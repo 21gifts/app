@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { postPasskeyRenewAck } from '@/lib/api';
@@ -99,6 +100,71 @@ export function PasskeyRenewNotice(): ReactElement | null {
   }
 
   const titleId = `passkey-renew-${step}`;
+  const title =
+    step === 'passkey'
+      ? t('passkeyRenew.passkeyTitle')
+      : step === 'success'
+        ? t('passkeyRenew.successTitle')
+        : step === 'failed'
+          ? t('passkeyRenew.failedTitle')
+          : t('passkeyRenew.banner');
+  const body =
+    step === 'passkey'
+      ? t('passkeyRenew.passkeyBody')
+      : step === 'success'
+        ? t('passkeyRenew.successBody')
+        : step === 'failed'
+          ? t('passkeyRenew.failedBody')
+          : t('passkeyRenew.explain');
+  let action: ReactNode;
+  if (step === 'passkey') {
+    action = (
+      <div className="flex min-h-11 w-full items-center justify-center">
+        <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-app-muted" />
+      </div>
+    );
+  } else if (step === 'success') {
+    action = (
+      <Button
+        type="button"
+        size="lg"
+        onClick={() => {
+          void onSuccessOk();
+        }}
+      >
+        {t('passkeyRenew.ok')}
+      </Button>
+    );
+  } else if (step === 'failed') {
+    action = (
+      <Button
+        type="button"
+        size="lg"
+        disabled={busy}
+        onClick={() => {
+          void onTryAgain();
+        }}
+        icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+      >
+        {t('passkeyRenew.retry')}
+      </Button>
+    );
+  } else {
+    action = (
+      <Button
+        type="button"
+        size="lg"
+        disabled={busy}
+        onClick={() => {
+          void onConfirm();
+        }}
+        icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+      >
+        {t('passkeyRenew.confirm')}
+      </Button>
+    );
+  }
+
   return (
     <div
       role="dialog"
@@ -106,68 +172,12 @@ export function PasskeyRenewNotice(): ReactElement | null {
       aria-labelledby={titleId}
       className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
     >
-      <Card>
-        {step === 'passkey' ? (
-          <>
-            <h2 id={titleId} className="text-lg font-semibold text-app-fg">
-              {t('passkeyRenew.passkeyTitle')}
-            </h2>
-            <p className="text-sm text-app-muted">{t('passkeyRenew.passkeyBody')}</p>
-          </>
-        ) : null}
-        {step === 'success' ? (
-          <>
-            <h2 id={titleId} className="text-lg font-semibold text-app-fg">
-              {t('passkeyRenew.successTitle')}
-            </h2>
-            <p className="text-sm text-app-muted">{t('passkeyRenew.successBody')}</p>
-            <Button
-              type="button"
-              size="lg"
-              onClick={() => {
-                void onSuccessOk();
-              }}
-            >
-              {t('passkeyRenew.ok')}
-            </Button>
-          </>
-        ) : null}
-        {step === 'failed' ? (
-          <>
-            <h2 id={titleId} className="text-lg font-semibold text-app-fg">
-              {t('passkeyRenew.failedTitle')}
-            </h2>
-            <p className="text-sm text-app-muted">{t('passkeyRenew.failedBody')}</p>
-            <Button
-              type="button"
-              size="lg"
-              disabled={busy}
-              onClick={() => {
-                void onTryAgain();
-              }}
-            >
-              {t('passkeyRenew.retry')}
-            </Button>
-          </>
-        ) : null}
-        {step === 'explain' ? (
-          <>
-            <h2 id={titleId} className="text-lg font-semibold text-app-fg">
-              {t('passkeyRenew.banner')}
-            </h2>
-            <p className="text-sm text-app-muted">{t('passkeyRenew.explain')}</p>
-            <Button
-              type="button"
-              size="lg"
-              disabled={busy}
-              onClick={() => {
-                void onConfirm();
-              }}
-            >
-              {t('passkeyRenew.confirm')}
-            </Button>
-          </>
-        ) : null}
+      <Card maxWidth="sm">
+        <h2 id={titleId} className="w-full text-lg font-semibold tracking-tight text-app-fg">
+          {title}
+        </h2>
+        <p className="w-full text-sm text-app-muted">{body}</p>
+        {action}
       </Card>
     </div>
   );
