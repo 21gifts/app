@@ -78,23 +78,6 @@ function listPreviewClass(fromMe: boolean): string {
 const EMPTY_PHOTO_URLS: Readonly<Record<string, string>> = {};
 
 /**
- * Scrolls the AppShell scroller to the bottom, or the document when none is mounted.
- *
- * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
- */
-function shellScrollToBottom(scroller: HTMLElement | null): void {
-  if (scroller !== null) {
-    if (typeof scroller.scrollTo === 'function') {
-      scroller.scrollTo(0, scroller.scrollHeight);
-    } else {
-      scroller.scrollTop = scroller.scrollHeight;
-    }
-    return;
-  }
-  window.scrollTo(0, document.documentElement.scrollHeight);
-}
-
-/**
  * Scrolls the AppShell scroller to the top, or the document when none is mounted.
  *
  * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
@@ -114,25 +97,95 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
 /** Stay pinned when the scroller is this close to the bottom. */
 const STUCK_TO_BOTTOM_PX = 80;
 
+/** Retry the open-thread pin for at most this many animation frames. */
+const MAX_PIN_FRAMES = 8;
+
 /**
- * Overflow node used for pin distance and prepend compensation.
+ * Active page scrollport, if that node is an HTMLElement.
  *
- * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
- * @returns The scroller, or `document.documentElement` when none is mounted.
+ * @returns The `[data-scrollport][data-scroll-active]` element, or `null`.
  */
-function shellScrollNode(scroller: HTMLElement | null): HTMLElement {
-  return scroller ?? document.documentElement;
+function activePageScrollport(): HTMLElement | null {
+  const node = document.querySelector('[data-scrollport][data-scroll-active]');
+  return node instanceof HTMLElement ? node : null;
 }
 
 /**
- * Distance in pixels from the current scroll position to the bottom.
+ * Overflow node for pin, stuck distance, and prepend compensation.
  *
- * @param scroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
- * @returns Distance to the bottom; within {@link STUCK_TO_BOTTOM_PX} counts as stuck.
+ * @param shellScroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
+ * @returns The active page scrollport, the shell scroller, or `document.documentElement`.
  */
-function shellDistanceToBottom(scroller: HTMLElement | null): number {
-  const node = shellScrollNode(scroller);
-  return node.scrollHeight - node.scrollTop - node.clientHeight;
+function resolveThreadScroller(shellScroller: HTMLElement | null): HTMLElement {
+  return activePageScrollport() ?? shellScroller ?? document.documentElement;
+}
+
+/**
+ * Whether pin and the scroll listener should use `window` (no shell scroller).
+ *
+ * @param shellScroller - Inner overflow node from {@link useAppShellScroller}, or `null`.
+ * @returns True when the document is the no-shell fallback.
+ */
+function usesWindowScroll(shellScroller: HTMLElement | null): boolean {
+  return activePageScrollport() === null && shellScroller === null;
+}
+
+/**
+ * Pins the resolved scroller so the thread end is on screen, unless the
+ * thread already fits a real viewport.
+ *
+ * @param node - Resolved overflow node.
+ * @param useWindowScroll - True when the document is the no-shell fallback.
+ * @param pinningRef - True only while this pin writes, including a
+ *   synchronous scroll event.
+ * @param lastPinTopRef - The scrollTop this pin wrote, or `null`.
+ */
+function pinThreadEnd(
+  node: HTMLElement,
+  useWindowScroll: boolean,
+  pinningRef: { current: boolean },
+  lastPinTopRef: { current: number | null },
+): void {
+  const height = node.scrollHeight;
+  const client = node.clientHeight;
+  if (client > 0 && height <= client + 1) {
+    return;
+  }
+  pinningRef.current = true;
+  const top = height - client;
+  node.scrollTop = top;
+  if (top > 0) {
+    lastPinTopRef.current = top;
+  }
+  if (useWindowScroll) {
+    window.scrollTo(0, height);
+  } else if (typeof node.scrollTo === 'function') {
+    node.scrollTo(0, height);
+  }
+  pinningRef.current = false;
+}
+
+/**
+ * Whether the open-thread column end is in the scroller viewport.
+ *
+ * A thread that fits (`scrollHeight <= clientHeight + 1`, including jsdom
+ * zeros) counts as in view. All-zero rects fail the rect test.
+ *
+ * @param column - Open-thread column.
+ * @param scroller - Resolved overflow node.
+ * @returns True when the newest end is on screen.
+ */
+function threadEndInView(column: HTMLElement, scroller: HTMLElement): boolean {
+  if (scroller.scrollHeight <= scroller.clientHeight + 1) {
+    return true;
+  }
+  const distance = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+  if (distance <= STUCK_TO_BOTTOM_PX) {
+    return true;
+  }
+  const columnRect = column.getBoundingClientRect();
+  const scrollerRect = scroller.getBoundingClientRect();
+  return columnRect.bottom <= scrollerRect.bottom + 1 && columnRect.bottom > scrollerRect.top;
 }
 
 /** Client-side composer validation or request failure. */
@@ -477,9 +530,10 @@ function ConversationListItem({
  * word Unread is not visible text. Heading and incoming author names with a
  * non-empty `accountId` are `inbox.authorProfile` buttons to `/members/:id`;
  * `fromMe` stays `inbox.you` text; Damus or a missing id stays plain text.
- * An open thread stays pinned to the AppShell scroller bottom while the
- * scroller is within 80px of the bottom, including when older pages prepend
- * and when stills on the loaded page finish decoding (`onLoad`). Scrolling up unsticks; further
+ * The first screen of an open thread is the newest message. An open thread
+ * stays pinned to the AppShell scroller bottom while the scroller is within
+ * 80px of the bottom, including when older pages prepend and when stills on
+ * the loaded page finish decoding (`onLoad`). Scrolling up unsticks; further
  * prepends keep the same messages in view by compensating scrollTop. A
  * newest-id change re-sticks. An invoice pay sheet opening pins again.
  * Inside AppShell the pin waits for that scroller and does not fall back to
@@ -487,8 +541,9 @@ function ConversationListItem({
  * Leaving a thread scrolls that scroller to the top once so the conversation
  * list is not left at the thread offset. A supplied `nearStartRef` is attached
  * to the eighth grouped bubble from the start, or the first bubble when fewer
- * than eight render, so loaders can prepend older pages without changing the
- * newest id.
+ * than eight render, only after the thread end is in view or the thread fits,
+ * so loaders can prepend older pages without changing the newest id. The
+ * history observer root is the active page scrollport when one is mounted.
  *
  * @param props - List/thread/composer state from {@link InboxLoader} or
  *   {@link ModeratorGroupScreen}.
@@ -546,8 +601,17 @@ export function InboxScreen({
   const payWaitingWasOn = useRef(false);
   const payQrWasOn = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const threadColumnRef = useRef<HTMLDivElement | null>(null);
+  const pinningRef = useRef(false);
+  const lastPinTopRef = useRef<number | null>(null);
+  const pinGenerationRef = useRef(0);
+  const pinRafRef = useRef<number | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const prevOpenIdRef = useRef(openId);
+  const [armedForOpenId, setArmedForOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>('direct');
   const [showPaymentQr, setShowPaymentQr] = useState(false);
+  const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
   const groups = messages === null ? [] : groupThreadGifts(messages);
@@ -567,6 +631,15 @@ export function InboxScreen({
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
   }, []);
 
+  const pinOpenThread = (): void => {
+    pinThreadEnd(
+      resolveThreadScroller(scroller),
+      usesWindowScroll(scroller),
+      pinningRef,
+      lastPinTopRef,
+    );
+  };
+
   useEffect(() => {
     if (inShell && scroller === null) {
       return;
@@ -576,57 +649,116 @@ export function InboxScreen({
       return;
     }
     const onScroll = (): void => {
-      const node = shellScrollNode(scroller);
-      stuckToBottomRef.current = shellDistanceToBottom(scroller) <= STUCK_TO_BOTTOM_PX;
-      threadScrollRef.current.scrollHeight = node.scrollHeight;
-      threadScrollRef.current.scrollTop = node.scrollTop;
+      const current = resolveThreadScroller(scroller);
+      threadScrollRef.current.scrollHeight = current.scrollHeight;
+      threadScrollRef.current.scrollTop = current.scrollTop;
+      if (pinningRef.current || current.scrollTop === lastPinTopRef.current) {
+        return;
+      }
+      const distance = current.scrollHeight - current.scrollTop - current.clientHeight;
+      stuckToBottomRef.current = distance <= STUCK_TO_BOTTOM_PX;
+      if (armedForOpenId !== openId) {
+        setArmedForOpenId(openId);
+      }
     };
-    if (scroller !== null) {
-      scroller.addEventListener('scroll', onScroll);
+    if (usesWindowScroll(scroller)) {
+      window.addEventListener('scroll', onScroll);
       return () => {
-        scroller.removeEventListener('scroll', onScroll);
+        window.removeEventListener('scroll', onScroll);
       };
     }
-    window.addEventListener('scroll', onScroll);
+    const node = resolveThreadScroller(scroller);
+    node.addEventListener('scroll', onScroll);
     return () => {
-      window.removeEventListener('scroll', onScroll);
+      node.removeEventListener('scroll', onScroll);
     };
-  }, [scroller, inShell, openId]);
+  }, [scroller, inShell, openId, armedForOpenId]);
 
   useLayoutEffect(() => {
     if (inShell && scroller === null) {
       return;
     }
     const threadOpen = openId !== null && openId !== '';
+    const pinNode = (): void => {
+      pinOpenThread();
+    };
+    const endInView = (): boolean => {
+      const column = threadColumnRef.current;
+      /* v8 ignore next 3 -- the open-thread column ref is set before this effect */
+      if (column === null || openId === null || openId === '') {
+        return false;
+      }
+      return threadEndInView(column, resolveThreadScroller(scroller));
+    };
+    const armIfEndInView = (): boolean => {
+      if (!endInView() || openId === null || openId === '') {
+        return false;
+      }
+      if (armedForOpenId !== openId) {
+        setArmedForOpenId(openId);
+      }
+      return true;
+    };
     if (threadOpen) {
       hadOpenThreadRef.current = true;
+      const openChanged = openId !== prevOpenIdRef.current;
+      prevOpenIdRef.current = openId;
       const lastIdChanged = lastMessageId !== prevLastMessageIdRef.current;
       const messagesSettled = messagesReady && messagesLoading === false && messagesError === false;
+      const node = resolveThreadScroller(scroller);
       if (lastIdChanged) {
         stuckToBottomRef.current = true;
         if (messagesSettled) {
-          shellScrollToBottom(scroller);
+          pinNode();
         }
       } else if (stuckToBottomRef.current && messagesSettled) {
-        shellScrollToBottom(scroller);
+        pinNode();
       } else if (
         stuckToBottomRef.current === false &&
         firstMessageId !== threadScrollRef.current.firstMessageId &&
         messageCount > threadScrollRef.current.messageCount
       ) {
-        const node = shellScrollNode(scroller);
         const delta = node.scrollHeight - threadScrollRef.current.scrollHeight;
         node.scrollTop = threadScrollRef.current.scrollTop + delta;
       }
       prevLastMessageIdRef.current = lastMessageId;
-      const node = shellScrollNode(scroller);
       threadScrollRef.current = {
         firstMessageId,
         messageCount,
         scrollHeight: node.scrollHeight,
         scrollTop: node.scrollTop,
       };
-      return;
+      if (messagesSettled && stuckToBottomRef.current && !armIfEndInView()) {
+        const generation = pinGenerationRef.current;
+        const followEnd = (framesLeft: number): void => {
+          pinRafRef.current = requestAnimationFrame(() => {
+            pinRafRef.current = null;
+            if (generation !== pinGenerationRef.current || !stuckToBottomRef.current) {
+              return;
+            }
+            if (armIfEndInView()) {
+              return;
+            }
+            pinNode();
+            if (armIfEndInView()) {
+              return;
+            }
+            if (framesLeft > 1) {
+              followEnd(framesLeft - 1);
+            }
+          });
+        };
+        followEnd(MAX_PIN_FRAMES);
+      } else if (openChanged && armedForOpenId !== null && armedForOpenId !== openId) {
+        setArmedForOpenId(null);
+      }
+      return () => {
+        pinGenerationRef.current += 1;
+        if (pinRafRef.current !== null) {
+          cancelAnimationFrame(pinRafRef.current);
+          pinRafRef.current = null;
+        }
+      };
     }
     if (hadOpenThreadRef.current) {
       shellScrollToTop(scroller);
@@ -634,12 +766,17 @@ export function InboxScreen({
     }
     stuckToBottomRef.current = false;
     prevLastMessageIdRef.current = null;
+    prevOpenIdRef.current = openId;
+    if (armedForOpenId !== null) {
+      setArmedForOpenId(null);
+    }
     threadScrollRef.current = {
       firstMessageId: '',
       messageCount: 0,
       scrollHeight: 0,
       scrollTop: 0,
     };
+    return undefined;
   }, [
     openId,
     messagesReady,
@@ -651,6 +788,7 @@ export function InboxScreen({
     photoUrls,
     scroller,
     inShell,
+    armedForOpenId,
   ]);
 
   useLayoutEffect(() => {
@@ -672,7 +810,7 @@ export function InboxScreen({
       messagesError === false &&
       (sheetOpened || waitingAppeared || qrAppeared)
     ) {
-      shellScrollToBottom(scroller);
+      pinOpenThread();
     }
   }, [
     openId,
@@ -686,18 +824,46 @@ export function InboxScreen({
     showPaymentQr,
   ]);
 
+  useEffect(() => {
+    if (inShell && scroller === null) {
+      return;
+    }
+    if (openId === null || openId === '' || typeof ResizeObserver !== 'function') {
+      return;
+    }
+    const column = threadColumnRef.current;
+    /* v8 ignore next 3 -- the column ref is set before this effect when a thread is open */
+    if (column === null) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      if (!stuckToBottomRef.current) {
+        return;
+      }
+      pinOpenThread();
+    });
+    observer.observe(column);
+    resizeObserverRef.current = observer;
+    return () => {
+      observer.disconnect();
+      if (resizeObserverRef.current === observer) {
+        resizeObserverRef.current = null;
+      }
+    };
+  }, [scroller, inShell, openId, messagesReady, messagesLoading, messagesError]);
+
   const pinIfStuck = (): void => {
     /* v8 ignore next 3 -- first AppShell paint: scrollerEl state is still null */
     if (inShell && scroller === null) {
       return;
     }
-    const node = shellScrollNode(scroller);
+    const node = resolveThreadScroller(scroller);
     threadScrollRef.current.scrollHeight = node.scrollHeight;
     threadScrollRef.current.scrollTop = node.scrollTop;
     if (!stuckToBottomRef.current) {
       return;
     }
-    shellScrollToBottom(scroller);
+    pinOpenThread();
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -766,7 +932,7 @@ export function InboxScreen({
   let body: ReactElement;
   if (openId !== null) {
     body = (
-      <div className="flex w-full flex-col gap-4">
+      <div ref={threadColumnRef} className="flex w-full flex-col gap-4">
         <div>
           {open !== null && hasInboxAccountId(open.accountId) ? (
             <h1
@@ -817,7 +983,9 @@ export function InboxScreen({
                 key={message.id}
                 data-message-id={message.id}
                 data-from-me={message.fromMe ? 'true' : 'false'}
-                {...(nearStartRef !== undefined && index === (groups.length >= 8 ? 7 : 0)
+                {...(nearStartRef !== undefined &&
+                historyArmed &&
+                index === (groups.length >= 8 ? 7 : 0)
                   ? { ref: nearStartRef }
                   : {})}
                 className={

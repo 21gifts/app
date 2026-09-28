@@ -95,8 +95,10 @@ function appendUnseenMessages(
  * opens, other roles and a failed lookup fall through. The composer sends
  * free text
  * directly, or mints an invoice from its amount field and long-polls for the
- * paid gift row. Threads load the newest 20-message page first; an
- * IntersectionObserver near the oldest bubble prepends unique older pages.
+ * paid gift row. Threads load the newest 20-message page first. The history
+ * observer attaches only after the thread end is in view (or the thread fits),
+ * uses the active page scrollport as its root when one is mounted, and then
+ * prepends unique older pages.
  * Prepending keeps the loaded thread visible and does not toggle its loading
  * state; {@link InboxScreen} stays pinned while stuck to the bottom.
  * Open Direct / Contact / Damus threads attach JPEG/PNG/WebP stills via
@@ -344,6 +346,8 @@ export function InboxLoader(): ReactElement | null {
     const activeId = openId;
     const activeCursor = nextCursor;
     const generation = paginationGeneration.current;
+    const rootNode = document.querySelector('[data-scrollport][data-scroll-active]');
+    const root = rootNode instanceof HTMLElement ? rootNode : null;
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
         return;
@@ -378,7 +382,7 @@ export function InboxLoader(): ReactElement | null {
           }
         }
       })();
-    });
+    }, { root });
     observer.observe(nearStartElement);
     return () => {
       cancelled = true;
