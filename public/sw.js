@@ -1,4 +1,5 @@
-/* Push-only service worker for 21.gifts. No cache/offline strategy in v1. */
+/* Push-only service worker for 21.gifts. No asset or offline cache.
+   A notification click stores a short-lived 21gifts-push-open path. */
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -83,48 +84,140 @@ self.addEventListener('push', (event) => {
   event.waitUntil(Promise.all(tasks));
 });
 
+/** Same-origin href and in-app path from a notification `data.url`. */
+function pushOpenTarget(raw) {
+  const welcomePath = '/welcome';
+  const welcomeHref = new URL(welcomePath, self.location.origin).href;
+  if (raw === '' || raw.includes('\\') || raw.startsWith('//')) {
+    return { href: welcomeHref, path: welcomePath };
+  }
+  try {
+    const target = new URL(raw, self.location.origin);
+    if (target.origin !== self.location.origin) {
+      return { href: welcomeHref, path: welcomePath };
+    }
+    return {
+      href: target.href,
+      path: `${target.pathname}${target.search}${target.hash}`,
+    };
+  } catch {
+    return { href: welcomeHref, path: welcomePath };
+  }
+}
+
+/** One id per click so a later click is not erased by an earlier one. */
+let pushOpenSeq = 0;
+
+/** Remember the path so a suspended page can open it after the message was missed. */
+function rememberPushOpen(path) {
+  const id = `${Date.now()}-${pushOpenSeq}`;
+  pushOpenSeq += 1;
+  return caches
+    .open('21gifts-push-open')
+    .then((cache) =>
+      cache.put(
+        new URL(`/push-open/${encodeURIComponent(id)}`, self.location.origin).href,
+        new Response(JSON.stringify({ url: path, at: Date.now(), id }), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    )
+    .catch(() => undefined)
+    .then(() => id);
+}
+
+/** Focus one same-origin window, preferring the one the person is looking at. */
+function chosenPushClient(clientList) {
+  let fallback = null;
+  for (const client of clientList) {
+    try {
+      const clientUrl = new URL(client.url);
+      if (clientUrl.origin === self.location.origin && 'focus' in client) {
+        if (client.focused === true) {
+          return client;
+        }
+        if (fallback === null) {
+          fallback = client;
+        }
+      }
+    } catch {
+      // ignore malformed client urls
+    }
+  }
+  return fallback;
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const raw =
     event.notification.data && typeof event.notification.data.url === 'string'
       ? event.notification.data.url
       : '/welcome';
-  const targetUrl = raw === '' ? '/welcome' : raw;
+  const { href, path } = pushOpenTarget(raw);
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        try {
-          const clientUrl = new URL(client.url);
-          const target = new URL(targetUrl, self.location.origin);
-          if (clientUrl.origin === target.origin && 'focus' in client) {
-            if (clientUrl.href !== target.href && 'navigate' in client) {
-              return client.navigate(target.href).then((navigated) => {
-                if (navigated) {
-                  return navigated.focus();
-                }
-                return client.focus();
-              });
-            }
-            return client.focus();
+    rememberPushOpen(path).then((id) =>
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        const client = chosenPushClient(clientList);
+        if (client !== null) {
+          // Safari has no WindowClient.navigate. Focus first so a frozen page
+          // can receive the path after it wakes.
+          let clientUrl = null;
+          try {
+            clientUrl = new URL(client.url);
+          } catch {
+            clientUrl = null;
           }
-        } catch {
-          // ignore malformed client urls
+          const focused = client.focus();
+          const deliver = () => {
+            const channel = typeof MessageChannel === 'function' ? new MessageChannel() : null;
+            if (channel === null) {
+              client.postMessage({ type: '21gifts-push-open', url: path, id });
+            } else {
+              client.postMessage({ type: '21gifts-push-open', url: path, id }, [channel.port2]);
+            }
+            const ack =
+              channel === null
+                ? Promise.resolve(false)
+                : new Promise((resolve) => {
+                    const timer = setTimeout(() => resolve(false), 500);
+                    channel.port1.onmessage = () => {
+                      clearTimeout(timer);
+                      resolve(true);
+                    };
+                  });
+            return ack.then((ok) => {
+              const canNavigate =
+                clientUrl !== null &&
+                clientUrl.href !== href &&
+                typeof client.navigate === 'function';
+              if (canNavigate) {
+                return client
+                  .navigate(href)
+                  .then((navigated) => {
+                    if (navigated && 'focus' in navigated) {
+                      return navigated.focus();
+                    }
+                    return undefined;
+                  })
+                  .catch(() => undefined);
+              }
+              if (!ok && self.clients.openWindow) {
+                return self.clients.openWindow(href);
+              }
+              return undefined;
+            });
+          };
+          if (focused !== undefined && focused !== null && typeof focused.then === 'function') {
+            return focused.then(deliver, deliver);
+          }
+          return deliver();
         }
-      }
-      let openUrl = '/welcome';
-      try {
-        const target = new URL(targetUrl, self.location.origin);
-        if (target.origin === self.location.origin) {
-          openUrl = target.href;
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(href);
         }
-      } catch {
-        openUrl = '/welcome';
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(openUrl);
-      }
-      return undefined;
-    }),
+        return undefined;
+      }),
+    ),
   );
 });

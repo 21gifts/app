@@ -59,8 +59,9 @@ function appendUnseenMessages(
  * After a successful group and thread fetch, marks the room read
  * (`markConversationRead`), bumps the badge epoch, and refreshes the
  * home-screen badge with staff-room unread `0`. The newest 20-message page
- * loads first; an IntersectionObserver near the oldest bubble prepends unique
- * older pages without returning to the loading card.
+ * loads first. The history observer attaches only after that end is in view
+ * (or the thread fits) and uses the active page scrollport as its root, then
+ * prepends unique older pages without returning to the loading card.
  * {@link InboxScreen} stays pinned while stuck to the bottom. While the room
  * is open and the tab is visible, the newest page is fetched every
  * {@link CONVERSATION_LIVE_POLL_MS} and unseen messages are appended; a hidden
@@ -263,37 +264,42 @@ export function ModeratorGroupScreen(): ReactElement | null {
     const activeId = group.id;
     const activeCursor = nextCursor;
     const generation = paginationGeneration.current;
-    const observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
-        return;
-      }
-      loadingMoreRef.current = true;
-      void (async () => {
-        try {
-          const page = await fetchConversation(activeSession, activeId, {
-            cursor: activeCursor,
-          });
-          /* v8 ignore next 3 -- unmount during cursor fetch */
-          if (cancelled || generation !== paginationGeneration.current) {
-            return;
-          }
-          setMessages((prev) => {
-            /* v8 ignore next -- the sentinel only renders after page one is in state */
-            if (prev === null) return page.messages;
-            const ids = new Set(prev.map((message) => message.id));
-            const older = page.messages.filter((message) => !ids.has(message.id));
-            return [...older, ...prev];
-          });
-          setNextCursor(page.nextCursor);
-        } catch {
-          // Keep the current pages and cursor so a later intersection may retry.
-        } finally {
-          if (!cancelled && generation === paginationGeneration.current) {
-            loadingMoreRef.current = false;
-          }
+    const rootNode = document.querySelector('[data-scrollport][data-scroll-active]');
+    const root = rootNode instanceof HTMLElement ? rootNode : null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting) || loadingMoreRef.current) {
+          return;
         }
-      })();
-    });
+        loadingMoreRef.current = true;
+        void (async () => {
+          try {
+            const page = await fetchConversation(activeSession, activeId, {
+              cursor: activeCursor,
+            });
+            /* v8 ignore next 3 -- unmount during cursor fetch */
+            if (cancelled || generation !== paginationGeneration.current) {
+              return;
+            }
+            setMessages((prev) => {
+              /* v8 ignore next -- the sentinel only renders after page one is in state */
+              if (prev === null) return page.messages;
+              const ids = new Set(prev.map((message) => message.id));
+              const older = page.messages.filter((message) => !ids.has(message.id));
+              return [...older, ...prev];
+            });
+            setNextCursor(page.nextCursor);
+          } catch {
+            // Keep the current pages and cursor so a later intersection may retry.
+          } finally {
+            if (!cancelled && generation === paginationGeneration.current) {
+              loadingMoreRef.current = false;
+            }
+          }
+        })();
+      },
+      { root },
+    );
     observer.observe(nearStartElement);
     return () => {
       cancelled = true;

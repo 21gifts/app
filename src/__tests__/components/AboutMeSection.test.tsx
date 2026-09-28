@@ -333,7 +333,10 @@ describe('AboutMeSection', () => {
     await waitFor(() => {
       expect(screen.getByAltText('About me photo')).toBeTruthy();
     });
-    expect(screen.getByAltText('About me photo').className).toContain('max-h-40');
+    expect(screen.getByAltText('About me photo').className).toContain('object-contain');
+    expect(screen.getByAltText('About me photo').className).toContain('max-h-80');
+    expect(screen.getByAltText('About me photo').className).not.toContain('object-cover');
+    expect(screen.getByAltText('About me photo').className).not.toContain('max-h-40');
   });
 
   it('stays filled when loadPhoto rejects and does not show an image or save error', async () => {

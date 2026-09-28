@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { ModeratorGroupScreen } from '@/components/ModeratorGroupScreen';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
@@ -797,9 +798,11 @@ describe('moderator conversation thread pages', () => {
     static instances: FakeIntersectionObserver[] = [];
     callback: IntersectionObserverCallback;
     observed: Element[] = [];
+    root: Element | null = null;
 
-    constructor(cb: IntersectionObserverCallback) {
+    constructor(cb: IntersectionObserverCallback, options?: { root?: Element | null }) {
       this.callback = cb;
+      this.root = options?.root ?? null;
       FakeIntersectionObserver.instances.push(this);
     }
 
@@ -858,6 +861,21 @@ describe('moderator conversation thread pages', () => {
       node.getAttribute('data-message-id'),
     );
     expect(ids).toEqual(['m-old', 'm1']);
+  });
+
+  it('observes older pages inside the active page scrollport', async () => {
+    threadMock.mockResolvedValue(conversationPage([MESSAGE], 'cur_2'));
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <ModeratorGroupScreen />
+      </AppShell>,
+    );
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    const scroller = container.querySelector('[data-scrollport]');
+    expect(scroller).toBeTruthy();
+    expect(FakeIntersectionObserver.instances[0]?.root).toBe(scroller);
   });
 
   it('does not create an observer or fetch a cursor page without a next cursor', async () => {

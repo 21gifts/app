@@ -296,7 +296,35 @@ describe('NotificationsLoader', () => {
     expect(await screen.findByText('Bob replied')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Bob replied/ }));
     expect(markReadMock).toHaveBeenCalledWith('sess', 'n1');
-    expect(push).toHaveBeenCalledWith('/messages/parent-1');
+    expect(push).toHaveBeenCalledWith('/messages/reply-1');
+  });
+
+  it('opens a post on the note, a zap on the note, and a mention on the message', async () => {
+    const post: Notification = { ...ROW, id: 'n-post', type: 'forum_post', parentId: 'a/b' };
+    const zap: Notification = {
+      ...ROW,
+      id: 'n-zap',
+      type: 'zap',
+      parentId: 'note-9',
+      replyId: 'receipt-1',
+      text: '21',
+    };
+    const mention: Notification = {
+      ...ROW,
+      id: 'n-mention',
+      type: 'forum_mention',
+      parentId: 'note-1',
+      replyId: 'reply/2',
+      text: 'hi',
+    };
+    listMock.mockResolvedValue({ notifications: [post, zap, mention], unreadCount: 3 });
+    renderWithLocale(<NotificationsLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: /Bob posted/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Bob sent bitcoin/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Bob marked you/ }));
+    expect(push).toHaveBeenCalledWith('/messages/a%2Fb');
+    expect(push).toHaveBeenCalledWith('/messages/note-9');
+    expect(push).toHaveBeenCalledWith('/messages/reply%2F2');
   });
 
   it('opens a moderator proposal row on /moderate/proposals without mark-read', async () => {
