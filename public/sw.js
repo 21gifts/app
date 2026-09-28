@@ -170,17 +170,20 @@ self.addEventListener('notificationclick', (event) => {
               clientUrl.href !== href &&
               typeof client.navigate === 'function'
             ) {
-              return client.navigate(href).then((navigated) => {
-                if (navigated && 'focus' in navigated) {
-                  return navigated.focus();
-                }
-                return undefined;
-              });
+              return client
+                .navigate(href)
+                .then((navigated) => {
+                  if (navigated && 'focus' in navigated) {
+                    return navigated.focus();
+                  }
+                  return undefined;
+                })
+                .catch(() => undefined);
             }
             return undefined;
           };
           if (focused !== undefined && focused !== null && typeof focused.then === 'function') {
-            return focused.then(deliver).catch(() => client.focus());
+            return focused.then(deliver, deliver);
           }
           return deliver();
         }
