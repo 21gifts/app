@@ -178,16 +178,16 @@ export function FundingPayoutsScreen(): ReactElement | null {
             );
           })}
         </ul>
-        <div className="w-full overflow-x-auto">
+        <div className="w-full">
           <table
             aria-label={t('moderate.payouts.heading')}
-            className="w-full border-collapse text-sm"
+            className="w-full table-fixed border-collapse text-sm"
           >
             <thead>
               <tr>
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 bg-app-card px-3 py-2 text-left font-medium text-app-fg"
+                  className="w-[34%] overflow-hidden bg-app-card px-2 py-2 text-left font-medium text-app-fg"
                 >
                   {t('moderate.payouts.column.name')}
                 </th>
@@ -199,7 +199,7 @@ export function FundingPayoutsScreen(): ReactElement | null {
                     <th
                       key={day}
                       scope="col"
-                      className="px-1 py-2 text-center font-medium text-app-fg"
+                      className="overflow-hidden px-0 py-2 text-center text-[10px] font-medium leading-tight text-app-fg sm:text-xs"
                       {...(isToday ? { 'aria-label': `${formatted}, ${todayLabel}` } : {})}
                     >
                       <span className="block">{formatted}</span>
@@ -218,17 +218,17 @@ export function FundingPayoutsScreen(): ReactElement | null {
                   <tr key={`${row.accountId ?? 'none'}:${rowIndex}`}>
                     <th
                       scope="row"
-                      className="sticky left-0 z-10 bg-app-card px-3 py-2 text-left font-medium text-app-fg"
+                      className="overflow-hidden bg-app-card px-2 py-2 text-left font-medium text-app-fg"
                     >
                       {row.accountId !== null ? (
                         <Link
                           href={`/members/${row.accountId}`}
-                          className="text-sm font-medium text-app-fg underline underline-offset-2"
+                          className="block truncate text-sm font-medium text-app-fg underline underline-offset-2"
                         >
                           {label}
                         </Link>
                       ) : (
-                        label
+                        <span className="block truncate">{label}</span>
                       )}
                     </th>
                     {row.days.map((status, dayIndex) => {
@@ -236,9 +236,9 @@ export function FundingPayoutsScreen(): ReactElement | null {
                       const day = days[dayIndex] as string;
                       const date = formatPayoutDay(day, locale);
                       return (
-                        <td key={`${rowIndex}:${dayIndex}`} className="h-10 w-10 p-0">
+                        <td key={`${rowIndex}:${dayIndex}`} className="h-10 p-0">
                           <span
-                            className={`block h-full min-h-10 min-w-10 border border-app-border ${meta.swatch}`}
+                            className={`block h-full min-h-10 w-full border border-app-border ${meta.swatch}`}
                             aria-label={t(meta.cell, { name: label, date })}
                           >
                             <span className="sr-only">{t(meta.legend)}</span>
