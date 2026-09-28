@@ -40,81 +40,104 @@ afterEach(() => {
   cleanup();
   useAuthStore.setState({ session: null, account: null });
   vi.clearAllMocks();
+  window.history.replaceState({}, '', '/');
 });
 
 describe('PasskeyRenewNotice', () => {
-  it('blocks the page with the renew dialog and no failure copy', () => {
+  it('explains the renew and waits for confirmation', () => {
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<PasskeyRenewNotice />);
     expect(screen.getByRole('dialog')).toBeTruthy();
-    expect(
-      screen.getByText('You need to renew your passkey before you can continue.'),
-    ).toBeTruthy();
+    expect(screen.getByText('Nothing changes until you confirm.', { exact: false })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+    expect(renewPasskey).not.toHaveBeenCalled();
   });
 
-  it('starts the ceremony from the bar and stores a successful account', async () => {
+  it('shows the passkey step only after Continue, then the success confirmation', async () => {
     const next = { ...account, walletRequired: true, passkeyCredentialId: 'seed' };
-    vi.mocked(renewPasskey).mockResolvedValue({
-      outcome: 'ok',
-      account: next,
-      prfFirst: new Uint8Array([1]),
-    });
+    let resolveRenew: (value: Awaited<ReturnType<typeof renewPasskey>>) => void = () => undefined;
+    vi.mocked(renewPasskey).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRenew = resolve;
+        }),
+    );
     useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<PasskeyRenewNotice />);
-    fireEvent.click(screen.getByRole('button', { name: 'Renew passkey' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByText('Your device is showing the passkey prompt.', { exact: false }),
+    ).toBeTruthy();
+    resolveRenew({ outcome: 'ok', account: next, prfFirst: new Uint8Array([1]) });
+    expect(await screen.findByRole('heading', { name: 'It worked' })).toBeTruthy();
+    expect(useAuthStore.getState().account?.walletRequired).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
     await waitFor(() => {
       expect(useAuthStore.getState().account).toEqual(next);
     });
-    expect(renewPasskey).toHaveBeenCalledWith('tok');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('shows the failure dialog and hides it after OK', async () => {
-    const open = { ...account, passkeyRenewFailed: true };
-    const closed = { ...account, passkeyRenewFailed: false };
-    vi.mocked(postPasskeyRenewAck).mockResolvedValue(closed);
-    useAuthStore.setState({ session: 'tok', account: open });
+  it('returns to the explanation when the device prompt is cancelled', async () => {
+    vi.mocked(renewPasskey).mockResolvedValue({ outcome: 'cancelled' });
+    useAuthStore.setState({ session: 'tok', account });
     renderWithLocale(<PasskeyRenewNotice />);
-    expect(screen.getByRole('dialog')).toBeTruthy();
-    expect(
-      screen.getByText('You can try again later. You do not need to do anything now.'),
-    ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
-    await screen.findByRole('button', { name: 'Renew passkey' });
-    expect(postPasskeyRenewAck).toHaveBeenCalledWith('tok');
-    expect(
-      screen.queryByText('You can try again later. You do not need to do anything now.'),
-    ).toBeNull();
-    expect(screen.getByRole('dialog')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByText('The renewal did not work. You can try again.')).toBeNull();
   });
 
-  it('keeps the dialog when acknowledgement fails', async () => {
+  it('shows the failure confirmation and try again returns to the explanation', async () => {
+    vi.mocked(renewPasskey).mockResolvedValue({ outcome: 'failed', kind: 'generic' });
+    vi.mocked(postPasskeyRenewAck).mockResolvedValue(account);
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(<PasskeyRenewNotice />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('The renewal did not work. You can try again.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(postPasskeyRenewAck).toHaveBeenCalledWith('tok');
+  });
+
+  it('starts on the failure confirmation when a failure is still open', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, passkeyRenewFailed: true },
+    });
+    renderWithLocale(<PasskeyRenewNotice />);
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('keeps the failure confirmation when acknowledgement fails', async () => {
     vi.mocked(postPasskeyRenewAck).mockRejectedValue(new Error('nope'));
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, passkeyRenewFailed: true },
     });
     renderWithLocale(<PasskeyRenewNotice />);
-    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
-    await screen.findByRole('dialog');
-    expect(screen.getByRole('dialog')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByRole('button', { name: 'Try again' });
+    expect(screen.getByText('The renewal did not work. You can try again.')).toBeTruthy();
   });
 
-  it('does not start a ceremony without a session', () => {
+  it('does not start without a session', () => {
     useAuthStore.setState({ session: null, account });
     renderWithLocale(<PasskeyRenewNotice />);
-    fireEvent.click(screen.getByRole('button', { name: 'Renew passkey' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(renewPasskey).not.toHaveBeenCalled();
   });
 
-  it('does not acknowledge without a session', () => {
-    useAuthStore.setState({
-      session: null,
-      account: { ...account, passkeyRenewFailed: true },
-    });
+  it('shows the screenshot steps from the visual query', () => {
+    window.history.replaceState({}, '', '/welcome?visual=renew-passkey');
+    useAuthStore.setState({ session: 'tok', account });
+    const passkey = renderWithLocale(<PasskeyRenewNotice />);
+    expect(
+      screen.getByText('Your device is showing the passkey prompt.', { exact: false }),
+    ).toBeTruthy();
+    passkey.unmount();
+    window.history.replaceState({}, '', '/welcome?visual=renew-ok');
     renderWithLocale(<PasskeyRenewNotice />);
-    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
-    expect(postPasskeyRenewAck).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'It worked' })).toBeTruthy();
   });
 });

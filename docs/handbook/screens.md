@@ -472,21 +472,27 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ### Variant: renew
 
-Signed in, no seed yet (`walletRequired` false). A blocking dialog covers the page. There is no close control. **Renew passkey** is the only action.
+Signed in, no seed yet. The dialog explains that the device will ask for a passkey and that nothing changes until the member confirms. **Continue** is the only action. There is no close control.
 
 ![21.gifts welcome renew](images/welcome-renew.png)
 
-### Variant: renew-failed
+### Variant: renew-passkey
 
-The renew ceremony failed and has not been acknowledged. The same blocking layer shows that it did not work. **OK** hides that text. The renew dialog comes back, because there is still no seed.
+After **Continue**. The dialog says the device is showing the passkey prompt. The member confirms that prompt on the device. There is no second button.
 
-![21.gifts welcome renew failed](images/welcome-renew-failed.png)
+![21.gifts welcome renew passkey](images/welcome-renew-passkey.png)
 
 ### Variant: renew-ok
 
-The seed exists (`walletRequired` true). The blocking dialog is gone. The living room is usable.
+The passkey was renewed. The dialog says it worked. **OK** closes it and the living room is usable.
 
 ![21.gifts welcome renew ok](images/welcome-renew-ok.png)
+
+### Variant: renew-failed
+
+The renewal did not work. **Try again** returns to the explanation. The member stays on this dialog until a later attempt succeeds.
+
+![21.gifts welcome renew failed](images/welcome-renew-failed.png)
 
 ### Variant: sunday
 

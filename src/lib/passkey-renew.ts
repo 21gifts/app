@@ -93,11 +93,8 @@ async function storedOrFailed(sessionToken: string, err: unknown): Promise<Passk
   if (!isCurrentSession(sessionToken)) {
     return { outcome: 'cancelled' };
   }
-  if (!fetchFailed && latest !== null) {
-    useAuthStore.getState().setAccount(latest);
-    if (hasSeedPasskey(latest.passkeyCredentialId)) {
-      return { outcome: 'stored', account: latest };
-    }
+  if (!fetchFailed && latest !== null && hasSeedPasskey(latest.passkeyCredentialId)) {
+    return { outcome: 'stored', account: latest };
   }
   return { outcome: 'failed', kind: failKind(err) };
 }

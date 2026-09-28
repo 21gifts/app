@@ -495,9 +495,9 @@
     ]
   },
   {
-    "id": "/welcome:renew-failed",
-    "label": "/welcome renew-failed",
-    "visual": "state-welcome-renew-failed",
+    "id": "/welcome:renew-passkey",
+    "label": "/welcome renew-passkey",
+    "visual": "state-welcome-renew-passkey",
     "combos": [
       "desktop-light",
       "desktop-dark",
@@ -509,6 +509,17 @@
     "id": "/welcome:renew-ok",
     "label": "/welcome renew-ok",
     "visual": "state-welcome-renew-ok",
+    "combos": [
+      "desktop-light",
+      "desktop-dark",
+      "mobile-light",
+      "mobile-dark"
+    ]
+  },
+  {
+    "id": "/welcome:renew-failed",
+    "label": "/welcome renew-failed",
+    "visual": "state-welcome-renew-failed",
     "combos": [
       "desktop-light",
       "desktop-dark",

@@ -63,7 +63,8 @@ describe('AppShell', () => {
         <p>Body</p>
       </AppShell>,
     );
-    expect(screen.getByRole('button', { name: 'Renew passkey' })).toBeTruthy();
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     useAuthStore.setState({ session: null, account: null });
   });
 
