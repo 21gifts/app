@@ -52,9 +52,13 @@ function installHistoryTap(): void {
   };
   window.history.replaceState = (data, unused, url) => {
     const before = `${window.location.pathname}${window.location.search}`;
+    let requested = before;
+    if (url !== undefined && url !== null && String(url) !== '') {
+      const parsed = new URL(String(url), window.location.href);
+      requested = `${parsed.pathname}${parsed.search}`;
+    }
     rawReplace(data, unused, url);
-    const after = `${window.location.pathname}${window.location.search}`;
-    if (after !== before) {
+    if (requested !== before) {
       navKind = 'replace';
     }
   };
