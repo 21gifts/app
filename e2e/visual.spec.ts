@@ -4713,6 +4713,190 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-goal-credit');
   });
 
+  test('state /members posts-open-loan-tag-open', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: 'Loan' }).click();
+    await expect(page.getByText('A loan is paid back.')).toBeVisible();
+    await shotScreen(page, 'state-members-posts-open-loan-tag-open');
+  });
+
+  test('state /members posts-open-goal-credit-open', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: 'BTC',
+          fundedAt: '2026-09-26T12:00:00.000Z',
+          termDays: 2,
+          daysDue: 1,
+          daysPaid: 0,
+          unassignedSats: 0,
+          givers: [
+            {
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              givenSats: 20,
+              givenAmount: null,
+            },
+          ],
+          repayments: [
+            {
+              dayIndex: 0,
+              dueOn: '2026-09-27',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 10,
+              status: 'due',
+              via: 'lightning',
+            },
+          ],
+          next: null,
+        }),
+      });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 2,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: 'Who gave and who is paid back' }).click();
+    await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
+    await shotScreen(page, 'state-members-posts-open-goal-credit-open');
+  });
+
   test('state /members posts-open-photos', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const postId = '44444444-4444-4444-8444-444444444444';
@@ -7083,6 +7267,39 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText("₿21'000")).toBeVisible();
     await expect(page.getByText('$21.00')).toBeVisible();
     await shotScreen(page, 'state-messages-id-goal-credit');
+  });
+
+  test('state /messages/[id] loan-tag-open', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await fulfillRateDay(page);
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Need help with a train ticket',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 10500,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Loan' }).click();
+    await expect(page.getByRole('status')).toContainText('paid back');
+    await shotScreen(page, 'state-messages-id-loan-tag-open');
   });
 
   test('state /messages/[id] credit-ledger', async ({ page }) => {
@@ -9761,6 +9978,154 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-credit');
+  });
+
+  test('state /welcome loan-tag-open', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Loan' }).click();
+    await expect(page.getByRole('status')).toContainText('paid back');
+    await shotScreen(page, 'state-welcome-loan-tag-open');
+  });
+
+  test('state /welcome donation-tag-open', async ({ page }) => {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Donation' }).click();
+    await expect(page.getByRole('status')).toContainText('not paid back');
+    await shotScreen(page, 'state-welcome-donation-tag-open');
+  });
+
+  test('state /welcome repay-today', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
+    await shotScreen(page, 'state-welcome-repay-today');
+  });
+
+  test('state /welcome repay-today-invoice', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: 'lnbc21n1repay', amountSats: 700 }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: "Pay today's repayment" }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-repay-today-invoice');
   });
 
   test('state /welcome goal-credit-open', async ({ page }) => {

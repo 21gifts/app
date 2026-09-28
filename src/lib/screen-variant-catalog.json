@@ -384,6 +384,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loan-tag-open",
+    "label": "/welcome loan-tag-open",
+    "visual": "state-welcome-loan-tag-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:donation-tag-open",
+    "label": "/welcome donation-tag-open",
+    "visual": "state-welcome-donation-tag-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:repay-today",
+    "label": "/welcome repay-today",
+    "visual": "state-welcome-repay-today",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:repay-today-invoice",
+    "label": "/welcome repay-today-invoice",
+    "visual": "state-welcome-repay-today-invoice",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:ask-credit-amount",
     "label": "/welcome ask-credit-amount",
     "visual": "state-welcome-ask-credit-amount",
@@ -1305,6 +1329,18 @@
     "id": "/members/[accountId]:posts-open-goal-credit",
     "label": "/members/[accountId] posts-open-goal-credit",
     "visual": "state-members-posts-open-goal-credit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-tag-open",
+    "label": "/members/[accountId] posts-open-loan-tag-open",
+    "visual": "state-members-posts-open-loan-tag-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-goal-credit-open",
+    "label": "/members/[accountId] posts-open-goal-credit-open",
+    "visual": "state-members-posts-open-goal-credit-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2679,6 +2715,12 @@
     "id": "/messages/[id]:goal-credit",
     "label": "/messages/[id] goal-credit",
     "visual": "state-messages-id-goal-credit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-tag-open",
+    "label": "/messages/[id] loan-tag-open",
+    "visual": "state-messages-id-loan-tag-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

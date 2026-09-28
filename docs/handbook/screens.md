@@ -589,6 +589,30 @@ Same note as **goal-credit**, after **Who gave and who is paid back** is pressed
 
 ![21.gifts welcome goal credit open](images/welcome-goal-credit-open.png)
 
+### Variant: loan-tag-open
+
+Same note as **goal-credit**, after **Loan** is pressed. A line under the name says a loan is paid back and each giver gets back what they gave.
+
+![21.gifts welcome loan tag open](images/welcome-loan-tag-open.png)
+
+### Variant: donation-tag-open
+
+On **All**: a top-level Ada note with `sats: 10500` and `goalSats: 21000`, after **Donation** is pressed. A line under the name says a donation is a gift and is not paid back.
+
+![21.gifts welcome donation tag open](images/welcome-donation-tag-open.png)
+
+### Variant: repay-today
+
+On **All**: Ada's own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Pay today's repayment** is visible. The plan stays closed.
+
+![21.gifts welcome repay today](images/welcome-repay-today.png)
+
+### Variant: repay-today-invoice
+
+Same note as **repay-today**, after **Pay today's repayment** is pressed. The invoice card is open, with **Pay with Wallet of Satoshi**. The amount form is not shown.
+
+![21.gifts welcome repay today invoice](images/welcome-repay-today-invoice.png)
+
 ### Variant: ask-credit-amount
 
 Credit, step **1 of 9**. **Ask for money** is selected. **Credit** is pressed under **One-time** / **Daily** (**One-time** pressed). The heading is **How much?** **21000** is typed in bitcoin, with the preferred-fiat counterpart under the field. **Continue** is enabled. There is no checkbox and no **Post** on this step. Choosing **Donation** leaves this path and returns to the four-step ask.
@@ -1860,6 +1884,18 @@ Identity card; posts pressed; the listed English post is defined as **$1.50** wi
 Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The post offers **Who gave and who is paid back**.
 
 ![21.gifts member posts open with credit goal](images/members-posts-open-goal-credit.png)
+
+### Variant: posts-open-loan-tag-open
+
+Same post as **posts-open-goal-credit**, after **Loan** is pressed. A line under the name says a loan is paid back.
+
+![21.gifts member posts loan tag open](images/members-posts-open-loan-tag-open.png)
+
+### Variant: posts-open-goal-credit-open
+
+Same member, after **Who gave and who is paid back** is pressed on a filled credit. **Given** lists Bea. **Paid back** shows the chart and Bea's share **Due**.
+
+![21.gifts member posts credit ledger open](images/members-posts-open-goal-credit-open.png)
 
 ### Variant: posts-open-photos
 
@@ -3339,6 +3375,12 @@ Unsigned permalink of an English note defined as **$1.50** with frozen **₿1'00
 Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. No composer Ask.
 
 ![21.gifts public message credit goal](images/messages-id-goal-credit.png)
+
+### Variant: loan-tag-open
+
+Same unsigned credit, after **Loan** is pressed. A line under the name says a loan is paid back.
+
+![21.gifts public message loan tag open](images/messages-id-loan-tag-open.png)
 
 ### Variant: credit-ledger
 
