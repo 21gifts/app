@@ -538,16 +538,16 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; the editor is not translatable; copy-profile-link on the card — never a forum post), name, location, then the same public facts as `/members/:id` (`MemberProfileScreen` `factsOnly`: role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed), then Wallet of Satoshi address forms, then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
-- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `fetchMember(session, account.id)` then `MemberProfileScreen` with `factsOnly` for the public gifts facts; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
-- **Returns / side effects:** Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no chart FiatPicker, no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG). The only FiatPicker on the card is `FiatPreferenceSwitcher`. About me, name form, location form, then the public member facts (role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, QR, Shop sticker, post/reaction counts, and the on-demand feed), then the Wallet of Satoshi address form, then `PushToggle` (Notifications pills), Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). A failed `fetchMember` shows `forum.error` and **Try again** and leaves the editors up. `MissingRequirementsError` replaces to `/setup/rules`. No Message button and no staff actions. Back + wordmark live in `ProfileChromeLeft`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a resting header (round profile photo from `GET /pictures/me` and wide image from `GET /banners/me`, only when that slot is stored; neither is the About me photo), a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; the editor is not translatable; copy-profile-link on the card — never a forum post), name, location, then the same public facts as `/members/:id` (`MemberProfileScreen` `factsOnly`: role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed), then Wallet of Satoshi address forms, then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. Menu icon+amount totals stay in `SignedInChrome`. Back + wordmark live in `ProfileChromeLeft`.
+- **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime`; pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `fetchProfilePhoto`, `fetchWideBanner`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `fetchMember(session, account.id)` then `MemberProfileScreen` with `factsOnly` for the public gifts facts; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
+- **Returns / side effects:** When a profile photo or wide image is stored, that header is above the heading (wide image `aspect-[5/2]`, round photo overlapping its lower edge when both exist). Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no chart FiatPicker, no SVG / no ₿|fiat scale; populated: legend + ₿ | selected fiat + SVG). The only FiatPicker on the card is `FiatPreferenceSwitcher`. About me, name form, location form, then the public member facts (role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, QR, Shop sticker, post/reaction counts, and the on-demand feed), then the Wallet of Satoshi address form, then `PushToggle` (Notifications pills), Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). A failed `fetchMember` shows `forum.error` and **Try again** and leaves the editors up. `MissingRequirementsError` replaces to `/setup/rules`. No Message button and no staff actions. Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: AboutMeSection
 
-- **Purpose:** Profile-card About me block: heading plus filled text and/or photo, or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`, attach a JPEG/PNG/WebP with ImagePlus (`prepareForumPhoto`, no video), preview, and remove. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
-- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `messageId` (stored About me note id; omitted or blank keeps `LinkedText`), optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets), optional `startEditing` to open the owner editor on mount.
-- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save. Loads a blob URL when `hasPhoto` and `loadPhoto` are set; revokes it on unmount.
+- **Purpose:** Profile-card About me block: heading plus filled text and/or photo (the note photo is a `max-h-40` cover, not the profile photo or the wide image), or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`. The editor has three separate attaches, each its own ImagePlus and remove: the About me photo (JPEG/PNG/WebP via `prepareForumPhoto`, no video), the round profile photo, and the wide image. Each previews on its own. A portrait is never stored as the wide image. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
+- **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `messageId` (stored About me note id; omitted or blank keeps `LinkedText`), optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets), optional `loadPicture` / `onSavePicture` for the round profile photo and optional `loadBanner` / `onSaveBanner` for the wide image (neither is the About me note photo; a non-image blob stays empty), optional `startEditing` to open the owner editor on mount.
+- **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save, `onSavePicture` when the profile photo changes, and `onSaveBanner` when the wide image changes. Loads a blob URL when `hasPhoto` and `loadPhoto` are set and revokes it on unmount. Loads and revokes the profile-photo and wide-image blob URLs the same way when `loadPicture` or `loadBanner` is set.
 - **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), `FundingApplyScreen` on `/grants/apply`.
 
 ## Function: PushToggle
@@ -1793,8 +1793,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: prepareForumPhoto
 
 - **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL. JPEG files also keep `takenAt` from Exif before the canvas encode; PNG and WebP set `takenAt` null.
-- **Inputs:** `file` accepted by `isForumPhotoFile`.
-- **Returns / side effects:** `{ ok: true, photo }` (`photo.takenAt` is a civil string or null) or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates.
+- **Inputs:** `file` accepted by `isForumPhotoFile`. Optional second argument `{ wide: true }` for the profile wide image.
+- **Returns / side effects:** `{ ok: true, photo }` (`photo.takenAt` is a civil string or null) or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. With `{ wide: true }`, a still that is under 640 px wide or less than 1.5 times as wide as it is tall returns `'notWide'`. Revokes temporary object URLs it creates.
 - **Used by:** `ForumLoader`, `AboutMeSection`, `InboxLoader`, `ModeratorGroupScreen`.
 
 ## Function: parseNumberFormat
@@ -2697,6 +2697,62 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with Bearer session and JSON `{ text, photo? }`.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** App Router `PUT` on `/me/about`.
+
+## Function: putProfilePhoto
+
+- **Purpose:** `PUT /pictures/me` with `{ photo }` for the signed-in account. `null` clears the profile photo. Does not change the wide image or the About me note.
+- **Inputs:** Session token, JPEG payload or `null`.
+- **Returns / side effects:** Resolves on 2xx. Throws the save error otherwise.
+- **Used by:** `ProfileScreen` via `AboutMeSection` `onSavePicture`.
+
+## Function: fetchProfilePhoto
+
+- **Purpose:** `GET /pictures/me` bytes for the signed-in account.
+- **Inputs:** Session token.
+- **Returns / side effects:** Blob. Throws the load error on failure or an empty body.
+- **Used by:** `ProfileScreen` (resting header `ProfileImages` and `AboutMeSection` `loadPicture`).
+
+## Function: proxyProfilePhotoGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /pictures/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `GET` on `/pictures/me`.
+
+## Function: proxyProfilePhotoPut
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /pictures/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `PUT` on `/pictures/me`.
+
+## Function: putWideBanner
+
+- **Purpose:** `PUT /banners/me` with `{ photo }` for the signed-in account. `null` clears the wide image. Does not change the About me photo.
+- **Inputs:** Session token, JPEG payload or `null`.
+- **Returns / side effects:** Resolves on 2xx. Throws the save error otherwise.
+- **Used by:** `ProfileScreen` via `AboutMeSection` `onSaveBanner`.
+
+## Function: fetchWideBanner
+
+- **Purpose:** `GET /banners/me` bytes for the signed-in account.
+- **Inputs:** Session token.
+- **Returns / side effects:** Blob. Throws the load error on failure or an empty body.
+- **Used by:** `ProfileScreen` (resting header `ProfileImages` and `AboutMeSection` `loadBanner`).
+
+## Function: proxyWideBannerGet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /banners/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `GET` on `/banners/me`.
+
+## Function: proxyWideBannerPut
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /banners/me`.
+- **Inputs:** Incoming `Request`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** App Router `PUT` on `/banners/me`.
 
 ## Function: proxyMeAboutPhotoGet
 

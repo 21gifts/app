@@ -44,6 +44,44 @@ describe('isForumPhotoFile', () => {
 });
 
 describe('prepareForumPhoto', () => {
+  it('rejects a portrait when a wide image is required', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 8, height: 8, close: vi.fn() }),
+    );
+    await expect(prepareForumPhoto(jpegFile(), { wide: true })).resolves.toEqual({
+      ok: false,
+      error: 'notWide',
+    });
+  });
+
+  it('rejects a tall image that is already 640 px wide', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 640, height: 960, close: vi.fn() }),
+    );
+    await expect(prepareForumPhoto(jpegFile(), { wide: true })).resolves.toEqual({
+      ok: false,
+      error: 'notWide',
+    });
+  });
+
+  it('accepts a wide image', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 1280, height: 640, close: vi.fn() }),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/jpeg;base64,smol',
+    );
+    await expect(prepareForumPhoto(jpegFile(), { wide: true })).resolves.toMatchObject({
+      ok: true,
+    });
+  });
+
   it('returns unsupported for a non-image type', async () => {
     await expect(prepareForumPhoto(new File([], 'a.gif', { type: 'image/gif' }))).resolves.toEqual({
       ok: false,

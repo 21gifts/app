@@ -25,7 +25,17 @@ export type ForumPhotoPayload = {
 
 /** Result of {@link prepareForumPhoto}. */
 export type PrepareForumPhotoResult =
-  { ok: true; photo: ForumPhotoPayload } | { ok: false; error: 'unsupported' | 'tooLarge' };
+  | { ok: true; photo: ForumPhotoPayload }
+  | { ok: false; error: 'unsupported' | 'tooLarge' | 'notWide' };
+
+/** Options for {@link prepareForumPhoto}. */
+export type PrepareForumPhotoOptions = {
+  /**
+   * When true, reject a still that is under 640 px wide or less than 1.5
+   * times as wide as it is tall, after the usual resize.
+   */
+  wide?: boolean;
+};
 
 const FORUM_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
@@ -119,11 +129,25 @@ async function readFileBytes(file: File): Promise<Uint8Array> {
  * most {@link FORUM_PHOTO_MAX_EDGE}.
  *
  * @param file - Browser file from the composer attach control.
+ * @param options - Pass `{ wide: true }` to refuse a still that is not at least
+ * 640 px wide and 1.5 times as wide as it is tall (`notWide`).
  * @returns Ok payload with raw base64 + preview data URL, or a typed error.
  * @throws If the browser cannot decode the file (`createImageBitmap` rejection
  * or `<img>` `onerror` → `Could not decode image`).
  */
-export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoResult> {
+export async function prepareForumPhoto(
+  file: File,
+): Promise<
+  { ok: true; photo: ForumPhotoPayload } | { ok: false; error: 'unsupported' | 'tooLarge' }
+>;
+export async function prepareForumPhoto(
+  file: File,
+  options: { wide: true },
+): Promise<PrepareForumPhotoResult>;
+export async function prepareForumPhoto(
+  file: File,
+  options?: PrepareForumPhotoOptions,
+): Promise<PrepareForumPhotoResult> {
   if (!isForumPhotoFile(file)) {
     return { ok: false, error: 'unsupported' };
   }
@@ -136,6 +160,9 @@ export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoRe
     const scale = longest > FORUM_PHOTO_MAX_EDGE ? FORUM_PHOTO_MAX_EDGE / longest : 1;
     const width = Math.max(1, Math.round(loaded.width * scale));
     const height = Math.max(1, Math.round(loaded.height * scale));
+    if (options?.wide === true && (width < 640 || width * 2 < height * 3)) {
+      return { ok: false, error: 'notWide' };
+    }
 
     const canvas = document.createElement('canvas');
     canvas.width = width;

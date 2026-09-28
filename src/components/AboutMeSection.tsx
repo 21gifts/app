@@ -46,6 +46,20 @@ export type AboutMeSectionProps = {
   hasPhoto?: boolean;
   /** Load stored photo bytes (owner: GET /me/about/photo; view/member: public). */
   loadPhoto?: () => Promise<Blob>;
+  /** Load the stored profile photo. A rejection means none is stored. */
+  loadPicture?: () => Promise<Blob>;
+  /**
+   * Owner save for the profile photo only. Not the About me note photo and
+   * not the wide image. `null` clears it.
+   */
+  onSavePicture?: (photo: AboutMeSavePhoto | null) => Promise<void>;
+  /** Load the stored wide image. A rejection means none is stored. */
+  loadBanner?: () => Promise<Blob>;
+  /**
+   * Owner save for the wide image only. `null` clears it. Independent of
+   * the About me text save.
+   */
+  onSaveBanner?: (photo: AboutMeSavePhoto | null) => Promise<void>;
   /**
    * Owner save. `photo` omitted = keep stored photo; `null` = clear;
    * object = replace with prepared JPEG payload.
@@ -73,6 +87,10 @@ export function AboutMeSection({
   profileUrl,
   hasPhoto,
   loadPhoto,
+  loadPicture,
+  onSavePicture,
+  loadBanner,
+  onSaveBanner,
   onSave,
   startEditing = false,
 }: AboutMeSectionProps): ReactElement | null {
@@ -81,10 +99,14 @@ export function AboutMeSection({
   const copyMounted = useRef(true);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const pictureInputRef = useRef<HTMLInputElement>(null);
   const loadPhotoRef = useRef(loadPhoto);
   const storedObjectUrlRef = useRef<string | null>(null);
   const photoGeneration = useRef(0);
   const loadGeneration = useRef(0);
+  const bannerGeneration = useRef(0);
+  const pictureGeneration = useRef(0);
   const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(aboutMe ?? '');
   const [saving, setSaving] = useState(false);
@@ -94,8 +116,86 @@ export function AboutMeSection({
   const [photoDraft, setPhotoDraft] = useState<ForumPhotoPayload | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [preparingPhoto, setPreparingPhoto] = useState(false);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const bannerUrlRef = useRef<string | null>(null);
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const pictureUrlRef = useRef<string | null>(null);
 
   loadPhotoRef.current = loadPhoto;
+  const loadBannerRef = useRef(loadBanner);
+  loadBannerRef.current = loadBanner;
+  const loadPictureRef = useRef(loadPicture);
+  loadPictureRef.current = loadPicture;
+
+  useEffect(() => {
+    if (!editing || loadBannerRef.current === undefined) {
+      return;
+    }
+    const generation = bannerGeneration.current + 1;
+    bannerGeneration.current = generation;
+    const load = loadBannerRef.current;
+    void (async () => {
+      try {
+        const blob = await load();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          throw new Error('not-image');
+        }
+        /* v8 ignore start -- a newer wide-image load replaced this one */
+        if (generation !== bannerGeneration.current) {
+          return;
+        }
+        /* v8 ignore end */
+        if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(bannerUrlRef.current);
+        }
+        const url = URL.createObjectURL(blob);
+        bannerUrlRef.current = url;
+        setBannerUrl(url);
+      } catch {
+        /* v8 ignore start -- a newer wide-image load replaced this one */
+        if (generation !== bannerGeneration.current) {
+          return;
+        }
+        /* v8 ignore end */
+        setBannerUrl(null);
+      }
+    })();
+  }, [editing]);
+
+  useEffect(() => {
+    if (!editing || loadPictureRef.current === undefined) {
+      return;
+    }
+    const generation = pictureGeneration.current + 1;
+    pictureGeneration.current = generation;
+    const load = loadPictureRef.current;
+    void (async () => {
+      try {
+        const blob = await load();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          throw new Error('not-image');
+        }
+        /* v8 ignore start -- a newer profile-photo load replaced this one */
+        if (generation !== pictureGeneration.current) {
+          return;
+        }
+        /* v8 ignore end */
+        if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(pictureUrlRef.current);
+        }
+        const url = URL.createObjectURL(blob);
+        pictureUrlRef.current = url;
+        setPictureUrl(url);
+      } catch {
+        /* v8 ignore start -- a newer profile-photo load replaced this one */
+        if (generation !== pictureGeneration.current) {
+          return;
+        }
+        /* v8 ignore end */
+        setPictureUrl(null);
+      }
+    })();
+  }, [editing]);
 
   const trimmedAbout = typeof aboutMe === 'string' ? aboutMe.trim() : '';
   const trimmedName = (name ?? '').trim();
@@ -119,6 +219,14 @@ export function AboutMeSection({
     return () => {
       copyMounted.current = false;
       photoGeneration.current += 1;
+      pictureGeneration.current += 1;
+      bannerGeneration.current += 1;
+      if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(bannerUrlRef.current);
+      }
+      if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(pictureUrlRef.current);
+      }
       if (copyTimer.current !== null) {
         clearTimeout(copyTimer.current);
       }
@@ -305,6 +413,148 @@ export function AboutMeSection({
     })();
   };
 
+  const handlePictureChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file === undefined || onSavePicture === undefined) {
+      return;
+    }
+    const generation = photoGeneration.current + 1;
+    photoGeneration.current = generation;
+    setPreparingPhoto(true);
+    void (async () => {
+      try {
+        const result = await prepareForumPhoto(file);
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        if (!result.ok) {
+          setError(
+            result.error === 'tooLarge'
+              ? t('profile.about.errorTooLarge')
+              : t('profile.about.errorUnsupported'),
+          );
+          return;
+        }
+        pictureGeneration.current += 1;
+        await onSavePicture({ contentType: result.photo.contentType, data: result.photo.data });
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(pictureUrlRef.current);
+        }
+        pictureUrlRef.current = result.photo.previewUrl;
+        setPictureUrl(result.photo.previewUrl);
+        setError(null);
+      } catch {
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        setError(t('profile.about.error'));
+      } finally {
+        if (generation === photoGeneration.current) {
+          setPreparingPhoto(false);
+        }
+      }
+    })();
+  };
+
+  const handleBannerChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file === undefined || onSaveBanner === undefined) {
+      return;
+    }
+    const generation = photoGeneration.current + 1;
+    photoGeneration.current = generation;
+    setPreparingPhoto(true);
+    void (async () => {
+      try {
+        const result = await prepareForumPhoto(file, { wide: true });
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        if (!result.ok) {
+          setError(
+            result.error === 'tooLarge'
+              ? t('profile.about.errorTooLarge')
+              : result.error === 'notWide'
+                ? t('profile.about.errorNotWide')
+                : t('profile.about.errorUnsupported'),
+          );
+          return;
+        }
+        bannerGeneration.current += 1;
+        await onSaveBanner({ contentType: result.photo.contentType, data: result.photo.data });
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(bannerUrlRef.current);
+        }
+        bannerUrlRef.current = result.photo.previewUrl;
+        setBannerUrl(result.photo.previewUrl);
+        setError(null);
+      } catch {
+        if (generation !== photoGeneration.current) {
+          return;
+        }
+        setError(t('profile.about.error'));
+      } finally {
+        if (generation === photoGeneration.current) {
+          setPreparingPhoto(false);
+        }
+      }
+    })();
+  };
+
+  const removePicture = (): void => {
+    if (onSavePicture === undefined) {
+      return;
+    }
+    pictureGeneration.current += 1;
+    setPreparingPhoto(true);
+    void (async () => {
+      try {
+        await onSavePicture(null);
+        if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(pictureUrlRef.current);
+        }
+        pictureUrlRef.current = null;
+        setPictureUrl(null);
+        setError(null);
+      } catch {
+        setError(t('profile.about.error'));
+      } finally {
+        setPreparingPhoto(false);
+      }
+    })();
+  };
+
+  const removeBanner = (): void => {
+    if (onSaveBanner === undefined) {
+      return;
+    }
+    bannerGeneration.current += 1;
+    setPreparingPhoto(true);
+    void (async () => {
+      try {
+        await onSaveBanner(null);
+        if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(bannerUrlRef.current);
+        }
+        bannerUrlRef.current = null;
+        setBannerUrl(null);
+        setError(null);
+      } catch {
+        setError(t('profile.about.error'));
+      } finally {
+        setPreparingPhoto(false);
+      }
+    })();
+  };
+
   const removePhoto = (): void => {
     photoGeneration.current += 1;
     setPreparingPhoto(false);
@@ -322,7 +572,7 @@ export function AboutMeSection({
       <img
         src={storedPhotoUrl}
         alt={t('profile.about.photoAlt')}
-        className="w-full rounded-2xl object-cover"
+        className="max-h-40 w-full rounded-2xl object-cover"
       />
     ) : null;
 
@@ -337,68 +587,164 @@ export function AboutMeSection({
       {mode === 'owner' && editing ? (
         <SundayWritingGate>
           <div className="flex flex-col items-stretch gap-3">
-            <div className="flex items-start gap-2">
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={saving || preparingPhoto}
-                aria-label={t('profile.about.attach')}
-                title={t('profile.about.attach')}
-                onClick={() => {
-                  fileInputRef.current?.click();
-                }}
-              >
-                <ImagePlus aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                disabled={saving}
-                onChange={handleFileChange}
-              />
-              <label htmlFor={textareaId} className="sr-only">
-                {t('profile.about.heading')}
-              </label>
-              <textarea
-                id={textareaId}
-                value={draft}
-                maxLength={ABOUT_ME_MAX_LENGTH}
-                disabled={saving}
-                onChange={(event) => setDraft(event.target.value)}
-                className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
-              />
-              <IconButton
-                type="button"
-                variant="primary"
-                size="md"
-                disabled={saving || preparingPhoto}
-                aria-label={t('profile.about.save')}
-                title={t('profile.about.save')}
-                onClick={() => {
-                  void saveEdit();
-                }}
-              >
-                {saving ? (
-                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check aria-hidden="true" className="h-4 w-4" />
-                )}
-              </IconButton>
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={saving}
-                aria-label={t('profile.about.cancel')}
-                title={t('profile.about.cancel')}
-                onClick={cancelEdit}
-              >
-                <X aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-start gap-2">
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.attach')}
+                  title={t('profile.about.attach')}
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={saving}
+                  onChange={handleFileChange}
+                />
+                {onSavePicture !== undefined ? (
+                  <>
+                    <IconButton
+                      type="button"
+                      variant="secondary"
+                      size="md"
+                      disabled={saving || preparingPhoto}
+                      aria-label={t('profile.about.portrait')}
+                      title={t('profile.about.portrait')}
+                      onClick={() => {
+                        pictureInputRef.current?.click();
+                      }}
+                    >
+                      <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                    <input
+                      ref={pictureInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={saving}
+                      onChange={handlePictureChange}
+                    />
+                  </>
+                ) : null}
+                {onSaveBanner !== undefined ? (
+                  <>
+                    <IconButton
+                      type="button"
+                      variant="secondary"
+                      size="md"
+                      disabled={saving || preparingPhoto}
+                      aria-label={t('profile.about.banner')}
+                      title={t('profile.about.banner')}
+                      onClick={() => {
+                        bannerInputRef.current?.click();
+                      }}
+                    >
+                      <ImagePlus aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                    <input
+                      ref={bannerInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={saving}
+                      onChange={handleBannerChange}
+                    />
+                  </>
+                ) : null}
+              </div>
+              <div className="flex items-start gap-2">
+                <label htmlFor={textareaId} className="sr-only">
+                  {t('profile.about.heading')}
+                </label>
+                <textarea
+                  id={textareaId}
+                  value={draft}
+                  maxLength={ABOUT_ME_MAX_LENGTH}
+                  disabled={saving}
+                  onChange={(event) => setDraft(event.target.value)}
+                  className="min-h-24 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base text-app-fg whitespace-pre-wrap transition focus-visible:border-app-fg disabled:opacity-50"
+                />
+                <IconButton
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.save')}
+                  title={t('profile.about.save')}
+                  onClick={() => {
+                    void saveEdit();
+                  }}
+                >
+                  {saving ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check aria-hidden="true" className="h-4 w-4" />
+                  )}
+                </IconButton>
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving}
+                  aria-label={t('profile.about.cancel')}
+                  title={t('profile.about.cancel')}
+                  onClick={cancelEdit}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
             </div>
+            {pictureUrl !== null ? (
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- blob or data URL from the profile photo */}
+                <img
+                  src={pictureUrl}
+                  alt={t('profile.about.portraitAlt')}
+                  className="h-16 w-16 rounded-full object-cover"
+                />
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.removePortrait')}
+                  title={t('profile.about.removePortrait')}
+                  onClick={removePicture}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+            ) : null}
+            {bannerUrl !== null ? (
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- blob or data URL from the wide image */}
+                <img
+                  src={bannerUrl}
+                  alt={t('profile.about.bannerAlt')}
+                  className="h-16 w-full rounded-2xl object-cover"
+                />
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.removeBanner')}
+                  title={t('profile.about.removeBanner')}
+                  onClick={removeBanner}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+            ) : null}
             {photoDraft !== null || keptPhoto ? (
               <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
                 {previewSrc !== null ? (

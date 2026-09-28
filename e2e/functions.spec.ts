@@ -1218,6 +1218,56 @@ test('Function: proxyMeAboutPut — PUT /me/about without bearer is 401', async 
   expect(res.status()).toBe(401);
 });
 
+test('Function: putProfilePhoto — PUT /pictures/me without bearer is 401', async ({ request }) => {
+  const res = await request.put('/pictures/me', { data: { photo: null } });
+  expect(res.status()).toBe(401);
+});
+
+test('Function: fetchProfilePhoto — GET /pictures/me without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/pictures/me');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyProfilePhotoGet — GET /pictures/me without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/pictures/me');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyProfilePhotoPut — PUT /pictures/me without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.put('/pictures/me', { data: { photo: null } });
+  expect(res.status()).toBe(401);
+});
+
+test('Function: putWideBanner — PUT /banners/me without bearer is 401', async ({ request }) => {
+  const res = await request.put('/banners/me', { data: { photo: null } });
+  expect(res.status()).toBe(401);
+});
+
+test('Function: fetchWideBanner — GET /banners/me without bearer is 401', async ({ request }) => {
+  const res = await request.get('/banners/me');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyWideBannerGet — GET /banners/me without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/banners/me');
+  expect(res.status()).toBe(401);
+});
+
+test('Function: proxyWideBannerPut — PUT /banners/me without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.put('/banners/me', { data: { photo: null } });
+  expect(res.status()).toBe(401);
+});
+
 test('Function: proxyMeAboutPhotoGet — GET /me/about/photo without bearer is 401', async ({
   request,
 }) => {
@@ -1273,7 +1323,7 @@ test('Function: fetchAboutMePhoto — signed-in profile About me photo is visibl
   }
   await page.getByRole('button', { name: 'Write your About me' }).click();
   await page.getByRole('button', { name: 'Add a photo' }).click();
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await page.locator('input[type="file"]').first().setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('textbox', { name: 'About me' }).fill('I build on Bitcoin');
   await page.getByRole('button', { name: 'Save About me' }).click();
