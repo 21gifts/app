@@ -85,7 +85,8 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
     });
   });
   await page.goto('/shops');
-  await expect(page.getByLabel('Your message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
+  await expect(page.getByLabel('Your message')).toHaveCount(0);
   await page.getByRole('button', { name: 'Map' }).click();
   await expect(page.getByText('No places yet.')).toBeVisible();
   await expect(page.getByLabel('Your message')).toHaveCount(0);
@@ -121,13 +122,38 @@ test('Function: ShopsPage — heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
 });
 
+test('Function: ShopAddWizard — steps then summary', async ({ page }) => {
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops');
+  await expect(page.getByLabel('Your message')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Cafe Luna');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('21.gifts username').fill('@luna');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+  await expect(page.getByText('@luna')).toBeVisible();
+  await expect(page.getByText('Cafe Luna')).toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
+});
+
 test('Function: ShopsScreen — lead is visible', async ({ page }) => {
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
   await page.goto('/shops');
   await expect(
     page.getByText(
-      'Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.',
+      'Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.',
     ),
   ).toBeVisible();
 });
@@ -265,12 +291,13 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
     });
   });
   await page.goto('/shops');
-  await page.getByLabel('Your message').fill('Cafe Luna');
-  await page
-    .getByLabel('Your message')
-    .locator('xpath=ancestor::form')
-    .getByRole('button', { name: 'Post', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Cafe Luna');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
   const invoiceReq = await invoiced;
   const parsed = invoiceReq.postDataJSON() as { text?: string };
   expect(typeof parsed.text === 'string' ? parsed.text : '').toContain('#21GiftsShop');

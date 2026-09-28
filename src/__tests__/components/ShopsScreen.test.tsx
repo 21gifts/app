@@ -32,7 +32,7 @@ describe('ShopsScreen', () => {
     expect(screen.getByRole('heading', { name: 'Shops' })).toBeTruthy();
     expect(
       screen.getByText(
-        'Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.',
+        'Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();

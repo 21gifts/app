@@ -1178,6 +1178,15 @@
 - **Returns / side effects:** React element. Local scroll index only. No network. Blob `<img>` URLs from the parent.
 - **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`.
 
+## Function: ShopAddWizard
+
+Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place, text, an optional 21.gifts username, then a summary. **Post** on the summary is the only submit. **Cancel** on the photo step drops the draft and closes. Later steps use **Back**. Photos, place, text, and the username can each be left empty; an empty summary still follows the forum rule that a note needs text or media.
+
+- **Purpose:** Replace the living-room composer on the shops feed. The shop tag is added when the note is sent, not typed in the text step. The summary shows the photo count (stills plus a video), the place name or coordinates, the text, and `@username`, or **None** when that part was skipped.
+- **Inputs:** `posting`, `draft` / `onDraftChange`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `place` / `onPlaceChange`, `username` / `onUsernameChange`, `onSubmit`, `onCancel`, `resetToken` (closes the wizard after a successful send), `maxLength`.
+- **Returns / side effects:** React tree. No network. File selection calls `onPickFiles`. **Post** calls `onSubmit`. **Cancel** calls `onCancel`.
+- **Used by:** `ForumBoard` when `shopComposer` is set.
+
 ## Function: ForumAskWizard
 
 Ask composer on `/welcome`. A donation is four steps and the counter reads **{step} of 4**. A credit is nine steps and the counter reads **{step} of 9**. Step 1 starts with the One-time / Daily pill and a Donation / Credit pill under it. Photos and text follow the credit confirmations. The preview shows the same pills and `ForumGoalBar` at 0 collected versus the ask. The heading and the step counter share one row (step on the right). The labeled **Post** on the preview is the only Ask submit. Switching to **Credit** on the preview returns to step 1. A shown bitcoin amount on the plan also shows the visitor's fiat when a rate exists.

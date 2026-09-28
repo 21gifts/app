@@ -1933,7 +1933,8 @@ function forumAskGoalFields(
  * notes), optional `goalCurrency` plus `goalAmount` (top-level Ask; omitted
  * on replies and when either is unset; never `goalSats`), optional
  * `goalRepayable: true` on a credit Ask (omitted on a donation), and optional
- * `place` pin (omit when unset; replies must not send it).
+ * `place` pin (omit when unset; replies must not send it), and optional
+ * `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
  * @throws {@link NoteDeletedError} on 404 (missing or deleted `inReplyTo` parent).
  * @throws Error when the api rejects the body (400, 403, or 429) — the api
@@ -1953,6 +1954,7 @@ export async function postMessage(
     goalRepayable?: true;
     goalTermDays?: number;
     place?: ForumPlacePin;
+    shopUsername?: string;
   },
 ): Promise<ForumMessage> {
   const sourceStills =
@@ -1977,6 +1979,7 @@ export async function postMessage(
     input.goalRepayable,
     input.goalTermDays,
   );
+  const shopUsername = input.shopUsername?.trim().replace(/^@/, '') ?? '';
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: {
@@ -1990,9 +1993,10 @@ export async function postMessage(
       ...(inReplyTo !== undefined ? { inReplyTo } : {}),
       ...(askGoal === null ? {} : askGoal),
       ...(inReplyTo === undefined && input.place !== undefined ? { place: input.place } : {}),
+      ...(shopUsername === '' ? {} : { shopUsername }),
     }),
   });
-  if (response.status === 400 || response.status === 429) {
+  if (response.status === 400 || response.status === 404 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }
@@ -2029,7 +2033,8 @@ export async function postMessage(
  * @param input - Text, video file, optional JPEG poster, optional
  * `goalCurrency` plus `goalAmount` (omitted from the form when either is
  * unset; never `goalSats`), optional `goalRepayable: true` on a credit Ask,
- * and optional `place` pin (omit when unset; form fields only when set).
+ * and optional `place` pin (omit when unset; form fields only when set),
+ * and optional `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
  * @throws Error when the api rejects the body (400 or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
@@ -2046,6 +2051,7 @@ export async function postMessageVideo(
     goalRepayable?: true;
     goalTermDays?: number;
     place?: ForumPlacePin;
+    shopUsername?: string;
   },
 ): Promise<ForumMessage> {
   const form = new FormData();
@@ -2078,12 +2084,16 @@ export async function postMessageVideo(
       form.set('placeLabel', input.place.label);
     }
   }
+  const shopUsername = input.shopUsername?.trim().replace(/^@/, '') ?? '';
+  if (shopUsername !== '') {
+    form.set('shopUsername', shopUsername);
+  }
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     body: form,
   });
-  if (response.status === 400 || response.status === 429) {
+  if (response.status === 400 || response.status === 404 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }

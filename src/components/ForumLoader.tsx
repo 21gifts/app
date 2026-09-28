@@ -301,10 +301,20 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
   });
 }
 
+/** Optional shop handle for a shops-feed post, or null when unset. */
+function composeShopUsername(feed: 'living-room' | 'shops', username: string): string | null {
+  if (feed !== 'shops') {
+    return null;
+  }
+  const handle = username.trim().replace(/^@/, '');
+  return handle === '' ? null : handle;
+}
+
 /**
  * Client loader for the public forum on `/welcome`. Also used on `/shops` with
- * `feed="shops"` (hashtag filter, no laws hint, compose appends `#21GiftsShop`,
- * staff place editor and staff account editor on listed shop notes).
+ * `feed="shops"` (hashtag filter, no laws hint, **Add a shop** instead of the
+ * living-room composer, compose appends `#21GiftsShop`, optional shop username
+ * on create, staff place editor and staff account editor on listed shop notes).
  *
  * Reads the session and account from the auth store, fetches the first page of
  * 20 messages for the current mode with a cancelled-flag pattern matching
@@ -383,6 +393,8 @@ export function ForumLoader({
   const videoDraftRef = useRef(videoDraft);
   videoDraftRef.current = videoDraft;
   const [placeDraft, setPlaceDraft] = useState<ForumPlacePin | null>(null);
+  const [shopUsername, setShopUsername] = useState('');
+  const [shopResetToken, setShopResetToken] = useState(0);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -490,6 +502,7 @@ export function ForumLoader({
     | undefined
   >(undefined);
   const pendingComposePlaceRef = useRef<ForumPlacePin | null>(null);
+  const pendingComposeShopUsernameRef = useRef<string | null>(null);
   const composeFeePaidRef = useRef(false);
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
@@ -1410,6 +1423,8 @@ export function ForumLoader({
                 const askGoal = pendingComposeGoalRef.current;
                 const pendingPlace = pendingComposePlaceRef.current;
                 const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
+                const pendingShop = pendingComposeShopUsernameRef.current;
+                const shopFields = pendingShop === null ? {} : { shopUsername: pendingShop };
                 try {
                   const created =
                     video !== null
@@ -1420,6 +1435,7 @@ export function ForumLoader({
                           /* v8 ignore next -- Ask plus a video clip is the photo path in tests */
                           ...(askGoal !== undefined ? askGoal : {}),
                           ...placeFields,
+                          ...shopFields,
                         })
                       : await postMessage(session, {
                           text: caption,
@@ -1435,11 +1451,13 @@ export function ForumLoader({
                               }),
                           ...(askGoal !== undefined ? askGoal : {}),
                           ...placeFields,
+                          ...shopFields,
                         });
                   applyCreatedNote(created, photos, video);
                   composeFeePaidRef.current = false;
                   pendingComposeGoalRef.current = undefined;
                   pendingComposePlaceRef.current = null;
+                  pendingComposeShopUsernameRef.current = null;
                 } catch {
                   setFormError('request');
                   composeFeePaidRef.current = true;
@@ -1734,6 +1752,9 @@ export function ForumLoader({
     setAskCadence('once');
     setAskObligation('donation');
     setPlaceDraft(null);
+    setShopUsername('');
+    pendingComposeShopUsernameRef.current = null;
+    setShopResetToken((token) => token + 1);
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
@@ -1766,8 +1787,11 @@ export function ForumLoader({
         !composeFeePaidRef.current
       ) {
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
-        const postAfterPay = hasMedia || askGoal !== undefined || pendingPlace !== null;
+        const shopHandle = composeShopUsername(feed, shopUsername);
+        const postAfterPay =
+          hasMedia || askGoal !== undefined || pendingPlace !== null || shopHandle !== null;
         pendingComposePlaceRef.current = pendingPlace;
+        pendingComposeShopUsernameRef.current = shopHandle;
         const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
@@ -1799,6 +1823,8 @@ export function ForumLoader({
         return;
       }
       const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
+      const shopHandle = composeShopUsername(feed, shopUsername);
+      const shopAccount = shopHandle === null ? {} : { shopUsername: shopHandle };
       const created =
         pendingVideo !== null
           ? await postMessageVideo(session, {
@@ -1807,6 +1833,7 @@ export function ForumLoader({
               poster: pendingVideo.poster,
               ...(askGoal !== undefined ? askGoal : {}),
               ...placeFields,
+              ...shopAccount,
             })
           : await postMessage(session, {
               text: trimmed,
@@ -1821,6 +1848,7 @@ export function ForumLoader({
                   }),
               ...(askGoal !== undefined ? askGoal : {}),
               ...placeFields,
+              ...shopAccount,
             });
       applyCreatedNote(created, pendingPhotos, pendingVideo);
       pendingPostRef.current = null;
@@ -1842,6 +1870,7 @@ export function ForumLoader({
         return;
       }
       pendingComposePlaceRef.current = null;
+      pendingComposeShopUsernameRef.current = null;
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       if (!awaitingPay) {
@@ -2390,6 +2419,18 @@ export function ForumLoader({
     void pending();
   };
 
+  const clearShopDraft = (): void => {
+    setDraft('');
+    setPlaceDraft(null);
+    setShopUsername('');
+    pendingComposeShopUsernameRef.current = null;
+    revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
+    pickGeneration.current += 1;
+    setPhotoDrafts([]);
+    setVideoDraft(null);
+    setFormError(null);
+  };
+
   const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
   const composerMaxLength =
     feed === 'shops' && !isShopNote(draft)
@@ -2416,6 +2457,18 @@ export function ForumLoader({
         {...(feed === 'shops' ? { modeSelector: false as const } : {})}
         {...(feed === 'shops' ? { allowAsk: false as const } : {})}
         {...(feed === 'shops' ? { composerMaxLength } : {})}
+        {...(feed === 'shops'
+          ? {
+              shopComposer: true as const,
+              shopUsername,
+              onShopUsernameChange: (value: string) => {
+                setShopUsername(value);
+                setFormError(null);
+              },
+              onShopCancel: clearShopDraft,
+              shopResetToken,
+            }
+          : {})}
         {...(feed === 'shops'
           ? {
               shopPlaceEdit: true as const,

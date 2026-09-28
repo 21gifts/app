@@ -292,6 +292,21 @@ const EMPTY_STATS: GiftStats = {
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
 
+function submitShopWizard(text: string, username?: string): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  if (text !== '') {
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: text } });
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  if (username !== undefined) {
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: username } });
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+}
+
 function chooseForumMode(name: string | RegExp): void {
   fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
   fireEvent.click(screen.getByRole('option', { name }));
@@ -1121,7 +1136,8 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Hello from Ada')).toBeNull();
     expect(screen.getByRole('link', { name: '#Shop' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Ask for money' })).toBeNull();
-    expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
   });
 
   it('feed="shops" shows shops.empty when no listed note is a shop', async () => {
@@ -1159,10 +1175,32 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
-    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    submitShopWizard('Cafe Luna');
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+    });
+    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+  });
+
+  it('feed="shops" sends an optional shop username', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    submitShopWizard('Cafe Luna', '@Luna');
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Cafe Luna\n\n#21GiftsShop',
+        shopUsername: 'Luna',
+      });
     });
   });
 
@@ -1176,8 +1214,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    submitShopWizard('Cafe Luna');
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
       expect(invoiceMock).toHaveBeenCalledWith(
@@ -1229,13 +1266,106 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), {
-      target: { value: 'Cafe Luna\n\n#21GiftsShop' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    submitShopWizard('Cafe Luna\n\n#21GiftsShop');
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
     });
+  });
+
+  it('feed="shops" posts a basis shop username after the compose fee', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-paid',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    submitShopWizard('Cafe Luna', 'luna');
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
+    });
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Cafe Luna\n\n#21GiftsShop',
+        shopUsername: 'luna',
+      });
+    });
+  });
+
+  it('feed="shops" cancel drops a prepared video', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    const file = new File(['v'], 'clip.mp4', { type: 'video/mp4' });
+    isVideoMock.mockReturnValue(true);
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster: new Blob(['p']), previewUrl: 'blob:shop-video' },
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+  });
+
+  it('feed="shops" cancel closes the wizard and drops the draft', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: 'Cafe Luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect((screen.getByLabelText('Shop text') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('feed="shops" refuses an empty summary', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    });
+    submitShopWizard('');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    expect(postMock).not.toHaveBeenCalled();
   });
 
   it('feed="shops" first fetch sends hashtag 21GiftsShop', async () => {

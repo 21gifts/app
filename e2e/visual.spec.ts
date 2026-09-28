@@ -15118,6 +15118,8 @@ test.describe('shops screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await expect(page.getByText('The map is not available.')).toBeVisible();
     await shotScreen(page, 'state-shops-composer-place');
@@ -15129,6 +15131,8 @@ test.describe('shops screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     const frame = page.locator('.h-64');
     await expect(frame).toBeVisible();
@@ -15146,6 +15150,8 @@ test.describe('shops screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
@@ -15162,6 +15168,8 @@ test.describe('shops screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
@@ -15176,6 +15184,8 @@ test.describe('shops screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     const name = page.getByLabel('Place name');
     await expect(name).toBeVisible();
@@ -15193,6 +15203,8 @@ test.describe('shops screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
@@ -15209,6 +15221,8 @@ test.describe('shops screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByRole('button', { name: 'Use this place' }).click();

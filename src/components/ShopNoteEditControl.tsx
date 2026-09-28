@@ -219,7 +219,7 @@ export function ShopNoteEditControl({
                     <p>
                       {who} · {formatEditWhen(edit.createdAt)} · {fieldLabel}
                     </p>
-                    <p className="max-h-24 overflow-auto whitespace-pre-wrap">
+                    <p className="whitespace-pre-wrap">
                       {editValueText(edit.field, edit.before, t('forum.editNone'))}
                       {' → '}
                       {editValueText(edit.field, edit.after, t('forum.editNone'))}

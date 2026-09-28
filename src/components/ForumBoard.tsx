@@ -58,6 +58,7 @@ import {
 } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
+import { ShopAddWizard } from '@/components/ShopAddWizard';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { ShopPlaceControl } from '@/components/ShopPlaceControl';
 import {
@@ -212,6 +213,19 @@ export interface ForumBoardProps {
   formError: ForumFormError;
   /** New-post composer `maxLength`. Default {@link FORUM_MESSAGE_MAX_LENGTH}. */
   composerMaxLength?: number;
+  /**
+   * When true, the shops feed shows Add a shop instead of the message composer.
+   * Default false.
+   */
+  shopComposer?: boolean;
+  /** Optional username for the shop being composed. */
+  shopUsername?: string;
+  /** Replace the optional shop username. */
+  onShopUsernameChange?: (username: string) => void;
+  /** Clear a shop draft. The wizard closes itself. */
+  onShopCancel?: () => void;
+  /** Bumps after a shop is sent so the wizard closes. */
+  shopResetToken?: number;
   /** Message id whose pay sheet is open, or `null`. */
   payMessageId: string | null;
   /**
@@ -701,6 +715,11 @@ export function ForumBoard({
   onRetry,
   formError,
   composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
+  shopComposer = false,
+  shopUsername = '',
+  onShopUsernameChange,
+  onShopCancel,
+  shopResetToken = 0,
   payMessageId,
   payHost = null,
   payDraft,
@@ -1975,7 +1994,29 @@ export function ForumBoard({
         </SundayWritingGate>
       ) : null}
 
-      {!hideCompose && (!allowAsk || composeIntent === 'post') ? (
+      {!hideCompose && (!allowAsk || composeIntent === 'post') && shopComposer ? (
+        <SundayWritingGate>
+          <ShopAddWizard
+            posting={posting}
+            draft={draft}
+            onDraftChange={onDraftChange}
+            photoDrafts={photoDrafts}
+            videoDraft={videoDraft}
+            onPickFiles={onPickFiles}
+            onRemovePhoto={onRemovePhoto}
+            onClearPhoto={onClearPhoto}
+            place={placeDraft}
+            onPlaceChange={onPlaceDraftChange!}
+            username={shopUsername}
+            onUsernameChange={onShopUsernameChange!}
+            onSubmit={onPost}
+            onCancel={onShopCancel!}
+            resetToken={shopResetToken}
+            maxLength={composerMaxLength}
+          />
+        </SundayWritingGate>
+      ) : null}
+      {!hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer ? (
         <SundayWritingGate>
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">

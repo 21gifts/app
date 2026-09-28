@@ -126,5 +126,7 @@ test('Function: PlaceField — add a place is on the shop composer', async ({ pa
     });
   });
   await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
 });

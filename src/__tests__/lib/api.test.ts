@@ -1993,6 +1993,19 @@ describe('postMessage', () => {
     expect(JSON.parse(String(without.body))).not.toHaveProperty('place');
   });
 
+  it('sends shopUsername without a leading @ and omits a blank handle', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('tok', { text: 'Cafe', shopUsername: '@Luna' });
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual(
+      expect.objectContaining({ text: 'Cafe', shopUsername: 'Luna' }),
+    );
+    fetchMock.mockClear();
+    await postMessage('tok', { text: 'Cafe', shopUsername: '  @  ' });
+    expect(
+      JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body)),
+    ).not.toHaveProperty('shopUsername');
+  });
+
   it('posts the text and returns the validated message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
     await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(
@@ -2216,6 +2229,13 @@ describe('postMessage', () => {
     await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Message too long');
   });
 
+  it('throws the api error message on a 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'No account with that username' } });
+    await expect(postMessage('sess', { text: 'x', shopUsername: 'missing' })).rejects.toThrow(
+      'No account with that username',
+    );
+  });
+
   it('throws the unpaid-reply copy on 403', async () => {
     stubFetch({ ok: false, status: 403, body: { error: 'A reply needs a Bitcoin payment' } });
     await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toThrow(
@@ -2322,6 +2342,17 @@ describe('postMessageVideo', () => {
     expect(empty.get('placeLat')).toBeNull();
     expect(empty.get('placeLng')).toBeNull();
     expect(empty.get('placeLabel')).toBeNull();
+    expect(empty.get('shopUsername')).toBeNull();
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', { text: 'Hello from Ada', video: file, shopUsername: '@Luna' });
+    const withShop = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((withShop.body as FormData).get('shopUsername')).toBe('Luna');
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', { text: 'Hello from Ada', video: file, shopUsername: ' @ ' });
+    const blankShop = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((blankShop.body as FormData).get('shopUsername')).toBeNull();
   });
 
   it('posts multipart video and optional poster and returns the validated message', async () => {
@@ -2453,6 +2484,14 @@ describe('postMessageVideo', () => {
     await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
       'Too many messages',
     );
+  });
+
+  it('throws the api error message on a 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'No account with that username' } });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(
+      postMessageVideo('sess', { text: 'x', video, shopUsername: 'missing' }),
+    ).rejects.toThrow('No account with that username');
   });
 
   it('falls back when a 400 body is not an error envelope', async () => {
