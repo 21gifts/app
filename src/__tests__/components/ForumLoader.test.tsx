@@ -47,6 +47,7 @@ vi.mock('@/lib/api', () => ({
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
   setMessageShopText: vi.fn(),
+  setMessageShopPhotos: vi.fn(),
   fetchShopNoteEdits: vi.fn(),
   fetchMessages: vi.fn(),
   fetchPublicForumMessages: vi.fn(),
@@ -84,6 +85,7 @@ vi.mock('@/lib/forum-photo', () => ({
 vi.mock('@/lib/forum-video', () => ({
   isForumVideoFile: vi.fn(() => false),
   prepareForumVideo: vi.fn(),
+  forumVideoSrc: (id: string) => `/messages/${id}/video.mp4`,
 }));
 
 import {
@@ -1416,13 +1418,26 @@ describe('ForumLoader', () => {
       account: { ...account, role: 'moderator', forumLawsDismissed: true },
     });
     fetchMock.mockResolvedValue(
-      forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: true,
+        },
+      ]),
     );
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    await waitFor(() => {
+      expect(card.querySelector('video')?.getAttribute('poster')).toBe('blob:mock');
+    });
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
     expect(within(card).getByRole('button', { name: 'Edit shop note' })).toBeTruthy();
   });
@@ -1439,11 +1454,13 @@ describe('ForumLoader', () => {
       ]),
     );
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.mocked(setMessageShopText).mockResolvedValue({
+    vi.mocked(setMessageShopText).mockResolvedValueOnce({
       ...SAMPLE,
       id: 'shop1',
       text: 'Cafe Sol\n\n#21GiftsShop',
       sats: 5,
+      place: { lat: 1, lng: 2, label: 'Stall' },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
@@ -1451,14 +1468,38 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
-    fireEvent.change(within(card).getByRole('textbox', { name: 'Edit shop note' }), {
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'Cafe Sol' },
     });
-    fireEvent.click(within(card).getByRole('button', { name: 'Save' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
       expect(within(card).getByText('Cafe Sol')).toBeTruthy();
     });
+    expect(within(card).getByRole('button', { name: 'Edit place' })).toBeTruthy();
     expect(screen.getByText('Other stall')).toBeTruthy();
+    vi.mocked(setMessageShopText).mockResolvedValueOnce({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Norte\n\n#21GiftsShop',
+      sats: 5,
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Norte' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Norte')).toBeTruthy();
+    });
+    expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
   });
 
   it('does not put a staff place control on living-room notes', async () => {

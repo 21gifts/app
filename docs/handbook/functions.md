@@ -4136,6 +4136,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** PATCH `/forum/messages/:id/place` with JSON `{ place }`. Resolves to the public message JSON (`place` omitted when cleared). Throws `Could not save place` on a non-2xx status.
 - **Used by:** `ShopPlaceControl`.
 
+## Function: setMessageShopPhotos
+
+- **Purpose:** Replace the stills on a shop note for a moderator session. An empty list clears stills. A video on the note stays.
+- **Inputs:** sessionToken, messageId, and `photos` (`{ contentType, data, takenAt? }[]`, at most 10).
+- **Returns / side effects:** PATCH `/forum/messages/:id/photos` with JSON `{ photos }`. A blank `takenAt` is omitted. Resolves to the public message JSON. Throws `Could not save shop note` on a non-2xx status.
+- **Used by:** `ShopNoteEditControl`.
+
 ## Function: setMessageShopText
 
 - **Purpose:** Replace the text of a shop note for a moderator session. The API keeps the shop tag.
@@ -4177,6 +4184,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming Request (Bearer JSON `{ place }`) and messageId.
 - **Returns / side effects:** Proxied PATCH `/messages/:id/place`, with encoded id, authorization and upstream status. 200 is the public message JSON; a cleared pin omits `place`.
 - **Used by:** App Router `PATCH` on `/forum/messages/[id]/place`.
+
+## Function: proxyMessagesPhotosPatch
+
+- **Purpose:** Forward a moderator's PATCH of shop-note stills to the API.
+- **Inputs:** Incoming Request (Bearer JSON `{ photos }`) and messageId.
+- **Returns / side effects:** Proxied PATCH `/messages/:id/photos`, with encoded id, authorization and upstream status. 200 is the public message JSON.
+- **Used by:** App Router `PATCH` on `/forum/messages/[id]/photos`.
 
 ## Function: proxyMessagesTextPatch
 

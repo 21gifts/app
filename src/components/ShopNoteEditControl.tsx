@@ -3,20 +3,33 @@
 import { Pencil } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { ShopAddWizard, type ShopKeptMedia } from '@/components/ShopAddWizard';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { IconButton } from '@/components/ui';
-import { fetchShopNoteEdits, setMessageShopText, type ShopNoteEdit } from '@/lib/api';
-import type { ForumMessage } from '@/lib/api-types';
+import {
+  fetchShopNoteEdits,
+  setMessagePlace,
+  setMessageShopAccount,
+  setMessageShopPhotos,
+  setMessageShopText,
+  type ShopNoteEdit,
+} from '@/lib/api';
+import type { ForumMessage, ForumPlacePin } from '@/lib/api-types';
+import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Props for the shop-note text editor. */
+/** Props for the shop-note editor. */
 export interface ShopNoteEditControlProps {
   /** Top-level shop note to edit. */
   message: ForumMessage;
-  /** Apply the saved body to the listed row. */
-  onUpdated: (messageId: string, text: string) => void;
+  /** Apply the saved note to the listed row. */
+  onUpdated: (message: ForumMessage) => void;
+  /** Still previews already loaded for this note, in order. */
+  existingPhotos?: readonly string[];
+  /** Video preview already loaded for this note. */
+  existingVideoUrl?: string;
 }
 
 /**
@@ -67,22 +80,74 @@ function formatEditWhen(createdAt: string): string {
   );
 }
 
+function placeStamp(place: ForumPlacePin | null): string {
+  if (place === null) {
+    return '';
+  }
+  return `${place.lat},${place.lng},${place.label ?? ''}`;
+}
+
+function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): boolean {
+  return placeStamp(left) === placeStamp(right);
+}
+
+function usernameOf(value: string): string {
+  return value.trim().replace(/^@/, '');
+}
+
+const KEPT_STILL_TYPES = new Set(['image/png', 'image/webp']);
+
+function keptStillType(type: string): 'image/jpeg' | 'image/png' | 'image/webp' {
+  if (KEPT_STILL_TYPES.has(type)) {
+    return type as 'image/png' | 'image/webp';
+  }
+  return 'image/jpeg';
+}
+
+function encodeBytes(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
+
+async function stillFromUrl(
+  url: string,
+): Promise<{ contentType: 'image/jpeg' | 'image/png' | 'image/webp'; data: string }> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Could not save shop note');
+  }
+  const blob = await response.blob();
+  const data = encodeBytes(new Uint8Array(await blob.arrayBuffer()));
+  return { contentType: keptStillType(blob.type), data };
+}
+
 /**
- * Moderator-only text editor and edit history on a shop note. Absent on
- * replies, hidden notes, non-shop text, and ranks below moderator.
+ * Moderator-only editor and edit history on a shop note. The pencil opens the
+ * same steps as adding a shop, filled with the current text, place, pictures,
+ * and 21.gifts user. Absent on replies, hidden notes, non-shop text, and ranks
+ * below moderator.
  *
- * @param props - Note and successful-save callback.
+ * @param props - Note, loaded media, and successful-save callback.
  * @returns The pencil, or null when it must not edit.
  */
 export function ShopNoteEditControl({
   message,
   onUpdated,
+  existingPhotos = [],
+  existingVideoUrl,
 }: ShopNoteEditControlProps): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const { t } = useTranslations();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
+  const [place, setPlace] = useState<ForumPlacePin | null>(null);
+  const [username, setUsername] = useState('');
+  const [kept, setKept] = useState<ShopKeptMedia[]>([]);
+  const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
@@ -102,6 +167,13 @@ export function ShopNoteEditControl({
 
   function openEditor(): void {
     setDraft(stripShopHashtag(message.text));
+    setPlace(message.place ?? null);
+    setUsername(message.shopAccount?.username ?? '');
+    setKept([
+      ...existingPhotos.map((url) => ({ url, kind: 'photo' as const })),
+      ...(existingVideoUrl ? [{ url: existingVideoUrl, kind: 'video' as const }] : []),
+    ]);
+    setPhotoDrafts([]);
     setSaveError(false);
     setHistory(null);
     setHistoryError(false);
@@ -113,6 +185,68 @@ export function ShopNoteEditControl({
       .catch(() => {
         setHistoryError(true);
       });
+  }
+
+  /* v8 ignore start -- edit mode never has a pending video to clear */
+  function clearPendingPhotos(): void {
+    setPhotoDrafts([]);
+  }
+  /* v8 ignore stop */
+
+  async function onPickFiles(files: File[]): Promise<void> {
+    const prepared: ForumPhotoPayload[] = [];
+    for (const file of files) {
+      const result = await prepareForumPhoto(file);
+      if (result.ok) {
+        prepared.push(result.photo);
+      }
+    }
+    if (prepared.length > 0) {
+      setPhotoDrafts((current) => current.concat(prepared));
+    }
+  }
+
+  async function save(): Promise<void> {
+    setSaving(true);
+    setSaveError(false);
+    try {
+      let latest = message;
+      if (draft !== stripShopHashtag(message.text)) {
+        latest = await setMessageShopText(token, message.id, draft);
+      }
+      if (!placesEqual(place, message.place ?? null)) {
+        latest = await setMessagePlace(token, message.id, place);
+      }
+      const nextUser = usernameOf(username);
+      const prevUser = message.shopAccount?.username ?? '';
+      if (nextUser !== prevUser) {
+        latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
+      }
+      const keptPhotos = kept.filter((item) => item.kind === 'photo');
+      const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== existingPhotos.length;
+      if (photosChanged) {
+        const stills = [];
+        for (const item of keptPhotos) {
+          stills.push(await stillFromUrl(item.url));
+        }
+        for (const photo of photoDrafts) {
+          stills.push({
+            contentType: photo.contentType,
+            data: photo.data,
+            ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
+              ? { takenAt: photo.takenAt }
+              : {}),
+          });
+        }
+        latest = await setMessageShopPhotos(token, message.id, stills);
+      }
+      onUpdated(latest);
+      setOpen(false);
+    } catch {
+      setSaveError(true);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -144,51 +278,42 @@ export function ShopNoteEditControl({
       {open ? (
         <div className="mt-2 flex w-full flex-col gap-2">
           <SundayWritingGate>
-            <label className="flex flex-col gap-1">
-              <span className="sr-only">{t('forum.editShopNote')}</span>
-              <textarea
-                value={draft}
-                rows={4}
-                className="w-full rounded-xl border border-app-border bg-app-card px-3 py-2 text-sm text-app-fg"
-                onChange={(event) => {
-                  setDraft(event.target.value);
-                }}
-              />
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className="text-xs font-medium text-app-fg underline"
-                disabled={saving}
-                onClick={() => {
-                  setSaving(true);
-                  setSaveError(false);
-                  void setMessageShopText(token, message.id, draft)
-                    .then((updated) => {
-                      onUpdated(message.id, updated.text);
-                      setOpen(false);
-                    })
-                    .catch(() => {
-                      setSaveError(true);
-                    })
-                    .finally(() => {
-                      setSaving(false);
-                    });
-                }}
-              >
-                {t('forum.editShopNoteSave')}
-              </button>
-              <button
-                type="button"
-                className="text-xs text-app-subtle"
-                onClick={() => {
-                  setSaveError(false);
-                  setOpen(false);
-                }}
-              >
-                {t('forum.editShopNoteCancel')}
-              </button>
-            </div>
+            <ShopAddWizard
+              mode="edit"
+              posting={saving}
+              draft={draft}
+              onDraftChange={setDraft}
+              photoDrafts={photoDrafts}
+              videoDraft={null}
+              onPickFiles={(files) => {
+                void onPickFiles(files);
+              }}
+              onRemovePhoto={(index) => {
+                setPhotoDrafts((current) =>
+                  current.filter((_, photoIndex) => photoIndex !== index),
+                );
+              }}
+              onClearPhoto={clearPendingPhotos}
+              place={place}
+              onPlaceChange={setPlace}
+              username={username}
+              onUsernameChange={setUsername}
+              onSubmit={() => {
+                void save();
+              }}
+              onCancel={() => {
+                setSaveError(false);
+                setOpen(false);
+              }}
+              resetToken={0}
+              maxLength={8000}
+              submitLabel={t('shops.saveChanges')}
+              keptMedia={kept}
+              onRemoveKept={(index) => {
+                setKept((current) => current.filter((_, keptIndex) => keptIndex !== index));
+              }}
+              imagesOnly
+            />
           </SundayWritingGate>
           {saveError ? (
             <p role="alert" className="text-xs text-app-danger">

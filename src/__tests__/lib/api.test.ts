@@ -5,6 +5,7 @@ import {
   setMessagePlace,
   setMessageShopAccount,
   setMessageShopText,
+  setMessageShopPhotos,
   fetchShopNoteEdits,
   deletePushSubscription,
   dismissForumLaws,
@@ -4945,6 +4946,33 @@ describe('setMessageShopText', () => {
   it('throws when the response is not ok', async () => {
     stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
     await expect(setMessageShopText('token', 'm1', 'Cafe')).rejects.toThrow(
+      'Could not save shop note',
+    );
+  });
+});
+
+describe('setMessageShopPhotos', () => {
+  it('patches stills and omits a blank capture time', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, hasPhoto: true, photoCount: 1 },
+    });
+    await setMessageShopPhotos('token', 'm1', [
+      { contentType: 'image/jpeg', data: 'abc', takenAt: '2020-01-01T00:00:00+00:00' },
+      { contentType: 'image/png', data: 'def', takenAt: '' },
+    ]);
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+      photos: [
+        { contentType: 'image/jpeg', data: 'abc', takenAt: '2020-01-01T00:00:00+00:00' },
+        { contentType: 'image/png', data: 'def' },
+      ],
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
       'Could not save shop note',
     );
   });

@@ -177,4 +177,49 @@ describe('ShopAddWizard', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true);
   });
+
+  it('edits an existing shop and keeps a video preview', () => {
+    const onCancel = vi.fn();
+    const onRemoveKept = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ShopAddWizard
+        {...props({
+          mode: 'edit',
+          submitLabel: 'Save changes',
+          imagesOnly: true,
+          keptMedia: [
+            { url: 'blob:still', kind: 'photo' },
+            { url: 'blob:clip', kind: 'video' },
+          ],
+          onRemoveKept,
+          onCancel,
+        })}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Add a shop' })).toBeNull();
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(document.querySelector('input[type="file"]')?.getAttribute('accept')).toBe(
+      'image/jpeg,image/png,image/webp',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(onRemoveKept).toHaveBeenCalledWith(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    rerender(
+      <ShopAddWizard
+        {...props({
+          mode: 'edit',
+          keptMedia: [{ url: 'blob:still', kind: 'photo' }],
+        })}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
+    expect(screen.getByText('1')).toBeTruthy();
+  });
 });

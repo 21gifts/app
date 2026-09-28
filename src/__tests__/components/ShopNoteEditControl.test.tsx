@@ -1,14 +1,28 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
-import { fetchShopNoteEdits, setMessageShopText } from '@/lib/api';
+import {
+  fetchShopNoteEdits,
+  setMessagePlace,
+  setMessageShopAccount,
+  setMessageShopPhotos,
+  setMessageShopText,
+} from '@/lib/api';
+import { prepareForumPhoto } from '@/lib/forum-photo';
 import type { Account, ForumMessage } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
   setMessageShopText: vi.fn(),
+  setMessagePlace: vi.fn(),
+  setMessageShopAccount: vi.fn(),
+  setMessageShopPhotos: vi.fn(),
   fetchShopNoteEdits: vi.fn(),
+}));
+
+vi.mock('@/lib/forum-photo', () => ({
+  prepareForumPhoto: vi.fn(),
 }));
 
 const account: Account = {
@@ -132,9 +146,17 @@ describe('ShopNoteEditControl', () => {
       text: 'Cafe Sol\n\n#21GiftsShop',
     });
     const onUpdated = vi.fn();
-    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={onUpdated} />);
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, place: { lat: 1, lng: 2, label: null } }}
+        onUpdated={onUpdated}
+      />,
+    );
     const pencil = screen.getByRole('button', { name: 'Edit shop note' });
     fireEvent.keyDown(pencil, { key: 'Enter' });
+    fireEvent.click(pencil);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
     fireEvent.click(pencil);
     expect(await screen.findByRole('heading', { name: 'History' })).toBeTruthy();
     expect(screen.getAllByText(/Ada ·/).length).toBeGreaterThan(0);
@@ -144,15 +166,24 @@ describe('ShopNoteEditControl', () => {
     expect(screen.getByText('None → Stall')).toBeTruthy();
     expect(screen.getByText('None → @luna')).toBeTruthy();
     expect(screen.getByText('None → None')).toBeTruthy();
-    const box = screen.getByRole('textbox', { name: 'Edit shop note' });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const box = screen.getByRole('textbox', { name: 'Shop text' });
     expect(box).toHaveProperty('value', 'Cafe Luna');
     fireEvent.change(box, { target: { value: 'Cafe Sol' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(onUpdated).toHaveBeenCalledWith('shop1', 'Cafe Sol\n\n#21GiftsShop');
+      expect(onUpdated).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'shop1', text: 'Cafe Sol\n\n#21GiftsShop' }),
+      );
     });
     expect(setMessageShopText).toHaveBeenCalledWith('token', 'shop1', 'Cafe Sol');
-    expect(screen.queryByRole('textbox', { name: 'Edit shop note' })).toBeNull();
+    expect(setMessagePlace).not.toHaveBeenCalled();
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+    expect(setMessageShopPhotos).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: 'Shop text' })).toBeNull();
   });
 
   it('keeps the panel open when the save fails and shows an empty or failed history', async () => {
@@ -162,17 +193,204 @@ describe('ShopNoteEditControl', () => {
     renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('No edits yet')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect((await screen.findByRole('alert')).textContent).toContain(
       'Could not save this shop note',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByRole('textbox')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(screen.queryByText('5 / 5 · Summary')).toBeNull();
 
     vi.mocked(fetchShopNoteEdits).mockRejectedValue(new Error('down'));
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('Could not load the history')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(screen.queryByText('Could not load the history')).toBeNull();
+  });
+
+  it('saves a place, a user, and replaced stills, and ignores a bad file', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    vi.mocked(setMessagePlace).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      place: { lat: 1, lng: 2, label: null },
+    });
+    vi.mocked(setMessageShopAccount).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      place: { lat: 1, lng: 2, label: null },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    });
+    vi.mocked(setMessageShopPhotos).mockResolvedValue({
+      ...shopMessage,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    vi.mocked(prepareForumPhoto)
+      .mockResolvedValueOnce({ ok: false, error: 'unsupported' })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'data:image/jpeg;base64,abc',
+          takenAt: '2020-01-01T00:00:00+00:00',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'def',
+          previewUrl: 'data:image/jpeg;base64,def',
+          takenAt: null,
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'ghi',
+          previewUrl: 'data:image/jpeg;base64,ghi',
+          takenAt: '',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'jkl',
+          previewUrl: 'data:image/jpeg;base64,jkl',
+          takenAt: '1999-01-01T00:00:00+00:00',
+        },
+      });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const type = String(input).includes('jpeg') ? 'image/jpeg' : 'image/png';
+        return {
+          ok: true,
+          blob: () =>
+            Promise.resolve({
+              type,
+              arrayBuffer: () => Promise.resolve(Uint8Array.of(9).buffer),
+            }),
+        };
+      }),
+    );
+    const onUpdated = vi.fn();
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          place: { lat: 9, lng: 8, label: 'Old' },
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        existingPhotos={['blob:png', 'blob:jpeg']}
+        existingVideoUrl="blob:video"
+        onUpdated={onUpdated}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:video');
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File(['b'], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File(['c'], 'c.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File(['d'], 'd.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(input, {
+      target: { files: [new File(['e'], 'e.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(6);
+    });
+    const removeButtons = screen.getAllByRole('button', { name: 'Remove photo' });
+    fireEvent.click(removeButtons[removeButtons.length - 1]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(onUpdated).toHaveBeenCalled();
+    });
+    expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', null);
+    expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', 'luna');
+    const photos = vi.mocked(setMessageShopPhotos).mock.calls[0]?.[2] ?? [];
+    expect(photos.map((photo) => photo.contentType)).toEqual([
+      'image/png',
+      'image/jpeg',
+      'image/jpeg',
+      'image/jpeg',
+      'image/jpeg',
+    ]);
+    expect(photos.map((photo) => photo.takenAt ?? null)).toEqual([
+      null,
+      null,
+      '2020-01-01T00:00:00+00:00',
+      null,
+      null,
+    ]);
+    vi.unstubAllGlobals();
+  });
+
+  it('clears a user and stills and shows a photo read failure', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopAccount).mockResolvedValue({ ...shopMessage });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        blob: () => Promise.resolve(new Blob()),
+      }),
+    );
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        existingPhotos={['blob:kept', 'blob:other']}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    vi.unstubAllGlobals();
   });
 });

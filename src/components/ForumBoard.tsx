@@ -107,6 +107,22 @@ export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
 /** Pay-sheet validation or request failure. */
 export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
 
+/** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
+function editStillUrls(
+  messageId: string,
+  photoCount: number,
+  photoUrls: Readonly<Record<string, string>>,
+): string[] {
+  const found: string[] = [];
+  for (let index = 0; index < photoCount; index += 1) {
+    const url = photoUrls[`${messageId}:${index}`];
+    if (typeof url === 'string') {
+      found.push(url);
+    }
+  }
+  return found;
+}
+
 /** Roles that show a clickable tag beside the author name. */
 type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
 
@@ -375,7 +391,7 @@ export interface ForumBoardProps {
    */
   shopNoteEdit?: boolean;
   /** Apply a saved shop-note body to the listed row. */
-  onShopNoteUpdated?: (messageId: string, text: string) => void;
+  onShopNoteUpdated?: (message: ForumMessage) => void;
 }
 
 /**
@@ -1455,7 +1471,12 @@ export function ForumBoard({
                   {shopNoteEdit &&
                   onShopNoteUpdated !== undefined &&
                   message.parentId === undefined ? (
-                    <ShopNoteEditControl message={message} onUpdated={onShopNoteUpdated} />
+                    <ShopNoteEditControl
+                      message={message}
+                      onUpdated={onShopNoteUpdated}
+                      existingPhotos={editStillUrls(message.id, photoCount, photoUrls)}
+                      {...(videoSrc !== undefined ? { existingVideoUrl: videoSrc } : {})}
+                    />
                   ) : null}
                   {shopPlaceEdit &&
                   onShopPlaceUpdated !== undefined &&

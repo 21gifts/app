@@ -467,6 +467,59 @@ test('Function: fetchShopNoteEdits — opening the pencil shows who edited the n
   await expect(note.getByText('Old → Cafe Luna')).toBeVisible();
 });
 
+test('Function: setMessageShopPhotos — moderator save replaces stills', async ({ page }) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [{ ...STAFF_SHOP_NOTE, hasPhoto: true, photoCount: 1 }]);
+  await page.route('**/messages/m-staff/photo*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+    });
+  });
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    },
+  );
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/photos'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...STAFF_SHOP_NOTE, hasPhoto: false, photoCount: 0 }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await expect(note.getByRole('img').first()).toBeVisible();
+  await note.getByRole('button', { name: 'Edit shop note' }).click();
+  await note.getByRole('button', { name: 'Remove photo' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  const patched = page.waitForRequest(
+    (req) =>
+      req.method() === 'PATCH' &&
+      new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/photos'),
+  );
+  await note.getByRole('button', { name: 'Save changes' }).click();
+  const photosReq = await patched;
+  expect(photosReq.postDataJSON()).toEqual({ photos: [] });
+});
+
 test('Function: setMessageShopText — moderator save updates the shop note', async ({ page }) => {
   await seedAda(page, 'moderator');
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
@@ -501,13 +554,17 @@ test('Function: setMessageShopText — moderator save updates the shop note', as
   await page.goto('/shops');
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Edit shop note' }).click();
-  await note.getByRole('textbox', { name: 'Edit shop note' }).fill('Cafe Sol');
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByLabel('Shop text').fill('Cafe Sol');
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
   const patched = page.waitForRequest(
     (req) =>
       req.method() === 'PATCH' &&
       new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/text'),
   );
-  await note.getByRole('button', { name: 'Save' }).click();
+  await note.getByRole('button', { name: 'Save changes' }).click();
   const textReq = await patched;
   expect(textReq.postDataJSON()).toEqual({ text: 'Cafe Sol' });
   await expect(note.getByText('Cafe Sol')).toBeVisible();

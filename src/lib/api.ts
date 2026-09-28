@@ -3279,6 +3279,46 @@ export async function setMessageShopAccount(
   return forumMessageSchema.parse(await response.json());
 }
 
+/**
+ * Replaces the stills on a shop note (moderator session).
+ *
+ * An empty list clears stills. Video on the note is left in place.
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @param photos - JPEG, PNG, or WebP stills, at most 10.
+ * @returns The updated {@link ForumMessage}.
+ * @throws Error `Could not save shop note` on a non-2xx status or a body that
+ * fails {@link forumMessageSchema}.
+ */
+export async function setMessageShopPhotos(
+  sessionToken: string,
+  messageId: string,
+  photos: { contentType: string; data: string; takenAt?: string | null }[],
+): Promise<ForumMessage> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/photos`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
+    },
+    body: JSON.stringify({
+      photos: photos.map((photo) => ({
+        contentType: photo.contentType,
+        data: photo.data,
+        ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
+          ? { takenAt: photo.takenAt }
+          : {}),
+      })),
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save shop note');
+  }
+  return forumMessageSchema.parse(await response.json());
+}
+
 /** One staff edit of a shop note, newest first when listed. */
 export const shopNoteEditSchema = z.object({
   id: z.string(),

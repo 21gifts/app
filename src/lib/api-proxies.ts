@@ -1161,6 +1161,20 @@ export async function proxyMessagesTextPatch(
 }
 
 /**
+ * Proxies a moderator's PATCH /messages/:id/photos request.
+ *
+ * @param request - Incoming Bearer request with JSON `{ photos }`.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesPhotosPatch(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/photos`);
+}
+
+/**
  * Proxies a moderator's GET /messages/:id/edits request.
  *
  * @param request - Incoming Bearer request.

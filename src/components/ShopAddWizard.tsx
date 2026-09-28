@@ -12,6 +12,14 @@ import type { ForumVideoPayload } from '@/lib/forum-video';
 /** One step of the shop submission, after the closed button. */
 type ShopAddStep = 1 | 2 | 3 | 4 | 5;
 
+/** A still or video already stored on the shop note. */
+export interface ShopKeptMedia {
+  /** Preview URL already loaded for this note. */
+  url: string;
+  /** Whether the URL is a video or a still. */
+  kind: 'photo' | 'video';
+}
+
 /** Props for the guided shop composer. */
 export interface ShopAddWizardProps {
   /** True while the note is being sent. */
@@ -46,6 +54,16 @@ export interface ShopAddWizardProps {
   resetToken: number;
   /** Maximum length of the text step. */
   maxLength: number;
+  /** `edit` opens on step 1 for an existing shop. Default `create`. */
+  mode?: 'create' | 'edit';
+  /** Summary button label. Default is the post label. */
+  submitLabel?: string;
+  /** Stills and video already on the note. */
+  keptMedia?: readonly ShopKeptMedia[];
+  /** Remove one kept still. Videos stay. */
+  onRemoveKept?: (index: number) => void;
+  /** When true, the file picker accepts stills only. */
+  imagesOnly?: boolean;
 }
 
 const STEP_KEY = {
@@ -81,14 +99,19 @@ export function ShopAddWizard({
   onCancel,
   resetToken,
   maxLength,
+  mode = 'create',
+  submitLabel,
+  keptMedia = [],
+  onRemoveKept,
+  imagesOnly = false,
 }: ShopAddWizardProps): ReactElement {
   const { t } = useTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState<ShopAddStep | 'closed'>('closed');
+  const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
 
   useEffect(() => {
-    setStep('closed');
-  }, [resetToken]);
+    setStep(mode === 'edit' ? 1 : 'closed');
+  }, [resetToken, mode]);
 
   if (step === 'closed') {
     return (
@@ -126,7 +149,11 @@ export function ShopAddWizard({
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+            accept={
+              imagesOnly
+                ? 'image/jpeg,image/png,image/webp'
+                : 'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v'
+            }
             className="hidden"
             disabled={posting}
             onChange={(event) => {
@@ -149,6 +176,42 @@ export function ShopAddWizard({
           >
             <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
           </IconButton>
+          {keptMedia.map((item, index) =>
+            item.kind === 'video' ? (
+              <div key={`${item.url}:${index}`} className="flex items-start gap-3">
+                <video
+                  src={item.url}
+                  className="h-20 w-20 rounded-lg object-cover"
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+              </div>
+            ) : (
+              <div key={`${item.url}:${index}`} className="flex items-start gap-1">
+                {/* eslint-disable-next-line @next/next/no-img-element -- already loaded shop still */}
+                <img
+                  src={item.url}
+                  alt={t('forum.previewAlt')}
+                  className="h-20 w-20 rounded-lg object-cover"
+                />
+                {onRemoveKept !== undefined ? (
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      onRemoveKept(index);
+                    }}
+                    disabled={posting}
+                    aria-label={t('forum.removePhoto')}
+                  >
+                    <X aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                ) : null}
+              </div>
+            ),
+          )}
           {videoDraft !== null ? (
             <div className="flex items-start gap-3">
               <video
@@ -231,9 +294,9 @@ export function ShopAddWizard({
           <div>
             <dt className="text-app-muted">{t('shops.stepPhotos')}</dt>
             <dd>
-              {photoDrafts.length + (videoDraft !== null ? 1 : 0) === 0
+              {keptMedia.length + photoDrafts.length + (videoDraft !== null ? 1 : 0) === 0
                 ? t('shops.summaryNone')
-                : String(photoDrafts.length + (videoDraft !== null ? 1 : 0))}
+                : String(keptMedia.length + photoDrafts.length + (videoDraft !== null ? 1 : 0))}
             </dd>
           </div>
           <div>
@@ -270,7 +333,9 @@ export function ShopAddWizard({
             disabled={posting}
             onClick={() => {
               onCancel();
-              setStep('closed');
+              if (mode !== 'edit') {
+                setStep('closed');
+              }
             }}
           >
             {t('shops.cancel')}
@@ -300,7 +365,7 @@ export function ShopAddWizard({
           </Button>
         ) : (
           <Button type="submit" variant="primary" disabled={posting}>
-            {t('forum.post')}
+            {submitLabel ?? t('forum.post')}
           </Button>
         )}
       </div>

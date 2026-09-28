@@ -10127,6 +10127,13 @@ test('Function: proxyMessagesTextPatch — unauthenticated text patch is forward
   expect(response.status()).toBe(401);
 });
 
+test('Function: proxyMessagesPhotosPatch — unauthenticated photo patch is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.patch('/forum/messages/[id]/photos');
+  expect(response.status()).toBe(401);
+});
+
 test('Function: proxyMessagesEditsGet — unauthenticated edit history is forwarded and denied', async ({
   request,
 }) => {

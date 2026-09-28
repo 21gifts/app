@@ -2515,9 +2515,31 @@ export function ForumLoader({
         {...(account !== null && roleAtLeast(account.role, 'moderator')
           ? {
               shopNoteEdit: true as const,
-              onShopNoteUpdated: (messageId: string, text: string) => {
+              onShopNoteUpdated: (updated: ForumMessage) => {
                 setMessages((prev) =>
-                  prev!.map((row) => (row.id === messageId ? { ...row, text } : row)),
+                  prev!.map((row) => {
+                    if (row.id !== updated.id) {
+                      return row;
+                    }
+                    const next = {
+                      ...row,
+                      text: updated.text,
+                      hasPhoto: updated.hasPhoto,
+                      photoCount: updated.photoCount,
+                      hasVideo: updated.hasVideo,
+                    };
+                    if (updated.place === undefined) {
+                      delete next.place;
+                    } else {
+                      next.place = updated.place;
+                    }
+                    if (updated.shopAccount === undefined) {
+                      delete next.shopAccount;
+                    } else {
+                      next.shopAccount = updated.shopAccount;
+                    }
+                    return next;
+                  }),
                 );
               },
             }
