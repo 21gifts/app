@@ -559,9 +559,9 @@
 
 ## Function: recordCurrentView
 
-- **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A router `pushState` is a push, even when `history.length` does not grow. A URL-changing `replaceState` replaces the current entry once this document is anchored, so a replaced screen is not a previous view. The first path of a new document is a push, unless it is the arrow's one-shot target, which steps the cursor back. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50.
+- **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A router `pushState` is a push, even when `history.length` does not grow. A URL-changing `replaceState` replaces the current entry once this document is anchored, so a replaced screen is not a previous view. The first path of a new document is a push, unless it is the arrow's one-shot target, which steps the cursor back. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50. A dropped entry keeps its absolute stamp, so browser back still finds it.
 - **Inputs:** A pathname, optionally with a query string.
-- **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor` only). Stamps `giftsView` with `history.replaceState` without pushing a history entry. A thrown storage write leaves the slot intact. No network.
+- **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor`, plus `base` after a capped drop). Stamps `giftsView` with `history.replaceState` without pushing a history entry. A thrown storage write leaves the slot intact. No network.
 - **Used by:** `ViewHistoryRoot`.
 
 ## Function: resetViewHistory

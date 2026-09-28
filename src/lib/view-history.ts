@@ -10,8 +10,11 @@ const CAP = 50;
 
 const SAFE_IN_APP_PATH = /^\/[A-Za-z0-9._~/-]*(?:\?[A-Za-z0-9._~%=&*+-]*)?$/;
 
-/** Persisted stack. `historyLength` stays in memory so a reload can see the new document. */
-type StoredViewHistory = { stack: string[]; cursor: number };
+/**
+ * Persisted stack. `base` is how many entries have been dropped off the front.
+ * It stays out of storage until the first drop. `historyLength` stays in memory.
+ */
+type StoredViewHistory = { stack: string[]; cursor: number; base: number };
 
 /**
  * In-memory stack for this document.
@@ -123,6 +126,7 @@ function hydrateSlot(): ViewHistoryMemory | null {
   const hydrated: ViewHistoryMemory = {
     stack: stored.stack,
     cursor: stored.cursor,
+    base: stored.base,
     historyLength: window.history.length,
     anchored: false,
   };
@@ -148,6 +152,7 @@ function browserSlot(): ViewHistoryMemory | null {
   const created: ViewHistoryMemory = {
     stack: [],
     cursor: 0,
+    base: 0,
     historyLength: window.history.length,
     anchored: true,
   };
@@ -174,15 +179,17 @@ function readStoredMemory(): StoredViewHistory | null {
     if (parsed === null || typeof parsed !== 'object') {
       return null;
     }
-    const record = parsed as { stack?: unknown; cursor?: unknown };
+    const record = parsed as { stack?: unknown; cursor?: unknown; base?: unknown };
     if (!Array.isArray(record.stack) || typeof record.cursor !== 'number') {
       return null;
     }
     const stack = record.stack.filter((entry): entry is string => typeof entry === 'string');
     if (!Number.isInteger(record.cursor) || record.cursor < 0 || record.cursor >= stack.length) {
-      return stack.length === 0 ? { stack: [], cursor: 0 } : null;
+      return stack.length === 0 ? { stack: [], cursor: 0, base: 0 } : null;
     }
-    return { stack, cursor: record.cursor };
+    const rawBase = record.base;
+    const base = typeof rawBase === 'number' && rawBase > 0 ? Math.floor(rawBase) : 0;
+    return { stack, cursor: record.cursor, base };
   } catch {
     return null;
   }
@@ -203,10 +210,11 @@ function writeStoredMemory(memory: StoredViewHistory | null): void {
       sessionStorage.removeItem(HISTORY_KEY);
       return;
     }
-    sessionStorage.setItem(
-      HISTORY_KEY,
-      JSON.stringify({ stack: memory.stack, cursor: memory.cursor }),
-    );
+    const payload =
+      memory.base > 0
+        ? { stack: memory.stack, cursor: memory.cursor, base: memory.base }
+        : { stack: memory.stack, cursor: memory.cursor };
+    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(payload));
   } catch {
     /* Private mode can reject storage; the global slot still holds the stack. */
   }
@@ -217,7 +225,7 @@ function writeStoredMemory(memory: StoredViewHistory | null): void {
  *
  * @param cursor - Index into the in-app stack.
  */
-function stampGiftsView(cursor: number): void {
+function stampGiftsView(absolute: number): void {
   /* v8 ignore next 3 -- SSR has no history */
   if (typeof window === 'undefined') {
     return;
@@ -227,7 +235,7 @@ function stampGiftsView(cursor: number): void {
   if (rawReplaceState === null) {
     return;
   }
-  rawReplaceState({ ...window.history.state, giftsView: cursor }, '');
+  rawReplaceState({ ...window.history.state, giftsView: absolute }, '');
 }
 
 /**
@@ -358,7 +366,7 @@ export function recordCurrentView(path: string): void {
   if (!slot.anchored && arriveFromBack(slot, path)) {
     slot.historyLength = length;
     slot.anchored = true;
-    stampGiftsView(slot.cursor);
+    stampGiftsView(slot.cursor + slot.base);
     writeStoredMemory(slot);
     return;
   }
@@ -366,23 +374,24 @@ export function recordCurrentView(path: string): void {
     takeBackTarget();
   }
   const stamped = stampedIndex();
+  const index = stamped === null ? -1 : stamped - slot.base;
   if (
     stamped !== null &&
-    Number.isInteger(stamped) &&
-    stamped >= 0 &&
-    stamped < slot.stack.length &&
-    slot.stack[stamped] === path
+    Number.isInteger(index) &&
+    index >= 0 &&
+    index < slot.stack.length &&
+    slot.stack[index] === path
   ) {
-    slot.cursor = stamped;
+    slot.cursor = index;
     slot.historyLength = length;
     slot.anchored = true;
-    stampGiftsView(slot.cursor);
+    stampGiftsView(slot.cursor + slot.base);
     writeStoredMemory(slot);
     return;
   }
   if (slot.stack[slot.cursor] === path) {
     if (stamped !== slot.cursor) {
-      stampGiftsView(slot.cursor);
+      stampGiftsView(slot.cursor + slot.base);
     }
     slot.historyLength = length;
     slot.anchored = true;
@@ -399,13 +408,14 @@ export function recordCurrentView(path: string): void {
     next.push(path);
     if (next.length > CAP) {
       next.shift();
+      slot.base += 1;
     }
     slot.stack = next;
     slot.cursor = next.length - 1;
   }
   slot.historyLength = length;
   slot.anchored = true;
-  stampGiftsView(slot.cursor);
+  stampGiftsView(slot.cursor + slot.base);
   writeStoredMemory(slot);
 }
 

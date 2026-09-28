@@ -243,6 +243,18 @@ describe('recordCurrentView', () => {
     expect(stored()?.cursor).toBe(49);
   });
 
+  it('restores a capped entry from its absolute stamp', () => {
+    for (let index = 0; index < 51; index += 1) {
+      pushView(`/p${index}`);
+    }
+    setGiftsView(49);
+    dropSlot();
+    recordCurrentView('/p49');
+    expect(stored()?.cursor).toBe(48);
+    expect(previousViewPath()).toBe('/p48');
+    expect(stored()?.stack[48]).toBe('/p49');
+  });
+
   it('replaces the open view when the router replaceState changes the url', () => {
     recordCurrentView('/gated');
     replaceView('/login');
@@ -340,6 +352,7 @@ describe('stored memory', () => {
     expect(readSlot()).toEqual({
       stack: [],
       cursor: 0,
+      base: 0,
       historyLength: window.history.length,
       anchored: false,
     });
