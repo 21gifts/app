@@ -27,6 +27,13 @@ export interface AccountActivityChartProps {
    * `undefined`; omit the prop or pass `[]`.
    */
   donated?: AccountActivity['donatedOverTime'];
+  /**
+   * When true and the series is empty or all-zero sats, show
+   * `profile.chartError` instead of `profile.chartEmpty`. Ignored when any
+   * cumulative sats are positive. Defaults to false (in-flight and successful
+   * empty still use `profile.chartEmpty`).
+   */
+  failed?: boolean;
 }
 
 const GIVEN_STROKE = 'var(--color-app-chart-given)';
@@ -48,8 +55,9 @@ const NON_USD_CUMULATIVE: Record<
 };
 
 /**
- * True when every source cumulative for `fiat` on both input series is `null`.
- * USD is never unsummable (the API string is always present).
+ * True when y-ticks for `fiat` should be an em dash instead of an amount.
+ * USD is unsummable when any raw `cumulativeUsd` is `null`. Other codes are
+ * unsummable when every source cumulative on both series is `null`.
  *
  * @param received - Receive `receivedOverTime`.
  * @param donated - Donate `donatedOverTime`.
@@ -61,13 +69,12 @@ function selectedFiatUnsummable(
   donated: AccountActivity['donatedOverTime'],
   fiat: FiatCode,
 ): boolean {
+  const points = [...received, ...donated];
   if (fiat === 'USD') {
-    return false;
+    return points.some((point) => point.cumulativeUsd === null);
   }
   const key = NON_USD_CUMULATIVE[fiat];
-  return [...received, ...donated].every(
-    (point) => point[key] === null || point[key] === undefined,
-  );
+  return points.every((point) => point[key] === null || point[key] === undefined);
 }
 
 /**
@@ -75,17 +82,21 @@ function selectedFiatUnsummable(
  * when hydration is ready AND session is null (unsigned public view).
  * Signed-in mounts omit it.
  * Fiat code comes from {@link useFiatPreference}. Populated series still get
- * a ₿ | selected-fiat scale.
+ * a ₿ | selected-fiat scale. A null `usd` / `cumulativeUsd` still draws the
+ * satoshi chart; the USD scale uses an em dash when `cumulativeUsd` is null.
  *
- * @param props - Receive series and optional donate series.
+ * @param props - Receive series, optional donate series, and optional `failed`.
  * @returns When unsigned, FiatPicker then empty `profile.chartEmpty` status,
- *   or FiatPicker plus legend, selected-fiat chrome, and reserved-height SVG.
- *   Signed-in empty is `profile.chartEmpty` alone; populated signed-in starts
- *   at legend + ₿\|selected fiat scale (no title heading).
+ *   failed-empty `profile.chartError` alert, or FiatPicker plus legend,
+ *   selected-fiat chrome, and reserved-height SVG. Signed-in empty is
+ *   `profile.chartEmpty` alone (or `profile.chartError` when `failed`);
+ *   populated signed-in starts at legend + ₿\|selected fiat scale (no title
+ *   heading), including when USD is null.
  */
 export function AccountActivityChart({
   received,
   donated = [],
+  failed = false,
 }: AccountActivityChartProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -109,9 +120,15 @@ export function AccountActivityChart({
     return (
       <div className="flex w-full flex-col gap-2">
         {picker}
-        <p className="text-center text-sm text-app-muted" role="status">
-          {t('profile.chartEmpty')}
-        </p>
+        {failed ? (
+          <p className="text-center text-sm text-app-danger" role="alert">
+            {t('profile.chartError')}
+          </p>
+        ) : (
+          <p className="text-center text-sm text-app-muted" role="status">
+            {t('profile.chartEmpty')}
+          </p>
+        )}
       </div>
     );
   }

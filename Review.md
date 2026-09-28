@@ -56,4 +56,4 @@ only, server components by default, TSDoc on exports, handbook / e2e /
 screenshot baselines for new screenshot-gated screens/variants in the same PR
 (handbook doc routes: `## Screen:` prose and e2e `page.goto` only). New controls
 follow the labeled vs icon-only table in `docs/ui.md` and CONTRIBUTING
-**Icon controls**. A new control that ignores the table is rejected.
+**Icon controls**. A new control that ignores the table is rejected. The `profile.chartError` chart-slot exception in CONTRIBUTING is not a new variant.

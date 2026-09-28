@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   accountNotificationLevel,
+  accountActivitySchema,
   accountSchema,
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
@@ -1708,5 +1709,55 @@ describe('giftStatsSchema', () => {
 
   it('rejects a bad USD money string', () => {
     expect(() => giftStatsSchema.parse({ ...stats, totalUsd: '1425' })).toThrow();
+  });
+
+  it('rejects a spendOverTime day with a null dollar amount', () => {
+    const day = stats.spendOverTime[0];
+    expect(day).toBeDefined();
+    expect(() =>
+      giftStatsSchema.parse({
+        ...stats,
+        spendOverTime: [{ ...day, usd: null }],
+      }),
+    ).toThrow();
+  });
+});
+
+describe('accountActivitySchema', () => {
+  it('accepts a received day with a null dollar amount', () => {
+    const activity = {
+      donatedSats: 0,
+      receivedSats: 21,
+      donatedOverTime: [],
+      receivedOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 21,
+          cumulativeSats: 21,
+          btc: '0.00000000',
+          cumulativeBtc: '0.00000000',
+          usd: null,
+          cumulativeUsd: null,
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+      ],
+      fx: {
+        quote: 'BTC-USD' as const,
+        dayBasis: 'utc' as const,
+        source: 'coinbase-exchange-daily-close' as const,
+        quotes: [
+          { code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+          { code: 'CHF' as const, pair: 'USD-CHF', source: 'ecb-daily' },
+          { code: 'EUR' as const, pair: 'USD-EUR', source: 'ecb-daily' },
+          { code: 'PHP' as const, pair: 'USD-PHP', source: 'ecb-daily' },
+        ],
+      },
+    };
+    expect(accountActivitySchema.parse(activity)).toEqual(activity);
   });
 });

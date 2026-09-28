@@ -139,8 +139,22 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
     await waitFor(() => {
-      expect(screen.getByText('No gifts yet.')).toBeTruthy();
+      expect(screen.getByText('Could not load gifts.')).toBeTruthy();
     });
+    expect(screen.queryByText('No gifts yet.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  it('shows empty gifts copy while activity is still loading', async () => {
+    fetchProfile.mockResolvedValue(profile);
+    fetchActivity.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('No gifts yet.')).toBeTruthy();
+    expect(screen.queryByText('Could not load gifts.')).toBeNull();
+    expect(screen.queryByText('Loading…')).toBeNull();
   });
 
   it('fetches activity when lightningAddress is null', async () => {

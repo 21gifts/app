@@ -731,6 +731,13 @@ async function seedShopStickerMember(page: Page): Promise<void> {
       }),
     });
   });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
   await page.goto(`/members/${memberId}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByText('carol@21.gifts')).toBeVisible();
@@ -1913,6 +1920,7 @@ test.describe('onboarding screens', () => {
           messages: [
             {
               id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc-ada',
               name: 'Ada',
               text: 'Hello from the active list.',
               createdAt: '2026-08-01T10:00:00.000Z',
@@ -1939,6 +1947,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
     await expect(page.getByText('Hello from the active list.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View profile' })).toBeVisible();
     await shotScreen(page, 'screen-welcome-signed-out');
   });
 
@@ -2409,10 +2418,13 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
+    const payPage = page.locator('[data-reply-pay-page]');
+    await expect(payPage).toBeVisible();
+    await expect(payPage.getByText(REACTION_ANSWER)).toBeVisible();
+    await expect(page.getByLabel('Your reaction')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
     await expect(page.getByText(/Pay ₿21/)).toBeVisible();
     expect(await insideShell(page.getByText(REACTION_NOTE_TEXT))).toBe(true);
-    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
     await shotScreen(page, 'state-welcome-reaction-pay');
   });
 
@@ -2435,8 +2447,9 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-pay-sheet]');
+    const sheet = page.locator('[data-reply-pay-page]');
     await expect(sheet).toBeVisible();
+    await expect(sheet.getByText(REACTION_ANSWER)).toBeVisible();
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -2479,15 +2492,24 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
-    const field = page.getByLabel('Your reaction');
-    await expect(field).toHaveValue(REACTION_ANSWER);
-    await expect(field).toBeDisabled();
-    await field.evaluate((node) => {
+    const payPage = page.locator('[data-reply-pay-page]');
+    const preview = payPage.getByText(REACTION_ANSWER);
+    await expect(preview).toBeVisible();
+    expect(
+      await preview.evaluate((node) => {
+        return (
+          !(node instanceof HTMLInputElement) &&
+          !(node instanceof HTMLTextAreaElement) &&
+          node.closest('input, textarea') === null
+        );
+      }),
+    ).toBe(true);
+    await preview.evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
     });
-    expect(await insideShell(field)).toBe(true);
-    expect(await insideShell(page.getByText('$0.02').last())).toBe(true);
-    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    expect(await insideShell(preview)).toBe(true);
+    await expect(page.getByLabel('Amount')).toHaveCount(0);
+    await expect(page.getByLabel('Your reaction')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-reaction-pay-kept');
   });
 
@@ -4206,6 +4228,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('About me')).toBeVisible();
@@ -4287,6 +4316,13 @@ test.describe('onboarding screens', () => {
             },
           ],
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -4383,6 +4419,13 @@ test.describe('onboarding screens', () => {
         ),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
@@ -4468,6 +4511,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
@@ -4546,6 +4596,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
@@ -4635,6 +4692,13 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Goal note to be repaid')).toBeVisible();
@@ -4742,6 +4806,13 @@ test.describe('onboarding screens', () => {
         ),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 posts' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
@@ -4826,6 +4897,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 reactions' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
@@ -4891,6 +4969,13 @@ test.describe('onboarding screens', () => {
     await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
       await held;
       await route.abort();
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -4961,6 +5046,13 @@ test.describe('onboarding screens', () => {
       await held;
       await route.abort();
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 reactions' }).click();
@@ -5025,6 +5117,13 @@ test.describe('onboarding screens', () => {
     await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
       await route.abort();
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 posts' }).click();
@@ -5087,6 +5186,13 @@ test.describe('onboarding screens', () => {
     });
     await page.route(`**/forum/members/${memberId}/replies`, async (route) => {
       await route.abort();
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -5170,6 +5276,13 @@ test.describe('onboarding screens', () => {
             },
           ],
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5256,6 +5369,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '3 reactions' }).click();
@@ -5303,6 +5423,13 @@ test.describe('onboarding screens', () => {
           postCount: 0,
           replyCount: 0,
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5361,6 +5488,13 @@ test.describe('onboarding screens', () => {
     await page.route(`**/forum/members/${memberId}`, async (route) => {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-members-error');
@@ -5405,6 +5539,13 @@ test.describe('onboarding screens', () => {
           postCount: 0,
           replyCount: 0,
         }),
+      });
+    });
+    await page.route(`**/forum/members/${ownId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${ownId}`);
@@ -5493,6 +5634,13 @@ test.describe('onboarding screens', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5594,6 +5742,13 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '1 posts' }).click();
@@ -5655,6 +5810,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByTestId('state-members-staff-verify')).toBeVisible();
     await expect(page.getByText('Moderator functions')).toBeVisible();
@@ -5707,6 +5869,13 @@ test.describe('onboarding screens', () => {
             appointedBy: null,
           },
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -5769,6 +5938,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByText('Moderator functions').click();
     await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
@@ -5814,6 +5990,13 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await expect(
       page.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
@@ -5857,6 +6040,13 @@ test.describe('onboarding screens', () => {
           replyCount: 0,
           fundingReviewedAt: Date.parse('2026-08-28T12:00:00.000Z'),
         }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -7547,7 +7737,7 @@ test.describe('onboarding screens', () => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
-        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
       });
     });
     await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
@@ -8148,13 +8338,110 @@ test.describe('profile activity chart variants', () => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
-        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
+      });
+    });
+    const pictures = page.waitForResponse((response) => response.url().endsWith('/pictures/me'));
+    const banners = page.waitForResponse((response) => response.url().endsWith('/banners/me'));
+    await openProfile(page);
+    await pictures;
+    await banners;
+    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
+    await expect(page.getByAltText('About me photo')).toBeVisible();
+    await expect(page.getByAltText('Profile photo')).toHaveCount(0);
+    await expect(page.getByAltText('Wide profile image')).toHaveCount(0);
+    await shotScreen(page, 'state-profile-about-photo');
+  });
+
+  test('profile images', async ({ page }) => {
+    // state-profile-images
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/pictures\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await page.route(/\/banners\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
+      });
+    });
+    await page.route(/\/me\/about\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
       });
     });
     await openProfile(page);
-    await expect(page.getByText('I build on Bitcoin')).toBeVisible();
-    await expect(page.getByAltText('About me photo')).toBeVisible();
-    await shotScreen(page, 'state-profile-about-photo');
+    const banner = page.getByAltText('Wide profile image');
+    const portrait = page.getByAltText('Profile photo');
+    const about = page.getByAltText('About me photo');
+    await expect(banner).toBeVisible();
+    await expect(portrait).toBeVisible();
+    await expect(about).toBeVisible();
+    await expect(banner).toBeInViewport();
+    await expect(portrait).toBeInViewport();
+    await expect(about).toBeInViewport();
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('img')].every((img) => img.complete && img.naturalWidth > 0),
+    );
+    await shotScreen(page, 'state-profile-images');
+  });
+
+  test('profile images-editing', async ({ page }) => {
+    await seedAdaProfile(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/pictures\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await page.route(/\/banners\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-banner.jpg')),
+      });
+    });
+    await page.route(/\/me\/about\/photo$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-about.jpg')),
+      });
+    });
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Edit About me' }).click();
+    const about = page.getByRole('textbox', { name: 'About me' });
+    const removePortrait = page.getByRole('button', { name: 'Remove profile photo' });
+    const removeBanner = page.getByRole('button', { name: 'Remove wide image' });
+    await expect(about).toBeVisible();
+    await expect(removePortrait).toBeVisible();
+    await expect(removeBanner).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
+    const addPhoto = page.getByRole('button', { name: 'Add a photo' });
+    await expect(addPhoto).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+    await addPhoto.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await expect(addPhoto).toBeInViewport();
+    await expect(about).toBeInViewport();
+    await expect(removePortrait).toBeInViewport();
+    await expect(removeBanner).toBeInViewport();
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll('img')].every((img) => img.complete && img.naturalWidth > 0),
+    );
+    await shotScreen(page, 'state-profile-images-editing');
   });
 
   test('profile about-editing', async ({ page }) => {

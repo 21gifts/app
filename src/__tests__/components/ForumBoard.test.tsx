@@ -4494,6 +4494,103 @@ describe('ForumBoard', () => {
     expect(push).toHaveBeenCalledWith('/members/acc_reply');
   });
 
+  it('links author names with accountId to the member profile when readOnly', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const author = screen.getByRole('button', { name: 'View profile' });
+    fireEvent.click(author);
+    expect(push).toHaveBeenCalledWith('/members/acc_other');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    fireEvent.keyDown(author, { key: 'Enter' });
+    fireEvent.keyDown(author, { key: ' ' });
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('does not expand the card when Enter or Space is pressed on a role pill', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other', role: 'verified' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const pill = screen.getByRole('button', { name: 'Verified' });
+    fireEvent.keyDown(pill, { key: 'Enter' });
+    fireEvent.keyDown(pill, { key: ' ' });
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('links reply author names with accountId to the member profile when readOnly', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Carol', accountId: 'acc_reply', replyCount: 0 }]}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_reply');
+  });
+
+  it('keeps author names as plain text when readOnly and there is no accountId', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByText('Ada')).toBeTruthy();
+  });
+
   it('keeps Damus-only names as plain text', () => {
     renderWithLocale(
       <ForumBoard
@@ -6769,6 +6866,7 @@ describe('reply form size', () => {
           replies={[]}
           replyDraft="Hi Bob"
           replyAmountDraft="21"
+          replyPayPreview="Hi Bob"
           payMessageId="m1"
           payHost="card"
           payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
@@ -6780,8 +6878,13 @@ describe('reply form size', () => {
     expect(
       observed.some((node) => node instanceof HTMLElement && node.hasAttribute('data-pay-sheet')),
     ).toBe(true);
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
+    expect(
+      observed.some(
+        (node) => node instanceof HTMLElement && node.hasAttribute('data-reply-pay-page'),
+      ),
+    ).toBe(true);
+    expect(screen.getByText('Hi Bob')).toBeTruthy();
+    expect(screen.queryByLabelText('Your reaction')).toBeNull();
     globalThis.ResizeObserver = previous;
   });
 
@@ -6808,6 +6911,7 @@ describe('reply form size', () => {
                 payHost: 'card' as const,
                 payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
                 payWaiting: true,
+                replyPayPreview: 'Hi Bob',
               }
             : {})}
           {...modeProps('all')}
@@ -6825,6 +6929,32 @@ describe('reply form size', () => {
     expect(port.scrollTop).toBe(48);
     view.rerender(board(true, [{ ...SAMPLE, id: 'r-extra', text: 'Later' }]));
     expect(port.scrollTop).toBe(48);
+  });
+
+  it('keeps the card pay sheet under a note when the reaction pay preview is absent', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        payMessageId="m1"
+        payHost="card"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('[data-pay-sheet]')).toBeTruthy();
+    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
+    expect(screen.getByLabelText('Your reaction')).toBeTruthy();
   });
 });
 
