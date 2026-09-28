@@ -30,7 +30,7 @@ test('wallet page shows Add recovery phrase for an existing member', async ({ pa
   });
   await page.goto('/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
 });
 
 test('Function: WalletPage — /wallet renders the wallet heading', async ({ page }) => {
@@ -205,6 +205,16 @@ test('Function: WalletScreenView — wallet heading is Wallet', async ({ page })
 test('Function: WalletScreen — wallet heading is Wallet', async ({ page }) => {
   await page.goto('/wallet');
   await expect(page).toHaveURL(/\/(wallet|login)/);
+});
+
+test('Function: WalletPhraseScreen — phrase page is not the receive page', async ({ page }) => {
+  await page.goto('/wallet/phrase');
+  await expect(page).toHaveURL(/\/(wallet\/phrase|login)/);
+});
+
+test('Function: WalletPhrasePage — phrase page is not the receive page', async ({ page }) => {
+  await page.goto('/wallet/phrase');
+  await expect(page).toHaveURL(/\/(wallet\/phrase|login)/);
 });
 
 test('Function: resetWalletReturn — wallet heading is Wallet', async ({ page }) => {
