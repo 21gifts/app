@@ -51,6 +51,8 @@ test.beforeEach(async ({ page }) => {
       }),
     });
   });
+});
+
 test('Function: marketingMetadata — homepage has its own search and social title', async ({
   request,
 }) => {
@@ -8631,6 +8633,14 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
   await seedAdaSession(page);
   await page.goto('/profile');
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+});
+
+test('Function: WelcomeTopRight — signed-out welcome offers the log-in link', async ({ page }) => {
+  await page.goto('/welcome');
+  const login = page.getByRole('link', { name: 'Log in' });
+  await expect(login).toBeVisible();
+  await expect(login).toHaveAttribute('href', '/login');
+  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
 });
 
 test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {

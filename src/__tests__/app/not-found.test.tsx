@@ -31,14 +31,15 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('NotFound', () => {
-  it('shows 404 and the one top-left back arrow', async () => {
+  it('shows 404, the one top-left back arrow, and localized wordmarks', async () => {
     renderWithLocale(await NotFound());
     expect(screen.getByRole('heading', { name: '404' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Back home' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    const wordmarks = screen.getAllByRole('link', { name: '21.gifts' });
+    expect(wordmarks.map((link) => link.getAttribute('href'))).toEqual(['/en', '/en']);
     expect(screen.queryByLabelText('Number format')).toBeNull();
   });
 

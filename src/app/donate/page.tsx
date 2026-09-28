@@ -36,7 +36,9 @@ export default async function DonatePage(): Promise<ReactElement> {
       mode="fill"
       align="center"
       topLeft={
-        <ProfileChromeLeft wordmark={<HomeWordmark publicHref={localizedPublicPath(locale, '/')} />} />
+        <ProfileChromeLeft
+          wordmark={<HomeWordmark publicHref={localizedPublicPath(locale, '/')} />}
+        />
       }
       topRight={<LanguageSwitcher tone="light" />}
     >
