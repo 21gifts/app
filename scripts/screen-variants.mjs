@@ -437,6 +437,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'mention-suggest',
+    image: 'welcome-mention-suggest.png',
+    visual: 'state-welcome-mention-suggest',
+    needle: 'state /welcome mention-suggest',
+  },
+  {
+    route: '/welcome',
+    id: 'mention-suggest-reply',
+    image: 'welcome-mention-suggest-reply.png',
+    visual: 'state-welcome-mention-suggest-reply',
+    needle: 'state /welcome mention-suggest-reply',
+  },
+  {
+    route: '/welcome',
+    id: 'mention-suggest-ask',
+    image: 'welcome-mention-suggest-ask.png',
+    visual: 'state-welcome-mention-suggest-ask',
+    needle: 'state /welcome mention-suggest-ask',
+  },
+  {
+    route: '/welcome',
     id: 'laws',
     image: 'welcome-laws.png',
     visual: 'state-welcome-laws',
@@ -3377,6 +3398,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'mention-suggest',
+    image: 'messages-id-mention-suggest.png',
+    visual: 'state-messages-id-mention-suggest',
+    needle: 'state /messages/[id] mention-suggest',
+  },
+  {
+    route: '/messages/[id]',
     id: 'place',
     image: 'messages-id-place.png',
     visual: 'state-messages-id-place',
@@ -3675,6 +3703,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops.png',
     visual: 'screen-shops',
     needle: 'Cafe Luna',
+  },
+  {
+    route: '/shops',
+    id: 'mention-suggest',
+    image: 'shops-mention-suggest.png',
+    visual: 'state-shops-mention-suggest',
+    needle: 'state /shops mention-suggest',
   },
   {
     route: '/shops',

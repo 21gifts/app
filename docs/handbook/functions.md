@@ -3649,6 +3649,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** void.
 - **Used by:** `NotificationsLoader` fire-and-forget after a successful list fetch.
 
+## Function: activeMention
+
+- **Purpose:** Find the `@username` token under a collapsed caret in a forum composer. A mark starts at `@` only when the previous character is not a username character, so an email address is not a mark. The query is the lowercase text between `@` and the caret. A bare `@` is a mark with an empty query.
+- **Inputs:** Composer text and a caret index.
+- **Returns / side effects:** `{ start, end, query }`, or `null` when the caret is outside a mark, the query is longer than 32 characters, or the query is not a username prefix.
+- **Used by:** `MentionTextarea`.
+
+## Function: MentionTextarea
+
+- **Purpose:** Forum text field that lists people as soon as `@` is typed. The first page is prefetched for the signed-in session. More letters narrow the list to usernames that start that way. Choosing a row inserts `@username ` and closes the list. No session, or a disabled field, is a plain textarea.
+- **Inputs:** Controlled value, `onChange`, disabled, wrapper and textarea classes, accessible name, and optional placeholder, max length, rows, and textarea ref.
+- **Returns / side effects:** The textarea. When a token is active and at least one person matches, a `People` listbox. Inserts the chosen handle through `onChange`.
+- **Used by:** The post composer and reply composer in `ForumBoard`, and the ask-for-money text step in `ForumAskWizard`.
+
+## Function: searchMentionAccounts
+
+- **Purpose:** Load username suggestions for an `@` token. Calls same-origin GET `/forum/mentions`, adding `q` only when the prefix is non-empty.
+- **Inputs:** Bearer session and a lowercase prefix (`""` for the first page).
+- **Returns / side effects:** `{ id, username, name }[]`. Throws when the response is not 200 or the body is not that list.
+- **Used by:** `MentionTextarea`.
+
+## Function: proxyForumMentionsGet
+
+- **Purpose:** Same-origin proxy for api GET `/mentions`. App route is GET `/forum/mentions`. Forwards the query string.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/forum/mentions/route.ts`.
+
 ## Function: proxyNotificationsGet
 
 - **Purpose:** Same-origin proxy for api GET `/notifications`. App route is GET `/forum/notifications`.

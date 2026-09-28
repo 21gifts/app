@@ -518,6 +518,24 @@ A post whose author is the member button contains `@ada`, and that mark is the s
 
 ![21.gifts welcome mention](images/welcome-mention.png)
 
+### Variant: mention-suggest
+
+The post composer contains `@` and the People list is open, with `@ada` and `@adam`.
+
+![21.gifts welcome mention suggestions](images/welcome-mention-suggest.png)
+
+### Variant: mention-suggest-reply
+
+A note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts welcome reply mention suggestions](images/welcome-mention-suggest-reply.png)
+
+### Variant: mention-suggest-ask
+
+Ask for money is on the text step, the message contains `@`, and the People list is open.
+
+![21.gifts welcome ask mention suggestions](images/welcome-mention-suggest-ask.png)
+
 ### Variant: laws
 
 First visit: the dismissible living-room laws hint box is visible (two laws plus links to **Living room rules** and **Contact**). Idle screenshots after dismiss omit it.
@@ -1572,6 +1590,12 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** selected, composer (mode selector absent), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
 
 ![21.gifts shops](images/shops.png)
+
+### Variant: mention-suggest
+
+The shop post composer contains `@` and the People list is open, with `@ada`.
+
+![21.gifts shops mention suggestions](images/shops-mention-suggest.png)
 
 ### Variant: sunday
 
@@ -3496,6 +3520,12 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the gift-day rate; no ` · —` when that rate is unusable), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
+
+### Variant: mention-suggest
+
+Signed in. The root note is expanded, the reaction field contains `@`, and the People list is open.
+
+![21.gifts public message mention suggestions](images/messages-id-mention-suggest.png)
 
 ### Variant: place
 

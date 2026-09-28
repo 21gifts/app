@@ -576,6 +576,13 @@
 - **Used by:** `markConversationRead` from `InboxLoader` after a successful thread fetch.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/mentions
+
+- **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. Used so the forum composer can suggest people while `@` is being typed.
+- **Errors:** Upstream 401/400/409, or 502 if the api is unreachable.
+- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, and ask-for-money composers.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /forum/notifications
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/notifications` (posts, replies, payments, moderator appointment, and moderator proposal for the session). App path is `/forum/notifications` so HTML `/notifications` can serve the page.

@@ -592,7 +592,7 @@ describe('ForumBoard', () => {
     expect(button).toBeTruthy();
     expect(button.textContent?.trim()).toBe('');
     expect(screen.getByLabelText('Add a photo or video').textContent?.trim()).toBe('');
-    expect(field.nextElementSibling).toBe(button);
+    expect(field.parentElement?.nextElementSibling).toBe(button);
     const photo = screen.getByLabelText('Add a photo or video');
     const place = screen.getByLabelText('Add a place');
     expect(screen.queryByText('Add a place')).toBeNull();
