@@ -3342,6 +3342,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('alice@21.gifts')).toBeVisible();
     await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Shop sticker' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     await shotScreen(page, 'screen-profile');
   });
 
