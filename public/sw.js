@@ -8,6 +8,15 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+/** Device-local Sunday. A broken clock does not pause notifications. */
+function isDeviceSunday() {
+  try {
+    return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(new Date()) === 'Sun';
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener('push', (event) => {
   let payload = {};
   try {
@@ -15,6 +24,11 @@ self.addEventListener('push', (event) => {
     payload = parsed !== null && typeof parsed === 'object' ? parsed : {};
   } catch {
     payload = {};
+  }
+
+  // Public posts and zaps stay quiet on Sunday. A private message still rings.
+  if (isDeviceSunday() && payload.type !== 'conversation') {
+    return;
   }
 
   const title =
