@@ -10124,7 +10124,9 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    const wallet = page.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    await expect(wallet).toBeVisible();
+    await wallet.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-today-invoice');
   });
 
