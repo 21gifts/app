@@ -607,6 +607,12 @@ On **All**: Ada's own filled credit (`accountId` matches the signed-in account, 
 
 ![21.gifts welcome repay today](images/welcome-repay-today.png)
 
+### Variant: repay-today-error
+
+Same funded credit note as **repay-today**, after **Pay today's repayment** is pressed. The POST failed, and the alert **The author's wallet cannot receive this Bitcoin payment** is visible. There is no invoice QR.
+
+![21.gifts welcome repay today error](images/welcome-repay-today-error.png)
+
 ### Variant: repay-today-invoice
 
 Same note as **repay-today**, after **Pay today's repayment** is pressed. The invoice card is open, with **Pay with Wallet of Satoshi**. The amount form is not shown.
@@ -699,7 +705,7 @@ Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repea
 
 ### Variant: ask-credit-confirm-want-fiat
 
-Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The daily rule and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The button **I want to take this credit.** is the confirmation. There is no checkbox.
+Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The daily rule and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want fiat](images/welcome-ask-credit-confirm-want-fiat.png)
 
@@ -732,6 +738,12 @@ Credit, step **8 of 9**. Heading **Write a message**. The message can be empty; 
 Credit, step **9 of 9**, bitcoin, after the message **Need help with a train ticket**. Heading **Preview**. **One-time** and **Credit** are pressed. The card shows the author, the message, and the goal bar at **0%**: **Ask ₿21'000 · $21.00**, a **Loan** tag, and **To repay per day: ₿700 · $0.70 per day for 30 days.** **Post** is the only submit. It sends `goalRepayable: true` and `goalTermDays: 30` with the ask amount. The counter reads **9 of 9**.
 
 ![21.gifts welcome ask credit preview](images/welcome-ask-credit-preview.png)
+
+### Variant: ask-credit-preview-loan-open
+
+Same preview as **ask-credit-preview**, after the **Loan** tag is pressed. Its explanation is visible (`role="status"`).
+
+![21.gifts welcome ask credit preview loan open](images/welcome-ask-credit-preview-loan-open.png)
 
 ### Variant: ask-credit-preview-daily
 
@@ -861,9 +873,15 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 
 ### Variant: ask-preview
 
-Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), the **Donation** / **Credit** pill under it (**Donation** pressed by default), then a preview card with photo, caption, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading. Only **Credit** is posted as `goalRepayable` true.
+Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), the **Donation** / **Credit** pill under it (**Donation** pressed by default), then a preview card with photo, caption, a **Donation** tag, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading. Only **Credit** is posted as `goalRepayable` true.
 
 ![21.gifts welcome ask preview](images/welcome-ask-preview.png)
+
+### Variant: ask-preview-donation-open
+
+Same preview as **ask-preview**, after the **Donation** tag on the card is pressed. Its explanation is visible (`role="status"`).
+
+![21.gifts welcome ask preview donation open](images/welcome-ask-preview-donation-open.png)
 
 ### Variant: ask-preview-fiat
 

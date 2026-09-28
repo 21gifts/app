@@ -47,14 +47,16 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
     if (ledger === null || !ledger.repayments.some((row) => row.status === 'due')) {
       return;
     }
+    let cancel = false;
     const timer = setInterval(() => {
       void getRepayment(messageId).then((row) => {
-        if (row !== null) {
+        if (!cancel && row !== null) {
           setLedger(row);
         }
       });
     }, 4000);
     return () => {
+      cancel = true;
       clearInterval(timer);
     };
   }, [ledger, messageId]);

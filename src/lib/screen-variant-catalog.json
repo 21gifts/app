@@ -402,6 +402,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:repay-today-error",
+    "label": "/welcome repay-today-error",
+    "visual": "state-welcome-repay-today-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:repay-today-invoice",
     "label": "/welcome repay-today-invoice",
     "visual": "state-welcome-repay-today-invoice",
@@ -525,6 +531,12 @@
     "id": "/welcome:ask-credit-preview",
     "label": "/welcome ask-credit-preview",
     "visual": "state-welcome-ask-credit-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-credit-preview-loan-open",
+    "label": "/welcome ask-credit-preview-loan-open",
+    "visual": "state-welcome-ask-credit-preview-loan-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -663,6 +675,12 @@
     "id": "/welcome:ask-preview",
     "label": "/welcome ask-preview",
     "visual": "state-welcome-ask-preview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:ask-preview-donation-open",
+    "label": "/welcome ask-preview-donation-open",
+    "visual": "state-welcome-ask-preview-donation-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

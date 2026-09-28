@@ -542,6 +542,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'repay-today-error',
+    image: 'welcome-repay-today-error.png',
+    visual: 'state-welcome-repay-today-error',
+    needle: 'state /welcome repay-today-error',
+  },
+  {
+    route: '/welcome',
     id: 'repay-today-invoice',
     image: 'welcome-repay-today-invoice.png',
     visual: 'state-welcome-repay-today-invoice',
@@ -686,6 +693,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-ask-credit-preview.png',
     visual: 'state-welcome-ask-credit-preview',
     needle: 'state /welcome ask-credit-preview',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-credit-preview-loan-open',
+    image: 'welcome-ask-credit-preview-loan-open.png',
+    visual: 'state-welcome-ask-credit-preview-loan-open',
+    needle: 'state /welcome ask-credit-preview-loan-open',
   },
   {
     route: '/welcome',
@@ -847,6 +861,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-ask-preview.png',
     visual: 'state-welcome-ask-preview',
     needle: 'state /welcome ask-preview',
+  },
+  {
+    route: '/welcome',
+    id: 'ask-preview-donation-open',
+    image: 'welcome-ask-preview-donation-open.png',
+    visual: 'state-welcome-ask-preview-donation-open',
+    needle: 'state /welcome ask-preview-donation-open',
   },
   {
     route: '/welcome',

@@ -2942,6 +2942,44 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toContain('not paid back');
   });
 
+  it("disables Pay today's repayment while that note's invoice is open", () => {
+    const funded = {
+      ...SAMPLE,
+      accountId: 'acc-ada',
+      sats: 21000,
+      goalSats: 21000,
+      goalRepayable: true as const,
+    };
+    const board = (invoice: ForumBoardProps['payInvoice']) => (
+      <ForumBoard
+        messages={[funded]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payInvoice={invoice}
+        viewerAccountId="acc-ada"
+        onRepay={() => undefined}
+        {...modeProps('all')}
+      />
+    );
+    const { rerender } = renderWithLocale(
+      board({ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }),
+    );
+    const repayButton = (): HTMLButtonElement =>
+      screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement;
+    expect(repayButton().disabled).toBe(true);
+    rerender(board(null));
+    expect(repayButton().disabled).toBe(false);
+    rerender(board({ messageId: 'm-other', pr: 'lnbc21n1other', amountSats: 21 }));
+    expect(repayButton().disabled).toBe(false);
+  });
+
   it('shows a #Shop pill on a top-level shop note and hides the raw hashtag', () => {
     renderWithLocale(
       <ForumBoard

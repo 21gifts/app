@@ -1329,7 +1329,7 @@ export function ForumBoard({
                     <button
                       type="button"
                       className="text-xs font-medium text-app-fg underline"
-                      disabled={payBusy}
+                      disabled={payBusy || payInvoice?.messageId === message.id}
                       onClick={(event) => {
                         stopCardToggle(event);
                         onRepay(message.id);

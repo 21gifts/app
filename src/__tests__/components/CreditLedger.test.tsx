@@ -146,6 +146,92 @@ describe('CreditLedger', () => {
     vi.useRealTimers();
   });
 
+  it('applies a due refresh and ignores one after the id changes', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      const named = (name: string, username: string) => {
+        const accountId = '55555555-5555-4555-8555-555555555555';
+        return {
+          ...btc,
+          givers: [
+            {
+              accountId,
+              name,
+              username,
+              givenSats: 20,
+              givenAmount: null,
+            },
+          ],
+          repayments: [
+            {
+              dayIndex: 0,
+              dueOn: '2026-09-27',
+              accountId,
+              name,
+              username,
+              amount: null,
+              sats: 10,
+              status: 'due' as const,
+              via: 'lightning',
+            },
+          ],
+        };
+      };
+      ledger(btc);
+      const view = renderWithLocale(<CreditLedger messageId="m1" />);
+      expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);
+      let resolveApplied: (value: Response) => void = () => {};
+      const appliedPending = new Promise<Response>((done) => {
+        resolveApplied = done;
+      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: RequestInfo) => {
+          const url = String(input);
+          if (url.includes('/gifts/stats')) {
+            return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+          }
+          return appliedPending;
+        }),
+      );
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
+      await act(async () => {
+        resolveApplied(new Response(JSON.stringify(named('Nia', 'nia')), { status: 200 }));
+      });
+      expect((await screen.findAllByText('Nia @nia')).length).toBeGreaterThan(0);
+      let resolveStale: (value: Response) => void = () => {};
+      const stalePending = new Promise<Response>((done) => {
+        resolveStale = done;
+      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: RequestInfo) => {
+          const url = String(input);
+          if (url.includes('/gifts/stats')) {
+            return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+          }
+          if (url.includes('/messages/m2/')) {
+            return new Response(JSON.stringify(named('Milo', 'milo')), { status: 200 });
+          }
+          return stalePending;
+        }),
+      );
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
+      view.rerender(<CreditLedger messageId="m2" />);
+      await act(async () => {
+        resolveStale(new Response(JSON.stringify(named('Quinn', 'quinn')), { status: 200 }));
+      });
+      expect((await screen.findAllByText('Milo @milo')).length).toBeGreaterThan(0);
+      expect(screen.queryByText('Quinn @quinn')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('shows an open fiat plan and stays blank when the read fails', async () => {
     ledger({
       ...btc,
