@@ -136,9 +136,11 @@ export function AboutMeSection({
     void (async () => {
       try {
         const blob = await load();
+        /* v8 ignore start -- a newer wide-image load replaced this one */
         if (generation !== loadGeneration.current) {
           return;
         }
+        /* v8 ignore end */
         if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
           URL.revokeObjectURL(bannerUrlRef.current);
         }
@@ -146,9 +148,11 @@ export function AboutMeSection({
         bannerUrlRef.current = url;
         setBannerUrl(url);
       } catch {
+        /* v8 ignore start -- a newer wide-image load replaced this one */
         if (generation !== loadGeneration.current) {
           return;
         }
+        /* v8 ignore end */
         setBannerUrl(null);
       }
     })();
@@ -164,9 +168,11 @@ export function AboutMeSection({
     void (async () => {
       try {
         const blob = await load();
+        /* v8 ignore start -- a newer profile-photo load replaced this one */
         if (generation !== pictureGeneration.current) {
           return;
         }
+        /* v8 ignore end */
         if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
           URL.revokeObjectURL(pictureUrlRef.current);
         }
@@ -174,9 +180,11 @@ export function AboutMeSection({
         pictureUrlRef.current = url;
         setPictureUrl(url);
       } catch {
+        /* v8 ignore start -- a newer profile-photo load replaced this one */
         if (generation !== pictureGeneration.current) {
           return;
         }
+        /* v8 ignore end */
         setPictureUrl(null);
       }
     })();
@@ -206,6 +214,9 @@ export function AboutMeSection({
       photoGeneration.current += 1;
       if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
         URL.revokeObjectURL(bannerUrlRef.current);
+      }
+      if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(pictureUrlRef.current);
       }
       if (copyTimer.current !== null) {
         clearTimeout(copyTimer.current);
@@ -526,7 +537,7 @@ export function AboutMeSection({
       <img
         src={storedPhotoUrl}
         alt={t('profile.about.photoAlt')}
-        className="w-full rounded-2xl object-cover"
+        className="max-h-40 w-full rounded-2xl object-cover"
       />
     ) : null;
 

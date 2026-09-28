@@ -1566,6 +1566,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:images",
+    "label": "/profile images",
+    "visual": "state-profile-images",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:about-editing",
     "label": "/profile about-editing",
     "visual": "state-profile-about-editing",

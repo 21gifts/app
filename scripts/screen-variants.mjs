@@ -1900,6 +1900,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'images',
+    image: 'profile-images.png',
+    visual: 'state-profile-images',
+    needle: 'state-profile-images',
+  },
+  {
+    route: '/profile',
     id: 'about-editing',
     image: 'profile-about-editing.png',
     visual: 'state-profile-about-editing',

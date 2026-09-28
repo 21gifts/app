@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
@@ -28,6 +28,98 @@ import {
 import type { MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
+
+/**
+ * Resting header for the signed-in profile. The round photo and the wide
+ * image are different pictures, and neither is the About me note photo.
+ * A missing picture stays absent, so a profile without them is unchanged.
+ *
+ * @param props - Loaders for the two account slots. A rejection means none.
+ * @returns The header, or `null` when neither picture has loaded.
+ */
+function ProfileImages({
+  loadPicture,
+  loadBanner,
+}: {
+  loadPicture: () => Promise<Blob>;
+  loadBanner: () => Promise<Blob>;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const loadPictureRef = useRef(loadPicture);
+  const loadBannerRef = useRef(loadBanner);
+  loadPictureRef.current = loadPicture;
+  loadBannerRef.current = loadBanner;
+
+  useEffect(() => {
+    let cancelled = false;
+    let pictureObject: string | null = null;
+    let bannerObject: string | null = null;
+    void (async () => {
+      try {
+        const blob = await loadPictureRef.current();
+        if (cancelled || !blob.type.startsWith('image/') || blob.size === 0) {
+          return;
+        }
+        pictureObject = URL.createObjectURL(blob);
+        setPictureUrl(pictureObject);
+      } catch {
+        // No profile photo. The round picture stays absent.
+      }
+    })();
+    void (async () => {
+      try {
+        const blob = await loadBannerRef.current();
+        if (cancelled || !blob.type.startsWith('image/') || blob.size === 0) {
+          return;
+        }
+        bannerObject = URL.createObjectURL(blob);
+        setBannerUrl(bannerObject);
+      } catch {
+        // No wide image. The header stays without a banner.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (pictureObject !== null) {
+        URL.revokeObjectURL(pictureObject);
+      }
+      if (bannerObject !== null) {
+        URL.revokeObjectURL(bannerObject);
+      }
+    };
+  }, []);
+
+  if (pictureUrl === null && bannerUrl === null) {
+    return null;
+  }
+  const overlapped = pictureUrl !== null && bannerUrl !== null;
+  return (
+    <div className={`relative w-full${overlapped ? ' mb-8' : ''}`}>
+      {bannerUrl !== null ? (
+        // eslint-disable-next-line @next/next/no-img-element -- blob URL from the wide image
+        <img
+          src={bannerUrl}
+          alt={t('profile.about.bannerAlt')}
+          className="aspect-[5/2] w-full rounded-2xl object-cover"
+        />
+      ) : null}
+      {pictureUrl !== null ? (
+        // eslint-disable-next-line @next/next/no-img-element -- blob URL from the profile photo
+        <img
+          src={pictureUrl}
+          alt={t('profile.about.portraitAlt')}
+          className={
+            overlapped
+              ? 'absolute bottom-0 left-1/2 h-16 w-16 -translate-x-1/2 translate-y-1/2 rounded-full object-cover ring-4 ring-app-card'
+              : 'mx-auto h-16 w-16 rounded-full object-cover'
+          }
+        />
+      ) : null}
+    </div>
+  );
+}
 
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
@@ -99,6 +191,13 @@ export function ProfileScreen(): ReactElement {
 
   return (
     <Card surface={false}>
+      {session !== null ? (
+        <ProfileImages
+          key={session}
+          loadPicture={() => fetchProfilePhoto(session)}
+          loadBanner={() => fetchWideBanner(session)}
+        />
+      ) : null}
       <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
         {t('profile.title')}
       </h1>

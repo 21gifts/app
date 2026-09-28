@@ -333,6 +333,7 @@ describe('AboutMeSection', () => {
     await waitFor(() => {
       expect(screen.getByAltText('About me photo')).toBeTruthy();
     });
+    expect(screen.getByAltText('About me photo').className).toContain('max-h-40');
   });
 
   it('stays filled when loadPhoto rejects and does not show an image or save error', async () => {
@@ -959,5 +960,402 @@ describe('AboutMeSection', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
     });
+  });
+
+  function openEditor(): void {
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+  }
+
+  it('leaves the editor header empty when the profile pictures fail to load', async () => {
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() => Promise.reject(new Error('none'))}
+        onSavePicture={vi.fn()}
+        loadBanner={() => Promise.reject(new Error('none'))}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+  });
+
+  it('loads the stored profile photo and wide image into the editor', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() => Promise.resolve(blob)}
+        onSavePicture={vi.fn()}
+        loadBanner={() => Promise.resolve(blob)}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    openEditor();
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+  });
+
+  it('drops a picture load that finishes after the editor closes', async () => {
+    const resolvePicture: Array<(blob: Blob) => void> = [];
+    const rejectBanner: Array<(err: Error) => void> = [];
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() =>
+          new Promise((resolve) => {
+            resolvePicture.push(resolve);
+          })
+        }
+        onSavePicture={vi.fn()}
+        loadBanner={() =>
+          new Promise((_resolve, reject) => {
+            rejectBanner.push(reject);
+          })
+        }
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    openEditor();
+    expect(resolvePicture.length).toBe(2);
+    expect(rejectBanner.length).toBe(2);
+    const finishPicture = resolvePicture[0];
+    const failBanner = rejectBanner[0];
+    if (finishPicture === undefined || failBanner === undefined) {
+      throw new Error('loaders did not start');
+    }
+    await act(async () => {
+      finishPicture(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+      failBanner(new Error('late'));
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+  });
+
+  it('revokes loaded profile pictures when the section unmounts', async () => {
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const view = renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() => Promise.resolve(blob)}
+        onSavePicture={vi.fn()}
+        loadBanner={() => Promise.resolve(blob)}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    view.unmount();
+    expect(revoke).toHaveBeenCalled();
+  });
+
+  it('saves a profile photo, replaces a stored one, and reports prepare errors', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const onSavePicture = vi.fn().mockResolvedValue(undefined);
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() => Promise.resolve(blob)}
+        onSavePicture={onSavePicture}
+      />,
+    );
+    openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a profile photo' }));
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [] } });
+    expect(prepareMock).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSavePicture).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'pic' });
+    });
+    prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    });
+    prepareMock.mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    prepareMock.mockRejectedValueOnce(new Error('decode'));
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
+    });
+  });
+
+  it('ignores a stale profile-photo prepare', async () => {
+    let resolveFirst: (value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void = () =>
+      undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'second', previewUrl: 'data:image/jpeg;base64,b' },
+    });
+    const onSavePicture = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSavePicture={onSavePicture} />);
+    openEditor();
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSavePicture).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'second' });
+    });
+    await act(async () => {
+      resolveFirst({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'first', previewUrl: 'data:image/jpeg;base64,a' },
+      });
+    });
+    expect(onSavePicture).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a profile-photo save that loses to a newer pick', async () => {
+    const resolveSave: Array<() => void> = [];
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    const onSavePicture = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave.push(resolve);
+        }),
+    );
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSavePicture={onSavePicture} />);
+    openEditor();
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSavePicture).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    const finishFirst = resolveSave[0];
+    if (finishFirst === undefined) {
+      throw new Error('save did not start');
+    }
+    await act(async () => {
+      finishFirst();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('replaces a stored wide image and ignores a stale prepare', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    let resolveFirst: (value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void = () =>
+      undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    );
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
+    });
+    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadBanner={() => Promise.resolve(blob)}
+        onSaveBanner={onSaveBanner}
+      />,
+    );
+    openEditor();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSaveBanner).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'wide' });
+    });
+    await act(async () => {
+      resolveFirst({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'old', previewUrl: 'data:image/jpeg;base64,old' },
+      });
+    });
+    expect(onSaveBanner).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a stale failure while saving a profile photo or a wide image', async () => {
+    let rejectPicture: (err: Error) => void = () => undefined;
+    let rejectBanner: (err: Error) => void = () => undefined;
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectPicture = reject;
+        }),
+    );
+    const onSavePicture = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSavePicture={onSavePicture} />);
+    openEditor();
+    const picture = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(picture, { target: { files: [jpegFile()] } });
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    fireEvent.change(picture, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSavePicture).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      rejectPicture(new Error('late'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    cleanup();
+    prepareMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectBanner = reject;
+        }),
+    );
+    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
+    openEditor();
+    const banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(banner, { target: { files: [jpegFile()] } });
+    prepareMock.mockResolvedValueOnce({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
+    });
+    fireEvent.change(banner, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSaveBanner).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      rejectBanner(new Error('late'));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('ignores a wide-image prepare that loses to a newer pick', async () => {
+    const resolveSave: Array<() => void> = [];
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
+    });
+    const onSaveBanner = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave.push(resolve);
+        }),
+    );
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
+    openEditor();
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSaveBanner).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    const finishFirst = resolveSave[0];
+    if (finishFirst === undefined) {
+      throw new Error('save did not start');
+    }
+    await act(async () => {
+      finishFirst();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('reports a wide image that is too large, unsupported, or fails to clear', async () => {
+    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
+    openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a wide image' }));
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [] } });
+    expect(prepareMock).not.toHaveBeenCalled();
+    prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    });
+    prepareMock.mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+  });
+
+  it('clears a stored wide image and shows an error when clearing fails', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadBanner={() => Promise.resolve(blob)}
+        onSaveBanner={onSaveBanner}
+      />,
+    );
+    openEditor();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove wide image' }));
+    await waitFor(() => {
+      expect(onSaveBanner).toHaveBeenCalledWith(null);
+    });
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
+    });
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(screen.getByAltText('Wide profile image')).toBeTruthy();
+    });
+    onSaveBanner.mockRejectedValueOnce(new Error('nope'));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove wide image' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
+    });
+  });
+
+  it('does nothing when removing a wide image that has no save handler', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} loadBanner={() => Promise.resolve(blob)} />,
+    );
+    openEditor();
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove wide image' }));
+    expect(screen.getByAltText('Wide profile image')).toBeTruthy();
   });
 });

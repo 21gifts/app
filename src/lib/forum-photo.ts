@@ -135,6 +135,15 @@ async function readFileBytes(file: File): Promise<Uint8Array> {
  */
 export async function prepareForumPhoto(
   file: File,
+): Promise<
+  { ok: true; photo: ForumPhotoPayload } | { ok: false; error: 'unsupported' | 'tooLarge' }
+>;
+export async function prepareForumPhoto(
+  file: File,
+  options: { wide: true },
+): Promise<PrepareForumPhotoResult>;
+export async function prepareForumPhoto(
+  file: File,
   options?: PrepareForumPhotoOptions,
 ): Promise<PrepareForumPhotoResult> {
   if (!isForumPhotoFile(file)) {

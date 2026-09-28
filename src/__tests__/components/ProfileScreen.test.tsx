@@ -1,7 +1,16 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileScreen } from '@/components/ProfileScreen';
-import { fetchAboutMePhoto, fetchAccountActivity, fetchMember, putAboutMe } from '@/lib/api';
+import {
+  fetchAboutMePhoto,
+  fetchAccountActivity,
+  fetchMember,
+  fetchProfilePhoto,
+  fetchWideBanner,
+  putAboutMe,
+  putProfilePhoto,
+  putWideBanner,
+} from '@/lib/api';
 import type { Account, AccountActivity, MemberProfile } from '@/lib/api-types';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -69,6 +78,10 @@ vi.mock('@/lib/api', () => ({
   fetchAboutMePhoto: vi
     .fn()
     .mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' })),
+  fetchProfilePhoto: vi.fn().mockRejectedValue(new Error('none')),
+  fetchWideBanner: vi.fn().mockRejectedValue(new Error('none')),
+  putProfilePhoto: vi.fn(),
+  putWideBanner: vi.fn(),
   fetchMember: vi.fn(),
   fetchComposeTarget: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
@@ -150,6 +163,10 @@ beforeEach(() => {
   vi.mocked(fetchAboutMePhoto).mockResolvedValue(
     new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
   );
+  vi.mocked(fetchProfilePhoto).mockReset();
+  vi.mocked(fetchProfilePhoto).mockRejectedValue(new Error('none'));
+  vi.mocked(fetchWideBanner).mockReset();
+  vi.mocked(fetchWideBanner).mockRejectedValue(new Error('none'));
   vi.mocked(prepareForumPhoto).mockReset();
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
@@ -617,6 +634,167 @@ describe('ProfileScreen', () => {
     useAuthStore.setState({ session: 'tok', account: null });
     renderWithLocale(<ProfileScreen />);
     expect(fetchMember).not.toHaveBeenCalled();
+  });
+
+  it('shows the wide image and the round profile photo as two pictures', async () => {
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([2])], { type: 'image/png' }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    const portrait = await screen.findByAltText('Profile photo');
+    const banner = await screen.findByAltText('Wide profile image');
+    expect(portrait.className).toContain('rounded-full');
+    expect(portrait.className).toContain('absolute');
+    expect(banner.className).toContain('aspect-[5/2]');
+    expect(screen.queryByAltText('About me photo')).toBeNull();
+  });
+
+  it('shows only the round profile photo when the wide image is missing', async () => {
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    const portrait = await screen.findByAltText('Profile photo');
+    expect(portrait.className).toContain('mx-auto');
+    expect(portrait.className).not.toContain('absolute');
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+  });
+
+  it('shows only the wide image when the profile photo is missing', async () => {
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([2])], { type: 'image/png' }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+  });
+
+  it('ignores a profile response that is not an image', async () => {
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'application/json' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(new Blob([], { type: 'image/jpeg' }));
+    renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(fetchProfilePhoto).toHaveBeenCalled();
+      expect(fetchWideBanner).toHaveBeenCalled();
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+    cleanup();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob([], { type: 'image/jpeg' }));
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'application/json' }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(fetchWideBanner).toHaveBeenCalled();
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+  });
+
+  it('leaves the header empty when neither picture loads', async () => {
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('heading', { name: 'Profile' });
+    await waitFor(() => {
+      expect(fetchProfilePhoto).toHaveBeenCalled();
+      expect(fetchWideBanner).toHaveBeenCalled();
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+  });
+
+  it('revokes a loaded picture on unmount and ignores one that arrives later', async () => {
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    let resolvePicture: (blob: Blob) => void = () => undefined;
+    let resolveBanner: (blob: Blob) => void = () => undefined;
+    vi.mocked(fetchProfilePhoto).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePicture = resolve;
+      }),
+    );
+    vi.mocked(fetchWideBanner).mockReturnValue(
+      new Promise((resolve) => {
+        resolveBanner = resolve;
+      }),
+    );
+    const view = renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(fetchProfilePhoto).toHaveBeenCalled();
+    });
+    await act(async () => {
+      resolvePicture(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+      resolveBanner(new Blob([new Uint8Array([2])], { type: 'image/png' }));
+    });
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    view.unmount();
+    expect(revoke).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not keep a picture that resolves after unmount', async () => {
+    let resolvePicture: (blob: Blob) => void = () => undefined;
+    let resolveBanner: (blob: Blob) => void = () => undefined;
+    vi.mocked(fetchProfilePhoto).mockReturnValue(
+      new Promise((resolve) => {
+        resolvePicture = resolve;
+      }),
+    );
+    vi.mocked(fetchWideBanner).mockReturnValue(
+      new Promise((resolve) => {
+        resolveBanner = resolve;
+      }),
+    );
+    const view = renderWithLocale(<ProfileScreen />);
+    view.unmount();
+    await act(async () => {
+      resolvePicture(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+      resolveBanner(new Blob([new Uint8Array([2])], { type: 'image/png' }));
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+  });
+
+  it('saves the profile photo and the wide image from their own controls', async () => {
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'pic',
+        previewUrl: 'data:image/jpeg;base64,pic',
+      },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    vi.mocked(putWideBanner).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const inputs = document.querySelectorAll('input[type="file"]');
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(putProfilePhoto).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'pic',
+      });
+    });
+    fireEvent.change(inputs[2] as HTMLInputElement, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(putWideBanner).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'pic',
+      });
+    });
   });
 
   it('ignores a rejected fetchMember after unmount', async () => {
