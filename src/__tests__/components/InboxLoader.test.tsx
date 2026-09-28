@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/AppShell';
 import { InboxLoader } from '@/components/InboxLoader';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -237,6 +238,86 @@ describe('InboxLoader', () => {
     searchParams.set('c', 'conv-2');
     view.rerender(<InboxLoader />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
+  });
+
+  it('opens a private thread on the newest message after the list was scrolled', async () => {
+    const htmlScrollTo = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo');
+    const htmlScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    const htmlClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+    const scrollTo = vi.fn();
+    class QuietObserver {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    vi.stubGlobal('IntersectionObserver', QuietObserver);
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+      configurable: true,
+      writable: true,
+      value: scrollTo,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 2000;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+      configurable: true,
+      get() {
+        return 400;
+      },
+    });
+    listMock.mockResolvedValue([THREAD, OLDER]);
+    const messages = Array.from({ length: 12 }, (_, index) => ({
+      ...MESSAGE,
+      id: `m${index + 1}`,
+      text: index === 11 ? 'Newest private' : `Older private ${index + 1}`,
+      createdAt: `2026-08-${String(index + 1).padStart(2, '0')}T12:00:00.000Z`,
+    }));
+    threadMock.mockResolvedValue(conversationPage(messages, 'cur_2'));
+    try {
+      const view = renderWithLocale(
+        <AppShell mode="fill">
+          <InboxLoader />
+        </AppShell>,
+      );
+      expect(await screen.findByText('Bob')).toBeTruthy();
+      const scroller = view.container.querySelector('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        throw new Error('expected page scroller');
+      }
+      scroller.scrollTop = 100;
+      searchParams.set('c', 'conv-1');
+      view.rerender(
+        <AppShell mode="fill">
+          <InboxLoader />
+        </AppShell>,
+      );
+      expect(await screen.findByText('Newest private')).toBeTruthy();
+      await waitFor(() => {
+        expect(scroller.scrollTop).toBe(1600);
+      });
+      expect(scrollTo).toHaveBeenCalledWith(0, 2000);
+      expect(threadMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+      if (htmlScrollTo === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollTo', htmlScrollTo);
+      }
+      if (htmlScrollHeight === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollHeight');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', htmlScrollHeight);
+      }
+      if (htmlClientHeight === undefined) {
+        Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'clientHeight', htmlClientHeight);
+      }
+    }
   });
 
   it('opens a thread from ?c= and posts a reply', async () => {
@@ -1959,9 +2040,11 @@ describe('conversation thread pages', () => {
     static instances: FakeIntersectionObserver[] = [];
     callback: IntersectionObserverCallback;
     observed: Element[] = [];
+    root: Element | null = null;
 
-    constructor(cb: IntersectionObserverCallback) {
+    constructor(cb: IntersectionObserverCallback, options?: { root?: Element | null }) {
       this.callback = cb;
+      this.root = options?.root ?? null;
       FakeIntersectionObserver.instances.push(this);
     }
 
@@ -2022,6 +2105,21 @@ describe('conversation thread pages', () => {
       node.getAttribute('data-message-id'),
     );
     expect(ids).toEqual(['m-old', 'm1']);
+  });
+
+  it('observes older pages inside the active page scrollport', async () => {
+    threadMock.mockResolvedValue(conversationPage([MESSAGE], 'cur_2'));
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <InboxLoader />
+      </AppShell>,
+    );
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    });
+    const scroller = container.querySelector('[data-scrollport]');
+    expect(scroller).toBeTruthy();
+    expect(FakeIntersectionObserver.instances[0]?.root).toBe(scroller);
   });
 
   it('recovers nextCursor from a pay poll after the first thread fetch failed', async () => {
