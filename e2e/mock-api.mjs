@@ -356,6 +356,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (method === 'GET' && pathName === '/mentions') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
     const q = (url.searchParams.get('q') ?? '').toLowerCase();
     const all = [
       { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },

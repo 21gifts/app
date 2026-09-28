@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -12,6 +13,9 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { searchMentionAccounts } from '@/lib/mention-search';
 import { activeMention } from '@/lib/mention-caret';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Open the list upward when fewer than this many pixels remain below the field. */
+const MENTION_LIST_ROOM = 220;
 
 /** One username the suggestion list can insert. */
 export interface MentionAccount {
@@ -81,6 +85,7 @@ export function MentionTextarea({
   const [remote, setRemote] = useState<MentionAccount[] | null>(null);
   const [highlight, setHighlight] = useState(0);
   const [closedKey, setClosedKey] = useState<string | null>(null);
+  const [placeAbove, setPlaceAbove] = useState(false);
 
   const mention = collapsed ? activeMention(value, caret) : null;
   const query = mention === null ? null : mention.query;
@@ -147,7 +152,20 @@ export function MentionTextarea({
     setHighlight(0);
   }, [tokenKey]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+    const node = localRef.current;
+    /* v8 ignore next 3 -- the list is open only after the textarea is mounted */
+    if (node === null) {
+      return;
+    }
+    const spaceBelow = window.innerHeight - node.getBoundingClientRect().bottom;
+    setPlaceAbove(spaceBelow < MENTION_LIST_ROOM);
+  }, [open, shown.length, tokenKey]);
+
+  useLayoutEffect(() => {
     const next = pendingCaret.current;
     if (next === null) {
       return;
@@ -188,9 +206,11 @@ export function MentionTextarea({
 
   const insertAt = (token: NonNullable<typeof mention>, account: MentionAccount): void => {
     const next = value.slice(0, token.start) + `@${account.username} ` + value.slice(token.end);
-    pendingCaret.current = token.start + account.username.length + 2;
+    const caretAt = token.start + account.username.length + 2;
+    pendingCaret.current = caretAt;
+    setCaret(caretAt);
+    setClosedKey(`${String(token.start)}:${token.query}`);
     onChange(next);
-    setClosedKey(`${String(token.start)}:${account.username.toLowerCase()}`);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -276,14 +296,16 @@ export function MentionTextarea({
         {...(maxLength === undefined ? {} : { maxLength })}
         {...(rows === undefined ? {} : { rows })}
         disabled={disabled}
-        className={className}
+        className={`block min-w-0 ${className}`}
       />
       {open ? (
         <ul
           id="forum-mention-suggest"
           role="listbox"
           aria-label={t('forum.mentionSuggest')}
-          className="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
+          className={`absolute left-0 right-0 z-50 rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${
+            placeAbove ? 'bottom-full mb-2' : 'top-full mt-2'
+          }`}
         >
           {shown.map((account, index) => (
             <li key={account.id} role="presentation">

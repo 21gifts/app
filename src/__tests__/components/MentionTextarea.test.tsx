@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { useState, type ReactElement } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { searchMentionAccounts } from '@/lib/mention-search';
@@ -90,6 +90,7 @@ describe('MentionTextarea', () => {
     });
     const box = typeInto('@');
     expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    expect(screen.getByRole('listbox', { name: 'People' }).className).toContain('top-full');
     expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
     expect(screen.getByText('Ada Lovelace')).toBeTruthy();
     expect(screen.queryByText('ashton')).toBeNull();
@@ -183,6 +184,86 @@ describe('MentionTextarea', () => {
     await waitFor(() => {
       expect(search).toHaveBeenCalled();
     });
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('opens the list above the field when the composer sits near the bottom', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('@');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = typeInto('@');
+    expect((await screen.findByRole('listbox', { name: 'People' })).className).toContain(
+      'top-full',
+    );
+    vi.spyOn(box, 'getBoundingClientRect').mockReturnValue({
+      bottom: window.innerHeight - 8,
+      top: window.innerHeight - 48,
+      left: 0,
+      right: 200,
+      width: 200,
+      height: 40,
+      x: 0,
+      y: window.innerHeight - 48,
+      toJSON() {
+        return {};
+      },
+    });
+    typeInto('@a');
+    expect((await screen.findByRole('listbox', { name: 'People' })).className).toContain(
+      'bottom-full',
+    );
+  });
+
+  it('closes the list in the same update that inserts a name', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    const watching = { current: false };
+    const openDuringInsert = { current: false };
+    function Field(): ReactElement {
+      const [value, setValue] = useState('@');
+      const root = useRef<HTMLDivElement>(null);
+      useLayoutEffect(() => {
+        if (!watching.current || root.current === null) {
+          return;
+        }
+        if (root.current.querySelector('[role="listbox"]') !== null) {
+          openDuringInsert.current = true;
+        }
+      });
+      return (
+        <div ref={root}>
+          <MentionTextarea
+            value={value}
+            onChange={setValue}
+            ariaLabel="Your message"
+            wrapperClassName="relative"
+            className="w-full"
+          />
+        </div>
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = typeInto('@');
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    watching.current = true;
+    fireEvent.keyDown(box, { key: 'Enter' });
+    expect(openDuringInsert.current).toBe(false);
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('@ada ');
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).selectionStart).toBe(
+      '@ada '.length,
+    );
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 

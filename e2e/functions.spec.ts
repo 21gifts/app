@@ -11339,8 +11339,7 @@ test('Function: proxyForumMentionsGet — GET /forum/mentions without bearer is 
 });
 
 test('Function: activeMention — @ in the composer opens People', async ({ page, request }) => {
-  await signInViaStub(page, request);
-  await page.goto('/welcome');
+  await reachWelcome(page, request);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@');
   await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
@@ -11351,8 +11350,7 @@ test('Function: MentionTextarea — choosing a person inserts the handle', async
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
-  await page.goto('/welcome');
+  await reachWelcome(page, request);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@');
   await page.getByRole('option', { name: '@ada', exact: true }).click();
@@ -11360,10 +11358,9 @@ test('Function: MentionTextarea — choosing a person inserts the handle', async
 });
 
 test('Function: searchMentionAccounts — @as keeps only that prefix', async ({ page, request }) => {
-  await signInViaStub(page, request);
-  await page.goto('/welcome');
+  await reachWelcome(page, request);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@as');
   await expect(page.getByRole('option', { name: '@ashton' })).toBeVisible();
-  await expect(page.getByRole('option', { name: '@ada' })).toHaveCount(0);
+  await expect(page.getByRole('option', { name: '@ada', exact: true })).toHaveCount(0);
 });
