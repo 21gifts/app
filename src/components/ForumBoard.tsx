@@ -734,13 +734,35 @@ export function ForumBoard({
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const shownReplies = replies === null ? -1 : replies.length;
+  const scrollBeforeSheet = useRef<number | null>(null);
+  const sheetWasOpen = useRef(false);
+  useEffect(() => {
+    if (scroller === null) {
+      return;
+    }
+    const remember = (): void => {
+      if (!sheetWasOpen.current) {
+        scrollBeforeSheet.current = scroller.scrollTop;
+      }
+    };
+    remember();
+    scroller.addEventListener('scroll', remember);
+    return () => {
+      scroller.removeEventListener('scroll', remember);
+    };
+  }, [scroller]);
   useLayoutEffect(() => {
     const field = replyComposerRef.current;
     const form = field === null ? null : field.form;
     const sheet = paySheetElement(rootRef.current);
     if (sheet !== null) {
+      if (!sheetWasOpen.current && scroller !== null && scrollBeforeSheet.current !== null) {
+        scroller.scrollTop = scrollBeforeSheet.current;
+      }
+      sheetWasOpen.current = true;
       revealPaySheet(scroller, sheet);
     } else {
+      sheetWasOpen.current = false;
       revealReplyForm(scroller, form);
     }
     if (scroller === null || typeof ResizeObserver === 'undefined') {
@@ -998,7 +1020,7 @@ export function ForumBoard({
       <ul
         aria-label={t('forum.listLabel')}
         aria-busy={refreshing === true}
-        className="flex flex-col gap-4 [overflow-anchor:none]"
+        className="flex flex-col gap-4"
       >
         {displayed.map((message, index) => {
           const photoCount = message.photoCount ?? (message.hasPhoto ? 1 : 0);

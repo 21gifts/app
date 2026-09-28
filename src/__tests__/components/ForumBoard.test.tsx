@@ -6782,6 +6782,48 @@ describe('reply form size', () => {
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
     globalThis.ResizeObserver = previous;
   });
+
+  it('restores the scroll position when the pay sheet opens', () => {
+    const board = (withSheet: boolean, replies: ForumMessage[]) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={replies}
+          replyDraft="Hi Bob"
+          {...(withSheet
+            ? {
+                payMessageId: 'm1' as const,
+                payHost: 'card' as const,
+                payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
+                payWaiting: true,
+              }
+            : {})}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(false, []));
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    port.scrollTop = 48;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board(true, []));
+    expect(port.scrollTop).toBe(48);
+    view.rerender(board(true, [{ ...SAMPLE, id: 'r-extra', text: 'Later' }]));
+    expect(port.scrollTop).toBe(48);
+  });
 });
 
 describe('revealReplyForm', () => {
