@@ -1088,14 +1088,6 @@ export function ForumBoard({
                           stopCardToggle(event);
                           router.push(`/members/${message.accountId}`);
                         }}
-                        onKeyDown={(event) => {
-                          if (event.key !== 'Enter' && event.key !== ' ') {
-                            return;
-                          }
-                          event.preventDefault();
-                          stopCardToggle(event);
-                          router.push(`/members/${message.accountId}`);
-                        }}
                       >
                         {message.name}
                       </button>
@@ -1431,14 +1423,6 @@ export function ForumBoard({
                                     aria-label={t('forum.authorProfile')}
                                     className="text-sm font-medium text-app-fg underline underline-offset-2"
                                     onClick={(event) => {
-                                      stopCardToggle(event);
-                                      router.push(`/members/${reply.accountId}`);
-                                    }}
-                                    onKeyDown={(event) => {
-                                      if (event.key !== 'Enter' && event.key !== ' ') {
-                                        return;
-                                      }
-                                      event.preventDefault();
                                       stopCardToggle(event);
                                       router.push(`/members/${reply.accountId}`);
                                     }}

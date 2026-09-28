@@ -4517,9 +4517,33 @@ describe('ForumBoard', () => {
     fireEvent.click(author);
     expect(push).toHaveBeenCalledWith('/members/acc_other');
     expect(onToggleExpand).not.toHaveBeenCalled();
-    push.mockClear();
     fireEvent.keyDown(author, { key: 'Enter' });
-    expect(push).toHaveBeenCalledWith('/members/acc_other');
+    fireEvent.keyDown(author, { key: ' ' });
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('does not expand the card when Enter or Space is pressed on a role pill', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other', role: 'verified' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    const pill = screen.getByRole('button', { name: 'Verified' });
+    fireEvent.keyDown(pill, { key: 'Enter' });
+    fireEvent.keyDown(pill, { key: ' ' });
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
