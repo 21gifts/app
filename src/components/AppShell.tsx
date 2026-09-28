@@ -99,8 +99,7 @@ export function AppShell({
   );
 
   const showPasskeyRenew = useAuthStore(
-    (state) =>
-      state.account?.walletRequired === false && state.account.passkeyRenewClosed !== true,
+    (state) => state.account?.walletRequired === false && state.account.passkeyRenewClosed !== true,
   );
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const hasRight = topRight !== undefined && topRight !== null;

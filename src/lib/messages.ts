@@ -2379,7 +2379,8 @@ const es = {
     'A continuación tu dispositivo te pedirá confirmar un passkey. Así se renueva el passkey y se crea la frase de recuperación de la wallet. No cambia nada hasta que confirmes.',
   'passkeyRenew.confirm': 'Continuar',
   'passkeyRenew.passkeyTitle': 'Confirmar el passkey',
-  'passkeyRenew.passkeyBody': 'Tu dispositivo muestra ahora la solicitud del passkey. Confírmala allí.',
+  'passkeyRenew.passkeyBody':
+    'Tu dispositivo muestra ahora la solicitud del passkey. Confírmala allí.',
   'passkeyRenew.successTitle': 'Ha funcionado',
   'passkeyRenew.successBody': 'Tu passkey está renovado. Puedes continuar.',
   'passkeyRenew.failedTitle': 'Eso no funcionó',
@@ -3319,7 +3320,8 @@ const fil = {
     'Susunod, hihingi ang device mo ng kumpirmasyon sa passkey. Nire-renew nito ang passkey at nalilikha ang recovery phrase ng wallet. Walang magbabago hanggang kumpirmahin mo.',
   'passkeyRenew.confirm': 'Magpatuloy',
   'passkeyRenew.passkeyTitle': 'Kumpirmahin ang passkey',
-  'passkeyRenew.passkeyBody': 'Ipinapakita na ng device mo ang passkey prompt. Kumpirmahin ito doon.',
+  'passkeyRenew.passkeyBody':
+    'Ipinapakita na ng device mo ang passkey prompt. Kumpirmahin ito doon.',
   'passkeyRenew.successTitle': 'Nagtagumpay ito',
   'passkeyRenew.successBody': 'Na-renew na ang passkey mo. Maaari ka nang magpatuloy.',
   'passkeyRenew.failedTitle': 'Hindi iyon nagtagumpay',
