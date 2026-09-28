@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * Fail if production source adds a second layout scrollport.
- * The only scrolling declaration in globals.css is `overflow: auto` on
- * `[data-scrollport][data-scroll-active]`. Any other auto, scroll, or
- * overlay overflow there is a second scrollport.
+ * globals.css may scroll in two places only: `overflow: auto` on
+ * `[data-scrollport][data-scroll-active]`, and `overflow-x: auto` with
+ * `overflow-y: clip` on `[data-scroll-x]`. Anything else is a second
+ * page scroll.
  * Run from the repo root. No extra packages.
  */
 import fs from 'node:fs';
@@ -53,6 +54,7 @@ function bannedLine(line) {
 
 const SCROLL_TOKEN = new Set(['auto', 'scroll', 'overlay']);
 const ACTIVE_SELECTOR = '[data-scrollport][data-scroll-active]';
+const ROW_SELECTOR = '[data-scroll-x]';
 
 /**
  * @param {string} css
@@ -120,33 +122,74 @@ function scrollingDecls(body) {
 }
 
 /**
- * The one allowed scrolling declaration is `overflow: auto` on exactly
- * `[data-scrollport][data-scroll-active]`. A second value (`clip auto`),
- * another axis, or the same declaration on a grouped selector is a second
- * scrollport.
+ * @param {string} raw
+ * @returns {string[]}
+ */
+function valueTokens(raw) {
+  return raw
+    .replace(/\s*!important\b/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token !== '');
+}
+
+/**
+ * The sideways row must clip vertically. Otherwise `overflow-x: auto` makes
+ * the other axis scroll too.
+ *
+ * @param {string} body
+ * @returns {boolean}
+ */
+function clipsY(body) {
+  const re = /(?:^|[^-\w])overflow-y\s*:\s*([^;]+)/g;
+  const match = re.exec(body);
+  if (match === null) {
+    return false;
+  }
+  const tokens = valueTokens(match[1]);
+  return tokens.length === 1 && tokens[0] === 'clip' && re.exec(body) === null;
+}
+
+/**
+ * Allowed scrolling is the page port plus one sideways row. A second value,
+ * another axis, or a grouped selector is a second page scroll.
  *
  * @param {string} css
  * @returns {string | null}
  */
 function globalsScrollProblem(css) {
+  const rules = leafRules(stripCssComments(css));
   const hits = [];
-  for (const rule of leafRules(stripCssComments(css))) {
+  for (const rule of rules) {
     for (const decl of scrollingDecls(rule.body)) {
       hits.push({ selector: rule.selector, prop: decl.prop, tokens: decl.tokens });
     }
   }
-  const only = hits[0];
+  const page = hits.filter(
+    (hit) =>
+      hit.selector === ACTIVE_SELECTOR &&
+      hit.prop === 'overflow' &&
+      hit.tokens.length === 1 &&
+      hit.tokens[0] === 'auto',
+  );
+  const row = hits.filter(
+    (hit) =>
+      hit.selector === ROW_SELECTOR &&
+      hit.prop === 'overflow-x' &&
+      hit.tokens.length === 1 &&
+      hit.tokens[0] === 'auto',
+  );
+  const rowRule = rules.find((rule) => rule.selector === ROW_SELECTOR);
   if (
-    hits.length === 1 &&
-    only &&
-    only.selector === ACTIVE_SELECTOR &&
-    only.prop === 'overflow' &&
-    only.tokens.length === 1 &&
-    only.tokens[0] === 'auto'
+    hits.length === 2 &&
+    page.length === 1 &&
+    row.length === 1 &&
+    rowRule !== undefined &&
+    clipsY(rowRule.body)
   ) {
     return null;
   }
-  return 'expected exactly one overflow:auto on [data-scrollport][data-scroll-active]';
+  return 'expected overflow:auto on [data-scrollport][data-scroll-active] and overflow-x:auto with overflow-y:clip on [data-scroll-x]';
 }
 
 function selfTest() {
@@ -190,6 +233,7 @@ function selfTest() {
     html, body { overflow: clip !important; }
     [data-scrollport] { overflow: clip !important; }
     [data-scrollport][data-scroll-active] { overflow: auto !important; }
+    [data-scroll-x] { overflow-x: auto !important; overflow-y: clip !important; }
     * { scroll-behavior: auto !important; }
     :root { --overflow: auto; }
     /* overflow: auto must not count inside a comment */
@@ -209,9 +253,13 @@ function selfTest() {
     '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: clip/**/auto }',
     '[data-scrollport][data-scroll-active] { overflow: auto } .x { overflow: scroll!important }',
     '[data-scrollport][data-scroll-active] { overflow: scroll!important }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } .x, [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: auto }',
   ];
   const gluedImportant = `
     [data-scrollport][data-scroll-active] { overflow:auto!important; }
+    [data-scroll-x] { overflow-x:auto!important; overflow-y:clip!important; }
     :root { --overflow: auto; }
   `;
   if (globalsScrollProblem(passSheet) !== null || globalsScrollProblem(gluedImportant) !== null) {

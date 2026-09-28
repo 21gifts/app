@@ -1208,9 +1208,11 @@ export function MemberProfileScreen({
         {t('profile.giftsHeading')}
       </p>
       {address !== null && address.trim() !== '' ? (
-        <p className="min-w-0 truncate font-mono text-sm text-app-fg">{address}</p>
+        <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
       ) : (
-        <p className="min-w-0 truncate text-sm text-app-fg">{t('view.noGiftsAddress')}</p>
+        <p className="min-w-0 truncate text-center text-sm text-app-fg">
+          {t('view.noGiftsAddress')}
+        </p>
       )}
       {showQr && qr !== null ? (
         <div className="flex flex-col items-center gap-3">
@@ -1463,7 +1465,7 @@ export function MemberProfileScreen({
             <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
               {t('location.heading')}
             </p>
-            <p className="min-w-0 truncate text-sm text-app-fg">
+            <p className="min-w-0 truncate text-center text-sm text-app-fg">
               {profile.location !== null && profile.location.trim() !== ''
                 ? profile.location
                 : t('location.unset')}
