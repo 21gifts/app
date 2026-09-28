@@ -1,13 +1,138 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://21.gifts/</loc>
+    <loc>https://21.gifts/en</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/" />
+  </url>
+  <url>
+    <loc>https://21.gifts/de</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/" />
+  </url>
+  <url>
+    <loc>https://21.gifts/es</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/" />
+  </url>
+  <url>
+    <loc>https://21.gifts/fil</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/" />
+  </url>
+  <url>
+    <loc>https://21.gifts/en/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/about" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/about" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/about" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/about" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/about" />
+  </url>
+  <url>
+    <loc>https://21.gifts/de/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/about" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/about" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/about" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/about" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/about" />
+  </url>
+  <url>
+    <loc>https://21.gifts/es/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/about" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/about" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/about" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/about" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/about" />
+  </url>
+  <url>
+    <loc>https://21.gifts/fil/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/about" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/about" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/about" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/about" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/about" />
+  </url>
+  <url>
+    <loc>https://21.gifts/en/donate</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/donate" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/donate" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/donate" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/donate" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/donate" />
+  </url>
+  <url>
+    <loc>https://21.gifts/de/donate</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/donate" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/donate" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/donate" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/donate" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/donate" />
+  </url>
+  <url>
+    <loc>https://21.gifts/es/donate</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/donate" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/donate" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/donate" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/donate" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/donate" />
+  </url>
+  <url>
+    <loc>https://21.gifts/fil/donate</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/donate" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/donate" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/donate" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/donate" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/donate" />
+  </url>
+  <url>
+    <loc>https://21.gifts/en/rules</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/rules" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/rules" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/rules" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/rules" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/rules" />
+  </url>
+  <url>
+    <loc>https://21.gifts/de/rules</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/rules" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/rules" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/rules" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/rules" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/rules" />
+  </url>
+  <url>
+    <loc>https://21.gifts/es/rules</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/rules" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/rules" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/rules" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/rules" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/rules" />
+  </url>
+  <url>
+    <loc>https://21.gifts/fil/rules</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://21.gifts/en/rules" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://21.gifts/de/rules" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://21.gifts/es/rules" />
+    <xhtml:link rel="alternate" hreflang="fil" href="https://21.gifts/fil/rules" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://21.gifts/rules" />
   </url>
   <url>
     <loc>https://21.gifts/legal</loc>
   </url>
   <url>
-    <loc>https://21.gifts/about</loc>
+    <loc>https://21.gifts/stats</loc>
   </url>
   <url>
     <loc>https://21.gifts/handbook</loc>

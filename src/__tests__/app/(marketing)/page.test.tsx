@@ -1,8 +1,9 @@
 import { cleanup, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import Home, { metadata as homeMetadata } from '@/app/(marketing)/page';
+import Home, { generateMetadata } from '@/app/(marketing)/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { getRequestLocale } from '@/lib/request-locale';
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -28,18 +29,34 @@ afterEach(cleanup);
 describe('Home', () => {
   it('renders the product headline', async () => {
     renderWithLocale(await Home());
-    expect(screen.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /Help people.*with Bitcoin/i })).toBeTruthy();
   });
 
-  it('states what the product is', async () => {
+  it('explains the direct gift and shows an honest non-interactive preview', async () => {
     renderWithLocale(await Home());
-    const lead = screen.getByText(/Ask for help or send help, with no organization in the middle/i);
-    expect(lead).toBeTruthy();
-    expect(lead.textContent).toContain('21.gifts');
+    expect(screen.getByText(/Sign in to read their posts and reactions/i)).toBeTruthy();
+    expect(screen.getByText('How it works')).toBeTruthy();
+    expect(screen.getByText('Where the Bitcoin goes')).toBeTruthy();
+    expect(screen.getByText('Your wallet')).toBeTruthy();
+    expect(screen.getByText('Their wallet')).toBeTruthy();
+    expect(screen.getByText('Choose a reaction with the gift icon')).toBeTruthy();
+    expect(document.querySelectorAll('img[src="/bitcoin-symbol.svg"]')).toHaveLength(5);
+    expect(screen.queryByRole('spinbutton')).toBeNull();
+    expect(screen.queryByRole('button', { name: /pay with/i })).toBeNull();
   });
 
-  it('exports a homepage canonical of /', () => {
-    expect(homeMetadata.alternates?.canonical).toBe('/');
+  it('publishes an accurate, localized search preview with one canonical', async () => {
+    expect(await generateMetadata()).toMatchObject({
+      title: 'Help people with Bitcoin | 21.gifts',
+      alternates: { canonical: '/en' },
+      openGraph: { url: '/en', title: 'Help people with Bitcoin | 21.gifts' },
+    });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
+    expect(await generateMetadata()).toMatchObject({
+      title: 'Hilf Menschen mit Bitcoin | 21.gifts',
+      alternates: { canonical: '/de' },
+      openGraph: { title: 'Hilf Menschen mit Bitcoin | 21.gifts' },
+    });
   });
 
   it('does not say the product is coming soon', async () => {
@@ -60,29 +77,36 @@ describe('Home', () => {
 
   it('links Ask for help to login', async () => {
     renderWithLocale(await Home());
-    const link = screen.getByRole('link', { name: 'Ask for help' });
-    expect(link.getAttribute('href')).toBe('/login');
+    const links = screen.getAllByRole('link', { name: 'Ask for help' });
+    expect(links.length).toBeGreaterThanOrEqual(2);
+    for (const link of links) expect(link.getAttribute('href')).toBe('/login');
   });
 
-  it('links Send help to donate', async () => {
+  it('links Give Bitcoin to donate', async () => {
     renderWithLocale(await Home());
-    const link = screen.getByRole('link', { name: 'Send help' });
-    expect(link.getAttribute('href')).toBe('/donate');
+    const link = screen.getByRole('link', { name: 'Give Bitcoin' });
+    expect(link.getAttribute('href')).toBe('/en/donate');
   });
 
   it('renders a donate-to-project heading', async () => {
     renderWithLocale(await Home());
-    expect(screen.getByRole('heading', { name: 'Donate to this project' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Want to support 21.gifts?' })).toBeTruthy();
   });
 
   it('exposes the project Wallet of Satoshi address as a lightning link', async () => {
     renderWithLocale(await Home());
     const link = screen.getByRole('link', { name: '21gifts@walletofsatoshi.com' });
     expect(link.getAttribute('href')).toBe('lightning:21gifts@walletofsatoshi.com');
-    expect(link.className).toContain('text-accent');
-    expect(link.className).toContain('underline-offset-2');
-    const code = link.querySelector('code');
-    expect(code?.textContent).toBe('21gifts@walletofsatoshi.com');
-    expect(code?.className).toContain('font-mono');
+  });
+
+  it('links the discovery cards to the corresponding sections', async () => {
+    renderWithLocale(await Home());
+    expect(screen.getByRole('link', { name: /Happyland · Tondo/ }).getAttribute('href')).toBe(
+      '#happyland',
+    );
+    expect(screen.getByRole('link', { name: /Why Bitcoin/i }).getAttribute('href')).toBe('#why');
+    expect(screen.getByRole('link', { name: /Where does the gift go/i }).getAttribute('href')).toBe(
+      '#faq',
+    );
   });
 });

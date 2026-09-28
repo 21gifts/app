@@ -2,16 +2,21 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { ButtonLink } from '@/components/ui';
 import { getCatalog, type MessageKey } from '@/lib/messages';
+import { marketingMetadata } from '@/lib/marketing-metadata';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
 
-/**
- * Title and description for `/about` (overrides the root layout metadata).
- */
-export const metadata: Metadata = {
-  title: 'About — 21.gifts',
-  description: 'The three convictions 21.gifts stands on.',
-};
+/** Localized search and social preview for `/about`. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale();
+  const messages = getCatalog(locale);
+  return marketingMetadata(
+    '/about',
+    `${messages['about.heading']} | 21.gifts`,
+    messages['about.lead'],
+    locale,
+  );
+}
 
 /**
  * Three convictions the house stands on at `/about`, with Matthew 10:8.

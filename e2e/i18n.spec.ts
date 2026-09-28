@@ -8,14 +8,16 @@ test.describe('Accept-Language de', () => {
 
   test('home heading is German', async ({ page }) => {
     await page.goto('/');
+    await expect(page.getByRole('heading', { name: /Hilf Menschen mit Bitcoin/ })).toBeVisible();
+    await page.getByText('Brauche ich ein Konto, um das Wohnzimmer zu sehen?').click();
     await expect(
-      page.getByRole('heading', { name: /Direkte Geschenke von Mensch zu Mensch/ }),
+      page.getByText('Ja. Für das Wohnzimmer meldest du dich an.', { exact: false }),
     ).toBeVisible();
   });
 
-  test('home Send help is German', async ({ page }) => {
+  test('home giving CTA is German', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Hilfe senden' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Bitcoin verschenken' })).toBeVisible();
   });
 
   test('login button is German', async ({ page }) => {
@@ -45,7 +47,9 @@ test.describe('Accept-Language tl without en', () => {
 
   test('home CTA is Filipino', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Humiling ng tulong' })).toBeVisible();
+    await expect(
+      page.locator('main > section').first().getByRole('link', { name: 'Humiling ng tulong' }),
+    ).toBeVisible();
   });
 
   test('login button is Filipino', async ({ page }) => {
@@ -62,7 +66,7 @@ test.describe('Accept-Language PH default with en first', () => {
 
   test('home stays English when en outranks tl', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
   });
 });
 
@@ -77,7 +81,7 @@ test.describe('language switcher cookie', () => {
     await page.getByLabel('Language').click();
     await page.getByRole('option', { name: 'Español' }).click();
     await expect(
-      page.getByRole('heading', { name: /Regalos directos de persona a persona/ }),
+      page.getByRole('heading', { name: /Ayuda a otras personas con Bitcoin/ }),
     ).toBeVisible();
     const cookies = await context.cookies();
     expect(cookies.some((cookie) => cookie.name === 'locale' && cookie.value === 'es')).toBe(true);
@@ -100,7 +104,7 @@ test.describe('locale cookie overrides Accept-Language', () => {
     ]);
     await page.goto('/');
     await expect(
-      page.getByRole('heading', { name: /Direktang regalo mula sa tao patungo sa tao/ }),
+      page.getByRole('heading', { name: /Tumulong sa kapwa gamit ang Bitcoin/ }),
     ).toBeVisible();
   });
 });

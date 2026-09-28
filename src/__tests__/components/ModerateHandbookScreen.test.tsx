@@ -121,9 +121,9 @@ describe('ModerateHandbookScreen', () => {
       expect(screen.getByText('Daily Bitcoin payments are mandatory')).toBeTruthy();
       expect(screen.getByText('Please keep a record of the daily payments')).toBeTruthy();
       expect(screen.getByText('New members are capped at 1 USD per day.')).toBeTruthy();
-      expect(screen.getByText('Giving is a duty')).toBeTruthy();
-      expect(screen.getByText('Direct, with no middleman')).toBeTruthy();
-      expect(screen.getByText('Bitcoin is the most effective money')).toBeTruthy();
+      expect(screen.getByText('Giving is part of faith')).toBeTruthy();
+      expect(screen.getByText('From one person to another')).toBeTruthy();
+      expect(screen.getByText('Why Bitcoin?')).toBeTruthy();
     },
   );
 

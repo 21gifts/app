@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FundingApplicationDetailScreen } from '@/components/FundingApplicationDetailScreen';
 import type { Account, FundingApplicationDetail, ForumMessage } from '@/lib/api-types';
-import { formatForumTime } from '@/lib/forum-time';
+import { formatForumTime, formatForumTimeFromMs } from '@/lib/forum-time';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -169,12 +169,16 @@ describe('FundingApplicationDetailScreen', () => {
     );
     expect(screen.getAllByText(formatForumTime(POST.createdAt, 'en'))).toHaveLength(1);
     expect(
+      screen.getAllByText(formatForumTimeFromMs(DETAIL.grant.appliedAt, 'en')).length,
+    ).toBeGreaterThan(0);
+    expect(
       screen.getByText('Do their profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe(
       'https://21.gifts/about',
     );
-    expect(screen.queryByText('Giving is a duty')).toBeNull();
+    expect(screen.getByText('Please check whether the posts match principle 1.')).toBeTruthy();
+    expect(screen.getByText('Giving is part of faith')).toBeTruthy();
     expect(screen.getByText('Living-room note.')).toBeTruthy();
     expect(screen.getAllByText(formatForumTime(POST.createdAt, 'en')).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Yes' })).toBeTruthy();

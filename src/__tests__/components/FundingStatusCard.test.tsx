@@ -128,9 +128,9 @@ describe('FundingStatusCard', () => {
         'Daily grants go to people whose living-room posts reflect the three convictions.',
       ),
     ).toBeNull();
-    expect(screen.queryByText('Giving is a duty')).toBeNull();
-    expect(screen.queryByText('Direct, with no middleman')).toBeNull();
-    expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
+    expect(screen.queryByText('Giving is part of faith')).toBeNull();
+    expect(screen.queryByText('From one person to another')).toBeNull();
+    expect(screen.queryByText('Why Bitcoin?')).toBeNull();
     expect(
       screen.queryByText(
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
@@ -179,9 +179,9 @@ describe('FundingStatusCard', () => {
     });
     renderWithLocale(<FundingStatusCard />);
     expect(screen.queryByText('You are not admitted to daily 21.gifts grant payouts.')).toBeNull();
-    expect(screen.queryByText('Giving is a duty')).toBeNull();
-    expect(screen.queryByText('Direct, with no middleman')).toBeNull();
-    expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
+    expect(screen.queryByText('Giving is part of faith')).toBeNull();
+    expect(screen.queryByText('From one person to another')).toBeNull();
+    expect(screen.queryByText('Why Bitcoin?')).toBeNull();
     expect(
       screen.queryByText(
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',

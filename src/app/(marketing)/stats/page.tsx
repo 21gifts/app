@@ -1,5 +1,14 @@
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { StatsLoader } from '@/app/(marketing)/stats/stats-loader';
+import { marketingMetadata } from '@/lib/marketing-metadata';
+
+/** The public totals page has a distinct, self-referencing search preview. */
+export const metadata: Metadata = marketingMetadata(
+  '/stats',
+  'Bitcoin gifts over time | 21.gifts',
+  'See how much Bitcoin people have given through 21.gifts over time.',
+);
 
 /**
  * `/stats` — public gift totals and diagrams.

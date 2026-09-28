@@ -51,6 +51,15 @@ test.beforeEach(async ({ page }) => {
       }),
     });
   });
+test('Function: marketingMetadata — homepage has its own search and social title', async ({
+  request,
+}) => {
+  const response = await request.get('/');
+  expect(response.ok()).toBe(true);
+  const html = await response.text();
+  expect(html).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
+  expect(html).toContain('<meta property="og:title" content="Help people with Bitcoin | 21.gifts"');
+  expect(html).toContain('<link rel="canonical" href="https://21.gifts/en"');
 });
 
 test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', async ({
@@ -3283,13 +3292,13 @@ test('Function: resolveLightningAddress — GET /lightning-address still resolve
 
 test('Function: RootLayout — landing renders', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
 });
 
 test('Function: Home — landing renders the pitch', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Want to support 21.gifts?' })).toBeVisible();
   await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
     'href',
     'lightning:21gifts@walletofsatoshi.com',
@@ -3380,7 +3389,7 @@ test('Function: LegalPage — legal heading is visible', async ({ page }) => {
 
 test('Function: AboutPage — about heading is visible', async ({ page }) => {
   await page.goto('/about');
-  await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What 21.gifts stands for' })).toBeVisible();
 });
 
 test('Function: HandbookPage — handbook heading is visible', async ({ page }) => {
@@ -4640,7 +4649,7 @@ test('Function: LoginPage — login heading is visible', async ({ page }) => {
 
 test('Function: DonatePage — send-help explainer renders', async ({ page }) => {
   await page.goto('/donate');
-  await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Give Bitcoin to someone' })).toBeVisible();
 });
 
 test('Function: LoginCard — a single Log in button is visible', async ({ page }) => {
@@ -6475,27 +6484,27 @@ test('Function: LanguagePreferenceSwitcher — /profile lists English Deutsch Es
 
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: useTranslations — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: translate — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: getCatalog — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: getRequestLocale — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: parseSupportedLocale — Español cookie localizes the landing heading', async ({
@@ -6505,7 +6514,7 @@ test('Function: parseSupportedLocale — Español cookie localizes the landing h
   await page.getByLabel('Language').click();
   await page.getByRole('option', { name: 'Español' }).click();
   await expect(
-    page.getByRole('heading', { name: /Regalos directos de persona a persona/ }),
+    page.getByRole('heading', { name: /Escucha a las personas Ayuda con Bitcoin/ }),
   ).toBeVisible();
 });
 
@@ -6519,9 +6528,7 @@ test.describe('Function: parseAcceptLanguage', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(
-      page.getByRole('heading', { name: /Direkte Geschenke von Mensch zu Mensch/ }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Hilf Menschen mit Bitcoin/ })).toBeVisible();
   });
 });
 
