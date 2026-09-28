@@ -559,6 +559,71 @@ describe('ShopNoteEditControl', () => {
     expect(setMessageShopPhotos).not.toHaveBeenCalled();
   });
 
+  it('reads kept stills before a text save can drop their addresses', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      blob: () =>
+        Promise.resolve({
+          type: 'image/png',
+          arrayBuffer: () => Promise.resolve(Uint8Array.of(4).buffer),
+        }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(setMessageShopText).mockImplementation(async () => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      return { ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' };
+    });
+    vi.mocked(setMessagePlace).mockRejectedValueOnce(new Error('no'));
+    vi.mocked(setMessageShopPhotos).mockResolvedValue({
+      ...shopMessage,
+      hasPhoto: false,
+      photoCount: 0,
+    });
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          hasPhoto: true,
+          photoCount: 1,
+          place: { lat: 1, lng: 2, label: 'Old' },
+        }}
+        existingPhotos={['blob:kept']}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(setMessageShopPhotos).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessageShopPhotos).toHaveBeenCalledTimes(1);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
   it('reads a kept still once when a later photo save fails', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

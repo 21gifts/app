@@ -1468,6 +1468,17 @@ describe('ForumLoader', () => {
       ]),
     );
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        blob: () =>
+          Promise.resolve({
+            type: 'image/jpeg',
+            arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+          }),
+      })),
+    );
     vi.mocked(setMessageShopText).mockResolvedValueOnce({
       ...SAMPLE,
       id: 'shop1',

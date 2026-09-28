@@ -302,15 +302,17 @@ export function ShopNoteEditControl({
         return;
       }
       const stills = [];
-      if (photosChanged) {
-        for (const item of keptPhotos) {
-          const cached = keptStillBytes.current.get(item.url);
-          const encoded = cached ?? (await stillFromUrl(item.url));
-          if (cached === undefined) {
-            keptStillBytes.current.set(item.url, encoded);
-          }
+      for (const item of keptPhotos) {
+        const cached = keptStillBytes.current.get(item.url);
+        const encoded = cached ?? (await stillFromUrl(item.url));
+        if (cached === undefined) {
+          keptStillBytes.current.set(item.url, encoded);
+        }
+        if (photosChanged) {
           stills.push(encoded);
         }
+      }
+      if (photosChanged) {
         for (const photo of photoDrafts) {
           stills.push({
             contentType: photo.contentType,
