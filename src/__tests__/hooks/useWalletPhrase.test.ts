@@ -213,6 +213,54 @@ describe('useWalletPhrase', () => {
     fetchMock.mockRestore();
   });
 
+  it('reports a cancelled PRF prompt and returns to idle', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.cancel')).toEqual([
+      { event: 'client.passkey.cancel', stage: 'seed', name: 'NotAllowedError' },
+    ]);
+    expect(bodies.some((body) => body.event === 'client.passkey.seed.ceremony')).toBe(false);
+    fetchMock.mockRestore();
+  });
+
+  it('reports a failed PRF prompt and keeps the generic seed error', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new TypeError('Boom'));
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(finishPasskeySeed).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('generic');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.seed.ceremony')).toEqual([
+      {
+        event: 'client.passkey.seed.ceremony',
+        stage: 'seed',
+        name: 'TypeError',
+        message: 'Boom',
+      },
+    ]);
+    fetchMock.mockRestore();
+  });
+
   it('maps seed begin 409 to generic and does not finish', async () => {
     vi.mocked(startPasskeySeed).mockRejectedValueOnce(
       new Error('Failed to start passkey seed: 409'),

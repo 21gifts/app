@@ -21,17 +21,19 @@ import { useAuthStore } from '@/stores/auth-store';
 export { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 
 function diagnosticName(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.name;
+  if (typeof error !== 'object' || error === null || !('name' in error)) {
+    return undefined;
   }
-  return undefined;
+  const name = (error as { name: unknown }).name;
+  return typeof name === 'string' ? name : undefined;
 }
 
 function diagnosticMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
+  if (typeof error !== 'object' || error === null || !('message' in error)) {
+    return undefined;
   }
-  return undefined;
+  const message = (error as { message: unknown }).message;
+  return typeof message === 'string' ? message : undefined;
 }
 
 function accountIdFromOptions(options: Record<string, unknown>): string | undefined {
@@ -262,7 +264,22 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         setStatus('idle');
         return;
       }
-      const prfFirst = await obtainPrfFirst(credential);
+      let prfFirst: Uint8Array | null;
+      try {
+        prfFirst = await obtainPrfFirst(credential);
+      } catch (error: unknown) {
+        reportDiagnostic(
+          classifyWebAuthnError(error) === 'cancel'
+            ? { event: 'client.passkey.cancel', stage: 'seed', name: diagnosticName(error) }
+            : {
+                event: 'client.passkey.seed.ceremony',
+                stage: 'seed',
+                name: diagnosticName(error),
+                message: diagnosticMessage(error),
+              },
+        );
+        throw error;
+      }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }

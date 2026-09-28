@@ -70,17 +70,19 @@ function isUserCancel(error: unknown): boolean {
 }
 
 function diagnosticName(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.name;
+  if (typeof error !== 'object' || error === null || !('name' in error)) {
+    return undefined;
   }
-  return undefined;
+  const name = (error as { name: unknown }).name;
+  return typeof name === 'string' ? name : undefined;
 }
 
 function diagnosticMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
+  if (typeof error !== 'object' || error === null || !('message' in error)) {
+    return undefined;
   }
-  return undefined;
+  const message = (error as { message: unknown }).message;
+  return typeof message === 'string' ? message : undefined;
 }
 
 function accountIdFromOptions(options: Record<string, unknown>): string | undefined {
@@ -238,7 +240,22 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       const publicKeyCredential = credential as PublicKeyCredential;
-      const prfFirst = await obtainPrfFirst(publicKeyCredential);
+      let prfFirst: Uint8Array | null;
+      try {
+        prfFirst = await obtainPrfFirst(publicKeyCredential);
+      } catch (error: unknown) {
+        reportDiagnostic(
+          isUserCancel(error)
+            ? { event: 'client.passkey.cancel', stage: 'register', name: diagnosticName(error) }
+            : {
+                event: 'client.passkey.register.ceremony',
+                stage: 'register',
+                name: diagnosticName(error),
+                message: diagnosticMessage(error),
+              },
+        );
+        throw error;
+      }
       guard(runId);
       if (prfFirst === null) {
         reportDiagnostic({

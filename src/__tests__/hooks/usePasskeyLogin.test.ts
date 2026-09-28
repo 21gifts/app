@@ -113,6 +113,67 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('reports a cancelled PRF prompt and does not finish registration', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('idle');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.cancel')).toEqual([
+      { event: 'client.passkey.cancel', stage: 'register', name: 'NotAllowedError' },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('reports a failed PRF prompt and shows the registration error', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new TypeError('Boom'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'TypeError',
+        message: 'Boom',
+      },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
   it('registers a passkey and stores the session', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
