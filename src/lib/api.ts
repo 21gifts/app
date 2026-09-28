@@ -472,6 +472,14 @@ export async function fetchWideBanner(sessionToken: string): Promise<Blob> {
   }
 }
 
+/**
+ * Fetches the signed-in account's About me photo bytes.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The photo as a Blob.
+ * @throws Error `'Could not load. Please try again.'` on a non-ok response,
+ * an empty blob, or a network failure.
+ */
 export async function fetchAboutMePhoto(sessionToken: string): Promise<Blob> {
   try {
     const response = await fetch('/me/about/photo', {

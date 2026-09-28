@@ -219,6 +219,8 @@ export function AboutMeSection({
     return () => {
       copyMounted.current = false;
       photoGeneration.current += 1;
+      pictureGeneration.current += 1;
+      bannerGeneration.current += 1;
       if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
         URL.revokeObjectURL(bannerUrlRef.current);
       }
@@ -417,6 +419,7 @@ export function AboutMeSection({
     if (file === undefined || onSavePicture === undefined) {
       return;
     }
+    pictureGeneration.current += 1;
     const generation = photoGeneration.current + 1;
     photoGeneration.current = generation;
     setPreparingPhoto(true);
@@ -463,6 +466,7 @@ export function AboutMeSection({
     if (file === undefined || onSaveBanner === undefined) {
       return;
     }
+    bannerGeneration.current += 1;
     const generation = photoGeneration.current + 1;
     photoGeneration.current = generation;
     setPreparingPhoto(true);
@@ -509,6 +513,7 @@ export function AboutMeSection({
     if (onSavePicture === undefined) {
       return;
     }
+    pictureGeneration.current += 1;
     setPreparingPhoto(true);
     void (async () => {
       try {
@@ -531,6 +536,7 @@ export function AboutMeSection({
     if (onSaveBanner === undefined) {
       return;
     }
+    bannerGeneration.current += 1;
     setPreparingPhoto(true);
     void (async () => {
       try {

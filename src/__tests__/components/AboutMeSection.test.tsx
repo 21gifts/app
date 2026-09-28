@@ -933,6 +933,8 @@ describe('AboutMeSection', () => {
       expect(onSaveBanner).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'wide' });
     });
     expect(screen.getByAltText('Wide profile image')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove wide image' })).toBeTruthy();
+    expect(screen.queryByText('Remove wide image')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove wide image' }));
     await waitFor(() => {
       expect(onSaveBanner).toHaveBeenCalledWith(null);
@@ -1125,6 +1127,8 @@ describe('AboutMeSection', () => {
       />,
     );
     openEditor();
+    expect(screen.getByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a profile photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a profile photo' }));
     expect(await screen.findByAltText('Profile photo')).toBeTruthy();
     const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
@@ -1339,6 +1343,8 @@ describe('AboutMeSection', () => {
     const onSaveBanner = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
     openEditor();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.queryByText('Add a wide image')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a wide image' }));
     const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [] } });
@@ -1389,6 +1395,43 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('keeps a saved profile photo when an older load finishes later', async () => {
+    let resolveLoad: (blob: Blob) => void = () => undefined;
+    const loadPicture = vi.fn(
+      () =>
+        new Promise<Blob>((resolve) => {
+          resolveLoad = resolve;
+        }),
+    );
+    const onSavePicture = vi.fn().mockResolvedValue(undefined);
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={loadPicture}
+        onSavePicture={onSavePicture}
+      />,
+    );
+    openEditor();
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
+      expect(onSavePicture).toHaveBeenCalled();
+    });
+    const photo = screen.getByAltText('Profile photo');
+    expect(photo.getAttribute('src')).toBe('data:image/jpeg;base64,pic');
+    await act(async () => {
+      resolveLoad(new Blob([new Uint8Array([9])], { type: 'image/jpeg' }));
+    });
+    expect(screen.getByAltText('Profile photo').getAttribute('src')).toBe(
+      'data:image/jpeg;base64,pic',
+    );
+  });
+
   it('removes a stored profile photo and reports a failed clear', async () => {
     const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
     const onSavePicture = vi.fn().mockResolvedValue(undefined);
@@ -1402,6 +1445,8 @@ describe('AboutMeSection', () => {
     );
     openEditor();
     expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove profile photo' })).toBeTruthy();
+    expect(screen.queryByText('Remove profile photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Remove profile photo' }));
     await waitFor(() => {
       expect(onSavePicture).toHaveBeenCalledWith(null);
