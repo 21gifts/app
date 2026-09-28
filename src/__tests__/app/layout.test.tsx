@@ -14,6 +14,7 @@ import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
+import { PushOpenListener } from '@/components/PushOpenListener';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
@@ -236,13 +237,14 @@ describe('RootLayout', () => {
     const themeChildren = themeProvider.props.children as ReactNode[];
     expect(Array.isArray(themeChildren)).toBe(true);
     expect((themeChildren[0] as ReactElement).type).toBe(AccountPreferenceSync);
-    const suspense = themeChildren[1] as ReactElement<{
+    expect((themeChildren[1] as ReactElement).type).toBe(PushOpenListener);
+    const suspense = themeChildren[2] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    expect(themeChildren[2]).toBe('content');
+    expect(themeChildren[3]).toBe('content');
   });
 });

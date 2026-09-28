@@ -8,6 +8,7 @@ import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
+import { PushOpenListener } from '@/components/PushOpenListener';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
@@ -155,6 +156,7 @@ export default async function RootLayout({
             <FiatPreferenceProvider initial={fiat}>
               <ThemeProvider>
                 <AccountPreferenceSync />
+                <PushOpenListener />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />
                 </Suspense>

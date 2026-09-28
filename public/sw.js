@@ -83,28 +83,53 @@ self.addEventListener('push', (event) => {
   event.waitUntil(Promise.all(tasks));
 });
 
+/** Same-origin href and in-app path from a notification `data.url`. */
+function pushOpenTarget(raw) {
+  const welcomePath = '/welcome';
+  const welcomeHref = new URL(welcomePath, self.location.origin).href;
+  if (raw === '') {
+    return { href: welcomeHref, path: welcomePath };
+  }
+  try {
+    const target = new URL(raw, self.location.origin);
+    if (target.origin !== self.location.origin) {
+      return { href: welcomeHref, path: welcomePath };
+    }
+    return {
+      href: target.href,
+      path: `${target.pathname}${target.search}${target.hash}`,
+    };
+  } catch {
+    return { href: welcomeHref, path: welcomePath };
+  }
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const raw =
     event.notification.data && typeof event.notification.data.url === 'string'
       ? event.notification.data.url
       : '/welcome';
-  const targetUrl = raw === '' ? '/welcome' : raw;
+  const { href, path } = pushOpenTarget(raw);
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         try {
           const clientUrl = new URL(client.url);
-          const target = new URL(targetUrl, self.location.origin);
-          if (clientUrl.origin === target.origin && 'focus' in client) {
-            if (clientUrl.href !== target.href && 'navigate' in client) {
-              return client.navigate(target.href).then((navigated) => {
-                if (navigated) {
-                  return navigated.focus();
-                }
-                return client.focus();
-              });
+          if (clientUrl.origin === self.location.origin && 'focus' in client) {
+            client.postMessage({ type: '21gifts-push-open', url: path });
+            // Safari has no WindowClient.navigate, so an already open page stays put unless it receives the path.
+            if (clientUrl.href !== href && typeof client.navigate === 'function') {
+              return client
+                .navigate(href)
+                .then((navigated) => {
+                  if (navigated && 'focus' in navigated) {
+                    return navigated.focus();
+                  }
+                  return client.focus();
+                })
+                .catch(() => client.focus());
             }
             return client.focus();
           }
@@ -112,17 +137,8 @@ self.addEventListener('notificationclick', (event) => {
           // ignore malformed client urls
         }
       }
-      let openUrl = '/welcome';
-      try {
-        const target = new URL(targetUrl, self.location.origin);
-        if (target.origin === self.location.origin) {
-          openUrl = target.href;
-        }
-      } catch {
-        openUrl = '/welcome';
-      }
       if (self.clients.openWindow) {
-        return self.clients.openWindow(openUrl);
+        return self.clients.openWindow(href);
       }
       return undefined;
     }),

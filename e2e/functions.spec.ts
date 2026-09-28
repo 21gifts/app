@@ -8952,10 +8952,24 @@ test('Function: push service worker — GET /sw.js is the push worker', async ({
   expect(body).toContain('navigator.setAppBadge');
   expect(body).toContain('showNotification');
   expect(body).toContain('isDeviceSunday');
+  expect(body).toContain('21gifts-push-open');
   expect(body.indexOf("payload.type !== 'conversation'")).toBeGreaterThan(-1);
   expect(body.indexOf("payload.type !== 'conversation'")).toBeLessThan(
     body.indexOf('showNotification'),
   );
+});
+
+test('Function: PushOpenListener — welcome heading is visible', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
 });
 
 test('Function: fetchVapidPublicKey — GET /push/vapid-public with bearer is 200', async ({

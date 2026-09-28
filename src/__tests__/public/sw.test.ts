@@ -14,3 +14,16 @@ describe('service worker Sunday push', () => {
     expect(show).toBeGreaterThan(guard);
   });
 });
+
+describe('service worker notification click', () => {
+  it('posts 21gifts-push-open before navigate', () => {
+    expect(source).toContain('21gifts-push-open');
+    expect(source).toContain('postMessage');
+    const click = source.indexOf("addEventListener('notificationclick'");
+    expect(click).toBeGreaterThan(-1);
+    const post = source.indexOf('postMessage', click);
+    const nav = source.indexOf('navigate', click);
+    expect(post).toBeGreaterThan(click);
+    expect(nav).toBeGreaterThan(post);
+  });
+});
