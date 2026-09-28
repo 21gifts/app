@@ -147,6 +147,35 @@ describe('recordCurrentView', () => {
     expect(stored()?.stack).toEqual(['/shops', '/notifications']);
   });
 
+  it('keeps the oldest view when a full stack replace arrives after a provisional push', () => {
+    for (let index = 0; index < 50; index += 1) {
+      pushView(`/p${index}`);
+    }
+    expect(stored()?.stack[0]).toBe('/p0');
+    recordCurrentView('/extra', false);
+    expect(stored()?.stack).toHaveLength(51);
+    expect(stored()?.stack[0]).toBe('/p0');
+    window.history.replaceState(window.history.state, '', '/extra');
+    recordCurrentView('/extra');
+    expect(stored()?.stack).toHaveLength(50);
+    expect(stored()?.stack[0]).toBe('/p0');
+    expect(stored()?.stack[49]).toBe('/extra');
+    expect(stored()?.base).toBeUndefined();
+  });
+
+  it('drops the oldest view when a full stack push is committed', () => {
+    for (let index = 0; index < 50; index += 1) {
+      pushView(`/p${index}`);
+    }
+    recordCurrentView('/extra', false);
+    window.history.pushState(null, '', '/extra');
+    recordCurrentView('/extra');
+    expect(stored()?.stack).toHaveLength(50);
+    expect(stored()?.stack[0]).toBe('/p1');
+    expect(stored()?.stack[49]).toBe('/extra');
+    expect(stored()?.base).toBe(1);
+  });
+
   it('collapses a provisional push when the router then replaces', () => {
     pushView('/shops');
     recordCurrentView('/login', false);

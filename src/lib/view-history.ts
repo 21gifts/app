@@ -415,6 +415,11 @@ export function recordCurrentView(path: string, stampHistory = true): void {
       slot.cursor -= 1;
       kept[slot.cursor] = path;
       slot.stack = kept;
+    } else if (stampHistory && slot.stack.length > CAP) {
+      const dropped = slot.stack.length - CAP;
+      slot.stack = slot.stack.slice(dropped);
+      slot.cursor -= dropped;
+      slot.base += dropped;
     }
     if (stamped !== slot.cursor + slot.base) {
       stampCommitted(stampHistory, slot.cursor + slot.base);
@@ -432,7 +437,7 @@ export function recordCurrentView(path: string, stampHistory = true): void {
   } else {
     const next = slot.stack.slice(0, slot.cursor + 1);
     next.push(path);
-    if (next.length > CAP) {
+    if (stampHistory && next.length > CAP) {
       next.shift();
       slot.base += 1;
     }
