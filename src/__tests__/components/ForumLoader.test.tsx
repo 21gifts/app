@@ -9409,7 +9409,7 @@ describe('forum feed pages', () => {
   });
 
   it('pays today repayment and opens requirements when the author is missing one', async () => {
-    repayMock.mockResolvedValueOnce({ pr: 'lnbc21n1repay', amountSats: 21 });
+    repayMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     fetchMock.mockResolvedValue(
       forumPage([
         {
@@ -9428,11 +9428,7 @@ describe('forum feed pages', () => {
     await waitFor(() => {
       expect(repayMock).toHaveBeenCalledWith('sess', 'm1');
     });
-    repayMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    await waitFor(() => {
-      expect(screen.getByText(/rules/i)).toBeTruthy();
-    });
+    expect(await screen.findByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
     vi.mocked(agreeToRules).mockResolvedValue({
       ...account,
       rulesAgreedAt: 2,
@@ -9443,6 +9439,7 @@ describe('forum feed pages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
     await waitFor(() => {
       expect(repayMock).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: "Pay today's repayment" })).toBeDisabled();
     });
   });
 
