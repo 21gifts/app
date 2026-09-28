@@ -14666,6 +14666,7 @@ test.describe('moderate screens', () => {
               accountId: 'acc_ada',
               name: 'Ada',
               days: ['blocked', 'missed', 'paid', 'blocked', 'blocked', 'blocked', 'blocked'],
+              welcome: [true, false, true, false, false, false, false],
             },
           ],
         }),
