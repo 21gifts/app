@@ -56,10 +56,10 @@ test('Function: middleware — an old map link opens the shops map', async ({ pa
   await page.goto('/map');
   await expect(page).toHaveURL(/\/shops#map$/);
   await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'Map', selected: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
   await page.goto('/map?pin=m-pin');
   await expect(page).toHaveURL(/\/shops\?pin=m-pin#map$/);
-  await expect(page.getByRole('tab', { name: 'Map', selected: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
 });
 
 test('Function: fetchPlaces — the map lists a pin', async ({ page }) => {

@@ -29,22 +29,22 @@ describe('ShopsScreen', () => {
         'Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.',
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Post', selected: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
     expect(screen.getByTestId('forum-loader').getAttribute('data-feed')).toBe('shops');
   });
 
   it('switches to the map and the table', () => {
     renderWithLocale(<ShopsScreen />);
     window.history.replaceState({ idx: 1 }, '', window.location.pathname);
-    fireEvent.click(screen.getByRole('tab', { name: 'Map' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Map' }));
     expect(screen.getByTestId('places-map-screen')).toBeTruthy();
     expect(window.history.state).toEqual({ idx: 1 });
     expect(screen.queryByTestId('forum-loader')).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Table' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Table' }));
     expect(screen.getByTestId('shop-table')).toBeTruthy();
     expect(screen.queryByTestId('places-map-screen')).toBeNull();
     expect(window.location.hash).toBe('#table');
-    fireEvent.click(screen.getByRole('tab', { name: 'Post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(window.location.hash).toBe('');
   });
 
@@ -52,13 +52,13 @@ describe('ShopsScreen', () => {
     window.location.hash = '#map';
     renderWithLocale(<ShopsScreen />);
     expect(await screen.findByTestId('places-map-screen')).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Map', selected: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
     act(() => {
       window.history.replaceState(null, '', `${window.location.pathname}#nope`);
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     expect(window.location.hash).toBe('#nope');
-    expect(screen.getByRole('tab', { name: 'Post', selected: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
     expect(screen.getByTestId('forum-loader')).toBeTruthy();
   });
 
@@ -66,7 +66,7 @@ describe('ShopsScreen', () => {
     window.location.hash = '#TABLE';
     renderWithLocale(<ShopsScreen />);
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Table', selected: true })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Table', pressed: true })).toBeTruthy();
     });
     expect(screen.getByTestId('shop-table')).toBeTruthy();
   });

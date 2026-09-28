@@ -12211,7 +12211,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Map' }).click();
+    await page.getByRole('button', { name: 'Map' }).click();
     await expect(page.getByText('Happyland')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
@@ -12247,7 +12247,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Map' }).click();
+    await page.getByRole('button', { name: 'Map' }).click();
     await expect(page.getByText('Happyland')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
@@ -12279,7 +12279,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
     await expect(page.getByRole('link', { name: '@luna' })).toBeVisible();
     await shotScreen(page, 'state-shops-table');
@@ -12308,7 +12308,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
     await shotScreen(page, 'state-shops-table-more');
   });
@@ -12331,7 +12331,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Table' }).click();
     await page.getByRole('button', { name: 'Show more' }).click();
     await expect(page.getByText('Other stall')).toBeVisible();
     await expect(page.getByText('Cafe Luna')).toBeVisible();
@@ -12358,7 +12358,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Table' }).click();
     await page.getByRole('button', { name: 'Show more' }).click();
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
@@ -12377,7 +12377,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
     await expect(page.getByText('No shops yet — add the first one.')).toHaveCount(0);
     await shotScreen(page, 'state-shops-table-more-empty');
@@ -12393,7 +12393,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveCount(0);
     await shotScreen(page, 'state-shops-table-empty');
@@ -12410,8 +12410,8 @@ test.describe('shops screens', () => {
       await route.abort();
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
-    await expect(page.getByRole('tab', { name: 'Table', selected: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Table', pressed: true })).toBeVisible();
     await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-shops-table-loading');
     release();
@@ -12427,7 +12427,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveCount(0);
     await shotScreen(page, 'state-shops-table-error');
@@ -12450,7 +12450,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Map' }).click();
+    await page.getByRole('button', { name: 'Map' }).click();
     await expect(page.getByText('No places yet.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-map-empty');
@@ -12474,7 +12474,7 @@ test.describe('shops screens', () => {
       await route.abort();
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Map' }).click();
+    await page.getByRole('button', { name: 'Map' }).click();
     await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-map-loading');
@@ -12498,7 +12498,7 @@ test.describe('shops screens', () => {
       });
     });
     await page.goto('/shops');
-    await page.getByRole('tab', { name: 'Map' }).click();
+    await page.getByRole('button', { name: 'Map' }).click();
     await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-map-error');

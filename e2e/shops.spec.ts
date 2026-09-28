@@ -86,10 +86,10 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
   });
   await page.goto('/shops');
   await expect(page.getByLabel('Your message')).toBeVisible();
-  await page.getByRole('tab', { name: 'Map' }).click();
+  await page.getByRole('button', { name: 'Map' }).click();
   await expect(page.getByText('No places yet.')).toBeVisible();
   await expect(page.getByLabel('Your message')).toHaveCount(0);
-  await page.getByRole('tab', { name: 'Table' }).click();
+  await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
   await expect(page.getByText('Cafe Luna')).toBeVisible();
 });
@@ -104,7 +104,7 @@ test('Function: ShopTable — name, place, and operator', async ({ page }) => {
     },
   ]);
   await page.goto('/shops');
-  await page.getByRole('tab', { name: 'Table' }).click();
+  await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('link', { name: 'Happyland' })).toHaveAttribute(
     'href',
     '/map?pin=m-shop',
