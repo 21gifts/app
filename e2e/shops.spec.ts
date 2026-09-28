@@ -75,6 +75,46 @@ async function seedShopList(page: import('@playwright/test').Page): Promise<void
   await fulfillForumMessages(page, [SHOP_NOTE, LIVING_ROOM_NOTE]);
 }
 
+test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
+  await seedShopList(page);
+  await page.route('**/forum/messages/places', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ places: [] }),
+    });
+  });
+  await page.goto('/shops');
+  await expect(page.getByLabel('Your message')).toBeVisible();
+  await page.getByRole('button', { name: 'Map' }).click();
+  await expect(page.getByText('No places yet.')).toBeVisible();
+  await expect(page.getByLabel('Your message')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Table' }).click();
+  await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+  await expect(page.getByText('Cafe Luna')).toBeVisible();
+});
+
+test('Function: ShopTable — name, place, and operator', async ({ page }) => {
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, [
+    {
+      ...SHOP_NOTE,
+      place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+      shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    },
+  ]);
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Table' }).click();
+  await expect(page.getByRole('link', { name: 'Happyland' })).toHaveAttribute(
+    'href',
+    '/map?pin=m-shop',
+  );
+  await expect(page.getByRole('link', { name: '@luna' })).toHaveAttribute(
+    'href',
+    '/members/acc-luna',
+  );
+});
+
 test('Function: ShopsPage — heading is visible', async ({ page }) => {
   await seedShopList(page);
   await page.goto('/shops');
@@ -226,7 +266,11 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   });
   await page.goto('/shops');
   await page.getByLabel('Your message').fill('Cafe Luna');
-  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await page
+    .getByLabel('Your message')
+    .locator('xpath=ancestor::form')
+    .getByRole('button', { name: 'Post', exact: true })
+    .click();
   const invoiceReq = await invoiced;
   const parsed = invoiceReq.postDataJSON() as { text?: string };
   expect(typeof parsed.text === 'string' ? parsed.text : '').toContain('#21GiftsShop');

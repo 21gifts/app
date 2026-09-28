@@ -12351,6 +12351,463 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-sunday');
   });
 
+  test('shops map', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.getByText('Happyland')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map');
+  });
+
+  test('shops map with key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.getByText('Happyland')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await shotScreen(page, 'state-shops-map-with-key');
+  });
+
+  async function fulfillShopsMapPlaces(page: Page, label: string | null): Promise<void> {
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-pin',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label,
+            },
+          ],
+        }),
+      });
+    });
+  }
+
+  test('shops map pin', async ({ page }) => {
+    await seedAda(page);
+    await fulfillShopsMapPlaces(page, 'Happyland');
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
+      timeout: 20000,
+    });
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-pin');
+  });
+
+  test('shops map pin with key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillShopsMapPlaces(page, 'Happyland');
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
+      timeout: 20000,
+    });
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await shotScreen(page, 'state-shops-map-pin-with-key');
+  });
+
+  test('shops map coords', async ({ page }) => {
+    await seedAda(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops#map');
+    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords');
+  });
+
+  test('shops map coords pin', async ({ page }) => {
+    await seedAda(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords-pin');
+  });
+
+  test('shops map coords with key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.goto('/shops#map');
+    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords-with-key');
+  });
+
+  test('shops map coords pin with key', async ({ page }) => {
+    await seedAda(page);
+    await installBaselineMap(page);
+    await fulfillShopsMapPlaces(page, null);
+    await page.goto('/shops?pin=m-pin#map');
+    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
+      timeout: 20000,
+    });
+    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
+    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-coords-pin-with-key');
+  });
+
+  test('shops table', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('link', { name: '@luna' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table');
+  });
+
+  const shopTableRow = {
+    id: 'm-shop',
+    name: 'Ada',
+    text: 'Cafe Luna\n\n#21GiftsShop',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 5,
+    payable: true,
+    hasPhoto: false,
+    role: 'basis',
+    place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+  };
+
+  test('shops table more', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [shopTableRow], nextCursor: 'c2' }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table-more');
+  });
+
+  test('shops table next', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const cursor = new URL(route.request().url()).searchParams.get('cursor');
+      const message =
+        cursor === 'c2'
+          ? { ...shopTableRow, id: 'm-stall', text: 'Other stall\n\n#21GiftsShop' }
+          : shopTableRow;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [message],
+          ...(cursor === 'c2' ? {} : { nextCursor: 'c2' }),
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(page.getByText('Other stall')).toBeVisible();
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-next');
+  });
+
+  test('shops table more error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const cursor = new URL(route.request().url()).searchParams.get('cursor');
+      if (cursor === 'c2') {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: '{"error":"Unavailable"}',
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [shopTableRow], nextCursor: 'c2' }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table-more-error');
+  });
+
+  test('shops table more empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [], nextCursor: 'c2' }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await expect(page.getByText('No shops yet — add the first one.')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-more-empty');
+  });
+
+  test('shops table empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-empty');
+  });
+
+  test('shops table loading', async ({ page }) => {
+    await seedAda(page);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Table', pressed: true })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-shops-table-loading');
+    release();
+  });
+
+  test('shops table error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Unavailable"}',
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-table-error');
+  });
+
+  test('shops map empty', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ places: [] }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.getByText('No places yet.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-empty');
+  });
+
+  test('shops map loading', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-loading');
+    release();
+  });
+
+  test('shops map error', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: '{"error":"Unavailable"}',
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-map-error');
+  });
+
   test('shops empty', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
@@ -13130,209 +13587,6 @@ test.describe('shops screens', () => {
     await expect(save).toBeVisible();
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account-error');
-  });
-});
-
-test.describe('map screens', () => {
-  test.describe.configure({ timeout: 60_000 });
-
-  async function seedAda(page: Page): Promise<void> {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          location: null,
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          aboutMe: null,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route('**/maps/key', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ key: null }),
-      });
-    });
-  }
-
-  async function fulfillMapPlaces(page: Page, label: string | null): Promise<void> {
-    await page.route('**/forum/messages/places', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          places: [
-            {
-              id: 'm-pin',
-              name: 'Ada',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              lat: 14.6,
-              lng: 120.98,
-              label,
-            },
-          ],
-        }),
-      });
-    });
-  }
-
-  test('map default', async ({ page }) => {
-    await seedAda(page);
-    await fulfillMapPlaces(page, 'Happyland');
-    await page.goto('/map');
-    await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await shotScreen(page, 'screen-map');
-  });
-
-  test('map pin', async ({ page }) => {
-    await seedAda(page);
-    await fulfillMapPlaces(page, 'Happyland');
-    await page.goto('/map?pin=m-pin');
-    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await shotScreen(page, 'state-map-pin');
-  });
-
-  test('map with-key', async ({ page }) => {
-    await seedAda(page);
-    await installBaselineMap(page);
-    await fulfillMapPlaces(page, 'Happyland');
-    await page.goto('/map');
-    await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
-    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
-    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
-    await shotScreen(page, 'state-map-with-key');
-  });
-
-  test('map pin-with-key', async ({ page }) => {
-    await seedAda(page);
-    await installBaselineMap(page);
-    await fulfillMapPlaces(page, 'Happyland');
-    await page.goto('/map?pin=m-pin');
-    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · Happyland', {
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
-    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
-    await shotScreen(page, 'state-map-pin-with-key');
-  });
-
-  test('map coords unselected', async ({ page }) => {
-    await seedAda(page);
-    await fulfillMapPlaces(page, null);
-    await page.goto('/map');
-    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
-    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await shotScreen(page, 'state-map-coords');
-  });
-
-  test('map coords pin', async ({ page }) => {
-    await seedAda(page);
-    await fulfillMapPlaces(page, null);
-    await page.goto('/map?pin=m-pin');
-    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await shotScreen(page, 'state-map-coords-pin');
-  });
-
-  test('map coords with-key', async ({ page }) => {
-    await seedAda(page);
-    await installBaselineMap(page);
-    await fulfillMapPlaces(page, null);
-    await page.goto('/map');
-    await expect(page.getByRole('link', { name: 'Ada · 14.60000, 120.98000' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
-    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
-    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
-    await shotScreen(page, 'state-map-coords-with-key');
-  });
-
-  test('map coords pin-with-key', async ({ page }) => {
-    await seedAda(page);
-    await installBaselineMap(page);
-    await fulfillMapPlaces(page, null);
-    await page.goto('/map?pin=m-pin');
-    await expect(page.locator('[data-selected="true"]')).toHaveText('Ada · 14.60000, 120.98000', {
-      timeout: 20_000,
-    });
-    await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
-    await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
-    await shotScreen(page, 'state-map-coords-pin-with-key');
-  });
-
-  test('map loading', async ({ page }) => {
-    await seedAda(page);
-    let release: () => void = () => undefined;
-    const held = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    await page.route('**/forum/messages/places', async (route) => {
-      await held;
-      await route.abort();
-    });
-    await page.goto('/map');
-    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible({
-      timeout: 20_000,
-    });
-    await shotScreen(page, 'state-map-loading');
-    release();
-  });
-
-  test('map empty', async ({ page }) => {
-    await seedAda(page);
-    await page.route('**/forum/messages/places', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ places: [] }),
-      });
-    });
-    await page.goto('/map');
-    await expect(page.getByText('No places yet.')).toBeVisible({ timeout: 20_000 });
-    await shotScreen(page, 'state-map-empty');
-  });
-
-  test('map error', async ({ page }) => {
-    await seedAda(page);
-    await page.route('**/forum/messages/places', async (route) => {
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        body: '{"error":"Unavailable"}',
-      });
-    });
-    await page.goto('/map');
-    await expect(page.getByText('Could not load places. Please try again.')).toBeVisible({
-      timeout: 20_000,
-    });
-    await shotScreen(page, 'state-map-error');
   });
 });
 

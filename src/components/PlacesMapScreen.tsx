@@ -57,9 +57,10 @@ function loadGoogleMaps(key: string): Promise<void> {
  * Without a Google key the places stay a list of links. A key draws the
  * same places as markers and does not replace the list.
  *
- * @returns The map card (loading, error, empty, or places).
+ * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body.
+ * @returns The map card, or only the body when `embedded` is true.
  */
-export function PlacesMapScreen(): ReactElement {
+export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {}): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const [places, setPlaces] = useState<ForumPlaceRow[] | null>(null);
@@ -244,6 +245,10 @@ export function PlacesMapScreen(): ReactElement {
         </ul>
       </div>
     );
+  }
+
+  if (embedded) {
+    return body;
   }
 
   return (
