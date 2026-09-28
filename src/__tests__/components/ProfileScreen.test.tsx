@@ -429,7 +429,10 @@ describe('ProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
     fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+    const aboutInput = [...document.querySelectorAll('input[type="file"]')].find(
+      (input) => input.getAttribute('name') === null,
+    );
+    fireEvent.change(aboutInput as HTMLInputElement, {
       target: {
         files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', { type: 'image/jpeg' })],
       },
@@ -842,6 +845,7 @@ describe('ProfileScreen', () => {
   });
 
   it('saves a wide image from the empty-slot button and explains a portrait', async () => {
+    vi.mocked(putWideBanner).mockClear();
     vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'notWide' });
     renderWithLocale(<ProfileScreen />);
     await screen.findByRole('button', { name: 'Add a wide image' });
