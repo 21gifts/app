@@ -129,6 +129,8 @@ async function readFileBytes(file: File): Promise<Uint8Array> {
  * most {@link FORUM_PHOTO_MAX_EDGE}.
  *
  * @param file - Browser file from the composer attach control.
+ * @param options - Pass `{ wide: true }` to refuse a still that is not at least
+ * 640 px wide and 1.5 times as wide as it is tall (`notWide`).
  * @returns Ok payload with raw base64 + preview data URL, or a typed error.
  * @throws If the browser cannot decode the file (`createImageBitmap` rejection
  * or `<img>` `onerror` → `Could not decode image`).

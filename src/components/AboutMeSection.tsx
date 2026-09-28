@@ -105,6 +105,7 @@ export function AboutMeSection({
   const storedObjectUrlRef = useRef<string | null>(null);
   const photoGeneration = useRef(0);
   const loadGeneration = useRef(0);
+  const bannerGeneration = useRef(0);
   const pictureGeneration = useRef(0);
   const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(aboutMe ?? '');
@@ -130,8 +131,8 @@ export function AboutMeSection({
     if (!editing || loadBannerRef.current === undefined) {
       return;
     }
-    const generation = loadGeneration.current + 1;
-    loadGeneration.current = generation;
+    const generation = bannerGeneration.current + 1;
+    bannerGeneration.current = generation;
     const load = loadBannerRef.current;
     void (async () => {
       try {
@@ -140,7 +141,7 @@ export function AboutMeSection({
           throw new Error('not-image');
         }
         /* v8 ignore start -- a newer wide-image load replaced this one */
-        if (generation !== loadGeneration.current) {
+        if (generation !== bannerGeneration.current) {
           return;
         }
         /* v8 ignore end */
@@ -152,7 +153,7 @@ export function AboutMeSection({
         setBannerUrl(url);
       } catch {
         /* v8 ignore start -- a newer wide-image load replaced this one */
-        if (generation !== loadGeneration.current) {
+        if (generation !== bannerGeneration.current) {
           return;
         }
         /* v8 ignore end */
@@ -504,6 +505,28 @@ export function AboutMeSection({
     })();
   };
 
+  const removePicture = (): void => {
+    if (onSavePicture === undefined) {
+      return;
+    }
+    setPreparingPhoto(true);
+    void (async () => {
+      try {
+        await onSavePicture(null);
+        if (pictureUrlRef.current !== null && pictureUrlRef.current.startsWith('blob:')) {
+          URL.revokeObjectURL(pictureUrlRef.current);
+        }
+        pictureUrlRef.current = null;
+        setPictureUrl(null);
+        setError(null);
+      } catch {
+        setError(t('profile.about.error'));
+      } finally {
+        setPreparingPhoto(false);
+      }
+    })();
+  };
+
   const removeBanner = (): void => {
     if (onSaveBanner === undefined) {
       return;
@@ -671,12 +694,25 @@ export function AboutMeSection({
               </IconButton>
             </div>
             {pictureUrl !== null ? (
-              // eslint-disable-next-line @next/next/no-img-element -- blob or data URL from the profile photo
-              <img
-                src={pictureUrl}
-                alt={t('profile.about.portraitAlt')}
-                className="h-16 w-16 rounded-full object-cover"
-              />
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- blob or data URL from the profile photo */}
+                <img
+                  src={pictureUrl}
+                  alt={t('profile.about.portraitAlt')}
+                  className="h-16 w-16 rounded-full object-cover"
+                />
+                <IconButton
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  disabled={saving || preparingPhoto}
+                  aria-label={t('profile.about.removePortrait')}
+                  title={t('profile.about.removePortrait')}
+                  onClick={removePicture}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
             ) : null}
             {bannerUrl !== null ? (
               <div className="flex items-center gap-2">

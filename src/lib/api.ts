@@ -359,15 +359,6 @@ export async function putAboutMe(
 const ABOUT_ME_PHOTO_LOAD_ERROR = 'Could not load. Please try again.';
 
 /**
- * Stores or clears the signed-in account's wide profile image.
- *
- * The About me photo is unchanged. `null` clears the wide image.
- *
- * @param sessionToken - A bearer token from a completed challenge.
- * @param photo - JPEG payload, or `null` to clear.
- * @throws Error `'Could not save. Please try again.'` on a non-2xx response.
- */
-/**
  * Stores or clears the signed-in account's profile photo.
  *
  * Not the wide image and not the About me note photo.
@@ -421,6 +412,15 @@ export async function fetchProfilePhoto(sessionToken: string): Promise<Blob> {
   }
 }
 
+/**
+ * Stores or clears the signed-in account's wide profile image.
+ *
+ * The About me photo is unchanged. `null` clears the wide image.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param photo - JPEG payload, or `null` to clear.
+ * @throws Error `'Could not save. Please try again.'` on a non-2xx response.
+ */
 export async function putWideBanner(
   sessionToken: string,
   photo: { contentType: string; data: string } | null,

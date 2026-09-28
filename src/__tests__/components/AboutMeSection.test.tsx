@@ -1389,6 +1389,49 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('removes a stored profile photo and reports a failed clear', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const onSavePicture = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() => Promise.resolve(blob)}
+        onSavePicture={onSavePicture}
+      />,
+    );
+    openEditor();
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove profile photo' }));
+    await waitFor(() => {
+      expect(onSavePicture).toHaveBeenCalledWith(null);
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    onSavePicture.mockResolvedValueOnce(undefined);
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    onSavePicture.mockRejectedValueOnce(new Error('nope'));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove profile photo' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
+    });
+  });
+
+  it('does nothing when removing a profile photo that has no save handler', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} loadPicture={() => Promise.resolve(blob)} />,
+    );
+    openEditor();
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove profile photo' }));
+    expect(screen.getByAltText('Profile photo')).toBeTruthy();
+  });
+
   it('does nothing when removing a wide image that has no save handler', async () => {
     const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
     renderWithLocale(

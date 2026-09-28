@@ -148,6 +148,7 @@ export function ProfileScreen(): ReactElement {
   const [member, setMember] = useState<MemberProfile | null>(null);
   const [memberStatus, setMemberStatus] = useState<'loading' | 'error' | 'ready'>('loading');
   const [memberAttempt, setMemberAttempt] = useState(0);
+  const [imageEpoch, setImageEpoch] = useState(0);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -193,7 +194,7 @@ export function ProfileScreen(): ReactElement {
     <Card surface={false}>
       {session !== null ? (
         <ProfileImages
-          key={session}
+          key={`${session}:${imageEpoch}`}
           loadPicture={() => fetchProfilePhoto(session)}
           loadBanner={() => fetchWideBanner(session)}
         />
@@ -215,10 +216,12 @@ export function ProfileScreen(): ReactElement {
           loadPicture={() => fetchProfilePhoto(session)}
           onSavePicture={async (photo) => {
             await putProfilePhoto(session, photo);
+            setImageEpoch((epoch) => epoch + 1);
           }}
           loadBanner={() => fetchWideBanner(session)}
           onSaveBanner={async (photo) => {
             await putWideBanner(session, photo);
+            setImageEpoch((epoch) => epoch + 1);
           }}
           /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
           {...(origin !== '' ? { profileUrl: `${origin}/view/${account.viewKey}` } : {})}
