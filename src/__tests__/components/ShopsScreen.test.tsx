@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopsScreen } from '@/components/ShopsScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -51,9 +51,13 @@ describe('ShopsScreen', () => {
     renderWithLocale(<ShopsScreen />);
     expect(await screen.findByTestId('places-map-screen')).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Map', selected: true })).toBeTruthy();
-    window.location.hash = '#nope';
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-    expect(screen.getByRole('tab', { name: 'Map', selected: true })).toBeTruthy();
+    act(() => {
+      window.history.replaceState(null, '', `${window.location.pathname}#nope`);
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    expect(window.location.hash).toBe('#nope');
+    expect(screen.getByRole('tab', { name: 'Post', selected: true })).toBeTruthy();
+    expect(screen.getByTestId('forum-loader')).toBeTruthy();
   });
 
   it('opens the table from /shops#table', async () => {

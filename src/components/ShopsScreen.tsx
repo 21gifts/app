@@ -42,10 +42,7 @@ export function ShopsScreen(): ReactElement {
 
   useEffect(() => {
     const apply = (): void => {
-      const next = shopsViewFromHash(window.location.hash);
-      if (next !== null) {
-        setView(next);
-      }
+      setView(shopsViewFromHash(window.location.hash) ?? 'post');
     };
     apply();
     window.addEventListener('hashchange', apply);
