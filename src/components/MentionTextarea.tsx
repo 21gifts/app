@@ -198,7 +198,10 @@ export function MentionTextarea({
     const onPointer = (event: MouseEvent): void => {
       const root = rootRef.current;
       /* v8 ignore next 3 -- the listener is attached only after the wrapper is mounted */
-      if (root === null || root.contains(event.target as Node)) {
+      if (root === null) {
+        return;
+      }
+      if (root.contains(event.target as Node)) {
         return;
       }
       setClosedKey(tokenKey);
