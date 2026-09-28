@@ -554,12 +554,12 @@
 
 - **Purpose:** Leave for the previous in-app view in this tab, or open `/welcome` when this tab has none. Does not jump to a fixed parent and does not leave the site.
 - **Inputs:** None. Reads `previousViewPath`.
-- **Returns / side effects:** `location.assign` of the previous path, or `location.assign('/welcome')` when this tab has none. Does not call `history.back()`. No network.
+- **Returns / side effects:** `location.assign` of the previous path, or `location.assign('/welcome')` when this tab has none. Does not call `history.back()` and does not pop the stack before that load, so a second click assigns the same path. The next document steps the cursor back to the opened path. No network.
 - **Used by:** `ProfileChromeLeft`, `RulesSetup`, `WalletScreenView`.
 
 ## Function: recordCurrentView
 
-- **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A path change that grows `history.length`, and the first path change after a new document loads the stack, is a push. A path change that does not grow `history.length` replaces the current entry, so a replaced screen is not a previous view. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50.
+- **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A router `pushState` is a push, even when `history.length` does not grow. A URL-changing `replaceState` replaces the current entry once this document is anchored, so a replaced screen is not a previous view. The first path of a new document is a push, unless it is the arrow's one-shot target, which steps the cursor back. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50.
 - **Inputs:** A pathname, optionally with a query string.
 - **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor` only). Stamps `giftsView` with `history.replaceState` without pushing a history entry. A thrown storage write leaves the slot intact. No network.
 - **Used by:** `ViewHistoryRoot`.

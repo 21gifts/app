@@ -1,6 +1,9 @@
 /** Tab-scoped in-app view stack. Not `localStorage`. */
 const HISTORY_KEY = '21gifts.viewHistory';
 
+/** One-shot target of the top-left arrow. Consumed by the next document. */
+const BACK_KEY = '21gifts.viewHistoryBack';
+
 const SLOT = '__giftsViewHistory';
 
 const CAP = 50;
@@ -14,13 +17,59 @@ type StoredViewHistory = { stack: string[]; cursor: number };
  * In-memory stack for this document.
  *
  * `historyLength` is the last `history.length` observed here. It is not
- * stored: a new document hydrates the stack and treats its first path change
- * as the navigation that opened it. A later path change that does not grow
- * `history.length` is a replace, not a new view.
+ * stored. A push or a replace is whatever the router just did with
+ * `pushState` or `replaceState`, not whether `history.length` grew: a browser
+ * back drops the forward entry without growing the length, and some browsers
+ * stop growing it. A new document is not yet anchored, so its first path is a
+ * push unless it is the arrow's one-shot target.
  */
 type ViewHistoryMemory = StoredViewHistory & { historyLength: number; anchored: boolean };
 
 type ViewHistoryGlobal = typeof globalThis & { [SLOT]?: ViewHistoryMemory };
+
+type NavKind = 'push' | 'replace';
+
+let navKind: NavKind | null = null;
+let historyTapped = false;
+let rawReplaceState: History['replaceState'] | null = null;
+
+/**
+ * Remember the last router `pushState` or URL-changing `replaceState`.
+ * A state-only `replaceState` (the giftsView stamp) is not a navigation.
+ */
+function installHistoryTap(): void {
+  /* v8 ignore next 3 -- SSR never taps history */
+  if (historyTapped || typeof window === 'undefined') {
+    return;
+  }
+  historyTapped = true;
+  const rawPush = window.history.pushState.bind(window.history);
+  const rawReplace = window.history.replaceState.bind(window.history);
+  rawReplaceState = rawReplace;
+  window.history.pushState = (data, unused, url) => {
+    navKind = 'push';
+    rawPush(data, unused, url);
+  };
+  window.history.replaceState = (data, unused, url) => {
+    const before = `${window.location.pathname}${window.location.search}`;
+    rawReplace(data, unused, url);
+    const after = `${window.location.pathname}${window.location.search}`;
+    if (after !== before) {
+      navKind = 'replace';
+    }
+  };
+}
+
+/**
+ * Last router navigation since the previous record, then clear it.
+ *
+ * @returns `push`, `replace`, or `null` when the router did not move.
+ */
+function takeNavKind(): NavKind | null {
+  const kind = navKind;
+  navKind = null;
+  return kind;
+}
 
 /**
  * True when `path` is a safe in-app href.
@@ -169,7 +218,72 @@ function stampGiftsView(cursor: number): void {
   if (typeof window === 'undefined') {
     return;
   }
-  window.history.replaceState({ ...window.history.state, giftsView: cursor }, '');
+  installHistoryTap();
+  /* v8 ignore next 3 -- install keeps the original replaceState */
+  if (rawReplaceState === null) {
+    return;
+  }
+  rawReplaceState({ ...window.history.state, giftsView: cursor }, '');
+}
+
+/**
+ * Remember the path the arrow is opening, so the next document can step back.
+ *
+ * @param path - In-app path passed to `location.assign`.
+ */
+function markBackTarget(path: string): void {
+  try {
+    /* v8 ignore next 3 -- SSR has no sessionStorage */
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
+    sessionStorage.setItem(BACK_KEY, path);
+  } catch {
+    /* A missing marker still assigns; the next document pushes that path. */
+  }
+}
+
+/**
+ * Read and drop the arrow's one-shot target.
+ *
+ * @returns The marked path, or `null` when there is none.
+ */
+function takeBackTarget(): string | null {
+  try {
+    /* v8 ignore next 3 -- SSR has no sessionStorage */
+    if (typeof sessionStorage === 'undefined') {
+      return null;
+    }
+    const value = sessionStorage.getItem(BACK_KEY);
+    sessionStorage.removeItem(BACK_KEY);
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Step the hydrated stack onto the path the arrow just opened.
+ *
+ * @param slot - Stack loaded for this new document. Not yet anchored.
+ * @param path - Path this document recorded.
+ * @returns Whether this record was the arrow's arrival.
+ */
+function arriveFromBack(slot: ViewHistoryMemory, path: string): boolean {
+  if (takeBackTarget() !== path) {
+    return false;
+  }
+  if (slot.cursor >= 1 && slot.stack[slot.cursor - 1] === path) {
+    slot.cursor -= 1;
+    slot.stack = slot.stack.slice(0, slot.cursor + 1);
+    return true;
+  }
+  if (slot.cursor < 1) {
+    slot.stack = [path];
+    slot.cursor = 0;
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -216,10 +330,11 @@ export function previousViewPath(): string | null {
 /**
  * Record `path` as the current in-app view unless it is unsafe.
  *
- * Restores a stamped stack index on browser back/forward. A path change that
- * grows `history.length`, and the first path change after a new document
- * loads the stack, is a push. A path change that does not grow
- * `history.length` replaces the current entry. Caps the stack at 50.
+ * Restores a stamped stack index on browser back/forward. A router `pushState`
+ * pushes, even when `history.length` does not grow. A URL-changing
+ * `replaceState` replaces the current entry once this document is anchored.
+ * The first path of a new document is a push, unless it is the arrow's
+ * one-shot target, which steps the cursor back. Caps the stack at 50.
  *
  * @param path - Candidate in-app path (pathname, optionally with query).
  * @returns void
@@ -234,6 +349,18 @@ export function recordCurrentView(path: string): void {
     return;
   }
   const length = window.history.length;
+  installHistoryTap();
+  const kind = takeNavKind();
+  if (!slot.anchored && arriveFromBack(slot, path)) {
+    slot.historyLength = length;
+    slot.anchored = true;
+    stampGiftsView(slot.cursor);
+    writeStoredMemory(slot);
+    return;
+  }
+  if (slot.anchored) {
+    takeBackTarget();
+  }
   const stamped = stampedIndex();
   if (
     stamped !== null &&
@@ -258,7 +385,7 @@ export function recordCurrentView(path: string): void {
     writeStoredMemory(slot);
     return;
   }
-  const replacing = slot.anchored && slot.stack.length > 0 && length <= slot.historyLength;
+  const replacing = kind === 'replace' && slot.anchored && slot.stack.length > 0;
   if (replacing) {
     const kept = slot.stack.slice(0, slot.cursor + 1);
     kept[slot.cursor] = path;
@@ -281,8 +408,9 @@ export function recordCurrentView(path: string): void {
 /**
  * Return to the previous in-app view, or open the forum when this tab has none.
  *
- * Assigns that path. A browser back step can leave the site when the current
- * entry replaced an external referrer.
+ * Assigns that path and leaves the stack for the next document. A second click
+ * before that load assigns the same path. A browser back step can leave the
+ * site when the current entry replaced an external referrer.
  *
  * @returns void
  */
@@ -292,5 +420,7 @@ export function goToPreviousView(): void {
     return;
   }
   const prev = previousViewPath();
-  window.location.assign(prev ?? '/welcome');
+  const target = prev ?? '/welcome';
+  markBackTarget(target);
+  window.location.assign(target);
 }
