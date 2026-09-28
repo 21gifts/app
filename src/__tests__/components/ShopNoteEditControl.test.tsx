@@ -533,6 +533,88 @@ describe('ShopNoteEditControl', () => {
     expect(setMessageShopText).not.toHaveBeenCalled();
   });
 
+  it('clears a shop user without sending stills', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopAccount).mockResolvedValue({ ...shopMessage });
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', null);
+    });
+    expect(setMessageShopPhotos).not.toHaveBeenCalled();
+  });
+
+  it('reads a kept still once when a later photo save fails', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopPhotos)
+      .mockRejectedValueOnce(new Error('no'))
+      .mockResolvedValueOnce({ ...shopMessage, hasPhoto: true, photoCount: 1 });
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+        takenAt: '',
+      },
+    });
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      blob: () =>
+        Promise.resolve({
+          type: 'image/png',
+          arrayBuffer: () => Promise.resolve(Uint8Array.of(9).buffer),
+        }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        existingPhotos={['blob:kept']}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(2);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessageShopPhotos).toHaveBeenCalledTimes(2);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
   it('keeps the eleventh new still off the note', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

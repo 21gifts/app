@@ -108,10 +108,16 @@ export function ShopAddWizard({
   const { t } = useTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
+  // The summary control replaces Next in the same spot. Ignore that same click.
+  const [summaryArmed, setSummaryArmed] = useState(false);
 
   useEffect(() => {
     setStep(mode === 'edit' ? 1 : 'closed');
   }, [resetToken, mode]);
+
+  useEffect(() => {
+    setSummaryArmed(step === 5);
+  }, [step]);
 
   if (step === 'closed') {
     return (
@@ -346,6 +352,7 @@ export function ShopAddWizard({
             variant="secondary"
             disabled={posting}
             onClick={() => {
+              setSummaryArmed(false);
               setStep((step - 1) as ShopAddStep);
             }}
           >
@@ -358,13 +365,14 @@ export function ShopAddWizard({
             variant="primary"
             disabled={posting}
             onClick={() => {
+              setSummaryArmed(false);
               setStep((step + 1) as ShopAddStep);
             }}
           >
             {t('shops.next')}
           </Button>
         ) : (
-          <Button type="submit" variant="primary" disabled={posting}>
+          <Button type="submit" variant="primary" disabled={posting || !summaryArmed}>
             {submitLabel ?? t('forum.post')}
           </Button>
         )}

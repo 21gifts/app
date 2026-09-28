@@ -116,9 +116,12 @@ function encodeBytes(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-async function stillFromUrl(
-  url: string,
-): Promise<{ contentType: 'image/jpeg' | 'image/png' | 'image/webp'; data: string }> {
+type KeptStillBytes = {
+  contentType: 'image/jpeg' | 'image/png' | 'image/webp';
+  data: string;
+};
+
+async function stillFromUrl(url: string): Promise<KeptStillBytes> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Could not save shop note');
@@ -161,6 +164,9 @@ export function ShopNoteEditControl({
   const [photosReady, setPhotosReady] = useState(false);
   const ownedPhotoUrls = useRef<string[]>([]);
   const openEditorRef = useRef<(() => void) | null>(null);
+  // Bytes read before the feed revokes preview URLs. A later step can fail
+  // and leave this panel open; the next save must not fetch those URLs again.
+  const keptStillBytes = useRef(new Map<string, KeptStillBytes>());
 
   function revokeOwnedPhotos(): void {
     for (const url of ownedPhotoUrls.current) {
@@ -195,6 +201,7 @@ export function ShopNoteEditControl({
   const token = session;
 
   async function openEditor(): Promise<void> {
+    keptStillBytes.current.clear();
     setDraft(stripShopHashtag(message.text));
     setPlace(message.place ?? null);
     setUsername(message.shopAccount?.username ?? '');
@@ -297,7 +304,12 @@ export function ShopNoteEditControl({
       const stills = [];
       if (photosChanged) {
         for (const item of keptPhotos) {
-          stills.push(await stillFromUrl(item.url));
+          const cached = keptStillBytes.current.get(item.url);
+          const encoded = cached ?? (await stillFromUrl(item.url));
+          if (cached === undefined) {
+            keptStillBytes.current.set(item.url, encoded);
+          }
+          stills.push(encoded);
         }
         for (const photo of photoDrafts) {
           stills.push({

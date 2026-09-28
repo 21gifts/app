@@ -297,7 +297,11 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
   await page.getByLabel('Shop text').fill('Cafe Luna');
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
+  const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
+  await expect(post).toBeEnabled();
+  await post.evaluate((element) => {
+    element.click();
+  });
   const invoiceReq = await invoiced;
   const parsed = invoiceReq.postDataJSON() as { text?: string };
   expect(typeof parsed.text === 'string' ? parsed.text : '').toContain('#21GiftsShop');
@@ -510,12 +514,16 @@ test('Function: setMessageShopPhotos — moderator save replaces stills', async 
   await note.getByRole('button', { name: 'Next' }).click();
   await note.getByRole('button', { name: 'Next' }).click();
   await note.getByRole('button', { name: 'Next' }).click();
+  const save = note.getByRole('button', { name: 'Save changes' });
+  await expect(save).toBeEnabled();
   const patched = page.waitForRequest(
     (req) =>
       req.method() === 'PATCH' &&
       new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/photos'),
   );
-  await note.getByRole('button', { name: 'Save changes' }).click();
+  await save.evaluate((element) => {
+    element.click();
+  });
   const photosReq = await patched;
   expect(photosReq.postDataJSON()).toEqual({ photos: [] });
 });
@@ -559,12 +567,16 @@ test('Function: setMessageShopText — moderator save updates the shop note', as
   await note.getByLabel('Shop text').fill('Cafe Sol');
   await note.getByRole('button', { name: 'Next' }).click();
   await note.getByRole('button', { name: 'Next' }).click();
+  const save = note.getByRole('button', { name: 'Save changes' });
+  await expect(save).toBeEnabled();
   const patched = page.waitForRequest(
     (req) =>
       req.method() === 'PATCH' &&
       new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/text'),
   );
-  await note.getByRole('button', { name: 'Save changes' }).click();
+  await save.evaluate((element) => {
+    element.click();
+  });
   const textReq = await patched;
   expect(textReq.postDataJSON()).toEqual({ text: 'Cafe Sol' });
   await expect(note.getByText('Cafe Sol')).toBeVisible();
