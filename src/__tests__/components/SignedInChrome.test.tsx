@@ -205,16 +205,25 @@ function stubMatchMedia(matches: boolean): () => void {
   };
 }
 
-function trackScrollTop(scroller: HTMLElement, initial: number): { read: () => number } {
+function trackScrollTop(
+  scroller: HTMLElement,
+  initial: number,
+): { read: () => number; log: string[] } {
   let top = initial;
+  const log: string[] = [];
+  const sheet = (): string => document.documentElement.dataset['menuSheet'] ?? 'off';
   Object.defineProperty(scroller, 'scrollTop', {
     configurable: true,
-    get: () => top,
+    get: () => {
+      log.push(`get:${top}:sheet=${sheet()}`);
+      return top;
+    },
     set: (value: number) => {
+      log.push(`set:${value}:sheet=${sheet()}`);
       top = value;
     },
   });
-  return { read: () => top };
+  return { read: () => top, log };
 }
 
 describe('SignedInChrome', () => {
@@ -829,8 +838,11 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('absolute');
       expect(document.documentElement.dataset['menuSheet']).toBe('1');
       expect(scroll.read()).toBe(0);
+      expect(scroll.log).toContain('get:80:sheet=off');
+      expect(scroll.log).toContain('set:0:sheet=1');
       fireEvent.keyDown(document, { key: 'Escape' });
       expect(document.documentElement.dataset['menuSheet']).toBeUndefined();
+      expect(scroll.log.at(-1)).toBe('set:80:sheet=off');
       expect(scroll.read()).toBe(80);
       expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Menu' }));
       expect(menuPanel()).toBe(panel);

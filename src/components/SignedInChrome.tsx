@@ -111,17 +111,19 @@ export function SignedInChrome(): ReactElement {
       delete document.documentElement.dataset['menuSheet'];
       return;
     }
-    document.documentElement.dataset['menuSheet'] = '1';
     if (scroller === null) {
+      document.documentElement.dataset['menuSheet'] = '1';
       return () => {
         delete document.documentElement.dataset['menuSheet'];
       };
     }
+    // Read first. Hiding the page clamps scrollTop to the shorter sheet.
     const previousScrollTop = scroller.scrollTop;
+    document.documentElement.dataset['menuSheet'] = '1';
     scroller.scrollTop = 0;
     return () => {
-      scroller.scrollTop = previousScrollTop;
       delete document.documentElement.dataset['menuSheet'];
+      scroller.scrollTop = previousScrollTop;
     };
   }, [narrow, open, scroller]);
 
