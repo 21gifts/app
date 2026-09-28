@@ -8428,14 +8428,20 @@ test('Function: proxyViewGet — GET /view-key/[viewKey] is reachable', async ({
   const res = await request.get('/view-key/[viewKey]');
   expect(res.status()).toBeGreaterThanOrEqual(400);
 });
-test('Function: fetchAccountActivity — signed-in profile menu shows received sats', async ({
+test('Function: fetchAccountActivity — profile chart shows received sats and the menu does not', async ({
   page,
 }) => {
   await seedAdaSession(page);
-  await stubAccountActivity(page, { ...EMPTY_ACTIVITY, receivedSats: 1000 });
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    receivedSats: 1500,
+    receivedOverTime: POPULATED_STATS.spendOverTime,
+  });
   await page.goto('/profile');
+  await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
 });
 test('Function: fetchMemberActivity — member card shows empty activity copy', async ({
   page,
@@ -8492,14 +8498,20 @@ test('Function: proxyViewActivityGet — GET /view-key/[viewKey]/activity is rea
   expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
 });
 
-test('Function: useAccountTotals — menu shows received sats from /me/activity', async ({
+test('Function: useAccountTotals — profile chart reads /me/activity and the menu hides amounts', async ({
   page,
 }) => {
   await seedAdaSession(page);
-  await stubAccountActivity(page, { ...EMPTY_ACTIVITY, receivedSats: 1000 });
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    receivedSats: 1500,
+    receivedOverTime: POPULATED_STATS.spendOverTime,
+  });
   await page.goto('/profile');
+  await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: /Received ₿1'000/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
 });
 
 test('Function: AccountActivityChart — profile shows Given legend and ₿ chart', async ({

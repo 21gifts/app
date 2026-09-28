@@ -1,8 +1,6 @@
 'use client';
 
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
   Bell,
   HandCoins,
   Home,
@@ -20,48 +18,20 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
-import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PwaInstall } from '@/components/PwaInstall';
-import { useAccountTotals } from '@/hooks/useAccountTotals';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
-import type { NumberFormatStyle } from '@/lib/number-format';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
-import {
-  formatBitcoin,
-  formatFiatDisplay,
-  satsToFiatAmount,
-  type FiatCode,
-  type FiatRateDay,
-} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
-
-/** Bitcoin amount plus the visitor's default fiat when a gift-day rate exists. */
-function formatMenuAmount(
-  sats: number,
-  rateDay: FiatRateDay | null,
-  fiat: FiatCode,
-  numberFormat: NumberFormatStyle,
-): string {
-  const bitcoin = formatBitcoin(sats, numberFormat);
-  const fiatAmount = satsToFiatAmount(sats, rateDay, fiat);
-  if (fiatAmount === null) {
-    return bitcoin;
-  }
-  return `${bitcoin} · ${formatFiatDisplay(fiatAmount, fiat, numberFormat)}`;
-}
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with same-line given/received amounts only when that
- * side is non-zero, each with the default fiat when a gift-day rate exists, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, staff-only Moderation
+ * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
  * notifications with an
@@ -78,11 +48,8 @@ function formatMenuAmount(
  */
 export function SignedInChrome(): ReactElement {
   const { t } = useTranslations();
-  const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
-  const rateDay = useLatestRateDay(session !== null);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
@@ -90,7 +57,6 @@ export function SignedInChrome(): ReactElement {
   );
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const { donatedSats, receivedSats, loading } = useAccountTotals();
   const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
   const showIntroduce =
     account !== null &&
@@ -131,12 +97,6 @@ export function SignedInChrome(): ReactElement {
     }
     void resyncPushSubscription(session).catch(() => undefined);
   }, [session]);
-
-  const givenAmount = formatMenuAmount(donatedSats, rateDay, fiat, numberFormat);
-  const receivedAmount = formatMenuAmount(receivedSats, rateDay, fiat, numberFormat);
-  const showGiven = donatedSats > 0;
-  const showReceived = receivedSats > 0;
-  const showTotalsCluster = loading || showGiven || showReceived;
 
   return (
     <div ref={rootRef} className="relative">
@@ -199,43 +159,10 @@ export function SignedInChrome(): ReactElement {
           onClick={() => {
             setOpen(false);
           }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-app-fg no-underline transition hover:bg-app-hover"
+          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
         >
           <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          <span className="font-medium">{t('profile.title')}</span>
-          {showTotalsCluster ? (
-            <span className="ml-auto flex items-center gap-2 text-app-muted">
-              {loading ? (
-                t('forum.loading')
-              ) : (
-                <>
-                  {showGiven ? (
-                    <span
-                      className="inline-flex items-center gap-1"
-                      aria-label={t('profile.given', { amount: givenAmount })}
-                      title={t('profile.given', { amount: givenAmount })}
-                    >
-                      <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                      <span className="font-semibold tabular-nums lining-nums">{givenAmount}</span>
-                    </span>
-                  ) : null}
-                  {showGiven && showReceived ? <span aria-hidden="true">·</span> : null}
-                  {showReceived ? (
-                    <span
-                      className="inline-flex items-center gap-1"
-                      aria-label={t('profile.received', { amount: receivedAmount })}
-                      title={t('profile.received', { amount: receivedAmount })}
-                    >
-                      <ArrowDownLeft aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                      <span className="font-semibold tabular-nums lining-nums">
-                        {receivedAmount}
-                      </span>
-                    </span>
-                  ) : null}
-                </>
-              )}
-            </span>
-          ) : null}
+          {t('profile.title')}
         </Link>
         <Link
           href="/grants"

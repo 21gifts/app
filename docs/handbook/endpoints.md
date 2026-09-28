@@ -321,7 +321,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /me/activity` for given and received sat totals plus both cumulative day series (house gifts and forum zaps).
 - **Errors:** Upstream 401, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchAccountActivity` via `useAccountTotals` on `/profile` and the signed-in menu.
+- **Used by:** `fetchAccountActivity` via `useAccountTotals` on `/profile`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /view-key/[viewKey]

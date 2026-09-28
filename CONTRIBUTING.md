@@ -497,8 +497,7 @@ Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-
 Tests locate icon **buttons** with `getByRole('button', { name })` against
 the catalog `aria-label` and assert `queryByText` for the visible catalog
 string is `null`. Icon **links** use `getByRole('link', { name })`.
-Non-interactive indicators (given/received arrows) use `aria-label` on the
-glyph, not a button role.
+The Profile menu row is the label only. It shows no given or received amounts.
 
 A **new** control that is labeled when the table says icon-only (or
 icon-only when the table says labeled) is an undeclared deviation.
