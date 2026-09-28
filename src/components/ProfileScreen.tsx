@@ -35,11 +35,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * @param props - Loader for the account profile photo. A rejection means none.
  * @returns The header, or `null` when the profile photo has not loaded.
  */
-function ProfileImages({
-  loadPicture,
-}: {
-  loadPicture: () => Promise<Blob>;
-}): ReactElement | null {
+function ProfileImages({ loadPicture }: { loadPicture: () => Promise<Blob> }): ReactElement | null {
   const { t } = useTranslations();
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const loadPictureRef = useRef(loadPicture);

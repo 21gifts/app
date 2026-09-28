@@ -1277,5 +1277,4 @@ describe('AboutMeSection', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Remove profile photo' }));
     expect(screen.getByAltText('Profile photo')).toBeTruthy();
   });
-
 });
