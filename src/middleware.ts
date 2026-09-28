@@ -16,6 +16,7 @@ export function middleware(request: NextRequest): NextResponse {
   return NextResponse.redirect(destination);
 }
 
+/** Match only the old map address. `/shops` is not redirected. */
 export const config = {
   matcher: '/map',
 };
