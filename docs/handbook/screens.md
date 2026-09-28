@@ -194,6 +194,12 @@ Account that can already show a phrase. Open **Advanced functions** shows **Show
 
 ![21.gifts wallet reveal open](images/wallet-reveal-open.png)
 
+### Variant: mac-app
+
+Installed macOS Chrome, Chromium, or Edge app. The receive card stays. **Add recovery phrase** and **Advanced functions** are replaced by the notice **Passkeys do not work in the Chrome app**.
+
+![21.gifts wallet mac app](images/wallet-mac-app.png)
+
 ## Screen: /wallet/phrase
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
@@ -237,6 +243,12 @@ PRF missing. Alert **This browser cannot create a recovery phrase. Try another b
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
 
+### Variant: mac-app
+
+Installed macOS Chrome, Chromium, or Edge app. Heading **Wallet** and the notice **Passkeys do not work in the Chrome app**. No **Add recovery phrase**, no **Show recovery phrase**, and no receive QR.
+
+![21.gifts wallet phrase mac app](images/wallet-phrase-mac-app.png)
+
 ## Screen: /login
 
 - **URL:** `/login` — login only.
@@ -279,6 +291,12 @@ After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey
 Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** button; **Open in browser** and **Copy link** instead.
 
 ![21.gifts login in-app](images/login-in-app.png)
+
+### Variant: mac-app
+
+Installed macOS Chrome, Chromium, or Edge app. Heading **Passkeys do not work in the Chrome app**. No **Log in** button.
+
+![21.gifts login mac app](images/login-mac-app.png)
 
 ### Variant: language-open
 
@@ -3598,6 +3616,12 @@ Valid known key whose profile already has a passkey (`hasPasskey: true`). Same r
 Telegram or another in-app WebView detected on an unclaimed profile. Escape card under the profile (**Open this page in your browser**, **Open in browser**, **Copy link**); no yellow **Activate** banner.
 
 ![21.gifts public view in-app](images/view-in-app.png)
+
+### Variant: mac-app
+
+Installed macOS Chrome, Chromium, or Edge app on an unclaimed profile. Notice **Passkeys do not work in the Chrome app** under the card. No yellow **Activate** banner.
+
+![21.gifts public view mac app](images/view-mac-app.png)
 
 ## Screen: /handbook
 
