@@ -9,7 +9,7 @@ import {
 const HISTORY_KEY = '21gifts.viewHistory';
 const SLOT = '__giftsViewHistory';
 
-type ViewSlot = { stack: string[]; cursor: number };
+type ViewSlot = { stack: string[]; cursor: number; base?: number };
 
 function dropSlot(): void {
   delete (globalThis as { [SLOT]?: ViewSlot })[SLOT];
