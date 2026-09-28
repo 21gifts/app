@@ -37,6 +37,7 @@ import {
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
+import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PlaceField } from '@/components/PlaceField';
@@ -224,6 +225,11 @@ export interface ForumBoardProps {
   payError: ForumPayError;
   /** Issued invoice for QR / wallet link, or `null`. */
   payInvoice: ForumPayInvoice | null;
+  /**
+   * Submitted reaction text shown on {@link ForumReplyPayPage}, or `null`
+   * when the reply composer stays mounted. Default `null`.
+   */
+  replyPayPreview?: string | null;
   /** True while polling for an updated sats total after pay. */
   payWaiting: boolean;
   /** Opens the pay sheet for a payable message. */
@@ -676,6 +682,7 @@ export function ForumBoard({
   payBusy,
   payError,
   payInvoice,
+  replyPayPreview = null,
   payWaiting,
   onPayOpen,
   onPayDraftChange,
@@ -1039,6 +1046,19 @@ export function ForumBoard({
           const expanded = expandedId === message.id;
           const replyPayLocked =
             payInvoice !== null && payMessageId === message.id && payHost !== 'composer';
+          const reactionPay =
+            replyPayPreview !== null &&
+            payInvoice !== null &&
+            payMessageId === message.id &&
+            payHost === 'card' &&
+            payInvoice.messageId === message.id
+              ? {
+                  preview: replyPayPreview,
+                  amountSats: payInvoice.amountSats,
+                  pr: payInvoice.pr,
+                }
+              : null;
+          const reactionPayPage = reactionPay !== null;
           const copied = copiedId === message.id;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
@@ -1355,7 +1375,7 @@ export function ForumBoard({
                 ) : null}
               </div>
 
-              {payMessageId === message.id && payHost !== 'composer' ? (
+              {!reactionPayPage && payMessageId === message.id && payHost !== 'composer' ? (
                 <SundayWritingGate notice="zap">
                   <ForumPaySheet
                     messageId={message.id}
@@ -1608,36 +1628,28 @@ export function ForumBoard({
                     </ul>
                   ) : null}
                   {!readOnly && message.deletedAt === undefined ? (
-                    <SundayWritingGate>
-                      <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                        <AmountEntry
-                          id="forum-reply-amount"
-                          layout="inline"
-                          label={t('forum.replyAmountLabel')}
-                          placeholder={t('forum.payAmountPlaceholder')}
-                          value={replyAmountDraft}
-                          disabled={
-                            replyPayLocked ||
-                            replyPosting ||
-                            repliesLoading ||
-                            repliesError ||
-                            replies === null
-                          }
+                    reactionPay !== null ? (
+                      <SundayWritingGate notice="zap">
+                        <ForumReplyPayPage
+                          preview={reactionPay.preview}
+                          amountSats={reactionPay.amountSats}
+                          pr={reactionPay.pr}
+                          payWaiting={payWaiting}
+                          payBusy={payBusy}
+                          showPaymentQr={showPaymentQr}
                           rateDay={rateDay}
-                          onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                          {...(onReplyUnitChange === undefined
-                            ? {}
-                            : { onUnitChange: onReplyUnitChange })}
+                          onCancel={onPayCancel}
                         />
-                        <div className="flex items-center gap-2">
-                          <textarea
-                            ref={replyComposerRef}
-                            aria-label={t('forum.replyComposerLabel')}
-                            placeholder={t('forum.replyPlaceholder')}
-                            value={replyDraft}
-                            onChange={(event) => onReplyDraftChange(event.target.value)}
-                            maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                            rows={1}
+                      </SundayWritingGate>
+                    ) : (
+                      <SundayWritingGate>
+                        <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
+                          <AmountEntry
+                            id="forum-reply-amount"
+                            layout="inline"
+                            label={t('forum.replyAmountLabel')}
+                            placeholder={t('forum.payAmountPlaceholder')}
+                            value={replyAmountDraft}
                             disabled={
                               replyPayLocked ||
                               replyPosting ||
@@ -1645,58 +1657,81 @@ export function ForumBoard({
                               repliesError ||
                               replies === null
                             }
-                            className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
+                            rateDay={rateDay}
+                            onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                            {...(onReplyUnitChange === undefined
+                              ? {}
+                              : { onUnitChange: onReplyUnitChange })}
                           />
-                          <IconButton
-                            type="submit"
-                            size="lg"
-                            variant="primary"
-                            disabled={
-                              replyPayLocked ||
-                              replyPosting ||
-                              repliesLoading ||
-                              repliesError ||
-                              replies === null
-                            }
-                            aria-label={t('forum.post')}
-                          >
-                            {replyPosting ? (
-                              <Loader2
-                                aria-hidden="true"
-                                className="block h-5 w-5 shrink-0 animate-spin"
-                              />
-                            ) : (
-                              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                            )}
-                          </IconButton>
-                        </div>
-                        {replyFormError === 'empty' ? (
-                          <p role="alert" className="text-center text-sm text-app-danger">
-                            {t('forum.errorEmpty')}
-                          </p>
-                        ) : null}
-                        {replyFormError === 'amount' ? (
-                          <p role="alert" className="text-center text-sm text-app-danger">
-                            {t('forum.errorReplyPayment')}
-                          </p>
-                        ) : null}
-                        {replyFormError === 'tooLong' ? (
-                          <p role="alert" className="text-center text-sm text-app-danger">
-                            {t('forum.errorTooLong')}
-                          </p>
-                        ) : null}
-                        {replyFormError === 'request' ? (
-                          <p role="alert" className="text-center text-sm text-app-danger">
-                            {t('forum.errorRequest')}
-                          </p>
-                        ) : null}
-                        {replyFormError === 'rateLimit' ? (
-                          <p role="alert" className="text-center text-sm text-app-danger">
-                            {t('forum.errorRateLimit')}
-                          </p>
-                        ) : null}
-                      </form>
-                    </SundayWritingGate>
+                          <div className="flex items-center gap-2">
+                            <textarea
+                              ref={replyComposerRef}
+                              aria-label={t('forum.replyComposerLabel')}
+                              placeholder={t('forum.replyPlaceholder')}
+                              value={replyDraft}
+                              onChange={(event) => onReplyDraftChange(event.target.value)}
+                              maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                              rows={1}
+                              disabled={
+                                replyPayLocked ||
+                                replyPosting ||
+                                repliesLoading ||
+                                repliesError ||
+                                replies === null
+                              }
+                              className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
+                            />
+                            <IconButton
+                              type="submit"
+                              size="lg"
+                              variant="primary"
+                              disabled={
+                                replyPayLocked ||
+                                replyPosting ||
+                                repliesLoading ||
+                                repliesError ||
+                                replies === null
+                              }
+                              aria-label={t('forum.post')}
+                            >
+                              {replyPosting ? (
+                                <Loader2
+                                  aria-hidden="true"
+                                  className="block h-5 w-5 shrink-0 animate-spin"
+                                />
+                              ) : (
+                                <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                              )}
+                            </IconButton>
+                          </div>
+                          {replyFormError === 'empty' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.errorEmpty')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'amount' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.errorReplyPayment')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'tooLong' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.errorTooLong')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'request' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.errorRequest')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'rateLimit' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.errorRateLimit')}
+                            </p>
+                          ) : null}
+                        </form>
+                      </SundayWritingGate>
+                    )
                   ) : null}
                 </div>
               ) : null}

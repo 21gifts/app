@@ -1051,19 +1051,19 @@ Same draft, with the payment request still in flight. The reply **Post** control
 
 ### Variant: reaction-pay
 
-The invoice has been minted. The pay sheet is open under the note, and the note text is still inside the window (the page does not jump the note away). The reply field still contains **This is my answer**.
+The invoice has been minted. The pay page stands where the reply field was. The note stays in the window. The page previews **This is my answer**. The reply field is gone.
 
 ![21.gifts welcome reaction pay](images/welcome-reaction-pay.png)
 
 ### Variant: reaction-pay-sheet
 
-The same open payment, scrolled so the sheet itself is in the window. **Back** is at the top left. The line reads **Pay ₿21**. Desktop shows the Bitcoin payment QR; a phone shows **Pay** and no QR. **Waiting for payment…** is visible.
+The same page, scrolled so Back, **Pay ₿21**, the QR or the phone **Pay** button, and **Waiting for payment…** are in the window. The preview is on that page.
 
 ![21.gifts welcome reaction pay sheet](images/welcome-reaction-pay-sheet.png)
 
 ### Variant: reaction-pay-kept
 
-The same open payment, scrolled so the reply composer is in the window. **Your reaction** is disabled and still says **This is my answer**. **Amount** is still **21**, with **$0.02** under it.
+The same page. The sentence is a preview, not a disabled **Your reaction** field, and there is no **Amount** field.
 
 ![21.gifts welcome reaction pay kept](images/welcome-reaction-pay-kept.png)
 

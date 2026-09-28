@@ -6055,12 +6055,9 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, 'Hi Bob', NO_RATE_SHOWN);
     });
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
-    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
-    expect((within(form).getByRole('button', { name: 'Post' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
+    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
     await act(async () => {
       resolvePublic({ ...FOREIGN, sats: 21, replyCount: 1 });
     });
@@ -6092,9 +6089,36 @@ describe('ForumLoader', () => {
       expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
+  });
+
+  it('does not collapse while a reaction pay page is open', async () => {
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    publicFetchMock.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
+    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Hide reactions' })).toBeTruthy();
   });
 
   it('invoices a gift-only reply from the composer', async () => {

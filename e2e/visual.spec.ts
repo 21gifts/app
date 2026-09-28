@@ -2411,10 +2411,13 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
+    const payPage = page.locator('[data-reply-pay-page]');
+    await expect(payPage).toBeVisible();
+    await expect(payPage.getByText(REACTION_ANSWER)).toBeVisible();
+    await expect(page.getByLabel('Your reaction')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
     await expect(page.getByText(/Pay ₿21/)).toBeVisible();
     expect(await insideShell(page.getByText(REACTION_NOTE_TEXT))).toBe(true);
-    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
     await shotScreen(page, 'state-welcome-reaction-pay');
   });
 
@@ -2437,8 +2440,9 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-pay-sheet]');
+    const sheet = page.locator('[data-reply-pay-page]');
     await expect(sheet).toBeVisible();
+    await expect(sheet.getByText(REACTION_ANSWER)).toBeVisible();
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -2481,15 +2485,24 @@ test.describe('onboarding screens', () => {
     await fillReaction(page);
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
-    const field = page.getByLabel('Your reaction');
-    await expect(field).toHaveValue(REACTION_ANSWER);
-    await expect(field).toBeDisabled();
-    await field.evaluate((node) => {
+    const payPage = page.locator('[data-reply-pay-page]');
+    const preview = payPage.getByText(REACTION_ANSWER);
+    await expect(preview).toBeVisible();
+    expect(
+      await preview.evaluate((node) => {
+        return (
+          !(node instanceof HTMLInputElement) &&
+          !(node instanceof HTMLTextAreaElement) &&
+          node.closest('input, textarea') === null
+        );
+      }),
+    ).toBe(true);
+    await preview.evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
     });
-    expect(await insideShell(field)).toBe(true);
-    expect(await insideShell(page.getByText('$0.02').last())).toBe(true);
-    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    expect(await insideShell(preview)).toBe(true);
+    await expect(page.getByLabel('Amount')).toHaveCount(0);
+    await expect(page.getByLabel('Your reaction')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-reaction-pay-kept');
   });
 
