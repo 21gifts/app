@@ -105,16 +105,12 @@ function scrollingDecls(body) {
   /** @type {{ prop: string, tokens: string[] }[]} */
   const found = [];
   // Not `--overflow`: the name must not continue an identifier.
-  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/g;
+  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/gi;
   let match = re.exec(body);
   while (match) {
-    const tokens = match[2]
-      .replace(/\s*!important\b/g, '')
-      .trim()
-      .split(/\s+/)
-      .filter((token) => token !== '');
+    const tokens = valueTokens(match[2]);
     if (tokens.some((token) => SCROLL_TOKEN.has(token))) {
-      found.push({ prop: match[1], tokens });
+      found.push({ prop: match[1].toLowerCase(), tokens });
     }
     match = re.exec(body);
   }
@@ -127,8 +123,9 @@ function scrollingDecls(body) {
  */
 function valueTokens(raw) {
   return raw
-    .replace(/\s*!important\b/g, '')
+    .replace(/\s*!important\b/gi, '')
     .trim()
+    .toLowerCase()
     .split(/\s+/)
     .filter((token) => token !== '');
 }
@@ -142,10 +139,10 @@ function valueTokens(raw) {
 function allOverflowDecls(body) {
   /** @type {{ prop: string, tokens: string[] }[]} */
   const found = [];
-  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/g;
+  const re = /(?:^|[^-\w])(overflow(?:-x|-y)?)\s*:\s*([^;]+)/gi;
   let match = re.exec(body);
   while (match) {
-    found.push({ prop: match[1], tokens: valueTokens(match[2]) });
+    found.push({ prop: match[1].toLowerCase(), tokens: valueTokens(match[2]) });
     match = re.exec(body);
   }
   return found;
@@ -266,6 +263,10 @@ function selfTest() {
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: auto }',
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } [data-scroll-x] { overflow-y: visible !important }',
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scrollport][data-scroll-active] { overflow: hidden } [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto; overflow: hidden } [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip; overflow-y: visible }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { overflow: AUTO }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { OVERFLOW: auto }',
   ];
   const gluedImportant = `
     [data-scrollport][data-scroll-active] { overflow:auto!important; }
