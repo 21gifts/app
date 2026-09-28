@@ -26,7 +26,7 @@ function shopsViewFromHash(hash: string): ShopsView | null {
 function writeShopsHash(view: ShopsView): void {
   const hash = view === 'post' ? '' : `#${view}`;
   const next = `${window.location.pathname}${window.location.search}${hash}`;
-  window.history.replaceState(null, '', next);
+  window.history.replaceState(window.history.state, '', next);
 }
 
 /**

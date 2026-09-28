@@ -35,8 +35,10 @@ describe('ShopsScreen', () => {
 
   it('switches to the map and the table', () => {
     renderWithLocale(<ShopsScreen />);
+    window.history.replaceState({ idx: 1 }, '', window.location.pathname);
     fireEvent.click(screen.getByRole('tab', { name: 'Map' }));
     expect(screen.getByTestId('places-map-screen')).toBeTruthy();
+    expect(window.history.state).toEqual({ idx: 1 });
     expect(screen.queryByTestId('forum-loader')).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Table' }));
     expect(screen.getByTestId('shop-table')).toBeTruthy();
