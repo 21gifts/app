@@ -524,7 +524,7 @@
 
 ## Function: PushOpenListener
 
-- **Purpose:** Listens for `21gifts-push-open` from the service worker and calls `router.push` only for a same-origin path, so an already open installed phone page can follow the notification URL. On mount, when the page becomes visible, and when it returns from the back-forward cache, it also opens a path the worker stored in the `21gifts-push-open` cache (at most 60 seconds old) in case a frozen page missed the message. The stored path is dropped only after the page follows it.
+- **Purpose:** Listens for `21gifts-push-open` from the service worker and calls `router.push` only for a same-origin path, so an already open installed phone page can follow the notification URL. On mount, when the page becomes visible, and when it returns from the back-forward cache, it also opens a path the worker stored in the `21gifts-push-open` cache (at most 60 seconds old) in case a frozen page missed the message. A query may contain `://`. The page answers the worker; if that answer does not arrive and the window cannot navigate, the worker opens the href. Each click has its own id, and only that id is dropped after the page follows it.
 - **Inputs:** `MessageEvent` on `navigator.serviceWorker`, plus a JSON `{ url, at }` cache record at `/push-open`. Accepts only `data.type === '21gifts-push-open'` with a string `data.url` that starts with a single `/` and contains no `://` or `\\`. Drops a missing, stale, future, or unsafe cache record.
 - **Returns / side effects:** `null`. Navigates with `router.push` when the path is a same-origin in-app URL; ignores anything else. No network.
 - **Used by:** `RootLayout` (inside `ThemeProvider`, after `AccountPreferenceSync`).

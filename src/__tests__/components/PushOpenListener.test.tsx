@@ -76,6 +76,73 @@ describe('PushOpenListener', () => {
     expect(navigation.push).toHaveBeenCalledWith('/messages/note-1');
   });
 
+  it('pushes a same-origin query that contains a url', () => {
+    const worker = stubServiceWorker();
+    renderWithLocale(<PushOpenListener />);
+    postMessage(worker, {
+      type: '21gifts-push-open',
+      url: '/messages/n1?return=https://21.gifts/welcome',
+    });
+    expect(navigation.push).toHaveBeenCalledWith('/messages/n1?return=https://21.gifts/welcome');
+  });
+
+  it('acks the worker after following the path', async () => {
+    const worker = stubServiceWorker();
+    const channel = new MessageChannel();
+    const acked = new Promise<void>((resolve) => {
+      channel.port1.onmessage = () => resolve();
+    });
+    renderWithLocale(<PushOpenListener />);
+    act(() => {
+      worker.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: '21gifts-push-open', url: '/messages/note-1', id: 'c1' },
+          ports: [channel.port2],
+        }),
+      );
+    });
+    await acked;
+    expect(navigation.push).toHaveBeenCalledWith('/messages/note-1');
+  });
+
+  it('still follows a message when nothing is stored', async () => {
+    const worker = stubServiceWorker();
+    installCaches(async () => undefined);
+    renderWithLocale(<PushOpenListener />);
+    postMessage(worker, { type: '21gifts-push-open', url: '/messages/note-1', id: 'gone' });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(navigation.push).toHaveBeenCalledWith('/messages/note-1');
+  });
+
+  it('does not drop a newer stored click', async () => {
+    const worker = stubServiceWorker();
+    const at = Date.now();
+    let reads = 0;
+    const cache = installCaches(async () => {
+      reads += 1;
+      const id = reads === 1 ? 'old' : 'new';
+      return record({ url: reads === 1 ? '/messages/old' : '/messages/new', at, id });
+    });
+    renderWithLocale(<PushOpenListener />);
+    await waitFor(() => {
+      expect(navigation.push).toHaveBeenCalledWith('/messages/old');
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(cache.delete).not.toHaveBeenCalled();
+    postMessage(worker, { type: '21gifts-push-open', url: '/messages/new', id: 'new' });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(cache.delete).toHaveBeenCalled();
+  });
+
   it('pushes a path with search or hash', () => {
     const worker = stubServiceWorker();
     renderWithLocale(<PushOpenListener />);
@@ -84,6 +151,26 @@ describe('PushOpenListener', () => {
     expect(navigation.push).toHaveBeenCalledWith('/messages?c=c-1');
     expect(navigation.push).toHaveBeenCalledWith('/messages/note-1#reply');
     expect(navigation.push).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores a path the URL parser rejects', () => {
+    const worker = stubServiceWorker();
+    const RealURL = globalThis.URL;
+    globalThis.URL = class extends RealURL {
+      constructor(url: string | URL, base?: string | URL) {
+        if (typeof url === 'string' && url.startsWith('/explode')) {
+          throw new TypeError('bad url');
+        }
+        super(url, base);
+      }
+    } as unknown as typeof URL;
+    try {
+      renderWithLocale(<PushOpenListener />);
+      postMessage(worker, { type: '21gifts-push-open', url: '/explode' });
+      expect(navigation.push).not.toHaveBeenCalled();
+    } finally {
+      globalThis.URL = RealURL;
+    }
   });
 
   it('ignores messages that are not a same-origin in-app path', () => {
@@ -98,7 +185,7 @@ describe('PushOpenListener', () => {
     postMessage(worker, { type: '21gifts-push-open' });
     postMessage(worker, 'nope');
     postMessage(worker, {});
-    postMessage(worker, { type: '21gifts-push-open', url: '/x://y' });
+
     postMessage(worker, { type: '21gifts-push-open', url: '/a\\b' });
     expect(navigation.push).not.toHaveBeenCalled();
   });

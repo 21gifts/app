@@ -105,19 +105,25 @@ function pushOpenTarget(raw) {
   }
 }
 
+/** One id per click so a later click is not erased by an earlier one. */
+let pushOpenSeq = 0;
+
 /** Remember the path so a suspended page can open it after the message was missed. */
 function rememberPushOpen(path) {
+  const id = `${Date.now()}-${pushOpenSeq}`;
+  pushOpenSeq += 1;
   return caches
     .open('21gifts-push-open')
     .then((cache) =>
       cache.put(
         new URL('/push-open', self.location.origin).href,
-        new Response(JSON.stringify({ url: path, at: Date.now() }), {
+        new Response(JSON.stringify({ url: path, at: Date.now(), id }), {
           headers: { 'Content-Type': 'application/json' },
         }),
       ),
     )
-    .catch(() => undefined);
+    .catch(() => undefined)
+    .then(() => id);
 }
 
 /** Focus one same-origin window, preferring the one the person is looking at. */
@@ -150,7 +156,7 @@ self.addEventListener('notificationclick', (event) => {
   const { href, path } = pushOpenTarget(raw);
 
   event.waitUntil(
-    rememberPushOpen(path).then(() =>
+    rememberPushOpen(path).then((id) =>
       self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
         const client = chosenPushClient(clientList);
         if (client !== null) {
@@ -164,23 +170,43 @@ self.addEventListener('notificationclick', (event) => {
           }
           const focused = client.focus();
           const deliver = () => {
-            client.postMessage({ type: '21gifts-push-open', url: path });
-            if (
-              clientUrl !== null &&
-              clientUrl.href !== href &&
-              typeof client.navigate === 'function'
-            ) {
-              return client
-                .navigate(href)
-                .then((navigated) => {
-                  if (navigated && 'focus' in navigated) {
-                    return navigated.focus();
-                  }
-                  return undefined;
-                })
-                .catch(() => undefined);
+            const channel = typeof MessageChannel === 'function' ? new MessageChannel() : null;
+            if (channel === null) {
+              client.postMessage({ type: '21gifts-push-open', url: path, id });
+            } else {
+              client.postMessage({ type: '21gifts-push-open', url: path, id }, [channel.port2]);
             }
-            return undefined;
+            const ack =
+              channel === null
+                ? Promise.resolve(true)
+                : new Promise((resolve) => {
+                    const timer = setTimeout(() => resolve(false), 500);
+                    channel.port1.onmessage = () => {
+                      clearTimeout(timer);
+                      resolve(true);
+                    };
+                  });
+            return ack.then((ok) => {
+              const canNavigate =
+                clientUrl !== null &&
+                clientUrl.href !== href &&
+                typeof client.navigate === 'function';
+              if (canNavigate) {
+                return client
+                  .navigate(href)
+                  .then((navigated) => {
+                    if (navigated && 'focus' in navigated) {
+                      return navigated.focus();
+                    }
+                    return undefined;
+                  })
+                  .catch(() => undefined);
+              }
+              if (!ok && self.clients.openWindow) {
+                return self.clients.openWindow(href);
+              }
+              return undefined;
+            });
           };
           if (focused !== undefined && focused !== null && typeof focused.then === 'function') {
             return focused.then(deliver, deliver);

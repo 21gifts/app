@@ -8970,6 +8970,22 @@ test('Function: PushOpenListener — welcome heading is visible', async ({ page 
   });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.evaluate(async () => {
+    const cache = await caches.open('21gifts-push-open');
+    await cache.put(
+      new URL('/push-open', location.origin).href,
+      new Response(
+        JSON.stringify({
+          url: '/messages/note-1?from=https://21.gifts/welcome',
+          at: Date.now(),
+          id: 'e2e-push',
+        }),
+        { headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+  });
+  await page.reload();
+  await expect(page).toHaveURL(/\/messages\/note-1\?from=https:\/\/21\.gifts\/welcome$/);
 });
 
 test('Function: fetchVapidPublicKey — GET /push/vapid-public with bearer is 200', async ({
