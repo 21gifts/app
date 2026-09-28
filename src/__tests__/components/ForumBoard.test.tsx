@@ -4494,6 +4494,74 @@ describe('ForumBoard', () => {
     expect(push).toHaveBeenCalledWith('/members/acc_reply');
   });
 
+  it('links author names with accountId to the member profile when readOnly', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc_other' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        onToggleExpand={onToggleExpand}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_other');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+  });
+
+  it('links reply author names with accountId to the member profile when readOnly', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', name: 'Carol', accountId: 'acc_reply', replyCount: 0 }]}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc_reply');
+  });
+
+  it('keeps author names as plain text when readOnly and there is no accountId', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
+    expect(screen.getByText('Ada')).toBeTruthy();
+  });
+
   it('keeps Damus-only names as plain text', () => {
     renderWithLocale(
       <ForumBoard

@@ -1913,6 +1913,7 @@ test.describe('onboarding screens', () => {
           messages: [
             {
               id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc-ada',
               name: 'Ada',
               text: 'Hello from the active list.',
               createdAt: '2026-08-01T10:00:00.000Z',
@@ -1939,6 +1940,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
     await expect(page.getByText('Hello from the active list.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View profile' })).toBeVisible();
     await shotScreen(page, 'screen-welcome-signed-out');
   });
 
