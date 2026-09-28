@@ -14,10 +14,34 @@ import {
   creationOptionsFromJSON,
   credentialToJSON,
 } from '@/lib/webauthn-browser';
+import { reportDiagnostic } from '@/lib/diagnostics';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 export { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+
+function diagnosticName(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.name;
+  }
+  return undefined;
+}
+
+function diagnosticMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return undefined;
+}
+
+function accountIdFromOptions(options: Record<string, unknown>): string | undefined {
+  const user = options['user'];
+  if (user === null || typeof user !== 'object') {
+    return undefined;
+  }
+  const name = (user as { name?: unknown }).name;
+  return typeof name === 'string' ? name : undefined;
+}
 
 /** One wallet WebAuthn ceremony per tab, including across remounts. */
 let ceremonyInFlight = false;
@@ -186,18 +210,55 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setStatus('busy');
     setError(null);
     try {
-      const begin = await startPasskeySeed(token);
+      let begin: Awaited<ReturnType<typeof startPasskeySeed>>;
+      try {
+        begin = await startPasskeySeed(token);
+      } catch (error: unknown) {
+        reportDiagnostic({
+          event: 'client.passkey.seed.begin',
+          stage: 'seed',
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
+      }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
+      reportDiagnostic({
+        event: 'client.passkey.seed.begin',
+        stage: 'seed',
+        challengeId: begin.challengeId,
+        accountId: accountIdFromOptions(begin.options),
+      });
       const options = await mergePrfExtension(creationOptionsFromJSON(begin.options));
-      const credential = (await navigator.credentials.create({
-        publicKey: options,
-      })) as PublicKeyCredential | null;
+      let credential: PublicKeyCredential | null;
+      try {
+        credential = (await navigator.credentials.create({
+          publicKey: options,
+        })) as PublicKeyCredential | null;
+      } catch (error: unknown) {
+        reportDiagnostic(
+          classifyWebAuthnError(error) === 'cancel'
+            ? { event: 'client.passkey.cancel', stage: 'seed', name: diagnosticName(error) }
+            : {
+                event: 'client.passkey.seed.ceremony',
+                stage: 'seed',
+                name: diagnosticName(error),
+                message: diagnosticMessage(error),
+              },
+        );
+        throw error;
+      }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
       if (!credential) {
+        reportDiagnostic({
+          event: 'client.passkey.seed.ceremony',
+          stage: 'seed',
+          message: 'no credential',
+        });
         setStatus('idle');
         return;
       }
@@ -206,15 +267,37 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       if (!prfFirst) {
+        reportDiagnostic({
+          event: 'client.passkey.seed.prf',
+          prfPresent: false,
+          stage: 'seed',
+        });
         setError('prfUnsupported');
         setStatus('error');
         return;
       }
-      const nextAccount = await finishPasskeySeed(
-        token,
-        begin.challengeId,
-        credentialToJSON(credential),
-      );
+      reportDiagnostic({
+        event: 'client.passkey.seed.prf',
+        prfPresent: true,
+        stage: 'seed',
+      });
+      let nextAccount: Awaited<ReturnType<typeof finishPasskeySeed>>;
+      try {
+        nextAccount = await finishPasskeySeed(
+          token,
+          begin.challengeId,
+          credentialToJSON(credential),
+        );
+      } catch (error: unknown) {
+        reportDiagnostic({
+          event: 'client.passkey.seed.finish',
+          stage: 'seed',
+          challengeId: begin.challengeId,
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
+      }
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
@@ -222,6 +305,11 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       try {
         nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
       } catch (deriveErr) {
+        reportDiagnostic({
+          event: 'client.passkey.seed.finish',
+          stage: 'seed',
+          name: diagnosticName(deriveErr),
+        });
         if (useAuthStore.getState().session === token) {
           setAccount(nextAccount);
         }
@@ -283,10 +371,20 @@ export function useWalletPhrase(): UseWalletPhraseResult {
         return;
       }
       if (!prfFirst) {
+        reportDiagnostic({
+          event: 'client.passkey.seed.prf',
+          prfPresent: false,
+          stage: 'seed',
+        });
         setError('prfUnsupported');
         setStatus('error');
         return;
       }
+      reportDiagnostic({
+        event: 'client.passkey.seed.prf',
+        prfPresent: true,
+        stage: 'seed',
+      });
       const nextMnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
@@ -297,6 +395,11 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
+      reportDiagnostic({
+        event: 'client.passkey.seed.show',
+        stage: 'seed',
+        name: diagnosticName(err),
+      });
       fail(err);
     } finally {
       inFlight.current = false;

@@ -1,6 +1,16 @@
 import { proxyApiRequest } from '@/lib/api-proxy';
 
 /**
+ * Proxies POST /diagnostics to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyDiagnosticsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/diagnostics');
+}
+
+/**
  * Proxies POST /auth/passkey/register/begin to the 21.gifts api.
  *
  * @param request - Incoming App Router request.

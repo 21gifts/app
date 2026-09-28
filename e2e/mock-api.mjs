@@ -2334,6 +2334,12 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/diagnostics') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   json(res, 404, { error: 'Not found' });
 });
 

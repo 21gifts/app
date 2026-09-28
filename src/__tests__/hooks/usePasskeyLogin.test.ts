@@ -85,6 +85,9 @@ afterEach(cleanup);
 
 describe('usePasskeyLogin', () => {
   it('does not finish registration when PRF is missing', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
     vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
@@ -98,6 +101,15 @@ describe('usePasskeyLogin', () => {
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(rememberSessionPhrase).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
+    const prfBody = fetchMock.mock.calls
+      .map((call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string })
+      .find((body) => body.event === 'client.passkey.register.prf');
+    expect(prfBody).toEqual({
+      event: 'client.passkey.register.prf',
+      prfPresent: false,
+      stage: 'register',
+    });
+    fetchMock.mockRestore();
     vi.unstubAllGlobals();
   });
 
@@ -1063,6 +1075,83 @@ describe('usePasskeyLogin', () => {
       value: originalUserAgent,
     });
     vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('records a string account id and ignores a null or non-string name', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const accountId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    vi.mocked(startPasskeyRegistration)
+      .mockResolvedValueOnce({
+        challengeId: 'ab'.repeat(32),
+        options: { user: { name: accountId } },
+      })
+      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: null } })
+      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: { name: 4 } } });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    await act(async () => {
+      result.current.register();
+    });
+    await act(async () => {
+      result.current.register();
+    });
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { accountId?: string },
+    );
+    expect(bodies.some((body) => body.accountId === accountId)).toBe(true);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('reports a ceremony error that is not a cancel', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockRejectedValue(new TypeError('blocked')),
+        get: vi.fn().mockRejectedValue(new TypeError('blocked')),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('error');
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('error');
+    vi.unstubAllGlobals();
+  });
+
+  it('reports a failed registration finish and a credential of the wrong type', async () => {
+    vi.mocked(finishPasskeyRegistration).mockRejectedValueOnce(new Error('finish failed'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+        get: vi.fn().mockResolvedValue({ id: 'cred', type: 'password' }),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('error');
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('error');
+    expect(finishPasskeyAuthentication).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 });

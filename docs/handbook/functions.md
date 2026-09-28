@@ -2978,6 +2978,27 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/auth/passkey/authenticate/finish`.
 
+## Function: DiagnosticsListener
+
+- **Purpose:** Subscribe to window `error` and `unhandledrejection` and forward the error name and message to the diagnostic log.
+- **Inputs:** None. Reads `window.location.pathname` and the event's `error` or `reason`.
+- **Returns / side effects:** Renders null. Posts `client.unhandled` through `reportDiagnostic`. Removes both listeners on unmount.
+- **Used by:** Root layout, mounted once for every page.
+
+## Function: proxyDiagnosticsPost
+
+- **Purpose:** Proxies POST `/diagnostics` so the browser can store an allowlisted client event.
+- **Inputs:** Incoming `Request` with a JSON body.
+- **Returns / side effects:** Upstream `Response` (204 when accepted). Does not read or log the body itself.
+- **Used by:** Route POST `/diagnostics`.
+
+## Function: reportDiagnostic
+
+- **Purpose:** POST one allowlisted client diagnostic to `/diagnostics`. Drops fields that fail the pattern instead of shortening them.
+- **Inputs:** Event name plus optional name, message, stage, status, path, challenge id, account id, and whether a PRF output was present.
+- **Returns / side effects:** void. Fire-and-forget `fetch` with `keepalive`. Never throws. Never sends PRF bytes, the recovery phrase, or a session token.
+- **Used by:** `DiagnosticsListener`, `usePasskeyLogin`, and `useWalletPhrase`.
+
 ## Function: proxyAuthPasskeyRegisterBeginPost
 
 - **Purpose:** Proxies POST `/auth/passkey/register/begin`.

@@ -191,6 +191,9 @@ describe('useWalletPhrase', () => {
   });
 
   it('does not finish seed when PRF is missing', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
     vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
     const { result } = renderHook(() => useWalletPhrase());
     await act(async () => {
@@ -198,6 +201,16 @@ describe('useWalletPhrase', () => {
     });
     expect(finishPasskeySeed).not.toHaveBeenCalled();
     expect(result.current.error).toBe('prfUnsupported');
+    const prfBody = fetchMock.mock.calls
+      .map((call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string })
+      .find((body) => body.event === 'client.passkey.seed.prf');
+    expect(prfBody).toEqual({
+      event: 'client.passkey.seed.prf',
+      prfPresent: false,
+      stage: 'seed',
+    });
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain('tok');
+    fetchMock.mockRestore();
   });
 
   it('maps seed begin 409 to generic and does not finish', async () => {
@@ -295,6 +308,9 @@ describe('useWalletPhrase', () => {
   });
 
   it('showPhrase records prfUnsupported when get has no PRF', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
     useAuthStore.setState({ session: 'tok', account: seededAccount });
     vi.mocked(obtainPrfFirstFromGet).mockResolvedValueOnce(null);
     const { result } = renderHook(() => useWalletPhrase());
@@ -302,6 +318,16 @@ describe('useWalletPhrase', () => {
       await result.current.showPhrase();
     });
     expect(result.current.error).toBe('prfUnsupported');
+    const prfBody = fetchMock.mock.calls
+      .map((call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string })
+      .find((body) => body.event === 'client.passkey.seed.prf');
+    expect(prfBody).toEqual({
+      event: 'client.passkey.seed.prf',
+      prfPresent: false,
+      stage: 'seed',
+    });
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain('tok');
+    fetchMock.mockRestore();
   });
 
   it('showPhrase fail maps cancel to idle', async () => {
@@ -735,5 +761,57 @@ describe('useWalletPhrase', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(result.current.error).toBeNull();
+  });
+
+  it('records a string account id and ignores a null or non-string name', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const accountId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    vi.mocked(startPasskeySeed)
+      .mockResolvedValueOnce({
+        challengeId: 'ab'.repeat(32),
+        options: { user: { name: accountId } },
+      })
+      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: null } })
+      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: { name: 4 } } });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    await act(async () => {
+      await result.current.activate();
+    });
+    await act(async () => {
+      await result.current.activate();
+    });
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { accountId?: string },
+    );
+    expect(bodies.some((body) => body.accountId === accountId)).toBe(true);
+    fetchMock.mockRestore();
+  });
+
+  it('reports a cancelled seed ceremony and a ceremony error', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi
+          .fn()
+          .mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'))
+          .mockRejectedValueOnce(new TypeError('blocked')),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.status).toBe('idle');
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBe('generic');
+    vi.unstubAllGlobals();
   });
 });

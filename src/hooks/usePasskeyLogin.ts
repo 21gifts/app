@@ -17,6 +17,7 @@ import {
   credentialToJSON,
   requestOptionsFromJSON,
 } from '@/lib/webauthn-browser';
+import { reportDiagnostic } from '@/lib/diagnostics';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -66,6 +67,29 @@ function isUserCancel(error: unknown): boolean {
     error instanceof DOMException &&
     (error.name === 'NotAllowedError' || error.name === 'AbortError')
   );
+}
+
+function diagnosticName(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.name;
+  }
+  return undefined;
+}
+
+function diagnosticMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return undefined;
+}
+
+function accountIdFromOptions(options: Record<string, unknown>): string | undefined {
+  const user = options['user'];
+  if (user === null || typeof user !== 'object') {
+    return undefined;
+  }
+  const name = (user as { name?: unknown }).name;
+  return typeof name === 'string' ? name : undefined;
 }
 
 /**
@@ -155,8 +179,25 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const completeRegistration = useCallback(
     async (runId: number, controller: AbortController, viewKey?: string): Promise<void> => {
       guard(runId);
-      const begin = await startPasskeyRegistration(viewKey);
+      let begin: Awaited<ReturnType<typeof startPasskeyRegistration>>;
+      try {
+        begin = await startPasskeyRegistration(viewKey);
+      } catch (error: unknown) {
+        reportDiagnostic({
+          event: 'client.passkey.register.begin',
+          stage: 'register',
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
+      }
       guard(runId);
+      reportDiagnostic({
+        event: 'client.passkey.register.begin',
+        stage: 'register',
+        challengeId: begin.challengeId,
+        accountId: accountIdFromOptions(begin.options),
+      });
       const publicKey = creationOptionsFromJSON(begin.options);
       const salt = await prfEvalFirstSalt();
       const first = new Uint8Array(salt.byteLength);
@@ -169,21 +210,65 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       if (!isIosWebAuthnHost()) {
         request.signal = controller.signal;
       }
-      const credential = await navigator.credentials.create(request);
+      let credential: Credential | null;
+      try {
+        credential = await navigator.credentials.create(request);
+      } catch (error: unknown) {
+        reportDiagnostic(
+          isUserCancel(error)
+            ? { event: 'client.passkey.cancel', stage: 'register', name: diagnosticName(error) }
+            : {
+                event: 'client.passkey.register.ceremony',
+                stage: 'register',
+                name: diagnosticName(error),
+                message: diagnosticMessage(error),
+              },
+        );
+        throw error;
+      }
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
-        throw new Error('Passkey creation returned no credential');
+        const error = new Error('Passkey creation returned no credential');
+        reportDiagnostic({
+          event: 'client.passkey.register.ceremony',
+          stage: 'register',
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
       }
       const publicKeyCredential = credential as PublicKeyCredential;
       const prfFirst = await obtainPrfFirst(publicKeyCredential);
       guard(runId);
       if (prfFirst === null) {
+        reportDiagnostic({
+          event: 'client.passkey.register.prf',
+          prfPresent: false,
+          stage: 'register',
+        });
         throw new Error('wallet.prfUnsupported');
       }
-      const session = await finishPasskeyRegistration(
-        begin.challengeId,
-        credentialToJSON(publicKeyCredential),
-      );
+      reportDiagnostic({
+        event: 'client.passkey.register.prf',
+        prfPresent: true,
+        stage: 'register',
+      });
+      let session: Awaited<ReturnType<typeof finishPasskeyRegistration>>;
+      try {
+        session = await finishPasskeyRegistration(
+          begin.challengeId,
+          credentialToJSON(publicKeyCredential),
+        );
+      } catch (error: unknown) {
+        reportDiagnostic({
+          event: 'client.passkey.register.finish',
+          stage: 'register',
+          challengeId: begin.challengeId,
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
+      }
       guard(runId);
       setAuth(session.token, session.account);
       choiceOfferedRef.current = false;
@@ -196,23 +281,77 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const completeAuthentication = useCallback(
     async (runId: number, controller: AbortController): Promise<void> => {
       guard(runId);
-      const begin = await startPasskeyAuthentication();
+      let begin: Awaited<ReturnType<typeof startPasskeyAuthentication>>;
+      try {
+        begin = await startPasskeyAuthentication();
+      } catch (error: unknown) {
+        reportDiagnostic({
+          event: 'client.passkey.authenticate.begin',
+          stage: 'authenticate',
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
+      }
       guard(runId);
+      reportDiagnostic({
+        event: 'client.passkey.authenticate.begin',
+        stage: 'authenticate',
+        challengeId: begin.challengeId,
+      });
       const request: CredentialRequestOptions = {
         publicKey: requestOptionsFromJSON(begin.options),
       };
       if (!isIosWebAuthnHost()) {
         request.signal = controller.signal;
       }
-      const credential = await navigator.credentials.get(request);
+      let credential: Credential | null;
+      try {
+        credential = await navigator.credentials.get(request);
+      } catch (error: unknown) {
+        reportDiagnostic(
+          isUserCancel(error)
+            ? {
+                event: 'client.passkey.cancel',
+                stage: 'authenticate',
+                name: diagnosticName(error),
+              }
+            : {
+                event: 'client.passkey.authenticate.ceremony',
+                stage: 'authenticate',
+                name: diagnosticName(error),
+                message: diagnosticMessage(error),
+              },
+        );
+        throw error;
+      }
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
-        throw new Error('Passkey assertion returned no credential');
+        const error = new Error('Passkey assertion returned no credential');
+        reportDiagnostic({
+          event: 'client.passkey.authenticate.ceremony',
+          stage: 'authenticate',
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
       }
-      const session = await finishPasskeyAuthentication(
-        begin.challengeId,
-        credentialToJSON(credential as PublicKeyCredential),
-      );
+      let session: Awaited<ReturnType<typeof finishPasskeyAuthentication>>;
+      try {
+        session = await finishPasskeyAuthentication(
+          begin.challengeId,
+          credentialToJSON(credential as PublicKeyCredential),
+        );
+      } catch (error: unknown) {
+        reportDiagnostic({
+          event: 'client.passkey.authenticate.finish',
+          stage: 'authenticate',
+          challengeId: begin.challengeId,
+          name: diagnosticName(error),
+          message: diagnosticMessage(error),
+        });
+        throw error;
+      }
       guard(runId);
       setAuth(session.token, session.account);
       choiceOfferedRef.current = false;
