@@ -69,7 +69,7 @@
     "id": "/login:mac-app",
     "label": "/login mac-app",
     "visual": "state-login-mac-app",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+    "combos": ["desktop-light", "desktop-dark"]
   },
   {
     "id": "/login:language-open",
@@ -183,7 +183,7 @@
     "id": "/wallet/phrase:mac-app",
     "label": "/wallet/phrase mac-app",
     "visual": "state-wallet-phrase-mac-app",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+    "combos": ["desktop-light", "desktop-dark"]
   },
   {
     "id": "/setup/name:default",

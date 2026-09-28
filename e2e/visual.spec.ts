@@ -1534,7 +1534,8 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-prf-unsupported');
   });
 
-  test('wallet phrase mac-app', async ({ page }) => {
+  test('wallet phrase mac-app', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.startsWith('mobile'), 'Mac Chrome app is not a phone');
     await installMacChromiumApp(page);
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -1745,7 +1746,8 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-in-app');
   });
 
-  test('login mac-app', async ({ page }) => {
+  test('login mac-app', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.startsWith('mobile'), 'Mac Chrome app is not a phone');
     await installMacChromiumApp(page);
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();

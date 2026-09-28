@@ -154,6 +154,8 @@ export const SCREEN_VARIANTS = [
     image: 'login-mac-app.png',
     visual: 'state-login-mac-app',
     needle: 'Passkey in the Chrome app',
+    // The installed Chrome app is a Mac window. A phone never shows this note.
+    combos: ['desktop-light', 'desktop-dark'],
   },
   {
     route: '/login',
@@ -287,6 +289,8 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-phrase-mac-app.png',
     visual: 'state-wallet-phrase-mac-app',
     needle: 'Passkey in the Chrome app',
+    // Same Mac-only window as /login mac-app. No phone baseline.
+    combos: ['desktop-light', 'desktop-dark'],
   },
   {
     route: '/setup/name',

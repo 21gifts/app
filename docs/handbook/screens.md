@@ -239,7 +239,7 @@ PRF missing. Alert **This browser cannot create a recovery phrase. Try another b
 
 ### Variant: mac-app
 
-Installed macOS Chrome app. Heading **Wallet**, the note **Passkey in the Chrome app**, and **Add recovery phrase** still on the page. No receive QR.
+Installed macOS Chrome app, desktop only. Heading **Wallet**, the note **Passkey in the Chrome app**, and **Add recovery phrase** still on the page. No receive QR. A phone does not show this note.
 
 ![21.gifts wallet phrase mac app](images/wallet-phrase-mac-app.png)
 
@@ -288,7 +288,7 @@ Telegram or another in-app WebView detected. Heading **Open this page in your br
 
 ### Variant: mac-app
 
-Installed macOS Chrome app. Note **Passkey in the Chrome app** above **Log in**. The QR code still starts from **Log in**. Touch ID on this Mac is the Chrome tab or Safari.
+Installed macOS Chrome app, desktop only. Note **Passkey in the Chrome app** above **Log in**. The QR code still starts from **Log in**. Touch ID on this Mac is the Chrome tab or Safari. A phone does not show this note.
 
 ![21.gifts login mac app](images/login-mac-app.png)
 
