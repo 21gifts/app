@@ -27,6 +27,14 @@ describe('ForumVideo', () => {
     }
     fireEvent.click(video);
     expect(onClick).toHaveBeenCalledTimes(1);
+    const play = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(video, 'play', { configurable: true, value: play });
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    expect(play).toHaveBeenCalledTimes(1);
+    fireEvent.play(video);
+    expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
+    fireEvent.pause(video);
+    expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
     const requestFullscreen = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(frame, 'requestFullscreen', {
       configurable: true,
