@@ -3220,7 +3220,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Show the givers and the repayment plan under a posted credit. Nothing renders until the ledger loads, and a failed read stays blank.
 - **Inputs:** Credit note id.
-- **Returns / side effects:** The Given and Paid back lists, or null. Fetches once per id. Names stay on one line. On a narrow screen the status sits under the amount; on a wide screen it sits beside it. The list scrolls with the page.
+- **Returns / side effects:** The Given and Paid back lists, or null. The chart uses day numbers (`dayIndex + 1`) until `fundedAt` is set or a day has no `dueOn`; once the credit is fully given it uses the UTC dates. A fiat chart sums only amounts in the ask currency. Fetches once per id. Names stay on one line. On a narrow screen the status sits under the amount; on a wide screen it sits beside it. The list scrolls with the page.
 - **Used by:** `ForumGoalBar`.
 
 ## Function: proxyMessagesRepaymentGet

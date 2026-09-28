@@ -1248,7 +1248,7 @@ const de = {
   'forum.creditChartDebt': 'Schuld',
   'forum.creditChartAria': 'Rückzahlung von {from} bis {to}. Am Anfang {total} geschuldet.',
   'forum.creditBackOpen':
-    'Die Tage stehen fest, sobald der Kredit voll gegeben ist. Bis dahin ist das der Plan für das bisher Gegebene.',
+    'Die Tage stehen fest, sobald das Darlehen voll gegeben ist. Bis dahin ist das der Plan für das bisher Gegebene.',
   'forum.creditNoneYet': 'Noch hat niemand gegeben.',
   'forum.creditUnassigned': 'hat kein 21.gifts-Konto und wird nicht zurückgezahlt.',
   'forum.creditStatusPaid': 'Bezahlt',

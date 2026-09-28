@@ -270,13 +270,14 @@ function RepaymentChart({
   }
   const first = groups[0]!;
   const last = groups[groups.length - 1]!;
+  const datesOpen = ledger.fundedAt !== null;
   const from =
-    first.dueOn === null
-      ? t('forum.creditDay', { day: '1' })
+    !datesOpen || first.dueOn === null
+      ? t('forum.creditDay', { day: String(first.dayIndex + 1) })
       : formatAxisDay(first.dueOn, locale, false);
   const to =
-    last.dueOn === null
-      ? t('forum.creditDay', { day: String(groups.length) })
+    !datesOpen || last.dueOn === null
+      ? t('forum.creditDay', { day: String(last.dayIndex + 1) })
       : formatAxisDay(
           last.dueOn,
           locale,
@@ -305,12 +306,17 @@ function useChartFormat(): {
 function dayAmount(rows: readonly RepaymentLine[], fiat: FiatCode | null): number {
   let sum = 0;
   for (const row of rows) {
-    if (fiat !== null && row.amount !== null) {
+    if (fiat !== null) {
+      if (row.amount === null) {
+        continue;
+      }
       const cents = Math.round(Number(row.amount) * 100);
       if (Number.isFinite(cents)) {
         sum += cents / 100;
       }
-    } else if (row.sats !== null) {
+      continue;
+    }
+    if (row.sats !== null) {
       sum += row.sats;
     }
   }

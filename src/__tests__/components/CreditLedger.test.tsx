@@ -394,4 +394,96 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" />);
     expect(await screen.findByText('No one has given yet.')).toBeTruthy();
   });
+
+  it('numbers an open plan even when calendar days are already present', async () => {
+    ledger({
+      ...btc,
+      fundedAt: null,
+      repayments: [
+        {
+          dayIndex: 2,
+          dueOn: '2026-09-27',
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: null,
+          sats: 10,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+        {
+          dayIndex: 4,
+          dueOn: '2026-09-29',
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: null,
+          sats: 10,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    const chart = await screen.findByRole('img', { name: /Day 3/ });
+    expect(chart.getAttribute('aria-label')).toContain('Day 5');
+    expect(chart.getAttribute('aria-label')).not.toMatch(/Sep/);
+    expect(screen.getAllByText('Day 3').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Sep 27/)).toBeNull();
+  });
+
+  it('sums a fiat chart in the ask currency and ignores satoshis', async () => {
+    ledger({
+      ...btc,
+      currency: 'USD',
+      repayments: [
+        {
+          dayIndex: 0,
+          dueOn: null,
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: null,
+          sats: 50,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+        {
+          dayIndex: 1,
+          dueOn: '2026-09-28',
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: 'nope',
+          sats: 7,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+        {
+          dayIndex: 2,
+          dueOn: '2026-09-29',
+          accountId: '11111111-1111-4111-8111-111111111111',
+          name: 'Bea',
+          username: 'bea',
+          amount: '1.50',
+          sats: 9,
+          status: 'scheduled',
+          via: 'lightning',
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    const chart = await screen.findByRole('img', { name: /Day 1/ });
+    const label = chart.getAttribute('aria-label') ?? '';
+    expect(label).toMatch(/\$1\.50 owed/);
+    expect(label).toContain('2026');
+    expect(label).not.toMatch(/₿|\$5/);
+  });
+
+  it('calls an open German plan a Darlehen', async () => {
+    ledger({ ...btc, fundedAt: null });
+    renderWithLocale(<CreditLedger messageId="m1" />, 'de');
+    expect(await screen.findByText(/Darlehen voll gegeben/)).toBeTruthy();
+    expect(screen.queryByText(/Kredit/)).toBeNull();
+  });
 });
