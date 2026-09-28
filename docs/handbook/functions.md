@@ -2220,7 +2220,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Info text in the installed macOS Chrome, Chromium, or Edge app. It says the QR code works with the phone that has the passkey, and that Touch ID on this Mac is available in a Chrome tab or by adding the site to the Dock from Safari. The passkey buttons stay on screen.
 - **Inputs:** None. Uses useTranslations for passkey.macAppHeading and passkey.macAppBody.
 - **Returns / side effects:** A heading and a paragraph. No buttons and no WebAuthn call.
-- **Used by:** LoginCard, ViewProfileClaim, and WalletScreenView when the macOS Chromium app gate is on.
+- **Used by:** `LoginCard` and `WalletScreenView` on `/wallet/phrase` only. Not on the public profile or the wallet receive page.
 
 ## Function: isInAppBrowser
 
@@ -2234,7 +2234,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Detects an installed macOS Chrome, Chromium, or Edge app, where the page shows a note that the QR code works and Touch ID on this Mac needs a Chrome tab or Safari. A normal Chrome tab and Safari stay false, so those pages stay unchanged.
 - **Inputs:** Optional MacChromiumAppHost (win); defaults to globalThis.window when present. Missing window (SSR) is false.
 - **Returns / side effects:** True only for a Macintosh Chrome, Chromium, or Edge app window (display-mode standalone, minimal-ui, or window-controls-overlay), not iPhone, iPad, or iPadOS desktop-site. No network and no DOM writes.
-- **Used by:** LoginCard, ViewProfileClaim, and WalletScreenView after mount. It does not start or block WebAuthn.
+- **Used by:** `LoginCard` and `WalletScreenView` on `/wallet/phrase` after mount. It does not start or block WebAuthn, and it is not used on `/view/[viewKey]` or the wallet receive page.
 
 ## Function: loadHandbookDocuments
 

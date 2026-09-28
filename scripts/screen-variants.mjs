@@ -240,13 +240,6 @@ export const SCREEN_VARIANTS = [
     needle: 'Show recovery phrase',
   },
   {
-    route: '/wallet',
-    id: 'mac-app',
-    image: 'wallet-mac-app.png',
-    visual: 'state-wallet-mac-app',
-    needle: 'Passkey in the Chrome app',
-  },
-  {
     route: '/wallet/phrase',
     id: 'default',
     image: 'wallet-phrase-add.png',
@@ -2352,13 +2345,6 @@ export const SCREEN_VARIANTS = [
     image: 'view-in-app.png',
     visual: 'state-view-in-app',
     needle: 'Open this page in your browser',
-  },
-  {
-    route: '/view/[viewKey]',
-    id: 'mac-app',
-    image: 'view-mac-app.png',
-    visual: 'state-view-mac-app',
-    needle: 'Passkey in the Chrome app',
   },
   {
     route: '/stats',

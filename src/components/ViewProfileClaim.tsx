@@ -4,13 +4,11 @@ import { Fingerprint, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
-import { MacChromiumAppPasskeyNote } from '@/components/MacChromiumAppPasskeyNote';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { isMacChromiumInstalledApp } from '@/lib/mac-chromium-app';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -48,11 +46,9 @@ export function ViewProfileClaim({
   const claimAttemptedRef = useRef(false);
   const claimedLoginRef = useRef(false);
   const [inApp, setInApp] = useState(false);
-  const [macApp, setMacApp] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
-    setMacApp(isMacChromiumInstalledApp());
   }, []);
 
   useEffect(() => {
@@ -153,24 +149,21 @@ export function ViewProfileClaim({
   }
 
   return (
-    <div className="flex w-full max-w-sm flex-col items-center gap-3">
-      {macApp ? <MacChromiumAppPasskeyNote /> : null}
-      <div className="flex w-full flex-col items-center gap-3 rounded-2xl bg-app-notice px-4 py-4 text-app-notice-fg">
-        <p className="text-center text-sm font-medium">{t('view.activationRequired')}</p>
-        <Button
-          type="button"
-          onClick={() => {
-            claimAttemptedRef.current = true;
-            if (useAuthStore.getState().account !== null) {
-              passkey.cancel();
-              useAuthStore.getState().clearAuth();
-            }
-            passkey.register(viewKey);
-          }}
-        >
-          {t('view.activate')}
-        </Button>
-      </div>
+    <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl bg-app-notice px-4 py-4 text-app-notice-fg">
+      <p className="text-center text-sm font-medium">{t('view.activationRequired')}</p>
+      <Button
+        type="button"
+        onClick={() => {
+          claimAttemptedRef.current = true;
+          if (useAuthStore.getState().account !== null) {
+            passkey.cancel();
+            useAuthStore.getState().clearAuth();
+          }
+          passkey.register(viewKey);
+        }}
+      >
+        {t('view.activate')}
+      </Button>
     </div>
   );
 }

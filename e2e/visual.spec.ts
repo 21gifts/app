@@ -1427,40 +1427,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-reveal-open');
   });
 
-  test('wallet mac-app', async ({ page }) => {
-    await installMacChromiumApp(page);
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: 'ada@walletofsatoshi.com',
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route(/\/pos\/charge$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ charge: null, history: [] }),
-      });
-    });
-    await page.goto('/wallet');
-    await expect(page.getByRole('heading', { name: 'Passkey in the Chrome app' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
-    await page.getByRole('link', { name: 'Set an amount' }).scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-wallet-mac-app');
-  });
-
   test('wallet error', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -8548,39 +8514,6 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
     await shotScreen(page, 'state-view-in-app');
-  });
-
-  test('screen /view/[viewKey] mac-app', async ({ page }) => {
-    await installMacChromiumApp(page);
-    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          name: 'Ada',
-          location: null,
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          lightningAddressVerified: false,
-          createdAt: 1,
-          hasPasskey: false,
-          aboutMe: null,
-        }),
-      });
-    });
-    await page.route('**/view-key/**/activity**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
-      });
-    });
-    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
-    const notice = page.getByRole('heading', { name: 'Passkey in the Chrome app' });
-    await expect(notice).toBeVisible();
-    await notice.scrollIntoViewIfNeeded();
-    await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
-    await shotScreen(page, 'state-view-mac-app');
   });
 });
 

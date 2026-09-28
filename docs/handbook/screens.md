@@ -194,12 +194,6 @@ Account that can already show a phrase. Open **Advanced functions** shows **Show
 
 ![21.gifts wallet reveal open](images/wallet-reveal-open.png)
 
-### Variant: mac-app
-
-Installed macOS Chrome app. The receive card and **Add recovery phrase** stay. Above them, the note **Passkey in the Chrome app**: the QR code works, Touch ID on this Mac is in a Chrome tab or Safari (File → Add to Dock).
-
-![21.gifts wallet mac app](images/wallet-mac-app.png)
-
 ## Screen: /wallet/phrase
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
@@ -3616,12 +3610,6 @@ Valid known key whose profile already has a passkey (`hasPasskey: true`). Same r
 Telegram or another in-app WebView detected on an unclaimed profile. Escape card under the profile (**Open this page in your browser**, **Open in browser**, **Copy link**); no yellow **Activate** banner.
 
 ![21.gifts public view in-app](images/view-in-app.png)
-
-### Variant: mac-app
-
-Installed macOS Chrome app on an unclaimed profile. Note **Passkey in the Chrome app** above the yellow **Activate** banner. **Activate** stays.
-
-![21.gifts public view mac app](images/view-mac-app.png)
 
 ## Screen: /handbook
 
