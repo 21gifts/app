@@ -283,7 +283,7 @@ export function MentionTextarea({
           id="forum-mention-suggest"
           role="listbox"
           aria-label={t('forum.mentionSuggest')}
-          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-2xl border border-app-border bg-app-card-muted p-1"
+          className="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
         >
           {shown.map((account, index) => (
             <li key={account.id} role="presentation">
