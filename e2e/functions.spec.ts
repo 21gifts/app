@@ -1323,7 +1323,10 @@ test('Function: fetchAboutMePhoto — signed-in profile About me photo is visibl
   }
   await page.getByRole('button', { name: 'Write your About me' }).click();
   await page.getByRole('button', { name: 'Add a photo' }).click();
-  await page.locator('input[type="file"]:not([name])').first().setInputFiles('e2e/fixtures/tiny.jpg');
+  await page
+    .locator('input[type="file"]:not([name])')
+    .first()
+    .setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('textbox', { name: 'About me' }).fill('I build on Bitcoin');
   await page.getByRole('button', { name: 'Save About me' }).click();
