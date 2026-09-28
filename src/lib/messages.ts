@@ -151,6 +151,9 @@ const en = {
   'home.why3Title': 'Their address, not ours',
   'home.why3Body':
     'The person you help adds their own Wallet of Satoshi address. Your payment goes there.',
+  'home.why4Title': '21.gifts takes no share',
+  'home.why4Body':
+    'We keep none of a person-to-person gift. Supporting the website uses a separate address.',
   'home.projectKicker': 'Keep the project running',
   'home.projectTitle': 'Want to support 21.gifts?',
   'home.projectLead':
@@ -160,6 +163,9 @@ const en = {
   'home.faq1Q': 'Do I need to sign in to read the forum?',
   'home.faq1A':
     'Yes. You need to sign in to read the forum. To receive gifts yourself, add a Wallet of Satoshi address.',
+  'home.faq2Q': 'Does 21.gifts take a cut?',
+  'home.faq2A':
+    'No. 21.gifts takes no share of a gift between people. Your wallet provider or the payment network may charge fees.',
   'home.faq3Q': 'Do I need a password?',
   'home.faq3A':
     'No. You sign in with your device instead of creating a 21.gifts password. Never share your recovery words.',
@@ -1294,6 +1300,9 @@ const de = {
   'home.why3Title': 'Du bezahlst in deiner Wallet',
   'home.why3Body':
     'Du legst den Betrag fest und bestätigst die Zahlung selbst. Am Computer kannst du den QR-Code scannen.',
+  'home.why4Title': '21.gifts behält keinen Anteil',
+  'home.why4Body':
+    'Für den Betrieb der Seite gibt es eine getrennte Adresse. Gebühren deiner Wallet können trotzdem anfallen.',
   'home.projectKicker': '21.gifts unterstützen',
   'home.projectTitle': 'Auch 21.gifts braucht Unterstützung',
   'home.projectLead':
@@ -1303,6 +1312,9 @@ const de = {
   'home.faq1Q': 'Brauche ich ein Konto, um das Wohnzimmer zu sehen?',
   'home.faq1A':
     'Ja. Für das Wohnzimmer meldest du dich an. Wenn du selbst Bitcoin-Geschenke empfangen möchtest, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.',
+  'home.faq2Q': 'Behält 21.gifts etwas von meinem Geschenk?',
+  'home.faq2A':
+    '21.gifts behält keinen Anteil ein. Für deine Wallet oder das Zahlungsnetzwerk können eigene Gebühren anfallen.',
   'home.faq3Q': 'Speichert 21.gifts mein Passwort?',
   'home.faq3A':
     'Du legst kein Passwort für 21.gifts an. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Gib Wiederherstellungswörter nie weiter.',
@@ -2463,6 +2475,9 @@ const es = {
   'home.why3Title': 'Su dirección, no la nuestra',
   'home.why3Body':
     'La persona que ayudas añade su propia dirección de Wallet of Satoshi. El pago va allí.',
+  'home.why4Title': '21.gifts no se queda con una parte',
+  'home.why4Body':
+    'No retenemos nada de los regalos entre personas. Si quieres apoyar esta web, hay una dirección aparte.',
   'home.projectKicker': 'Sostener el proyecto',
   'home.projectTitle': '¿Quieres apoyar a 21.gifts?',
   'home.projectLead':
@@ -2472,6 +2487,9 @@ const es = {
   'home.faq1Q': '¿Tengo que iniciar sesión para leer el foro?',
   'home.faq1A':
     'Sí. Para leer el foro debes iniciar sesión. Si también quieres recibir regalos, añade tu dirección de Wallet of Satoshi.',
+  'home.faq2Q': '¿Se queda 21.gifts con una parte?',
+  'home.faq2A':
+    'No. 21.gifts no se queda con parte de los regalos entre personas. Tu proveedor de cartera o la red de pago pueden cobrar comisiones.',
   'home.faq3Q': '¿Necesito una contraseña?',
   'home.faq3A':
     'No. Inicias sesión con tu dispositivo sin crear una contraseña para 21.gifts. Nunca compartas tus palabras de recuperación.',
@@ -3611,6 +3629,9 @@ const fil = {
   'home.why3Title': 'Address nila, hindi sa amin',
   'home.why3Body':
     'Sariling Wallet of Satoshi address ang inilalagay ng tatanggap. Doon napupunta ang bayad mo.',
+  'home.why4Title': 'Walang bahaging kinukuha ang 21.gifts',
+  'home.why4Body':
+    'Wala kaming kinukuha sa regalong ibinibigay mo sa kapwa. May hiwalay na address kung gusto mong suportahan ang website.',
   'home.projectKicker': 'Suportahan ang proyekto',
   'home.projectTitle': 'Gusto mo ring suportahan ang 21.gifts?',
   'home.projectLead':
@@ -3620,6 +3641,9 @@ const fil = {
   'home.faq1Q': 'Kailangan bang mag-log in para mabasa ang forum?',
   'home.faq1A':
     'Oo. Kailangan mong mag-log in para mabasa ang forum. Kung gusto mo ring tumanggap ng regalo, ilagay ang iyong Wallet of Satoshi address.',
+  'home.faq2Q': 'May kinukuha bang bahagi ang 21.gifts?',
+  'home.faq2A':
+    'Wala. Hindi kumukuha ng bahagi ang 21.gifts sa mga regalong ibinibigay sa kapwa. Maaaring maningil ang wallet provider o ang payment network.',
   'home.faq3Q': 'Kailangan ko ba ng password?',
   'home.faq3A':
     'Hindi. Gamit ang device mo ang pag-log in, kaya hindi ka gagawa ng password para sa 21.gifts. Huwag ibahagi ang mga recovery word mo.',

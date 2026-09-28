@@ -177,8 +177,7 @@ describe('FundingApplicationDetailScreen', () => {
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe(
       'https://21.gifts/about',
     );
-    expect(screen.getByText('Please check whether the posts match principle 1.')).toBeTruthy();
-    expect(screen.getByText('Giving is part of faith')).toBeTruthy();
+    expect(screen.queryByText('Giving is part of faith')).toBeNull();
     expect(screen.getByText('Living-room note.')).toBeTruthy();
     expect(screen.getAllByText(formatForumTime(POST.createdAt, 'en')).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Yes' })).toBeTruthy();

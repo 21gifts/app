@@ -44,6 +44,7 @@ export default async function Home(): Promise<ReactElement> {
   const t = (key: MessageKey): string => translate(messages, key);
   const faq = [
     ['home.faq1Q', 'home.faq1A'],
+    ['home.faq2Q', 'home.faq2A'],
     ['home.faq3Q', 'home.faq3A'],
     ['home.faq4Q', 'home.faq4A'],
     ['home.faq5Q', 'home.faq5A'],

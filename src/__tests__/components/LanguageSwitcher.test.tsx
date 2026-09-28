@@ -407,6 +407,7 @@ describe('LanguageSwitcher', () => {
     expect(localeGeneration()).toBe(generation + 1);
     expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=de`);
     expect(refresh).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
 
     await act(async () => {
       resolveRequest(updated);
@@ -414,7 +415,7 @@ describe('LanguageSwitcher', () => {
     });
 
     expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
-    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith('/de');
     expect(useAuthStore.getState().account?.locale).toBe('de');
     expect(useAuthStore.getState().account?.id).toBe(original.id);
   });
