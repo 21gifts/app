@@ -9,6 +9,7 @@ describe('service worker Sunday push', () => {
     const show = source.indexOf('showNotification');
     expect(source).toContain('function isDeviceSunday()');
     expect(source).toContain("weekday: 'short'");
+    expect(source).toContain("tag: 'sunday-quiet'");
     expect(guard).toBeGreaterThan(-1);
     expect(show).toBeGreaterThan(guard);
   });

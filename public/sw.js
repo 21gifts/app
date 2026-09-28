@@ -27,7 +27,22 @@ self.addEventListener('push', (event) => {
   }
 
   // Public posts and zaps stay quiet on Sunday. A private message still rings.
+  // The subscription requires a visible notification, so show one and close it.
   if (isDeviceSunday() && payload.type !== 'conversation') {
+    event.waitUntil(
+      self.registration
+        .showNotification('21.gifts', {
+          silent: true,
+          tag: 'sunday-quiet',
+          data: { url: '/welcome' },
+        })
+        .then(() => self.registration.getNotifications({ tag: 'sunday-quiet' }))
+        .then((notes) => {
+          for (const note of notes) {
+            note.close();
+          }
+        }),
+    );
     return;
   }
 
