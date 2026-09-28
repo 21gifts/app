@@ -67,7 +67,7 @@ function bootWorker(clients: unknown): { click: ClickListener; put: ReturnType<t
   };
   vm.createContext(sandbox);
   vm.runInContext(readFileSync('public/sw.js', 'utf8'), sandbox);
-  const click = listeners.notificationclick;
+  const click = listeners['notificationclick'];
   if (click === undefined) {
     throw new Error('notificationclick was not registered');
   }
