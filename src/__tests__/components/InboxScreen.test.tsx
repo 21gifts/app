@@ -2547,11 +2547,12 @@ describe('InboxScreen', () => {
     let stick = false;
     let stored = 0;
     let columnBottom = 3000;
+    const cancelAnimationFrame = vi.fn();
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       queued.push(cb);
       return queued.length;
     });
-    vi.stubGlobal('cancelAnimationFrame', () => undefined);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
     Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
       configurable: true,
       get() {
@@ -2609,22 +2610,22 @@ describe('InboxScreen', () => {
         </AppShell>,
       );
       expect(queued.length).toBeGreaterThan(0);
-      const scroller = staleView.container.querySelector('[data-scrollport]');
-      if (!(scroller instanceof HTMLElement)) {
-        throw new Error('expected AppShell scroller');
-      }
-      await act(async () => {
-        scroller.dispatchEvent(new Event('scroll'));
-      });
       expect(nearStartRef.mock.calls.some((call) => call[0] instanceof HTMLElement)).toBe(false);
+      const frameId = queued.length;
       const stale = queued[queued.length - 1];
       if (stale === undefined) {
         throw new Error('expected a pin frame');
       }
+      const queuedBeforeCancel = queued.length;
       staleView.unmount();
+      expect(cancelAnimationFrame).toHaveBeenCalledWith(frameId);
+      stick = true;
       await act(async () => {
         stale(0);
       });
+      expect(stored).toBe(0);
+      expect(queued.length).toBe(queuedBeforeCancel);
+      stick = false;
       nearStartRef.mockClear();
       renderWithLocale(
         <AppShell mode="fill">
