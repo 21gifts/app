@@ -2754,7 +2754,7 @@ Staff (moderator) hub with the payout-goal widget showing **Could not load payou
 
 ### Variant: default
 
-Staff table with one person, Ada, and black, white, and green cells. Today is the rightmost column.
+Staff table with one person, Ada: amber for a welcome gift alone, white for entitled but not collected, a split green/amber cell when both were received, and black for the remaining days. Today is the rightmost column.
 
 ![21.gifts payout per person](images/moderate-payouts.png)
 

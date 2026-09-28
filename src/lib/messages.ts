@@ -2605,7 +2605,7 @@ const es = {
   'moderate.payouts.link': 'Mostrar el pago por persona',
   'moderate.payouts.heading': 'Pago por persona',
   'moderate.payouts.lead':
-    'Concesión diaria y regalo de bienvenida de los últimos siete días UTC. Hoy está a la derecha. Las becas de moderadores no cuentan.',
+    'Ayuda diaria y regalo de bienvenida de los últimos siete días UTC. Hoy está a la derecha. Los estipendios de moderación no cuentan.',
   'moderate.payouts.empty': 'Nadie tenía derecho en estos siete días.',
   'moderate.payouts.error': 'No se pudo cargar la tabla. Inténtalo de nuevo.',
   'moderate.payouts.legend.blocked': 'Sin derecho',
@@ -2618,7 +2618,7 @@ const es = {
   'moderate.payouts.cell.missed': '{name}, {date}, con derecho, no cobrado',
   'moderate.payouts.cell.paid': '{name}, {date}, pago recibido',
   'moderate.payouts.cell.welcome': '{name}, {date}, regalo de bienvenida',
-  'moderate.payouts.cell.both': '{name}, {date}, concesión diaria y regalo de bienvenida',
+  'moderate.payouts.cell.both': '{name}, {date}, ayuda diaria y regalo de bienvenida',
 
   'moderate.handbook.heading': 'Manual',
   'moderate.handbook.tocLabel': 'Capítulos',
@@ -3510,7 +3510,7 @@ const fil = {
   'moderate.payouts.link': 'Ipakita ang bayad bawat tao',
   'moderate.payouts.heading': 'Bayad bawat tao',
   'moderate.payouts.lead':
-    'Araw-araw na grant at welcome gift sa nakaraang pitong araw na UTC. Nasa kanan ang ngayon. Hindi kasama ang stipend ng mga moderator.',
+    'Araw-araw na grant at welcome gift sa huling pitong araw na UTC. Nasa kanan ang ngayon. Hindi kasama ang stipend ng moderator.',
   'moderate.payouts.empty': 'Walang may karapatan sa pitong araw na ito.',
   'moderate.payouts.error': 'Hindi ma-load ang talahanayan. Subukan ulit.',
   'moderate.payouts.legend.blocked': 'Walang karapatan',
