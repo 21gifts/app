@@ -4786,7 +4786,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Loan' }).click();
     await expect(page.getByText('A loan is paid back.')).toBeVisible();
     await shotScreen(page, 'state-members-posts-open-loan-tag-open');
@@ -4858,7 +4858,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Donation' }).click();
     await expect(page.getByText('A donation is a gift. It is not paid back.')).toBeVisible();
     await shotScreen(page, 'state-members-posts-open-donation-tag-open');
@@ -4967,7 +4967,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Who gave and who is paid back' }).click();
     await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
     await expect(page.getByLabel('Paid back')).toBeVisible();
