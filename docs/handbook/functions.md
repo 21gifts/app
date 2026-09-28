@@ -489,7 +489,7 @@
 
 ## Function: ProfileChromeLeft
 
-- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`), `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading` | `nav.back`, default `profile.back`), and `onBackClick`. An unmodified click runs `onBackClick` and does not follow `backHref`. Modified clicks still follow `backHref`. Wallet's handler hides the words, closes Advanced functions, goes back, or opens the forum.
+- **Purpose:** Shared signed-in top-left chrome: icon-only back (44px link, ArrowLeft) plus `Wordmark` to `/welcome`. Optional `backHref` (default `/welcome`), `backLabelKey` (`profile.back` | `inbox.back` | `moderate.heading` | `nav.back` | `funding.apply.back` | `funding.applications.heading`, default `profile.back`), and `onBackClick`. `/grants/apply` and `/grants/applications` pass `funding.apply.back` with `backHref="/grants"`. `/grants/applications/[accountId]` passes `funding.applications.heading` with `backHref="/grants/applications"`. `/moderate/payouts`, `/moderate/hidden`, `/moderate/proposals`, and `/moderate/handbook` pass `moderate.heading` with `backHref="/moderate"`, the same as `ModeratorGroupPage`. An unmodified click runs `onBackClick` and does not follow `backHref`. Modified clicks still follow `backHref`. Wallet's handler hides the words, closes Advanced functions, goes back, or opens the forum.
 - **Inputs:** Optional `backHref`, `backLabelKey`, and `onBackClick`; catalog via `useTranslations`.
 - **Returns / side effects:** A link (`aria-label` from `backLabelKey`) and a wordmark link to `/welcome`. `onBackClick` runs on an unmodified primary click. No network.
 - **Used by:** `ProfilePage`, `WalletChromeLeft`, `WalletScreenView` (the visible `/wallet` Back, via `AppShellTopLeft`), `ShopsPage`, `GrantsPage`, `FundingApplyPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage` (`backHref="/moderate"`, `moderate.heading`), `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` mounts `WalletChromeLeft` as page `topLeft`; the card's registration wins while Wallet is shown.
@@ -3532,28 +3532,28 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateHandbookPage
 
-- **Purpose:** Next.js page for `/moderate/handbook` (signed-in staff handbook). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModerateHandbookScreen`. Hub is `/moderate`.
+- **Purpose:** Next.js page for `/moderate/handbook` (signed-in staff handbook). HTML `/moderate/handbook` is the handbook page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (`backHref="/moderate"`, `backLabelKey="moderate.heading"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModerateHandbookScreen`. Hub is `/moderate`.
 - **Inputs:** None.
 - **Returns / side effects:** The handbook screen inside fill AppShell.
 - **Used by:** Route `/moderate/handbook`.
 
 ## Function: ModerateHandbookScreen
 
-- **Purpose:** Client staff handbook of how 21.gifts works. Staff (`roleAtLeast(..., 'moderator')`) see TOC **Chapters** and three chapters **21.gifts login** (`#login`), **Verified** (`#verified`), **Official funding program** (`#funding`), each with a permalink and `HandbookCopyLink` `tone="app"`. Non-staff signed-in visitors see the heading plus forbidden copy and no chapters. Renders `null` without a session. In-card icon back to `/moderate`. No fetch. On mount and hashchange, scrolls the matching chapter into view when the hash is `#login`, `#verified`, or `#funding`.
+- **Purpose:** Client staff handbook of how 21.gifts works. Staff (`roleAtLeast(..., 'moderator')`) see TOC **Chapters** and three chapters **21.gifts login** (`#login`), **Verified** (`#verified`), **Official funding program** (`#funding`), each with a permalink and `HandbookCopyLink` `tone="app"`. Non-staff signed-in visitors see the heading plus forbidden copy and no chapters. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. No fetch. On mount and hashchange, scrolls the matching chapter into view when the hash is `#login`, `#verified`, or `#funding`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. No network.
 - **Used by:** `ModerateHandbookPage`.
 
 ## Function: HiddenNotesPage
 
-- **Purpose:** Next.js page for `/moderate/hidden` (signed-in hidden-notes list for moderators). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `HiddenNotesScreen`. Hidden HTTP is under `/forum/messages/hidden` (no `route.ts` beside this page).
+- **Purpose:** Next.js page for `/moderate/hidden` (signed-in hidden-notes list for moderators). HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (`backHref="/moderate"`, `backLabelKey="moderate.heading"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `HiddenNotesScreen`. Hidden HTTP is under `/forum/messages/hidden` (no `route.ts` beside this page).
 - **Inputs:** None.
 - **Returns / side effects:** The hidden-notes screen inside fill AppShell.
 - **Used by:** Route `/moderate/hidden`.
 
 ## Function: HiddenNotesScreen
 
-- **Purpose:** Client list of hidden living-room notes. Staff (moderator) fetch `listHiddenMessages` and show the lead copy plus the newest-hidden-first list (a non-interactive **External** badge next to the name when the row has a `via` value) (or empty / loading / try-again). A 21.gifts author name is a `Link` to `/members/:accountId`. The time is a `Link` to `/messages/:id`. An external name stays text inside the note link. The note text sits outside that link in `TranslatableNoteBody` (Languages **Translate** when the text differs from the UI locale). Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. No un-hide control.
+- **Purpose:** Client list of hidden living-room notes. Staff (moderator) fetch `listHiddenMessages` and show the lead copy plus the newest-hidden-first list (a non-interactive **External** badge next to the name when the row has a `via` value) (or empty / loading / try-again). A 21.gifts author name is a `Link` to `/members/:accountId`. The time is a `Link` to `/messages/:id`. An external name stays text inside the note link. The note text sits outside that link in `TranslatableNoteBody` (Languages **Translate** when the text differs from the UI locale). Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. No un-hide control.
 
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /forum/messages/hidden` only when the role is at least moderator.
@@ -3561,56 +3561,56 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: PayoutsPage
 
-- **Purpose:** Next.js page for `/moderate/payouts` (signed-in staff payout-per-person table). HTML `/moderate/payouts` is the table, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingPayoutsScreen`. JSON lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
+- **Purpose:** Next.js page for `/moderate/payouts` (signed-in staff payout-per-person table). HTML `/moderate/payouts` is the table, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (`backHref="/moderate"`, `backLabelKey="moderate.heading"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingPayoutsScreen`. JSON lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
 - **Inputs:** None.
 - **Returns / side effects:** The payout table inside fill AppShell.
 - **Used by:** Route `/moderate/payouts`.
 
 ## Function: FundingPayoutsScreen
 
-- **Purpose:** Client table of daily-grant payouts for seven UTC days. Staff (moderator) fetch `fetchFundingPayoutDays` and show a lead, a four-color legend, and name plus seven cells (black not entitled, white entitled but not collected, green payout received, amber welcome gift; split green/amber when both were paid the same day). Today is the rightmost column. A row with `accountId` links the name to `/members/{id}`. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. Moderator stipends are not in this table. Welcome gifts are in the table.
+- **Purpose:** Client table of daily-grant payouts for seven UTC days. Staff (moderator) fetch `fetchFundingPayoutDays` and show a lead, a four-color legend, and name plus seven cells (black not entitled, white entitled but not collected, green payout received, amber welcome gift; split green/amber when both were paid the same day). Today is the rightmost column. A row with `accountId` links the name to `/members/{id}`. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. Moderator stipends are not in this table. Welcome gifts are in the table.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/payout-days` only when the role is at least moderator.
 - **Used by:** `PayoutsPage`.
 
 ## Function: ProposalsPage
 
-- **Purpose:** Next.js page for `/moderate/proposals` (signed-in staff confirm/reject queue). HTML `/moderate/proposals` is the queue, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ProposalsScreen`. Proposal HTTP lives under `/trust/proposals` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
+- **Purpose:** Next.js page for `/moderate/proposals` (signed-in staff confirm/reject queue). HTML `/moderate/proposals` is the queue, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (`backHref="/moderate"`, `backLabelKey="moderate.heading"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ProposalsScreen`. Proposal HTTP lives under `/trust/proposals` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
 - **Inputs:** None.
 - **Returns / side effects:** The open-proposals screen inside fill AppShell.
 - **Used by:** Route `/moderate/proposals`.
 
 ## Function: ProposalsScreen
 
-- **Purpose:** Client confirm/reject queue of open moderator proposals. Staff (moderator) fetch `fetchTrustProposals` and show subject name, **Proposed by {name}**, time, **Reject** on every open row (`postTrustReject`, including a self-proposal), and **Confirm as moderator** (`postTrustConfirm`) or **Waiting for another moderator to confirm.** when `proposedBy.id === account.id`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/moderate`. A failed confirm or reject shows `trustChain.actionFailed`.
+- **Purpose:** Client confirm/reject queue of open moderator proposals. Staff (moderator) fetch `fetchTrustProposals` and show subject name, **Proposed by {name}**, time, **Reject** on every open row (`postTrustReject`, including a self-proposal), and **Confirm as moderator** (`postTrustConfirm`) or **Waiting for another moderator to confirm.** when `proposedBy.id === account.id`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed confirm or reject shows `trustChain.actionFailed`.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /trust/proposals` only when the role is at least moderator. Confirm posts `POST /trust/confirm-moderator`; reject posts `POST /trust/reject-moderator`. While either POST is in flight, Confirm and Reject are disabled and Loader2 sits on the pressed action.
 - **Used by:** `ProposalsPage`.
 
 ## Function: FundingApplicationsPage
 
-- **Purpose:** Next.js page for `/grants/applications` (signed-in staff grant-application queue). HTML `/grants/applications` is the queue, not a GET proxy. `/moderate/applications` redirects there. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingApplicationsScreen`. Application HTTP lives under `/funding/applications` because Next.js forbids a `route.ts` beside this page.
+- **Purpose:** Next.js page for `/grants/applications` (signed-in staff grant-application queue). HTML `/grants/applications` is the queue, not a GET proxy. `/moderate/applications` redirects there. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (`backHref="/grants"`, `backLabelKey="funding.apply.back"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingApplicationsScreen`. Application HTTP lives under `/funding/applications` because Next.js forbids a `route.ts` beside this page.
 - **Inputs:** None.
 - **Returns / side effects:** The open-applications screen inside fill AppShell.
 - **Used by:** Route `/grants/applications`. `/moderate/applications` redirects here.
 
 ## Function: FundingApplicationsScreen
 
-- **Purpose:** Client queue of open 21 gifts grant applications. Staff (founder or moderator) fetch `fetchFundingApplications` and show applicant name (link `/grants/applications/{id}`), applied time, empty / Loading… / error+Try again. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/grants`.
+- **Purpose:** Client queue of open 21 gifts grant applications. Staff (founder or moderator) fetch `fetchFundingApplications` and show applicant name (link `/grants/applications/{id}`), applied time, empty / Loading… / error+Try again. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when the role is founder or moderator.
 - **Used by:** `FundingApplicationsPage`.
 
 ## Function: FundingApplicationDetailPage
 
-- **Purpose:** Next.js page for `/grants/applications/[accountId]` (signed-in staff grant-application review). HTML page, not a GET proxy. `/moderate/applications/[accountId]` redirects there. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingApplicationDetailScreen`. Application HTTP lives under `/funding/applications/:accountId`.
+- **Purpose:** Next.js page for `/grants/applications/[accountId]` (signed-in staff grant-application review). HTML page, not a GET proxy. `/moderate/applications/[accountId]` redirects there. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (`backHref="/grants/applications"`, `backLabelKey="funding.applications.heading"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `FundingApplicationDetailScreen`. Application HTTP lives under `/funding/applications/:accountId`.
 - **Inputs:** Dynamic `accountId`.
 - **Returns / side effects:** The application-detail screen inside fill AppShell.
 - **Used by:** Route `/grants/applications/[accountId]`. The moderate path redirects here.
 
 ## Function: FundingApplicationDetailScreen
 
-- **Purpose:** Client staff review of one grant application. Staff fetch `fetchFundingApplication` and answer two questions against living-room posts (no replies; post text uses `TranslatableNoteBody`, the applicant name stays plain; each post keeps its own time; there is no application time under the name). The first is `funding.review.question.staff`, with an About link to `https://21.gifts/about`. **Yes** shows `funding.review.truth`. **Yes** there posts `postFundingAdmit`. **No** on either question posts `postFundingReject` while the grant is `pending` or `trial`. A failed decision shows `trustChain.actionFailed`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. In-card icon back to `/grants/applications`. While a POST is in flight, visible decide buttons are disabled and show the Loader2 spinner.
+- **Purpose:** Client staff review of one grant application. Staff fetch `fetchFundingApplication` and answer two questions against living-room posts (no replies; post text uses `TranslatableNoteBody`, the applicant name stays plain; each post keeps its own time; there is no application time under the name). The first is `funding.review.question.staff`, with an About link to `https://21.gifts/about`. **Yes** shows `funding.review.truth`. **Yes** there posts `postFundingAdmit`. **No** on either question posts `postFundingReject` while the grant is `pending` or `trial`. A failed decision shows `trustChain.actionFailed`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. While a POST is in flight, visible decide buttons are disabled and show the Loader2 spinner.
 - **Inputs:** `accountId`; session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications/:accountId` only when the role is founder or moderator. Decide buttons only when `grant.status` is `pending` or `trial`. Successful Admit / Reject leaves the buttons disabled and navigates to `/grants/applications`.
 - **Used by:** `FundingApplicationDetailPage`.
@@ -3638,14 +3638,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingApplyPage
 
-- **Purpose:** Next.js page for `/grants/apply`. Fill `AppShell` with `ProfileChromeLeft`, `SignedInChrome`, and `OnboardingGate screen="profile"` around `FundingApplyScreen`. `/profile/apply` redirects to this path.
+- **Purpose:** Next.js page for `/grants/apply`. Fill `AppShell` with `ProfileChromeLeft` top-left (`backHref="/grants"`, `backLabelKey="funding.apply.back"` — the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="profile"` around `FundingApplyScreen`. `/profile/apply` redirects to this path.
 - **Inputs:** None.
 - **Returns / side effects:** The apply walk inside fill AppShell.
 - **Used by:** Route `/grants/apply`.
 
 ## Function: FundingApplyScreen
 
-- **Purpose:** Guided grant apply. Missing About me, photo, or location are the next calm steps (not errors). Then two yes/no questions against `fetchMemberPosts` (post text uses `TranslatableNoteBody` with `messageId` = `row.id`; the name, location, and About me editor have no Translate control). The first is `funding.review.question.self`, plus an About link to `https://21.gifts/about`. **Yes** shows `funding.review.truth`. **Yes** there posts `postFundingApply` and goes to `/grants`. **No** does not apply.
+- **Purpose:** Guided grant apply. Missing About me, photo, or location are the next calm steps (not errors). Then two yes/no questions against `fetchMemberPosts` (post text uses `TranslatableNoteBody` with `messageId` = `row.id`; the name, location, and About me editor have no Translate control). The first is `funding.review.question.self`, plus an About link to `https://21.gifts/about`. **Yes** shows `funding.review.truth`. **Yes** there posts `postFundingApply` and goes to `/grants`. **No** does not apply. The page chrome owns the back; this screen renders no back control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session.
 - **Used by:** `FundingApplyPage`.

@@ -1,7 +1,5 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, type ReactElement } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -56,7 +54,8 @@ function hashChapterId(): ChapterId | null {
  * Moderators see a table of contents and three chapters (login, verified,
  * official funding), each with a permalink and copy-link. Other signed-in
  * visitors see a short forbidden message and no chapters. Renders nothing
- * without a session. In-card back goes to the moderation hub. No network.
+ * without a session. The page chrome owns the back; this screen renders
+ * none. No network.
  *
  * @returns The handbook card, forbidden copy, or `null` without a session.
  */
@@ -85,20 +84,9 @@ export function ModerateHandbookScreen(): ReactElement | null {
   }
 
   const heading = (
-    <div className="flex w-full items-center gap-2">
-      <Link
-        href="/moderate"
-        aria-label={t('moderate.heading')}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-      >
-        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('moderate.handbook.heading')}
-        </h1>
-      </div>
-    </div>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('moderate.handbook.heading')}
+    </h1>
   );
 
   if (!staff) {

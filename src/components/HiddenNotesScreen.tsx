@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -18,7 +17,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * Moderators see the hide-tool copy and the hidden-note list
  * (newest-hidden first). Other signed-in visitors see a short forbidden
  * message and no list. Fetches {@link listHiddenMessages} itself. Renders
- * nothing without a session. In-card back goes to the moderation hub.
+ * nothing without a session. The page chrome owns the back; this screen
+ * renders none.
  *
  * @returns The hidden-notes card, forbidden copy, or `null` without a session.
  */
@@ -68,20 +68,9 @@ export function HiddenNotesScreen(): ReactElement | null {
   }
 
   const heading = (
-    <div className="flex w-full items-center gap-2">
-      <Link
-        href="/moderate"
-        aria-label={t('moderate.heading')}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-      >
-        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('moderate.listLabel')}
-        </h1>
-      </div>
-    </div>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('moderate.listLabel')}
+    </h1>
   );
 
   if (!staff) {

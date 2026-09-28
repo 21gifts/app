@@ -14,8 +14,16 @@ export interface ProfileChromeLeftProps {
    * Catalog key for the icon-only back aria-label. Default `profile.back`;
    * `/moderate/group` passes `moderate.heading` with `backHref="/moderate"`.
    * `/wallet` passes `nav.back` when returning to a non-forum in-app page.
+   * `/grants/apply` and `/grants/applications` pass `funding.apply.back`;
+   * `/grants/applications/[accountId]` passes `funding.applications.heading`.
    */
-  backLabelKey?: 'profile.back' | 'inbox.back' | 'moderate.heading' | 'nav.back';
+  backLabelKey?:
+    | 'profile.back'
+    | 'inbox.back'
+    | 'moderate.heading'
+    | 'nav.back'
+    | 'funding.apply.back'
+    | 'funding.applications.heading';
   /**
    * Unmodified primary click. The link does not follow `backHref`. Modified
    * clicks still do. Wallet uses this for one step: hide the words, close

@@ -8,7 +8,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/grants/apply` — guided 21 gifts grant apply for a signed-in member.
  *
- * Requires name + address + living-room rules agreement via {@link OnboardingGate}
+ * The chrome back goes to `/grants` (the card has no back control). Requires
+ * name + address + living-room rules agreement via {@link OnboardingGate}
  * `screen="profile"`.
  *
  * @returns The apply walk.
@@ -18,7 +19,7 @@ export default function FundingApplyPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft />}
+      topLeft={<ProfileChromeLeft backHref="/grants" backLabelKey="funding.apply.back" />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="profile">

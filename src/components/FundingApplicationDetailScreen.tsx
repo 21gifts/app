@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
@@ -32,7 +32,7 @@ function personLabel(name: string | null, unnamed: string): string {
  * posts match the core principles, then whether those posts are true. **Yes**
  * on the truth question posts admit. **No** on either question posts reject.
  * Other signed-in visitors see forbidden copy and no fetch. Renders nothing
- * without a session. In-card back goes to the open-applications queue.
+ * without a session. The page chrome owns the back; this screen renders none.
  *
  * @param props - Dynamic route `accountId`.
  * @returns The detail card, forbidden copy, or `null` without a session.
@@ -86,20 +86,9 @@ export function FundingApplicationDetailScreen({
   }
 
   const heading = (
-    <div className="flex w-full items-center gap-2">
-      <Link
-        href="/grants/applications"
-        aria-label={t('funding.applications.heading')}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-      >
-        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('funding.detail.heading')}
-        </h1>
-      </div>
-    </div>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('funding.detail.heading')}
+    </h1>
   );
 
   if (!staff) {

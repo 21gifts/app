@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -68,9 +67,9 @@ function formatPayoutDay(day: string, locale: string): string {
  * Moderators fetch {@link fetchFundingPayoutDays} and see name plus seven
  * color cells (blocked / missed / paid / welcome; split when both were paid
  * the same day). Other signed-in visitors see a short forbidden message and
- * no table. Renders nothing without a session. In-card back goes to the
- * moderation hub. Moderator stipends are not in this table. Welcome gifts are
- * in the table.
+ * no table. Renders nothing without a session. The page chrome owns the back;
+ * this screen renders none. Moderator stipends are not in this table. Welcome
+ * gifts are in the table.
  *
  * @returns The payouts card, forbidden copy, or `null` without a session.
  */
@@ -114,20 +113,9 @@ export function FundingPayoutsScreen(): ReactElement | null {
   }
 
   const heading = (
-    <div className="flex w-full items-center gap-2">
-      <Link
-        href="/moderate"
-        aria-label={t('moderate.heading')}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-      >
-        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('moderate.payouts.heading')}
-        </h1>
-      </div>
-    </div>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('moderate.payouts.heading')}
+    </h1>
   );
 
   if (!staff) {

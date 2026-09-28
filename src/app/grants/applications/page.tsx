@@ -8,7 +8,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/grants/applications` — signed-in staff grant-application queue.
  *
- * Requires name + address + living-room rules agreement via {@link OnboardingGate}
+ * The chrome back goes to `/grants` (the card has no back control). Requires
+ * name + address + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page (Next.js forbids
  * that); application HTTP lives under `/funding/applications`.
  *
@@ -19,7 +20,7 @@ export default function FundingApplicationsPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<ProfileChromeLeft />}
+      topLeft={<ProfileChromeLeft backHref="/grants" backLabelKey="funding.apply.back" />}
       topRight={<SignedInChrome />}
     >
       <OnboardingGate screen="welcome">

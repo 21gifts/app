@@ -39,9 +39,7 @@ describe('ModerateHandbookPage', () => {
     renderWithLocale(<ModerateHandbookPage />);
     expect(screen.getByTestId('moderate-handbook-screen')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
-      '/welcome',
-    );
+    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 });

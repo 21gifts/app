@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
@@ -32,7 +32,8 @@ function personLabel(name: string | null, unnamed: string): string {
  * short forbidden message and no list. Fetches {@link fetchTrustProposals}
  * and confirms or rejects with {@link postTrustConfirm} /
  * {@link postTrustReject}. A failed action shows `trustChain.actionFailed`.
- * Renders nothing without a session. In-card back goes to the moderation hub.
+ * Renders nothing without a session. The page chrome owns the back; this
+ * screen renders none.
  *
  * @returns The proposals card, forbidden copy, or `null` without a session.
  */
@@ -81,20 +82,9 @@ export function ProposalsScreen(): ReactElement | null {
   }
 
   const heading = (
-    <div className="flex w-full items-center gap-2">
-      <Link
-        href="/moderate"
-        aria-label={t('moderate.heading')}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-      >
-        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('moderate.proposals.heading')}
-        </h1>
-      </div>
-    </div>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('moderate.proposals.heading')}
+    </h1>
   );
 
   if (!staff) {
