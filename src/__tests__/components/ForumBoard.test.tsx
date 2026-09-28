@@ -4513,7 +4513,12 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    const author = screen.getByRole('button', { name: 'View profile' });
+    fireEvent.click(author);
+    expect(push).toHaveBeenCalledWith('/members/acc_other');
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    push.mockClear();
+    fireEvent.keyDown(author, { key: 'Enter' });
     expect(push).toHaveBeenCalledWith('/members/acc_other');
     expect(onToggleExpand).not.toHaveBeenCalled();
   });

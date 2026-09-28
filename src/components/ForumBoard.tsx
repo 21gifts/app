@@ -1067,6 +1067,9 @@ export function ForumBoard({
                   onToggleExpand(message.id);
                 }}
                 onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) {
+                    return;
+                  }
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                     onToggleExpand(message.id);
@@ -1082,6 +1085,14 @@ export function ForumBoard({
                         aria-label={t('forum.authorProfile')}
                         className="text-sm font-medium text-app-fg underline underline-offset-2"
                         onClick={(event) => {
+                          stopCardToggle(event);
+                          router.push(`/members/${message.accountId}`);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Enter' && event.key !== ' ') {
+                            return;
+                          }
+                          event.preventDefault();
                           stopCardToggle(event);
                           router.push(`/members/${message.accountId}`);
                         }}
@@ -1420,6 +1431,14 @@ export function ForumBoard({
                                     aria-label={t('forum.authorProfile')}
                                     className="text-sm font-medium text-app-fg underline underline-offset-2"
                                     onClick={(event) => {
+                                      stopCardToggle(event);
+                                      router.push(`/members/${reply.accountId}`);
+                                    }}
+                                    onKeyDown={(event) => {
+                                      if (event.key !== 'Enter' && event.key !== ' ') {
+                                        return;
+                                      }
+                                      event.preventDefault();
                                       stopCardToggle(event);
                                       router.push(`/members/${reply.accountId}`);
                                     }}
