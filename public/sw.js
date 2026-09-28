@@ -116,7 +116,7 @@ function rememberPushOpen(path) {
     .open('21gifts-push-open')
     .then((cache) =>
       cache.put(
-        new URL('/push-open', self.location.origin).href,
+        new URL(`/push-open/${encodeURIComponent(id)}`, self.location.origin).href,
         new Response(JSON.stringify({ url: path, at: Date.now(), id }), {
           headers: { 'Content-Type': 'application/json' },
         }),

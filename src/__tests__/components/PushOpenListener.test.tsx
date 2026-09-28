@@ -35,6 +35,7 @@ function installCaches(
   openReject = false,
 ): { delete: ReturnType<typeof vi.fn> } {
   const cache = {
+    keys: vi.fn(async () => [new Request('https://21.gifts/push-open/one')]),
     match: vi.fn(match),
     delete: vi.fn(async () => true),
   };
@@ -117,30 +118,39 @@ describe('PushOpenListener', () => {
     expect(navigation.push).toHaveBeenCalledWith('/messages/note-1');
   });
 
-  it('does not drop a newer stored click', async () => {
-    const worker = stubServiceWorker();
-    const at = Date.now();
-    let reads = 0;
-    const cache = installCaches(async () => {
-      reads += 1;
-      const id = reads === 1 ? 'old' : 'new';
-      return record({ url: reads === 1 ? '/messages/old' : '/messages/new', at, id });
+  it('drops only the click it followed', async () => {
+    stubServiceWorker();
+    const at = Date.now() - 1_000;
+    const newer = { url: 'https://21.gifts/push-open/new' };
+    const older = { url: 'https://21.gifts/push-open/old' };
+    const deleted: string[] = [];
+    const cache = {
+      keys: vi.fn(async () => [newer, older]),
+      match: vi.fn(async (request: { url?: string }) => {
+        const label = String(request.url ?? '');
+        if (label.includes('/new')) {
+          return record({ url: '/messages/new', at: at + 10, id: 'new' });
+        }
+        return record({ url: '/messages/old', at, id: 'old' });
+      }),
+      delete: vi.fn(async (key: string) => {
+        deleted.push(key);
+        return true;
+      }),
+    };
+    Object.defineProperty(globalThis, 'caches', {
+      configurable: true,
+      value: { open: async () => cache },
     });
     renderWithLocale(<PushOpenListener />);
     await waitFor(() => {
-      expect(navigation.push).toHaveBeenCalledWith('/messages/old');
+      expect(navigation.push).toHaveBeenCalledWith('/messages/new');
     });
     await act(async () => {
       await Promise.resolve();
-      await Promise.resolve();
     });
-    expect(cache.delete).not.toHaveBeenCalled();
-    postMessage(worker, { type: '21gifts-push-open', url: '/messages/new', id: 'new' });
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-    expect(cache.delete).toHaveBeenCalled();
+    expect(deleted.some((key) => key.endsWith('/new'))).toBe(true);
+    expect(deleted.some((key) => key.endsWith('/old'))).toBe(false);
   });
 
   it('pushes a path with search or hash', () => {
@@ -339,7 +349,7 @@ describe('PushOpenListener', () => {
   it('still opens when dropping the stored path fails', async () => {
     stubServiceWorker();
     const at = Date.now();
-    const cache = installCaches(async () => record({ url: '/messages/note-9', at }));
+    const cache = installCaches(async () => record({ url: '/messages/note-9', at, id: 'drop' }));
     cache.delete.mockRejectedValue(new Error('delete'));
     renderWithLocale(<PushOpenListener />);
     await waitFor(() => {

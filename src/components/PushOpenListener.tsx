@@ -48,57 +48,64 @@ async function takePendingPushOpen(now: number): Promise<{ url: string; id: stri
   }
   try {
     const cache = await storage.open(PUSH_OPEN_CACHE);
-    const key = new URL('/push-open', window.location.origin).href;
-    const cached = await cache.match(key);
-    if (cached === undefined) {
-      return null;
+    const requests = await cache.keys();
+    let best: { url: string; id: string; at: number } | null = null;
+    for (const request of requests) {
+      const cached = await cache.match(request);
+      if (cached === undefined) {
+        continue;
+      }
+      let parsed: unknown;
+      try {
+        parsed = await cached.json();
+      } catch {
+        await cache.delete(request);
+        continue;
+      }
+      if (parsed === null || typeof parsed !== 'object') {
+        await cache.delete(request);
+        continue;
+      }
+      const url = 'url' in parsed ? parsed.url : undefined;
+      const at = 'at' in parsed ? parsed.at : undefined;
+      if (typeof url !== 'string' || typeof at !== 'number' || !Number.isFinite(at)) {
+        await cache.delete(request);
+        continue;
+      }
+      if (now - at > PUSH_OPEN_MAX_AGE_MS || at > now) {
+        await cache.delete(request);
+        continue;
+      }
+      const path = canonicalPushPath(url);
+      if (path === null) {
+        await cache.delete(request);
+        continue;
+      }
+      const id = 'id' in parsed && typeof parsed.id === 'string' ? parsed.id : '';
+      if (best === null || at > best.at) {
+        best = { url: path, id, at };
+      }
     }
-    const parsed: unknown = await cached.json();
-    if (parsed === null || typeof parsed !== 'object') {
-      await cache.delete(key);
-      return null;
-    }
-    const url = 'url' in parsed ? parsed.url : undefined;
-    const at = 'at' in parsed ? parsed.at : undefined;
-    if (typeof url !== 'string' || typeof at !== 'number' || !Number.isFinite(at)) {
-      await cache.delete(key);
-      return null;
-    }
-    if (now - at > PUSH_OPEN_MAX_AGE_MS || at > now) {
-      await cache.delete(key);
-      return null;
-    }
-    const path = canonicalPushPath(url);
-    if (path === null) {
-      await cache.delete(key);
-      return null;
-    }
-    const id = 'id' in parsed && typeof parsed.id === 'string' ? parsed.id : '';
-    return { url: path, id };
+    return best === null ? null : { url: best.url, id: best.id };
   } catch {
     return null;
   }
 }
 
-/** Drop a stored path after the page has followed that click. */
+/** Drop one click. A newer click lives under another key and stays. */
 async function forgetPendingPushOpen(id: string): Promise<void> {
+  if (id === '') {
+    return;
+  }
   const storage = globalThis.caches;
   if (storage === undefined) {
     return;
   }
   try {
     const cache = await storage.open(PUSH_OPEN_CACHE);
-    const key = new URL('/push-open', window.location.origin).href;
-    const cached = await cache.match(key);
-    if (cached === undefined) {
-      return;
-    }
-    const parsed: unknown = await cached.json();
-    const stored = parsed !== null && typeof parsed === 'object' && 'id' in parsed ? parsed.id : '';
-    if (stored !== id) {
-      return;
-    }
-    await cache.delete(key);
+    await cache.delete(
+      new URL(`/push-open/${encodeURIComponent(id)}`, window.location.origin).href,
+    );
   } catch {
     return;
   }

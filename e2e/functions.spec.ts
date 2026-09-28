@@ -8973,7 +8973,7 @@ test('Function: PushOpenListener — welcome heading is visible', async ({ page 
   await page.evaluate(async () => {
     const cache = await caches.open('21gifts-push-open');
     await cache.put(
-      new URL('/push-open', location.origin).href,
+      new URL('/push-open/e2e-push', location.origin).href,
       new Response(
         JSON.stringify({
           url: '/messages/note-1?from=https://21.gifts/welcome',

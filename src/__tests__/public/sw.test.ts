@@ -25,6 +25,7 @@ describe('service worker notification click', () => {
     expect(source).toContain(".open('21gifts-push-open')");
     expect(source).toContain('client.focused === true');
     expect(source).toContain('focused.then(deliver, deliver)');
+    expect(source).toContain('encodeURIComponent(id)');
     const remembered = source.indexOf('rememberPushOpen(path)', click);
     const focus = source.indexOf('client.focus()', click);
     const post = source.indexOf('client.postMessage', click);
