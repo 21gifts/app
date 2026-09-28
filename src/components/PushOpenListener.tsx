@@ -19,7 +19,7 @@ const PUSH_OPEN_MAX_AGE_MS = 60_000;
  * @returns `pathname` plus search and hash, or `null`.
  */
 function canonicalPushPath(url: string): string | null {
-  if (!url.startsWith('/') || url.includes('\\')) {
+  if (!url.startsWith('/') || url.startsWith('//') || url.includes('\\')) {
     return null;
   }
   try {

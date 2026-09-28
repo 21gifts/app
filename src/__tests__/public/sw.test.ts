@@ -135,6 +135,30 @@ describe('service worker notification click behavior', () => {
     expect(openWindow).toHaveBeenCalledWith('https://21.gifts/welcome');
   });
 
+  it('treats a backslash or a protocol-relative url as welcome', async () => {
+    const posted: unknown[] = [];
+    const client = {
+      url: 'https://21.gifts/wallet',
+      focused: true,
+      focus: () => Promise.resolve(),
+      postMessage(data: unknown, ports?: MessagePort[]) {
+        posted.push(data);
+        ports?.[0]?.postMessage('ack');
+      },
+      navigate: vi.fn(async () => undefined),
+    };
+    const { click } = bootWorker({
+      matchAll: async () => [client],
+      openWindow: async () => null,
+    });
+    await clickNotification(click, '/foo\\bar');
+    await clickNotification(click, '//21.gifts/messages/x');
+    expect(posted).toEqual([
+      expect.objectContaining({ url: '/welcome' }),
+      expect.objectContaining({ url: '/welcome' }),
+    ]);
+  });
+
   it('opens a window when no page is open', async () => {
     const openWindow = vi.fn(async () => null);
     const { click } = bootWorker({

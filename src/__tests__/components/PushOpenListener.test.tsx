@@ -183,6 +183,26 @@ describe('PushOpenListener', () => {
     }
   });
 
+  it('ignores a path the URL parser assigns to another origin', () => {
+    const worker = stubServiceWorker();
+    const RealURL = globalThis.URL;
+    globalThis.URL = class extends RealURL {
+      constructor(url: string | URL, base?: string | URL) {
+        super(url, base);
+        if (typeof url === 'string' && url.startsWith('/foreign')) {
+          Object.defineProperty(this, 'origin', { value: 'https://evil.example' });
+        }
+      }
+    } as unknown as typeof URL;
+    try {
+      renderWithLocale(<PushOpenListener />);
+      postMessage(worker, { type: '21gifts-push-open', url: '/foreign' });
+      expect(navigation.push).not.toHaveBeenCalled();
+    } finally {
+      globalThis.URL = RealURL;
+    }
+  });
+
   it('ignores messages that are not a same-origin in-app path', () => {
     const worker = stubServiceWorker();
     renderWithLocale(<PushOpenListener />);

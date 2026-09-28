@@ -88,7 +88,7 @@ self.addEventListener('push', (event) => {
 function pushOpenTarget(raw) {
   const welcomePath = '/welcome';
   const welcomeHref = new URL(welcomePath, self.location.origin).href;
-  if (raw === '') {
+  if (raw === '' || raw.includes('\\') || raw.startsWith('//')) {
     return { href: welcomeHref, path: welcomePath };
   }
   try {
@@ -178,7 +178,7 @@ self.addEventListener('notificationclick', (event) => {
             }
             const ack =
               channel === null
-                ? Promise.resolve(true)
+                ? Promise.resolve(false)
                 : new Promise((resolve) => {
                     const timer = setTimeout(() => resolve(false), 500);
                     channel.port1.onmessage = () => {
