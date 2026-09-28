@@ -966,6 +966,46 @@ describe('AboutMeSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
   }
 
+  it('ignores a stored profile response that is not an image', async () => {
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() =>
+          Promise.resolve(new Blob([new Uint8Array([1])], { type: 'application/json' }))
+        }
+        onSavePicture={vi.fn()}
+        loadBanner={() => Promise.resolve(new Blob([], { type: 'image/jpeg' }))}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+    cleanup();
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        loadPicture={() => Promise.resolve(new Blob([], { type: 'image/jpeg' }))}
+        onSavePicture={vi.fn()}
+        loadBanner={() =>
+          Promise.resolve(new Blob([new Uint8Array([1])], { type: 'application/json' }))
+        }
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(screen.queryByAltText('Wide profile image')).toBeNull();
+  });
+
   it('leaves the editor header empty when the profile pictures fail to load', async () => {
     renderWithLocale(
       <AboutMeSection

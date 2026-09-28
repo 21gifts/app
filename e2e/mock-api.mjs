@@ -1540,6 +1540,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (
+    (method === 'GET' || method === 'PUT') &&
+    (pathName === '/pictures/me' || pathName === '/banners/me')
+  ) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (method === 'PUT') {
+      res.writeHead(204, {
+        'access-control-allow-origin': '*',
+        'access-control-allow-headers': 'authorization, content-type, user-agent',
+        'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      });
+      res.end();
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/me/about/photo') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

@@ -136,6 +136,9 @@ export function AboutMeSection({
     void (async () => {
       try {
         const blob = await load();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          throw new Error('not-image');
+        }
         /* v8 ignore start -- a newer wide-image load replaced this one */
         if (generation !== loadGeneration.current) {
           return;
@@ -168,6 +171,9 @@ export function AboutMeSection({
     void (async () => {
       try {
         const blob = await load();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          throw new Error('not-image');
+        }
         /* v8 ignore start -- a newer profile-photo load replaced this one */
         if (generation !== pictureGeneration.current) {
           return;
