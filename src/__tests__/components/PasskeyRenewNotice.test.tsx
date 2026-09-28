@@ -130,6 +130,16 @@ describe('PasskeyRenewNotice', () => {
     expect(screen.getByText('You do not need to do anything now.', { exact: false })).toBeTruthy();
   });
 
+  it('does not acknowledge a failure without a session', () => {
+    useAuthStore.setState({
+      session: null,
+      account: { ...account, passkeyRenewFailed: true },
+    });
+    renderWithLocale(<PasskeyRenewNotice />);
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    expect(postPasskeyRenewAck).not.toHaveBeenCalled();
+  });
+
   it('does not start without a session', () => {
     useAuthStore.setState({ session: null, account });
     renderWithLocale(<PasskeyRenewNotice />);

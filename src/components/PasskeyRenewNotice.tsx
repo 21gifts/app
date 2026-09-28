@@ -18,6 +18,7 @@ type RenewStep = 'explain' | 'passkey' | 'success' | 'failed';
  * @returns The forced step, or `null` for the real flow.
  */
 function fixtureStep(): RenewStep | null {
+  /* v8 ignore next 3 -- client screenshots always have window */
   if (typeof window === 'undefined') {
     return null;
   }
@@ -81,7 +82,7 @@ export function PasskeyRenewNotice(): ReactElement | null {
   }
 
   async function onFailureOk(): Promise<void> {
-    if (session === null || busy) {
+    if (session === null) {
       return;
     }
     setBusy(true);
