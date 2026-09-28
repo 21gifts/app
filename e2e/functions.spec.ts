@@ -8434,11 +8434,11 @@ test('Function: fetchAccountActivity — profile chart shows received sats and t
   await seedAdaSession(page);
   await stubAccountActivity(page, {
     ...EMPTY_ACTIVITY,
-    receivedSats: 1000,
+    receivedSats: 1500,
     receivedOverTime: POPULATED_STATS.spendOverTime,
   });
   await page.goto('/profile');
-  await expect(page.getByText('2026-06-01')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
@@ -8504,11 +8504,11 @@ test('Function: useAccountTotals — profile chart reads /me/activity and the me
   await seedAdaSession(page);
   await stubAccountActivity(page, {
     ...EMPTY_ACTIVITY,
-    receivedSats: 1000,
+    receivedSats: 1500,
     receivedOverTime: POPULATED_STATS.spendOverTime,
   });
   await page.goto('/profile');
-  await expect(page.getByText('2026-06-01')).toBeVisible();
+  await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
