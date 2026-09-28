@@ -110,72 +110,76 @@ function QuotedForumNote({
 
   return (
     <div
-      className="block rounded-xl border border-app-border bg-app-card px-3 py-2 mt-2"
+      className="relative mt-2 block rounded-xl border border-app-border bg-app-card px-3 py-2"
       onClick={handleActivate}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <span className="flex flex-wrap items-center gap-2">
-          {memberAuthor ? (
-            <Link
-              href={`/members/${note.accountId}`}
-              aria-label={t('forum.authorProfile')}
-              className="text-sm font-medium text-app-fg underline underline-offset-2"
-              onClick={(event) => {
-                event.stopPropagation();
-              }}
-            >
-              {note.name}
-            </Link>
-          ) : (
-            <span className="text-sm font-medium text-app-fg">{note.name}</span>
-          )}
-          {badgeLabel !== null ? (
-            <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-              {badgeLabel}
-            </span>
-          ) : null}
-        </span>
-        <Link href={`/messages/${note.id}`} className="text-xs text-app-subtle">
-          <time dateTime={note.createdAt}>{formatForumTime(note.createdAt, locale)}</time>
-        </Link>
-      </div>
-      <Link href={`/messages/${note.id}`} aria-label={quoteLabel} className="block">
+      <Link
+        href={`/messages/${note.id}`}
+        aria-label={quoteLabel}
+        className="absolute inset-0 z-0 rounded-xl"
+      />
+      <div className="pointer-events-none relative z-10 [&_*]:pointer-events-none [&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_[role=dialog]]:pointer-events-auto [&_[role=dialog]_*]:pointer-events-auto">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <span className="flex flex-wrap items-center gap-2">
+            {memberAuthor ? (
+              <Link
+                href={`/members/${note.accountId}`}
+                aria-label={t('forum.authorProfile')}
+                className="pointer-events-auto text-sm font-medium text-app-fg underline underline-offset-2"
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                {note.name}
+              </Link>
+            ) : (
+              <span className="text-sm font-medium text-app-fg">{note.name}</span>
+            )}
+            {badgeLabel !== null ? (
+              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                {badgeLabel}
+              </span>
+            ) : null}
+          </span>
+          <time dateTime={note.createdAt} className="text-xs text-app-subtle">
+            {formatForumTime(note.createdAt, locale)}
+          </time>
+        </div>
         {photoUrl !== null ? (
           /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
           <img
             src={photoUrl}
             alt={t('forum.photoAlt', { name: note.name })}
             className="mt-2 block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+            draggable={false}
           />
         ) : null}
-      </Link>
-      {note.text !== '' ? (
-        translate ? (
-          <TranslatableNoteBody
-            messageId={note.id}
-            text={note.text}
-            truncate={truncate}
-            className="whitespace-pre-wrap text-sm text-app-fg"
-            {...(note.via === 'nostr' ? { plain: true } : {})}
-            {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
-          />
-        ) : truncate ? (
-          <ForumNoteText
-            text={note.text}
-            className="whitespace-pre-wrap text-sm text-app-fg"
-            {...(note.via === 'nostr' ? { plain: true } : {})}
-            {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
-          />
-        ) : (
-          <LinkedText
-            text={note.text}
-            className="whitespace-pre-wrap text-sm text-app-fg"
-            {...(note.via === 'nostr' ? { plain: true } : {})}
-            {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
-          />
-        )
-      ) : null}
-      <Link href={`/messages/${note.id}`} className="block">
+        {note.text !== '' ? (
+          translate ? (
+            <TranslatableNoteBody
+              messageId={note.id}
+              text={note.text}
+              truncate={truncate}
+              className="whitespace-pre-wrap text-sm text-app-fg"
+              {...(note.via === 'nostr' ? { plain: true } : {})}
+              {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
+            />
+          ) : truncate ? (
+            <ForumNoteText
+              text={note.text}
+              className="whitespace-pre-wrap text-sm text-app-fg"
+              {...(note.via === 'nostr' ? { plain: true } : {})}
+              {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
+            />
+          ) : (
+            <LinkedText
+              text={note.text}
+              className="whitespace-pre-wrap text-sm text-app-fg"
+              {...(note.via === 'nostr' ? { plain: true } : {})}
+              {...(memberAuthor && note.mentions !== undefined ? { mentions: note.mentions } : {})}
+            />
+          )
+        ) : null}
         <p
           className={
             fiatSuffix === null
@@ -186,7 +190,7 @@ function QuotedForumNote({
           {formatBitcoin(note.sats, numberFormat)}
           {fiatSuffix}
         </p>
-      </Link>
+      </div>
     </div>
   );
 }
@@ -213,7 +217,13 @@ function QuotedForumNote({
  *   `null` when `text` is empty and no quotes resolved. Unknown quote ids
  *   are loaded with `fetchPublicMessage` (catch, never throw). Short codes
  *   load with `fetchShortLink` (null, never throw); only a shown message strips
- *   that short URL.
+ *   that short URL. Each nested card has one stretched permalink to
+ *   `/messages/<id>` covering the caption, photo, time, and amount; the author
+ *   link, Translate, Show more, and links inside the caption stay outside that
+ *   permalink. `[&_[role=dialog]]:pointer-events-auto` and
+ *   `[&_[role=dialog]_*]:pointer-events-auto` keep the external-link confirm
+ *   dialog and everything inside it clickable, because that dialog is a
+ *   descendant of the card and is not portaled.
  * @throws Does not throw.
  */
 export function ForumQuotedBody({
