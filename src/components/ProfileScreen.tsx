@@ -125,7 +125,9 @@ function ProfileImages({
     void (async () => {
       try {
         const result =
-          wide === true ? await prepareForumPhoto(file, { wide: true }) : await prepareForumPhoto(file);
+          wide === true
+            ? await prepareForumPhoto(file, { wide: true })
+            : await prepareForumPhoto(file);
         if (!result.ok) {
           setError(
             result.error === 'tooLarge'
