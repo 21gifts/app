@@ -2130,6 +2130,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate:goal-payout",
+    "label": "/moderate goal-payout",
+    "visual": "state-moderate-goal-payout",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate:loading",
     "label": "/moderate loading",
     "visual": "state-moderate-loading",

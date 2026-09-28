@@ -2617,9 +2617,15 @@ Signed-in basis account. Copy **This page is for moderators.** No tools list.
 
 ### Variant: goal-open
 
-Staff (moderator) hub with the payout-goal widget expanded: explanation copy, the 30-UTC-day chart of people counted once (goal line at 100), and a secondary large **Show payout per person** button under the chart to `/moderate/payouts`. The button is absent while the widget is collapsed, loading, or in error.
+Staff (moderator) hub with the payout-goal widget expanded: explanation copy and the 30-UTC-day chart of people counted once (goal line at 100). This shot is the top of the open widget. The button under the chart is the next variant.
 
 ![21.gifts moderation goal open](images/moderate-goal-open.png)
+
+### Variant: goal-payout
+
+Same opened widget, scrolled so the secondary large **Show payout per person** button is in view. It links to `/moderate/payouts`. The button is absent while the widget is collapsed, loading, or in error.
+
+![21.gifts moderation goal payout link](images/moderate-goal-payout.png)
 
 ### Variant: loading
 

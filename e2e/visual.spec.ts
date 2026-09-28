@@ -13975,6 +13975,18 @@ test.describe('moderate screens', () => {
     await shotScreen(page, 'state-moderate-goal-open');
   });
 
+  test('moderate goal-payout', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await page.goto('/moderate');
+    await expect(page.getByText('12%')).toBeVisible();
+    await page.getByRole('button', { name: /Goal/ }).click();
+    const link = page.getByRole('link', { name: 'Show payout per person' });
+    await expect(link).toHaveAttribute('href', '/moderate/payouts');
+    await link.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-moderate-goal-payout');
+  });
+
   test('moderate payouts', async ({ page }) => {
     await seedAda(page, 'founder');
     await page.route('**/funding/payout-days', async (route) => {

@@ -2572,6 +2572,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/moderate',
+    id: 'goal-payout',
+    image: 'moderate-goal-payout.png',
+    visual: 'state-moderate-goal-payout',
+    needle: 'Show payout per person',
+  },
+  {
+    route: '/moderate',
     id: 'loading',
     image: 'moderate-loading.png',
     visual: 'state-moderate-loading',
