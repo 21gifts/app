@@ -828,7 +828,8 @@ describe('ShopNoteEditControl', () => {
       target: { files: [new File(['b'], 'extra.jpg', { type: 'image/jpeg' })] },
     });
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+      expect(prepareForumPhoto).toHaveBeenCalledTimes(11);
     });
+    expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
   });
 });
