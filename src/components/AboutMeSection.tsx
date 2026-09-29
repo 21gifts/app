@@ -14,8 +14,9 @@ import { LinkedText } from '@/components/LinkedText';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
+import { WideImageCropper } from '@/components/WideImageCropper';
 import { Button, IconButton } from '@/components/ui';
-import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
+import { isForumPhotoFile, prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 
 /** Max length of an About me note, matching the API. */
@@ -118,6 +119,7 @@ export function AboutMeSection({
   const [preparingPhoto, setPreparingPhoto] = useState(false);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const bannerUrlRef = useRef<string | null>(null);
+  const [bannerCropFile, setBannerCropFile] = useState<File | null>(null);
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
   const pictureUrlRef = useRef<string | null>(null);
 
@@ -323,6 +325,7 @@ export function AboutMeSection({
     setDraft(aboutMe ?? '');
     setPhotoDraft(null);
     setPhotoRemoved(false);
+    setBannerCropFile(null);
     setError(null);
     setEditing(false);
   }, [aboutMe]);
@@ -362,6 +365,7 @@ export function AboutMeSection({
       }
       setPhotoDraft(null);
       setPhotoRemoved(false);
+      setBannerCropFile(null);
       setEditing(false);
     } catch (err) {
       /* name 409 stays on /profile with the editor open; NameForm is on this card */
@@ -466,47 +470,52 @@ export function AboutMeSection({
     if (file === undefined || onSaveBanner === undefined) {
       return;
     }
-    const generation = photoGeneration.current + 1;
-    photoGeneration.current = generation;
+    photoGeneration.current += 1;
+    setPreparingPhoto(false);
+    if (!isForumPhotoFile(file)) {
+      setBannerCropFile(null);
+      setError(t('profile.about.errorUnsupported'));
+      return;
+    }
+    setError(null);
+    setBannerCropFile(file);
+  };
+
+  const saveBannerCrop = async (photo: {
+    contentType: 'image/jpeg';
+    data: string;
+  }): Promise<void> => {
+    /* v8 ignore start -- the cropper is mounted only when a save handler exists */
+    if (onSaveBanner === undefined) {
+      return;
+    }
+    /* v8 ignore end */
+    const generation = photoGeneration.current;
+    bannerGeneration.current += 1;
     setPreparingPhoto(true);
-    void (async () => {
-      try {
-        const result = await prepareForumPhoto(file, { wide: true });
-        if (generation !== photoGeneration.current) {
-          return;
-        }
-        if (!result.ok) {
-          setError(
-            result.error === 'tooLarge'
-              ? t('profile.about.errorTooLarge')
-              : result.error === 'notWide'
-                ? t('profile.about.errorNotWide')
-                : t('profile.about.errorUnsupported'),
-          );
-          return;
-        }
-        bannerGeneration.current += 1;
-        await onSaveBanner({ contentType: result.photo.contentType, data: result.photo.data });
-        if (generation !== photoGeneration.current) {
-          return;
-        }
-        if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
-          URL.revokeObjectURL(bannerUrlRef.current);
-        }
-        bannerUrlRef.current = result.photo.previewUrl;
-        setBannerUrl(result.photo.previewUrl);
-        setError(null);
-      } catch {
-        if (generation !== photoGeneration.current) {
-          return;
-        }
-        setError(t('profile.about.error'));
-      } finally {
-        if (generation === photoGeneration.current) {
-          setPreparingPhoto(false);
-        }
+    try {
+      await onSaveBanner(photo);
+      if (generation !== photoGeneration.current) {
+        return;
       }
-    })();
+      if (bannerUrlRef.current !== null && bannerUrlRef.current.startsWith('blob:')) {
+        URL.revokeObjectURL(bannerUrlRef.current);
+      }
+      const previewUrl = `data:image/jpeg;base64,${photo.data}`;
+      bannerUrlRef.current = previewUrl;
+      setBannerUrl(previewUrl);
+      setBannerCropFile(null);
+      setError(null);
+    } catch {
+      if (generation !== photoGeneration.current) {
+        return;
+      }
+      setError(t('profile.about.error'));
+    } finally {
+      if (generation === photoGeneration.current) {
+        setPreparingPhoto(false);
+      }
+    }
   };
 
   const removePicture = (): void => {
@@ -723,6 +732,24 @@ export function AboutMeSection({
                   <X aria-hidden="true" className="h-4 w-4" />
                 </IconButton>
               </div>
+            ) : null}
+            {bannerCropFile !== null ? (
+              <WideImageCropper
+                file={bannerCropFile}
+                busy={preparingPhoto || saving}
+                onConfirm={(photo) => {
+                  void saveBannerCrop(photo);
+                }}
+                onCancel={() => setBannerCropFile(null)}
+                onError={(cropError) => {
+                  if (cropError === 'unsupported') {
+                    setBannerCropFile(null);
+                    setError(t('profile.about.errorUnsupported'));
+                    return;
+                  }
+                  setError(t('profile.about.errorTooLarge'));
+                }}
+              />
             ) : null}
             {bannerUrl !== null ? (
               <div className="flex items-center gap-2">

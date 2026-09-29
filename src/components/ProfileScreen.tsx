@@ -15,9 +15,10 @@ import { NameForm } from '@/components/NameForm';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { WideImageCropper } from '@/components/WideImageCropper';
 import { Button, Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-import { prepareForumPhoto } from '@/lib/forum-photo';
+import { isForumPhotoFile, prepareForumPhoto } from '@/lib/forum-photo';
 import {
   fetchAboutMePhoto,
   fetchMember,
@@ -35,6 +36,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * Resting header for the signed-in profile. The round photo and the wide
  * image are different pictures, and neither is the About me note photo.
  * A slot that has no stored picture offers a labeled button to add one.
+ * An open wide-image crop stays while a profile photo saves. `imageEpoch`
+ * only reloads the stored pictures; it does not remount this header.
+ * A failed or empty reload clears that slot. Add buttons stay hidden until
+ * the reload settles.
  *
  * @param props - Loaders and saves for the two account slots. A rejected load means none.
  * @returns The header. Add buttons appear only after that slot's load has failed.
@@ -44,11 +49,13 @@ function ProfileImages({
   loadBanner,
   onSavePicture,
   onSaveBanner,
+  imageEpoch,
 }: {
   loadPicture: () => Promise<Blob>;
   loadBanner: () => Promise<Blob>;
   onSavePicture: (photo: { contentType: string; data: string }) => Promise<void>;
   onSaveBanner: (photo: { contentType: string; data: string }) => Promise<void>;
+  imageEpoch: number;
 }): ReactElement {
   const { t } = useTranslations();
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
@@ -57,93 +64,118 @@ function ProfileImages({
   const [bannerSettled, setBannerSettled] = useState(false);
   const [saving, setSaving] = useState<'picture' | 'banner' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bannerCropFile, setBannerCropFile] = useState<File | null>(null);
   const pictureInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const pictureUrlRef = useRef<string | null>(null);
+  const bannerUrlRef = useRef<string | null>(null);
   const loadPictureRef = useRef(loadPicture);
   const loadBannerRef = useRef(loadBanner);
   loadPictureRef.current = loadPicture;
   loadBannerRef.current = loadBanner;
 
   useEffect(() => {
+    setPictureSettled(false);
+    setBannerSettled(false);
     let cancelled = false;
-    let pictureObject: string | null = null;
-    let bannerObject: string | null = null;
+    const dropPicture = (): void => {
+      const previous = pictureUrlRef.current;
+      pictureUrlRef.current = null;
+      setPictureUrl(null);
+      setPictureSettled(true);
+      if (previous !== null) {
+        URL.revokeObjectURL(previous);
+      }
+    };
+    const dropBanner = (): void => {
+      const previous = bannerUrlRef.current;
+      bannerUrlRef.current = null;
+      setBannerUrl(null);
+      setBannerSettled(true);
+      if (previous !== null) {
+        URL.revokeObjectURL(previous);
+      }
+    };
     void (async () => {
       try {
         const blob = await loadPictureRef.current();
-        if (cancelled || !blob.type.startsWith('image/') || blob.size === 0) {
-          if (!cancelled) {
-            setPictureSettled(true);
-          }
+        if (cancelled) {
           return;
         }
-        pictureObject = URL.createObjectURL(blob);
-        if (!cancelled) {
-          setPictureUrl(pictureObject);
-          setPictureSettled(true);
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          dropPicture();
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const previous = pictureUrlRef.current;
+        pictureUrlRef.current = url;
+        setPictureUrl(url);
+        setPictureSettled(true);
+        if (previous !== null) {
+          URL.revokeObjectURL(previous);
         }
       } catch {
         if (!cancelled) {
-          setPictureSettled(true);
+          dropPicture();
         }
       }
     })();
     void (async () => {
       try {
         const blob = await loadBannerRef.current();
-        if (cancelled || !blob.type.startsWith('image/') || blob.size === 0) {
-          if (!cancelled) {
-            setBannerSettled(true);
-          }
+        if (cancelled) {
           return;
         }
-        bannerObject = URL.createObjectURL(blob);
-        if (!cancelled) {
-          setBannerUrl(bannerObject);
-          setBannerSettled(true);
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          dropBanner();
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const previous = bannerUrlRef.current;
+        bannerUrlRef.current = url;
+        setBannerUrl(url);
+        setBannerSettled(true);
+        if (previous !== null) {
+          URL.revokeObjectURL(previous);
         }
       } catch {
         if (!cancelled) {
-          setBannerSettled(true);
+          dropBanner();
         }
       }
     })();
     return () => {
       cancelled = true;
-      if (pictureObject !== null) {
-        URL.revokeObjectURL(pictureObject);
+    };
+  }, [imageEpoch]);
+
+  useEffect(() => {
+    return () => {
+      if (pictureUrlRef.current !== null) {
+        URL.revokeObjectURL(pictureUrlRef.current);
       }
-      if (bannerObject !== null) {
-        URL.revokeObjectURL(bannerObject);
+      if (bannerUrlRef.current !== null) {
+        URL.revokeObjectURL(bannerUrlRef.current);
       }
     };
   }, []);
 
-  const saveFile = (file: File, wide: boolean): void => {
-    setSaving(wide ? 'banner' : 'picture');
+  const savePicture = (file: File): void => {
+    setSaving('picture');
     setError(null);
     void (async () => {
       try {
-        const result =
-          wide === true
-            ? await prepareForumPhoto(file, { wide: true })
-            : await prepareForumPhoto(file);
+        const result = await prepareForumPhoto(file);
         if (!result.ok) {
           setError(
             result.error === 'tooLarge'
               ? t('profile.about.errorTooLarge')
-              : result.error === 'notWide'
-                ? t('profile.about.errorNotWide')
-                : t('profile.about.errorUnsupported'),
+              : t('profile.about.errorUnsupported'),
           );
           return;
         }
         const payload = { contentType: result.photo.contentType, data: result.photo.data };
-        if (wide) {
-          await onSaveBanner(payload);
-        } else {
-          await onSavePicture(payload);
-        }
+        await onSavePicture(payload);
       } catch {
         setError(t('profile.about.error'));
       } finally {
@@ -155,23 +187,63 @@ function ProfileImages({
   const onPictureFile = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (file !== undefined) {
-      saveFile(file, false);
+    if (saving !== null || file === undefined) {
+      return;
     }
+    savePicture(file);
   };
 
   const onBannerFile = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (file !== undefined) {
-      saveFile(file, true);
+    if (saving !== null || file === undefined) {
+      return;
+    }
+    if (!isForumPhotoFile(file)) {
+      setError(t('profile.about.errorUnsupported'));
+      return;
+    }
+    setBannerCropFile(file);
+    setError(null);
+  };
+
+  const saveBannerCrop = async (photo: {
+    contentType: 'image/jpeg';
+    data: string;
+  }): Promise<void> => {
+    setSaving('banner');
+    setError(null);
+    try {
+      await onSaveBanner(photo);
+      setBannerCropFile(null);
+    } catch {
+      setError(t('profile.about.error'));
+    } finally {
+      setSaving(null);
     }
   };
 
   const overlapped = pictureUrl !== null && bannerUrl !== null;
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      {bannerUrl !== null ? (
+      {bannerCropFile !== null ? (
+        <WideImageCropper
+          file={bannerCropFile}
+          busy={saving !== null}
+          onConfirm={(photo) => {
+            void saveBannerCrop(photo);
+          }}
+          onCancel={() => setBannerCropFile(null)}
+          onError={(cropError) => {
+            if (cropError === 'unsupported') {
+              setBannerCropFile(null);
+              setError(t('profile.about.errorUnsupported'));
+              return;
+            }
+            setError(t('profile.about.errorTooLarge'));
+          }}
+        />
+      ) : bannerUrl !== null ? (
         <div className={`relative w-full${overlapped ? ' mb-8' : ''}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- blob URL from the wide image */}
           <img
@@ -194,13 +266,7 @@ function ProfileImages({
           variant="secondary"
           size="lg"
           disabled={saving !== null}
-          icon={
-            saving === 'banner' ? (
-              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-            ) : (
-              <ImagePlus aria-hidden="true" className="h-4 w-4" />
-            )
-          }
+          icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
           onClick={() => {
             bannerInputRef.current?.click();
           }}
@@ -337,7 +403,8 @@ export function ProfileScreen(): ReactElement {
     <Card surface={false}>
       {session !== null ? (
         <ProfileImages
-          key={`${session}:${imageEpoch}`}
+          key={session}
+          imageEpoch={imageEpoch}
           loadPicture={() => fetchProfilePhoto(session)}
           loadBanner={() => fetchWideBanner(session)}
           onSavePicture={async (photo) => {

@@ -594,14 +594,14 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a resting header (round profile photo from `GET /pictures/me` and wide image from `GET /banners/me` when that slot is stored; a missing one is the button **Add a profile photo** or **Add a wide image**; neither is the About me photo), a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; the editor is not translatable; copy-profile-link on the card — never a forum post), name, location, then the same public facts as `/members/:id` (`MemberProfileScreen` `factsOnly`: role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed), then Wallet of Satoshi address forms, then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. The signed-in menu Profile row shows no amounts. Back + wordmark live in `ProfileChromeLeft`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a resting header (round profile photo from `GET /pictures/me` and wide image from `GET /banners/me` when that slot is stored; a missing one is the button **Add a profile photo** or **Add a wide image**; choosing a wide image opens a 5:2 cropper in place of **Add a wide image** (**Add a profile photo** stays; **Use this crop** stores the framed JPEG; the X (**Cancel crop**) stores nothing; saving the profile photo, including from About me, reloads the header and leaves that open crop in place; a failed or empty reload clears that header picture, and the Add button stays hidden until the reload settles); neither is the About me photo), a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; the editor is not translatable; copy-profile-link on the card — never a forum post), name, location, then the same public facts as `/members/:id` (`MemberProfileScreen` `factsOnly`: role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed), then Wallet of Satoshi address forms, then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. The signed-in menu Profile row shows no amounts. Back + wordmark live in `ProfileChromeLeft`.
 - **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime` (also returns `failed`); pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `fetchProfilePhoto`, `fetchWideBanner`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `fetchMember(session, account.id)` then `MemberProfileScreen` with `factsOnly` for the public gifts facts; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
 - **Returns / side effects:** When a profile photo or wide image is stored, that header is above the heading (wide image `aspect-[5/2]`, round photo overlapping its lower edge when both exist). Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no chart FiatPicker, no SVG / no ₿|fiat scale; a thrown activity load shows `profile.chartError` (`role="alert"`) instead of `profile.chartEmpty`; in-flight stays `profile.chartEmpty`; never **Loading…**; populated: legend + ₿ | selected fiat + SVG). The only FiatPicker on the card is `FiatPreferenceSwitcher`. About me, name form, location form, then the public member facts (role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, QR, Shop sticker, post/reaction counts, and the on-demand feed), then the Wallet of Satoshi address form, then `PushToggle` (Notifications pills), Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). A failed `fetchMember` shows `forum.error` and **Try again** and leaves the editors up. `MissingRequirementsError` replaces to `/setup/rules`. No Message button and no staff actions. Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
 
 ## Function: AboutMeSection
 
-- **Purpose:** Profile-card About me block: heading plus filled text and/or photo (the note photo shows the whole picture (`object-contain`, `max-h-80`) and is not cropped, not the profile photo or the wide image), or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`. The editor has three separate attaches, each its own ImagePlus and remove: the About me photo (JPEG/PNG/WebP via `prepareForumPhoto`, no video), the round profile photo, and the wide image. Each previews on its own. A portrait is never stored as the wide image. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
+- **Purpose:** Profile-card About me block: heading plus filled text and/or photo (the note photo shows the whole picture (`object-contain`, `max-h-80`) and is not cropped, not the profile photo or the wide image), or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`. The editor has three separate attaches, each its own ImagePlus and remove: the About me photo (JPEG/PNG/WebP via `prepareForumPhoto`, no video), the round profile photo, and the wide image. Each previews on its own. Choosing a wide image opens a 5:2 cropper above its preview; **Use this crop** stores that JPEG and the X (**Cancel crop**) stores nothing. Closing the editor, or a successful save, drops an unsaved crop. A whole portrait is not stored as the wide image. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
 - **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `messageId` (stored About me note id; omitted or blank keeps `LinkedText`), optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets), optional `loadPicture` / `onSavePicture` for the round profile photo and optional `loadBanner` / `onSaveBanner` for the wide image (neither is the About me note photo; a non-image blob stays empty), optional `startEditing` to open the owner editor on mount.
 - **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save, `onSavePicture` when the profile photo changes, and `onSaveBanner` when the wide image changes. Loads a blob URL when `hasPhoto` and `loadPhoto` are set and revokes it on unmount. Loads and revokes the profile-photo and wide-image blob URLs the same way when `loadPicture` or `loadBanner` is set.
 - **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), `FundingApplyScreen` on `/grants/apply`.
@@ -1905,9 +1905,51 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: prepareForumPhoto
 
 - **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL. JPEG files also keep `takenAt` from Exif before the canvas encode; PNG and WebP set `takenAt` null.
-- **Inputs:** `file` accepted by `isForumPhotoFile`. Optional second argument `{ wide: true }` for the profile wide image.
-- **Returns / side effects:** `{ ok: true, photo }` (`photo.takenAt` is a civil string or null) or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. With `{ wide: true }`, a still that is under 640 px wide or less than 1.5 times as wide as it is tall returns `'notWide'`. Revokes temporary object URLs it creates.
-- **Used by:** `ForumLoader`, `AboutMeSection`, `InboxLoader`, `ModeratorGroupScreen`.
+- **Inputs:** `file` accepted by `isForumPhotoFile`.
+- **Returns / side effects:** `{ ok: true, photo }` (`photo.takenAt` is a civil string or null) or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates. The wide profile image is not prepared here; `WideImageCropper` frames that JPEG.
+- **Used by:** `ForumLoader`, `AboutMeSection`, `InboxLoader`, `ModeratorGroupScreen`, `ProfileScreen`.
+
+## Function: initialBannerCrop
+
+- **Purpose:** Largest 5:2 rectangle centered in a source image, used as the opening frame when a member picks a wide profile image.
+- **Inputs:** `imageWidth` and `imageHeight` in source pixels.
+- **Returns / side effects:** `{ x, y, width, height }`, or `null` when either dimension is not a finite number greater than 0. A panorama is full height. Every other shape, including a square and a 4:3, is full width. No network.
+- **Used by:** `WideImageCropper`.
+
+## Function: panBannerCrop
+
+- **Purpose:** Move a 5:2 crop window by a source-pixel delta and keep it inside the image.
+- **Inputs:** `imageWidth`, `imageHeight`, the current `crop`, and `dx` / `dy` in source pixels.
+- **Returns / side effects:** A new crop with the same width and height. `x` and `y` are clamped to the image. No network.
+- **Used by:** `WideImageCropper`, `zoomBannerCrop`.
+
+## Function: zoomBannerCrop
+
+- **Purpose:** Scale a 5:2 crop around its center. A factor greater than 1 zooms in by shrinking the window.
+- **Inputs:** `imageWidth`, `imageHeight`, the current `crop`, and `factor`.
+- **Returns / side effects:** The zoomed crop, or the same crop when the image has no fitting window. The window cannot grow past `initialBannerCrop` and cannot shrink below a height of 32, unless the fitting window is already shorter. Width stays height times 5/2. No network.
+- **Used by:** `WideImageCropper`.
+
+## Function: outputBannerSize
+
+- **Purpose:** Encoded pixel size for a chosen wide-image crop. The result is what the profile API measures.
+- **Inputs:** `cropWidth` in source pixels.
+- **Returns / side effects:** `{ width, height }`. Width is `min(1280, max(640, round(cropWidth)))`. Height is `max(1, round(width * 2 / 5))`. No network.
+- **Used by:** `encodeWideBanner`.
+
+## Function: encodeWideBanner
+
+- **Purpose:** Draw a 5:2 crop into a JPEG the wide-image API accepts.
+- **Inputs:** `source` canvas image, `imageWidth`, `imageHeight`, and the `crop` window.
+- **Returns / side effects:** `{ ok: true, photo }` with `contentType: 'image/jpeg'`, raw base64 `data`, and a `previewUrl` data URL. Quality tries 0.8, then 0.6, then 0.4. `{ ok: false, error: 'tooLarge' }` when the decoded JPEG is still over 1 MiB. `'unsupported'` when the crop is not finite and positive, the canvas has no 2d context, or `toDataURL` is not a JPEG. Does not throw for those failures.
+- **Used by:** `WideImageCropper`.
+
+## Function: WideImageCropper
+
+- **Purpose:** In-app 5:2 frame for a picked wide profile image. The member drags, pinches, or scrolls the wheel, then confirms or cancels. A portrait, square, or 4:3 is framed here instead of rejected.
+- **Inputs:** `file` (JPEG, PNG, or WebP), optional `busy`, `onConfirm` with `{ contentType: 'image/jpeg', data }`, `onCancel`, and `onError` (`'unsupported'` or `'tooLarge'`).
+- **Returns / side effects:** The frame (`profile.about.bannerCropHint` **Drag the photo to choose the wide image**), labeled **Use this crop**, and an X IconButton whose accessible name is **Cancel crop** (no visible cancel sentence). Confirm calls `encodeWideBanner` and `onConfirm`. Cancel calls `onCancel` and uploads nothing. A file that cannot be decoded calls `onError('unsupported')`. No network by itself.
+- **Used by:** `ProfileScreen` (empty wide-image slot; the cropper replaces **Add a wide image** and leaves **Add a profile photo**), `AboutMeSection` (editor, full width above the small wide-image preview).
 
 ## Function: parseNumberFormat
 
