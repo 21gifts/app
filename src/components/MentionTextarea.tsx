@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { searchMentionAccounts } from '@/lib/mention-search';
-import { activeMention } from '@/lib/mention-caret';
+import { activeMention, remapClosedMentionStarts } from '@/lib/mention-caret';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Space between the field and the list (`mt-2` / `mb-2`). */
@@ -119,6 +119,8 @@ export function MentionTextarea({
   const listRef = useRef<HTMLUListElement>(null);
   const localRef = useRef<HTMLTextAreaElement>(null);
   const pendingCaret = useRef<number | null>(null);
+  const valueRef = useRef(value);
+  const editCaretRef = useRef<number | null>(null);
   const [caret, setCaret] = useState(0);
   const [collapsed, setCollapsed] = useState(true);
   const [seed, setSeed] = useState<MentionAccount[] | null>(null);
@@ -200,17 +202,14 @@ export function MentionTextarea({
   }, [tokenKey]);
 
   useEffect(() => {
-    setClosedStarts((current) => {
-      let next: Set<number> | null = null;
-      for (const index of current) {
-        if (value.charAt(index) === '@') {
-          continue;
-        }
-        next ??= new Set(current);
-        next.delete(index);
-      }
-      return next ?? current;
-    });
+    const previous = valueRef.current;
+    const caret = editCaretRef.current;
+    editCaretRef.current = null;
+    valueRef.current = value;
+    if (previous === value) {
+      return;
+    }
+    setClosedStarts((current) => remapClosedMentionStarts(previous, value, current, caret));
   }, [value]);
 
   useLayoutEffect(() => {
@@ -376,6 +375,7 @@ export function MentionTextarea({
       {...(placeholder === undefined ? {} : { placeholder })}
       value={value}
       onChange={(event) => {
+        editCaretRef.current = event.target.selectionStart;
         onChange(event.target.value);
         sync(event.target);
       }}

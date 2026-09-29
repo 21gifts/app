@@ -260,6 +260,56 @@ describe('MentionTextarea', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
+  it('opens a different @ that slides onto a dismissed index', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('@a @');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = placeCaret('@a @', 1);
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.keyDown(box, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    placeCaret('@', 0);
+    placeCaret('@', 1);
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+  });
+
+  it('keeps a dismissed @ closed when earlier text shifts it', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('hi @');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = placeCaret('hi @', 4);
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.keyDown(box, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    placeCaret('xhi @', 1);
+    placeCaret('xhi @', 5);
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
   it('hides the list when the prefetch fails or the prefix matches nobody', async () => {
     search.mockRejectedValueOnce(new Error('down'));
     useAuthStore.setState({ session: 'sess', account: null });
