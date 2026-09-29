@@ -3832,6 +3832,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'map-edit-open',
+    image: 'shops-map-edit-open.png',
+    visual: 'state-shops-map-edit-open',
+    needle: "shotScreen(page, 'state-shops-map-edit-open')",
+  },
+  {
+    route: '/shops',
     id: 'map-with-key',
     image: 'shops-map-with-key.png',
     visual: 'state-shops-map-with-key',
@@ -3895,10 +3902,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'table-edit-open',
+    image: 'shops-table-edit-open.png',
+    visual: 'state-shops-table-edit-open',
+    needle: "shotScreen(page, 'state-shops-table-edit-open')",
+  },
+  {
+    route: '/shops',
     id: 'add-photos',
     image: 'shops-add-photos.png',
     visual: 'state-shops-add-photos',
     needle: "shotScreen(page, 'state-shops-add-photos')",
+  },
+  {
+    route: '/shops',
+    id: 'add-place',
+    image: 'shops-add-place.png',
+    visual: 'state-shops-add-place',
+    needle: "shotScreen(page, 'state-shops-add-place')",
   },
   {
     route: '/shops',

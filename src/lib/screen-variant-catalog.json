@@ -3222,6 +3222,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:map-edit-open",
+    "label": "/shops map-edit-open",
+    "visual": "state-shops-map-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:map-with-key",
     "label": "/shops map-with-key",
     "visual": "state-shops-map-with-key",
@@ -3276,9 +3282,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:table-edit-open",
+    "label": "/shops table-edit-open",
+    "visual": "state-shops-table-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:add-photos",
     "label": "/shops add-photos",
     "visual": "state-shops-add-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-place",
+    "label": "/shops add-place",
+    "visual": "state-shops-add-place",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

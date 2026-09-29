@@ -14633,11 +14633,48 @@ test.describe('shops screens', () => {
         body: JSON.stringify({ key: null }),
       });
     });
+    await page.route(
+      (url) => {
+        const path = new URL(url).pathname;
+        return path === '/forum/messages/m-shop' || path === '/forum/messages/m-shop/edits';
+      },
+      async (route) => {
+        const path = new URL(route.request().url()).pathname;
+        if (path.endsWith('/edits')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ edits: [] }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'm-shop',
+            name: 'Ada',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          }),
+        });
+      },
+    );
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Map' }).click();
     await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-map-staff');
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    const history = page.getByText('No edits yet');
+    await expect(history).toBeVisible();
+    // The map frame fills the window. Scroll the opened editor into that window.
+    await history.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-open');
   });
 
   test('shops map with key', async ({ page }) => {
@@ -14860,10 +14897,21 @@ test.describe('shops screens', () => {
         }),
       });
     });
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
     await shotScreen(page, 'state-shops-table-staff');
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+    await shotScreen(page, 'state-shops-table-edit-open');
   });
 
   const shopTableRow = {
@@ -15926,6 +15974,10 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await shotScreen(page, 'state-shops-add-photos');
     await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('2 / 5 · Place')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-add-place');
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await shotScreen(page, 'state-shops-add-text');

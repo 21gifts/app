@@ -1669,6 +1669,12 @@ A moderator session. **Map** is selected. The pin is a shop, so **Edit shop note
 
 ![21.gifts shops map staff](images/shops-map-staff.png)
 
+### Variant: map-edit-open
+
+A moderator clicked **Edit shop note** beside **Ada · Happyland**. Step **1 / 5 · Photos** is open. **History** says there are no edits yet. **Map** stays selected. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map edit open](images/shops-map-edit-open.png)
+
 ### Variant: map-with-key
 
 **Map** is selected and a map key is set. The stub map surface is in the frame, still without a second **Map** heading. The place list stays.
@@ -1723,11 +1729,23 @@ A moderator session. **Table** is selected. **Edit shop note** sits beside the n
 
 ![21.gifts shops table staff](images/shops-table-staff.png)
 
+### Variant: table-edit-open
+
+A moderator clicked **Edit shop note** beside **Cafe Luna**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit open](images/shops-table-edit-open.png)
+
 ### Variant: add-photos
 
 **Add a shop** is open on step **1 / 5 · Photos**. **Next** is the only button. The shop list is empty.
 
 ![21.gifts shops add photos](images/shops-add-photos.png)
+
+### Variant: add-place
+
+**Add a shop** is open on step **2 / 5 · Place**. **Add a place** is closed. **Next** is the only button on the card. The shop list is empty.
+
+![21.gifts shops add place](images/shops-add-place.png)
 
 ### Variant: add-text
 
