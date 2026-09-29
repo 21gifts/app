@@ -4032,6 +4032,31 @@ describe('finishPasskeySeed', () => {
     });
   });
 
+  it('reads an owner account nested under account', async () => {
+    stubFetch({ ok: true, status: 200, body: { account } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).resolves.toEqual(account);
+  });
+
+  it('rejects an object that is not an account', async () => {
+    stubFetch({ ok: true, status: 200, body: { nope: true } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
+  it('rejects a nested body that is not an account', async () => {
+    stubFetch({ ok: true, status: 200, body: { account: { nope: true } } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
+  it('rejects a 200 body that is not an object', async () => {
+    stubFetch({ ok: true, status: 200, body: null });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
+  it('rejects a 200 array body', async () => {
+    stubFetch({ ok: true, status: 200, body: [] });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
   it('throws on a non-ok response', async () => {
     stubFetch({ ok: false, status: 400, body: {} });
     await expect(finishPasskeySeed('sess', 'ch', {})).rejects.toThrow(

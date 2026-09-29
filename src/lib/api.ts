@@ -3013,13 +3013,33 @@ export async function startPasskeySeed(sessionToken: string): Promise<PasskeyBeg
 }
 
 /**
+ * Seed finish is not login. The body is the owner account, or that same
+ * account under one `account` key when the body has no top-level `id`.
+ *
+ * @param body - Parsed JSON.
+ * @returns The value to validate as an {@link Account}.
+ */
+function ownerAccountBody(body: unknown): unknown {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return body;
+  }
+  if ('id' in body) {
+    return body;
+  }
+  if ('account' in body) {
+    return (body as { account: unknown }).account;
+  }
+  return body;
+}
+
+/**
  * Completes passkey seed and returns the owner account. Does not mint a
- * new session; the existing Bearer stays valid.
+ * new session; the existing Bearer stays valid. Does not show a recovery phrase.
  *
  * @param sessionToken - Bearer session.
  * @param challengeId - Id returned by {@link startPasskeySeed}.
  * @param credential - Browser attestation JSON.
- * @returns The owner {@link Account} (not wrapped).
+ * @returns The owner {@link Account}.
  * @throws Error on a non-2xx status or a body that fails validation.
  */
 export async function finishPasskeySeed(
@@ -3038,7 +3058,7 @@ export async function finishPasskeySeed(
   if (!response.ok) {
     throw new Error(`Failed to finish passkey seed: ${response.status}`);
   }
-  return accountSchema.parse(await response.json());
+  return accountSchema.parse(ownerAccountBody(await response.json()));
 }
 
 /**
