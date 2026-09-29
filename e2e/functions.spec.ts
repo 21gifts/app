@@ -11364,3 +11364,21 @@ test('Function: searchMentionAccounts — @as keeps only that prefix', async ({ 
   await expect(page.getByRole('option', { name: '@ashton' })).toBeVisible();
   await expect(page.getByRole('option', { name: '@ada', exact: true })).toHaveCount(0);
 });
+
+test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  const box = page.getByRole('textbox', { name: 'Your message' });
+  const people = page.getByRole('listbox', { name: 'People' });
+  await box.fill('hi @');
+  await expect(people).toBeVisible();
+  await box.press('Escape');
+  await expect(people).toHaveCount(0);
+  await box.press('Home');
+  await box.press('x');
+  await box.press('End');
+  await expect(people).toHaveCount(0);
+  await expect(box).toHaveValue('xhi @');
+});
