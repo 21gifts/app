@@ -89,6 +89,19 @@ export function ViewProfileClaim({
     );
   }
 
+  function claimFailedView(onRetry: () => void): ReactElement {
+    return (
+      <div className="flex max-w-sm flex-col items-center gap-3">
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('view.claimError')}
+        </p>
+        <Button type="button" onClick={onRetry}>
+          {t('view.retry')}
+        </Button>
+      </div>
+    );
+  }
+
   if (claimedLoginRef.current) {
     if (account !== null) {
       return null;
@@ -100,17 +113,11 @@ export function ViewProfileClaim({
         </div>
       );
     }
+    if (passkey.status === 'unknown') {
+      return claimFailedView(() => passkey.authenticate());
+    }
     if (passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
-      return (
-        <div className="flex max-w-sm flex-col items-center gap-3">
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('view.claimError')}
-          </p>
-          <Button type="button" onClick={() => passkey.retry()}>
-            {t('view.retry')}
-          </Button>
-        </div>
-      );
+      return claimFailedView(() => passkey.retry());
     }
     return alreadyClaimedView();
   }
@@ -136,16 +143,11 @@ export function ViewProfileClaim({
   }
 
   if (passkey.status === 'error') {
-    return (
-      <div className="flex max-w-sm flex-col items-center gap-3">
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('view.claimError')}
-        </p>
-        <Button type="button" onClick={() => passkey.retry()}>
-          {t('view.retry')}
-        </Button>
-      </div>
-    );
+    return claimFailedView(() => passkey.retry());
+  }
+
+  if (passkey.status === 'unknown') {
+    return claimFailedView(() => passkey.authenticate());
   }
 
   return (

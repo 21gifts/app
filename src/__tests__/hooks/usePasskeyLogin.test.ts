@@ -8,6 +8,7 @@ import {
   finishPasskeyRegistration,
   startPasskeyAuthentication,
   startPasskeyRegistration,
+  UnknownCredentialError,
   WRONG_ACCOUNT_ERROR,
   WrongAccountError,
 } from '@/lib/api';
@@ -70,6 +71,46 @@ const account = {
 };
 
 const begin = { challengeId: 'ch', options: { challenge: 'aa' } };
+const beginWithRp = {
+  challengeId: 'ch',
+  options: { challenge: 'aa', rpId: 'localhost' },
+};
+
+let stubInstalledPublicKeyCredential = false;
+
+function stubSignalUnknownCredential(
+  impl: (
+    this: unknown,
+    options?: { rpId: string; credentialId: string },
+  ) => Promise<void> = async () => undefined,
+): ReturnType<typeof vi.fn> {
+  let ctor: object;
+  const existing = globalThis.PublicKeyCredential as unknown;
+  if (typeof existing === 'function') {
+    ctor = existing;
+  } else {
+    class DummyPublicKeyCredential {}
+    Object.defineProperty(globalThis, 'PublicKeyCredential', {
+      configurable: true,
+      writable: true,
+      value: DummyPublicKeyCredential,
+    });
+    ctor = DummyPublicKeyCredential;
+    stubInstalledPublicKeyCredential = true;
+  }
+  const fn = vi.fn(function (
+    this: unknown,
+    options: { rpId: string; credentialId: string },
+  ): Promise<void> {
+    return impl.call(this, options);
+  });
+  Object.defineProperty(ctor, 'signalUnknownCredential', {
+    configurable: true,
+    writable: true,
+    value: fn,
+  });
+  return fn;
+}
 
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
@@ -79,9 +120,19 @@ beforeEach(() => {
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyAuthentication).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(rememberSessionPhrase).mockClear();
+  const ctor = globalThis.PublicKeyCredential as unknown;
+  if (typeof ctor === 'function' || (typeof ctor === 'object' && ctor !== null)) {
+    Reflect.deleteProperty(ctor, 'signalUnknownCredential');
+  }
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  if (stubInstalledPublicKeyCredential) {
+    Reflect.deleteProperty(globalThis, 'PublicKeyCredential');
+    stubInstalledPublicKeyCredential = false;
+  }
+});
 
 describe('usePasskeyLogin', () => {
   it('does not finish registration when PRF is missing', async () => {
@@ -327,6 +378,334 @@ describe('usePasskeyLogin', () => {
     expect(startPasskeyRegistration).not.toHaveBeenCalled();
     expect(useAuthStore.getState().session).toBeNull();
     expect(useAuthStore.getState().wrongAccount).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('finish Unknown credential sets unknown and signals the offered id', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const signal = stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    expect(result.current.error).toBeNull();
+    expect(signal).toHaveBeenCalledWith({ rpId: 'localhost', credentialId: 'cred' });
+    expect(signal.mock.contexts[0]).toBe(globalThis.PublicKeyCredential);
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('still shows unknown when signalUnknownCredential rejects', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential(async () => {
+      throw new Error('signal failed');
+    });
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    vi.unstubAllGlobals();
+  });
+
+  it('still shows unknown when signalUnknownCredential is absent', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    vi.unstubAllGlobals();
+  });
+
+  it('still shows unknown when the constructor exists but signalUnknownCredential is not a function', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const installedConstructor = typeof globalThis.PublicKeyCredential !== 'function';
+    if (installedConstructor) {
+      class DummyPublicKeyCredential {}
+      Object.defineProperty(globalThis, 'PublicKeyCredential', {
+        configurable: true,
+        writable: true,
+        value: DummyPublicKeyCredential,
+      });
+    }
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    try {
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.login();
+      });
+      expect(result.current.status).toBe('unknown');
+    } finally {
+      vi.unstubAllGlobals();
+      if (installedConstructor) {
+        Reflect.deleteProperty(globalThis, 'PublicKeyCredential');
+      }
+    }
+  });
+
+  it('does not signal on a different finish 400 and shows error', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const signal = stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(
+      new Error('Failed to finish passkey authentication: 400'),
+    );
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('error');
+    expect(signal).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('skips the signal when rpId is missing and still shows unknown', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const signal = stubSignalUnknownCredential();
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    expect(signal).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('skips the signal when rpId is empty and still shows unknown', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const signal = stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId: 'ch',
+      options: { challenge: 'aa', rpId: '' },
+    });
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    expect(signal).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('skips the signal when the credential id is empty and still shows unknown', async () => {
+    const cred = { id: '', type: 'public-key' };
+    const signal = stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    expect(signal).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('returns to unknown when register is dismissed after unknown', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'))
+      .mockRejectedValueOnce(new DOMException('aborted', 'AbortError'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('unknown');
+    expect(create).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('unknown');
+    expect(create).toHaveBeenCalledTimes(2);
+    vi.unstubAllGlobals();
+  });
+
+  it('stays on unknown when Try again login is dismissed', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce(cred)
+      .mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    vi.unstubAllGlobals();
+  });
+
+  it('cancel from unknown returns to idle', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    act(() => {
+      result.current.cancel();
+    });
+    expect(result.current.status).toBe('idle');
+    vi.unstubAllGlobals();
+  });
+
+  it('returns to unknown when register is dismissed after choice then unknown', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential();
+    const get = vi
+      .fn()
+      .mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'))
+      .mockResolvedValueOnce(cred);
+    const create = vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError'));
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create, get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('unknown');
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('unknown');
+    vi.unstubAllGlobals();
+  });
+
+  it('clears unknown after a later successful register', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockResolvedValue(cred),
+        get: vi.fn().mockResolvedValue(cred),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    await act(async () => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(useAuthStore.getState().session).toBe('tok');
+    vi.unstubAllGlobals();
+  });
+
+  it('clears unknown after a later successful login', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValueOnce(new UnknownCredentialError());
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce(cred)
+      .mockResolvedValueOnce(cred)
+      .mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    vi.mocked(finishPasskeyAuthentication).mockResolvedValue({ token: 'tok', account });
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('idle');
+    expect(useAuthStore.getState().session).toBe('tok');
+    useAuthStore.setState({ session: null, account: null, wrongAccount: false });
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('idle');
     vi.unstubAllGlobals();
   });
 

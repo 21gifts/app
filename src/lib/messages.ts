@@ -219,6 +219,9 @@ const en = {
   'login.choiceHeading': 'Do you already have an account?',
   'login.existing': 'Log in with existing account',
   'login.create': 'Open a new account',
+  'login.unknownHeading': 'This passkey is not an account',
+  'login.unknownBody':
+    'This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.',
   'login.inAppHeading': 'Open this page in your browser',
   'login.inAppBody':
     'Passkeys do not work inside Telegram or other in-app browsers. Open this page in Safari or Chrome to log in.',
@@ -1163,6 +1166,9 @@ const de = {
   'login.choiceHeading': 'Haben Sie schon ein Konto?',
   'login.existing': 'Mit bestehendem Konto einloggen',
   'login.create': 'Ein neues Konto eröffnen',
+  'login.unknownHeading': 'Dieser Passkey ist kein Konto',
+  'login.unknownBody':
+    'Dieses Telefon hat einen Passkey angeboten, den 21.gifts nicht kennt. Eröffnen Sie ein neues Konto. Bietet das Telefon denselben Passkey erneut an, löschen Sie den gespeicherten 21.gifts-Passkey in den Passwort-Einstellungen und versuchen Sie es erneut.',
   'login.inAppHeading': 'Diese Seite im Browser öffnen',
   'login.inAppBody':
     'Passkeys funktionieren in Telegram und anderen In-App-Browsern nicht. Öffnen Sie diese Seite in Safari oder Chrome, um sich anzumelden.',
@@ -2127,6 +2133,9 @@ const es = {
   'login.choiceHeading': '¿Ya tienes una cuenta?',
   'login.existing': 'Iniciar sesión con una cuenta existente',
   'login.create': 'Abrir una cuenta nueva',
+  'login.unknownHeading': 'Esta llave de acceso no es una cuenta',
+  'login.unknownBody':
+    'Este teléfono ofreció una llave de acceso que 21.gifts no reconoce. Abra una cuenta nueva. Si el teléfono vuelve a ofrecer la misma llave, borre la llave de acceso guardada de 21.gifts en los ajustes de contraseñas y vuelva a intentarlo.',
   'login.inAppHeading': 'Abre esta página en tu navegador',
   'login.inAppBody':
     'Las passkeys no funcionan dentro de Telegram ni de otros navegadores integrados. Abre esta página en Safari o Chrome para iniciar sesión.',
@@ -3073,6 +3082,9 @@ const fil = {
   'login.choiceHeading': 'May account ka na ba?',
   'login.existing': 'Mag-log in gamit ang existing account',
   'login.create': 'Magbukas ng bagong account',
+  'login.unknownHeading': 'Hindi account ang passkey na ito',
+  'login.unknownBody':
+    'Nag-alok ang teleponong ito ng passkey na hindi kinikilala ng 21.gifts. Magbukas ng bagong account. Kapag inalok ulit ng telepono ang parehong passkey, burahin ang naka-save na 21.gifts passkey sa mga setting ng password, tapos subukan ulit.',
   'login.inAppHeading': 'Buksan ang page na ito sa browser',
   'login.inAppBody':
     'Hindi gumagana ang mga passkey sa Telegram o sa ibang in-app browser. Buksan ang page na ito sa Safari o Chrome para mag-log in.',

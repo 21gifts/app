@@ -91,6 +91,24 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
   });
 
+  it('shows the unknown-passkey heading and create button', () => {
+    mockPasskey('unknown');
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('heading', { name: 'This passkey is not an account' })).toBeTruthy();
+    expect(
+      screen.getByText(
+        'This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.',
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
+    expect(registerSpy).toHaveBeenCalledTimes(1);
+    expect(registerSpy).toHaveBeenCalledWith();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(loginSpy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
   it('shows a loading state while a passkey ceremony starts', () => {
     mockPasskey('starting');
     renderWithLocale(<LoginCard />);

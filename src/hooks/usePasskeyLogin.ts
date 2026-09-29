@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  isUnknownCredentialError,
   isWrongAccountError,
   startPasskeyAuthentication,
   startPasskeyRegistration,
@@ -24,18 +25,21 @@ import { useAuthStore } from '@/stores/auth-store';
  * Discrete states of the passkey login flow.
  *
  * `choice` is the account question after `login()` gets `NotAllowedError`
- * outside an in-app browser.
+ * outside an in-app browser when unknown was not offered.
+ *
+ * `unknown` is authenticate finish rejected the credential the phone offered
+ * because the server returned `Unknown credential`.
  */
-export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported' | 'choice';
+export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported' | 'choice' | 'unknown';
 
 /** Public surface returned by {@link usePasskeyLogin}. */
 export interface UsePasskeyLogin {
   /** Where the passkey flow currently is. */
   status: PasskeyStatus;
   /**
-   * Authenticate with an existing discoverable passkey. On `NotAllowedError`
-   * outside an in-app browser, status becomes `choice` instead of creating
-   * an account.
+   * Authenticate with an existing discoverable passkey. A dismissed
+   * `NotAllowedError` stays on `unknown` when that card was already offered,
+   * and becomes `choice` only when unknown was not offered.
    */
   login: () => void;
   /**
@@ -57,7 +61,8 @@ export interface UsePasskeyLogin {
  * Whether the user dismissed the WebAuthn prompt (not an app error).
  *
  * Picker dismiss is `NotAllowedError`; `AbortController.abort()` is
- * `AbortError`. Both return the visitor to idle rather than the error card.
+ * `AbortError`. Both return to `unknown` while that card was shown, else
+ * `choice` when a choice was offered, else idle rather than the error card.
  *
  * @param error - Unknown rejection.
  * @returns True when the ceremony was dismissed.
@@ -67,6 +72,37 @@ function isUserCancel(error: unknown): boolean {
     error instanceof DOMException &&
     (error.name === 'NotAllowedError' || error.name === 'AbortError')
   );
+}
+
+/**
+ * Best-effort `PublicKeyCredential.signalUnknownCredential`. Missing or
+ * rejecting implementations are ignored.
+ *
+ * @param rpId - Ceremony relying-party id.
+ * @param credentialId - Base64url credential id.
+ */
+async function signalUnknownCredential(rpId: string, credentialId: string): Promise<void> {
+  try {
+    const ctor = globalThis.PublicKeyCredential as unknown as
+      | {
+          signalUnknownCredential?: (options: {
+            rpId: string;
+            credentialId: string;
+          }) => Promise<void>;
+        }
+      | null
+      | undefined;
+    if (ctor === undefined || ctor === null) {
+      return;
+    }
+    const signal = ctor.signalUnknownCredential;
+    if (typeof signal !== 'function') {
+      return;
+    }
+    await signal.call(ctor, { rpId, credentialId });
+  } catch {
+    return;
+  }
 }
 
 function diagnosticName(error: unknown): string | undefined {
@@ -140,6 +176,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const lastViewKeyRef = useRef<string | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
   const choiceOfferedRef = useRef(false);
+  const unknownOfferedRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setWrongAccount = useAuthStore((state) => state.setWrongAccount);
@@ -155,6 +192,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     abortRef.current?.abort();
     abortRef.current = null;
     choiceOfferedRef.current = false;
+    unknownOfferedRef.current = false;
     setLastError(null);
     setStatus('idle');
   }, []);
@@ -289,6 +327,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       guard(runId);
       setAuth(session.token, session.account);
       choiceOfferedRef.current = false;
+      unknownOfferedRef.current = false;
       setLastError(null);
       setStatus('idle');
     },
@@ -353,11 +392,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         });
         throw error;
       }
+      const publicKeyCredential = credential as PublicKeyCredential;
       let session: Awaited<ReturnType<typeof finishPasskeyAuthentication>>;
       try {
         session = await finishPasskeyAuthentication(
           begin.challengeId,
-          credentialToJSON(credential as PublicKeyCredential),
+          credentialToJSON(publicKeyCredential),
         );
       } catch (error: unknown) {
         reportDiagnostic({
@@ -367,11 +407,20 @@ export function usePasskeyLogin(): UsePasskeyLogin {
           name: diagnosticName(error),
           message: diagnosticMessage(error),
         });
+        if (isUnknownCredentialError(error)) {
+          const rpIdRaw = begin.options['rpId'];
+          const rpId = typeof rpIdRaw === 'string' && rpIdRaw !== '' ? rpIdRaw : '';
+          const credentialId = publicKeyCredential.id;
+          if (rpId !== '' && credentialId !== '') {
+            await signalUnknownCredential(rpId, credentialId);
+          }
+        }
         throw error;
       }
       guard(runId);
       setAuth(session.token, session.account);
       choiceOfferedRef.current = false;
+      unknownOfferedRef.current = false;
       setLastError(null);
       setStatus('idle');
     },
@@ -385,7 +434,9 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       if (isUserCancel(error)) {
         setLastError(null);
-        setStatus(choiceOfferedRef.current ? 'choice' : 'idle');
+        setStatus(
+          unknownOfferedRef.current ? 'unknown' : choiceOfferedRef.current ? 'choice' : 'idle',
+        );
         return;
       }
       if (isWrongAccountError(error)) {
@@ -393,6 +444,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         setWrongAccount(true);
         setLastError(WRONG_ACCOUNT_ERROR);
         setStatus('error');
+        return;
+      }
+      if (isUnknownCredentialError(error)) {
+        unknownOfferedRef.current = true;
+        setLastError(null);
+        setStatus('unknown');
         return;
       }
       setLastError(error instanceof Error ? error.message : String(error));
@@ -454,6 +511,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
           setStatus('unsupported');
           return;
         }
+        if (unknownOfferedRef.current) {
+          finishWithError(runId, error);
+          return;
+        }
         choiceOfferedRef.current = true;
         setLastError(null);
         setStatus('choice');
@@ -479,6 +540,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       abortRef.current?.abort();
       abortRef.current = null;
       choiceOfferedRef.current = false;
+      unknownOfferedRef.current = false;
     };
   }, []);
 
