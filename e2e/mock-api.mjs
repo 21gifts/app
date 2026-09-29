@@ -2063,7 +2063,6 @@ const server = http.createServer(async (req, res) => {
       }
       if (!hasSeed && outcome === 'failed') {
         account.passkeyRenewFailed = true;
-        account.passkeyRenewClosed = false;
       }
     } else if (!hasSeed && account.passkeyRenewFailed === true) {
       account.passkeyRenewFailed = false;
