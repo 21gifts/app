@@ -180,6 +180,24 @@ describe('useWalletPhrase', () => {
     expect(result.current.status).toBe('idle');
   });
 
+  it('omits a derivation failure whose name is not a string', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce({ name: 1 });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('generic');
+    const finishes = fetchMock.mock.calls
+      .map((call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string })
+      .filter((body) => body.event === 'client.passkey.seed.finish');
+    expect(finishes).toEqual([{ event: 'client.passkey.seed.finish', stage: 'seed' }]);
+    fetchMock.mockRestore();
+  });
+
   it('keeps the seed account when word derivation throws', async () => {
     vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('boom'));
     const { result } = renderHook(() => useWalletPhrase());

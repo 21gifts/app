@@ -228,6 +228,39 @@ describe('renewPasskey', () => {
     await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
   });
 
+  it('omits the account id when begin options are not an object', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(startPasskeySeed)
+      .mockResolvedValueOnce({
+        challengeId: 'ab'.repeat(32),
+        options: null as unknown as Record<string, unknown>,
+      })
+      .mockResolvedValueOnce({
+        challengeId: 'cd'.repeat(32),
+        options: 'nope' as unknown as Record<string, unknown>,
+      });
+    await renewPasskey('tok');
+    await renewPasskey('tok');
+    const begins = fetchMock.mock.calls
+      .map((call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string })
+      .filter((body) => body.event === 'client.passkey.seed.begin');
+    expect(begins).toEqual([
+      {
+        event: 'client.passkey.seed.begin',
+        stage: 'seed',
+        challengeId: 'ab'.repeat(32),
+      },
+      {
+        event: 'client.passkey.seed.begin',
+        stage: 'seed',
+        challengeId: 'cd'.repeat(32),
+      },
+    ]);
+    fetchMock.mockRestore();
+  });
+
   it('ignores a non-string error code and a null throw', async () => {
     vi.mocked(startPasskeySeed).mockRejectedValueOnce({ name: 'Boom', code: true });
     const coded = await renewPasskey('tok');

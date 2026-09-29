@@ -2948,14 +2948,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present and client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
 - **Inputs:** Record from `POST /auth/passkey/register/begin` or `POST /auth/passkey/seed/begin`.
 - **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
-- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+- **Used by:** `usePasskeyLogin.register`, `renewPasskey`.
 
 ## Function: credentialToJSON
 
 - **Purpose:** Serialise a `PublicKeyCredential` for the api finish body. Drops `clientExtensionResults.prf` so PRF bytes never leave the tab.
 - **Inputs:** Browser credential from create/get.
 - **Returns / side effects:** JSON record without `prf` results. Uses native `toJSON` when present, then strips `prf`.
-- **Used by:** `usePasskeyLogin`, `useWalletPhrase`.
+- **Used by:** `usePasskeyLogin`, `renewPasskey`.
 
 ## Function: finishPasskeyAuthentication
 
@@ -3053,14 +3053,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/auth/passkey/seed/begin` with Bearer and an empty body.
 - **Inputs:** Session token.
 - **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx, including 409.
-- **Used by:** `useWalletPhrase.activate`.
+- **Used by:** `renewPasskey`.
 
 ## Function: finishPasskeySeed
 
 - **Purpose:** POST `/auth/passkey/seed/finish` with Bearer and `{ challengeId, credential }`.
 - **Inputs:** Session token, challenge id, credential JSON.
 - **Returns / side effects:** 200 is the owner account JSON itself (`accountSchema`, not `{ account }`, no new token), including `passkeyCredentialId`. Throws on non-2xx.
-- **Used by:** `useWalletPhrase.activate`.
+- **Used by:** `renewPasskey`.
 
 ## Function: postWalletBackupSeen
 
@@ -3151,7 +3151,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** SHA-256 of UTF-8 `21gifts-nostr-v1`.
 - **Inputs:** None.
 - **Returns / side effects:** 32-byte `Uint8Array`.
-- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin.register`, `renewPasskey`.
 
 ## Function: readPrfFirst
 
@@ -3172,7 +3172,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Prefer create() PRF; else get() with allowCredentials and eval.first salt.
 - **Inputs:** The new `PublicKeyCredential`.
 - **Returns / side effects:** Bytes or `null`.
-- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+- **Used by:** `usePasskeyLogin.register`, `renewPasskey`.
 
 ## Function: obtainPrfFirstFromGet
 
@@ -3186,7 +3186,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Map WebAuthn failures to timeout / cancel / generic.
 - **Inputs:** Unknown rejection.
 - **Returns / side effects:** Discriminant string.
-- **Used by:** `useWalletPhrase`.
+- **Used by:** `useWalletPhrase`, `renewPasskey`.
 
 ## Function: rememberSessionPhrase
 
@@ -3220,7 +3220,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Add or show the recovery phrase. `/wallet` does not render the words. `/wallet/phrase` does. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
-- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `startPasskeySeed`, `credentials.create` with PRF, `obtainPrfFirst`, no finish when that is null, otherwise `finishPasskeySeed`, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. No Confirm, no Continue.
+- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `renewPasskey`, then `mnemonicFromPrfFirst` on the in-memory PRF bytes, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. No Confirm, no Continue.
 - **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreenView
