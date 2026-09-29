@@ -127,14 +127,14 @@ for (const locale of ['en', 'de', 'es', 'fil'] as const) {
       if (await menu.isVisible()) await menu.click();
       const nav = page.locator('header nav');
       const happyland = nav.getByRole('link', { name: 'Happyland', exact: true });
-      await expect(nav.getByRole('link').nth(0)).toHaveAttribute('href', '/#how');
+      await expect(nav.getByRole('link').nth(0)).toHaveAttribute('href', `/${locale}#how`);
       await expect(nav.getByRole('link').nth(1)).toHaveText('Happyland');
-      await expect(happyland).toHaveAttribute('href', '/#happyland');
+      await expect(happyland).toHaveAttribute('href', `/${locale}#happyland`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
         true,
       );
       await happyland.click();
-      await expect(page).toHaveURL(/\/#happyland$/);
+      await expect(page).toHaveURL(new RegExp(`/${locale}#happyland$`));
       await expect(page.locator('#happyland-title')).toBeInViewport();
       await expect(menu).toHaveAttribute('aria-expanded', 'false');
       await expect
@@ -157,7 +157,7 @@ for (const width of [375, 1280]) {
     const menu = page.getByRole('button', { name: 'Menu', exact: true, includeHidden: true });
     if (await menu.isVisible()) await menu.click();
     await page.locator('header nav').getByRole('link', { name: 'Happyland', exact: true }).click();
-    await expect(page).toHaveURL(/\/#happyland$/);
+    await expect(page).toHaveURL(/\/en#happyland$/);
     await expect(page.locator('#happyland-title')).toBeInViewport();
     await expect(
       page.getByRole('button', { name: 'Menu', exact: true, includeHidden: true }),
