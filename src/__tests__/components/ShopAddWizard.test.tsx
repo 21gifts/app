@@ -7,7 +7,15 @@ import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
+import { searchMentionAccounts } from '@/lib/mention-search';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('@/lib/mention-search', () => ({
+  searchMentionAccounts: vi.fn(),
+}));
+
+const searchPeople = vi.mocked(searchMentionAccounts);
 
 vi.mock('next/link', () => ({
   default: ({
@@ -34,7 +42,11 @@ function renderWizard(ui: ReactElement) {
   );
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  searchPeople.mockReset();
+  useAuthStore.setState({ session: null, account: null });
+});
 
 const photo: ForumPhotoPayload = {
   contentType: 'image/jpeg',
@@ -262,5 +274,26 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
     expect(screen.getByText('1')).toBeTruthy();
+  });
+
+  it('lists people when the shop text starts with @', async () => {
+    searchPeople.mockResolvedValue([{ id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' }]);
+    useAuthStore.setState({ session: 'sess', account: null });
+    function DraftHost(): ReactElement {
+      const [draft, setDraft] = useState('');
+      return <ShopAddWizard {...props({ draft, onDraftChange: setDraft })} />;
+    }
+    renderWizard(<DraftHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const box = screen.getByRole('textbox', { name: 'Shop text' }) as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: '@', selectionStart: 1, selectionEnd: 1 } });
+    box.setSelectionRange(1, 1);
+    fireEvent.select(box);
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.mouseDown(screen.getByRole('option', { name: '@ada' }));
+    expect(box.value).toBe('@ada ');
+    expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
   });
 });

@@ -14544,7 +14544,11 @@ test.describe('shops screens', () => {
     });
     await fulfillMentionPeople(page);
     await page.goto('/shops');
-    const box = page.getByRole('textbox', { name: 'Your message' });
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    const box = page.getByRole('textbox', { name: 'Shop text' });
+    await expect(box).toBeVisible();
     await box.fill('@');
     await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
     await shotScreen(page, 'state-shops-mention-suggest');
@@ -14574,7 +14578,11 @@ test.describe('shops screens', () => {
     });
     await fulfillMentionPeople(page);
     await page.goto('/shops');
-    const box = page.getByRole('textbox', { name: 'Your message' });
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    const box = page.getByRole('textbox', { name: 'Shop text' });
+    await expect(box).toBeVisible();
     await chooseMentionAda(page, box);
     await shotScreen(page, 'state-shops-mention-inserted');
   });

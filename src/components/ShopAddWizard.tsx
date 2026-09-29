@@ -2,6 +2,7 @@
 
 import { ImagePlus, X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
@@ -96,8 +97,9 @@ const STEP_KEY = {
 /**
  * Guided shop submission. Closed state is only **Add a shop**. Open steps
  * are photos, place, text, an optional 21.gifts username, then a summary
- * whose send control submits the note. Adding a shop shows Next on the
- * photo step. Edit mode still shows Cancel there.
+ * whose send control submits the note. The text step lists people as
+ * soon as `@` is typed. Adding a shop shows Next on the photo step.
+ * Edit mode still shows Cancel there.
  *
  * @param props - Draft fields and the send callback.
  * @returns The button, or the current step.
@@ -311,15 +313,14 @@ export function ShopAddWizard({
       ) : null}
       {step === 2 ? <PlaceField place={place} disabled={posting} onChange={onPlaceChange} /> : null}
       {step === 3 ? (
-        <textarea
-          aria-label={t('shops.textLabel')}
+        <MentionTextarea
+          ariaLabel={t('shops.textLabel')}
           value={draft}
-          onChange={(event) => {
-            onDraftChange(event.target.value);
-          }}
+          onChange={onDraftChange}
           maxLength={maxLength}
           rows={4}
           disabled={posting}
+          wrapperClassName="relative w-full"
           className="min-h-24 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50"
         />
       ) : null}
