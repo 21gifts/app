@@ -53,6 +53,7 @@ import {
   proxyConversationsPost,
   proxyNotificationReadPost,
   proxyNotificationsGet,
+  proxyForumMentionsGet,
   proxyNotificationsReadAllPost,
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
@@ -553,6 +554,14 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/conversations/a%2Fb/read');
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+  });
+
+  it('proxyForumMentionsGet forwards the query to /mentions', async () => {
+    const fetchMock = stubApi();
+    await proxyForumMentionsGet(new Request('http://localhost/forum/mentions?q=as'));
+    const target = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(target.pathname).toBe('/mentions');
+    expect(target.search).toBe('?q=as');
   });
 
   it('proxyNotificationsGet hits /notifications', async () => {

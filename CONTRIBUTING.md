@@ -233,6 +233,7 @@ app/
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
+│   │   ├── MentionTextarea.tsx  # Forum composer @ suggestions (post, reply, ask text)
 │   │   ├── ForumAskWizard.tsx   # Ask-for-money steps amount → photos → text → preview Post
 │   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
 │   │   ├── ForumPhotoGallery.tsx # Horizontal snap row (data-scroll-x, 88% peek, chip, dots)
@@ -280,6 +281,8 @@ app/
 │   │   ├── request-number-format.ts # Cookie numberFormat for the current request
 │   │   ├── request-fiat.ts      # Cookie fiat for the current request
 │   │   ├── messages.ts          # en/de/es/fil catalogs
+│   │   ├── mention-caret.ts     # Active @ token under the forum composer caret
+│   │   ├── mention-search.ts    # GET /forum/mentions username suggestions
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
 │   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM (never localStorage)

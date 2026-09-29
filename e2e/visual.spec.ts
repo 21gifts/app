@@ -675,6 +675,31 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
+/** Choose @ada from the open People list and leave that handle in the field. */
+async function chooseMentionAda(page: Page, field: Locator): Promise<void> {
+  await field.fill('@');
+  await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+  await page.getByRole('option', { name: '@ada', exact: true }).click();
+  await expect(field).toHaveValue('@ada ');
+  await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
+}
+
+/** Signed-in composer suggestions: first page is Ada and Adam. */
+async function fulfillMentionPeople(page: Page): Promise<void> {
+  await page.route('**/forum/mentions**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accounts: [
+          { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+          { id: 'acc-adam', username: 'adam', name: 'Adam' },
+        ],
+      }),
+    });
+  });
+}
+
 /** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
 async function fulfillPublicThreadReplies(
   page: Page,
@@ -2172,6 +2197,162 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-mention');
   });
 
+  test('state /welcome mention-suggest', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await fulfillMentionPeople(page);
+    await page.goto('/welcome');
+    const box = page.getByRole('textbox', { name: 'Your message' });
+    await box.fill('@');
+    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-mention-suggest');
+  });
+
+  test('state /welcome mention-inserted', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await fulfillMentionPeople(page);
+    await page.goto('/welcome');
+    const box = page.getByRole('textbox', { name: 'Your message' });
+    await chooseMentionAda(page, box);
+    await shotScreen(page, 'state-welcome-mention-inserted');
+  });
+
+  test('state /welcome mention-suggest-reply', async ({ page }) => {
+    await installReactionThread(page, []);
+    await fulfillMentionPeople(page);
+    await page.goto('/welcome');
+    await page.getByText(REACTION_NOTE_TEXT).click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeVisible();
+    await field.fill('@');
+    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-mention-suggest-reply');
+  });
+
+  test('state /welcome mention-inserted-reply', async ({ page }) => {
+    await installReactionThread(page, []);
+    await fulfillMentionPeople(page);
+    await page.goto('/welcome');
+    await page.getByText(REACTION_NOTE_TEXT).click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeVisible();
+    await chooseMentionAda(page, field);
+    await shotScreen(page, 'state-welcome-mention-inserted-reply');
+  });
+
+  test('state /welcome mention-suggest-ask', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await fulfillRateDay(page);
+    await fulfillMentionPeople(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByLabel('Ask').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const box = page.getByRole('textbox', { name: 'Your message' });
+    await box.fill('@');
+    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-mention-suggest-ask');
+  });
+
+  test('state /welcome mention-inserted-ask', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await fulfillRateDay(page);
+    await fulfillMentionPeople(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Ask for money' }).click();
+    await page.getByLabel('Ask').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const box = page.getByRole('textbox', { name: 'Your message' });
+    await chooseMentionAda(page, box);
+    await shotScreen(page, 'state-welcome-mention-inserted-ask');
+  });
+
   test('welcome shop-tag', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -3660,6 +3841,66 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-posts-open');
   });
 
+  /** Posts open on `/profile`, Ada's note expanded, reaction field ready. */
+  async function openProfileReaction(page: Page): Promise<Locator> {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await page.getByText('Second post from Ada.').click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeEnabled();
+    await field.scrollIntoViewIfNeeded();
+    return field;
+  }
+
+  test('state /profile mention-suggest-reply', async ({ page }) => {
+    const field = await openProfileReaction(page);
+    await field.fill('@');
+    const list = page.getByRole('listbox', { name: 'People' });
+    await expect(list).toBeVisible();
+    await list.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-mention-suggest-reply');
+  });
+
+  test('state /profile mention-inserted-reply', async ({ page }) => {
+    const field = await openProfileReaction(page);
+    await chooseMentionAda(page, field);
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-mention-inserted-reply');
+  });
+
   test('state /profile replies-open', async ({ page }) => {
     await seedProfilePage(page);
     await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
@@ -4524,6 +4765,121 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Second post from Carol.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open');
+  });
+
+  /** Posts open on Carol's profile, her note expanded, reaction field ready. */
+  async function openMemberReaction(page: Page): Promise<Locator> {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Second post from Carol.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByText('Second post from Carol.').click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeEnabled();
+    await field.scrollIntoViewIfNeeded();
+    return field;
+  }
+
+  test('state /members mention-suggest-reply', async ({ page }) => {
+    const field = await openMemberReaction(page);
+    await field.fill('@');
+    const list = page.getByRole('listbox', { name: 'People' });
+    await expect(list).toBeVisible();
+    await list.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-mention-suggest-reply');
+  });
+
+  test('state /members mention-inserted-reply', async ({ page }) => {
+    const field = await openMemberReaction(page);
+    await chooseMentionAda(page, field);
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-mention-inserted-reply');
   });
 
   test('state /members posts-open-photo', async ({ page }) => {
@@ -7382,6 +7738,127 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('Hello from Ada')).toBeVisible();
     await shotScreen(page, 'screen-messages-id');
+  });
+
+  test('state /messages/[id] mention-suggest', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          accountId: 'acc-ada',
+          name: 'Ada',
+          text: 'Hello from Ada',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto(`/messages/${id}`);
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeVisible();
+    await field.fill('@');
+    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-mention-suggest');
+  });
+
+  test('state /messages/[id] mention-inserted', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          accountId: 'acc-ada',
+          name: 'Ada',
+          text: 'Hello from Ada',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 21,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto(`/messages/${id}`);
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeVisible();
+    await chooseMentionAda(page, field);
+    await shotScreen(page, 'state-messages-id-mention-inserted');
   });
 
   test('state /messages/[id] place label', async ({ page }) => {
@@ -13683,6 +14160,120 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('link', { name: '#Shop' })).toBeVisible();
     await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
     await shotScreen(page, 'screen-shops');
+  });
+
+  test('state /shops mention-suggest', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto('/shops');
+    const box = page.getByRole('textbox', { name: 'Your message' });
+    await box.fill('@');
+    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    await shotScreen(page, 'state-shops-mention-suggest');
+  });
+
+  test('state /shops mention-inserted', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto('/shops');
+    const box = page.getByRole('textbox', { name: 'Your message' });
+    await chooseMentionAda(page, box);
+    await shotScreen(page, 'state-shops-mention-inserted');
+  });
+
+  /** Cafe Luna expanded on `/shops`, reaction field ready. */
+  async function openShopReaction(page: Page): Promise<Locator> {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto('/shops');
+    await page.getByText('Cafe Luna').click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeEnabled();
+    await field.scrollIntoViewIfNeeded();
+    return field;
+  }
+
+  test('state /shops mention-suggest-reply', async ({ page }) => {
+    const field = await openShopReaction(page);
+    await field.fill('@');
+    const list = page.getByRole('listbox', { name: 'People' });
+    await expect(list).toBeVisible();
+    await list.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-mention-suggest-reply');
+  });
+
+  test('state /shops mention-inserted-reply', async ({ page }) => {
+    const field = await openShopReaction(page);
+    await chooseMentionAda(page, field);
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-mention-inserted-reply');
   });
 
   test('state /shops sunday', async ({ page }) => {

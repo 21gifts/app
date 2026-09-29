@@ -977,6 +977,18 @@ export async function proxyNotificationsGet(request: Request): Promise<Response>
 }
 
 /**
+ * Proxies GET /forum/mentions to api `GET /mentions`.
+ *
+ * The query string (`q`) is forwarded by {@link proxyApiRequest}.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyForumMentionsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/mentions');
+}
+
+/**
  * Proxies POST /notifications/read-all to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
