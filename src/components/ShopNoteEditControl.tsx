@@ -300,7 +300,7 @@ export function ShopNoteEditControl({
         setSaveError(true);
         return;
       }
-      const stills = [];
+      const stills: { contentType: string; data: string; takenAt?: string | null }[] = [];
       for (const item of keptPhotos) {
         const cached = keptStillBytes.current.get(item.url);
         const encoded = cached ?? (await stillFromUrl(item.url));
