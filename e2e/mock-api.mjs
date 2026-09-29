@@ -2049,7 +2049,23 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (pathName === '/me/passkey-renew/ack') {
+    const hasSeed =
+      typeof account.passkeyCredentialId === 'string' && account.passkeyCredentialId !== '';
+    if (pathName === '/me/passkey-renew/report') {
+      let outcome = '';
+      try {
+        const parsed = JSON.parse(rawBody);
+        if (typeof parsed?.outcome === 'string') {
+          outcome = parsed.outcome;
+        }
+      } catch {
+        outcome = '';
+      }
+      if (!hasSeed && outcome === 'failed') {
+        account.passkeyRenewFailed = true;
+        account.passkeyRenewClosed = false;
+      }
+    } else if (!hasSeed && account.passkeyRenewFailed === true) {
       account.passkeyRenewFailed = false;
       account.passkeyRenewClosed = true;
     }
@@ -2188,6 +2204,7 @@ const server = http.createServer(async (req, res) => {
     byPasskeyCredential.set(credId, account);
     account.passkeyCredentialId = credId;
     account.walletRequired = true;
+    account.passkeyRenewClosed = false;
     json(res, 200, account);
     return;
   }

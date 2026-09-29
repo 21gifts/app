@@ -10,7 +10,11 @@ export type PasskeyRenewResult =
   | { outcome: 'ok'; account: Account; prfFirst: Uint8Array }
   | { outcome: 'cancelled' }
   | { outcome: 'stored'; account: Account }
-  | { outcome: 'failed'; kind: 'timeout' | 'prfUnsupported' | 'generic' };
+  | {
+      outcome: 'failed';
+      kind: 'timeout' | 'prfUnsupported' | 'generic';
+      account?: Account;
+    };
 
 const HTTP_SEED_FAILURE = /^Failed to (start|finish) passkey seed: \d+$/;
 
@@ -64,9 +68,9 @@ async function reportRenew(
   stage: 'begin' | 'ceremony' | 'finish',
   outcome: 'failed' | 'cancelled',
   err: unknown,
-): Promise<void> {
+): Promise<Account | null> {
   try {
-    await postPasskeyRenewReport(sessionToken, {
+    return await postPasskeyRenewReport(sessionToken, {
       stage,
       outcome,
       errorName: errorNameOf(err),
@@ -76,10 +80,25 @@ async function reportRenew(
     });
   } catch {
     // A failed report must not hide the local failure.
+    return null;
   }
 }
 
-async function storedOrFailed(sessionToken: string, err: unknown): Promise<PasskeyRenewResult> {
+function openFailureAccount(reported: Account | null, latest: Account | null): Account | null {
+  if (reported?.passkeyRenewFailed === true) {
+    return reported;
+  }
+  if (latest?.passkeyRenewFailed === true) {
+    return latest;
+  }
+  return null;
+}
+
+async function storedOrFailed(
+  sessionToken: string,
+  err: unknown,
+  reported: Account | null,
+): Promise<PasskeyRenewResult> {
   if (!isCurrentSession(sessionToken)) {
     return { outcome: 'cancelled' };
   }
@@ -96,7 +115,12 @@ async function storedOrFailed(sessionToken: string, err: unknown): Promise<Passk
   if (!fetchFailed && latest !== null && hasSeedPasskey(latest.passkeyCredentialId)) {
     return { outcome: 'stored', account: latest };
   }
-  return { outcome: 'failed', kind: failKind(err) };
+  const openFailure = openFailureAccount(reported, fetchFailed ? null : latest);
+  const kind = failKind(err);
+  if (openFailure === null) {
+    return { outcome: 'failed', kind };
+  }
+  return { outcome: 'failed', kind, account: openFailure };
 }
 
 function diagnosticName(error: unknown): string | undefined {
@@ -220,8 +244,8 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
         stage: 'seed',
       });
       const prfErr = Object.assign(new Error('wallet.prfUnsupported'), { name: 'prfUnsupported' });
-      await reportRenew(sessionToken, 'ceremony', 'failed', prfErr);
-      return storedOrFailed(sessionToken, prfErr);
+      const reported = await reportRenew(sessionToken, 'ceremony', 'failed', prfErr);
+      return storedOrFailed(sessionToken, prfErr, reported);
     }
     reportDiagnostic({
       event: 'client.passkey.seed.prf',
@@ -241,13 +265,13 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
       return { outcome: 'cancelled' };
     }
     if (isHttpSeedFailure(err)) {
-      return storedOrFailed(sessionToken, err);
+      return storedOrFailed(sessionToken, err, null);
     }
     if (classifyWebAuthnError(err) === 'cancel') {
       await reportRenew(sessionToken, 'ceremony', 'cancelled', err);
       return { outcome: 'cancelled' };
     }
-    await reportRenew(sessionToken, stage, 'failed', err);
-    return storedOrFailed(sessionToken, err);
+    const reported = await reportRenew(sessionToken, stage, 'failed', err);
+    return storedOrFailed(sessionToken, err, reported);
   }
 }

@@ -228,6 +228,23 @@ describe('renewPasskey', () => {
     await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
   });
 
+  it('returns the open failure account from the report', async () => {
+    const open = { ...account, passkeyRenewFailed: true };
+    vi.mocked(postPasskeyRenewReport).mockResolvedValueOnce(open);
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(new TypeError('offline'));
+    const result = await renewPasskey('tok');
+    expect(result).toEqual({ outcome: 'failed', kind: 'generic', account: open });
+  });
+
+  it('returns the open failure account from reload when the report throws', async () => {
+    const open = { ...account, passkeyRenewFailed: true };
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(new TypeError('offline'));
+    vi.mocked(postPasskeyRenewReport).mockRejectedValueOnce(new Error('report down'));
+    vi.mocked(fetchMe).mockResolvedValueOnce(open);
+    const result = await renewPasskey('tok');
+    expect(result).toEqual({ outcome: 'failed', kind: 'generic', account: open });
+  });
+
   it('omits the account id when begin options are not an object', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
