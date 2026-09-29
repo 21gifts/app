@@ -1638,6 +1638,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:photo-only",
+    "label": "/profile photo-only",
+    "visual": "state-profile-photo-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:banner-only",
+    "label": "/profile banner-only",
+    "visual": "state-profile-banner-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:banner-not-wide",
+    "label": "/profile banner-not-wide",
+    "visual": "state-profile-banner-not-wide",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:picture-unsupported",
+    "label": "/profile picture-unsupported",
+    "visual": "state-profile-picture-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:picture-too-large",
+    "label": "/profile picture-too-large",
+    "visual": "state-profile-picture-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:picture-save-error",
+    "label": "/profile picture-save-error",
+    "visual": "state-profile-picture-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:picture-saving",
+    "label": "/profile picture-saving",
+    "visual": "state-profile-picture-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:images-editing",
     "label": "/profile images-editing",
     "visual": "state-profile-images-editing",
