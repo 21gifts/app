@@ -11,6 +11,7 @@ import {
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { iosPasskeyBlock } from '@/lib/ios-passkey';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
@@ -128,6 +129,19 @@ function accountIdFromOptions(options: Record<string, unknown>): string | undefi
   }
   const name = (user as { name?: unknown }).name;
   return typeof name === 'string' ? name : undefined;
+}
+
+/**
+ * True when this iPhone or iPad is too old to finish passkey sign-in.
+ *
+ * @returns Whether register must fail with `login.iosVersion`.
+ */
+function iosRegisterBlocked(): boolean {
+  /* v8 ignore next 3 -- client hook: navigator exists whenever this runs */
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  return iosPasskeyBlock(navigator.userAgent) !== null;
 }
 
 /**
@@ -254,6 +268,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       try {
         credential = await navigator.credentials.create(request);
       } catch (error: unknown) {
+        if (isUserCancel(error) && iosRegisterBlocked()) {
+          reportDiagnostic({
+            event: 'client.passkey.register.ceremony',
+            stage: 'register',
+            name: diagnosticName(error),
+            message: 'iOS version below minimum',
+          });
+          throw new Error('login.iosVersion');
+        }
         reportDiagnostic(
           isUserCancel(error)
             ? { event: 'client.passkey.cancel', stage: 'register', name: diagnosticName(error) }
@@ -282,6 +305,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       try {
         prfFirst = await obtainPrfFirst(publicKeyCredential);
       } catch (error: unknown) {
+        if (isUserCancel(error) && iosRegisterBlocked()) {
+          reportDiagnostic({
+            event: 'client.passkey.register.ceremony',
+            stage: 'register',
+            name: diagnosticName(error),
+            message: 'iOS version below minimum',
+          });
+          throw new Error('login.iosVersion');
+        }
         reportDiagnostic(
           isUserCancel(error)
             ? { event: 'client.passkey.cancel', stage: 'register', name: diagnosticName(error) }
@@ -301,7 +333,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
           prfPresent: false,
           stage: 'register',
         });
-        throw new Error('wallet.prfUnsupported');
+        throw new Error(iosRegisterBlocked() ? 'login.iosVersion' : 'wallet.prfUnsupported');
       }
       reportDiagnostic({
         event: 'client.passkey.register.prf',
