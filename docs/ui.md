@@ -1045,14 +1045,14 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - Laws `Banner`.
 - `ForumModeSelect`: one closed full-width combobox showing the selected label and ChevronDown; open listbox with a check on the selected row; unpaid count chip on the closed trigger when the count is positive and unpaid is not selected; omitted at 0 and when unpaid is selected. Not a pill grid.
 - Composer.
-- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the gift-day rate). Top-level notes tagged `#21GiftsShop` show a `#Shop` pill (`forum.shopTag` → `/shops`) and hide the raw token. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. Moderator: icon-only Trash2 + inline confirm.
+- Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the gift-day rate). Top-level notes tagged `#21GiftsShop` show a `#Shop` pill (`forum.shopTag` → `/shops`) and hide the raw token. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. A moderator sees **Edit shop note** after copy on a top-level shop note, then icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, username, Wallet of Satoshi address, or rules agreement.
 - `ExternalLinkWarning` (same overlay chrome, no Skip) when a visitor clicks an external http(s) URL in note, About me, or inbox text. Internal 21.gifts URLs navigate in-app with no overlay.
 
 Author names with `accountId` open `/members/[accountId]`.
 
-Handbook states: place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords.
+Handbook states: place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open.
 
 ### `/wallet`
 
@@ -1144,7 +1144,7 @@ Flow `AppShell` `align="start"`; `ProfileChromeLeft` + `SignedInChrome`. `Onboar
 
 A missing-requirements response on **Table** opens `/setup/rules`, the same as the post list. **Map** with a key draws the map frame and still has no second Map heading.
 
-Handbook states: default, map, map-staff, map-edit-open, map-with-key, map-pin, map-pin-with-key, map-coords, map-coords-pin, map-coords-with-key, map-coords-pin-with-key, map-empty, map-loading, map-error, table, table-staff, table-edit-open, add-photos, add-place, add-text, add-user, add-summary, table-more, table-next, table-more-error, table-more-empty, table-empty, table-loading, table-error, empty, loading, error, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, staff-place, edit-open, staff-account, staff-account-set, staff-account-error, staff-place-unavailable, staff-place-set, staff-place-edit, staff-place-edit-error, staff-place-edit-unavailable, staff-place-edit-unavailable-error, staff-place-map, staff-place-confirm, staff-place-unlabeled, staff-place-set-coords, staff-place-error.
+Handbook states: default, map, map-staff, map-edit-open, map-edit-load-failed, map-with-key, map-pin, map-pin-with-key, map-coords, map-coords-pin, map-coords-with-key, map-coords-pin-with-key, map-empty, map-loading, map-error, table, table-staff, table-edit-open, add-photos, add-place, add-text, add-user, add-summary, table-more, table-next, table-more-error, table-more-empty, table-empty, table-loading, table-error, empty, loading, error, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, staff-place, edit-open, edit-save-error, edit-history-error, staff-account, staff-account-set, staff-account-error, staff-place-unavailable, staff-place-set, staff-place-edit, staff-place-edit-error, staff-place-edit-unavailable, staff-place-edit-unavailable-error, staff-place-map, staff-place-confirm, staff-place-unlabeled, staff-place-set-coords, staff-place-error.
 
 ### `/rules`
 

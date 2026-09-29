@@ -3775,6 +3775,20 @@ export const SCREEN_VARIANTS = [
     needle: '#Shop',
   },
   {
+    route: '/welcome',
+    id: 'shop-edit',
+    image: 'welcome-shop-edit.png',
+    visual: 'state-welcome-shop-edit',
+    needle: "shotScreen(page, 'state-welcome-shop-edit')",
+  },
+  {
+    route: '/welcome',
+    id: 'shop-edit-open',
+    image: 'welcome-shop-edit-open.png',
+    visual: 'state-welcome-shop-edit-open',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-open')",
+  },
+  {
     route: '/shops',
     id: 'default',
     image: 'shops.png',
@@ -3836,6 +3850,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-map-edit-open.png',
     visual: 'state-shops-map-edit-open',
     needle: "shotScreen(page, 'state-shops-map-edit-open')",
+  },
+  {
+    route: '/shops',
+    id: 'map-edit-load-failed',
+    image: 'shops-map-edit-load-failed.png',
+    visual: 'state-shops-map-edit-load-failed',
+    needle: "shotScreen(page, 'state-shops-map-edit-load-failed')",
   },
   {
     route: '/shops',
@@ -4109,6 +4130,20 @@ export const SCREEN_VARIANTS = [
     image: 'shops-edit-open.png',
     visual: 'state-shops-edit-open',
     needle: "shotScreen(page, 'state-shops-edit-open')",
+  },
+  {
+    route: '/shops',
+    id: 'edit-save-error',
+    image: 'shops-edit-save-error.png',
+    visual: 'state-shops-edit-save-error',
+    needle: "shotScreen(page, 'state-shops-edit-save-error')",
+  },
+  {
+    route: '/shops',
+    id: 'edit-history-error',
+    image: 'shops-edit-history-error.png',
+    visual: 'state-shops-edit-history-error',
+    needle: "shotScreen(page, 'state-shops-edit-history-error')",
   },
   {
     route: '/shops',
