@@ -2053,19 +2053,25 @@ const server = http.createServer(async (req, res) => {
       typeof account.passkeyCredentialId === 'string' && account.passkeyCredentialId !== '';
     if (pathName === '/me/passkey-renew/report') {
       let outcome = '';
+      let errorName = '';
       try {
         const parsed = JSON.parse(rawBody);
         if (typeof parsed?.outcome === 'string') {
           outcome = parsed.outcome;
+        }
+        if (typeof parsed?.errorName === 'string') {
+          errorName = parsed.errorName;
         }
       } catch {
         outcome = '';
       }
       if (!hasSeed && outcome === 'failed') {
         account.passkeyRenewFailed = true;
+        account.passkeyRenewPrfUnsupported = errorName === 'prfUnsupported';
       }
     } else if (!hasSeed && account.passkeyRenewFailed === true) {
       account.passkeyRenewFailed = false;
+      account.passkeyRenewPrfUnsupported = false;
       account.passkeyRenewClosed = true;
     }
     json(res, 200, account);

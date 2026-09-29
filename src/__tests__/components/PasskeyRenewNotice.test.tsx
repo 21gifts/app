@@ -184,6 +184,17 @@ describe('PasskeyRenewNotice', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
+  it('says a missing recovery key cannot be retried with the same passkey', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...account, passkeyRenewFailed: true, passkeyRenewPrfUnsupported: true },
+    });
+    renderWithLocale(<PasskeyRenewNotice />);
+    expect(screen.getByText(/another password manager/i)).toBeTruthy();
+    expect(screen.queryByText(/try again later/i)).toBeNull();
+    expect(screen.getByRole('button', { name: 'OK' })).toBeTruthy();
+  });
+
   it('keeps the failure confirmation when acknowledgement fails', async () => {
     vi.mocked(postPasskeyRenewAck).mockRejectedValue(new Error('nope'));
     useAuthStore.setState({

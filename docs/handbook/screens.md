@@ -494,6 +494,12 @@ The renewal did not work. **OK** confirms that and closes the dialog. The renew 
 
 ![21.gifts welcome renew failed](images/welcome-renew-failed.png)
 
+### Variant: renew-failed-prf-unsupported
+
+The renewal did not work because this passkey cannot create a recovery phrase. The dialog says another password manager or another device is needed. **OK** confirms that and closes the dialog. The renew does not start again. The account still has no seed.
+
+![21.gifts welcome renew failed prf unsupported](images/welcome-renew-failed-prf-unsupported.png)
+
 ### Variant: sunday
 
 Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.

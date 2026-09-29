@@ -129,7 +129,9 @@ export function PasskeyRenewNotice(): ReactElement | null {
       : step === 'success'
         ? t('passkeyRenew.successBody')
         : step === 'failed'
-          ? t('passkeyRenew.failedBody')
+          ? account?.passkeyRenewPrfUnsupported === true
+            ? t('passkeyRenew.prfUnsupported')
+            : t('passkeyRenew.failedBody')
           : t('passkeyRenew.explain');
   let action: ReactNode;
   if (step === 'passkey') {

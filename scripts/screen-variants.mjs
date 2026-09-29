@@ -409,6 +409,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'renew-failed-prf-unsupported',
+    image: 'welcome-renew-failed-prf-unsupported.png',
+    visual: 'state-welcome-renew-failed-prf-unsupported',
+    needle: 'This passkey cannot create a recovery phrase.',
+  },
+  {
+    route: '/welcome',
     id: 'sunday',
     image: 'welcome-sunday.png',
     visual: 'state-welcome-sunday',
