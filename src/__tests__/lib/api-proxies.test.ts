@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  proxyDiagnosticsPost,
   proxyAuthPasskeyAuthenticateBeginPost,
   proxyAuthPasskeyAuthenticateFinishPost,
   proxyAuthPasskeyRegisterBeginPost,
@@ -609,6 +610,18 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/video.webm');
     await proxyMessagesVideoGet(new Request('http://localhost/messages/m1/video.mov'), 'm1', 'mov');
     expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/messages/m1/video.mov');
+  });
+
+  it('proxyDiagnosticsPost hits /diagnostics', async () => {
+    const fetchMock = stubApi();
+    await proxyDiagnosticsPost(
+      new Request('http://localhost/diagnostics', {
+        method: 'POST',
+        body: '{"event":"client.unhandled"}',
+      }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/diagnostics');
   });
 
   it('proxyAuthPasskeyRegisterBeginPost hits /auth/passkey/register/begin', async () => {

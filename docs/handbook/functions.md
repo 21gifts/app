@@ -545,7 +545,7 @@
 
 ## Function: ProfileScreen
 
-- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a resting header (round profile photo from `GET /pictures/me` and wide image from `GET /banners/me`, only when that slot is stored; neither is the About me photo), a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; the editor is not translatable; copy-profile-link on the card — never a forum post), name, location, then the same public facts as `/members/:id` (`MemberProfileScreen` `factsOnly`: role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed), then Wallet of Satoshi address forms, then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. The signed-in menu Profile row shows no amounts. Back + wordmark live in `ProfileChromeLeft`.
+- **Purpose:** Signed-in profile: single `max-w-sm` identity card with a resting header (round profile photo from `GET /pictures/me` and wide image from `GET /banners/me` when that slot is stored; a missing one is the button **Add a profile photo** or **Add a wide image**; neither is the About me photo), a compact Given/Received activity chart, About me (`AboutMeSection` owner: empty prompt + **Write your About me**, or filled text and/or photo + edit; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; the editor is not translatable; copy-profile-link on the card — never a forum post), name, location, then the same public facts as `/members/:id` (`MemberProfileScreen` `factsOnly`: role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed), then Wallet of Satoshi address forms, then `PushToggle` (Notifications pills: All/Active/Mentions always; This device On/Off when Push APIs are ready), a language settings row (`LanguagePreferenceSwitcher`) after push and before theme, a theme settings row (`ThemeSwitcher`), a fiat settings row (`FiatPreferenceSwitcher`), and a number-format settings row (`NumberFormatSwitcher`) last. Never shows `forum.loading` on the card. The signed-in menu Profile row shows no amounts. Back + wordmark live in `ProfileChromeLeft`.
 - **Inputs:** `useAccountTotals` for both `receiveOverTime` and `donateOverTime` (also returns `failed`); pass both to `AccountActivityChart`; `AboutMeSection` (`putAboutMe` text plus optional photo, `fetchAboutMePhoto` when `aboutMeHasPhoto`, `fetchProfilePhoto`, `fetchWideBanner`, `name={account.name}`); `NameForm`, `LocationForm`, and `LightningAddressForm` for edits; `fetchMember(session, account.id)` then `MemberProfileScreen` with `factsOnly` for the public gifts facts; `PushToggle`; `LanguagePreferenceSwitcher`; `ThemeSwitcher`; `FiatPreferenceSwitcher`; `NumberFormatSwitcher`; catalog via `useTranslations`.
 - **Returns / side effects:** When a profile photo or wide image is stored, that header is above the heading (wide image `aspect-[5/2]`, round photo overlapping its lower edge when both exist). Heading **Profile**, compact chart (empty: `profile.chartEmpty` with no chart FiatPicker, no SVG / no ₿|fiat scale; a thrown activity load shows `profile.chartError` (`role="alert"`) instead of `profile.chartEmpty`; in-flight stays `profile.chartEmpty`; never **Loading…**; populated: legend + ₿ | selected fiat + SVG). The only FiatPicker on the card is `FiatPreferenceSwitcher`. About me, name form, location form, then the public member facts (role pill, funding-program icon (pressing it reveals that one sentence; on this screen the pressed result is `funding-program-press`), `username@21.gifts`, QR, Shop sticker, post/reaction counts, and the on-demand feed), then the Wallet of Satoshi address form, then `PushToggle` (Notifications pills), Language (English / Deutsch / Español / Filipino), Theme (System / Light / Dark), Fiat currency (CHF|EUR|USD|PHP), and Number format (`10'000.23` / `10,000.23` / `23.000,33`) as the last settings row — all inside one identity card (no second panel). A failed `fetchMember` shows `forum.error` and **Try again** and leaves the editors up. `MissingRequirementsError` replaces to `/setup/rules`. No Message button and no staff actions. Back + wordmark live in `ProfileChromeLeft`.
 - **Used by:** `ProfilePage`.
@@ -2984,6 +2984,27 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with JSON body.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/auth/passkey/authenticate/finish`.
+
+## Function: DiagnosticsListener
+
+- **Purpose:** Subscribe to window `error` and `unhandledrejection` and forward the error name and message to the diagnostic log.
+- **Inputs:** None. Reads `window.location.pathname` when the event fires, plus the event's `error` or `reason`.
+- **Returns / side effects:** Renders null. Posts `client.unhandled` through `reportDiagnostic`. Removes both listeners on unmount.
+- **Used by:** Root layout, mounted once for every page.
+
+## Function: proxyDiagnosticsPost
+
+- **Purpose:** Proxies POST `/diagnostics` so the browser can store an allowlisted client event.
+- **Inputs:** Incoming `Request` with a JSON body.
+- **Returns / side effects:** Upstream `Response` (204 when accepted). Does not read or log the body itself.
+- **Used by:** Route POST `/diagnostics`.
+
+## Function: reportDiagnostic
+
+- **Purpose:** POST one allowlisted client diagnostic to `/diagnostics`. Drops fields that fail the pattern instead of shortening them.
+- **Inputs:** Event name plus optional name, message, stage, status, path, challenge id, account id, and whether a PRF output was present.
+- **Returns / side effects:** void. Fire-and-forget `fetch` with `keepalive`. Never throws. Never sends PRF bytes, the recovery phrase, or a session token.
+- **Used by:** `DiagnosticsListener`, `usePasskeyLogin`, and `useWalletPhrase`.
 
 ## Function: proxyAuthPasskeyRegisterBeginPost
 

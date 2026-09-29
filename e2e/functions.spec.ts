@@ -1323,7 +1323,10 @@ test('Function: fetchAboutMePhoto — signed-in profile About me photo is visibl
   }
   await page.getByRole('button', { name: 'Write your About me' }).click();
   await page.getByRole('button', { name: 'Add a photo' }).click();
-  await page.locator('input[type="file"]').first().setInputFiles('e2e/fixtures/tiny.jpg');
+  await page
+    .locator('input[type="file"]:not([name])')
+    .first()
+    .setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('textbox', { name: 'About me' }).fill('I build on Bitcoin');
   await page.getByRole('button', { name: 'Save About me' }).click();
@@ -4607,6 +4610,48 @@ test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a chall
   const body = (await res.json()) as { challengeId: string; options: { challenge: string } };
   expect(body.challengeId.length).toBeGreaterThan(8);
   expect(body.options.challenge.length).toBeGreaterThan(8);
+});
+
+test('Function: proxyDiagnosticsPost — POST /diagnostics is accepted', async ({ request }) => {
+  const res = await request.post('/diagnostics', {
+    data: { event: 'client.unhandled', stage: 'unhandled' },
+  });
+  expect(res.status()).toBe(204);
+});
+
+test('Function: reportDiagnostic — a window error is posted', async ({ page }) => {
+  const bodies: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    bodies.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.goto('/login');
+  await page.evaluate(() => {
+    const error = new TypeError('Boom');
+    window.dispatchEvent(new ErrorEvent('error', { error, message: error.message }));
+  });
+  await expect.poll(() => bodies.join('\n')).toContain('client.unhandled');
+  await expect.poll(() => bodies.join('\n')).toContain('Boom');
+});
+
+test('Function: DiagnosticsListener — an unhandled rejection is posted', async ({ page }) => {
+  const bodies: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    bodies.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.goto('/login');
+  await page.evaluate(() => {
+    const reason = new Error('Later');
+    window.dispatchEvent(
+      new PromiseRejectionEvent('unhandledrejection', {
+        promise: Promise.resolve(),
+        reason,
+      }),
+    );
+  });
+  await expect.poll(() => bodies.join('\n')).toContain('client.unhandled');
+  await expect.poll(() => bodies.join('\n')).toContain('Later');
 });
 
 test('Function: startPasskeyRegistration — create passkey reaches the signed-in view', async ({
