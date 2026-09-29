@@ -250,6 +250,18 @@ describe('renewPasskey', () => {
     await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
   });
 
+  it('does not report when the session ends while reading browser capabilities', async () => {
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(new TypeError('offline'));
+    vi.stubGlobal('PublicKeyCredential', {
+      getClientCapabilities: vi.fn(async () => {
+        useAuthStore.setState({ session: null, account: null });
+        return { prf: true };
+      }),
+    });
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+    expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+  });
+
   it('returns the open failure account after an HTTP seed error', async () => {
     const open = { ...account, passkeyRenewFailed: true };
     vi.mocked(startPasskeySeed).mockRejectedValueOnce(

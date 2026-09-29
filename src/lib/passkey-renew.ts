@@ -78,6 +78,9 @@ async function reportRenew(
 ): Promise<Account | null> {
   try {
     const clientCapabilities = await passkeyRenewClientCapabilities();
+    if (!isCurrentSession(sessionToken)) {
+      return null;
+    }
     return await postPasskeyRenewReport(sessionToken, {
       stage,
       outcome,
