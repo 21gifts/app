@@ -392,8 +392,10 @@ describe('PlacesMapScreen', () => {
       place: { lat: 3, lng: 4, label: 'Stall' },
     });
     renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
     useAuthStore.setState({ session: 'tok', account: { ...moderator, role: 'basis' } });
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
     useAuthStore.setState({ session: 'tok', account: moderator });
     const pencils = await screen.findAllByRole('button', { name: 'Edit shop note' });

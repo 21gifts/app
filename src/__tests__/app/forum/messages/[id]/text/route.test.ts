@@ -21,10 +21,10 @@ it('forwards PATCH, encoded id, Bearer auth and the upstream text URL', async ()
       method: 'PATCH',
       headers: { authorization: 'Bearer token' },
     }),
-    { params: Promise.resolve({ id: 'm-staff' }) },
+    { params: Promise.resolve({ id: 'm/staff' }) },
   );
   expect(response.status).toBe(200);
-  expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://api.test/messages/m-staff/text');
+  expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://api.test/messages/m%2Fstaff/text');
   expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('PATCH');
   expect(
     new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers).get('authorization'),
