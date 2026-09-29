@@ -268,6 +268,12 @@ GET `/me` 403 with the api wrong-account copy, or passkey finish with that same 
 
 ![21.gifts login wrong-account](images/login-wrong-account.png)
 
+### Variant: unknown
+
+Passkey authenticate finish 400 `{ "error": "Unknown credential" }`. Heading **This passkey is not an account** (`login.unknownHeading`), muted sentence **This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.** (`login.unknownBody`), and **Open a new account**. Dismissing that create ceremony returns to this card.
+
+![21.gifts login unknown](images/login-unknown.png)
+
 ### Variant: choice
 
 After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account** and **Open a new account**. No account is created until the visitor clicks **Open a new account** and completes the create ceremony.

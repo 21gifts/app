@@ -136,6 +136,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'unknown',
+    image: 'login-unknown.png',
+    visual: 'state-login-unknown',
+    needle: 'This passkey is not an account',
+  },
+  {
+    route: '/login',
     id: 'choice',
     image: 'login-choice.png',
     visual: 'state-login-choice',

@@ -11,8 +11,8 @@ import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The `/login` card: Log in, account choice, preparing, error, or in-app
- * browser escape.
+ * The `/login` card: Log in, account choice, unknown passkey, preparing,
+ * error, or in-app browser escape.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`,
@@ -60,6 +60,8 @@ export function LoginCard(): ReactElement {
         }}
       />
     );
+  } else if (passkey.status === 'unknown') {
+    body = <UnknownView onRegister={() => passkey.register()} />;
   } else if (passkey.status === 'choice') {
     body = (
       <ChoiceView onAuthenticate={passkey.authenticate} onRegister={() => passkey.register()} />
@@ -128,6 +130,32 @@ function ChoiceView({ onAuthenticate, onRegister }: ChoiceViewProps): ReactEleme
         {t('login.existing')}
       </Button>
       <Button type="button" variant="secondary" onClick={onRegister}>
+        {t('login.create')}
+      </Button>
+    </>
+  );
+}
+
+/** Props for {@link UnknownView}. */
+interface UnknownViewProps {
+  /** Create a passkey with no view key. */
+  onRegister: () => void;
+}
+
+/**
+ * After authenticate finish `Unknown credential`: the offered passkey is not an account.
+ *
+ * @param props - See {@link UnknownViewProps}.
+ * @returns The unknown-credential view.
+ */
+function UnknownView({ onRegister }: UnknownViewProps): ReactElement {
+  const { t } = useTranslations();
+  return (
+    <>
+      <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      <h1 className="text-lg font-medium text-center text-app-fg">{t('login.unknownHeading')}</h1>
+      <p className="text-sm text-app-muted text-center">{t('login.unknownBody')}</p>
+      <Button type="button" onClick={onRegister}>
         {t('login.create')}
       </Button>
     </>

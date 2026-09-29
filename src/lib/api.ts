@@ -113,6 +113,39 @@ export function isWrongAccountError(error: unknown): boolean {
   );
 }
 
+/**
+ * Exact api 400 body when authenticate finish does not know the offered credential.
+ * Matched literally (English).
+ */
+export const UNKNOWN_CREDENTIAL_ERROR = 'Unknown credential';
+
+/**
+ * Api 400 rejection when authenticate finish does not know the offered credential.
+ */
+export class UnknownCredentialError extends Error {
+  /**
+   * @returns An unknown-credential error with the api's exact English copy.
+   */
+  public constructor() {
+    super(UNKNOWN_CREDENTIAL_ERROR);
+    this.name = 'UnknownCredentialError';
+  }
+}
+
+/**
+ * True for {@link UnknownCredentialError} or any `Error` whose message is exactly
+ * {@link UNKNOWN_CREDENTIAL_ERROR}.
+ *
+ * @param error - Unknown rejection.
+ * @returns Whether the offered credential is unknown to the server.
+ */
+export function isUnknownCredentialError(error: unknown): boolean {
+  return (
+    error instanceof UnknownCredentialError ||
+    (error instanceof Error && error.message === UNKNOWN_CREDENTIAL_ERROR)
+  );
+}
+
 /** Device IANA zone for the Sunday write check. Empty when the runtime has none. */
 export function deviceTimeZoneHeader(): Record<string, string> {
   if (typeof window === 'undefined') {
@@ -2920,6 +2953,7 @@ export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
  * @param credential - Browser assertion JSON.
  * @returns Token plus account.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
+ * @throws {@link UnknownCredentialError} on 400 with the unknown-credential api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
  */
 export async function finishPasskeyAuthentication(
@@ -2932,6 +2966,12 @@ export async function finishPasskeyAuthentication(
     body: JSON.stringify({ challengeId, credential }),
   });
   await throwIfWrongAccount(response);
+  if (response.status === 400) {
+    const raw = await readApiError(response);
+    if (raw === UNKNOWN_CREDENTIAL_ERROR) {
+      throw new UnknownCredentialError();
+    }
+  }
   if (!response.ok) {
     throw new Error(`Failed to finish passkey authentication: ${response.status}`);
   }

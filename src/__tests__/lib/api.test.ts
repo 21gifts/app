@@ -49,8 +49,11 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   finishPasskeySeed,
+  isUnknownCredentialError,
   isWrongAccountError,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  UNKNOWN_CREDENTIAL_ERROR,
+  UnknownCredentialError,
   WRONG_ACCOUNT_ERROR,
   WrongAccountError,
   listHiddenMessages,
@@ -3973,6 +3976,20 @@ describe('finishPasskeyAuthentication', () => {
       'Failed to finish passkey authentication: 403',
     );
   });
+
+  it('throws UnknownCredentialError on 400 with the unknown-credential body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: UNKNOWN_CREDENTIAL_ERROR } });
+    const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(UnknownCredentialError);
+    expect(isUnknownCredentialError(error)).toBe(true);
+  });
+
+  it('throws the generic finish error on 400 with another error string', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'expired challenge' } });
+    const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
+    expect(error).toEqual(new Error('Failed to finish passkey authentication: 400'));
+    expect(isUnknownCredentialError(error)).toBe(false);
+  });
 });
 
 describe('startPasskeySeed', () => {
@@ -4105,6 +4122,22 @@ describe('isWrongAccountError', () => {
     expect(isWrongAccountError(new Error('nope'))).toBe(false);
     expect(isWrongAccountError('nope')).toBe(false);
     expect(isWrongAccountError(null)).toBe(false);
+  });
+});
+
+describe('isUnknownCredentialError', () => {
+  it('is true for UnknownCredentialError instances', () => {
+    expect(isUnknownCredentialError(new UnknownCredentialError())).toBe(true);
+  });
+
+  it('is true for Error whose message is the api string', () => {
+    expect(isUnknownCredentialError(new Error(UNKNOWN_CREDENTIAL_ERROR))).toBe(true);
+  });
+
+  it('is false for other values', () => {
+    expect(isUnknownCredentialError(new Error('nope'))).toBe(false);
+    expect(isUnknownCredentialError('nope')).toBe(false);
+    expect(isUnknownCredentialError(null)).toBe(false);
   });
 });
 
