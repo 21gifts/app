@@ -36,6 +36,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * Resting header for the signed-in profile. The round photo and the wide
  * image are different pictures, and neither is the About me note photo.
  * A slot that has no stored picture offers a labeled button to add one.
+ * An open wide-image crop stays while a profile photo saves. `imageEpoch`
+ * only reloads the stored pictures; it does not remount this header.
  *
  * @param props - Loaders and saves for the two account slots. A rejected load means none.
  * @returns The header. Add buttons appear only after that slot's load has failed.
@@ -45,11 +47,13 @@ function ProfileImages({
   loadBanner,
   onSavePicture,
   onSaveBanner,
+  imageEpoch,
 }: {
   loadPicture: () => Promise<Blob>;
   loadBanner: () => Promise<Blob>;
   onSavePicture: (photo: { contentType: string; data: string }) => Promise<void>;
   onSaveBanner: (photo: { contentType: string; data: string }) => Promise<void>;
+  imageEpoch: number;
 }): ReactElement {
   const { t } = useTranslations();
   const [pictureUrl, setPictureUrl] = useState<string | null>(null);
@@ -57,13 +61,12 @@ function ProfileImages({
   const [pictureSettled, setPictureSettled] = useState(false);
   const [bannerSettled, setBannerSettled] = useState(false);
   const [saving, setSaving] = useState<'picture' | 'banner' | null>(null);
-  const releaseSaving = (kind: 'picture' | 'banner'): void => {
-    setSaving((current) => (current === kind ? null : current));
-  };
   const [error, setError] = useState<string | null>(null);
   const [bannerCropFile, setBannerCropFile] = useState<File | null>(null);
   const pictureInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const pictureUrlRef = useRef<string | null>(null);
+  const bannerUrlRef = useRef<string | null>(null);
   const loadPictureRef = useRef(loadPicture);
   const loadBannerRef = useRef(loadBanner);
   loadPictureRef.current = loadPicture;
@@ -71,8 +74,6 @@ function ProfileImages({
 
   useEffect(() => {
     let cancelled = false;
-    let pictureObject: string | null = null;
-    let bannerObject: string | null = null;
     void (async () => {
       try {
         const blob = await loadPictureRef.current();
@@ -82,10 +83,13 @@ function ProfileImages({
           }
           return;
         }
-        pictureObject = URL.createObjectURL(blob);
-        if (!cancelled) {
-          setPictureUrl(pictureObject);
-          setPictureSettled(true);
+        const url = URL.createObjectURL(blob);
+        const previous = pictureUrlRef.current;
+        pictureUrlRef.current = url;
+        setPictureUrl(url);
+        setPictureSettled(true);
+        if (previous !== null) {
+          URL.revokeObjectURL(previous);
         }
       } catch {
         if (!cancelled) {
@@ -102,10 +106,13 @@ function ProfileImages({
           }
           return;
         }
-        bannerObject = URL.createObjectURL(blob);
-        if (!cancelled) {
-          setBannerUrl(bannerObject);
-          setBannerSettled(true);
+        const url = URL.createObjectURL(blob);
+        const previous = bannerUrlRef.current;
+        bannerUrlRef.current = url;
+        setBannerUrl(url);
+        setBannerSettled(true);
+        if (previous !== null) {
+          URL.revokeObjectURL(previous);
         }
       } catch {
         if (!cancelled) {
@@ -115,11 +122,16 @@ function ProfileImages({
     })();
     return () => {
       cancelled = true;
-      if (pictureObject !== null) {
-        URL.revokeObjectURL(pictureObject);
+    };
+  }, [imageEpoch]);
+
+  useEffect(() => {
+    return () => {
+      if (pictureUrlRef.current !== null) {
+        URL.revokeObjectURL(pictureUrlRef.current);
       }
-      if (bannerObject !== null) {
-        URL.revokeObjectURL(bannerObject);
+      if (bannerUrlRef.current !== null) {
+        URL.revokeObjectURL(bannerUrlRef.current);
       }
     };
   }, []);
@@ -143,7 +155,7 @@ function ProfileImages({
       } catch {
         setError(t('profile.about.error'));
       } finally {
-        releaseSaving('picture');
+        setSaving(null);
       }
     })();
   };
@@ -151,15 +163,16 @@ function ProfileImages({
   const onPictureFile = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (file !== undefined) {
-      savePicture(file);
+    if (saving !== null || file === undefined) {
+      return;
     }
+    savePicture(file);
   };
 
   const onBannerFile = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (file === undefined) {
+    if (saving !== null || file === undefined) {
       return;
     }
     if (!isForumPhotoFile(file)) {
@@ -182,7 +195,7 @@ function ProfileImages({
     } catch {
       setError(t('profile.about.error'));
     } finally {
-      releaseSaving('banner');
+      setSaving(null);
     }
   };
 
@@ -366,7 +379,8 @@ export function ProfileScreen(): ReactElement {
     <Card surface={false}>
       {session !== null ? (
         <ProfileImages
-          key={`${session}:${imageEpoch}`}
+          key={session}
+          imageEpoch={imageEpoch}
           loadPicture={() => fetchProfilePhoto(session)}
           loadBanner={() => fetchWideBanner(session)}
           onSavePicture={async (photo) => {
