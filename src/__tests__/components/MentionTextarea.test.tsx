@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MentionTextarea } from '@/components/MentionTextarea';
+import { MentionTextarea, type MentionAccount } from '@/components/MentionTextarea';
 import { searchMentionAccounts } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -284,6 +284,51 @@ describe('MentionTextarea', () => {
     expect((await screen.findByRole('listbox', { name: 'People' })).className).toContain(
       'top-full',
     );
+  });
+
+  it('measures again when the same number of people is replaced', async () => {
+    let release: (rows: MentionAccount[]) => void = () => undefined;
+    search.mockImplementation(async (_token: string, query: string) => {
+      if (query === '') {
+        return PEOPLE.slice(0, 2);
+      }
+      return new Promise<MentionAccount[]>((resolve) => {
+        release = resolve;
+      });
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('@');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = typeInto('@');
+    const list = await screen.findByRole('listbox', { name: 'People' });
+    const fieldBox = vi.spyOn(box, 'getBoundingClientRect');
+    const listBox = vi.spyOn(list, 'getBoundingClientRect');
+    fieldBox.mockReturnValue(boxRect(300, window.innerHeight - 80));
+    listBox.mockReturnValue(listRect(40));
+    typeInto('@a');
+    expect(list.className).toContain('top-full');
+    await waitFor(() => {
+      expect(search).toHaveBeenCalledWith('sess', 'a');
+    });
+    listBox.mockReturnValue(listRect(200));
+    release([
+      { id: 'acc-long-1', username: 'alpha', name: 'Alpha' },
+      { id: 'acc-long-2', username: 'alpine', name: 'Alpine' },
+    ]);
+    await waitFor(() => {
+      expect(list.className).toContain('bottom-full');
+    });
   });
 
   it('closes the list in the same update that inserts a name', async () => {

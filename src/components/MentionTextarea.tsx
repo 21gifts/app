@@ -102,6 +102,7 @@ export function MentionTextarea({
         ? seed
         : seed.filter((row) => row.username.toLowerCase().startsWith(mention.query));
   const shown = mention !== null && mention.query !== '' && remote !== null ? remote : filtered;
+  const shownKey = shown.map((row) => row.id).join('\n');
   const open = mention !== null && closedKey !== dismissKey && shown.length > 0;
   const activeIndex = Math.min(highlight, Math.max(shown.length - 1, 0));
 
@@ -180,7 +181,7 @@ export function MentionTextarea({
     const roomAbove = fieldBox.top;
     const needed = list.getBoundingClientRect().height + MENTION_LIST_GAP;
     setPlaceAbove(roomBelow < needed && roomAbove > roomBelow);
-  }, [open, shown.length, tokenKey]);
+  }, [open, shownKey, tokenKey]);
 
   useLayoutEffect(() => {
     const next = pendingCaret.current;
