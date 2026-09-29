@@ -62,8 +62,9 @@ export { AppShellContext };
  * viewport-height utilities on app routes. Always draws one rounded-3xl page
  * frame; wordmark and Menu live in that frame’s first row. The frame
  * (`data-app-frame`) publishes its content-box width as `frameWidth`.
- * `[data-menu-scrim-host]` sits on that frame. `[data-menu-sheet-host]` and
- * `[data-scroll-page]` sit inside the one `[data-scrollport]`. `<main>` has
+ * `[data-menu-scrim-host]` sits on that frame. `[data-menu-sheet-host]`
+ * (`px-8`, the page inset) and `[data-scroll-page]` sit inside the one
+ * `[data-scrollport]`. `<main>` has
  * no `overflow-hidden`. The document does not scroll. Content scrolls in the
  * one `[data-scrollport]`. Cards never host page chrome.
  *
@@ -155,7 +156,7 @@ export function AppShell({
             }}
             className="w-full flex-1"
           >
-            <div data-menu-sheet-host />
+            <div data-menu-sheet-host className="px-8" />
             {align === 'center' ? (
               <div
                 data-scroll-page

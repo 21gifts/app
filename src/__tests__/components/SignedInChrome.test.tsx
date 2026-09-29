@@ -834,6 +834,7 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
+      expect(document.querySelector('[data-menu-sheet-host]')?.className).toContain('px-8');
       expect(panel.className).toContain('w-full');
       expect(panel.className).not.toContain('absolute');
       expect(document.documentElement.dataset['menuSheet']).toBe('1');
@@ -870,6 +871,7 @@ describe('SignedInChrome', () => {
         throw new Error('missing menu scrim');
       }
       expect(scrim.getAttribute('aria-label')).toBe('Close menu');
+      expect(scrim.className).toContain('rounded-3xl');
       expect(scrim.tabIndex).toBe(-1);
       expect(document.querySelector('[data-menu-scrim-host]')?.contains(scrim)).toBe(true);
       fireEvent.click(scrim);

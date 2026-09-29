@@ -42,8 +42,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * and log out). The Menu ends with a quiet
  * Version line (`app.version` / `getAppVersion()`). On a wide frame the panel
  * is an 18rem (`w-72`) portal on the trigger parent and a scrim portals to
- * `[data-menu-scrim-host]`. On a narrow frame the panel is a full-width sheet
- * in `[data-menu-sheet-host]` and the page underneath is hidden. When onboarding
+ * `[data-menu-scrim-host]` and uses `rounded-3xl` so it follows the frame.
+ * On a narrow frame the panel is a full-width sheet in `[data-menu-sheet-host]`
+ * (the host has the page's `px-8` inset) and the page underneath is hidden. When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
  * introduce CTA skips the overlay once so a remount after navigating to
@@ -365,7 +366,7 @@ export function SignedInChrome(): ReactElement {
               id="signed-in-menu-scrim"
               tabIndex={-1}
               aria-label={t('aria.menuDismiss')}
-              className="absolute inset-0 z-40 bg-app-overlay"
+              className="absolute inset-0 z-40 rounded-3xl bg-app-overlay"
               onClick={() => {
                 setOpen(false);
               }}

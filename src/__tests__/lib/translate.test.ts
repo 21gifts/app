@@ -42,6 +42,51 @@ describe('translate', () => {
     expect(translate(en, 'profile.postCount', { count: 0 })).toBe('0 posts');
   });
 
+  it('expands every plural message in every catalog', () => {
+    for (const locale of ['en', 'de', 'es', 'fil'] as const) {
+      const catalog = getCatalog(locale);
+      for (const key of Object.keys(catalog) as MessageKey[]) {
+        const template = catalog[key];
+        if (template === undefined || !template.includes('{count, plural,')) {
+          continue;
+        }
+        const vars: Record<string, string | number> = { count: 1 };
+        for (const match of template.matchAll(/\{([A-Za-z_][A-Za-z0-9_]*)/g)) {
+          const name = match[1];
+          if (name !== undefined && vars[name] === undefined) {
+            vars[name] = 'x';
+          }
+        }
+        for (const count of [1, 2]) {
+          vars['count'] = count;
+          const rendered = translate(catalog, key, vars);
+          expect(rendered, `${locale} ${key} ${count}`).not.toMatch(/[{}]/);
+          expect(rendered).toContain(String(count));
+        }
+      }
+    }
+    const fil = getCatalog('fil');
+    expect(translate(fil, 'forum.replyCount', { count: 2 })).toBe('2 reaksyon');
+    expect(translate(fil, 'profile.postCount', { count: 2 })).toBe('2 post');
+    expect(translate(fil, 'profile.replyCount', { count: 2 })).toBe('2 reaksyon');
+    expect(
+      translate(fil, 'moderate.goal.explYesterday', {
+        count: 2,
+        date: 'x',
+        percent: 'x',
+        goal: 'x',
+      }),
+    ).toContain('2 tao');
+    expect(
+      translate(fil, 'moderate.goal.explYesterday', {
+        count: 2,
+        date: 'x',
+        percent: 'x',
+        goal: 'x',
+      }),
+    ).not.toContain('mga tao');
+  });
+
   it('throws when a plural count is missing or not a finite number', () => {
     const en = getCatalog('en');
     expect(() => translate(en, 'forum.replyCount')).toThrow(/Missing placeholder \{count\}/);

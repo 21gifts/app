@@ -3245,7 +3245,7 @@ const fil = {
   'forum.goalBarAria': 'Progreso ng layunin {percent} porsyento',
   'forum.copyLink': 'Kopyahin ang link sa notang ito',
   'forum.copyReplyLink': 'Kopyahin ang link sa tugong ito',
-  'forum.replyCount': '{count, plural, one {# reaksyon} other {# mga reaksyon}}',
+  'forum.replyCount': '{count, plural, one {# reaksyon} other {# reaksyon}}',
   'forum.replyComposerLabel': 'Iyong reaksyon',
   'forum.replyPlaceholder': 'Sumulat ng reaksyon',
   'forum.giftReply': 'magpadala ng {amount}',
@@ -3330,8 +3330,8 @@ const fil = {
   'profile.push.level.hint':
     'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga post ng admin, sagot sa iyo, at mga regalo na natatanggap mo, at mga marka gamit ang @username.',
   'profile.push.level.error': 'Hindi ma-save ang antas ng notification.',
-  'profile.postCount': '{count, plural, one {# post} other {# mga post}}',
-  'profile.replyCount': '{count, plural, one {# reaksyon} other {# mga reaksyon}}',
+  'profile.postCount': '{count, plural, one {# post} other {# post}}',
+  'profile.replyCount': '{count, plural, one {# reaksyon} other {# reaksyon}}',
   'profile.activityLatest': 'Ipinapakita ang pinakabago {shown} sa {total}.',
   'profile.about.heading': 'Tungkol sa akin',
   'profile.about.empty': 'Sabihin sa iba kung sino ka.',
@@ -3622,7 +3622,7 @@ const fil = {
   'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
   'moderate.goal.closeHint': 'I-tap para isara',
   'moderate.goal.explYesterday':
-    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count, plural, one {# tao} other {# mga tao}} ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
+    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count, plural, one {# tao} other {# tao}} ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
   'moderate.goal.explOfficial':
     'Isang beses lang binibilang ang bawat tao sa UTC-araw na binayaran siya ng 21.gifts ng araw-araw na tulong o ng welcome gift. Ang nakatanggap ng pareho sa araw na iyon ay isang beses lang. Hindi binibilang ang stipend ng moderator at ang mga regalo sa pagitan ng mga miyembro.',
   'moderate.goal.explBar':
