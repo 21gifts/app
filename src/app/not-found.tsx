@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { LocaleProvider } from '@/components/LocaleProvider';
 import { MarketingFooter } from '@/components/MarketingFooter';
 import { MarketingHeader } from '@/components/MarketingHeader';
 import { Scrollport } from '@/components/ui/Scrollport';
@@ -10,6 +11,7 @@ import { translate } from '@/lib/translate';
  * Dark not-found page. The marketing header's top-left arrow is the only back
  * control. Uses the marketing chrome because this file sits outside the
  * `(marketing)` route group.
+ * This segment can render without the root layout, so it provides the locale itself.
  *
  * @returns The 404 screen.
  */
@@ -19,15 +21,17 @@ export default async function NotFound(): Promise<ReactElement> {
   const footer = await MarketingFooter();
 
   return (
-    <div className="flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]">
-      <Scrollport className="flex-1 bg-ink">
-        <MarketingHeader />
-        <main className="mx-auto flex max-w-[1100px] flex-col items-start px-5 py-28">
-          <h1 className="text-5xl font-semibold">404</h1>
-          <p className="mt-4 text-paper/60">{translate(messages, 'notFound.body')}</p>
-        </main>
-        {footer}
-      </Scrollport>
-    </div>
+    <LocaleProvider locale={locale} messages={messages}>
+      <div className="flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]">
+        <Scrollport className="flex-1 bg-ink">
+          <MarketingHeader />
+          <main className="mx-auto flex max-w-[1100px] flex-col items-start px-5 py-28">
+            <h1 className="text-5xl font-semibold">404</h1>
+            <p className="mt-4 text-paper/60">{translate(messages, 'notFound.body')}</p>
+          </main>
+          {footer}
+        </Scrollport>
+      </div>
+    </LocaleProvider>
   );
 }
