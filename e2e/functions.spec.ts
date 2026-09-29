@@ -502,7 +502,10 @@ async function confirmNewAccount(page: Page): Promise<string> {
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
   await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
-  const handle = `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.slice(0, 32);
+  const handle = `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.slice(
+    0,
+    32,
+  );
   await page.getByRole('textbox', { name: 'Name' }).fill(handle);
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
@@ -1063,17 +1066,18 @@ test('Function: postContact — sending from contact shows the official thread',
   await expect(page.getByText(body)).toBeVisible();
 });
 
-async function reachWelcome(page: Page, request: APIRequestContext): Promise<void> {
-  await signInViaStub(page, request);
+async function reachWelcome(page: Page, request: APIRequestContext): Promise<string> {
+  const handle = await signInViaStub(page, request);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  return handle;
 }
 
-async function reachWelcomeVerified(page: Page, request: APIRequestContext): Promise<void> {
-  await reachWelcome(page, request);
+async function reachWelcomeVerified(page: Page, request: APIRequestContext): Promise<string> {
+  const handle = await reachWelcome(page, request);
   await page.route(/\/me$/, async (route) => {
     const res = await route.fetch();
     const body = (await res.json()) as Record<string, unknown>;
@@ -1086,6 +1090,7 @@ async function reachWelcomeVerified(page: Page, request: APIRequestContext): Pro
   await page.reload();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  return handle;
 }
 
 async function attachTinyJpeg(page: Page): Promise<void> {
@@ -1093,7 +1098,11 @@ async function attachTinyJpeg(page: Page): Promise<void> {
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
 }
 
-async function postAndExpectPhotoRow(page: Page, caption?: string): Promise<string> {
+async function postAndExpectPhotoRow(
+  page: Page,
+  author: string,
+  caption?: string,
+): Promise<string> {
   const posted = page.waitForResponse((response) => {
     if (response.request().method() !== 'POST' || !response.ok()) {
       return false;
@@ -1110,7 +1119,7 @@ async function postAndExpectPhotoRow(page: Page, caption?: string): Promise<stri
   expect(created.text).toBe(caption ?? '');
   const row = page.locator(`li[data-message-id="${created.id}"]`);
   await expect(row).toBeVisible();
-  await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({
+  await expect(row.getByRole('img', { name: `Photo from ${author}` })).toBeVisible({
     timeout: 10_000,
   });
   if (caption !== undefined) {
@@ -1135,27 +1144,27 @@ test('Function: prepareForumPhoto — attaching a jpeg shows a preview then post
   page,
   request,
 }) => {
-  await reachWelcomeVerified(page, request);
+  const handle = await reachWelcomeVerified(page, request);
   await attachTinyJpeg(page);
-  await postAndExpectPhotoRow(page);
+  await postAndExpectPhotoRow(page, handle);
 });
 
 test('Function: isForumPhotoFile — photo-only post does not require text', async ({
   page,
   request,
 }) => {
-  await reachWelcomeVerified(page, request);
+  const handle = await reachWelcomeVerified(page, request);
   await attachTinyJpeg(page);
   await expect(page.getByLabel('Your message')).toHaveValue('');
-  await postAndExpectPhotoRow(page);
+  await postAndExpectPhotoRow(page, handle);
 });
 
 test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
-  await reachWelcomeVerified(page, request);
+  const handle = await reachWelcomeVerified(page, request);
   const caption = `Caption ${Date.now()}`;
   await page.getByLabel('Your message').fill(caption);
   await attachTinyJpeg(page);
-  await postAndExpectPhotoRow(page, caption);
+  await postAndExpectPhotoRow(page, handle, caption);
 });
 
 test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ page }) => {
