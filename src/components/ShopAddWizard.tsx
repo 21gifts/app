@@ -13,6 +13,24 @@ import type { ForumVideoPayload } from '@/lib/forum-video';
 /** One step of the shop submission, after the closed button. */
 type ShopAddStep = 1 | 2 | 3 | 4 | 5;
 
+function advanceShopStep(current: ShopAddStep | 'closed'): ShopAddStep | 'closed' {
+  /* v8 ignore start -- Next is not mounted when the wizard is closed or already on the summary */
+  if (current === 'closed' || current >= 5) {
+    return current;
+  }
+  /* v8 ignore stop */
+  return (current + 1) as ShopAddStep;
+}
+
+function retreatShopStep(current: ShopAddStep | 'closed'): ShopAddStep | 'closed' {
+  /* v8 ignore start -- Back is not mounted when the wizard is closed or still on the photo step */
+  if (current === 'closed' || current <= 1) {
+    return current;
+  }
+  /* v8 ignore stop */
+  return (current - 1) as ShopAddStep;
+}
+
 /** A still or video already stored on the shop note. */
 export interface ShopKeptMedia {
   /** Preview URL already loaded for this note. */
@@ -129,13 +147,12 @@ export function ShopAddWizard({
         setOverride(null);
       };
     }
-    const previous = (step - 1) as ShopAddStep;
     setOverride({
       labelKey: 'shops.back',
       disabled: posting,
       onClick: (): void => {
         setSummaryArmed(false);
-        setStep(previous);
+        setStep((current) => retreatShopStep(current));
       },
     });
     return (): void => {
@@ -372,7 +389,7 @@ export function ShopAddWizard({
             disabled={posting}
             onClick={() => {
               setSummaryArmed(false);
-              setStep((step + 1) as ShopAddStep);
+              setStep((current) => advanceShopStep(current));
             }}
           >
             {t('shops.next')}
