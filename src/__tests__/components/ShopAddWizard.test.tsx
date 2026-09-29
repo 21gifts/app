@@ -117,6 +117,9 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.queryByText('Add a photo or video')).toBeNull();
+    expect(screen.queryByText('Remove video')).toBeNull();
+    expect(screen.queryByText('Remove photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo or video' }));
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: null } });
@@ -150,6 +153,7 @@ describe('ShopAddWizard', () => {
     expect(summary).toBeTruthy();
     expect(within(summary as HTMLElement).queryByRole('button', { name: 'Back' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Back' })).toHaveLength(1);
+    expect(screen.queryByText('Back')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByText('4 / 5 · 21.gifts user')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -233,11 +237,13 @@ describe('ShopAddWizard', () => {
     );
     expect(screen.queryByRole('button', { name: 'Add a shop' })).toBeNull();
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:clip');
     expect(document.querySelector('input[type="file"]')?.getAttribute('accept')).toBe(
       'image/jpeg,image/png,image/webp',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(onRemoveKept).toHaveBeenCalledWith(0);
+    expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:clip');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();

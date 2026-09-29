@@ -18,6 +18,7 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { ensureShopHashtag, isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -66,22 +67,6 @@ function editValueText(field: ShopNoteEdit['field'], value: unknown, none: strin
   }
   const account = value as { username?: unknown };
   return typeof account.username === 'string' ? `@${account.username}` : none;
-}
-
-/**
- * Local medium date and short time, or the raw string when it is not a date.
- *
- * @param createdAt - ISO timestamp from the history row.
- * @returns A formatted instant.
- */
-function formatEditWhen(createdAt: string): string {
-  const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) {
-    return createdAt;
-  }
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
-    date,
-  );
 }
 
 function placeStamp(place: ForumPlacePin | null): string {
@@ -149,7 +134,7 @@ export function ShopNoteEditControl({
 }: ShopNoteEditControlProps): ReactElement | null {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [place, setPlace] = useState<ForumPlacePin | null>(null);
@@ -444,7 +429,7 @@ export function ShopNoteEditControl({
                 return (
                   <li key={edit.id} className="text-xs text-app-muted">
                     <p>
-                      {who} · {formatEditWhen(edit.createdAt)} · {fieldLabel}
+                      {who} · {formatForumTime(edit.createdAt, locale)} · {fieldLabel}
                     </p>
                     <p className="whitespace-pre-wrap">
                       {editValueText(edit.field, edit.before, t('forum.editNone'))}

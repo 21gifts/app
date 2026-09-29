@@ -4967,15 +4967,24 @@ describe('setMessageShopPhotos', () => {
       status: 200,
       body: { ...forumMessage, hasPhoto: true, photoCount: 1 },
     });
-    await setMessageShopPhotos('token', 'm1', [
-      { contentType: 'image/jpeg', data: 'abc', takenAt: '2020-01-01T00:00:00+00:00' },
-      { contentType: 'image/png', data: 'def', takenAt: '' },
-    ]);
-    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
-      photos: [
+    await expect(
+      setMessageShopPhotos('token', 'a/b', [
         { contentType: 'image/jpeg', data: 'abc', takenAt: '2020-01-01T00:00:00+00:00' },
-        { contentType: 'image/png', data: 'def' },
-      ],
+        { contentType: 'image/png', data: 'def', takenAt: '' },
+      ]),
+    ).resolves.toEqual({ ...parsedForumMessage, hasPhoto: true, photoCount: 1 });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/photos', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        photos: [
+          { contentType: 'image/jpeg', data: 'abc', takenAt: '2020-01-01T00:00:00+00:00' },
+          { contentType: 'image/png', data: 'def' },
+        ],
+      }),
     });
   });
 

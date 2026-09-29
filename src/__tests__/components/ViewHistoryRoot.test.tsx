@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useChromeBack, ViewHistoryRoot } from '@/components/ViewHistoryRoot';
+import { ChromeBackProvider, useChromeBack, ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { previousViewPath, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -171,5 +171,73 @@ describe('ViewHistoryRoot', () => {
     expect(screen.getByRole('button', { name: 'none' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'none' }));
     expect(screen.getByRole('button', { name: 'none' })).toBeTruthy();
+  });
+
+  it('keeps a slot per caller; clear and unmount restore the previous override', () => {
+    function Caller({
+      name,
+      labelKey,
+    }: {
+      name: string;
+      labelKey: 'forum.askBack' | 'shops.back';
+    }): ReactElement {
+      const { override, setOverride } = useChromeBack();
+      const visible = override === null ? 'none' : override.labelKey;
+      return (
+        <div>
+          <p>{`${name}:${visible}`}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setOverride({ labelKey, onClick: (): void => undefined });
+            }}
+          >
+            {`${name} set`}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOverride(null);
+            }}
+          >
+            {`${name} clear`}
+          </button>
+        </div>
+      );
+    }
+
+    function Probe({ showSecond }: { showSecond: boolean }): ReactElement {
+      return (
+        <ChromeBackProvider>
+          <Caller name="first" labelKey="forum.askBack" />
+          {showSecond ? <Caller name="second" labelKey="shops.back" /> : null}
+        </ChromeBackProvider>
+      );
+    }
+
+    const view = renderWithLocale(<Probe showSecond />);
+    expect(screen.getByText('first:none')).toBeTruthy();
+    expect(screen.getByText('second:none')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'first clear' }));
+    expect(screen.getByText('first:none')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'first set' }));
+    expect(screen.getByText('first:forum.askBack')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'first set' }));
+    expect(screen.getByText('first:forum.askBack')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'second set' }));
+    expect(screen.getByText('first:shops.back')).toBeTruthy();
+    expect(screen.getByText('second:shops.back')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'first set' }));
+    expect(screen.getByText('first:forum.askBack')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'second set' }));
+    expect(screen.getByText('second:shops.back')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'second clear' }));
+    expect(screen.getByText('first:forum.askBack')).toBeTruthy();
+    expect(screen.getByText('second:forum.askBack')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'second set' }));
+    expect(screen.getByText('second:shops.back')).toBeTruthy();
+    view.rerender(<Probe showSecond={false} />);
+    expect(screen.getByText('first:forum.askBack')).toBeTruthy();
+    expect(screen.queryByText('second:shops.back')).toBeNull();
   });
 });

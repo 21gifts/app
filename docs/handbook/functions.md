@@ -583,13 +583,13 @@
 - **Purpose:** Read and set the top-left arrow override for an in-page step such as the ask wizard. Without a provider, the override is null and the setter is a no-op, so a wizard render does not throw.
 - **Inputs:** None. Reads `ChromeBackProvider` context when it is present.
 - **Returns / side effects:** `{ override, setOverride }`. Does not navigate by itself. No network.
-- **Used by:** `ProfileChromeLeft`, `ForumAskWizard`, the welcome top-left chrome.
+- **Used by:** `ProfileChromeLeft`, `ForumAskWizard`, `ShopAddWizard`, the welcome top-left chrome.
 
 ## Function: ChromeBackProvider
 
-- **Purpose:** Hold the single top-left back override. When set, the chrome arrow runs that in-page step instead of the view history. Pay-sheet dismiss stays Close (`X`), not this control.
+- **Purpose:** Hold the top-left back overrides, one slot per caller. The chrome arrow runs the latest in-page step instead of the view history. Pay-sheet dismiss stays Close (`X`), not this control.
 - **Inputs:** `children`.
-- **Returns / side effects:** Context provider. One override at a time. No network.
+- **Returns / side effects:** Context provider. Each caller has its own slot. The arrow shows the last set override. Clearing or unmounting a caller restores the previous. No network.
 - **Used by:** `ViewHistoryRoot`.
 
 ## Function: ProfileScreen

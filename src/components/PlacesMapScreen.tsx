@@ -78,7 +78,7 @@ function ShopPinEdit({
       </IconButton>
       {failed ? (
         <p role="alert" className="text-xs text-app-danger">
-          {t('forum.editShopNoteFailed')}
+          {t('forum.editShopNoteLoadFailed')}
         </p>
       ) : null}
     </span>

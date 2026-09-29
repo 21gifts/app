@@ -7,6 +7,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useState,
@@ -22,14 +23,19 @@ export type ChromeBackOverride = {
   disabled?: boolean;
 };
 
+type ChromeBackSlot = {
+  id: string;
+  override: ChromeBackOverride;
+};
+
 type ChromeBackContextValue = {
   override: ChromeBackOverride | null;
-  setOverride: (next: ChromeBackOverride | null) => void;
+  setSlot: (id: string, next: ChromeBackOverride | null) => void;
 };
 
 const ChromeBackContext = createContext<ChromeBackContextValue>({
   override: null,
-  setOverride: (): void => undefined,
+  setSlot: (): void => undefined,
 });
 
 /**
@@ -42,7 +48,20 @@ export function useChromeBack(): {
   override: ChromeBackOverride | null;
   setOverride: (next: ChromeBackOverride | null) => void;
 } {
-  return useContext(ChromeBackContext);
+  const id = useId();
+  const { override, setSlot } = useContext(ChromeBackContext);
+  const setOverride = useCallback(
+    (next: ChromeBackOverride | null): void => {
+      setSlot(id, next);
+    },
+    [id, setSlot],
+  );
+  useLayoutEffect(() => {
+    return (): void => {
+      setSlot(id, null);
+    };
+  }, [id, setSlot]);
+  return { override, setOverride };
 }
 
 /**
@@ -52,8 +71,19 @@ export function useChromeBack(): {
  * @returns The provider.
  */
 export function ChromeBackProvider({ children }: { children: ReactNode }): ReactElement {
-  const [override, setOverride] = useState<ChromeBackOverride | null>(null);
-  const value = useMemo((): ChromeBackContextValue => ({ override, setOverride }), [override]);
+  const [slots, setSlots] = useState<readonly ChromeBackSlot[]>([]);
+  const setSlot = useCallback((id: string, next: ChromeBackOverride | null): void => {
+    setSlots((current) => {
+      const without = current.filter((slot) => slot.id !== id);
+      if (next === null) {
+        return without.length === current.length ? current : without;
+      }
+      return [...without, { id, override: next }];
+    });
+  }, []);
+  const last = slots[slots.length - 1];
+  const override = last === undefined ? null : last.override;
+  const value = useMemo((): ChromeBackContextValue => ({ override, setSlot }), [override, setSlot]);
   return <ChromeBackContext.Provider value={value}>{children}</ChromeBackContext.Provider>;
 }
 

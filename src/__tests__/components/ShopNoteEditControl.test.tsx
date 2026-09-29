@@ -122,6 +122,9 @@ describe('ShopNoteEditControl', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'basis' } });
     rerender(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'verified' } });
+    rerender(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
     useAuthStore.setState({ session: null, account: null });
     rerender(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
@@ -183,6 +186,7 @@ describe('ShopNoteEditControl', () => {
       />,
     );
     const pencil = screen.getByRole('button', { name: 'Edit shop note' });
+    expect(screen.queryByText('Edit shop note')).toBeNull();
     fireEvent.keyDown(pencil, { key: 'Enter' });
     fireEvent.click(pencil);
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
@@ -495,7 +499,7 @@ describe('ShopNoteEditControl', () => {
     expect(document.querySelector('video')?.getAttribute('src')).toBe('/messages/shop1/video.webm');
   });
 
-  it('refuses an empty note, a too-long note, and a photo save before the stills load', async () => {
+  it('refuses an empty note and a photo save before the stills load', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(fetchMessagePhoto).mockRejectedValue(new Error('nope'));
@@ -550,8 +554,15 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(setMessageShopPhotos).not.toHaveBeenCalled();
     expect(onUpdated).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+  });
+
+  it('refuses a note that is longer than the limit', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'x'.repeat(8000) },
     });
@@ -559,6 +570,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(setMessageShopText).not.toHaveBeenCalled();
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
   });
 
   it('clears a shop user without sending stills', async () => {

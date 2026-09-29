@@ -400,7 +400,7 @@ describe('PlacesMapScreen', () => {
     expect(pencils).toHaveLength(2);
     fireEvent.click(pencils[0]!);
     expect((await screen.findByRole('alert')).textContent).toContain(
-      'Could not save this shop note',
+      'Could not load this shop note',
     );
     fireEvent.click(pencils[1]!);
     await waitFor(() => {
