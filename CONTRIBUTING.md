@@ -442,7 +442,10 @@ arbitrary values, and assignments, and on any stylesheet scrolling overflow
 except `overflow: auto` on `[data-scrollport][data-scroll-active]` and that
 one sideways row. It rejects its own detector if that check goes blind. The document lock is
 `!important`. AppShell `<main>` stays free of `overflow-hidden` so the
-in-tree menu is not clipped. The document lock stops the page from
+menu hosts on the frame are not clipped. `--app-offset-top` is
+`visualViewport.offsetTop` (else 0) and positions `body`
+(`position: fixed; top: var(--app-offset-top); height: var(--app-height)`).
+The offset is never added into the height. The document lock stops the page from
 scrolling under the frame.
 
 ### Components
