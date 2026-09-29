@@ -39,11 +39,15 @@ function listRect(height: number): DOMRect {
 }
 
 function typeInto(value: string): HTMLTextAreaElement {
+  return placeCaret(value, value.length);
+}
+
+function placeCaret(value: string, caret: number): HTMLTextAreaElement {
   const box = screen.getByRole('textbox') as HTMLTextAreaElement;
   fireEvent.change(box, {
-    target: { value, selectionStart: value.length, selectionEnd: value.length },
+    target: { value, selectionStart: caret, selectionEnd: caret },
   });
-  box.setSelectionRange(value.length, value.length);
+  box.setSelectionRange(caret, caret);
   fireEvent.select(box);
   return box;
 }
@@ -197,6 +201,34 @@ describe('MentionTextarea', () => {
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
     typeInto('@ ');
     typeInto('@');
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('keeps every dismissed @ closed until that character is gone', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('@ one @');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = placeCaret('@ one @', 1);
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.keyDown(box, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    placeCaret('@ one @', 7);
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    placeCaret('@ one @', 1);
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 

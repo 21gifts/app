@@ -67,7 +67,8 @@ const OPTION_ROW_CLASS =
  * closes the list. A space already after the token stays a single space.
  * A choice that would pass the length limit is not inserted. Keys during
  * text composition stay with the input method. Escape, Tab, or a click
- * outside keeps that `@` closed until that character is gone. The caret
+ * outside keeps each such `@` closed until that character is gone.
+ * Choosing does not remember that `@` as closed. The caret
  * sits after the inserted space even when the text was already that handle.
  * The list sits under the field, and
  * above it only when this list would not fit underneath and there is
@@ -100,13 +101,13 @@ export function MentionTextarea({
   const [seed, setSeed] = useState<MentionAccount[] | null>(null);
   const [remote, setRemote] = useState<MentionPage | null>(null);
   const [highlight, setHighlight] = useState(0);
-  const [closedKey, setClosedKey] = useState<string | null>(null);
+  const [closedStarts, setClosedStarts] = useState<ReadonlySet<number>>(() => new Set());
   const [placeAbove, setPlaceAbove] = useState(false);
 
   const mention = collapsed ? activeMention(value, caret) : null;
   const query = mention === null ? null : mention.query;
   const tokenKey = mention === null ? '' : `${String(mention.start)}:${mention.query}`;
-  const dismissKey = mention === null ? '' : String(mention.start);
+  const mentionStart = mention === null ? null : mention.start;
   const filtered =
     mention === null || seed === null
       ? []
@@ -118,7 +119,7 @@ export function MentionTextarea({
       ? remote.rows
       : filtered;
   const shownKey = shown.map((row) => row.id).join('\n');
-  const open = mention !== null && closedKey !== dismissKey && shown.length > 0;
+  const open = mention !== null && !closedStarts.has(mention.start) && shown.length > 0;
   const activeIndex = Math.min(highlight, Math.max(shown.length - 1, 0));
 
   useEffect(() => {
@@ -176,14 +177,18 @@ export function MentionTextarea({
   }, [tokenKey]);
 
   useEffect(() => {
-    if (closedKey === null) {
-      return;
-    }
-    const index = Number(closedKey);
-    if (!Number.isInteger(index) || value.charAt(index) !== '@') {
-      setClosedKey(null);
-    }
-  }, [value, closedKey]);
+    setClosedStarts((current) => {
+      let next: Set<number> | null = null;
+      for (const index of current) {
+        if (value.charAt(index) === '@') {
+          continue;
+        }
+        next ??= new Set(current);
+        next.delete(index);
+      }
+      return next ?? current;
+    });
+  }, [value]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -222,6 +227,11 @@ export function MentionTextarea({
     if (!open) {
       return;
     }
+    /* v8 ignore next 3 -- the list is open only while a mention token is active */
+    if (mentionStart === null) {
+      return;
+    }
+    const start = mentionStart;
     const onPointer = (event: MouseEvent): void => {
       const root = rootRef.current;
       /* v8 ignore next 3 -- the listener is attached only after the wrapper is mounted */
@@ -231,13 +241,17 @@ export function MentionTextarea({
       if (root.contains(event.target as Node)) {
         return;
       }
-      setClosedKey(dismissKey);
+      setClosedStarts((current) => {
+        const next = new Set(current);
+        next.add(start);
+        return next;
+      });
     };
     document.addEventListener('mousedown', onPointer, true);
     return () => {
       document.removeEventListener('mousedown', onPointer, true);
     };
-  }, [open, dismissKey]);
+  }, [open, mentionStart]);
 
   const sync = (node: HTMLTextAreaElement): void => {
     setCaret(node.selectionStart);
@@ -307,11 +321,21 @@ export function MentionTextarea({
     }
     if (event.key === 'Escape') {
       event.preventDefault();
-      setClosedKey(dismissKey);
+      const start = mention.start;
+      setClosedStarts((current) => {
+        const next = new Set(current);
+        next.add(start);
+        return next;
+      });
       return;
     }
     if (event.key === 'Tab') {
-      setClosedKey(dismissKey);
+      const start = mention.start;
+      setClosedStarts((current) => {
+        const next = new Set(current);
+        next.add(start);
+        return next;
+      });
     }
   };
 
