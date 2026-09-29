@@ -4931,20 +4931,27 @@ async function openLoginWithDiagnostics(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const marked = window as unknown as { __diagLive: number };
     marked.__diagLive = 0;
-    const origAdd = window.addEventListener.bind(window);
-    const origRemove = window.removeEventListener.bind(window);
-    window.addEventListener = (type, listener, options) => {
+    type TrackedListener = (
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) => void;
+    const origAdd = window.addEventListener.bind(window) as TrackedListener;
+    const origRemove = window.removeEventListener.bind(window) as TrackedListener;
+    const trackAdd: TrackedListener = (type, listener, options) => {
       if (type === 'error') {
         marked.__diagLive += 1;
       }
-      return origAdd(type, listener, options);
+      origAdd(type, listener, options);
     };
-    window.removeEventListener = (type, listener, options) => {
+    const trackRemove: TrackedListener = (type, listener, options) => {
       if (type === 'error') {
         marked.__diagLive -= 1;
       }
-      return origRemove(type, listener, options);
+      origRemove(type, listener, options);
     };
+    window.addEventListener = trackAdd as typeof window.addEventListener;
+    window.removeEventListener = trackRemove as typeof window.removeEventListener;
   });
   await page.goto('/login');
   await page.waitForFunction(() => (window as unknown as { __diagLive: number }).__diagLive > 0);
