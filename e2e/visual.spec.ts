@@ -2698,6 +2698,28 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-reaction-error');
   });
 
+  test('state /welcome reaction-deleted', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const alert = page.getByText('This note was deleted.');
+    await expect(alert).toBeVisible();
+    await alert.evaluate((node) => {
+      node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    expect(await insideShell(alert)).toBe(true);
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
+    await shotScreen(page, 'state-welcome-reaction-deleted');
+  });
+
   test('state /welcome reaction-rate-limit', async ({ page }) => {
     await installReactionThread(page, [REACTION_REPLY]);
     await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
@@ -13145,6 +13167,81 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-pay-author-wallet');
+  });
+
+  test('welcome pay-deleted', async ({ page }) => {
+    await stubWalletLocationAssign(page);
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const url = route.request().url();
+      if (
+        url.includes('/invoice') ||
+        url.includes('/replies') ||
+        route.request().method() !== 'GET'
+      ) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-pay',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-pay/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-pay',
+              name: 'Carol',
+              text: 'A payable reply',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/r-pay/invoice', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    const replyCard = page.locator('[data-reply-id="r-pay"]');
+    await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await replyCard.getByLabel('Amount').fill('21');
+    await submitPayAmount(page);
+    await expect(page.getByText('This note was deleted.')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-pay-deleted');
   });
 
   test('welcome role-hint', async ({ page }) => {
