@@ -4378,6 +4378,7 @@ test('Function: recordCurrentView shows Back to shops after notifications', asyn
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   const back = page.getByRole('link', { name: 'Back', exact: true });
   await expect(back).toHaveCount(1);
@@ -4388,6 +4389,7 @@ test('Function: ViewHistoryRoot records shops then notifications in this tab', a
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   const back = page.getByRole('link', { name: 'Back', exact: true });
   await expect(back).toHaveAttribute('href', '/shops');
@@ -4401,6 +4403,7 @@ test('Function: goToPreviousView opens the shops view from notifications', async
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   const origin = new URL(page.url()).origin;
   await page.getByRole('link', { name: 'Back', exact: true }).click();
@@ -4412,6 +4415,7 @@ test('Function: previousViewPath is the shops href on the back link', async ({ p
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
     'href',
@@ -4440,10 +4444,30 @@ test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ pag
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
 });
 
+/** Shops is on the tab stack only after ViewHistoryRoot records it. */
+async function waitUntilShopsRecorded(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const raw = sessionStorage.getItem('21gifts.viewHistory');
+    if (raw === null) {
+      return false;
+    }
+    try {
+      const stored = JSON.parse(raw) as { stack?: unknown; cursor?: unknown };
+      if (!Array.isArray(stored.stack) || typeof stored.cursor !== 'number') {
+        return false;
+      }
+      return stored.stack[stored.cursor] === '/shops';
+    } catch {
+      return false;
+    }
+  });
+}
+
 test('Function: previousViewPath is shops when welcome follows shops', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   const back = page.getByRole('link', { name: 'Back', exact: true });
