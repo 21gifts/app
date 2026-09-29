@@ -238,8 +238,6 @@ export interface ForumBoardProps {
   shopUsername?: string;
   /** Replace the optional shop username. */
   onShopUsernameChange?: (username: string) => void;
-  /** Clear a shop draft. The wizard closes itself. */
-  onShopCancel?: () => void;
   /** Bumps after a shop is sent so the wizard closes. */
   shopResetToken?: number;
   /** Message id whose pay sheet is open, or `null`. */
@@ -734,7 +732,6 @@ export function ForumBoard({
   shopComposer = false,
   shopUsername = '',
   onShopUsernameChange,
-  onShopCancel,
   shopResetToken = 0,
   payMessageId,
   payHost = null,
@@ -2031,7 +2028,6 @@ export function ForumBoard({
             username={shopUsername}
             onUsernameChange={onShopUsernameChange!}
             onSubmit={onPost}
-            onCancel={onShopCancel!}
             resetToken={shopResetToken}
             maxLength={composerMaxLength}
           />

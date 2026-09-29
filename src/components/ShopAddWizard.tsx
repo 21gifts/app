@@ -48,8 +48,8 @@ export interface ShopAddWizardProps {
   onUsernameChange: (username: string) => void;
   /** Send the shop from the summary. */
   onSubmit: () => void;
-  /** Drop the draft and close. */
-  onCancel: () => void;
+  /** Close an edit. The add wizard does not show a cancel button. */
+  onCancel?: () => void;
   /** Increments after a successful send so the wizard closes. */
   resetToken: number;
   /** Maximum length of the text step. */
@@ -77,9 +77,10 @@ const STEP_KEY = {
 /**
  * Guided shop submission. Closed state is only **Add a shop**. Open steps
  * are photos, place, text, an optional 21.gifts username, then a summary
- * whose send control submits the note.
+ * whose send control submits the note. Adding a shop shows Next on the
+ * photo step. Edit mode still shows Cancel there.
  *
- * @param props - Draft fields and the send/cancel callbacks.
+ * @param props - Draft fields and the send callback.
  * @returns The button, or the current step.
  */
 export function ShopAddWizard({
@@ -135,6 +136,7 @@ export function ShopAddWizard({
   }
 
   const title = t(STEP_KEY[step]);
+  const cancelEdit = mode === 'edit' ? onCancel : undefined;
 
   return (
     <form
@@ -332,21 +334,11 @@ export function ShopAddWizard({
         </dl>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        {step === 1 ? (
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={posting}
-            onClick={() => {
-              onCancel();
-              if (mode !== 'edit') {
-                setStep('closed');
-              }
-            }}
-          >
+        {step === 1 && cancelEdit !== undefined ? (
+          <Button type="button" variant="secondary" disabled={posting} onClick={cancelEdit}>
             {t('shops.cancel')}
           </Button>
-        ) : (
+        ) : step > 1 ? (
           <Button
             type="button"
             variant="secondary"
@@ -358,7 +350,7 @@ export function ShopAddWizard({
           >
             {t('shops.back')}
           </Button>
-        )}
+        ) : null}
         {step < 5 ? (
           <Button
             type="button"

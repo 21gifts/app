@@ -1725,7 +1725,7 @@ A moderator session. **Table** is selected. **Edit shop note** sits beside the n
 
 ### Variant: add-photos
 
-**Add a shop** is open on step **1 / 5 · Photos**. The shop list is empty.
+**Add a shop** is open on step **1 / 5 · Photos**. **Next** is the only button. The shop list is empty.
 
 ![21.gifts shops add photos](images/shops-add-photos.png)
 

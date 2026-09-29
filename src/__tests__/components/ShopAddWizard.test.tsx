@@ -127,9 +127,10 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(onCancel).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a shop' })).toBeNull();
+    expect(onCancel).not.toHaveBeenCalled();
   });
 
   it('summarises an empty shop and a pin without a name', () => {
@@ -175,7 +176,7 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Mark posting' }));
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
-    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveProperty('disabled', true);
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
   it('edits an existing shop and keeps a video preview', () => {

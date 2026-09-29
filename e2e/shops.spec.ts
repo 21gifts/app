@@ -143,8 +143,9 @@ test('Function: ShopAddWizard — steps then summary', async ({ page }) => {
   await page.getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: 'Back' }).click();
-  await page.getByRole('button', { name: 'Cancel' }).click();
-  await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next' })).toBeVisible();
 });
 
 test('Function: ShopsScreen — lead is visible', async ({ page }) => {

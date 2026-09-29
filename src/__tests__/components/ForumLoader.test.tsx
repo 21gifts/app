@@ -1317,7 +1317,7 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('feed="shops" cancel drops a prepared video', async () => {
+  it('feed="shops" photo step has no cancel and keeps a prepared video', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     const file = new File(['v'], 'clip.mp4', { type: 'video/mp4' });
     isVideoMock.mockReturnValue(true);
@@ -1335,11 +1335,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
   });
 
-  it('feed="shops" cancel closes the wizard and drops the draft', async () => {
+  it('feed="shops" keeps the draft when the photo step is open', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
@@ -1351,12 +1351,11 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: 'Cafe Luna' } });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect((screen.getByLabelText('Shop text') as HTMLTextAreaElement).value).toBe('');
+    expect((screen.getByLabelText('Shop text') as HTMLTextAreaElement).value).toBe('Cafe Luna');
   });
 
   it('feed="shops" refuses an empty summary', async () => {

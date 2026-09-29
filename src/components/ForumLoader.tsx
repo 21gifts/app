@@ -2420,18 +2420,6 @@ export function ForumLoader({
     void pending();
   };
 
-  const clearShopDraft = (): void => {
-    setDraft('');
-    setPlaceDraft(null);
-    setShopUsername('');
-    pendingComposeShopUsernameRef.current = null;
-    revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
-    pickGeneration.current += 1;
-    setPhotoDrafts([]);
-    setVideoDraft(null);
-    setFormError(null);
-  };
-
   const shopSuffixLen = `\n\n#${SHOP_HASHTAG}`.length; // 14
   const composerMaxLength =
     feed === 'shops' && !isShopNote(draft)
@@ -2466,7 +2454,6 @@ export function ForumLoader({
                 setShopUsername(value);
                 setFormError(null);
               },
-              onShopCancel: clearShopDraft,
               shopResetToken,
             }
           : {})}
