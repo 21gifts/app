@@ -23,5 +23,9 @@ describe('AddressSetupPage', () => {
     renderWithLocale(<AddressSetupPage />);
     expect(screen.getByTestId('address-setup')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
+    expect(screen.getByText('21.gifts').tagName).toBe('SPAN');
   });
 });

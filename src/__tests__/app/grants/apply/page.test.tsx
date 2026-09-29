@@ -4,11 +4,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import FundingApplyPage from '@/app/grants/apply/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock('@/components/FundingApplyScreen', () => ({
   FundingApplyScreen: () => <div data-testid="funding-apply-screen" />,
-}));
-vi.mock('@/components/ProfileChromeLeft', () => ({
-  ProfileChromeLeft: () => <div data-testid="profile-chrome-left" />,
 }));
 
 vi.mock('@/components/OnboardingGate', () => ({
@@ -25,8 +38,11 @@ describe('FundingApplyPage', () => {
   it('renders the apply walk behind signed-in chrome', () => {
     const { container } = renderWithLocale(<FundingApplyPage />);
     expect(screen.getByTestId('funding-apply-screen')).toBeTruthy();
-    expect(screen.getByTestId('profile-chrome-left')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');
   });

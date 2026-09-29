@@ -23,5 +23,9 @@ describe('UsernameSetupPage', () => {
     renderWithLocale(<UsernameSetupPage />);
     expect(screen.getByTestId('username-setup')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
+    expect(screen.getByText('21.gifts').tagName).toBe('SPAN');
   });
 });

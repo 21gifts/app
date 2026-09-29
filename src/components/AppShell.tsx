@@ -10,7 +10,9 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { PasskeyRenewNotice } from '@/components/PasskeyRenewNotice';
 import { Scrollport } from '@/components/ui/Scrollport';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Kept on the API; `fill` and `flow` render the same page-frame geometry. */
 export type AppShellMode = 'fill' | 'flow';
@@ -48,6 +50,7 @@ interface AppShellContextValue {
   setHasTopLeftPortal: (value: boolean) => void;
   hasTopLeftPortal: boolean;
   scrollerEl: HTMLElement | null;
+  frameWidth: number | null;
   topLeft?: ReactNode;
   topRight?: ReactNode;
 }
@@ -59,9 +62,13 @@ export { AppShellContext };
 /**
  * App page shell driven by `--app-height`. Prefer this over Tailwind
  * viewport-height utilities on app routes. Always draws one rounded-3xl page
- * frame; wordmark and Menu live in that frame’s first row. The document does
- * not scroll. Content scrolls in the one `[data-scrollport]`. Cards never
- * host page chrome.
+ * frame; wordmark and Menu live in that frame’s first row. The frame
+ * (`data-app-frame`) publishes its content-box width as `frameWidth`.
+ * `[data-menu-scrim-host]` sits on that frame. `[data-menu-sheet-host]`
+ * (`px-8`, the page inset) and `[data-scroll-page]` sit inside the one
+ * `[data-scrollport]`. `<main>` has
+ * no `overflow-hidden`. The document does not scroll. Content scrolls in the
+ * one `[data-scrollport]`. Cards never host page chrome.
  *
  * @param props - See {@link AppShellProps}.
  * @returns The page shell element.
@@ -80,6 +87,27 @@ export function AppShell({
   const [topLeftEl, setTopLeftEl] = useState<HTMLElement | null>(null);
   const [hasTopLeftPortal, setHasTopLeftPortal] = useState(false);
   const [scrollerEl, setScrollerEl] = useState<HTMLElement | null>(null);
+  const [frameEl, setFrameEl] = useState<HTMLElement | null>(null);
+  const [frameWidth, setFrameWidth] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (frameEl === null) return;
+    const publish = (width: number): void => {
+      setFrameWidth(width > 0 ? width : null);
+    };
+    publish(frameEl.clientWidth);
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry === undefined) return;
+      const box = Array.isArray(entry.contentBoxSize)
+        ? entry.contentBoxSize[0]
+        : entry.contentBoxSize;
+      publish(box?.inlineSize ?? entry.contentRect.width);
+    });
+    observer.observe(frameEl);
+    return () => observer.disconnect();
+  }, [frameEl]);
 
   const ctx = useMemo<AppShellContextValue>(
     () => ({
@@ -90,12 +118,16 @@ export function AppShell({
       setHasTopLeftPortal,
       hasTopLeftPortal,
       scrollerEl,
+      frameWidth,
       topLeft,
       topRight,
     }),
-    [headerEl, footerEl, topLeftEl, hasTopLeftPortal, scrollerEl, topLeft, topRight],
+    [headerEl, footerEl, topLeftEl, hasTopLeftPortal, scrollerEl, frameWidth, topLeft, topRight],
   );
 
+  const showPasskeyRenew = useAuthStore(
+    (state) => state.account?.walletRequired === false && state.account.passkeyRenewClosed !== true,
+  );
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const hasRight = topRight !== undefined && topRight !== null;
   const showPageTopLeft = !hasTopLeftPortal && topLeft !== undefined && topLeft !== null;
@@ -105,7 +137,12 @@ export function AppShell({
       <main
         className={`relative flex h-[var(--app-height)] flex-col overscroll-y-none px-6 py-4${extra}`}
       >
-        <section className="flex min-h-0 w-full flex-col grow shrink basis-0 self-stretch overflow-visible rounded-3xl border border-app-border bg-app-card shadow-sm">
+        <section
+          ref={setFrameEl}
+          data-app-frame
+          className="relative flex min-h-0 w-full flex-col grow shrink basis-0 self-stretch overflow-visible rounded-3xl border border-app-border bg-app-card shadow-sm"
+        >
+          <div data-menu-scrim-host className="contents" />
           <div
             data-app-chrome
             className="relative z-40 flex flex-none items-center justify-between gap-2 px-8 pt-6 pb-2"
@@ -117,6 +154,7 @@ export function AppShell({
               {hasRight ? topRight : null}
             </div>
           </div>
+          {showPasskeyRenew ? <PasskeyRenewNotice /> : null}
           <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
           <Scrollport
             scrollRef={(node) => {
@@ -124,12 +162,18 @@ export function AppShell({
             }}
             className="w-full flex-1"
           >
+            <div data-menu-sheet-host className="px-8" />
             {align === 'center' ? (
-              <div className="shell-safe-center flex min-h-full flex-col items-center px-8 py-6">
+              <div
+                data-scroll-page
+                className="shell-safe-center flex min-h-full flex-col items-center px-8 py-6"
+              >
                 {children}
               </div>
             ) : (
-              <div className="flex w-full flex-col items-center px-8 py-6">{children}</div>
+              <div data-scroll-page className="flex w-full flex-col items-center px-8 py-6">
+                {children}
+              </div>
             )}
           </Scrollport>
           <footer ref={setFooterEl} className="flex-none px-8 pb-8 empty:hidden" />

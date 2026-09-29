@@ -1881,6 +1881,136 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-welcome');
   });
 
+  test('state /welcome renew', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          walletRequired: false,
+          passkeyRenewFailed: false,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByText('Nothing changes until you confirm.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-renew');
+  });
+
+  test('state /welcome renew-passkey', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          walletRequired: false,
+          passkeyRenewFailed: false,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome?visual=renew-passkey');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByText('Your device is showing the passkey prompt.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-renew-passkey');
+  });
+
+  test('state /welcome renew-failed', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          walletRequired: false,
+          passkeyRenewFailed: true,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByText('You do not need to do anything now.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'OK' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-renew-failed');
+  });
+
+  test('state /welcome renew-ok', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          walletRequired: false,
+          passkeyRenewFailed: false,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome?visual=renew-ok');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'It worked' })).toBeVisible();
+    await expect(page.getByText('Your passkey is renewed. You can continue.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'OK' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-renew-ok');
+  });
+
   test('state /welcome sunday', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
@@ -2422,7 +2552,7 @@ test.describe('onboarding screens', () => {
     await expect(payPage).toBeVisible();
     await expect(payPage.getByText(REACTION_ANSWER)).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
     await expect(page.getByText(/Pay ₿21/)).toBeVisible();
     expect(await insideShell(page.getByText(REACTION_NOTE_TEXT))).toBe(true);
     await shotScreen(page, 'state-welcome-reaction-pay');
@@ -2466,7 +2596,7 @@ test.describe('onboarding screens', () => {
     if (mobile) {
       await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     }
-    expect(await insideShell(page.getByRole('button', { name: 'Back' }))).toBe(true);
+    expect(await insideShell(page.getByRole('button', { name: 'Close' }))).toBe(true);
     expect(await insideShell(page.getByText(/Pay ₿21/))).toBe(true);
     expect(await insideShell(payControl)).toBe(true);
     expect(await insideShell(waiting)).toBe(true);
@@ -3518,7 +3648,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await openProfile(page);
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('A reply from Ada.')).toBeVisible();
     await shotScreen(page, 'state-profile-replies-open');
   });
@@ -4330,7 +4460,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Second post from Carol.').scrollIntoViewIfNeeded();
@@ -4431,7 +4561,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     const photo = page.getByAltText('Photo from Carol');
     await expect(photo).toBeVisible();
@@ -4523,7 +4653,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
@@ -4608,7 +4738,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
@@ -4707,7 +4837,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
@@ -4786,7 +4916,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Loan' }).click();
     await expect(page.getByText('A loan is paid back.')).toBeVisible();
     await shotScreen(page, 'state-members-posts-open-loan-tag-open');
@@ -4858,7 +4988,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Donation' }).click();
     await expect(page.getByText('A donation is a gift. It is not paid back.')).toBeVisible();
     await shotScreen(page, 'state-members-posts-open-donation-tag-open');
@@ -4967,7 +5097,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Who gave and who is paid back' }).click();
     await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
     await expect(page.getByLabel('Paid back')).toBeVisible();
@@ -5080,7 +5210,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     const photos = page.getByAltText('Photo from Carol');
     await expect(photos).toHaveCount(2);
@@ -5171,7 +5301,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
@@ -5245,7 +5375,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     const postsLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
     await expect(postsLoading).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -5321,7 +5451,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     const repliesLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
     await expect(repliesLoading).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -5392,7 +5522,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -5462,7 +5592,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -5911,7 +6041,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
     await expect(page.getByLabel('Your reaction')).toBeVisible();
@@ -6017,7 +6147,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
     await expect(page.getByLabel('Your reaction')).toBeVisible();
@@ -6453,7 +6583,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
     await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
@@ -6544,7 +6674,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'hang');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
       'aria-busy',
@@ -6638,7 +6768,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
@@ -6729,7 +6859,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).click();
@@ -6822,7 +6952,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'fail');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
     await page

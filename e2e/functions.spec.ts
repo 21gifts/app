@@ -1463,7 +1463,7 @@ test('Function: fetchMemberReplies — member replies open from the count', asyn
 }) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
-  await page.getByRole('button', { name: '1 reactions' }).click();
+  await page.getByRole('button', { name: '1 reaction' }).click();
   await expect(page.getByText('A reply from Carol.')).toBeVisible();
 });
 
@@ -1903,7 +1903,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   });
   await page.goto(`/members/${memberId}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-  await page.getByRole('button', { name: '1 posts' }).click();
+  await page.getByRole('button', { name: '1 post' }).click();
   await expect(page.getByText('Hello from my profile note.')).toBeVisible();
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByLabel('Your reaction')).toBeVisible();
@@ -2466,6 +2466,10 @@ test('Function: MarketingLayout — landing has marketing chrome', async ({ page
 test('Function: MarketingHeader — landing shows the wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: PwaInstall — iPhone Safari shows the install control', async ({ page }) => {
@@ -3278,9 +3282,7 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
 });
 
-test('Function: MessagesChromeLeft — open thread has one All conversations back', async ({
-  page,
-}) => {
+test('Function: MessagesChromeLeft — cold open thread is Back to the forum', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -3345,17 +3347,17 @@ test('Function: MessagesChromeLeft — open thread has one All conversations bac
     });
   });
   await page.goto('/messages?c=conv-21');
-  await expect(page.getByRole('link', { name: 'All conversations' })).toHaveCount(1);
-  await expect(page.getByRole('link', { name: 'All conversations' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
     'href',
-    '/messages',
+    '/welcome',
   );
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toHaveAttribute(
     'href',
     '/welcome',
   );
+  await expect(page.getByRole('link', { name: 'All conversations' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'All conversations' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
 });
 
 test('Function: MessagesChromeLeft — list chrome back goes to the forum', async ({ page }) => {
@@ -3402,6 +3404,209 @@ test('Function: MessagesChromeLeft — list chrome back goes to the forum', asyn
     '/welcome',
   );
   await expect(page.getByRole('link', { name: 'All conversations' })).toHaveCount(0);
+});
+
+test('Function: MessagesChromeLeft — recorded thread returns to the list', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      '21gifts.viewHistory',
+      JSON.stringify({ stack: ['/messages', '/messages?c=conv-21'], cursor: 1 }),
+    );
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_platform',
+            name: '21.gifts',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveCount(1);
+  await expect(back).toHaveAttribute('href', '/messages');
+  // The load stamps giftsView. Clear it so this click assigns instead of leaving the site.
+  await page.evaluate(() => {
+    const state = window.history.state as { giftsView?: unknown } | null;
+    if (state !== null && typeof state === 'object') {
+      const next = { ...state };
+      delete next.giftsView;
+      window.history.replaceState(next, '');
+    }
+  });
+  const origin = new URL(page.url()).origin;
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/messages`);
+  expect(new URL(page.url()).origin).toBe(origin);
+});
+
+/** Empty forum lists so shops and notifications do not depend on the mock server shape. */
+async function routeForumLists(page: Page): Promise<void> {
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/forum\/notifications(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+    });
+  });
+  await page.route(/\/conversations(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations: [], unreadCount: 0 }),
+    });
+  });
+}
+
+test('Function: recordCurrentView shows Back to shops after notifications', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveCount(1);
+  await expect(back).toHaveAttribute('href', '/shops');
+});
+
+test('Function: ViewHistoryRoot records shops then notifications in this tab', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/shops');
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+});
+
+test('Function: goToPreviousView opens the shops view from notifications', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  const origin = new URL(page.url()).origin;
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  expect(new URL(page.url()).origin).toBe(origin);
+});
+
+test('Function: previousViewPath is the shops href on the back link', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/notifications');
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
+    'href',
+    '/shops',
+  );
+});
+
+test('Function: resetViewHistory leaves a fresh shops visit on the forum back', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+});
+
+test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+});
+
+test('Function: previousViewPath is shops when welcome follows shops', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/shops');
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveCount(1);
+  await expect(back).toHaveAttribute('href', '/shops');
+  const origin = new URL(page.url()).origin;
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+});
+
+test('Function: useChromeBack shows one chrome Back on the ask step', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ask for money' }).click();
+  await page.getByLabel('Ask').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'Add photos' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back', exact: true })).toHaveCount(1);
+  await expect(
+    page.locator('[data-app-chrome]').getByRole('button', { name: 'Back', exact: true }),
+  ).toHaveCount(1);
 });
 
 test('Function: postConversationMessage — composer is visible on a thread', async ({ page }) => {
@@ -3572,6 +3777,11 @@ test('Function: HandbookCopyLink — copy link marks the button copied', async (
 test('Function: NotFound — unknown path is 404', async ({ page }) => {
   await page.goto('/404');
   await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back home' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: LoginPage — login heading is visible', async ({ page }) => {
@@ -5816,7 +6026,7 @@ test('Function: revealPaySheet — paying a reaction keeps the note on screen', 
   await field.fill('This is my answer');
   await page.getByLabel('Amount').fill('21');
   await field.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
-  const back = page.getByRole('button', { name: 'Back' });
+  const back = page.getByRole('button', { name: 'Close' });
   await expect(back).toBeVisible();
   const payPage = page.locator('[data-reply-pay-page]');
   await expect(payPage.getByText('This is my answer')).toBeVisible();
@@ -7484,6 +7694,10 @@ test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page
 test('Function: HomeWordmark — unsigned donate wordmark goes home', async ({ page }) => {
   await page.goto('/donate');
   await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/');
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', async ({ page }) => {
@@ -7888,15 +8102,120 @@ test('Function: resolveAppHeight — short keyboard visualViewport sizes the pag
     const main = document.querySelector('main');
     return {
       appHeight: getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+      appOffset: getComputedStyle(document.documentElement)
+        .getPropertyValue('--app-offset-top')
+        .trim(),
       inner,
       short: vv === null || vv === undefined ? 0 : Math.round(vv.height),
+      offset: vv === null || vv === undefined ? 0 : Math.round(vv.offsetTop ?? 0),
+      bodyTop: document.body.getBoundingClientRect().top,
       mainHeight: main === null ? 0 : Math.round(main.getBoundingClientRect().height),
     };
   });
   expect(measured.short).toBeGreaterThan(0);
   expect(measured.short).toBeLessThan(measured.inner);
   expect(measured.appHeight).toBe(`${measured.short}px`);
+  expect(measured.appOffset).toBe(`${measured.offset}px`);
+  expect(measured.bodyTop).toBe(measured.offset);
   expect(measured.mainHeight).toBe(measured.short);
+  expect(measured.mainHeight).not.toBe(measured.short + measured.offset);
+});
+
+test('Function: resolveAppOffsetTop — body sits on the visual viewport', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        height: 500,
+        offsetTop: 120,
+        scale: 1,
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    });
+  });
+  await page.goto('/login');
+  const measured = await page.evaluate(() => {
+    const main = document.querySelector('main');
+    return {
+      offset: getComputedStyle(document.documentElement)
+        .getPropertyValue('--app-offset-top')
+        .trim(),
+      height: getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+      bodyTop: document.body.getBoundingClientRect().top,
+      mainHeight: main === null ? 0 : Math.round(main.getBoundingClientRect().height),
+    };
+  });
+  expect(measured.offset).toBe('120px');
+  expect(measured.height).toBe('500px');
+  expect(measured.bodyTop).toBe(120);
+  expect(measured.mainHeight).toBe(500);
+});
+
+test('Function: revealInScrollport — a focused field moves the scrollport, not the document', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.locator('[data-scrollport][data-scroll-active]').waitFor();
+  const before = await page.evaluate(() => {
+    const scroller = document.querySelector('[data-scrollport][data-scroll-active]');
+    if (!(scroller instanceof HTMLElement)) {
+      return { ready: false, scrollTop: -1, scrollY: window.scrollY, below: false };
+    }
+    const field = document.createElement('textarea');
+    field.id = 'reveal-probe';
+    field.setAttribute('aria-label', 'Reveal probe');
+    field.style.display = 'block';
+    field.style.width = '12rem';
+    field.style.marginTop = '2400px';
+    // Room below the field so the 12px reveal is not clamped at the scroll end.
+    field.style.marginBottom = '48px';
+    scroller.appendChild(field);
+    const fieldBox = field.getBoundingClientRect();
+    const scrollerBox = scroller.getBoundingClientRect();
+    return {
+      ready: true,
+      scrollTop: scroller.scrollTop,
+      scrollY: window.scrollY,
+      below: fieldBox.bottom > scrollerBox.bottom,
+    };
+  });
+  expect(before.ready).toBe(true);
+  expect(before.scrollTop).toBe(0);
+  expect(before.scrollY).toBe(0);
+  expect(before.below).toBe(true);
+
+  const after = await page.evaluate(
+    () =>
+      new Promise<{ focused: boolean; scrollTop: number; scrollY: number; bottomGap: number }>(
+        (resolve) => {
+          const field = document.querySelector('#reveal-probe');
+          const scroller = document.querySelector('[data-scrollport][data-scroll-active]');
+          if (!(field instanceof HTMLTextAreaElement) || !(scroller instanceof HTMLElement)) {
+            resolve({ focused: false, scrollTop: -1, scrollY: window.scrollY, bottomGap: -1 });
+            return;
+          }
+          // The browser must not scroll on focus. The app's focus listener reveals.
+          field.focus({ preventScroll: true });
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const fieldBox = field.getBoundingClientRect();
+              const scrollerBox = scroller.getBoundingClientRect();
+              resolve({
+                focused: document.activeElement === field,
+                scrollTop: scroller.scrollTop,
+                scrollY: window.scrollY,
+                bottomGap: scrollerBox.bottom - fieldBox.bottom,
+              });
+            });
+          });
+        },
+      ),
+  );
+  expect(after.focused).toBe(true);
+  expect(after.scrollTop).toBeGreaterThan(before.scrollTop);
+  expect(after.scrollY).toBe(0);
+  expect(Math.abs(after.bottomGap - 12)).toBeLessThan(1);
 });
 
 test('Function: AppHeightViewport — document has --app-height', async ({ page }) => {

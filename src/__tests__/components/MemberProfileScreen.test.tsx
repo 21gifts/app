@@ -36,6 +36,8 @@ vi.mock('next/navigation', () => ({
     push,
     replace: push,
   }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -185,7 +187,7 @@ const originalUserAgent = navigator.userAgent;
 
 async function openPostsShowingNote(feedNote: ForumMessage = note): Promise<void> {
   vi.mocked(fetchMemberPosts).mockResolvedValue([feedNote]);
-  const postsButton = screen.getByRole('button', { name: /posts/ });
+  const postsButton = screen.getByRole('button', { name: /posts?/ });
   if (postsButton.getAttribute('aria-pressed') !== 'true') {
     fireEvent.click(postsButton);
   }
@@ -194,7 +196,7 @@ async function openPostsShowingNote(feedNote: ForumMessage = note): Promise<void
 
 async function openPostsShowingPhotoNote(): Promise<void> {
   vi.mocked(fetchMemberPosts).mockResolvedValue([{ ...note, hasPhoto: true, photoCount: 1 }]);
-  const postsButton = screen.getByRole('button', { name: /posts/ });
+  const postsButton = screen.getByRole('button', { name: /posts?/ });
   if (postsButton.getAttribute('aria-pressed') !== 'true') {
     fireEvent.click(postsButton);
   }
@@ -585,14 +587,14 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
 
     expect(screen.queryByText('Hello from my profile note.')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
     expect(fetchMemberPosts).toHaveBeenCalledWith('sess', profile.id);
 
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(screen.queryByText('Second post from Carol.')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
     expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
   });
@@ -606,12 +608,12 @@ describe('MemberProfileScreen', () => {
         }),
     );
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     await waitFor(() => {
       expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
     });
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(fetchMemberPosts).toHaveBeenCalledTimes(1);
     await act(async () => {
       resolvePosts([secondPost]);
@@ -628,13 +630,13 @@ describe('MemberProfileScreen', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     expect(screen.queryByText('Hello from my profile note.')).toBeNull();
     expect(fetchMemberReplies).toHaveBeenCalledWith('sess', profile.id);
 
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: true }));
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: true }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
   });
@@ -654,7 +656,7 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     const replyCard = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
@@ -679,12 +681,12 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     await waitFor(() => {
       expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
     });
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: true }));
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: true }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
     await act(async () => {
       resolveReplies([activityReply]);
@@ -714,7 +716,7 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     const replyText = await screen.findByText('A reply from Carol.');
     const replyRow = replyText.closest('li');
     const expand = replyRow?.querySelector<HTMLButtonElement>('[aria-label="Show reactions"]');
@@ -726,7 +728,7 @@ describe('MemberProfileScreen', () => {
   it('shows an activity error when the session is missing', async () => {
     useAuthStore.setState({ session: null, account });
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not load messages. Please try again.');
     expect(alert.className).toContain('text-app-danger');
@@ -736,7 +738,7 @@ describe('MemberProfileScreen', () => {
   it('sends a missing-requirements feed load to rules setup', async () => {
     vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith('/setup/rules');
     });
@@ -747,7 +749,7 @@ describe('MemberProfileScreen', () => {
       .mockRejectedValueOnce(new Error('fail'))
       .mockResolvedValueOnce([secondPost]);
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
@@ -757,7 +759,7 @@ describe('MemberProfileScreen', () => {
   it('does not apply a stale posts feed error onto a newer success', async () => {
     vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new Error('fail'));
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
     const retry = screen.getByRole('button', { name: 'Try again' });
     let rejectOlder!: (reason: Error) => void;
@@ -795,7 +797,7 @@ describe('MemberProfileScreen', () => {
   it('does not apply a stale posts feed onto a newer success', async () => {
     vi.mocked(fetchMemberPosts).mockRejectedValueOnce(new Error('fail'));
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
     const retry = screen.getByRole('button', { name: 'Try again' });
     let resolveOlder!: (value: (typeof secondPost)[]) => void;
@@ -1076,7 +1078,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
@@ -1108,7 +1110,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectInvoice(new Error('fail'));
     });
@@ -1255,9 +1257,9 @@ describe('MemberProfileScreen', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(replyCard).queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(within(replyCard).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('uses expanded-thread sats for nested Gift, not a stale reactions copy', async () => {
@@ -1277,9 +1279,9 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
     expect(await screen.findByText('Payable nested reply.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: true }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: true }));
     await expandNote({ ...note, replyCount: 1 });
     const replyCard = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
@@ -1312,7 +1314,7 @@ describe('MemberProfileScreen', () => {
       />,
     );
     await expandNote({ ...note, replyCount: 1 });
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     expect(await screen.findByText('Payable nested reply.')).toBeTruthy();
     const replyCard = screen.getByText('Payable nested reply.').closest('li') as HTMLElement;
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
@@ -1336,20 +1338,20 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     const replyCard = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(within(replyCard).getByRole('button', { name: 'Back' })).toBeTruthy();
+      expect(within(replyCard).getByRole('button', { name: 'Close' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: true }));
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: true }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     const reopened = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
     expect(within(reopened).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(reopened).queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(within(reopened).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('cancels an expanded-thread Gift when Posts is collapsed', async () => {
@@ -1364,14 +1366,14 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(within(replyCard).getByRole('button', { name: 'Back' })).toBeTruthy();
+      expect(within(replyCard).getByRole('button', { name: 'Close' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: /posts/, pressed: true }));
-    fireEvent.click(screen.getByRole('button', { name: /posts/, pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: /posts?/, pressed: true }));
+    fireEvent.click(screen.getByRole('button', { name: /posts?/, pressed: false }));
     expect(await screen.findByText('Payable nested reply.')).toBeTruthy();
     const reopened = document.querySelector('[data-reply-id="r-pay"]') as HTMLElement;
     expect(within(reopened).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(reopened).queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(within(reopened).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('shows pay author-wallet copy when Gift Continue is rejected', async () => {
@@ -1598,7 +1600,7 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectPoll(new Error('poll failed'));
     });
@@ -1623,7 +1625,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
@@ -1648,7 +1650,7 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Back' }));
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectInvoice(new Error('gone'));
     });
@@ -1790,7 +1792,7 @@ describe('MemberProfileScreen', () => {
         inReplyTo: secondPost.id,
       });
     });
-    expect(secondRow.textContent).toMatch(/1 reactions/);
+    expect(secondRow.textContent).toMatch(/1 reaction/);
     fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
     expect(screen.queryByText('Hello from my profile note.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
@@ -2320,7 +2322,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByText('reply')).toBeTruthy();
-      expect(screen.getAllByText('1 reactions').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
     });
   });
 
@@ -3123,7 +3125,7 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     });
@@ -3414,7 +3416,7 @@ describe('MemberProfileScreen', () => {
       { ...secondPost, hasPhoto: true, photoCount: 1 },
     ]);
     const view = renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', secondPost.id, 0);
     });
@@ -3437,7 +3439,7 @@ describe('MemberProfileScreen', () => {
       },
     ]);
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', secondPost.id, 0);
     });
@@ -3475,7 +3477,7 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(
       <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: '1 reactions', pressed: false }));
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledWith('sess', activityReply.id, 0);
     });
@@ -3614,22 +3616,22 @@ describe('MemberProfileScreen', () => {
       { ...secondPost, hasPhoto: true, photoCount: 1 },
     ]);
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     await waitFor(() => {
       expect(photoMock).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:mock');
     });
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(photoMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not fetch photos for hasPhoto false posts', async () => {
     vi.mocked(fetchMemberPosts).mockResolvedValue([secondPost]);
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
     expect(photoMock).not.toHaveBeenCalled();
   });

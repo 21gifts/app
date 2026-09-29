@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useContext, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { createPortal } from 'react-dom';
+import { AppShellContext, useAppShellScroller } from '@/components/AppShell';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
@@ -38,7 +40,11 @@ import { useAuthStore } from '@/stores/auth-store';
  * unread count when greater than zero, messages with an inbox unread count
  * when greater than zero, contact, optional PWA install,
  * and log out). The Menu ends with a quiet
- * Version line (`app.version` / `getAppVersion()`). When onboarding
+ * Version line (`app.version` / `getAppVersion()`). On a wide frame the panel
+ * is an 18rem (`w-72`) portal on the trigger parent and a scrim portals to
+ * `[data-menu-scrim-host]` and uses `rounded-3xl` so it follows the frame.
+ * On a narrow frame the panel is a full-width sheet in `[data-menu-sheet-host]`
+ * (the host has the page's `px-8` inset) and the page underneath is hidden. When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
  * introduce CTA skips the overlay once so a remount after navigating to
@@ -55,8 +61,10 @@ export function SignedInChrome(): ReactElement {
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const frameWidth = useContext(AppShellContext)?.frameWidth ?? null;
+  const scroller = useAppShellScroller();
   const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
   const showIntroduce =
     account !== null &&
@@ -76,9 +84,10 @@ export function SignedInChrome(): ReactElement {
       buttonRef.current?.focus();
     };
     const onMouseDown = (event: MouseEvent): void => {
-      const root = rootRef.current;
+      const root = rootEl;
       const target = event.target as Node;
-      if (root !== null && root.contains(target)) {
+      const panel = document.getElementById('signed-in-menu');
+      if ((root !== null && root.contains(target)) || panel?.contains(target) === true) {
         return;
       }
       setOpen(false);
@@ -89,7 +98,35 @@ export function SignedInChrome(): ReactElement {
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('mousedown', onMouseDown);
     };
-  }, [open]);
+  }, [open, rootEl]);
+
+  const narrow =
+    frameWidth !== null
+      ? frameWidth < 576
+      : typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(max-width: 36rem)').matches === true;
+
+  useLayoutEffect(() => {
+    if (!open || !narrow) {
+      delete document.documentElement.dataset['menuSheet'];
+      return;
+    }
+    if (scroller === null) {
+      document.documentElement.dataset['menuSheet'] = '1';
+      return () => {
+        delete document.documentElement.dataset['menuSheet'];
+      };
+    }
+    // Read first. Hiding the page clamps scrollTop to the shorter sheet.
+    const previousScrollTop = scroller.scrollTop;
+    document.documentElement.dataset['menuSheet'] = '1';
+    scroller.scrollTop = 0;
+    return () => {
+      delete document.documentElement.dataset['menuSheet'];
+      scroller.scrollTop = previousScrollTop;
+    };
+  }, [narrow, open, scroller]);
 
   useEffect(() => {
     if (session === null) {
@@ -98,8 +135,29 @@ export function SignedInChrome(): ReactElement {
     void resyncPushSubscription(session).catch(() => undefined);
   }, [session]);
 
+  // Stay in the sheet host while closed. Moving the portal back to the
+  // trigger remounts the panel, and the iOS install sheet is state on
+  // that panel. `rootEl` is null on the first render, so the server and
+  // the hydration pass both skip the portal.
+  const sheetHost =
+    rootEl !== null && narrow && typeof document !== 'undefined'
+      ? document.querySelector('[data-menu-sheet-host]')
+      : null;
+  // `querySelector` is already an element or null. Do not touch `HTMLElement`:
+  // that name does not exist while this component renders on the server.
+  const panelTarget = sheetHost ?? rootEl;
+  const scrimHost =
+    open && !narrow && typeof document !== 'undefined'
+      ? document.querySelector('[data-menu-scrim-host]')
+      : null;
+  // A percentage width resolves against the trigger, which is only as
+  // wide as the button, so the wide panel is a fixed 18rem.
+  const panelClass = narrow
+    ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
+    : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
+
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={setRootEl} className="relative">
       <button
         ref={buttonRef}
         type="button"
@@ -115,189 +173,207 @@ export function SignedInChrome(): ReactElement {
         <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         {t('aria.menu')}
       </button>
-      {/* 7rem = main px-6×2 + chrome px-8×2 so the panel stays on-screen at 320px. */}
-      <div
-        id="signed-in-menu"
-        className={`absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-7rem))] rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${open ? '' : 'hidden'}`}
-      >
-        <Link
-          href="/welcome"
-          onClick={(event) => {
-            setOpen(false);
-            if (pathname === '/welcome') {
-              event.preventDefault();
-              window.dispatchEvent(new Event(FORUM_HOME_EVENT));
-            }
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <Home aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.home')}
-        </Link>
-        <Link
-          href="/shops"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <Store aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.shops')}
-        </Link>
-        <Link
-          href="/pos"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <Banknote aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('pos.nav')}
-        </Link>
-        <Link
-          href="/profile"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('profile.title')}
-        </Link>
-        <Link
-          href="/grants"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <HandCoins aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.grants')}
-        </Link>
-        <Link
-          href="/wallet"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('wallet.title')}
-        </Link>
-        <Link
-          href="/rules"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.rules')}
-        </Link>
-        <Link
-          href="/trust-chain"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.trustChain')}
-        </Link>
-        {roleAtLeast(account?.role, 'moderator') ? (
-          <Link
-            href="/moderate"
-            aria-label={
-              moderationUnreadCount > 0
-                ? t('nav.moderateUnread', { count: String(moderationUnreadCount) })
-                : t('nav.moderate')
-            }
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-          >
-            <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-            {t('nav.moderate')}
-            {moderationUnreadCount > 0 ? (
-              <span className="ml-auto font-semibold tabular-nums lining-nums">
-                {moderationUnreadCount}
-              </span>
-            ) : null}
-          </Link>
-        ) : null}
-        <Link
-          href="/notifications"
-          aria-label={
-            unreadCount > 0
-              ? t('nav.notificationsUnread', { count: String(unreadCount) })
-              : t('nav.notifications')
-          }
-          onClick={() => {
-            setOpen(false);
-            if (session === null) {
-              return;
-            }
-            if (
-              typeof Notification !== 'undefined' &&
-              Notification.permission !== 'granted' &&
-              typeof navigator.serviceWorker !== 'undefined' &&
-              typeof window.PushManager !== 'undefined'
-            ) {
-              void enablePush(session).catch(() => undefined);
-            } else {
-              void resyncPushSubscription(session).catch(() => undefined);
-            }
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <Bell aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.notifications')}
-          {unreadCount > 0 ? (
-            <span className="ml-auto font-semibold tabular-nums lining-nums">{unreadCount}</span>
-          ) : null}
-        </Link>
-        <Link
-          href="/messages"
-          aria-label={
-            inboxUnreadCount > 0
-              ? t('nav.inboxUnread', { count: String(inboxUnreadCount) })
-              : t('nav.inbox')
-          }
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.inbox')}
-          {inboxUnreadCount > 0 ? (
-            <span className="ml-auto font-semibold tabular-nums lining-nums">
-              {inboxUnreadCount}
-            </span>
-          ) : null}
-        </Link>
-        <Link
-          href="/contact"
-          onClick={() => {
-            setOpen(false);
-          }}
-          className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-        >
-          <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('nav.contact')}
-        </Link>
-        <PwaInstall
-          placement="menu"
-          onMenuAction={() => {
-            setOpen(false);
-          }}
-        />
-        <LogoutButton />
-        <p className="px-3 py-2 text-xs text-app-muted tabular-nums lining-nums">
-          {t('app.version', { version: getAppVersion() })}
-        </p>
-      </div>
+      {panelTarget === null
+        ? null
+        : createPortal(
+            <div id="signed-in-menu" className={panelClass}>
+              <Link
+                href="/welcome"
+                onClick={(event) => {
+                  setOpen(false);
+                  if (pathname === '/welcome') {
+                    event.preventDefault();
+                    window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+                  }
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Home aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.home')}
+              </Link>
+              <Link
+                href="/shops"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Store aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.shops')}
+              </Link>
+              <Link
+                href="/pos"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Banknote aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('pos.nav')}
+              </Link>
+              <Link
+                href="/profile"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('profile.title')}
+              </Link>
+              <Link
+                href="/grants"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <HandCoins aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.grants')}
+              </Link>
+              <Link
+                href="/wallet"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('wallet.title')}
+              </Link>
+              <Link
+                href="/rules"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.rules')}
+              </Link>
+              <Link
+                href="/trust-chain"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.trustChain')}
+              </Link>
+              {roleAtLeast(account?.role, 'moderator') ? (
+                <Link
+                  href="/moderate"
+                  aria-label={
+                    moderationUnreadCount > 0
+                      ? t('nav.moderateUnread', { count: String(moderationUnreadCount) })
+                      : t('nav.moderate')
+                  }
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.moderate')}
+                  {moderationUnreadCount > 0 ? (
+                    <span className="ml-auto font-semibold tabular-nums lining-nums">
+                      {moderationUnreadCount}
+                    </span>
+                  ) : null}
+                </Link>
+              ) : null}
+              <Link
+                href="/notifications"
+                aria-label={
+                  unreadCount > 0
+                    ? t('nav.notificationsUnread', { count: String(unreadCount) })
+                    : t('nav.notifications')
+                }
+                onClick={() => {
+                  setOpen(false);
+                  if (session === null) {
+                    return;
+                  }
+                  if (
+                    typeof Notification !== 'undefined' &&
+                    Notification.permission !== 'granted' &&
+                    typeof navigator.serviceWorker !== 'undefined' &&
+                    typeof window.PushManager !== 'undefined'
+                  ) {
+                    void enablePush(session).catch(() => undefined);
+                  } else {
+                    void resyncPushSubscription(session).catch(() => undefined);
+                  }
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Bell aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.notifications')}
+                {unreadCount > 0 ? (
+                  <span className="ml-auto font-semibold tabular-nums lining-nums">
+                    {unreadCount}
+                  </span>
+                ) : null}
+              </Link>
+              <Link
+                href="/messages"
+                aria-label={
+                  inboxUnreadCount > 0
+                    ? t('nav.inboxUnread', { count: String(inboxUnreadCount) })
+                    : t('nav.inbox')
+                }
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.inbox')}
+                {inboxUnreadCount > 0 ? (
+                  <span className="ml-auto font-semibold tabular-nums lining-nums">
+                    {inboxUnreadCount}
+                  </span>
+                ) : null}
+              </Link>
+              <Link
+                href="/contact"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.contact')}
+              </Link>
+              <PwaInstall
+                placement="menu"
+                onMenuAction={() => {
+                  setOpen(false);
+                }}
+              />
+              <LogoutButton />
+              <p className="px-3 py-2 text-xs text-app-muted tabular-nums lining-nums">
+                {t('app.version', { version: getAppVersion() })}
+              </p>
+            </div>,
+            panelTarget,
+          )}
+      {scrimHost !== null
+        ? createPortal(
+            <button
+              type="button"
+              id="signed-in-menu-scrim"
+              tabIndex={-1}
+              aria-label={t('aria.menuDismiss')}
+              className="absolute inset-0 z-40 rounded-3xl bg-app-overlay"
+              onClick={() => {
+                setOpen(false);
+              }}
+            />,
+            scrimHost,
+          )
+        : null}
       {showIntroduce ? (
         <IntroduceYourselfOverlay
           onDismiss={() => {

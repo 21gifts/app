@@ -108,7 +108,7 @@ describe('HiddenNotesScreen', () => {
     renderWithLocale(<HiddenNotesScreen />);
     expect(screen.getByRole('heading', { name: 'Hidden notes' })).toBeTruthy();
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(screen.queryByText('Moderation')).toBeNull();
     expect(screen.queryByText('No hidden notes.')).toBeNull();
     expect(screen.queryByRole('list')).toBeNull();
@@ -133,7 +133,7 @@ describe('HiddenNotesScreen', () => {
     listMock.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<HiddenNotesScreen />);
     expect(screen.getByRole('heading', { name: 'Hidden notes' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(screen.queryByText('Moderation')).toBeNull();
     expect(
       screen.getByText(

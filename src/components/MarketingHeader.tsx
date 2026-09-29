@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
 import { HomeWordmark } from '@/components/HomeWordmark';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PwaInstall } from '@/components/PwaInstall';
@@ -25,7 +26,9 @@ export function MarketingHeader(): ReactElement {
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
-      <HomeWordmark tone="dark" />
+      <div className="flex items-center">
+        <ProfileChromeLeft tone="dark" wordmark={<HomeWordmark tone="dark" />} />
+      </div>
       <div className="flex items-center gap-4">
         <nav
           aria-label={t('aria.primary')}

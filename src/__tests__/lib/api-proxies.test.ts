@@ -11,6 +11,8 @@ import {
   proxyAuthPasskeySeedBeginPost,
   proxyAuthPasskeySeedFinishPost,
   proxyMeWalletBackupSeenPost,
+  proxyMePasskeyRenewAckPost,
+  proxyMePasskeyRenewReportPost,
   proxyLightningAddressGet,
   proxyGiftsGet,
   proxyGiftsStatsGet,
@@ -144,6 +146,22 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/me/wallet-backup-seen', { method: 'POST' }),
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-backup-seen');
+  });
+
+  it('proxyMePasskeyRenewReportPost hits POST /me/passkey-renew/report', async () => {
+    const fetchMock = stubApi();
+    await proxyMePasskeyRenewReportPost(
+      new Request('http://localhost/me/passkey-renew/report', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/passkey-renew/report');
+  });
+
+  it('proxyMePasskeyRenewAckPost hits POST /me/passkey-renew/ack', async () => {
+    const fetchMock = stubApi();
+    await proxyMePasskeyRenewAckPost(
+      new Request('http://localhost/me/passkey-renew/ack', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/passkey-renew/ack');
   });
 
   it('proxyPosGet hits GET /pos', async () => {

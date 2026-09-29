@@ -1,8 +1,36 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ForumAskWizard } from '@/components/ForumAskWizard';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
+import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import { FORUM_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+function renderWizard(ui: ReactElement) {
+  return renderWithLocale(
+    <ChromeBackProvider>
+      <ProfileChromeLeft />
+      {ui}
+    </ChromeBackProvider>,
+  );
+}
 
 afterEach(cleanup);
 
@@ -117,10 +145,18 @@ describe('ForumAskWizard', () => {
 
   it('goes back from step 2', () => {
     const onStepChange = vi.fn();
-    renderWithLocale(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
+    renderWizard(<ForumAskWizard step={2} onStepChange={onStepChange} {...idle} />);
     expect(screen.queryByText('Back')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Back' })).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onStepChange).toHaveBeenCalledWith(1);
+  });
+
+  it('does not throw when step 2 renders without a chrome back provider', () => {
+    expect(() => {
+      renderWithLocale(<ForumAskWizard step={2} onStepChange={() => undefined} {...idle} />);
+    }).not.toThrow();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 
   it('continues from photos and text', () => {
@@ -440,7 +476,7 @@ describe('ForumAskWizard', () => {
   it('walks a bitcoin credit and a dollar credit before photos', () => {
     const onStepChange = vi.fn();
     const onCreditTermDays = vi.fn();
-    renderWithLocale(
+    renderWizard(
       <ForumAskWizard
         step={1}
         onStepChange={onStepChange}
@@ -518,7 +554,7 @@ describe('ForumAskWizard', () => {
     expect(screen.queryByRole('checkbox')).toBeNull();
     cleanup();
     const back = vi.fn();
-    renderWithLocale(
+    renderWizard(
       <ForumAskWizard
         step={2}
         onStepChange={back}

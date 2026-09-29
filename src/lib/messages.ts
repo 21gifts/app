@@ -73,6 +73,7 @@ const en = {
 
   'aria.primary': 'Primary',
   'aria.menu': 'Menu',
+  'aria.menuDismiss': 'Close menu',
   'app.version': 'Version {version}',
   'aria.footer': 'Footer',
   'aria.github': 'GitHub',
@@ -341,6 +342,7 @@ const en = {
   'forum.payContinue': 'Continue',
   'forum.payNow': 'Pay',
   'forum.payBack': 'Back',
+  'forum.payClose': 'Close',
   'forum.payOpenWallet': 'Pay',
   'forum.payOpenWalletAria': 'Pay with Wallet of Satoshi',
   'forum.payInvoiceQr': 'Bitcoin payment QR code',
@@ -444,7 +446,7 @@ const en = {
   'forum.goalBarAria': 'Goal progress {percent} percent',
   'forum.copyLink': 'Copy link to this note',
   'forum.copyReplyLink': 'Copy link to this reply',
-  'forum.replyCount': '{count} reactions',
+  'forum.replyCount': '{count, plural, one {# reaction} other {# reactions}}',
   'forum.replyComposerLabel': 'Your reaction',
   'forum.replyPlaceholder': 'Write a reaction',
   'forum.giftReply': 'send {amount}',
@@ -487,6 +489,18 @@ const en = {
   'wallet.addPhrase': 'Add recovery phrase',
   'wallet.addPhraseHint':
     'This creates a recovery phrase on this device. Your existing login passkey stays.',
+  'passkeyRenew.banner': 'Renew passkey',
+  'passkeyRenew.explain':
+    'Next, your device will ask you to confirm a passkey. That renews the passkey and creates the recovery phrase for your wallet. Nothing changes until you confirm.',
+  'passkeyRenew.confirm': 'Continue',
+  'passkeyRenew.passkeyTitle': 'Confirm the passkey',
+  'passkeyRenew.passkeyBody': 'Your device is showing the passkey prompt. Confirm it there.',
+  'passkeyRenew.successTitle': 'It worked',
+  'passkeyRenew.successBody': 'Your passkey is renewed. You can continue.',
+  'passkeyRenew.failedTitle': 'That did not work',
+  'passkeyRenew.failedBody':
+    'The renewal did not work. You can try again later. You do not need to do anything now.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
@@ -527,8 +541,8 @@ const en = {
   'profile.push.level.hint':
     'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is admin posts, replies to you, and gifts you receive, and @username marks.',
   'profile.push.level.error': 'Could not save notification level.',
-  'profile.postCount': '{count} posts',
-  'profile.replyCount': '{count} reactions',
+  'profile.postCount': '{count, plural, one {# post} other {# posts}}',
+  'profile.replyCount': '{count, plural, one {# reaction} other {# reactions}}',
   'profile.activityLatest': 'Showing the latest {shown} of {total}.',
   'profile.about.heading': 'About me',
   'profile.about.empty': 'Tell others who you are.',
@@ -812,7 +826,7 @@ const en = {
   'moderate.goal.yesterdayOf': 'yesterday {count} of {goal}',
   'moderate.goal.closeHint': 'Tap to close',
   'moderate.goal.explYesterday':
-    'Yesterday (UTC {date}) 21.gifts paid {count} people the daily funding or the welcome gift. Each person counts once. That is {percent} percent of the {goal} a day we are aiming for.',
+    'Yesterday (UTC {date}) 21.gifts paid {count, plural, one {# person} other {# people}} the daily funding or the welcome gift. Each person counts once. That is {percent} percent of the {goal} a day we are aiming for.',
   'moderate.goal.explOfficial':
     'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count.',
   'moderate.goal.explBar':
@@ -884,7 +898,8 @@ const en = {
     'Takes part in the 21.gifts funding program since {date}, reviewed by {name}',
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
-  'funding.applications.openCount': 'Open applications ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Open application ({count})} other {Open applications ({count})}}',
   'funding.applications.empty': 'No open applications.',
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
@@ -1005,6 +1020,7 @@ const de = {
   'pwa.close': 'Schließen',
   'aria.primary': 'Primär',
   'aria.menu': 'Menü',
+  'aria.menuDismiss': 'Menü schliessen',
   'app.version': 'Version {version}',
   'aria.footer': 'Fusszeile',
   'aria.github': 'GitHub',
@@ -1263,6 +1279,7 @@ const de = {
   'forum.payContinue': 'Weiter',
   'forum.payNow': 'Bezahlen',
   'forum.payBack': 'Zurück',
+  'forum.payClose': 'Schließen',
   'forum.payOpenWallet': 'Zahlen',
   'forum.payOpenWalletAria': 'Mit Wallet of Satoshi zahlen',
   'forum.payInvoiceQr': 'Bitcoin-Zahlungs-QR-Code',
@@ -1369,7 +1386,7 @@ const de = {
   'forum.goalBarAria': 'Zielfortschritt {percent} Prozent',
   'forum.copyLink': 'Link zu dieser Notiz kopieren',
   'forum.copyReplyLink': 'Link zu dieser Antwort kopieren',
-  'forum.replyCount': '{count} Reaktionen',
+  'forum.replyCount': '{count, plural, one {# Reaktion} other {# Reaktionen}}',
   'forum.replyComposerLabel': 'Ihre Reaktion',
   'forum.replyPlaceholder': 'Reaktion schreiben',
   'forum.giftReply': '{amount} senden',
@@ -1413,6 +1430,18 @@ const de = {
   'wallet.addPhrase': 'Wiederherstellungssatz hinzufügen',
   'wallet.addPhraseHint':
     'Dadurch entsteht ein Wiederherstellungssatz auf diesem Gerät. Ihr vorhandener Anmelde-Passkey bleibt.',
+  'passkeyRenew.banner': 'Passkey erneuern',
+  'passkeyRenew.explain':
+    'Als Nächstes fragt dich dein Gerät nach einem Passkey. Damit wird der Passkey erneuert und der Wiederherstellungssatz für die Wallet erzeugt. Bis zu deiner Bestätigung ändert sich nichts.',
+  'passkeyRenew.confirm': 'Weiter',
+  'passkeyRenew.passkeyTitle': 'Passkey bestätigen',
+  'passkeyRenew.passkeyBody': 'Dein Gerät zeigt jetzt die Passkey-Abfrage. Bestätige sie dort.',
+  'passkeyRenew.successTitle': 'Es hat funktioniert',
+  'passkeyRenew.successBody': 'Dein Passkey ist erneuert. Du kannst weitermachen.',
+  'passkeyRenew.failedTitle': 'Das hat nicht funktioniert',
+  'passkeyRenew.failedBody':
+    'Die Erneuerung ist nicht gelungen. Du kannst es später noch einmal versuchen. Jetzt musst du nichts unternehmen.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
@@ -1455,8 +1484,8 @@ const de = {
   'profile.push.level.hint':
     'Alle Wohnzimmer-Posts, Antworten und Geschenke. Aktiv sind Posts mit Geschenk. Erwähnungen sind Admin-Posts, Antworten auf dich und Geschenke, die du empfängst, und Markierungen mit @benutzername.',
   'profile.push.level.error': 'Benachrichtigungsstufe konnte nicht gespeichert werden.',
-  'profile.postCount': '{count} Beiträge',
-  'profile.replyCount': '{count} Reaktionen',
+  'profile.postCount': '{count, plural, one {# Beitrag} other {# Beiträge}}',
+  'profile.replyCount': '{count, plural, one {# Reaktion} other {# Reaktionen}}',
   'profile.activityLatest': 'Die neuesten {shown} von {total}.',
   'profile.about.heading': 'Über mich',
   'profile.about.empty': 'Erzähl anderen, wer du bist.',
@@ -1749,7 +1778,7 @@ const de = {
   'moderate.goal.yesterdayOf': 'gestern {count} von {goal}',
   'moderate.goal.closeHint': 'Tippen zum Schliessen',
   'moderate.goal.explYesterday':
-    'Gestern (UTC {date}) hat 21.gifts {count} Personen die Tagesförderung oder das Willkommensgeschenk gezahlt. Jede Person zählt einmal. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
+    'Gestern (UTC {date}) hat 21.gifts {count, plural, one {# Person} other {# Personen}} die Tagesförderung oder das Willkommensgeschenk gezahlt. Jede Person zählt einmal. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
   'moderate.goal.explOfficial':
     'Gezählt wird jede Person einmal an dem UTC-Tag, an dem 21.gifts ihr die Tagesförderung oder das Willkommensgeschenk gezahlt hat. Wer an einem Tag beides bekommt, zählt einmal. Moderatoren-Stipendien und Geschenke zwischen Mitgliedern zählen nicht.',
   'moderate.goal.explBar':
@@ -1826,7 +1855,8 @@ const de = {
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
-  'funding.applications.openCount': 'Offene Bewerbungen ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Offene Bewerbung ({count})} other {Offene Bewerbungen ({count})}}',
   'funding.applications.empty': 'Keine offenen Bewerbungen.',
   'funding.applications.listLabel': 'Offene Förderbewerbungen',
   'funding.applications.error':
@@ -1948,6 +1978,7 @@ const es = {
   'pwa.close': 'Cerrar',
   'aria.primary': 'Principal',
   'aria.menu': 'Menú',
+  'aria.menuDismiss': 'Cerrar menú',
   'app.version': 'Versión {version}',
   'aria.footer': 'Pie de página',
   'aria.github': 'GitHub',
@@ -2204,6 +2235,7 @@ const es = {
   'forum.payContinue': 'Continuar',
   'forum.payNow': 'Pagar',
   'forum.payBack': 'Atrás',
+  'forum.payClose': 'Cerrar',
   'forum.payOpenWallet': 'Pagar',
   'forum.payOpenWalletAria': 'Pagar con Wallet of Satoshi',
   'forum.payInvoiceQr': 'Código QR de pago Bitcoin',
@@ -2307,7 +2339,7 @@ const es = {
   'forum.goalBarAria': 'Progreso del objetivo {percent} por ciento',
   'forum.copyLink': 'Copiar enlace a esta nota',
   'forum.copyReplyLink': 'Copiar enlace a esta respuesta',
-  'forum.replyCount': '{count} reacciones',
+  'forum.replyCount': '{count, plural, one {# reacción} other {# reacciones}}',
   'forum.replyComposerLabel': 'Tu reacción',
   'forum.replyPlaceholder': 'Escribe una reacción',
   'forum.giftReply': 'envía {amount}',
@@ -2350,6 +2382,19 @@ const es = {
   'wallet.addPhrase': 'Añadir frase de recuperación',
   'wallet.addPhraseHint':
     'Esto crea una frase de recuperación en este dispositivo. Tu passkey de inicio de sesión se mantiene.',
+  'passkeyRenew.banner': 'Renovar passkey',
+  'passkeyRenew.explain':
+    'A continuación tu dispositivo te pedirá confirmar un passkey. Así se renueva el passkey y se crea la frase de recuperación de la wallet. No cambia nada hasta que confirmes.',
+  'passkeyRenew.confirm': 'Continuar',
+  'passkeyRenew.passkeyTitle': 'Confirmar el passkey',
+  'passkeyRenew.passkeyBody':
+    'Tu dispositivo muestra ahora la solicitud del passkey. Confírmala allí.',
+  'passkeyRenew.successTitle': 'Ha funcionado',
+  'passkeyRenew.successBody': 'Tu passkey está renovado. Puedes continuar.',
+  'passkeyRenew.failedTitle': 'Eso no funcionó',
+  'passkeyRenew.failedBody':
+    'La renovación no ha funcionado. Puedes intentarlo más tarde. Ahora no tienes que hacer nada.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
@@ -2392,8 +2437,8 @@ const es = {
   'profile.push.level.hint':
     'Todas las publicaciones, respuestas y regalos del salón. Activas son las publicaciones con regalos. Menciones son publicaciones de administradores, respuestas a ti y regalos que recibes, y marcas con @usuario.',
   'profile.push.level.error': 'No se pudo guardar el nivel de notificaciones.',
-  'profile.postCount': '{count} publicaciones',
-  'profile.replyCount': '{count} reacciones',
+  'profile.postCount': '{count, plural, one {# publicación} other {# publicaciones}}',
+  'profile.replyCount': '{count, plural, one {# reacción} other {# reacciones}}',
   'profile.activityLatest': 'Mostrando los {shown} más recientes de {total}.',
   'profile.about.heading': 'Sobre mí',
   'profile.about.empty': 'Cuéntales a los demás quién eres.',
@@ -2678,7 +2723,7 @@ const es = {
   'moderate.goal.yesterdayOf': 'ayer {count} de {goal}',
   'moderate.goal.closeHint': 'Toca para cerrar',
   'moderate.goal.explYesterday':
-    'Ayer (UTC {date}) 21.gifts pagó a {count} personas la ayuda diaria o el regalo de bienvenida. Cada persona cuenta una vez. Eso es el {percent} por ciento de las {goal} al día que buscamos.',
+    'Ayer (UTC {date}) 21.gifts pagó a {count, plural, one {# persona} other {# personas}} la ayuda diaria o el regalo de bienvenida. Cada persona cuenta una vez. Eso es el {percent} por ciento de las {goal} al día que buscamos.',
   'moderate.goal.explOfficial':
     'Cada persona cuenta una vez en el día UTC en que 21.gifts le pagó la ayuda diaria o el regalo de bienvenida. Quien recibe ambos ese día cuenta una vez. Los estipendios de moderación y los regalos entre miembros no cuentan.',
   'moderate.goal.explBar':
@@ -2750,7 +2795,8 @@ const es = {
     'Participa en el programa de apoyo de 21.gifts desde {date}, revisado por {name}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
-  'funding.applications.openCount': 'Solicitudes abiertas ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Solicitud abierta ({count})} other {Solicitudes abiertas ({count})}}',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
   'funding.applications.error':
@@ -2872,6 +2918,7 @@ const fil = {
   'pwa.close': 'Isara',
   'aria.primary': 'Pangunahin',
   'aria.menu': 'Menu',
+  'aria.menuDismiss': 'Isara ang menu',
   'app.version': 'Bersyon {version}',
   'aria.footer': 'Pang-ibaba',
   'aria.github': 'GitHub',
@@ -3131,6 +3178,7 @@ const fil = {
   'forum.payContinue': 'Magpatuloy',
   'forum.payNow': 'Magbayad',
   'forum.payBack': 'Bumalik',
+  'forum.payClose': 'Isara',
   'forum.payOpenWallet': 'Magbayad',
   'forum.payOpenWalletAria': 'Magbayad gamit ang Wallet of Satoshi',
   'forum.payInvoiceQr': 'QR code ng bayad sa Bitcoin',
@@ -3234,7 +3282,7 @@ const fil = {
   'forum.goalBarAria': 'Progreso ng layunin {percent} porsyento',
   'forum.copyLink': 'Kopyahin ang link sa notang ito',
   'forum.copyReplyLink': 'Kopyahin ang link sa tugong ito',
-  'forum.replyCount': '{count} na reaksyon',
+  'forum.replyCount': '{count, plural, one {# reaksyon} other {# reaksyon}}',
   'forum.replyComposerLabel': 'Iyong reaksyon',
   'forum.replyPlaceholder': 'Sumulat ng reaksyon',
   'forum.giftReply': 'magpadala ng {amount}',
@@ -3278,6 +3326,19 @@ const fil = {
   'wallet.addPhrase': 'Magdagdag ng recovery phrase',
   'wallet.addPhraseHint':
     'Lumilikha ito ng recovery phrase sa device na ito. Mananatili ang kasalukuyang login passkey mo.',
+  'passkeyRenew.banner': 'I-renew ang passkey',
+  'passkeyRenew.explain':
+    'Susunod, hihingi ang device mo ng kumpirmasyon sa passkey. Nire-renew nito ang passkey at nalilikha ang recovery phrase ng wallet. Walang magbabago hanggang kumpirmahin mo.',
+  'passkeyRenew.confirm': 'Magpatuloy',
+  'passkeyRenew.passkeyTitle': 'Kumpirmahin ang passkey',
+  'passkeyRenew.passkeyBody':
+    'Ipinapakita na ng device mo ang passkey prompt. Kumpirmahin ito doon.',
+  'passkeyRenew.successTitle': 'Nagtagumpay ito',
+  'passkeyRenew.successBody': 'Na-renew na ang passkey mo. Maaari ka nang magpatuloy.',
+  'passkeyRenew.failedTitle': 'Hindi iyon nagtagumpay',
+  'passkeyRenew.failedBody':
+    'Hindi nagtagumpay ang pag-renew. Maaari mong subukan ulit mamaya. Wala kang kailangang gawin ngayon.',
+  'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
@@ -3319,8 +3380,8 @@ const fil = {
   'profile.push.level.hint':
     'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga post ng admin, sagot sa iyo, at mga regalo na natatanggap mo, at mga marka gamit ang @username.',
   'profile.push.level.error': 'Hindi ma-save ang antas ng notification.',
-  'profile.postCount': '{count} mga post',
-  'profile.replyCount': '{count} mga reaksyon',
+  'profile.postCount': '{count, plural, one {# post} other {# post}}',
+  'profile.replyCount': '{count, plural, one {# reaksyon} other {# reaksyon}}',
   'profile.activityLatest': 'Ipinapakita ang pinakabago {shown} sa {total}.',
   'profile.about.heading': 'Tungkol sa akin',
   'profile.about.empty': 'Sabihin sa iba kung sino ka.',
@@ -3611,7 +3672,7 @@ const fil = {
   'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
   'moderate.goal.closeHint': 'I-tap para isara',
   'moderate.goal.explYesterday':
-    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count} tao ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
+    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count, plural, one {# tao} other {# tao}} ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
   'moderate.goal.explOfficial':
     'Isang beses lang binibilang ang bawat tao sa UTC-araw na binayaran siya ng 21.gifts ng araw-araw na tulong o ng welcome gift. Ang nakatanggap ng pareho sa araw na iyon ay isang beses lang. Hindi binibilang ang stipend ng moderator at ang mga regalo sa pagitan ng mga miyembro.',
   'moderate.goal.explBar':
@@ -3684,7 +3745,8 @@ const fil = {
     'Kasali sa programa ng tulong ng 21.gifts mula noong {date}, sinuri ni {name}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
-  'funding.applications.openCount': 'Mga bukas na aplikasyon ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Bukas na aplikasyon ({count})} other {Mga bukas na aplikasyon ({count})}}',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',

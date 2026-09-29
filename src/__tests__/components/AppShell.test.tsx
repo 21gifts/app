@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
-import { useState, type ReactElement } from 'react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { useContext, useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   AppShell,
+  AppShellContext,
   AppShellFooter,
   AppShellHeader,
   AppShellTopLeft,
@@ -10,6 +11,8 @@ import {
 } from '@/components/AppShell';
 import { Card } from '@/components/ui/Card';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { useAuthStore } from '@/stores/auth-store';
+import type { Account } from '@/lib/api-types';
 
 afterEach(cleanup);
 
@@ -33,7 +36,45 @@ function ScrollerProbe(): ReactElement {
   );
 }
 
+/** Shows the measured frame width, or `none` before the first positive measurement. */
+function FrameWidthProbe(): ReactElement {
+  const width = useContext(AppShellContext)?.frameWidth ?? null;
+  return <span data-testid="frame-width">{width === null ? 'none' : String(width)}</span>;
+}
+
 describe('AppShell', () => {
+  it('shows Renew passkey when the signed-in account has no seed', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        walletRequired: false,
+      } as Account,
+    });
+    renderWithLocale(
+      <AppShell mode="fill">
+        <p>Body</p>
+      </AppShell>,
+    );
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    useAuthStore.setState({ session: null, account: null });
+  });
+
   it('fill renders footer as a sibling of the inner scroller', () => {
     const { container } = renderWithLocale(
       <AppShell mode="fill">
@@ -91,7 +132,7 @@ describe('AppShell', () => {
     const scroller = main?.querySelector('[data-scrollport]');
     expect(scroller?.className).not.toContain('items-center');
     expect(scroller?.className).not.toContain('justify-center');
-    const inner = scroller?.firstElementChild;
+    const inner = scroller?.querySelector('[data-scroll-page]');
     expect(inner?.className).toContain('flex');
     expect(inner?.className).toContain('flex-col');
     expect(inner?.className).toContain('min-h-full');
@@ -316,5 +357,73 @@ describe('AppShell', () => {
       fireEvent.click(button);
     }
     expect(screen.getByRole('button').textContent).toBe('8');
+  });
+
+  it('publishes frame width from the content box, including a zero and a missing box', () => {
+    const callbacks: ResizeObserverCallback[] = [];
+    class FakeResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        callbacks.push(callback);
+      }
+
+      observe(): void {}
+
+      unobserve(): void {}
+
+      disconnect(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const widthDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get: () => 640,
+    });
+    try {
+      renderWithLocale(
+        <AppShell mode="fill">
+          <FrameWidthProbe />
+        </AppShell>,
+      );
+      expect(screen.getByTestId('frame-width').textContent).toBe('640');
+      const callback = callbacks.at(-1);
+      const frame = document.querySelector('[data-app-frame]');
+      if (callback === undefined || !(frame instanceof Element)) {
+        throw new Error('missing frame observer');
+      }
+      const entry = (width: number | undefined, box: unknown): ResizeObserverEntry =>
+        ({
+          target: frame,
+          contentBoxSize: box,
+          contentRect: { width: width ?? 320 },
+        }) as ResizeObserverEntry;
+      act(() => {
+        callback([entry(10, [{ inlineSize: 400 }])], {} as ResizeObserver);
+      });
+      expect(screen.getByTestId('frame-width').textContent).toBe('400');
+      act(() => {
+        callback([entry(11, { inlineSize: 700 })], {} as ResizeObserver);
+      });
+      expect(screen.getByTestId('frame-width').textContent).toBe('700');
+      act(() => {
+        callback([entry(320, undefined)], {} as ResizeObserver);
+      });
+      expect(screen.getByTestId('frame-width').textContent).toBe('320');
+      act(() => {
+        callback([entry(50, [{ inlineSize: 0 }])], {} as ResizeObserver);
+      });
+      expect(screen.getByTestId('frame-width').textContent).toBe('none');
+      act(() => {
+        callback([], {} as ResizeObserver);
+      });
+      expect(screen.getByTestId('frame-width').textContent).toBe('none');
+    } finally {
+      globalThis.ResizeObserver = previous;
+      if (widthDescriptor === undefined) {
+        delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth;
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDescriptor);
+      }
+    }
   });
 });

@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
@@ -70,7 +69,8 @@ export function nextFillStep(account: Account): FillStep | null {
  * yes/no questions. The first asks whether the posts match the core principles
  * and links to the about page. The second asks whether the posts are true.
  * Missing fields are next steps, not errors. Yes on the truth question posts
- * apply. No does not apply. Renders nothing without a session.
+ * apply. No does not apply. Renders nothing without a session. The page chrome
+ * owns the back; this screen renders none.
  *
  * @returns The apply card, or `null` without a session.
  */
@@ -128,20 +128,9 @@ export function FundingApplyScreen(): ReactElement | null {
   }
 
   const heading = (
-    <>
-      <div className="flex w-full justify-start">
-        <Link
-          href="/grants"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-          aria-label={t('funding.apply.back')}
-        >
-          <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-        </Link>
-      </div>
-      <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-        {t('funding.apply.heading')}
-      </h1>
-    </>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('funding.apply.heading')}
+    </h1>
   );
 
   if (!roleAtLeast(account.role, 'verified')) {

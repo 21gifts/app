@@ -2,11 +2,15 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
+import { resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(() => {
   cleanup();
+  resetViewHistory();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   useAuthStore.setState({ session: null, account: null });
 });
 
@@ -83,7 +87,7 @@ describe('WalletScreenView', () => {
       />,
     );
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
     expect(hidePhrase).toHaveBeenCalledTimes(1);
     expect(historyBack).not.toHaveBeenCalled();
     historyBack.mockRestore();
@@ -108,15 +112,16 @@ describe('WalletScreenView', () => {
     }
     details.open = true;
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
     expect(details.open).toBe(false);
     expect(historyBack).not.toHaveBeenCalled();
     historyBack.mockRestore();
   });
 
-  it('goes back one history step when nothing on the page is open', () => {
-    const descriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
+  it('opens the forum when nothing on the page is open even if history is longer', () => {
     Object.defineProperty(window.history, 'length', { configurable: true, value: 2 });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     renderWithLocale(
       <WalletScreenView
@@ -130,18 +135,16 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
-    expect(historyBack).toHaveBeenCalledTimes(1);
-    historyBack.mockRestore();
-    if (descriptor) {
-      Object.defineProperty(window.history, 'length', descriptor);
-    }
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(historyBack).not.toHaveBeenCalled();
   });
 
   it('opens the forum when this tab has no previous page', () => {
     Object.defineProperty(window.history, 'length', { configurable: true, value: 1 });
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     renderWithLocale(
       <WalletScreenView
         view="reveal"
@@ -154,9 +157,9 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
     expect(assign).toHaveBeenCalledWith('/welcome');
-    vi.unstubAllGlobals();
+    expect(historyBack).not.toHaveBeenCalled();
   });
 
   it('does not show the grid when phrase view has fewer than twelve words', () => {
@@ -376,9 +379,10 @@ describe('WalletScreenView', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
-  it('goes back one step from the phrase page when the words are hidden', () => {
-    const descriptor = Object.getOwnPropertyDescriptor(window.history, 'length');
+  it('opens the forum from the phrase page when the words are already hidden', () => {
     Object.defineProperty(window.history, 'length', { configurable: true, value: 2 });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     renderWithLocale(
       <WalletScreenView
@@ -393,18 +397,16 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
-    expect(historyBack).toHaveBeenCalledTimes(1);
-    historyBack.mockRestore();
-    if (descriptor) {
-      Object.defineProperty(window.history, 'length', descriptor);
-    }
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(historyBack).not.toHaveBeenCalled();
   });
 
-  it('returns from the phrase page to the wallet when nothing is open', () => {
+  it('opens the forum from the phrase page when nothing is open', () => {
     Object.defineProperty(window.history, 'length', { configurable: true, value: 1 });
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     renderWithLocale(
       <WalletScreenView
         surface="phrase"
@@ -418,9 +420,9 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
-    expect(assign).toHaveBeenCalledWith('/wallet');
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(historyBack).not.toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
-    vi.unstubAllGlobals();
   });
 });

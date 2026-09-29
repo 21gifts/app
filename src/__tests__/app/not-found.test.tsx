@@ -5,8 +5,18 @@ import NotFound from '@/app/not-found';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
   ),
 }));
 
@@ -21,10 +31,14 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('NotFound', () => {
-  it('shows 404 and a home link', async () => {
+  it('shows 404 and the one top-left back arrow', async () => {
     renderWithLocale(await NotFound());
     expect(screen.getByRole('heading', { name: '404' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Back home' }).getAttribute('href')).toBe('/');
+    expect(screen.queryByRole('link', { name: 'Back home' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
     expect(screen.queryByLabelText('Number format')).toBeNull();
   });
 });

@@ -116,6 +116,107 @@ test('Function: proxyMeWalletBackupSeenPost — backup-seen without a session is
   expect((await request.post('/me/wallet-backup-seen')).status()).toBe(401);
 });
 
+test('Function: postPasskeyRenewReport — report without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: postPasskeyRenewAck — ack without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/ack')).status()).toBe(401);
+});
+
+test('Function: renewPasskey — report without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: PasskeyRenewNotice — failure OK closes the dialog', async ({ page }) => {
+  let closed = false;
+  const renewAccount = {
+    id: 'acc_e2e',
+    linkingKey: `02${'a'.repeat(62)}`,
+    role: 'basis',
+    name: 'Ada',
+    username: 'ada',
+    location: null,
+    lightningAddress: 'ada@walletofsatoshi.com',
+    lightningAddressVerified: false,
+    forumLawsDismissed: false,
+    createdAt: 1_700_000_000,
+    rulesAgreedAt: 1,
+    viewKey: 'a'.repeat(64),
+    aboutMe: null,
+    aboutMeHasPhoto: false,
+    setup: null,
+    missing: [],
+    walletRequired: false,
+    passkeyRenewFailed: true,
+    passkeyRenewClosed: false,
+  };
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...renewAccount,
+        passkeyRenewFailed: !closed,
+        passkeyRenewClosed: closed,
+      }),
+    });
+  });
+  await page.route(/\/me\/passkey-renew\/ack$/, async (route) => {
+    closed = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...renewAccount,
+        passkeyRenewFailed: false,
+        passkeyRenewClosed: true,
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('You do not need to do anything now.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('You do not need to do anything now.')).toHaveCount(0);
+});
+
+test('Function: proxyMePasskeyRenewReportPost — report without a session is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: proxyMePasskeyRenewAckPost — ack without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/ack')).status()).toBe(401);
+});
+
 test('Function: prfEvalFirstSalt — wallet heading is Wallet', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

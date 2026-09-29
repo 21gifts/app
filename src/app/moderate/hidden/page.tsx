@@ -8,7 +8,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/moderate/hidden` — signed-in hidden-notes list for moderators.
  *
- * `/moderate` is the hub; `/moderate/hidden` is the hidden-notes list. Requires
+ * `/moderate/hidden` is the hidden-notes list. The chrome back returns to the
+ * previous in-app view (the card has no back control). Requires
  * name + address + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page (Next.js forbids
  * that); hidden-note HTTP lives under `/forum/messages/hidden`.

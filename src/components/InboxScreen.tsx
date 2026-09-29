@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ImagePlus, Loader2, Send, X } from 'lucide-react';
+import { ImagePlus, Loader2, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
   type ChangeEvent,
@@ -1304,11 +1304,11 @@ export function InboxScreen({
               type="button"
               size="sm"
               variant="ghost"
-              aria-label={t('forum.payBack')}
+              aria-label={t('forum.payClose')}
               onClick={onPayCancel}
               className="absolute left-2 top-2"
             >
-              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              <X aria-hidden="true" className="h-4 w-4" />
             </IconButton>
             <p className="px-10 text-center text-sm text-app-muted">
               {t('forum.payConfirm', {

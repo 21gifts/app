@@ -132,9 +132,7 @@ describe('FundingApplicationDetailScreen', () => {
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     expect(screen.getByRole('heading', { name: 'Grant application' })).toBeTruthy();
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Open applications' }).getAttribute('href')).toBe(
-      '/grants/applications',
-    );
+    expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

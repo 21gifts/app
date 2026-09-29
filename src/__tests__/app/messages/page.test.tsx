@@ -2,11 +2,13 @@ import { cleanup, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MessagesPage from '@/app/messages/page';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const searchParams = new URLSearchParams();
 
 vi.mock('next/navigation', () => ({
+  usePathname: (): string => '/',
   useSearchParams: (): URLSearchParams => searchParams,
 }));
 
@@ -40,10 +42,12 @@ vi.mock('@/components/SignedInChrome', () => ({
 
 beforeEach(() => {
   searchParams.delete('c');
+  resetViewHistory();
 });
 
 afterEach(() => {
   searchParams.delete('c');
+  resetViewHistory();
   cleanup();
 });
 
@@ -58,15 +62,19 @@ describe('MessagesPage', () => {
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 
-  it('renders All conversations chrome back when a thread is open', () => {
-    searchParams.set('c', 'conv-1');
+  it('returns to the messages list after that view was recorded', () => {
+    recordCurrentView('/messages');
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
+    recordCurrentView('/messages?c=conv-21');
+    searchParams.set('c', 'conv-21');
     renderWithLocale(<MessagesPage />);
-    expect(screen.getByRole('link', { name: 'All conversations' }).getAttribute('href')).toBe(
-      '/messages',
-    );
-    expect(screen.getAllByRole('link', { name: 'All conversations' })).toHaveLength(1);
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/messages');
+    expect(screen.getAllByRole('link', { name: 'Back' })).toHaveLength(1);
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'All conversations' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'All conversations' })).toBeNull();
   });
 });

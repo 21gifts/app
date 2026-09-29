@@ -1,7 +1,8 @@
 'use client';
 
+import { revealInScrollport } from '@/lib/reveal-in-scrollport';
+
 import {
-  ArrowLeft,
   ArrowUp,
   Check,
   Gift,
@@ -447,10 +448,10 @@ function ForumPaySheet({
             type="button"
             size="sm"
             variant="ghost"
-            aria-label={t('forum.payBack')}
+            aria-label={t('forum.payClose')}
             onClick={onPayCancel}
           >
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            <X aria-hidden="true" className="h-4 w-4" />
           </IconButton>
         </div>
         <AmountEntry
@@ -506,10 +507,10 @@ function ForumPaySheet({
           type="button"
           size="sm"
           variant="ghost"
-          aria-label={t('forum.payBack')}
+          aria-label={t('forum.payClose')}
           onClick={onPayCancel}
         >
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+          <X aria-hidden="true" className="h-4 w-4" />
         </IconButton>
       </div>
       <p className="px-10 text-center text-sm text-app-muted">
@@ -564,7 +565,11 @@ function fallbackCopy(text: string): boolean {
 }
 
 /**
- * Scrolls the reply form up only when its bottom sits past the shell.
+ * Reveals the reply form inside the one scrollport.
+ *
+ * A null scroller or form leaves the scroll position unchanged. Otherwise this
+ * delegates to {@link revealInScrollport}, which also corrects a top overflow
+ * and a target taller than the scroller.
  *
  * @param scroller - App shell scroller, or null when the board is not inside one.
  * @param form - Reply form, or null when no reply composer is open.
@@ -574,10 +579,7 @@ export function revealReplyForm(scroller: HTMLElement | null, form: HTMLFormElem
   if (scroller === null || form === null) {
     return;
   }
-  const overflow = form.getBoundingClientRect().bottom - scroller.getBoundingClientRect().bottom;
-  if (overflow > 0) {
-    scroller.scrollTop += overflow + 12;
-  }
+  revealInScrollport(scroller, form);
 }
 
 /**
@@ -750,6 +752,8 @@ export function ForumBoard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
+  const scrollerRef = useRef<HTMLElement | null>(scroller);
+  scrollerRef.current = scroller;
   const shownReplies = replies === null ? -1 : replies.length;
   const scrollBeforeSheet = useRef<number | null>(null);
   const sheetWasOpen = useRef(false);
@@ -930,8 +934,11 @@ export function ForumBoard({
       if (el === null) {
         return false;
       }
-      el.focus();
-      el.scrollIntoView({ block: 'nearest' });
+      el.focus({ preventScroll: true });
+      const port = scrollerRef.current;
+      if (port !== null) {
+        revealInScrollport(port, el);
+      }
       return true;
     };
     const onCompose = (): void => {
@@ -1285,136 +1292,145 @@ export function ForumBoard({
                   ledgerCollapsed={truncate}
                 />
               ) : null}
-              <div className="mt-3 flex flex-wrap items-center gap-5">
-                <button
-                  type="button"
-                  aria-expanded={expanded}
-                  onClick={() => {
-                    onToggleExpand(message.id);
-                  }}
-                  className="text-xs font-medium tabular-nums lining-nums text-app-muted"
-                >
-                  <span>{formatBitcoin(message.sats, numberFormat)}</span>
-                  {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
-                </button>
-                <div id={`note-translate-${message.id}`} className="contents" />
-                {message.parentId === undefined && message.deletedAt === undefined ? (
-                  <IconButton
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    aria-label={t('forum.react')}
-                    title={t('forum.react')}
-                    onClick={(event) => {
-                      stopCardToggle(event);
-                      if (expandedId !== message.id) {
-                        onToggleExpand(message.id);
-                      } else {
-                        replyComposerRef.current?.focus();
-                      }
-                    }}
-                  >
-                    <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
-                  </IconButton>
-                ) : null}
-                {onRepay !== undefined &&
-                viewerAccountId !== null &&
-                message.accountId === viewerAccountId &&
-                message.parentId === undefined &&
-                message.goalRepayable === true &&
-                typeof message.goalSats === 'number' &&
-                message.sats >= message.goalSats &&
-                message.deletedAt === undefined ? (
-                  <SundayWritingGate notice="zap">
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-app-fg underline"
-                      disabled={payBusy || payInvoice?.messageId === message.id}
-                      onClick={(event) => {
-                        stopCardToggle(event);
-                        onRepay(message.id);
-                      }}
-                    >
-                      {t('forum.repayToday')}
-                    </button>
-                  </SundayWritingGate>
-                ) : null}
-                {repayNotice?.messageId === message.id && repayNotice.error !== null ? (
-                  <p role="alert" className="text-xs text-app-danger">
-                    {t(
-                      repayNotice.error === 'rateLimit'
-                        ? 'forum.payErrorRateLimit'
-                        : repayNotice.error === 'authorWallet'
-                          ? 'forum.payErrorAuthorWallet'
-                          : 'forum.payErrorRequest',
-                    )}
-                  </p>
-                ) : null}
-                {message.parentId !== undefined &&
-                message.payable &&
-                message.deletedAt === undefined &&
-                !readOnly ? (
-                  <SundayWritingGate notice="zap">
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.pay')}
-                      disabled={payBusy}
-                      onClick={(event) => {
-                        stopCardToggle(event);
-                        onPayOpen(message.id);
-                      }}
-                    >
-                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                    </IconButton>
-                  </SundayWritingGate>
-                ) : null}
-                <IconButton
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  aria-label={t(copyLabelKey)}
-                  title={t(copyLabelKey)}
-                  data-copied={copied ? 'true' : undefined}
-                  onClick={(event) => {
-                    stopCardToggle(event);
-                    void copyMessageLink(message.id);
-                  }}
-                >
-                  {copied ? (
-                    <Check aria-hidden="true" className="h-3.5 w-3.5" />
-                  ) : (
-                    <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
-                  )}
-                </IconButton>
-                {shopPlaceEdit &&
-                onShopPlaceUpdated !== undefined &&
-                message.parentId === undefined ? (
-                  <ShopPlaceControl message={message} onUpdated={onShopPlaceUpdated} />
-                ) : null}
-                {shopAccountEdit &&
-                onShopAccountUpdated !== undefined &&
-                message.parentId === undefined ? (
-                  <SundayWritingGate>
-                    <ShopAccountControl message={message} onUpdated={onShopAccountUpdated} />
-                  </SundayWritingGate>
-                ) : null}
-                {onDeleted !== undefined && message.deletedAt === undefined ? (
-                  <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
-                ) : null}
-                {message.parentId === undefined ? (
+              <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                <div className="flex items-center gap-5">
                   <button
                     type="button"
                     aria-expanded={expanded}
                     onClick={() => {
                       onToggleExpand(message.id);
                     }}
-                    className="ml-auto text-xs text-app-subtle"
+                    className="text-xs font-medium tabular-nums lining-nums text-app-muted"
                   >
-                    {t('forum.replyCount', { count: String(message.replyCount) })}
+                    <span>{formatBitcoin(message.sats, numberFormat)}</span>
+                    {preferredFiatSuffix(message.sats, rateDay, fiat, numberFormat, message)}
                   </button>
-                ) : null}
+                  {message.parentId === undefined ? (
+                    <button
+                      type="button"
+                      aria-expanded={expanded}
+                      onClick={() => {
+                        onToggleExpand(message.id);
+                      }}
+                      className="text-xs text-app-subtle"
+                    >
+                      {t('forum.replyCount', { count: String(message.replyCount) })}
+                    </button>
+                  ) : null}
+                </div>
+                <div className="ml-auto flex flex-wrap items-center gap-5">
+                  <div id={`note-translate-${message.id}`} className="contents" />
+                  {message.parentId === undefined && message.deletedAt === undefined ? (
+                    <IconButton
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      aria-label={t('forum.react')}
+                      title={t('forum.react')}
+                      onClick={(event) => {
+                        stopCardToggle(event);
+                        if (expandedId !== message.id) {
+                          onToggleExpand(message.id);
+                        } else {
+                          const field = replyComposerRef.current;
+                          field?.focus({ preventScroll: true });
+                          const port = scrollerRef.current;
+                          if (port !== null && field !== null) {
+                            revealInScrollport(port, field);
+                          }
+                        }
+                      }}
+                    >
+                      <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    </IconButton>
+                  ) : null}
+                  {onRepay !== undefined &&
+                  viewerAccountId !== null &&
+                  message.accountId === viewerAccountId &&
+                  message.parentId === undefined &&
+                  message.goalRepayable === true &&
+                  typeof message.goalSats === 'number' &&
+                  message.sats >= message.goalSats &&
+                  message.deletedAt === undefined ? (
+                    <SundayWritingGate notice="zap">
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-app-fg underline"
+                        disabled={payBusy || payInvoice?.messageId === message.id}
+                        onClick={(event) => {
+                          stopCardToggle(event);
+                          onRepay(message.id);
+                        }}
+                      >
+                        {t('forum.repayToday')}
+                      </button>
+                    </SundayWritingGate>
+                  ) : null}
+                  {repayNotice?.messageId === message.id && repayNotice.error !== null ? (
+                    <p role="alert" className="text-xs text-app-danger">
+                      {t(
+                        repayNotice.error === 'rateLimit'
+                          ? 'forum.payErrorRateLimit'
+                          : repayNotice.error === 'authorWallet'
+                            ? 'forum.payErrorAuthorWallet'
+                            : 'forum.payErrorRequest',
+                      )}
+                    </p>
+                  ) : null}
+                  {message.parentId !== undefined &&
+                  message.payable &&
+                  message.deletedAt === undefined &&
+                  !readOnly ? (
+                    <SundayWritingGate notice="zap">
+                      <IconButton
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t('forum.pay')}
+                        disabled={payBusy}
+                        onClick={(event) => {
+                          stopCardToggle(event);
+                          onPayOpen(message.id);
+                        }}
+                      >
+                        <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                      </IconButton>
+                    </SundayWritingGate>
+                  ) : null}
+                  <IconButton
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    aria-label={t(copyLabelKey)}
+                    title={t(copyLabelKey)}
+                    data-copied={copied ? 'true' : undefined}
+                    onClick={(event) => {
+                      stopCardToggle(event);
+                      void copyMessageLink(message.id);
+                    }}
+                  >
+                    {copied ? (
+                      <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                    ) : (
+                      <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                    )}
+                  </IconButton>
+                  {shopPlaceEdit &&
+                  onShopPlaceUpdated !== undefined &&
+                  message.parentId === undefined ? (
+                    <ShopPlaceControl message={message} onUpdated={onShopPlaceUpdated} />
+                  ) : null}
+                  {shopAccountEdit &&
+                  onShopAccountUpdated !== undefined &&
+                  message.parentId === undefined ? (
+                    <SundayWritingGate>
+                      <ShopAccountControl message={message} onUpdated={onShopAccountUpdated} />
+                    </SundayWritingGate>
+                  ) : null}
+                  {onDeleted !== undefined && message.deletedAt === undefined ? (
+                    <DeletePostControl messageId={message.id} onDeleted={onDeleted} />
+                  ) : null}
+                </div>
               </div>
 
               {!reactionPayPage && payMessageId === message.id && payHost !== 'composer' ? (

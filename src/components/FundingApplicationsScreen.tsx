@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -28,7 +27,7 @@ function personLabel(name: string | null, unnamed: string): string {
  * Founders and moderators see one list of pending applications (oldest first).
  * Other signed-in visitors see a short forbidden message and no list. Fetches
  * {@link fetchFundingApplications} only. Renders nothing without a session.
- * In-card back goes to `/grants`.
+ * The page chrome owns the back; this screen renders none.
  *
  * @returns The applications card, forbidden copy, or `null` without a session.
  */
@@ -72,20 +71,9 @@ export function FundingApplicationsScreen(): ReactElement | null {
   }
 
   const heading = (
-    <div className="flex w-full items-center gap-2">
-      <Link
-        href="/grants"
-        aria-label={t('funding.apply.back')}
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full text-app-muted transition hover:bg-app-hover hover:text-app-fg"
-      >
-        <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-      </Link>
-      <div className="min-w-0 flex-1">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('funding.applications.heading')}
-        </h1>
-      </div>
-    </div>
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {t('funding.applications.heading')}
+    </h1>
   );
 
   if (!staff) {

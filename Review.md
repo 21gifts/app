@@ -57,3 +57,5 @@ screenshot baselines for new screenshot-gated screens/variants in the same PR
 (handbook doc routes: `## Screen:` prose and e2e `page.goto` only). New controls
 follow the labeled vs icon-only table in `docs/ui.md` and CONTRIBUTING
 **Icon controls**. A new control that ignores the table is rejected. The `profile.chartError` chart-slot exception in CONTRIBUTING is not a new variant.
+
+Reject the PR when any screen in the app has a second back control, or when the top-left back arrow jumps to a fixed parent or can leave the site. A second back control is absolutely forbidden, including a back link in the page body. The arrow returns to the in-app view this tab showed immediately before. With no earlier in-app view it opens `/welcome`, except on `/welcome` itself, which omits the arrow only in that case. See CONTRIBUTING.md “One back”.

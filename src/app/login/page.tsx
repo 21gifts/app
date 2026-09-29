@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { HomeWordmark } from '@/components/HomeWordmark';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { LoginCard } from '@/components/LoginCard';
 import { OnboardingGate } from '@/components/OnboardingGate';
@@ -17,7 +18,7 @@ export default function LoginPage(): ReactElement {
     <AppShell
       mode="fill"
       align="center"
-      topLeft={<HomeWordmark />}
+      topLeft={<ProfileChromeLeft wordmark={<HomeWordmark />} />}
       topRight={<LanguageSwitcher tone="light" />}
     >
       <OnboardingGate screen="login">

@@ -46,6 +46,8 @@ vi.mock('next/link', () => ({
 }));
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn().mockResolvedValue(null),
@@ -1950,7 +1952,7 @@ describe('ForumBoard', () => {
       await Promise.resolve();
     });
     expect(locationAssign).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
@@ -2348,7 +2350,7 @@ describe('ForumBoard', () => {
     expect(walletButton.querySelector('img[src="/wos-icon.png"]')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     expect(screen.queryByText('Back')).toBeNull();
-    const back = screen.getByRole('button', { name: 'Back' });
+    const back = screen.getByRole('button', { name: 'Close' });
     expect(back.parentElement?.className).toContain('absolute');
     expect(back.parentElement?.className).toContain('left-2');
     expect(back.parentElement?.className).toContain('top-2');
@@ -2415,7 +2417,7 @@ describe('ForumBoard', () => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
@@ -2540,7 +2542,7 @@ describe('ForumBoard', () => {
       expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
@@ -2567,7 +2569,8 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Zurück' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Zurück' })).toBeNull();
     expect(screen.queryByText('Zurück')).toBeNull();
     const walletButton = screen.getByRole('button', { name: 'Mit Wallet of Satoshi zahlen' });
     expect(walletButton.textContent).toContain('Zahlen');
@@ -6190,7 +6193,7 @@ describe('ForumBoard', () => {
       window.dispatchEvent(new Event(FORUM_COMPOSE_EVENT));
     });
     expect(document.activeElement).toBe(textarea);
-    expect(scrollMock).toHaveBeenCalledWith({ block: 'nearest' });
+    expect(scrollMock).not.toHaveBeenCalled();
   });
 
   it('focuses the new-post composer on mount when compose is pending', () => {
@@ -6211,7 +6214,81 @@ describe('ForumBoard', () => {
       />,
     );
     expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
-    expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+    expect(HTMLElement.prototype.scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('reveals the new-post composer inside the shell scrollport', () => {
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_COMPOSE_EVENT));
+    });
+    expect(document.activeElement).toBe(screen.getByLabelText('Your message'));
+    expect(top).toBe(12);
+  });
+
+  it('reveals the open reaction field inside the shell scrollport', () => {
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'React' }));
+    expect(document.activeElement).toBe(screen.getByLabelText('Your reaction'));
+    expect(top).toBe(12);
   });
 
   it('consumes pending compose when the composer is hidden', () => {
@@ -7039,16 +7116,16 @@ describe('reply form size', () => {
 });
 
 describe('revealReplyForm', () => {
-  function box(bottom: number): DOMRect {
+  function box(bottom: number, height = bottom): DOMRect {
     return {
       bottom,
-      top: 0,
+      top: bottom - height,
       left: 0,
       right: 0,
       width: 0,
-      height: bottom,
+      height,
       x: 0,
-      y: 0,
+      y: bottom - height,
       toJSON: () => ({}),
     };
   }
@@ -7066,10 +7143,10 @@ describe('revealReplyForm', () => {
     const scroller = document.createElement('div');
     const form = document.createElement('form');
     scroller.getBoundingClientRect = () => box(100);
-    form.getBoundingClientRect = () => box(80);
+    form.getBoundingClientRect = () => box(80, 20);
     revealReplyForm(scroller, form);
     expect(scroller.scrollTop).toBe(0);
-    form.getBoundingClientRect = () => box(140);
+    form.getBoundingClientRect = () => box(140, 20);
     revealReplyForm(scroller, form);
     expect(scroller.scrollTop).toBe(52);
   });

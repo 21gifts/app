@@ -106,7 +106,11 @@ test('Function: ProposalsScreen — basis visitors see the forbidden copy', asyn
   await expect(page.getByRole('heading', { name: 'Open proposals' })).toBeVisible();
   await expect(page.getByText('This page is for moderators.')).toBeVisible();
   await expect(page.getByRole('list')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
+  await expect(page.getByRole('link', { name: 'Moderation' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
   await page.getByRole('button', { name: 'Menu' }).click();
   const menu = page.locator('#signed-in-menu');
   await expect(menu.getByRole('link', { name: 'Open proposals' })).toHaveCount(0);

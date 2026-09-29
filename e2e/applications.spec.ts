@@ -101,7 +101,7 @@ test('Function: FundingApplicationsPage — grants page opens the queue', async 
   await stubApplications(page, [APPLICATION]);
   await page.goto('/grants');
   await expect(
-    page.getByRole('link', { name: 'Open applications (1)', exact: true }),
+    page.getByRole('link', { name: 'Open application (1)', exact: true }),
   ).toHaveAttribute('href', '/grants/applications');
   await page.goto('/grants/applications');
   await expect(page.getByRole('heading', { name: 'Open applications' })).toBeVisible();
@@ -119,7 +119,7 @@ test('Function: GrantsScreen — moderator sees the applications link', async ({
   await stubApplications(page, [APPLICATION]);
   await page.goto('/grants');
   await expect(
-    page.getByRole('link', { name: 'Open applications (1)', exact: true }),
+    page.getByRole('link', { name: 'Open application (1)', exact: true }),
   ).toHaveAttribute('href', '/grants/applications');
 });
 

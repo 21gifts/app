@@ -450,14 +450,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
           >
             {t('login.submit')}
           </Link>
-        ) : (
-          <Link
-            href="/welcome"
-            className="text-sm font-medium text-app-fg underline underline-offset-2"
-          >
-            {t('profile.back')}
-          </Link>
-        )
+        ) : null
       ) : (
         <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
       )}

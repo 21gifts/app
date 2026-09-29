@@ -83,7 +83,7 @@ describe('ProposalsScreen', () => {
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByText('No open proposals.')).toBeNull();
     expect(screen.queryByRole('list')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(screen.queryByText('Moderation')).toBeNull();
     expect(proposalsMock).not.toHaveBeenCalled();
   });
@@ -106,7 +106,7 @@ describe('ProposalsScreen', () => {
     proposalsMock.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<ProposalsScreen />);
     expect(screen.getByRole('heading', { name: 'Open proposals' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(screen.queryByText('Moderation')).toBeNull();
     expect(screen.getByText('Loading…')).toBeTruthy();
   });

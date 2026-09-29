@@ -75,9 +75,9 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
     '/moderate/handbook',
   );
   await expect(page.getByText('Hidden by Ada')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
-  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('link', { name: 'Hidden notes' }).click();
   await expect(page.getByRole('heading', { name: 'Hidden notes' })).toBeVisible();
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
@@ -179,7 +179,11 @@ test('Function: HiddenNotesPage — staff see the hidden-note list', async ({ pa
   await page.goto('/moderate/hidden');
   await expect(page.getByText('Hidden note', { exact: true })).toBeVisible();
   await expect(page.getByText('Hidden by Ada')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
+  await expect(page.getByRole('link', { name: 'Moderation' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: HiddenNotesScreen — basis visitors see the forbidden copy', async ({ page }) => {

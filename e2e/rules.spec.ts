@@ -11,9 +11,14 @@ test('rules page shows the living-room rules and CTAs', async ({ page }) => {
     'href',
     '/contact',
   );
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
     'href',
     '/welcome',
+  );
+  await expect(page.getByRole('link', { name: '21.gifts', exact: true })).toHaveAttribute(
+    'href',
+    '/',
   );
 });
 

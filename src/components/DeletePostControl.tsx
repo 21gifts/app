@@ -116,7 +116,7 @@ export function DeletePostControl({
             title={idleLabel}
             onClick={() => setConfirming(true)}
           >
-            <Trash2 aria-hidden="true" className="h-4 w-4" />
+            <Trash2 aria-hidden="true" className="h-4 w-4 text-app-danger" />
           </IconButton>
         )}
       </div>

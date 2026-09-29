@@ -47,5 +47,6 @@ describe('FundingApplicationDetailPage', () => {
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 });

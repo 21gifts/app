@@ -67,7 +67,7 @@ describe('ModerateHandbookScreen', () => {
     renderWithLocale(<ModerateHandbookScreen />);
     expect(screen.getByRole('heading', { name: 'Handbook' })).toBeTruthy();
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Chapters' })).toBeNull();
     expect(screen.queryByRole('heading', { name: '21.gifts login' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Copy link to 21.gifts login' })).toBeNull();
