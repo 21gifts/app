@@ -26,8 +26,8 @@ export interface ProfileChromeLeftProps {
   tone?: 'app' | 'dark';
   /**
    * Omit the arrow when this tab has no earlier in-app view. `/welcome` uses
-   * this because the fallback would be the current page. An ask-wizard
-   * override still shows.
+   * this because the fallback would be the current page. An ask or shop
+   * wizard override still shows.
    */
   hideWithoutHistory?: boolean;
 }
@@ -37,7 +37,7 @@ export interface ProfileChromeLeftProps {
  *
  * Back is a link to the previous in-app view, or `/welcome` when this tab has
  * none. The first client render matches SSR (`/welcome`, `profile.back`). An
- * ask-wizard override replaces the history link with a button. The wordmark is
+ * ask or shop wizard override replaces the history link with a button. The wordmark is
  * not the back control. `hideWithoutHistory` omits the arrow only when there
  * is no earlier view and no wizard override.
  *

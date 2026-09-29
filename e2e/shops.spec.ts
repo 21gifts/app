@@ -139,7 +139,8 @@ test('Function: ShopAddWizard — steps then summary', async ({ page }) => {
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await expect(page.getByText('@luna')).toBeVisible();
   await expect(page.getByText('Cafe Luna')).toBeVisible();
-  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.locator('form').getByRole('button', { name: 'Back' })).toHaveCount(0);
+  await page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: 'Back' }).click();

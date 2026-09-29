@@ -17,7 +17,7 @@ import { recordCurrentView } from '@/lib/view-history';
 
 /** Top-left chrome override while an in-page wizard step can go back. */
 export type ChromeBackOverride = {
-  labelKey: 'forum.askBack';
+  labelKey: 'forum.askBack' | 'shops.back';
   onClick: () => void;
   disabled?: boolean;
 };
@@ -46,7 +46,7 @@ export function useChromeBack(): {
 }
 
 /**
- * Holds the top-left chrome back override for in-page steps (ask wizard).
+ * Holds the top-left chrome back override for in-page steps (ask or shop wizard).
  *
  * @param props - Tree that may register an override.
  * @returns The provider.

@@ -1341,7 +1341,7 @@ describe('ForumLoader', () => {
 
   it('feed="shops" keeps the draft when the photo step is open', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
-    renderWithLocale(<ForumLoader feed="shops" />);
+    renderForumWithChrome(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
     });
@@ -1349,6 +1349,12 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: 'Cafe Luna' } });
+    expect(
+      within(screen.getByLabelText('Shop text').closest('form') as HTMLElement).queryByRole(
+        'button',
+        { name: 'Back' },
+      ),
+    ).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();

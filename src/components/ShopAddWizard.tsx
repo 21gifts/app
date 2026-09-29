@@ -1,9 +1,10 @@
 'use client';
 
 import { ImagePlus, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { PlaceField } from '@/components/PlaceField';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
@@ -107,6 +108,7 @@ export function ShopAddWizard({
   imagesOnly = false,
 }: ShopAddWizardProps): ReactElement {
   const { t } = useTranslations();
+  const { setOverride } = useChromeBack();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
   // The summary control replaces Next in the same spot. Ignore that same click.
@@ -119,6 +121,27 @@ export function ShopAddWizard({
   useEffect(() => {
     setSummaryArmed(step === 5);
   }, [step]);
+
+  useLayoutEffect(() => {
+    if (step === 'closed' || step === 1) {
+      setOverride(null);
+      return (): void => {
+        setOverride(null);
+      };
+    }
+    const previous = (step - 1) as ShopAddStep;
+    setOverride({
+      labelKey: 'shops.back',
+      disabled: posting,
+      onClick: (): void => {
+        setSummaryArmed(false);
+        setStep(previous);
+      },
+    });
+    return (): void => {
+      setOverride(null);
+    };
+  }, [posting, setOverride, step]);
 
   if (step === 'closed') {
     return (
@@ -338,21 +361,12 @@ export function ShopAddWizard({
           <Button type="button" variant="secondary" disabled={posting} onClick={cancelEdit}>
             {t('shops.cancel')}
           </Button>
-        ) : step > 1 ? (
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={posting}
-            onClick={() => {
-              setSummaryArmed(false);
-              setStep((step - 1) as ShopAddStep);
-            }}
-          >
-            {t('shops.back')}
-          </Button>
         ) : null}
         {step < 5 ? (
+          // A new node, not the summary control. Reusing the clicked button
+          // would change it to submit and send the note on the way in.
           <Button
+            key="shop-step-next"
             type="button"
             variant="primary"
             disabled={posting}
@@ -364,7 +378,12 @@ export function ShopAddWizard({
             {t('shops.next')}
           </Button>
         ) : (
-          <Button type="submit" variant="primary" disabled={posting || !summaryArmed}>
+          <Button
+            key="shop-step-submit"
+            type="submit"
+            variant="primary"
+            disabled={posting || !summaryArmed}
+          >
             {submitLabel ?? t('forum.post')}
           </Button>
         )}

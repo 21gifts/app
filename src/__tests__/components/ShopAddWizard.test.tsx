@@ -1,11 +1,38 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ShopAddWizard, type ShopAddWizardProps } from '@/components/ShopAddWizard';
+import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+function renderWizard(ui: ReactElement) {
+  return renderWithLocale(
+    <ChromeBackProvider>
+      <ProfileChromeLeft />
+      {ui}
+    </ChromeBackProvider>,
+  );
+}
 
 afterEach(cleanup);
 
@@ -68,7 +95,7 @@ describe('ShopAddWizard', () => {
     const onUsernameChange = vi.fn();
     const onSubmit = vi.fn();
     const onCancel = vi.fn();
-    renderWithLocale(
+    renderWizard(
       <ShopAddWizard
         {...props({
           onPickFiles,
@@ -89,6 +116,7 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByLabelText('Shop text')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo or video' }));
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: null } });
@@ -118,6 +146,10 @@ describe('ShopAddWizard', () => {
     expect(screen.getByText('Stall')).toBeTruthy();
     expect(screen.getByText('Cafe')).toBeTruthy();
     expect(screen.getByText('@luna')).toBeTruthy();
+    const summary = screen.getByText('5 / 5 · Summary').closest('form');
+    expect(summary).toBeTruthy();
+    expect(within(summary as HTMLElement).queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Back' })).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByText('4 / 5 · 21.gifts user')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -168,14 +200,16 @@ describe('ShopAddWizard', () => {
 
   it('closes after a successful send and disables controls while posting', () => {
     const place: ForumPlacePin = { lat: 1, lng: 2, label: null };
-    renderWithLocale(<Host initial={props({ place })} />);
+    renderWizard(<Host initial={props({ place })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Reset wizard' }));
     expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Mark posting' }));
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Back' })).toHaveProperty('disabled', true);
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 

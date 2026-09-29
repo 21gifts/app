@@ -1,6 +1,9 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
+import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import {
   fetchMessagePhoto,
   fetchShopNoteEdits,
@@ -13,6 +16,31 @@ import { prepareForumPhoto } from '@/lib/forum-photo';
 import type { Account, ForumMessage } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+function renderEdit(ui: ReactElement) {
+  return renderWithLocale(
+    <ChromeBackProvider>
+      <ProfileChromeLeft />
+      {ui}
+    </ChromeBackProvider>,
+  );
+}
 
 vi.mock('@/lib/api', () => ({
   setMessageShopText: vi.fn(),
@@ -472,7 +500,7 @@ describe('ShopNoteEditControl', () => {
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(fetchMessagePhoto).mockRejectedValue(new Error('nope'));
     const onUpdated = vi.fn();
-    renderWithLocale(
+    renderEdit(
       <ShopNoteEditControl
         message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
         onUpdated={onUpdated}
@@ -581,7 +609,7 @@ describe('ShopNoteEditControl', () => {
       hasPhoto: false,
       photoCount: 0,
     });
-    renderWithLocale(
+    renderEdit(
       <ShopNoteEditControl
         message={{
           ...shopMessage,
