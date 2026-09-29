@@ -3101,7 +3101,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/auth/passkey/register/finish` and parse the session.
 - **Inputs:** `challengeId` and credential JSON.
-- **Returns / side effects:** `{ token, account }` with `linkingKey` null. Throws `WrongAccountError` on 403 with the duplicate-account api string. Other non-2xx stay status fallbacks.
+- **Returns / side effects:** `{ token, account }` with `linkingKey` null. Throws `WrongAccountError` on 403 with the duplicate-account api string. A 409 whose error is exactly `Username is already in use` throws `Error` with that string. Other non-2xx stay status fallbacks.
 - **Used by:** `usePasskeyLogin.register`.
 
 ## Function: proxyAuthPasskeyAuthenticateBeginPost
