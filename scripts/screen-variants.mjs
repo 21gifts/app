@@ -157,6 +157,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'name-invalid',
+    image: 'login-name-invalid.png',
+    visual: 'state-login-name-invalid',
+    needle: 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+  },
+  {
+    route: '/login',
+    id: 'name-taken',
+    image: 'login-name-taken.png',
+    visual: 'state-login-name-taken',
+    needle: 'That username is already in use.',
+  },
+  {
+    route: '/login',
     id: 'in-app',
     image: 'login-in-app.png',
     visual: 'state-login-in-app',

@@ -1834,6 +1834,136 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-name');
   });
 
+  test('login name invalid', async ({ page }) => {
+    await page.addInitScript(() => {
+      const pk = globalThis.PublicKeyCredential as unknown as {
+        parseCreationOptionsFromJSON?: unknown;
+        parseRequestOptionsFromJSON?: unknown;
+      };
+      if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+        Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+        Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+      }
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: async () => {
+            throw new Error('create must not run on the login name path');
+          },
+          get: async (options?: CredentialRequestOptions) => {
+            const publicKey = options?.publicKey;
+            const challenge = publicKey?.challenge;
+            const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+            if (!publicKey || !isBytes) {
+              throw new Error('invalid request options');
+            }
+            throw new DOMException('No credentials', 'NotAllowedError');
+          },
+        },
+      });
+    });
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          challengeId: 'ch',
+          options: {
+            challenge: 'aa',
+            rpId: 'localhost',
+            userVerification: 'required',
+          },
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await page.getByRole('button', { name: 'Open a new account' }).click();
+    await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+      }),
+    ).toHaveText('Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.');
+    await shotScreen(page, 'state-login-name-invalid');
+  });
+
+  test('login name taken', async ({ page }) => {
+    await page.addInitScript(() => {
+      const pk = globalThis.PublicKeyCredential as unknown as {
+        parseCreationOptionsFromJSON?: unknown;
+        parseRequestOptionsFromJSON?: unknown;
+      };
+      if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+        Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+        Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+      }
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: async () => {
+            throw new Error('create must not run on the login name path');
+          },
+          get: async (options?: CredentialRequestOptions) => {
+            const publicKey = options?.publicKey;
+            const challenge = publicKey?.challenge;
+            const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+            if (!publicKey || !isBytes) {
+              throw new Error('invalid request options');
+            }
+            throw new DOMException('No credentials', 'NotAllowedError');
+          },
+        },
+      });
+    });
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          challengeId: 'ch',
+          options: {
+            challenge: 'aa',
+            rpId: 'localhost',
+            userVerification: 'required',
+          },
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await page.getByRole('button', { name: 'Open a new account' }).click();
+    await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Name' }).fill('takenname');
+    await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Username is already in use' }),
+      });
+    });
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'That username is already in use.',
+      }),
+    ).toHaveText('That username is already in use.');
+    await shotScreen(page, 'state-login-name-taken');
+  });
+
   test('login in-app', async ({ page }) => {
     await page.addInitScript(() => {
       Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
