@@ -33,6 +33,13 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+/** Photo bytes only. The text step also asks for people, and that request is not a still. */
+function keptStillReads(fetchMock: {
+  mock: { calls: ReadonlyArray<ReadonlyArray<unknown>> };
+}): number {
+  return fetchMock.mock.calls.filter((call) => call[0] === 'blob:kept').length;
+}
+
 function renderEdit(ui: ReactElement) {
   return renderWithLocale(
     <ChromeBackProvider>
@@ -681,10 +688,11 @@ describe('ShopNoteEditControl', () => {
           type: 'image/png',
           arrayBuffer: () => Promise.resolve(Uint8Array.of(4).buffer),
         }),
+      json: async () => ({ accounts: [] }),
     }));
     vi.stubGlobal('fetch', fetchMock);
     vi.mocked(setMessageShopText).mockImplementation(async () => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(keptStillReads(fetchMock)).toBe(1);
       return { ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' };
     });
     vi.mocked(setMessagePlace).mockRejectedValueOnce(new Error('no'));
@@ -732,7 +740,7 @@ describe('ShopNoteEditControl', () => {
     await waitFor(() => {
       expect(setMessageShopPhotos).toHaveBeenCalledTimes(1);
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(keptStillReads(fetchMock)).toBe(1);
     vi.unstubAllGlobals();
   });
 
@@ -758,6 +766,7 @@ describe('ShopNoteEditControl', () => {
           type: 'image/png',
           arrayBuffer: () => Promise.resolve(Uint8Array.of(9).buffer),
         }),
+      json: async () => ({ accounts: [] }),
     }));
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(
@@ -783,12 +792,12 @@ describe('ShopNoteEditControl', () => {
     expect((await screen.findByRole('alert')).textContent).toContain(
       'Could not save this shop note',
     );
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(keptStillReads(fetchMock)).toBe(1);
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
       expect(setMessageShopPhotos).toHaveBeenCalledTimes(2);
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(keptStillReads(fetchMock)).toBe(1);
     vi.unstubAllGlobals();
   });
 
