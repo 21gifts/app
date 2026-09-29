@@ -63,6 +63,13 @@
 - **Used by:** `finishPasskeyAuthentication`.
 - **Auth:** Public.
 
+## Endpoint: POST /diagnostics
+
+- **Purpose:** Same-origin proxy of api `POST /diagnostics`. Body is an allowlisted client event. The api stores it and returns 204.
+- **Errors:** Upstream 400 for a bad body, 429 when the caller is over the limit, 500 when the log cannot be written, or 502 if the api is unreachable.
+- **Used by:** `reportDiagnostic`.
+- **Auth:** Public. No session.
+
 ## Endpoint: POST /auth/passkey/register/begin
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`. Optional JSON body `{ viewKey }` (64 hex) claims an existing public profile; omit the body for a new registration.

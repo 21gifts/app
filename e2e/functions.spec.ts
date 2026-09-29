@@ -4609,6 +4609,48 @@ test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a chall
   expect(body.options.challenge.length).toBeGreaterThan(8);
 });
 
+test('Function: proxyDiagnosticsPost — POST /diagnostics is accepted', async ({ request }) => {
+  const res = await request.post('/diagnostics', {
+    data: { event: 'client.unhandled', stage: 'unhandled' },
+  });
+  expect(res.status()).toBe(204);
+});
+
+test('Function: reportDiagnostic — a window error is posted', async ({ page }) => {
+  const bodies: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    bodies.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.goto('/login');
+  await page.evaluate(() => {
+    const error = new TypeError('Boom');
+    window.dispatchEvent(new ErrorEvent('error', { error, message: error.message }));
+  });
+  await expect.poll(() => bodies.join('\n')).toContain('client.unhandled');
+  await expect.poll(() => bodies.join('\n')).toContain('Boom');
+});
+
+test('Function: DiagnosticsListener — an unhandled rejection is posted', async ({ page }) => {
+  const bodies: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    bodies.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.goto('/login');
+  await page.evaluate(() => {
+    const reason = new Error('Later');
+    window.dispatchEvent(
+      new PromiseRejectionEvent('unhandledrejection', {
+        promise: Promise.resolve(),
+        reason,
+      }),
+    );
+  });
+  await expect.poll(() => bodies.join('\n')).toContain('client.unhandled');
+  await expect.poll(() => bodies.join('\n')).toContain('Later');
+});
+
 test('Function: startPasskeyRegistration — create passkey reaches the signed-in view', async ({
   page,
 }) => {

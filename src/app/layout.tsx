@@ -3,6 +3,7 @@ import { Outfit } from 'next/font/google';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
+import { DiagnosticsListener } from '@/components/DiagnosticsListener';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -150,6 +151,7 @@ export default async function RootLayout({
       </head>
       <body className="bg-app-bg font-sans text-app-fg antialiased">
         <AppHeightSync />
+        <DiagnosticsListener />
         <ScrollSurfaceGuard />
         <LocaleProvider locale={locale} messages={getCatalog(locale)}>
           <NumberFormatProvider initial={numberFormat}>
