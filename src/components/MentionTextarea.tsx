@@ -15,8 +15,8 @@ import { searchMentionAccounts } from '@/lib/mention-search';
 import { activeMention } from '@/lib/mention-caret';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Open the list upward when fewer than this many pixels remain below the field. */
-const MENTION_LIST_ROOM = 220;
+/** Space between the field and the list (`mt-2` / `mb-2`). */
+const MENTION_LIST_GAP = 8;
 
 /** One username the suggestion list can insert. */
 export interface MentionAccount {
@@ -57,8 +57,9 @@ const OPTION_ROW_CLASS =
  *
  * An empty token shows the prefetched first page. A longer token shows
  * usernames that start with those letters. Choosing one inserts
- * `@username ` and closes the list. No session, or a disabled field,
- * is a plain textarea.
+ * `@username ` and closes the list. The list sits under the field, and
+ * above it only when this list would not fit underneath and there is
+ * more room above. No session, or a disabled field, is a plain textarea.
  *
  * @param props - Value, change handler, and textarea attributes.
  * @returns The field and, when a mention token is active, the list.
@@ -79,6 +80,7 @@ export function MentionTextarea({
   const { t } = useTranslations();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const localRef = useRef<HTMLTextAreaElement>(null);
   const pendingCaret = useRef<number | null>(null);
   const [caret, setCaret] = useState(0);
@@ -167,13 +169,17 @@ export function MentionTextarea({
     if (!open) {
       return;
     }
-    const node = localRef.current;
-    /* v8 ignore next 3 -- the list is open only after the textarea is mounted */
-    if (node === null) {
+    const field = localRef.current;
+    const list = listRef.current;
+    /* v8 ignore next 3 -- the list is open only after the field and the list are mounted */
+    if (field === null || list === null) {
       return;
     }
-    const spaceBelow = window.innerHeight - node.getBoundingClientRect().bottom;
-    setPlaceAbove(spaceBelow < MENTION_LIST_ROOM);
+    const fieldBox = field.getBoundingClientRect();
+    const roomBelow = window.innerHeight - fieldBox.bottom;
+    const roomAbove = fieldBox.top;
+    const needed = list.getBoundingClientRect().height + MENTION_LIST_GAP;
+    setPlaceAbove(roomBelow < needed && roomAbove > roomBelow);
   }, [open, shown.length, tokenKey]);
 
   useLayoutEffect(() => {
@@ -314,6 +320,7 @@ export function MentionTextarea({
       />
       {open ? (
         <ul
+          ref={listRef}
           id={listId}
           role="listbox"
           aria-label={t('forum.mentionSuggest')}

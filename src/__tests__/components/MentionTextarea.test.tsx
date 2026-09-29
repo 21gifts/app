@@ -18,6 +18,26 @@ const PEOPLE = [
   { id: 'acc-ashton', username: 'ashton', name: 'ashton' },
 ];
 
+function boxRect(top: number, bottom: number): DOMRect {
+  return {
+    top,
+    bottom,
+    height: bottom - top,
+    left: 0,
+    right: 200,
+    width: 200,
+    x: 0,
+    y: top,
+    toJSON() {
+      return {};
+    },
+  };
+}
+
+function listRect(height: number): DOMRect {
+  return boxRect(0, height);
+}
+
 function typeInto(value: string): HTMLTextAreaElement {
   const box = screen.getByRole('textbox') as HTMLTextAreaElement;
   fireEvent.change(box, {
@@ -225,7 +245,7 @@ describe('MentionTextarea', () => {
     expect(lists[0]?.id).not.toBe('');
   });
 
-  it('opens the list above the field when the composer sits near the bottom', async () => {
+  it('opens the list above the field only when that list would not fit below', async () => {
     search.mockResolvedValue(PEOPLE);
     useAuthStore.setState({ session: 'sess', account: null });
     function Field(): ReactElement {
@@ -242,25 +262,27 @@ describe('MentionTextarea', () => {
     }
     renderWithLocale(<Field />);
     const box = typeInto('@');
+    const list = await screen.findByRole('listbox', { name: 'People' });
+    expect(list.className).toContain('top-full');
+    const fieldBox = vi.spyOn(box, 'getBoundingClientRect');
+    const listBox = vi.spyOn(list, 'getBoundingClientRect');
+    // Two hundred pixels remain under the field, and this short list still fits there.
+    fieldBox.mockReturnValue(boxRect(200, window.innerHeight - 200));
+    listBox.mockReturnValue(listRect(40));
+    typeInto('@a');
     expect((await screen.findByRole('listbox', { name: 'People' })).className).toContain(
       'top-full',
     );
-    vi.spyOn(box, 'getBoundingClientRect').mockReturnValue({
-      bottom: window.innerHeight - 8,
-      top: window.innerHeight - 48,
-      left: 0,
-      right: 200,
-      width: 200,
-      height: 40,
-      x: 0,
-      y: window.innerHeight - 48,
-      toJSON() {
-        return {};
-      },
-    });
-    typeInto('@a');
+    fieldBox.mockReturnValue(boxRect(window.innerHeight - 48, window.innerHeight - 8));
+    listBox.mockReturnValue(listRect(120));
+    typeInto('@ad');
     expect((await screen.findByRole('listbox', { name: 'People' })).className).toContain(
       'bottom-full',
+    );
+    fieldBox.mockReturnValue(boxRect(4, window.innerHeight - 8));
+    typeInto('@ada');
+    expect((await screen.findByRole('listbox', { name: 'People' })).className).toContain(
+      'top-full',
     );
   });
 

@@ -3658,7 +3658,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MentionTextarea
 
-- **Purpose:** Forum text field that lists people as soon as `@` is typed. The first page is prefetched for the signed-in session. More letters narrow the list to usernames that start that way. Choosing a row inserts `@username ` and closes the list. No session, or a disabled field, is a plain textarea.
+- **Purpose:** Forum text field that lists people as soon as `@` is typed. The first page is prefetched for the signed-in session. More letters narrow the list to usernames that start that way. Choosing a row inserts `@username ` and closes the list. The list sits under the field, and above it only when this list would not fit underneath and there is more room above. No session, or a disabled field, is a plain textarea.
 - **Inputs:** Controlled value, `onChange`, disabled, wrapper and textarea classes, accessible name, and optional placeholder, max length, rows, and textarea ref.
 - **Returns / side effects:** The textarea. When a token is active and at least one person matches, a `People` listbox. Inserts the chosen handle through `onChange`.
 - **Used by:** The post composer and reply composer in `ForumBoard`, and the ask-for-money text step in `ForumAskWizard`.
