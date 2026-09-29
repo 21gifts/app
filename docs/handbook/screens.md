@@ -1615,11 +1615,23 @@ The shop post composer contains `@` and the People list is open, with `@ada`.
 
 ![21.gifts shops mention suggestions](images/shops-mention-suggest.png)
 
+### Variant: mention-suggest-reply
+
+A shop note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts shops reply mention suggestions](images/shops-mention-suggest-reply.png)
+
 ### Variant: mention-inserted
 
 Choosing `@ada` from that open list writes `@ada ` into the shop post composer and closes the list.
 
 ![21.gifts shops mention inserted](images/shops-mention-inserted.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts shops reply mention inserted](images/shops-mention-inserted-reply.png)
 
 ### Variant: sunday
 
@@ -1968,6 +1980,18 @@ Member identity card with About me inside the card when `aboutMe` is set; read-o
 Identity card with counts; posts button pressed; post card 'Second post from Carol.' in the feed.
 
 ![21.gifts member posts open](images/members-posts-open.png)
+
+### Variant: mention-suggest-reply
+
+Posts are open, Carol's note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts member reply mention suggestions](images/members-mention-suggest-reply.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts member reply mention inserted](images/members-mention-inserted-reply.png)
 
 ### Variant: posts-open-photo
 
@@ -2344,6 +2368,18 @@ The funding-program icon is pressed and the participation sentence is visible. N
 **14 posts** is pressed and the feed shows **Second post from Ada.** Needle `Second post from Ada.`
 
 ![21.gifts profile posts](images/profile-posts-open.png)
+
+### Variant: mention-suggest-reply
+
+Posts are open, Ada's note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts profile reply mention suggestions](images/profile-mention-suggest-reply.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts profile reply mention inserted](images/profile-mention-inserted-reply.png)
 
 ### Variant: replies-open
 

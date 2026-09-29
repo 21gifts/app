@@ -1380,6 +1380,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:mention-suggest-reply",
+    "label": "/profile mention-suggest-reply",
+    "visual": "state-profile-mention-suggest-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:mention-inserted-reply",
+    "label": "/profile mention-inserted-reply",
+    "visual": "state-profile-mention-inserted-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:replies-open",
     "label": "/profile replies-open",
     "visual": "state-profile-replies-open",
@@ -1395,6 +1407,18 @@
     "id": "/members/[accountId]:posts-open",
     "label": "/members/[accountId] posts-open",
     "visual": "state-members-posts-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:mention-suggest-reply",
+    "label": "/members/[accountId] mention-suggest-reply",
+    "visual": "state-members-mention-suggest-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:mention-inserted-reply",
+    "label": "/members/[accountId] mention-inserted-reply",
+    "visual": "state-members-mention-inserted-reply",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3144,9 +3168,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:mention-suggest-reply",
+    "label": "/shops mention-suggest-reply",
+    "visual": "state-shops-mention-suggest-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:mention-inserted",
     "label": "/shops mention-inserted",
     "visual": "state-shops-mention-inserted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:mention-inserted-reply",
+    "label": "/shops mention-inserted-reply",
+    "visual": "state-shops-mention-inserted-reply",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

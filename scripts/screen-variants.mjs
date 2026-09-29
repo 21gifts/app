@@ -1683,6 +1683,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'mention-suggest-reply',
+    image: 'profile-mention-suggest-reply.png',
+    visual: 'state-profile-mention-suggest-reply',
+    needle: 'state /profile mention-suggest-reply',
+  },
+  {
+    route: '/profile',
+    id: 'mention-inserted-reply',
+    image: 'profile-mention-inserted-reply.png',
+    visual: 'state-profile-mention-inserted-reply',
+    needle: 'state /profile mention-inserted-reply',
+  },
+  {
+    route: '/profile',
     id: 'replies-open',
     image: 'profile-replies-open.png',
     visual: 'state-profile-replies-open',
@@ -1701,6 +1715,20 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open.png',
     visual: 'state-members-posts-open',
     needle: 'Second post from Carol.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'mention-suggest-reply',
+    image: 'members-mention-suggest-reply.png',
+    visual: 'state-members-mention-suggest-reply',
+    needle: 'state /members mention-suggest-reply',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'mention-inserted-reply',
+    image: 'members-mention-inserted-reply.png',
+    visual: 'state-members-mention-inserted-reply',
+    needle: 'state /members mention-inserted-reply',
   },
   {
     route: '/members/[accountId]',
@@ -3741,10 +3769,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'mention-suggest-reply',
+    image: 'shops-mention-suggest-reply.png',
+    visual: 'state-shops-mention-suggest-reply',
+    needle: 'state /shops mention-suggest-reply',
+  },
+  {
+    route: '/shops',
     id: 'mention-inserted',
     image: 'shops-mention-inserted.png',
     visual: 'state-shops-mention-inserted',
     needle: 'state /shops mention-inserted',
+  },
+  {
+    route: '/shops',
+    id: 'mention-inserted-reply',
+    image: 'shops-mention-inserted-reply.png',
+    visual: 'state-shops-mention-inserted-reply',
+    needle: 'state /shops mention-inserted-reply',
   },
   {
     route: '/shops',

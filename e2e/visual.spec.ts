@@ -3841,6 +3841,66 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-posts-open');
   });
 
+  /** Posts open on `/profile`, Ada's note expanded, reaction field ready. */
+  async function openProfileReaction(page: Page): Promise<Locator> {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await page.getByText('Second post from Ada.').click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeEnabled();
+    await field.scrollIntoViewIfNeeded();
+    return field;
+  }
+
+  test('state /profile mention-suggest-reply', async ({ page }) => {
+    const field = await openProfileReaction(page);
+    await field.fill('@');
+    const list = page.getByRole('listbox', { name: 'People' });
+    await expect(list).toBeVisible();
+    await list.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-mention-suggest-reply');
+  });
+
+  test('state /profile mention-inserted-reply', async ({ page }) => {
+    const field = await openProfileReaction(page);
+    await chooseMentionAda(page, field);
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-mention-inserted-reply');
+  });
+
   test('state /profile replies-open', async ({ page }) => {
     await seedProfilePage(page);
     await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
@@ -4705,6 +4765,121 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Second post from Carol.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open');
+  });
+
+  /** Posts open on Carol's profile, her note expanded, reaction field ready. */
+  async function openMemberReaction(page: Page): Promise<Locator> {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Second post from Carol.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByText('Second post from Carol.').click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeEnabled();
+    await field.scrollIntoViewIfNeeded();
+    return field;
+  }
+
+  test('state /members mention-suggest-reply', async ({ page }) => {
+    const field = await openMemberReaction(page);
+    await field.fill('@');
+    const list = page.getByRole('listbox', { name: 'People' });
+    await expect(list).toBeVisible();
+    await list.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-mention-suggest-reply');
+  });
+
+  test('state /members mention-inserted-reply', async ({ page }) => {
+    const field = await openMemberReaction(page);
+    await chooseMentionAda(page, field);
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-mention-inserted-reply');
   });
 
   test('state /members posts-open-photo', async ({ page }) => {
@@ -14044,6 +14219,61 @@ test.describe('shops screens', () => {
     const box = page.getByRole('textbox', { name: 'Your message' });
     await chooseMentionAda(page, box);
     await shotScreen(page, 'state-shops-mention-inserted');
+  });
+
+  /** Cafe Luna expanded on `/shops`, reaction field ready. */
+  async function openShopReaction(page: Page): Promise<Locator> {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto('/shops');
+    await page.getByText('Cafe Luna').click();
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeEnabled();
+    await field.scrollIntoViewIfNeeded();
+    return field;
+  }
+
+  test('state /shops mention-suggest-reply', async ({ page }) => {
+    const field = await openShopReaction(page);
+    await field.fill('@');
+    const list = page.getByRole('listbox', { name: 'People' });
+    await expect(list).toBeVisible();
+    await list.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-mention-suggest-reply');
+  });
+
+  test('state /shops mention-inserted-reply', async ({ page }) => {
+    const field = await openShopReaction(page);
+    await chooseMentionAda(page, field);
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-mention-inserted-reply');
   });
 
   test('state /shops sunday', async ({ page }) => {
