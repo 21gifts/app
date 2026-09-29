@@ -258,9 +258,15 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 
 ### Variant: error
 
-Login begin or finish failed. Copy **Something went wrong. Please try again.** (`login.error`) and **Try again**. Phone pictures also show the muted installed-iOS line. A register that cannot finish on iOS below 18 uses that sentence as the alert instead, and does not create an account. That alert is not a separate picture.
+Login begin or finish failed. Copy **Something went wrong. Please try again.** (`login.error`) and **Try again**. Phone pictures also show the muted installed-iOS line. An old-iOS register that cannot finish is variant ios-version, not this picture. No account is created there.
 
 ![21.gifts login error](images/login-error.png)
+
+### Variant: ios-version
+
+After **Open a new account** on iOS below 18, the alert is exactly **iOS 17.5.1 is installed. Sign-in needs at least iOS 18.** Button **Try again**. The muted status line is then not also shown. No account is created.
+
+![21.gifts login ios version](images/login-ios-version.png)
 
 ### Variant: wrong-account
 
