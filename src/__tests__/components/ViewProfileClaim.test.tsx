@@ -211,6 +211,31 @@ describe('ViewProfileClaim', () => {
     expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
+  it('shows claimError if login-instead gets an unknown passkey', () => {
+    mockPasskey('error', 'This profile already has a passkey');
+    const { rerender } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+    mockPasskey('unknown');
+    rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.getByText('Could not set up a passkey. Please try again.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(authenticateSpy).toHaveBeenCalledTimes(2);
+    expect(registerSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not offer Activate when the passkey status is unknown', () => {
+    mockPasskey('unknown');
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.getByText('Could not set up a passkey. Please try again.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(authenticateSpy).toHaveBeenCalledTimes(1);
+    expect(registerSpy).not.toHaveBeenCalled();
+  });
+
   it('shows the in-app escape card when passkeys are unsupported', () => {
     mockPasskey('unsupported');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
