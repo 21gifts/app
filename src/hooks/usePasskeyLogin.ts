@@ -19,7 +19,7 @@ import {
   credentialToJSON,
   requestOptionsFromJSON,
 } from '@/lib/webauthn-browser';
-import { reportDiagnostic } from '@/lib/diagnostics';
+import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -142,6 +142,81 @@ function iosRegisterBlocked(): boolean {
     return false;
   }
   return iosPasskeyBlock(navigator.userAgent) !== null;
+}
+
+/** Where an old-iOS register stopped. `prf.absent` means create returned no extra key. */
+type IosRegisterStop = 'create' | 'prf' | 'prf.absent';
+
+/**
+ * Keep the browser text that the diagnostic allowlist accepts.
+ * Other characters become spaces so the whole message is not dropped.
+ */
+function diagnosticAllowlistText(value: string): string {
+  return value
+    .replace(/[^A-Za-z0-9._: -]+/g, ' ')
+    .replace(/ +/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
+/**
+ * Version, stop, and the browser text, inside the 120-character allowlist.
+ *
+ * @param step - Which part of register stopped.
+ * @param error - Ceremony rejection, when there is one.
+ */
+function iosDebugMessage(step: IosRegisterStop, error?: unknown): string {
+  const block = iosPasskeyBlock(navigator.userAgent);
+  /* v8 ignore next 3 -- caller already requires a parsed iOS version below 18 */
+  if (block === null) {
+    return `iOS unknown below 18 at ${step}`;
+  }
+  const prefix = `iOS ${block.installed} below ${block.required} at ${step}`;
+  if (error === undefined) {
+    return prefix;
+  }
+  const raw = diagnosticMessage(error);
+  /* v8 ignore next 3 -- a DOMException message is a string */
+  if (raw === undefined) {
+    return prefix;
+  }
+  const safe = diagnosticAllowlistText(raw);
+  if (safe === '') {
+    return prefix;
+  }
+  const clipped = safe.slice(0, 120 - prefix.length - 2).trim();
+  return `${prefix}. ${clipped}`;
+}
+
+/**
+ * Everything the allowlist can hold for an old-iOS register that did not finish.
+ * The server adds the user agent. No secret, challenge, or credential bytes.
+ */
+function iosRegisterReport(
+  step: IosRegisterStop,
+  started: { challengeId: string; options: Record<string, unknown> },
+  error?: unknown,
+): DiagnosticReport {
+  const report: DiagnosticReport = {
+    event:
+      step === 'prf.absent' ? 'client.passkey.register.prf' : 'client.passkey.register.ceremony',
+    stage: 'register',
+    prfPresent: false,
+    message: iosDebugMessage(step, error),
+    challengeId: started.challengeId,
+  };
+  const accountId = accountIdFromOptions(started.options);
+  if (accountId !== undefined) {
+    report.accountId = accountId;
+  }
+  if (error !== undefined) {
+    const name = diagnosticName(error);
+    /* v8 ignore next 3 -- a DOMException name is a string */
+    if (name !== undefined) {
+      report.name = name;
+    }
+  }
+  return report;
 }
 
 /**
@@ -269,12 +344,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         credential = await navigator.credentials.create(request);
       } catch (error: unknown) {
         if (isUserCancel(error) && iosRegisterBlocked()) {
-          reportDiagnostic({
-            event: 'client.passkey.register.ceremony',
-            stage: 'register',
-            name: diagnosticName(error),
-            message: 'iOS version below minimum',
-          });
+          reportDiagnostic(iosRegisterReport('create', begin, error));
           throw new Error('login.iosVersion');
         }
         reportDiagnostic(
@@ -306,12 +376,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         prfFirst = await obtainPrfFirst(publicKeyCredential);
       } catch (error: unknown) {
         if (isUserCancel(error) && iosRegisterBlocked()) {
-          reportDiagnostic({
-            event: 'client.passkey.register.ceremony',
-            stage: 'register',
-            name: diagnosticName(error),
-            message: 'iOS version below minimum',
-          });
+          reportDiagnostic(iosRegisterReport('prf', begin, error));
           throw new Error('login.iosVersion');
         }
         reportDiagnostic(
@@ -328,11 +393,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       guard(runId);
       if (prfFirst === null) {
-        reportDiagnostic({
-          event: 'client.passkey.register.prf',
-          prfPresent: false,
-          stage: 'register',
-        });
+        reportDiagnostic(
+          iosRegisterBlocked()
+            ? iosRegisterReport('prf.absent', begin)
+            : {
+                event: 'client.passkey.register.prf',
+                prfPresent: false,
+                stage: 'register',
+              },
+        );
         throw new Error(iosRegisterBlocked() ? 'login.iosVersion' : 'wallet.prfUnsupported');
       }
       reportDiagnostic({

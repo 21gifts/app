@@ -168,6 +168,12 @@ describe('usePasskeyLogin', () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ab'.repeat(32);
+    const accountId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa', user: { name: accountId } },
+    });
     vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -192,7 +198,10 @@ describe('usePasskeyLogin', () => {
         event: 'client.passkey.register.ceremony',
         stage: 'register',
         name: 'NotAllowedError',
-        message: 'iOS version below minimum',
+        message: 'iOS 17.5.1 below 18 at prf. no',
+        prfPresent: false,
+        challengeId,
+        accountId,
       },
     ]);
     fetchMock.mockRestore();
@@ -203,11 +212,17 @@ describe('usePasskeyLogin', () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'cd'.repeat(32);
+    const accountId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa', user: { name: accountId } },
+    });
     vi.stubGlobal('navigator', {
       ...navigator,
       userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)',
       credentials: {
-        create: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn().mockRejectedValue(new DOMException('(timed out)', 'NotAllowedError')),
         get: vi.fn(),
       },
     });
@@ -218,6 +233,76 @@ describe('usePasskeyLogin', () => {
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('login.iosVersion');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'NotAllowedError',
+        message: 'iOS 17.5.1 below 18 at create. timed out',
+        prfPresent: false,
+        challengeId,
+        accountId,
+      },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the version line when the browser text is empty', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)',
+      credentials: {
+        create: vi.fn().mockRejectedValue(new DOMException('', 'NotAllowedError')),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { message?: string },
+    );
+    expect(bodies.find((body) => body.message?.startsWith('iOS '))?.message).toBe(
+      'iOS 17.5.1 below 18 at create',
+    );
+    expect(result.current.error).toBe('login.iosVersion');
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the version line when the browser text has no allowlisted characters', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)',
+      credentials: {
+        create: vi.fn().mockRejectedValue(new DOMException('!!!', 'AbortError')),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { message?: string; name?: string },
+    );
+    expect(bodies.find((body) => body.message?.startsWith('iOS '))).toMatchObject({
+      name: 'AbortError',
+      message: 'iOS 17.5.1 below 18 at create',
+    });
+    expect(result.current.error).toBe('login.iosVersion');
     fetchMock.mockRestore();
     vi.unstubAllGlobals();
   });
@@ -226,6 +311,11 @@ describe('usePasskeyLogin', () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
     vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -242,6 +332,18 @@ describe('usePasskeyLogin', () => {
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('login.iosVersion');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.prf')).toEqual([
+      {
+        event: 'client.passkey.register.prf',
+        prfPresent: false,
+        stage: 'register',
+        message: 'iOS 17.0 below 18 at prf.absent',
+        challengeId,
+      },
+    ]);
     fetchMock.mockRestore();
     vi.unstubAllGlobals();
   });
