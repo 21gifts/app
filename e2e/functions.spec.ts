@@ -11309,6 +11309,7 @@ test('Function: encodeWideBanner — the saved wide image is raw jpeg base64', a
 test('Function: WideImageCropper — cancel restores add a wide image', async ({ page }) => {
   const puts: unknown[] = [];
   await openWideImageCrop(page, puts);
+  await expect(page.getByText('Cancel crop', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Cancel crop' }).click();
   await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
   await expect(page.getByText('Drag the photo to choose the wide image')).toHaveCount(0);

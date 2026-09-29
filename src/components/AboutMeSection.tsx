@@ -325,6 +325,7 @@ export function AboutMeSection({
     setDraft(aboutMe ?? '');
     setPhotoDraft(null);
     setPhotoRemoved(false);
+    setBannerCropFile(null);
     setError(null);
     setEditing(false);
   }, [aboutMe]);
@@ -364,6 +365,7 @@ export function AboutMeSection({
       }
       setPhotoDraft(null);
       setPhotoRemoved(false);
+      setBannerCropFile(null);
       setEditing(false);
     } catch (err) {
       /* name 409 stays on /profile with the editor open; NameForm is on this card */

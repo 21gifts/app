@@ -144,6 +144,7 @@ describe('WideImageCropper', () => {
     fireEvent.click(use);
     expect(onConfirm).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
+    expect(screen.queryByText('Cancel crop')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel crop' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
     const close = vi.fn();

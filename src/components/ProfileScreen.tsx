@@ -38,6 +38,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * A slot that has no stored picture offers a labeled button to add one.
  * An open wide-image crop stays while a profile photo saves. `imageEpoch`
  * only reloads the stored pictures; it does not remount this header.
+ * A failed or empty reload clears that slot. Add buttons stay hidden until
+ * the reload settles.
  *
  * @param props - Loaders and saves for the two account slots. A rejected load means none.
  * @returns The header. Add buttons appear only after that slot's load has failed.
@@ -73,14 +75,35 @@ function ProfileImages({
   loadBannerRef.current = loadBanner;
 
   useEffect(() => {
+    setPictureSettled(false);
+    setBannerSettled(false);
     let cancelled = false;
+    const dropPicture = (): void => {
+      const previous = pictureUrlRef.current;
+      pictureUrlRef.current = null;
+      setPictureUrl(null);
+      setPictureSettled(true);
+      if (previous !== null) {
+        URL.revokeObjectURL(previous);
+      }
+    };
+    const dropBanner = (): void => {
+      const previous = bannerUrlRef.current;
+      bannerUrlRef.current = null;
+      setBannerUrl(null);
+      setBannerSettled(true);
+      if (previous !== null) {
+        URL.revokeObjectURL(previous);
+      }
+    };
     void (async () => {
       try {
         const blob = await loadPictureRef.current();
-        if (cancelled || !blob.type.startsWith('image/') || blob.size === 0) {
-          if (!cancelled) {
-            setPictureSettled(true);
-          }
+        if (cancelled) {
+          return;
+        }
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          dropPicture();
           return;
         }
         const url = URL.createObjectURL(blob);
@@ -93,17 +116,18 @@ function ProfileImages({
         }
       } catch {
         if (!cancelled) {
-          setPictureSettled(true);
+          dropPicture();
         }
       }
     })();
     void (async () => {
       try {
         const blob = await loadBannerRef.current();
-        if (cancelled || !blob.type.startsWith('image/') || blob.size === 0) {
-          if (!cancelled) {
-            setBannerSettled(true);
-          }
+        if (cancelled) {
+          return;
+        }
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          dropBanner();
           return;
         }
         const url = URL.createObjectURL(blob);
@@ -116,7 +140,7 @@ function ProfileImages({
         }
       } catch {
         if (!cancelled) {
-          setBannerSettled(true);
+          dropBanner();
         }
       }
     })();

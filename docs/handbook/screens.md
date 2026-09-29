@@ -2389,7 +2389,7 @@ Wide image only. Stub GET `/banners/me` with the wide scene. No profile photo, s
 
 ### Variant: banner-not-wide
 
-Choosing a square portrait for the wide image opens the 5:2 cropper (**Drag the photo to choose the wide image**, **Use this crop**, **Cancel crop**). **Add a wide image** is hidden. **Add a profile photo** stays. Needle `state-profile-banner-not-wide`.
+Choosing a square portrait for the wide image opens the 5:2 cropper (**Drag the photo to choose the wide image**, labeled **Use this crop**, X with accessible name **Cancel crop**). **Add a wide image** is hidden. **Add a profile photo** stays. Needle `state-profile-banner-not-wide`.
 
 ![21.gifts profile banner not wide](images/profile-banner-not-wide.png)
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -10,7 +10,7 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button } from '@/components/ui';
+import { Button, IconButton } from '@/components/ui';
 import {
   encodeWideBanner,
   initialBannerCrop,
@@ -345,9 +345,19 @@ export function WideImageCropper(props: {
       >
         {t('profile.about.bannerUse')}
       </Button>
-      <Button type="button" variant="secondary" size="lg" disabled={busy} onClick={onCancel}>
-        {t('profile.about.bannerCancel')}
-      </Button>
+      <div className="flex justify-center">
+        <IconButton
+          type="button"
+          variant="secondary"
+          size="md"
+          disabled={busy}
+          aria-label={t('profile.about.bannerCancel')}
+          title={t('profile.about.bannerCancel')}
+          onClick={onCancel}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </IconButton>
+      </div>
     </div>
   );
 }

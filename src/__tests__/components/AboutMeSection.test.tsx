@@ -895,6 +895,53 @@ describe('AboutMeSection', () => {
     expect(screen.getByRole('button', { name: 'Save About me' })).toBeTruthy();
   });
 
+  it('drops an unsaved wide-image crop when the editor is cancelled or saved', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} onSave={onSave} onSaveBanner={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    let banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(banner, { target: { files: [jpegFile('wide.jpg')] } });
+    expect(screen.getByText('wide.jpg')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    expect(screen.queryByText('wide.jpg')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+    banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(banner, { target: { files: [jpegFile('again.jpg')] } });
+    expect(screen.getByText('again.jpg')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save About me' })).toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    expect(screen.queryByText('again.jpg')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+  });
+
+  it('keeps an unsaved wide-image crop when the text save does not finish', async () => {
+    const onSave = vi.fn().mockResolvedValue(false);
+    renderWithLocale(
+      <AboutMeSection mode="owner" aboutMe={null} onSave={onSave} onSaveBanner={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    fireEvent.change(banner, { target: { files: [jpegFile('wide.jpg')] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalled();
+    });
+    expect(screen.getByText('wide.jpg')).toBeTruthy();
+    onSave.mockRejectedValueOnce(new Error('no'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
+    });
+    expect(screen.getByText('wide.jpg')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
+  });
+
   it('cancels an attach and restores the previous empty prompt', async () => {
     prepareMock.mockResolvedValue({
       ok: true,
