@@ -8802,6 +8802,33 @@ test.describe('profile activity chart variants', () => {
     });
   }
 
+  /**
+   * Header inputs are named. The editor's unnamed inputs are the note photo,
+   * the profile photo, then the wide image.
+   */
+  async function chooseEditorWideImage(page: Page): Promise<void> {
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
+    await page
+      .locator('input[type="file"]:not([name])')
+      .nth(2)
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Add a wide image' }).first()).toBeVisible();
+  }
+
+  /** The editor cropper sits under the chart. Bring that block into the viewport shot. */
+  async function frameEditorWideCrop(page: Page): Promise<void> {
+    const about = page.getByRole('textbox', { name: 'About me' });
+    await about.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await expect(about).toBeInViewport();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeInViewport();
+  }
+
   test('profile receive', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_RECEIVE_STATS);
@@ -9050,6 +9077,82 @@ test.describe('profile activity chart variants', () => {
     await shotScreen(page, 'state-profile-banner-not-wide');
   });
 
+  test('profile banner-crop-saving', async ({ page }) => {
+    // state-profile-banner-crop-saving
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await openProfile(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const portrait = page.getByRole('button', { name: 'Add a profile photo' });
+    await expect(portrait).toBeDisabled();
+    await expect(portrait.locator('.animate-spin')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
+    await shotScreen(page, 'state-profile-banner-crop-saving');
+    release?.();
+  });
+
+  test('profile banner-crop-save-error', async ({ page }) => {
+    // state-profile-banner-crop-save-error
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await openProfile(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-profile-banner-crop-save-error');
+  });
+
+  test('profile banner-crop-too-large', async ({ page }) => {
+    // state-profile-banner-crop-too-large
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-profile-banner-crop-too-large');
+  });
+
   test('profile picture-unsupported', async ({ page }) => {
     // state-profile-picture-unsupported
     await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
@@ -9188,6 +9291,84 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
     await shotScreen(page, 'state-profile-about-editing');
+  });
+
+  test('profile about-banner-crop', async ({ page }) => {
+    // state-profile-about-banner-crop
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-profile-about-banner-crop');
+  });
+
+  test('profile about-banner-crop-saving', async ({ page }) => {
+    // state-profile-about-banner-crop-saving
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const save = page.getByRole('button', { name: 'Save About me' });
+    await expect(save).toBeDisabled();
+    await expect(save.locator('.animate-spin')).toHaveCount(0);
+    await frameEditorWideCrop(page);
+    await expect(confirm.locator('.animate-spin')).toBeInViewport();
+    await shotScreen(page, 'state-profile-about-banner-crop-saving');
+    release?.();
+  });
+
+  test('profile about-banner-crop-save-error', async ({ page }) => {
+    // state-profile-about-banner-crop-save-error
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await expect(page.getByText('Could not save. Please try again.')).toBeInViewport();
+    await shotScreen(page, 'state-profile-about-banner-crop-save-error');
+  });
+
+  test('profile about-banner-crop-too-large', async ({ page }) => {
+    // state-profile-about-banner-crop-too-large
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await expect(page.getByText('Keep photos under 1 MB')).toBeInViewport();
+    await shotScreen(page, 'state-profile-about-banner-crop-too-large');
   });
 
   test('profile about-save-error', async ({ page }) => {

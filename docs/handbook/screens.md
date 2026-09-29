@@ -2393,6 +2393,24 @@ Choosing a square portrait for the wide image opens the 5:2 cropper (**Drag the 
 
 ![21.gifts profile banner not wide](images/profile-banner-not-wide.png)
 
+### Variant: banner-crop-saving
+
+The wide-image cropper stays open while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Add a wide image** stays hidden. **Add a profile photo** stays, disabled, without a spinner. Needle `state-profile-banner-crop-saving`.
+
+![21.gifts profile banner crop saving](images/profile-banner-crop-saving.png)
+
+### Variant: banner-crop-save-error
+
+PUT `/banners/me` answers 500 after **Use this crop**. Alert **Could not save. Please try again.** The cropper stays open (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). Needle `state-profile-banner-crop-save-error`.
+
+![21.gifts profile banner crop save error](images/profile-banner-crop-save-error.png)
+
+### Variant: banner-crop-too-large
+
+**Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-banner-crop-too-large`.
+
+![21.gifts profile banner crop too large](images/profile-banner-crop-too-large.png)
+
 ### Variant: picture-unsupported
 
 Choosing a file that is not a JPEG, PNG, or WebP for the profile photo. Alert **Use a JPEG, PNG, or WebP photo**. Both add buttons stay. Needle `state-profile-picture-unsupported`.
@@ -2428,6 +2446,30 @@ Owner editor opened from variant **images**. The same three stubs are loaded (sq
 Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor still shows three icon-only attaches: **Add a photo** (`profile.about.attach`), **Add a profile photo** (`profile.about.portrait`), and **Add a wide image** (`profile.about.banner`). No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
+
+### Variant: about-banner-crop
+
+About me editor with the wide-image cropper inside it. From the empty CTA, **Write your About me**, then a square portrait on the editor wide-image input. The cropper sits under the textarea (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). The header **Add a wide image** stays, because that crop belongs to the header. Needle `state-profile-about-banner-crop`.
+
+![21.gifts profile About me banner crop](images/profile-about-banner-crop.png)
+
+### Variant: about-banner-crop-saving
+
+Same editor cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** is disabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
+
+![21.gifts profile About me banner crop saving](images/profile-about-banner-crop-saving.png)
+
+### Variant: about-banner-crop-save-error
+
+Same editor cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
+
+![21.gifts profile About me banner crop save error](images/profile-about-banner-crop-save-error.png)
+
+### Variant: about-banner-crop-too-large
+
+Same editor cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
+
+![21.gifts profile About me banner crop too large](images/profile-about-banner-crop-too-large.png)
 
 ### Variant: about-save-error
 
