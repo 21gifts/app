@@ -5,6 +5,7 @@ import {
   agreeToRules,
   deleteMessage,
   fetchComposeTarget,
+  NoteDeletedError,
   fetchGiftStats,
   fetchMessagePhoto,
   fetchPublicMessage,
@@ -36,6 +37,12 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
+  NoteDeletedError: class NoteDeletedError extends Error {
+    constructor() {
+      super('This note was deleted');
+      this.name = 'NoteDeletedError';
+    }
+  },
   fetchComposeTarget: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
@@ -321,6 +328,19 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('shows the deleted-note pay error when the invoice target is gone', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new NoteDeletedError());
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
+  });
+
   it('maps a pay rate-limit onto the pay error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
     vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
@@ -603,6 +623,18 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('maps a deleted unpaid reply onto the deleted-note error', async () => {
+    vi.mocked(postMessage).mockRejectedValue(new NoteDeletedError());
+    signIn({ role: 'founder' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
+  });
+
   it('maps a compose-pay failure onto the reply error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('offline'));
     signIn();
@@ -612,6 +644,18 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('keeps the generic request copy when the compose-target invoice is gone', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new NoteDeletedError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
   });
 
@@ -638,6 +682,19 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('maps a deleted paid-reply invoice onto the deleted-note error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new NoteDeletedError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
     });
   });
 

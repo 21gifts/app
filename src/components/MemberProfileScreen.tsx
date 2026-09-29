@@ -28,6 +28,7 @@ import {
   fetchPublicMessagePhoto,
   fetchReplies,
   openConversation,
+  NoteDeletedError,
   postMessage,
   postMessageInvoice,
 } from '@/lib/api';
@@ -734,6 +735,13 @@ export function MemberProfileScreen({
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
+      if (err instanceof NoteDeletedError) {
+        /* v8 ignore next 3 -- reply error after the thread was closed */
+        if (expandedIdRef.current === parentId) {
+          setReplyFormError('deleted');
+        }
+        return;
+      }
       if (expandedIdRef.current === parentId) {
         setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
@@ -864,6 +872,10 @@ export function MemberProfileScreen({
           return;
         }
         setReplyFormError('request');
+        return;
+      }
+      if (err instanceof NoteDeletedError) {
+        setReplyFormError('deleted');
         return;
       }
       setReplyFormError(
@@ -1004,6 +1016,10 @@ export function MemberProfileScreen({
               return null;
             }
             setPayError('request');
+            return null;
+          }
+          if (err instanceof NoteDeletedError) {
+            setPayError('deleted');
             return null;
           }
           setPayError(

@@ -1510,6 +1510,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Error instance named `WrongAccountError`. Callers clear the session and show `login.wrongAccount`.
 - **Used by:** `fetchMe`, `finishPasskeyAuthentication`, `finishPasskeyRegistration`, `useHydrateSession`, `usePasskeyLogin`.
 
+## Function: NoteDeletedError
+
+- **Purpose:** Typed error when a forum reply or a payment invoice gets HTTP 404 because that note is missing or was deleted.
+- **Inputs:** None. The message is exactly `This note was deleted`.
+- **Returns / side effects:** Error instance named `NoteDeletedError`. Reply and pay-sheet callers show `forum.errorNoteDeleted` instead of the generic send error. A 404 on the platform compose-target invoice stays the generic request error.
+- **Used by:** `postMessage`, `postMessageInvoice`, `ForumLoader`, `PublicMessageThread`, `MemberProfileScreen`.
+
 ## Function: isWrongAccountError
 
 - **Purpose:** Detects a wrong-account rejection (`WrongAccountError` or an `Error` whose message is exactly `WRONG_ACCOUNT_ERROR`).

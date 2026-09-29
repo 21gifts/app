@@ -99,10 +99,10 @@ export type ForumFormError =
   | null;
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
-export type ForumReplyFormError = ForumFormError | 'amount';
+export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
 
 /** Pay-sheet validation or request failure. */
-export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | null;
+export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
 
 /** Roles that show a clickable tag beside the author name. */
 type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
@@ -481,6 +481,11 @@ function ForumPaySheet({
         {payError === 'authorWallet' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('forum.payErrorAuthorWallet')}
+          </p>
+        ) : null}
+        {payError === 'deleted' ? (
+          <p role="alert" className="text-sm text-app-danger">
+            {t('forum.errorNoteDeleted')}
           </p>
         ) : null}
         <Button
@@ -1785,6 +1790,11 @@ export function ForumBoard({
                           {replyFormError === 'rateLimit' ? (
                             <p role="alert" className="text-center text-sm text-app-danger">
                               {t('forum.errorRateLimit')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'deleted' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.errorNoteDeleted')}
                             </p>
                           ) : null}
                         </form>
