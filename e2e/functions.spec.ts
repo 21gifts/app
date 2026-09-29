@@ -11331,3 +11331,54 @@ test('Function: WideImageCropper — cancel restores add a wide image', async ({
   await expect(page.getByText('Drag the photo to choose the wide image')).toHaveCount(0);
   expect(puts).toEqual([]);
 });
+
+test('Function: proxyForumMentionsGet — GET /forum/mentions without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.get('/forum/mentions')).status()).toBe(401);
+});
+
+test('Function: activeMention — @ in the composer opens People', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  const box = page.getByRole('textbox', { name: 'Your message' });
+  await box.fill('@');
+  await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+  await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+});
+
+test('Function: MentionTextarea — choosing a person inserts the handle', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  const box = page.getByRole('textbox', { name: 'Your message' });
+  await box.fill('@');
+  await page.getByRole('option', { name: '@ada', exact: true }).click();
+  await expect(box).toHaveValue('@ada ');
+});
+
+test('Function: searchMentionAccounts — @as keeps only that prefix', async ({ page, request }) => {
+  await reachWelcome(page, request);
+  const box = page.getByRole('textbox', { name: 'Your message' });
+  await box.fill('@as');
+  await expect(page.getByRole('option', { name: '@ashton' })).toBeVisible();
+  await expect(page.getByRole('option', { name: '@ada', exact: true })).toHaveCount(0);
+});
+
+test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  const box = page.getByRole('textbox', { name: 'Your message' });
+  const people = page.getByRole('listbox', { name: 'People' });
+  await box.fill('hi @');
+  await expect(people).toBeVisible();
+  await box.press('Escape');
+  await expect(people).toHaveCount(0);
+  await box.press('Home');
+  await box.press('x');
+  await box.press('End');
+  await expect(people).toHaveCount(0);
+  await expect(box).toHaveValue('xhi @');
+});

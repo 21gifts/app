@@ -1,0 +1,35 @@
+import { z } from 'zod';
+
+const mentionSearchSchema = z.object({
+  accounts: z.array(
+    z.object({
+      id: z.string(),
+      username: z.string(),
+      name: z.string(),
+    }),
+  ),
+});
+
+/**
+ * Username suggestions for an `@` token in a forum composer.
+ *
+ * Omits `q` when `query` is empty so the api returns the first page.
+ *
+ * @param sessionToken - Bearer session.
+ * @param query - Lowercase username prefix, or `""` for the first page.
+ * @returns Matching accounts, at most one page.
+ * @throws Error on a non-200 status or a body that fails validation.
+ */
+export async function searchMentionAccounts(
+  sessionToken: string,
+  query: string,
+): Promise<{ id: string; username: string; name: string }[]> {
+  const path = query === '' ? '/forum/mentions' : `/forum/mentions?q=${encodeURIComponent(query)}`;
+  const response = await fetch(path, {
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to search mentions: ${String(response.status)}`);
+  }
+  return mentionSearchSchema.parse(await response.json()).accounts;
+}

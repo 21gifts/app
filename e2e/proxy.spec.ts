@@ -41,6 +41,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   ).toBeGreaterThanOrEqual(400);
   expect((await request.get('/conversations/c1/messages/m1/photo/0.jpg')).status()).toBe(404);
   expect((await request.get('/forum/notifications')).status()).toBe(401);
+  expect((await request.get('/forum/mentions')).status()).toBe(401);
   expect((await request.post('/forum/notifications/read-all')).status()).toBe(401);
   expect((await request.post('/forum/notifications/[id]/read')).status()).toBeGreaterThanOrEqual(
     400,

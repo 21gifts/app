@@ -355,6 +355,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/mentions') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const q = (url.searchParams.get('q') ?? '').toLowerCase();
+    const all = [
+      { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+      { id: 'acc-adam', username: 'adam', name: 'Adam' },
+      { id: 'acc-ben', username: 'ben', name: 'Ben' },
+      { id: 'acc-ashton', username: 'ashton', name: 'Ashton' },
+      { id: 'acc-astrid', username: 'astrid', name: 'Astrid' },
+    ];
+    const accounts =
+      q === ''
+        ? all.slice(0, 3)
+        : q === 'zzz'
+          ? []
+          : all.filter((row) => row.username.startsWith(q));
+    json(res, 200, { accounts });
+    return;
+  }
+
   const shortLinkMatch = pathName.match(/^\/links\/([0-9a-f]{8})$/i);
   if (method === 'GET' && shortLinkMatch) {
     const code = shortLinkMatch[1].toLowerCase();

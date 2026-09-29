@@ -11,6 +11,7 @@ import {
   type ReactElement,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { MentionTextarea } from '@/components/MentionTextarea';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
@@ -403,16 +404,15 @@ export function ForumAskWizard({
       ) : null}
       {step === 3 ? (
         <>
-          <textarea
-            aria-label={t('forum.composerLabel')}
+          <MentionTextarea
+            ariaLabel={t('forum.composerLabel')}
             placeholder={t('forum.placeholder')}
             value={draft}
-            onChange={(event) => {
-              onDraftChange(event.target.value);
-            }}
+            onChange={onDraftChange}
             maxLength={composerMaxLength}
             rows={4}
             disabled={posting}
+            wrapperClassName="relative w-full"
             className="min-h-11 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
           />
           <Button

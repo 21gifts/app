@@ -48,6 +48,7 @@ import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
+import { MentionTextarea } from '@/components/MentionTextarea';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -1727,12 +1728,12 @@ export function ForumBoard({
                               : { onUnitChange: onReplyUnitChange })}
                           />
                           <div className="flex items-center gap-2">
-                            <textarea
-                              ref={replyComposerRef}
-                              aria-label={t('forum.replyComposerLabel')}
+                            <MentionTextarea
+                              textareaRef={replyComposerRef}
+                              ariaLabel={t('forum.replyComposerLabel')}
                               placeholder={t('forum.replyPlaceholder')}
                               value={replyDraft}
-                              onChange={(event) => onReplyDraftChange(event.target.value)}
+                              onChange={onReplyDraftChange}
                               maxLength={FORUM_MESSAGE_MAX_LENGTH}
                               rows={1}
                               disabled={
@@ -1742,6 +1743,7 @@ export function ForumBoard({
                                 repliesError ||
                                 replies === null
                               }
+                              wrapperClassName="relative min-w-0 flex-1"
                               className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
                             />
                             <IconButton
@@ -1984,15 +1986,16 @@ export function ForumBoard({
                 disabled={posting}
                 onChange={handleFileChange}
               />
-              <textarea
-                ref={composerRef}
-                aria-label={t('forum.composerLabel')}
+              <MentionTextarea
+                textareaRef={composerRef}
+                ariaLabel={t('forum.composerLabel')}
                 placeholder={t('forum.placeholder')}
                 value={draft}
-                onChange={(event) => onDraftChange(event.target.value)}
+                onChange={onDraftChange}
                 maxLength={composerMaxLength}
                 rows={2}
                 disabled={posting}
+                wrapperClassName="relative min-w-0 flex-1"
                 className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
               <IconButton

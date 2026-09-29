@@ -518,6 +518,42 @@ A post whose author is the member button contains `@ada`, and that mark is the s
 
 ![21.gifts welcome mention](images/welcome-mention.png)
 
+### Variant: mention-suggest
+
+The post composer contains `@` and the People list is open, with `@ada` and `@adam`.
+
+![21.gifts welcome mention suggestions](images/welcome-mention-suggest.png)
+
+### Variant: mention-suggest-reply
+
+A note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts welcome reply mention suggestions](images/welcome-mention-suggest-reply.png)
+
+### Variant: mention-suggest-ask
+
+Ask for money is on the text step, the message contains `@`, and the People list is open.
+
+![21.gifts welcome ask mention suggestions](images/welcome-mention-suggest-ask.png)
+
+### Variant: mention-inserted
+
+Choosing `@ada` from that open list writes `@ada ` into the post composer and closes the list.
+
+![21.gifts welcome mention inserted](images/welcome-mention-inserted.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts welcome reply mention inserted](images/welcome-mention-inserted-reply.png)
+
+### Variant: mention-inserted-ask
+
+Choosing `@ada` from that open list writes `@ada ` into the ask message and closes the list.
+
+![21.gifts welcome ask mention inserted](images/welcome-mention-inserted-ask.png)
+
 ### Variant: laws
 
 First visit: the dismissible living-room laws hint box is visible (two laws plus links to **Living room rules** and **Contact**). Idle screenshots after dismiss omit it.
@@ -1573,6 +1609,30 @@ Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** s
 
 ![21.gifts shops](images/shops.png)
 
+### Variant: mention-suggest
+
+The shop post composer contains `@` and the People list is open, with `@ada`.
+
+![21.gifts shops mention suggestions](images/shops-mention-suggest.png)
+
+### Variant: mention-suggest-reply
+
+A shop note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts shops reply mention suggestions](images/shops-mention-suggest-reply.png)
+
+### Variant: mention-inserted
+
+Choosing `@ada` from that open list writes `@ada ` into the shop post composer and closes the list.
+
+![21.gifts shops mention inserted](images/shops-mention-inserted.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts shops reply mention inserted](images/shops-mention-inserted-reply.png)
+
 ### Variant: sunday
 
 Device-local Sunday. The **Post** / **Map** / **Table** pill stays. The shop composer is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
@@ -1920,6 +1980,18 @@ Member identity card with About me inside the card when `aboutMe` is set; read-o
 Identity card with counts; posts button pressed; post card 'Second post from Carol.' in the feed.
 
 ![21.gifts member posts open](images/members-posts-open.png)
+
+### Variant: mention-suggest-reply
+
+Posts are open, Carol's note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts member reply mention suggestions](images/members-mention-suggest-reply.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts member reply mention inserted](images/members-mention-inserted-reply.png)
 
 ### Variant: posts-open-photo
 
@@ -2296,6 +2368,18 @@ The funding-program icon is pressed and the participation sentence is visible. N
 **14 posts** is pressed and the feed shows **Second post from Ada.** Needle `Second post from Ada.`
 
 ![21.gifts profile posts](images/profile-posts-open.png)
+
+### Variant: mention-suggest-reply
+
+Posts are open, Ada's note is expanded, its reaction field contains `@`, and the People list is open.
+
+![21.gifts profile reply mention suggestions](images/profile-mention-suggest-reply.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts profile reply mention inserted](images/profile-mention-inserted-reply.png)
 
 ### Variant: replies-open
 
@@ -3496,6 +3580,18 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the gift-day rate; no ` · —` when that rate is unusable), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
+
+### Variant: mention-suggest
+
+Signed in. The root note is expanded, the reaction field contains `@`, and the People list is open.
+
+![21.gifts public message mention suggestions](images/messages-id-mention-suggest.png)
+
+### Variant: mention-inserted
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts public message mention inserted](images/messages-id-mention-inserted.png)
 
 ### Variant: place
 

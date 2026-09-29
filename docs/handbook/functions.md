@@ -3649,6 +3649,41 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** void.
 - **Used by:** `NotificationsLoader` fire-and-forget after a successful list fetch.
 
+## Function: activeMention
+
+- **Purpose:** Find the `@username` token under a collapsed caret in a forum composer. A mark starts at `@` only when the previous character is not a username character, so an email address is not a mark. The query is the lowercase text between `@` and the caret. A bare `@` is a mark with an empty query.
+- **Inputs:** Composer text and a caret index.
+- **Returns / side effects:** `{ start, end, query }`, or `null` when the caret is outside a mark, the query is longer than 32 characters, or the query is not a username prefix.
+- **Used by:** `MentionTextarea`.
+
+## Function: remapClosedMentionStarts
+
+- **Purpose:** Keep a dismissed `@` attached to that character across one edit. Indexes after the edit shift with the text. An `@` inside the replaced span is forgotten, so a different `@` that lands on the old index opens.
+- **Inputs:** The previous composer value, the next value, the dismissed `@` indexes, and the caret in the next value, or nothing when the caret is unknown.
+- **Returns / side effects:** The same set when no dismissed `@` moved, otherwise the shifted indexes.
+- **Used by:** `MentionTextarea`.
+
+## Function: MentionTextarea
+
+- **Purpose:** Forum text field that lists people as soon as `@` is typed. The field stays mounted when the list opens. The first page is prefetched for the signed-in session. More letters narrow the list to usernames that start that way in the same update, even when a previous server page is still stored. Choosing a row inserts `@username ` and closes the list. A space already after the token stays a single space. A choice that would pass the length limit is not inserted. Keys during text composition stay with the input method. The caret sits after that space even when the text was already that handle. Escape or Tab, even while the first page is still loading, or a click outside the open list, keeps each such `@` closed until that character is gone, and a different `@` does not inherit the closure when text shifts. Choosing does not remember that `@` as closed. The list sits under the field, and above it only when this list would not fit underneath and there is more room above. No session, or a disabled field, is a plain textarea.
+- **Inputs:** Controlled value, `onChange`, disabled, wrapper and textarea classes, accessible name, and optional placeholder, max length, rows, and textarea ref.
+- **Returns / side effects:** The textarea. When a token is active and at least one person matches, a `People` listbox. Inserts the chosen handle through `onChange`.
+- **Used by:** The post composer and reply composer in `ForumBoard`, and the ask-for-money text step in `ForumAskWizard`.
+
+## Function: searchMentionAccounts
+
+- **Purpose:** Load username suggestions for an `@` token. Calls same-origin GET `/forum/mentions`, adding `q` only when the prefix is non-empty.
+- **Inputs:** Bearer session and a lowercase prefix (`""` for the first page).
+- **Returns / side effects:** `{ id, username, name }[]`. Throws when the response is not 200 or the body is not that list.
+- **Used by:** `MentionTextarea`.
+
+## Function: proxyForumMentionsGet
+
+- **Purpose:** Same-origin proxy for api GET `/mentions`. App route is GET `/forum/mentions`. Forwards the query string.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/forum/mentions/route.ts`.
+
 ## Function: proxyNotificationsGet
 
 - **Purpose:** Same-origin proxy for api GET `/notifications`. App route is GET `/forum/notifications`.
