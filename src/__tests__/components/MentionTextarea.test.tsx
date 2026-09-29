@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MentionTextarea, type MentionAccount } from '@/components/MentionTextarea';
@@ -308,6 +308,65 @@ describe('MentionTextarea', () => {
     placeCaret('xhi @', 1);
     placeCaret('xhi @', 5);
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('dismisses an @ with Escape or Tab before the people list arrives', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    function deferPeople(): (rows: MentionAccount[]) => void {
+      let settle: (rows: MentionAccount[]) => void = () => undefined;
+      search.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            settle = resolve;
+          }),
+      );
+      return (rows) => {
+        settle(rows);
+      };
+    }
+
+    const resolveEscape = deferPeople();
+    const escaped = renderWithLocale(<Field />);
+    let box = screen.getByRole('textbox') as HTMLTextAreaElement;
+    expect(fireEvent.keyDown(box, { key: 'Escape' })).toBe(true);
+    box = typeInto('@');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(fireEvent.keyDown(box, { key: 'Escape' })).toBe(false);
+    await act(async () => {
+      resolveEscape(PEOPLE);
+    });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    escaped.unmount();
+
+    const resolveTab = deferPeople();
+    const tabbed = renderWithLocale(<Field />);
+    box = typeInto('@');
+    expect(fireEvent.keyDown(box, { key: 'Tab' })).toBe(true);
+    await act(async () => {
+      resolveTab(PEOPLE);
+    });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    tabbed.unmount();
+
+    const resolveOpen = deferPeople();
+    renderWithLocale(<Field />);
+    typeInto('@');
+    await act(async () => {
+      resolveOpen(PEOPLE);
+    });
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
   });
 
   it('hides the list when the prefetch fails or the prefix matches nobody', async () => {

@@ -88,8 +88,9 @@ function openFieldClass(className: string): string {
  * server page in that same update. Choosing one inserts `@username ` and
  * closes the list. A space already after the token stays a single space.
  * A choice that would pass the length limit is not inserted. Keys during
- * text composition stay with the input method. Escape, Tab, or a click
- * outside keeps each such `@` closed until that character is gone.
+ * text composition stay with the input method. Escape or Tab, even while
+ * the first page is still loading, or a click outside the open list, keeps
+ * each such `@` closed until that character is gone.
  * Choosing does not remember that `@` as closed. The caret
  * sits after the inserted space even when the text was already that handle.
  * The list sits under the field, and
@@ -301,10 +302,22 @@ export function MentionTextarea({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (!open) {
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
       return;
     }
-    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
+    if (mention !== null && (event.key === 'Escape' || event.key === 'Tab')) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+      }
+      const start = mention.start;
+      setClosedStarts((current) => {
+        const next = new Set(current);
+        next.add(start);
+        return next;
+      });
+      return;
+    }
+    if (!open) {
       return;
     }
     /* v8 ignore next 3 -- the list is open only while a mention token is active */
@@ -339,25 +352,6 @@ export function MentionTextarea({
         return;
       }
       insertAt(mention, account);
-      return;
-    }
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      const start = mention.start;
-      setClosedStarts((current) => {
-        const next = new Set(current);
-        next.add(start);
-        return next;
-      });
-      return;
-    }
-    if (event.key === 'Tab') {
-      const start = mention.start;
-      setClosedStarts((current) => {
-        const next = new Set(current);
-        next.add(start);
-        return next;
-      });
     }
   };
 
