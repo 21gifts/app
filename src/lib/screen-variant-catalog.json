@@ -288,6 +288,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:renew-failed-prf-unsupported",
+    "label": "/welcome renew-failed-prf-unsupported",
+    "visual": "state-welcome-renew-failed-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:sunday",
     "label": "/welcome sunday",
     "visual": "state-welcome-sunday",
