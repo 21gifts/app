@@ -1686,6 +1686,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:banner-crop-saving",
+    "label": "/profile banner-crop-saving",
+    "visual": "state-profile-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:banner-crop-save-error",
+    "label": "/profile banner-crop-save-error",
+    "visual": "state-profile-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:banner-crop-too-large",
+    "label": "/profile banner-crop-too-large",
+    "visual": "state-profile-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:picture-unsupported",
     "label": "/profile picture-unsupported",
     "visual": "state-profile-picture-unsupported",
@@ -1719,6 +1737,30 @@
     "id": "/profile:about-editing",
     "label": "/profile about-editing",
     "visual": "state-profile-about-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-banner-crop",
+    "label": "/profile about-banner-crop",
+    "visual": "state-profile-about-banner-crop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-banner-crop-saving",
+    "label": "/profile about-banner-crop-saving",
+    "visual": "state-profile-about-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-banner-crop-save-error",
+    "label": "/profile about-banner-crop-save-error",
+    "visual": "state-profile-about-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:about-banner-crop-too-large",
+    "label": "/profile about-banner-crop-too-large",
+    "visual": "state-profile-about-banner-crop-too-large",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
