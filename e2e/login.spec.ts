@@ -93,6 +93,9 @@ async function confirmNewAccount(page: Page): Promise<void> {
     page.getByRole('heading', { name: 'Do you already have an account?' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
+  await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
+  await page.getByRole('textbox', { name: 'Name' }).fill('ada');
+  await page.getByRole('button', { name: 'Continue' }).click();
 }
 
 test('login page renders a single Log in button', async ({ page }) => {
