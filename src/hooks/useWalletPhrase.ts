@@ -1,13 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { reportDiagnostic } from '@/lib/diagnostics';
 import { renewPasskey } from '@/lib/passkey-renew';
 import {
   classifyWebAuthnError,
   mnemonicFromPrfFirst,
   obtainPrfFirstFromGet,
 } from '@/lib/prf-mnemonic';
-import { reportDiagnostic } from '@/lib/diagnostics';
 import { base64UrlToBytes } from '@/lib/webauthn-browser';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';

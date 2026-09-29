@@ -3087,7 +3087,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Runs the seed-passkey ceremony for a member who has no seed yet.
 - **Inputs:** Session token.
-- **Returns / side effects:** `ok` with the account and in-memory PRF bytes, `cancelled`, `stored` when reload already shows a seed, or `failed` with a wallet error kind. HTTP seed failures are not reported again. Does not persist the phrase.
+- **Returns / side effects:** `ok` with the account and in-memory PRF bytes, `cancelled`, `stored` when reload already shows a seed, or `failed` with a wallet error kind. HTTP seed failures are not reported again. Posts allowlisted seed diagnostics and never sends PRF bytes, the phrase, or the session token. Does not persist the phrase.
 - **Used by:** `useWalletPhrase.activate` and `PasskeyRenewNotice`.
 
 ## Function: PasskeyRenewNotice
