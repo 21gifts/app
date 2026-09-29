@@ -88,14 +88,17 @@ async function installFakeWebAuthn(page: Page, alreadyRegistered = false): Promi
   }, alreadyRegistered);
 }
 
-async function confirmNewAccount(page: Page): Promise<void> {
+async function confirmNewAccount(page: Page): Promise<string> {
   await expect(
     page.getByRole('heading', { name: 'Do you already have an account?' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
   await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
-  await page.getByRole('textbox', { name: 'Name' }).fill('ada');
+  const handle = `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.slice(0, 32);
+  await page.getByRole('textbox', { name: 'Name' }).fill(handle);
   await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  return handle;
 }
 
 test('login page renders a single Log in button', async ({ page }) => {
@@ -190,7 +193,7 @@ test('login Open a new account creates a passkey after the choice', async ({ pag
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
 });
 
 test('login Log in with existing account does not start register', async ({ page }) => {

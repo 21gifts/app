@@ -12,7 +12,7 @@ const HOST = '127.0.0.1';
 
 /** @type {Map<string, object>} */
 const byToken = new Map();
-/** @type {Map<string, { type: 'register' | 'authenticate' | 'replace' | 'seed', account?: object }>} */
+/** @type {Map<string, { type: 'register' | 'authenticate' | 'replace' | 'seed', account?: object, requestedName?: string, claimAccountId?: string }>} */
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
@@ -1957,6 +1957,103 @@ const server = http.createServer(async (req, res) => {
 
   if (method === 'POST' && pathName === '/auth/passkey/register/begin') {
     const challengeId = hex(randomBytes(32));
+    let parsed = null;
+    if (rawBody.trim() !== '') {
+      try {
+        parsed = JSON.parse(rawBody);
+      } catch {
+        parsed = null;
+      }
+    }
+    const body =
+      parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+
+    if (body !== null && 'viewKey' in body) {
+      if (typeof body.viewKey !== 'string') {
+        json(res, 400, {
+          error: 'Expected a JSON body with an optional "viewKey" string',
+        });
+        return;
+      }
+      if (!/^[0-9a-f]{64}$/.test(body.viewKey)) {
+        json(res, 404, { error: 'This profile could not be found.' });
+        return;
+      }
+      let claimed;
+      for (const row of byToken.values()) {
+        if (row.viewKey === body.viewKey) {
+          claimed = row;
+          break;
+        }
+      }
+      if (!claimed) {
+        json(res, 404, { error: 'This profile could not be found.' });
+        return;
+      }
+      if (
+        typeof claimed.passkeyCredentialId === 'string' &&
+        claimed.passkeyCredentialId !== ''
+      ) {
+        json(res, 409, { error: 'This profile already has a passkey' });
+        return;
+      }
+      byPasskey.set(challengeId, { type: 'register', claimAccountId: claimed.id });
+      json(res, 200, {
+        challengeId,
+        options: {
+          challenge: b64url(randomBytes(32)),
+          rp: { id: 'localhost', name: '21.gifts' },
+          user: {
+            id: b64url(Buffer.from(claimed.id)),
+            name: claimed.id,
+            displayName: claimed.name || '21.gifts',
+          },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+          authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+          extensions: { prf: {} },
+        },
+      });
+      return;
+    }
+
+    if (body !== null && 'name' in body) {
+      if (typeof body.name !== 'string') {
+        json(res, 400, {
+          error: 'Expected a JSON body with an optional "name" string',
+        });
+        return;
+      }
+      const normalized = body.name.trim().toLowerCase();
+      if (!/^[a-z0-9][a-z0-9._-]{0,31}$/.test(normalized)) {
+        json(res, 400, {
+          error: 'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+        });
+        return;
+      }
+      if (usernameTaken(normalized, '')) {
+        json(res, 409, { error: 'Username is already in use' });
+        return;
+      }
+      const userId = hex(randomBytes(16));
+      byPasskey.set(challengeId, { type: 'register', requestedName: normalized });
+      json(res, 200, {
+        challengeId,
+        options: {
+          challenge: b64url(randomBytes(32)),
+          rp: { id: 'localhost', name: '21.gifts' },
+          user: {
+            id: b64url(Buffer.from(userId, 'hex')),
+            name: normalized,
+            displayName: normalized,
+          },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+          authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+          extensions: { prf: {} },
+        },
+      });
+      return;
+    }
+
     const userId = hex(randomBytes(16));
     byPasskey.set(challengeId, { type: 'register' });
     json(res, 200, {
@@ -2034,9 +2131,35 @@ const server = http.createServer(async (req, res) => {
     byPasskey.delete(parsed.challengeId);
     let account;
     if (expectedType === 'register') {
-      account = newAccount(null);
-      account.passkeyCredentialId = credId;
-      byPasskeyCredential.set(credId, account);
+      if (typeof pending.claimAccountId === 'string') {
+        for (const row of byToken.values()) {
+          if (row.id === pending.claimAccountId) {
+            account = row;
+            break;
+          }
+        }
+        if (!account) {
+          json(res, 404, { error: 'This profile could not be found.' });
+          return;
+        }
+        account.passkeyCredentialId = credId;
+        byPasskeyCredential.set(credId, account);
+      } else if (typeof pending.requestedName === 'string') {
+        if (usernameTaken(pending.requestedName, '')) {
+          json(res, 409, { error: 'Username is already in use' });
+          return;
+        }
+        account = newAccount(null);
+        account.name = pending.requestedName;
+        account.username = pending.requestedName;
+        account.passkeyCredentialId = credId;
+        byPasskeyCredential.set(credId, account);
+        afterFieldWrite(account);
+      } else {
+        account = newAccount(null);
+        account.passkeyCredentialId = credId;
+        byPasskeyCredential.set(credId, account);
+      }
     } else {
       account = byPasskeyCredential.get(credId);
       if (!account) {

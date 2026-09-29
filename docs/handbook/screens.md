@@ -292,6 +292,18 @@ Heading **Choose your name**. This name is saved in the passkey. It is also your
 
 ![21.gifts login name](images/login-name.png)
 
+### Variant: name-invalid
+
+Pressing Continue with an empty name, or a name outside 1–32 characters of a-z, 0-9, hyphen, underscore, or dot, stays on this form. Alert: Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot. (`login.nameInvalid`). The passkey dialog does not open.
+
+![21.gifts login name invalid](images/login-name-invalid.png)
+
+### Variant: name-taken
+
+A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). The passkey dialog does not open.
+
+![21.gifts login name taken](images/login-name-taken.png)
+
 ### Variant: in-app
 
 Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** button; **Open in browser** and **Copy link** instead.
