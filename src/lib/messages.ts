@@ -73,6 +73,7 @@ const en = {
 
   'aria.primary': 'Primary',
   'aria.menu': 'Menu',
+  'aria.menuDismiss': 'Close menu',
   'app.version': 'Version {version}',
   'aria.footer': 'Footer',
   'aria.github': 'GitHub',
@@ -445,7 +446,7 @@ const en = {
   'forum.goalBarAria': 'Goal progress {percent} percent',
   'forum.copyLink': 'Copy link to this note',
   'forum.copyReplyLink': 'Copy link to this reply',
-  'forum.replyCount': '{count} reactions',
+  'forum.replyCount': '{count, plural, one {# reaction} other {# reactions}}',
   'forum.replyComposerLabel': 'Your reaction',
   'forum.replyPlaceholder': 'Write a reaction',
   'forum.giftReply': 'send {amount}',
@@ -540,8 +541,8 @@ const en = {
   'profile.push.level.hint':
     'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is admin posts, replies to you, and gifts you receive, and @username marks.',
   'profile.push.level.error': 'Could not save notification level.',
-  'profile.postCount': '{count} posts',
-  'profile.replyCount': '{count} reactions',
+  'profile.postCount': '{count, plural, one {# post} other {# posts}}',
+  'profile.replyCount': '{count, plural, one {# reaction} other {# reactions}}',
   'profile.activityLatest': 'Showing the latest {shown} of {total}.',
   'profile.about.heading': 'About me',
   'profile.about.empty': 'Tell others who you are.',
@@ -825,7 +826,7 @@ const en = {
   'moderate.goal.yesterdayOf': 'yesterday {count} of {goal}',
   'moderate.goal.closeHint': 'Tap to close',
   'moderate.goal.explYesterday':
-    'Yesterday (UTC {date}) 21.gifts paid {count} people the daily funding or the welcome gift. Each person counts once. That is {percent} percent of the {goal} a day we are aiming for.',
+    'Yesterday (UTC {date}) 21.gifts paid {count, plural, one {# person} other {# people}} the daily funding or the welcome gift. Each person counts once. That is {percent} percent of the {goal} a day we are aiming for.',
   'moderate.goal.explOfficial':
     'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count.',
   'moderate.goal.explBar':
@@ -897,7 +898,8 @@ const en = {
     'Takes part in the 21.gifts funding program since {date}, reviewed by {name}',
   'funding.applyError': 'Could not submit your application. Please try again.',
   'funding.applications.heading': 'Open applications',
-  'funding.applications.openCount': 'Open applications ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Open application ({count})} other {Open applications ({count})}}',
   'funding.applications.empty': 'No open applications.',
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
@@ -1018,6 +1020,7 @@ const de = {
   'pwa.close': 'Schließen',
   'aria.primary': 'Primär',
   'aria.menu': 'Menü',
+  'aria.menuDismiss': 'Menü schliessen',
   'app.version': 'Version {version}',
   'aria.footer': 'Fusszeile',
   'aria.github': 'GitHub',
@@ -1383,7 +1386,7 @@ const de = {
   'forum.goalBarAria': 'Zielfortschritt {percent} Prozent',
   'forum.copyLink': 'Link zu dieser Notiz kopieren',
   'forum.copyReplyLink': 'Link zu dieser Antwort kopieren',
-  'forum.replyCount': '{count} Reaktionen',
+  'forum.replyCount': '{count, plural, one {# Reaktion} other {# Reaktionen}}',
   'forum.replyComposerLabel': 'Ihre Reaktion',
   'forum.replyPlaceholder': 'Reaktion schreiben',
   'forum.giftReply': '{amount} senden',
@@ -1481,8 +1484,8 @@ const de = {
   'profile.push.level.hint':
     'Alle Wohnzimmer-Posts, Antworten und Geschenke. Aktiv sind Posts mit Geschenk. Erwähnungen sind Admin-Posts, Antworten auf dich und Geschenke, die du empfängst, und Markierungen mit @benutzername.',
   'profile.push.level.error': 'Benachrichtigungsstufe konnte nicht gespeichert werden.',
-  'profile.postCount': '{count} Beiträge',
-  'profile.replyCount': '{count} Reaktionen',
+  'profile.postCount': '{count, plural, one {# Beitrag} other {# Beiträge}}',
+  'profile.replyCount': '{count, plural, one {# Reaktion} other {# Reaktionen}}',
   'profile.activityLatest': 'Die neuesten {shown} von {total}.',
   'profile.about.heading': 'Über mich',
   'profile.about.empty': 'Erzähl anderen, wer du bist.',
@@ -1775,7 +1778,7 @@ const de = {
   'moderate.goal.yesterdayOf': 'gestern {count} von {goal}',
   'moderate.goal.closeHint': 'Tippen zum Schliessen',
   'moderate.goal.explYesterday':
-    'Gestern (UTC {date}) hat 21.gifts {count} Personen die Tagesförderung oder das Willkommensgeschenk gezahlt. Jede Person zählt einmal. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
+    'Gestern (UTC {date}) hat 21.gifts {count, plural, one {# Person} other {# Personen}} die Tagesförderung oder das Willkommensgeschenk gezahlt. Jede Person zählt einmal. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
   'moderate.goal.explOfficial':
     'Gezählt wird jede Person einmal an dem UTC-Tag, an dem 21.gifts ihr die Tagesförderung oder das Willkommensgeschenk gezahlt hat. Wer an einem Tag beides bekommt, zählt einmal. Moderatoren-Stipendien und Geschenke zwischen Mitgliedern zählen nicht.',
   'moderate.goal.explBar':
@@ -1852,7 +1855,8 @@ const de = {
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
-  'funding.applications.openCount': 'Offene Bewerbungen ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Offene Bewerbung ({count})} other {Offene Bewerbungen ({count})}}',
   'funding.applications.empty': 'Keine offenen Bewerbungen.',
   'funding.applications.listLabel': 'Offene Förderbewerbungen',
   'funding.applications.error':
@@ -1974,6 +1978,7 @@ const es = {
   'pwa.close': 'Cerrar',
   'aria.primary': 'Principal',
   'aria.menu': 'Menú',
+  'aria.menuDismiss': 'Cerrar menú',
   'app.version': 'Versión {version}',
   'aria.footer': 'Pie de página',
   'aria.github': 'GitHub',
@@ -2334,7 +2339,7 @@ const es = {
   'forum.goalBarAria': 'Progreso del objetivo {percent} por ciento',
   'forum.copyLink': 'Copiar enlace a esta nota',
   'forum.copyReplyLink': 'Copiar enlace a esta respuesta',
-  'forum.replyCount': '{count} reacciones',
+  'forum.replyCount': '{count, plural, one {# reacción} other {# reacciones}}',
   'forum.replyComposerLabel': 'Tu reacción',
   'forum.replyPlaceholder': 'Escribe una reacción',
   'forum.giftReply': 'envía {amount}',
@@ -2432,8 +2437,8 @@ const es = {
   'profile.push.level.hint':
     'Todas las publicaciones, respuestas y regalos del salón. Activas son las publicaciones con regalos. Menciones son publicaciones de administradores, respuestas a ti y regalos que recibes, y marcas con @usuario.',
   'profile.push.level.error': 'No se pudo guardar el nivel de notificaciones.',
-  'profile.postCount': '{count} publicaciones',
-  'profile.replyCount': '{count} reacciones',
+  'profile.postCount': '{count, plural, one {# publicación} other {# publicaciones}}',
+  'profile.replyCount': '{count, plural, one {# reacción} other {# reacciones}}',
   'profile.activityLatest': 'Mostrando los {shown} más recientes de {total}.',
   'profile.about.heading': 'Sobre mí',
   'profile.about.empty': 'Cuéntales a los demás quién eres.',
@@ -2718,7 +2723,7 @@ const es = {
   'moderate.goal.yesterdayOf': 'ayer {count} de {goal}',
   'moderate.goal.closeHint': 'Toca para cerrar',
   'moderate.goal.explYesterday':
-    'Ayer (UTC {date}) 21.gifts pagó a {count} personas la ayuda diaria o el regalo de bienvenida. Cada persona cuenta una vez. Eso es el {percent} por ciento de las {goal} al día que buscamos.',
+    'Ayer (UTC {date}) 21.gifts pagó a {count, plural, one {# persona} other {# personas}} la ayuda diaria o el regalo de bienvenida. Cada persona cuenta una vez. Eso es el {percent} por ciento de las {goal} al día que buscamos.',
   'moderate.goal.explOfficial':
     'Cada persona cuenta una vez en el día UTC en que 21.gifts le pagó la ayuda diaria o el regalo de bienvenida. Quien recibe ambos ese día cuenta una vez. Los estipendios de moderación y los regalos entre miembros no cuentan.',
   'moderate.goal.explBar':
@@ -2790,7 +2795,8 @@ const es = {
     'Participa en el programa de apoyo de 21.gifts desde {date}, revisado por {name}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
-  'funding.applications.openCount': 'Solicitudes abiertas ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Solicitud abierta ({count})} other {Solicitudes abiertas ({count})}}',
   'funding.applications.empty': 'No hay solicitudes abiertas.',
   'funding.applications.listLabel': 'Solicitudes abiertas de beca',
   'funding.applications.error':
@@ -2912,6 +2918,7 @@ const fil = {
   'pwa.close': 'Isara',
   'aria.primary': 'Pangunahin',
   'aria.menu': 'Menu',
+  'aria.menuDismiss': 'Isara ang menu',
   'app.version': 'Bersyon {version}',
   'aria.footer': 'Pang-ibaba',
   'aria.github': 'GitHub',
@@ -3275,7 +3282,7 @@ const fil = {
   'forum.goalBarAria': 'Progreso ng layunin {percent} porsyento',
   'forum.copyLink': 'Kopyahin ang link sa notang ito',
   'forum.copyReplyLink': 'Kopyahin ang link sa tugong ito',
-  'forum.replyCount': '{count} na reaksyon',
+  'forum.replyCount': '{count, plural, one {# reaksyon} other {# reaksyon}}',
   'forum.replyComposerLabel': 'Iyong reaksyon',
   'forum.replyPlaceholder': 'Sumulat ng reaksyon',
   'forum.giftReply': 'magpadala ng {amount}',
@@ -3373,8 +3380,8 @@ const fil = {
   'profile.push.level.hint':
     'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga post ng admin, sagot sa iyo, at mga regalo na natatanggap mo, at mga marka gamit ang @username.',
   'profile.push.level.error': 'Hindi ma-save ang antas ng notification.',
-  'profile.postCount': '{count} mga post',
-  'profile.replyCount': '{count} mga reaksyon',
+  'profile.postCount': '{count, plural, one {# post} other {# post}}',
+  'profile.replyCount': '{count, plural, one {# reaksyon} other {# reaksyon}}',
   'profile.activityLatest': 'Ipinapakita ang pinakabago {shown} sa {total}.',
   'profile.about.heading': 'Tungkol sa akin',
   'profile.about.empty': 'Sabihin sa iba kung sino ka.',
@@ -3665,7 +3672,7 @@ const fil = {
   'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
   'moderate.goal.closeHint': 'I-tap para isara',
   'moderate.goal.explYesterday':
-    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count} tao ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
+    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count, plural, one {# tao} other {# tao}} ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
   'moderate.goal.explOfficial':
     'Isang beses lang binibilang ang bawat tao sa UTC-araw na binayaran siya ng 21.gifts ng araw-araw na tulong o ng welcome gift. Ang nakatanggap ng pareho sa araw na iyon ay isang beses lang. Hindi binibilang ang stipend ng moderator at ang mga regalo sa pagitan ng mga miyembro.',
   'moderate.goal.explBar':
@@ -3738,7 +3745,8 @@ const fil = {
     'Kasali sa programa ng tulong ng 21.gifts mula noong {date}, sinuri ni {name}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
-  'funding.applications.openCount': 'Mga bukas na aplikasyon ({count})',
+  'funding.applications.openCount':
+    '{count, plural, one {Bukas na aplikasyon ({count})} other {Mga bukas na aplikasyon ({count})}}',
   'funding.applications.empty': 'Walang bukas na aplikasyon.',
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',

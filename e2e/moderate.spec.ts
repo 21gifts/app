@@ -75,9 +75,9 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
     '/moderate/handbook',
   );
   await expect(page.getByText('Hidden by Ada')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveAttribute('href', '/moderate');
-  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('link', { name: 'Hidden notes' }).click();
   await expect(page.getByRole('heading', { name: 'Hidden notes' })).toBeVisible();
   await expect(page.getByText('Hidden by Ada')).toBeVisible();

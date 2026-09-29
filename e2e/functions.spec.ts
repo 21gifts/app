@@ -1463,7 +1463,7 @@ test('Function: fetchMemberReplies — member replies open from the count', asyn
 }) => {
   await reachWelcome(page, request);
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
-  await page.getByRole('button', { name: '1 reactions' }).click();
+  await page.getByRole('button', { name: '1 reaction' }).click();
   await expect(page.getByText('A reply from Carol.')).toBeVisible();
 });
 
@@ -1903,7 +1903,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   });
   await page.goto(`/members/${memberId}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-  await page.getByRole('button', { name: '1 posts' }).click();
+  await page.getByRole('button', { name: '1 post' }).click();
   await expect(page.getByText('Hello from my profile note.')).toBeVisible();
   await page.getByRole('button', { name: 'Show reactions' }).click();
   await expect(page.getByLabel('Your reaction')).toBeVisible();
@@ -8102,15 +8102,120 @@ test('Function: resolveAppHeight — short keyboard visualViewport sizes the pag
     const main = document.querySelector('main');
     return {
       appHeight: getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+      appOffset: getComputedStyle(document.documentElement)
+        .getPropertyValue('--app-offset-top')
+        .trim(),
       inner,
       short: vv === null || vv === undefined ? 0 : Math.round(vv.height),
+      offset: vv === null || vv === undefined ? 0 : Math.round(vv.offsetTop ?? 0),
+      bodyTop: document.body.getBoundingClientRect().top,
       mainHeight: main === null ? 0 : Math.round(main.getBoundingClientRect().height),
     };
   });
   expect(measured.short).toBeGreaterThan(0);
   expect(measured.short).toBeLessThan(measured.inner);
   expect(measured.appHeight).toBe(`${measured.short}px`);
+  expect(measured.appOffset).toBe(`${measured.offset}px`);
+  expect(measured.bodyTop).toBe(measured.offset);
   expect(measured.mainHeight).toBe(measured.short);
+  expect(measured.mainHeight).not.toBe(measured.short + measured.offset);
+});
+
+test('Function: resolveAppOffsetTop — body sits on the visual viewport', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        height: 500,
+        offsetTop: 120,
+        scale: 1,
+        addEventListener() {},
+        removeEventListener() {},
+      },
+    });
+  });
+  await page.goto('/login');
+  const measured = await page.evaluate(() => {
+    const main = document.querySelector('main');
+    return {
+      offset: getComputedStyle(document.documentElement)
+        .getPropertyValue('--app-offset-top')
+        .trim(),
+      height: getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+      bodyTop: document.body.getBoundingClientRect().top,
+      mainHeight: main === null ? 0 : Math.round(main.getBoundingClientRect().height),
+    };
+  });
+  expect(measured.offset).toBe('120px');
+  expect(measured.height).toBe('500px');
+  expect(measured.bodyTop).toBe(120);
+  expect(measured.mainHeight).toBe(500);
+});
+
+test('Function: revealInScrollport — a focused field moves the scrollport, not the document', async ({
+  page,
+}) => {
+  await page.goto('/login');
+  await page.locator('[data-scrollport][data-scroll-active]').waitFor();
+  const before = await page.evaluate(() => {
+    const scroller = document.querySelector('[data-scrollport][data-scroll-active]');
+    if (!(scroller instanceof HTMLElement)) {
+      return { ready: false, scrollTop: -1, scrollY: window.scrollY, below: false };
+    }
+    const field = document.createElement('textarea');
+    field.id = 'reveal-probe';
+    field.setAttribute('aria-label', 'Reveal probe');
+    field.style.display = 'block';
+    field.style.width = '12rem';
+    field.style.marginTop = '2400px';
+    // Room below the field so the 12px reveal is not clamped at the scroll end.
+    field.style.marginBottom = '48px';
+    scroller.appendChild(field);
+    const fieldBox = field.getBoundingClientRect();
+    const scrollerBox = scroller.getBoundingClientRect();
+    return {
+      ready: true,
+      scrollTop: scroller.scrollTop,
+      scrollY: window.scrollY,
+      below: fieldBox.bottom > scrollerBox.bottom,
+    };
+  });
+  expect(before.ready).toBe(true);
+  expect(before.scrollTop).toBe(0);
+  expect(before.scrollY).toBe(0);
+  expect(before.below).toBe(true);
+
+  const after = await page.evaluate(
+    () =>
+      new Promise<{ focused: boolean; scrollTop: number; scrollY: number; bottomGap: number }>(
+        (resolve) => {
+          const field = document.querySelector('#reveal-probe');
+          const scroller = document.querySelector('[data-scrollport][data-scroll-active]');
+          if (!(field instanceof HTMLTextAreaElement) || !(scroller instanceof HTMLElement)) {
+            resolve({ focused: false, scrollTop: -1, scrollY: window.scrollY, bottomGap: -1 });
+            return;
+          }
+          // The browser must not scroll on focus. The app's focus listener reveals.
+          field.focus({ preventScroll: true });
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              const fieldBox = field.getBoundingClientRect();
+              const scrollerBox = scroller.getBoundingClientRect();
+              resolve({
+                focused: document.activeElement === field,
+                scrollTop: scroller.scrollTop,
+                scrollY: window.scrollY,
+                bottomGap: scrollerBox.bottom - fieldBox.bottom,
+              });
+            });
+          });
+        },
+      ),
+  );
+  expect(after.focused).toBe(true);
+  expect(after.scrollTop).toBeGreaterThan(before.scrollTop);
+  expect(after.scrollY).toBe(0);
+  expect(Math.abs(after.bottomGap - 12)).toBeLessThan(1);
 });
 
 test('Function: AppHeightViewport — document has --app-height', async ({ page }) => {

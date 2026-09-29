@@ -150,7 +150,7 @@ describe('GrantsScreen', () => {
     listMock.mockResolvedValue([APPLICATION]);
     renderWithLocale(<GrantsScreen />);
     expect(
-      (await screen.findByRole('link', { name: 'Open applications (1)' })).getAttribute('href'),
+      (await screen.findByRole('link', { name: 'Open application (1)' })).getAttribute('href'),
     ).toBe('/grants/applications');
   });
 
@@ -161,7 +161,7 @@ describe('GrantsScreen', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not load open applications. Please try again.');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('link', { name: 'Open applications (1)' })).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Open application (1)' })).toBeTruthy();
     expect(listMock).toHaveBeenCalledTimes(2);
   });
 

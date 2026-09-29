@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { APP_HEIGHT_BOOTSTRAP_SCRIPT, resolveAppHeight } from '@/lib/app-height';
+import {
+  APP_HEIGHT_BOOTSTRAP_SCRIPT,
+  resolveAppHeight,
+  resolveAppOffsetTop,
+} from '@/lib/app-height';
 
 describe('APP_HEIGHT_BOOTSTRAP_SCRIPT', () => {
   it('is a non-empty IIFE string that sets --app-height from visualViewport', () => {
@@ -10,7 +14,9 @@ describe('APP_HEIGHT_BOOTSTRAP_SCRIPT', () => {
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('innerHeight');
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('setProperty');
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).not.toContain('Math.max');
-    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).not.toContain('offsetTop');
+    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain('--app-offset-top');
+    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).not.toContain('h+top');
+    expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).not.toContain('offsetTop+');
     const skipWhenPinched = 'Math.abs(vv.scale-1)>0.01){return;}';
     expect(APP_HEIGHT_BOOTSTRAP_SCRIPT).toContain(skipWhenPinched);
   });
@@ -36,8 +42,10 @@ describe('resolveAppHeight', () => {
       value: { height: 511, offsetTop: 200, scale: 1 },
     });
     document.documentElement.style.removeProperty('--app-height');
+    document.documentElement.style.removeProperty('--app-offset-top');
     new Function(APP_HEIGHT_BOOTSTRAP_SCRIPT)();
     expect(document.documentElement.style.getPropertyValue('--app-height')).toBe('511px');
+    expect(document.documentElement.style.getPropertyValue('--app-offset-top')).toBe('200px');
   });
 
   it('skips the write when visualViewport is pinch-zoomed', () => {
@@ -54,5 +62,23 @@ describe('resolveAppHeight', () => {
 
   it('falls back to innerHeight when visualViewport is undefined', () => {
     expect(resolveAppHeight(500, undefined)).toBe(500);
+  });
+});
+
+describe('resolveAppOffsetTop', () => {
+  it('returns the rounded visual viewport offset and never the height', () => {
+    expect(resolveAppOffsetTop({ height: 511, offsetTop: 200, scale: 1 })).toBe(200);
+    expect(resolveAppHeight(852, { height: 511, offsetTop: 200, scale: 1 })).toBe(511);
+    expect(resolveAppOffsetTop({ height: 400, offsetTop: 10.6, scale: 1 })).toBe(11);
+  });
+
+  it('skips the write while pinch-zoomed', () => {
+    expect(resolveAppOffsetTop({ height: 511, offsetTop: 200, scale: 2 })).toBeNull();
+  });
+
+  it('is zero when the viewport or the offset is missing', () => {
+    expect(resolveAppOffsetTop(null)).toBe(0);
+    expect(resolveAppOffsetTop(undefined)).toBe(0);
+    expect(resolveAppOffsetTop({ height: 480 })).toBe(0);
   });
 });

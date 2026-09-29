@@ -3648,7 +3648,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await openProfile(page);
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('A reply from Ada.')).toBeVisible();
     await shotScreen(page, 'state-profile-replies-open');
   });
@@ -4460,7 +4460,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Second post from Carol.').scrollIntoViewIfNeeded();
@@ -4561,7 +4561,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     const photo = page.getByAltText('Photo from Carol');
     await expect(photo).toBeVisible();
@@ -4653,7 +4653,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Goal note at one hundred ten percent')).toBeVisible();
     await expect(page.getByText('110%')).toBeVisible();
     await expect(page.getByText("₿21'000")).toBeVisible();
@@ -4738,7 +4738,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('The goal is defined in dollars.')).toBeVisible();
     await expect(page.getByText('$1.50')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
@@ -4837,7 +4837,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
@@ -4916,7 +4916,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Loan' }).click();
     await expect(page.getByText('A loan is paid back.')).toBeVisible();
     await shotScreen(page, 'state-members-posts-open-loan-tag-open');
@@ -4988,7 +4988,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Donation' }).click();
     await expect(page.getByText('A donation is a gift. It is not paid back.')).toBeVisible();
     await shotScreen(page, 'state-members-posts-open-donation-tag-open');
@@ -5097,7 +5097,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillRateDay(page);
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Who gave and who is paid back' }).click();
     await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
     await expect(page.getByLabel('Paid back')).toBeVisible();
@@ -5210,7 +5210,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Second post from Carol.')).toBeVisible();
     const photos = page.getByAltText('Photo from Carol');
     await expect(photos).toHaveCount(2);
@@ -5301,7 +5301,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
@@ -5375,7 +5375,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     const postsLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
     await expect(postsLoading).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -5451,7 +5451,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     const repliesLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
     await expect(repliesLoading).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -5522,7 +5522,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -5592,7 +5592,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 reactions' }).click();
+    await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -6041,7 +6041,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
     await expect(page.getByLabel('Your reaction')).toBeVisible();
@@ -6147,7 +6147,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
     await expect(page.getByLabel('Your reaction')).toBeVisible();
@@ -6583,7 +6583,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText(GERMAN_NOTE_TEXT)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
     await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
@@ -6674,7 +6674,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'hang');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
       'aria-busy',
@@ -6768,7 +6768,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
@@ -6859,7 +6859,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'ok');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
     await page.getByRole('button', { name: 'Show original' }).click();
@@ -6952,7 +6952,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillTranslatePost(page, 'fail');
     await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 posts' }).click();
+    await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Translate' }).click();
     await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
     await page
