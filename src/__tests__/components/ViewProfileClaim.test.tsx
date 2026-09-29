@@ -53,10 +53,12 @@ function mockPasskey(status: PasskeyStatus = 'idle', error: string | null = null
     status,
     login: loginSpy,
     register: registerSpy,
+    submitName: vi.fn(),
     authenticate: authenticateSpy,
     retry: retrySpy,
     cancel: cancelSpy,
     error: status === 'error' ? error : null,
+    nameError: null,
   });
 }
 

@@ -148,6 +148,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(rememberSessionPhrase).not.toHaveBeenCalled();
@@ -851,9 +852,10 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
-    expect(result.current.status).toBe('idle');
+    expect(result.current.status).toBe('name');
     const bodies = fetchMock.mock.calls.map(
       (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
     );
@@ -1014,6 +1016,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
@@ -1049,6 +1052,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     const bodies = fetchMock.mock.calls.map(
@@ -1070,6 +1074,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
@@ -1094,7 +1099,84 @@ describe('usePasskeyLogin', () => {
       result.current.register(viewKey);
     });
     expect(startPasskeyRegistration).toHaveBeenCalledWith(viewKey);
+    expect(result.current.status).not.toBe('name');
     expect(useAuthStore.getState().session).toBe('tok');
+    vi.unstubAllGlobals();
+  });
+
+  it('register without a view key opens the name step', () => {
+    const { result } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(result.current.nameError).toBeNull();
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+  });
+
+  it('submitName forwards the normalized name to startPasskeyRegistration', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
+    expect(startPasskeyRegistration).toHaveBeenCalledWith(undefined, 'ada');
+    vi.unstubAllGlobals();
+  });
+
+  it('submitName stays on name when the typed name is invalid', () => {
+    const { result } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.submitName('Ada Lovelace');
+    });
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('name');
+    expect(result.current.nameError).toBe('invalid');
+  });
+
+  it('taken username stays on name', async () => {
+    vi.mocked(startPasskeyRegistration).mockRejectedValue(new Error('Username is already in use'));
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
+    expect(result.current.status).toBe('name');
+    expect(result.current.nameError).toBe('taken');
+    expect(result.current.status).not.toBe('error');
+  });
+
+  it('invalid username from begin stays on name', async () => {
+    vi.mocked(startPasskeyRegistration).mockRejectedValue(
+      new Error('Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot'),
+    );
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
+    expect(result.current.status).toBe('name');
+    expect(result.current.nameError).toBe('invalid');
+  });
+
+  it('named create NotAllowedError returns to name', async () => {
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
+    expect(result.current.status).toBe('name');
+    expect(result.current.status).not.toBe('idle');
+    expect(result.current.status).not.toBe('choice');
+    expect(result.current.status).not.toBe('error');
     vi.unstubAllGlobals();
   });
 
@@ -1373,13 +1455,15 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('unknown');
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
-    expect(result.current.status).toBe('unknown');
+    expect(result.current.status).toBe('name');
     expect(create).toHaveBeenCalledTimes(1);
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
-    expect(result.current.status).toBe('unknown');
+    expect(result.current.status).toBe('name');
     expect(create).toHaveBeenCalledTimes(2);
     vi.unstubAllGlobals();
   });
@@ -1455,8 +1539,9 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('unknown');
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
-    expect(result.current.status).toBe('unknown');
+    expect(result.current.status).toBe('name');
     vi.unstubAllGlobals();
   });
 
@@ -1479,6 +1564,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('unknown');
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
@@ -1598,6 +1684,7 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('choice');
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(create).toHaveBeenCalledTimes(1);
     expect(startPasskeyRegistration).toHaveBeenCalledTimes(1);
@@ -1642,8 +1729,9 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('choice');
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
-    expect(result.current.status).toBe('choice');
+    expect(result.current.status).toBe('name');
     vi.unstubAllGlobals();
   });
 
@@ -1747,6 +1835,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('unsupported');
     expect(startPasskeyRegistration).not.toHaveBeenCalled();
@@ -1837,8 +1926,9 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
-    expect(result.current.status).toBe('idle');
+    expect(result.current.status).toBe('name');
     vi.unstubAllGlobals();
   });
 
@@ -1859,6 +1949,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     act(() => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     act(() => {
       result.current.cancel();
@@ -1889,6 +1980,7 @@ describe('usePasskeyLogin', () => {
     const { result, unmount } = renderHook(() => usePasskeyLogin());
     act(() => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     unmount();
     await act(async () => {
@@ -1904,6 +1996,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('plain-fail');
@@ -1917,6 +2010,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     vi.unstubAllGlobals();
@@ -1965,6 +2059,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
   });
@@ -2040,12 +2135,14 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     await act(async () => {
       result.current.retry();
     });
-    expect(vi.mocked(startPasskeyRegistration)).toHaveBeenCalledTimes(2);
+    expect(result.current.status).toBe('name');
+    expect(vi.mocked(startPasskeyRegistration)).toHaveBeenCalledTimes(1);
   });
 
   it('goes to error when create returns a non-passkey credential', async () => {
@@ -2056,6 +2153,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     vi.unstubAllGlobals();
@@ -2089,10 +2187,12 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     vi.mocked(startPasskeyRegistration).mockRejectedValueOnce(new Error('second'));
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     await act(async () => {
       resolveFinish({ token: 'tok', account });
@@ -2144,10 +2244,12 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     vi.mocked(startPasskeyRegistration).mockRejectedValueOnce(new Error('second'));
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     await act(async () => {
       resolveCreate({ id: 'cred', type: 'public-key' });
@@ -2205,9 +2307,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     act(() => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     act(() => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     await act(async () => {
       resolveBegin(begin);
@@ -2230,9 +2334,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     act(() => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     await act(async () => {
       rejectFirst(new Error('late first'));
@@ -2339,6 +2445,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(create).toHaveBeenCalledTimes(1);
     expect(create.mock.calls[0]?.[0]).toEqual(
@@ -2451,12 +2558,15 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     const bodies = fetchMock.mock.calls.map(
       (call) => JSON.parse(String((call[1] as RequestInit).body)) as { accountId?: string },
@@ -2484,6 +2594,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     await act(async () => {
@@ -2509,6 +2620,7 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     await act(async () => {
