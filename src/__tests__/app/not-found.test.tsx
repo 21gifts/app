@@ -1,4 +1,4 @@
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import NotFound from '@/app/not-found';
@@ -40,5 +40,10 @@ describe('NotFound', () => {
     );
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
     expect(screen.queryByLabelText('Number format')).toBeNull();
+  });
+
+  it('renders without an outer LocaleProvider', async () => {
+    render(await NotFound());
+    expect(screen.getByRole('heading', { name: '404' })).toBeTruthy();
   });
 });
