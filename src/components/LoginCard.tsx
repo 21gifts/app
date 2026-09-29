@@ -61,7 +61,7 @@ export function LoginCard(): ReactElement {
       />
     );
   } else if (passkey.status === 'unknown') {
-    body = <UnknownView onRegister={() => passkey.register()} />;
+    body = <UnknownView onRegister={() => passkey.register()} onRetry={passkey.login} />;
   } else if (passkey.status === 'choice') {
     body = (
       <ChoiceView onAuthenticate={passkey.authenticate} onRegister={() => passkey.register()} />
@@ -140,15 +140,18 @@ function ChoiceView({ onAuthenticate, onRegister }: ChoiceViewProps): ReactEleme
 interface UnknownViewProps {
   /** Create a passkey with no view key. */
   onRegister: () => void;
+  /** Authenticate-first login; never creates an account. */
+  onRetry: () => void;
 }
 
 /**
  * After authenticate finish `Unknown credential`: the offered passkey is not an account.
+ * **Open a new account** creates; **Try again** calls login.
  *
  * @param props - See {@link UnknownViewProps}.
  * @returns The unknown-credential view.
  */
-function UnknownView({ onRegister }: UnknownViewProps): ReactElement {
+function UnknownView({ onRegister, onRetry }: UnknownViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -157,6 +160,9 @@ function UnknownView({ onRegister }: UnknownViewProps): ReactElement {
       <p className="text-sm text-app-muted text-center">{t('login.unknownBody')}</p>
       <Button type="button" onClick={onRegister}>
         {t('login.create')}
+      </Button>
+      <Button type="button" variant="secondary" onClick={onRetry}>
+        {t('login.retry')}
       </Button>
     </>
   );

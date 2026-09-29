@@ -1013,7 +1013,7 @@ Marketing shell, `max-w-[1100px] px-5 py-24`, `HandbookIntro`, accent section li
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft wordmark={<HomeWordmark />} />}` `topRight={<LanguageSwitcher tone="light" />}`. `OnboardingGate screen="login"` → `LoginCard` (`Fingerprint` 32px subtle, **one** heading `login.heading` at **card-title**, `Button` primary md with Fingerprint icon **Log in**). After login `NotAllowedError` (not in-app): heading `login.choiceHeading` at **card-title**, labeled `Button` primary **Log in with existing account** (Fingerprint icon allowed) and `Button` `variant="secondary"` **Open a new account** (no icon, no viewKey). No auto-create.
 
-Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try again**. Choice: as above. After passkey finish 400 `{ "error": "Unknown credential" }`, the card heading is `login.unknownHeading`, the muted sentence is `login.unknownBody`, and the only button is **Open a new account**; dismissing that create ceremony returns to this card. In-app: `InAppBrowserView`.
+Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try again**. Choice: as above. After passkey finish 400 `{ "error": "Unknown credential" }`, the card heading is `login.unknownHeading`, the muted sentence is `login.unknownBody`, and the buttons are primary **Open a new account** and secondary **Try again** (`login.retry`). **Try again** calls `passkey.login` and does not create an account; dismissing that create ceremony returns to this card. In-app: `InAppBrowserView`.
 
 **Do not reintroduce** an outer “Log in to 21.gifts” title.
 

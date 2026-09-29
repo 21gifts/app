@@ -3929,7 +3929,7 @@ async function expectUnknownPasskeyCard(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'This passkey is not an account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
   await expect(page.getByText('Something went wrong. Please try again.')).not.toBeVisible();
-  await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 }
 
 test('Function: isUnknownCredentialError — unknown passkey shows the new-account card', async ({

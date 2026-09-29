@@ -1694,6 +1694,7 @@ test.describe('login variant baselines', () => {
     await expect(
       page.getByRole('heading', { name: 'This passkey is not an account' }),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-login-unknown');
   });
 

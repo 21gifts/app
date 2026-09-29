@@ -103,9 +103,10 @@ describe('LoginCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
     expect(registerSpy).toHaveBeenCalledTimes(1);
     expect(registerSpy).toHaveBeenCalledWith();
-    expect(screen.queryByRole('button', { name: /try again/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(loginSpy).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
   it('shows a loading state while a passkey ceremony starts', () => {
