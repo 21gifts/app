@@ -52,6 +52,12 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
   fetchPublicReplies: vi.fn(),
   PublicForumUnauthorizedError: class PublicForumUnauthorizedError extends Error {},
+  NoteDeletedError: class NoteDeletedError extends Error {
+    constructor() {
+      super('This note was deleted');
+      this.name = 'NoteDeletedError';
+    }
+  },
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   fetchComposeTarget: vi.fn(),
@@ -91,6 +97,7 @@ import {
   fetchPublicReplies,
   fetchReplies,
   PublicForumUnauthorizedError,
+  NoteDeletedError,
   markNotificationRead,
   fetchComposeTarget,
   postMessage,
@@ -4904,6 +4911,27 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
   });
 
+  it('shows the deleted-note pay error when the invoice target is gone', async () => {
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
+    repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
+    invoiceMock.mockRejectedValue(new NoteDeletedError());
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+
+    const replyCard = await clickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+  });
+
   it('shows pay author-wallet error when invoice rejects the author wallet', async () => {
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
@@ -5967,6 +5995,27 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('keeps the generic request copy when the compose-target invoice is gone', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockRejectedValue(new NoteDeletedError());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+  });
+
   it('maps a compose-pay rate-limit onto the reply error', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
@@ -6376,6 +6425,14 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('maps a deleted paid-reply invoice onto the deleted-note error', async () => {
+    invoiceMock.mockRejectedValue(new NoteDeletedError());
+    await expandForeignAndPayReply('Hi Bob', '21');
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
+  });
+
   it('lets a founder reply without paying', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
@@ -6412,6 +6469,27 @@ describe('ForumLoader', () => {
       });
     });
     expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('maps a deleted unpaid reply onto the deleted-note error', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new NoteDeletedError());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Staff reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
   });
 
   it('lets a moderator reply without paying', async () => {

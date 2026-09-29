@@ -1151,6 +1151,12 @@ The payment request failed. The alert says **Could not post your message**. The 
 
 ![21.gifts welcome reaction error](images/welcome-reaction-error.png)
 
+### Variant: reaction-deleted
+
+The payment request failed because the note was deleted. The alert says **This note was deleted.**, the typed sentence is still in the field, and no pay sheet is open.
+
+![21.gifts welcome reaction deleted](images/welcome-reaction-deleted.png)
+
 ### Variant: reaction-rate-limit
 
 The payment request was rate-limited. The alert says **Too many messages. Please wait a moment and try again.** The typed sentence is still in the field.
@@ -1507,6 +1513,12 @@ Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the s
 Payable reply, Gift amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. No payment QR and no invoice-step **Pay with Wallet of Satoshi** button.
 
 ![21.gifts welcome pay author wallet](images/welcome-pay-author-wallet.png)
+
+### Variant: pay-deleted
+
+Payable reply, Gift amount submitted, but the note was deleted. The pay sheet stays on the amount form and shows **This note was deleted.**, with no payment QR and no invoice-step Pay button.
+
+![21.gifts welcome pay deleted](images/welcome-pay-deleted.png)
 
 ### Variant: role-hint
 

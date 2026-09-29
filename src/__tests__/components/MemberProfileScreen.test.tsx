@@ -4,6 +4,7 @@ import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
   agreeToRules,
   fetchComposeTarget,
+  NoteDeletedError,
   fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
@@ -45,6 +46,12 @@ vi.mock('@/lib/api', () => ({
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   postMessageInvoice: vi.fn(),
+  NoteDeletedError: class NoteDeletedError extends Error {
+    constructor() {
+      super('This note was deleted');
+      this.name = 'NoteDeletedError';
+    }
+  },
   fetchComposeTarget: vi.fn(),
   fetchPublicMessage: vi.fn(),
   dismissForumLaws: vi.fn(),
@@ -1193,6 +1200,23 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('shows the deleted-note pay error when the invoice target is gone', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new NoteDeletedError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
+  });
+
   it('retries replies after a failed expand', async () => {
     vi.mocked(fetchReplies).mockRejectedValueOnce(new Error('fail')).mockResolvedValueOnce([]);
     renderWithLocale(
@@ -2134,6 +2158,23 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('maps a deleted paid-reply invoice onto the deleted-note error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new NoteDeletedError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
+  });
+
   it('opens the overlay when a compose-pay invoice is missing a name', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(
@@ -2163,6 +2204,23 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
+    });
+  });
+
+  it('keeps the generic request copy when the compose-target invoice is gone', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new NoteDeletedError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
   });
 
@@ -2610,6 +2668,24 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+  });
+
+  it('maps a deleted unpaid reply onto the deleted-note error', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    vi.mocked(postMessage).mockRejectedValue(new NoteDeletedError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
     });
   });
 

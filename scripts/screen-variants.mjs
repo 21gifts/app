@@ -1417,6 +1417,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-deleted',
+    image: 'welcome-pay-deleted.png',
+    visual: 'state-welcome-pay-deleted',
+    needle: "shotScreen(page, 'state-welcome-pay-deleted')",
+  },
+  {
+    route: '/welcome',
     id: 'role-hint',
     image: 'welcome-role-hint.png',
     visual: 'state-welcome-role-hint',
@@ -3535,6 +3542,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-reaction-error.png',
     visual: 'state-welcome-reaction-error',
     needle: "shotScreen(page, 'state-welcome-reaction-error')",
+  },
+  {
+    route: '/welcome',
+    id: 'reaction-deleted',
+    image: 'welcome-reaction-deleted.png',
+    visual: 'state-welcome-reaction-deleted',
+    needle: "shotScreen(page, 'state-welcome-reaction-deleted')",
   },
   {
     route: '/welcome',

@@ -3891,7 +3891,7 @@ const REACTION_PAY_ANSWER = 'This is my answer';
 const REACTION_PAY_NOTE = 'Thank you so much to all donors.';
 
 /** Signed-in welcome, one foreign note, a paid reaction invoice that stays waiting. */
-async function openReactionPayPage(page: Page): Promise<void> {
+async function openReactionPayPage(page: Page, invoiceStatus: number = 200): Promise<void> {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
@@ -3944,6 +3944,14 @@ async function openReactionPayPage(page: Page): Promise<void> {
     });
   });
   await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+    if (invoiceStatus === 404) {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -4188,6 +4196,14 @@ test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', 
 
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {
   await openPayInvoice(page, request);
+});
+
+test('Function: NoteDeletedError — deleted reply invoice shows the note-deleted alert', async ({
+  page,
+}) => {
+  await openReactionPayPage(page, 404);
+  await expect(page.getByRole('alert').filter({ hasText: 'This note was deleted.' })).toBeVisible();
+  await expect(page.locator('[data-reply-pay-page]')).toHaveCount(0);
 });
 
 test('Function: shownFiatForSats — pay sheet sends the shown amounts', async ({

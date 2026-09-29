@@ -1152,6 +1152,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:pay-deleted",
+    "label": "/welcome pay-deleted",
+    "visual": "state-welcome-pay-deleted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:role-hint",
     "label": "/welcome role-hint",
     "visual": "state-welcome-role-hint",
@@ -2967,6 +2973,12 @@
     "id": "/welcome:reaction-error",
     "label": "/welcome reaction-error",
     "visual": "state-welcome-reaction-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-deleted",
+    "label": "/welcome reaction-deleted",
+    "visual": "state-welcome-reaction-deleted",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
