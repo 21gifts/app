@@ -29,6 +29,7 @@ describe('ForumVideo', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
     const play = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(video, 'play', { configurable: true, value: play });
+    expect(screen.queryByText('Play')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Play' }));
     expect(play).toHaveBeenCalledTimes(1);
     fireEvent.play(video);
