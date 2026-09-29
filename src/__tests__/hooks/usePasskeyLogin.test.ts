@@ -575,6 +575,31 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('stays on unknown when Try again login is dismissed', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    stubSignalUnknownCredential();
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new UnknownCredentialError());
+    const get = vi
+      .fn()
+      .mockResolvedValueOnce(cred)
+      .mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('unknown');
+    vi.unstubAllGlobals();
+  });
+
   it('cancel from unknown returns to idle', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     stubSignalUnknownCredential();

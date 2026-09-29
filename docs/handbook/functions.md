@@ -367,7 +367,7 @@
 
 ## Function: LoginCard
 
-- **Purpose:** Login UI: one **Log in** button (authenticate-first), an account-choice card after browser `NotAllowedError` (**Log in with existing account** / **Open a new account**), an unknown-passkey card after authenticate finish `Unknown credential` (heading `login.unknownHeading`, muted `login.unknownBody`, **Open a new account** and secondary **Try again** that calls `passkey.login`), preparing, error, or an in-app browser escape card via `InAppBrowserView` (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`. A new account is created only after **Open a new account** and a completed create ceremony. Error uses `login.error` plus **Try again**, except a wrong-account 403 (`wrongAccount` or passkey error equal to that api string) which uses `login.wrongAccount` with the same layout. **Try again** on that hint calls `clearWrongAccount` then `passkey.login` (never `retry`, so it cannot create another account). Generic errors still call `passkey.retry`.
+- **Purpose:** Login UI: one **Log in** button (authenticate-first), an account-choice card after browser `NotAllowedError` (**Log in with existing account** / **Open a new account**), an unknown-passkey card after authenticate finish `Unknown credential` (heading `login.unknownHeading`, muted `login.unknownBody`, **Open a new account** and secondary **Try again** that calls `passkey.login`; dismissing the Try again login prompt stays on this card and does not open the account-choice card), preparing, error, or an in-app browser escape card via `InAppBrowserView` (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`. A new account is created only after **Open a new account** and a completed create ceremony. Error uses `login.error` plus **Try again**, except a wrong-account 403 (`wrongAccount` or passkey error equal to that api string) which uses `login.wrongAccount` with the same layout. **Try again** on that hint calls `clearWrongAccount` then `passkey.login` (never `retry`, so it cannot create another account). Generic errors still call `passkey.retry`.
 - **Inputs:** Uses `usePasskeyLogin`, `useAuthStore`, `isInAppBrowser`, and `InAppBrowserView`.
 - **Returns / side effects:** React element covering idle/choice/unknown/starting/error/wrong-account/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card.
 - **Used by:** Screen `/login`.
@@ -1521,7 +1521,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Typed error for api 400 when authenticate finish rejects a credential the server does not store (`Unknown credential`).
 - **Inputs:** None; message is the exact api English string.
-- **Returns / side effects:** Error instance named `UnknownCredentialError`. Callers signal the credential unknown then show the unknown login card.
+- **Returns / side effects:** Error instance named `UnknownCredentialError`. `usePasskeyLogin` may signal the credential unknown and sets status `unknown`. `LoginCard` shows the unknown login card. `ViewProfileClaim` shows `view.claimError` and **Try again** calls `authenticate()`, never `register`.
 - **Used by:** `finishPasskeyAuthentication`, `usePasskeyLogin`.
 
 ## Function: isUnknownCredentialError

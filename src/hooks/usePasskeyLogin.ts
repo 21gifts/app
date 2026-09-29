@@ -25,7 +25,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * Discrete states of the passkey login flow.
  *
  * `choice` is the account question after `login()` gets `NotAllowedError`
- * outside an in-app browser.
+ * outside an in-app browser when unknown was not offered.
  *
  * `unknown` is authenticate finish rejected the credential the phone offered
  * because the server returned `Unknown credential`.
@@ -37,9 +37,9 @@ export interface UsePasskeyLogin {
   /** Where the passkey flow currently is. */
   status: PasskeyStatus;
   /**
-   * Authenticate with an existing discoverable passkey. On `NotAllowedError`
-   * outside an in-app browser, status becomes `choice` instead of creating
-   * an account.
+   * Authenticate with an existing discoverable passkey. A dismissed
+   * `NotAllowedError` stays on `unknown` when that card was already offered,
+   * and becomes `choice` only when unknown was not offered.
    */
   login: () => void;
   /**
@@ -509,6 +509,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         }
         if (isInAppBrowser()) {
           setStatus('unsupported');
+          return;
+        }
+        if (unknownOfferedRef.current) {
+          finishWithError(runId, error);
           return;
         }
         choiceOfferedRef.current = true;

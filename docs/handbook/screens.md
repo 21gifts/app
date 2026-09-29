@@ -270,7 +270,7 @@ GET `/me` 403 with the api wrong-account copy, or passkey finish with that same 
 
 ### Variant: unknown
 
-Passkey authenticate finish 400 `{ "error": "Unknown credential" }`. Heading **This passkey is not an account** (`login.unknownHeading`), muted sentence **This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.** (`login.unknownBody`), primary **Open a new account** and secondary **Try again**. **Try again** starts authenticate-first login and does not create an account. Dismissing that create ceremony returns to this card.
+Passkey authenticate finish 400 `{ "error": "Unknown credential" }`. Heading **This passkey is not an account** (`login.unknownHeading`), muted sentence **This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.** (`login.unknownBody`), primary **Open a new account** and secondary **Try again**. **Try again** starts authenticate-first login and does not create an account. Dismissing that create ceremony returns to this card. Dismissing the Try again login prompt stays on this card and does not open the account-choice card.
 
 ![21.gifts login unknown](images/login-unknown.png)
 
