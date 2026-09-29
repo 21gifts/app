@@ -120,6 +120,20 @@ test('Function: postPasskeyRenewReport — report without a session is 401', asy
   expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
 });
 
+test('Function: passkeyRenewDebug — report without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: passkeyRenewDebugFields — report without a session is 401', async ({ request }) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
+test('Function: passkeyRenewClientCapabilities — report without a session is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
+});
+
 test('Function: postPasskeyRenewAck — ack without a session is 401', async ({ request }) => {
   expect((await request.post('/me/passkey-renew/ack')).status()).toBe(401);
 });

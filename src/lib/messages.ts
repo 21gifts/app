@@ -500,6 +500,8 @@ const en = {
   'passkeyRenew.failedTitle': 'That did not work',
   'passkeyRenew.failedBody':
     'The renewal did not work. You can try again later. You do not need to do anything now.',
+  'passkeyRenew.prfUnsupported':
+    'This passkey cannot create a recovery phrase. You need another password manager or another device. You do not need to do anything now.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
@@ -1441,6 +1443,8 @@ const de = {
   'passkeyRenew.failedTitle': 'Das hat nicht funktioniert',
   'passkeyRenew.failedBody':
     'Die Erneuerung ist nicht gelungen. Du kannst es später noch einmal versuchen. Jetzt musst du nichts unternehmen.',
+  'passkeyRenew.prfUnsupported':
+    'Dieser Passkey kann keinen Wiederherstellungssatz erzeugen. Dafür brauchst du einen anderen Passwortmanager oder ein anderes Gerät. Jetzt musst du nichts unternehmen.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
@@ -2394,6 +2398,8 @@ const es = {
   'passkeyRenew.failedTitle': 'Eso no funcionó',
   'passkeyRenew.failedBody':
     'La renovación no ha funcionado. Puedes intentarlo más tarde. Ahora no tienes que hacer nada.',
+  'passkeyRenew.prfUnsupported':
+    'Este passkey no puede crear una frase de recuperación. Hace falta otro gestor de contraseñas u otro dispositivo. Ahora no tienes que hacer nada.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
@@ -3338,6 +3344,8 @@ const fil = {
   'passkeyRenew.failedTitle': 'Hindi iyon nagtagumpay',
   'passkeyRenew.failedBody':
     'Hindi nagtagumpay ang pag-renew. Maaari mong subukan ulit mamaya. Wala kang kailangang gawin ngayon.',
+  'passkeyRenew.prfUnsupported':
+    'Hindi makagawa ng recovery phrase ang passkey na ito. Kailangan mo ng ibang password manager o ibang device. Wala kang kailangang gawin ngayon.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',

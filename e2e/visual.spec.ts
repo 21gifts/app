@@ -1978,6 +1978,43 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-renew-failed');
   });
 
+  test('state /welcome renew-failed-prf-unsupported', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          walletRequired: false,
+          passkeyRenewFailed: true,
+          passkeyRenewPrfUnsupported: true,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByText('This passkey cannot create a recovery phrase.')).toBeVisible();
+    await expect(
+      page.getByText('You need another password manager or another device.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'OK' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-renew-failed-prf-unsupported');
+  });
+
   test('state /welcome renew-ok', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
