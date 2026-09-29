@@ -55,6 +55,22 @@ describe('ForumVideo', () => {
     expect(exitFullscreen).toHaveBeenCalledTimes(1);
   });
 
+  it('forwards play and pause when the caller listens', () => {
+    const onPlay = vi.fn();
+    const onPause = vi.fn();
+    renderWithLocale(
+      <ForumVideo src="/messages/clip/video.mp4" onPlay={onPlay} onPause={onPause} />,
+    );
+    const video = document.querySelector('video');
+    if (!(video instanceof HTMLVideoElement)) {
+      throw new Error('missing video');
+    }
+    fireEvent.play(video);
+    expect(onPlay).toHaveBeenCalledTimes(1);
+    fireEvent.pause(video);
+    expect(onPause).toHaveBeenCalledTimes(1);
+  });
+
   it('uses the webkit video call when the frame cannot request fullscreen', () => {
     renderWithLocale(<ForumVideo src="/messages/clip/video.webm" />);
     const video = document.querySelector('video');
