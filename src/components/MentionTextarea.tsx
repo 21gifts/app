@@ -25,6 +25,12 @@ export interface MentionAccount {
   name: string;
 }
 
+/** Server page kept only while its prefix is still the active token. */
+interface MentionPage {
+  query: string;
+  rows: MentionAccount[];
+}
+
 /** Props for {@link MentionTextarea}. */
 export interface MentionTextareaProps {
   /** Composer value. */
@@ -56,8 +62,10 @@ const OPTION_ROW_CLASS =
  * Forum composer field that suggests people as soon as `@` is typed.
  *
  * An empty token shows the prefetched first page. A longer token shows
- * usernames that start with those letters. Choosing one inserts
- * `@username ` and closes the list. The list sits under the field, and
+ * usernames that start with those letters. A new letter drops the previous
+ * server page in that same update. Choosing one inserts `@username ` and
+ * closes the list. A space already after the token stays a single space.
+ * The list sits under the field, and
  * above it only when this list would not fit underneath and there is
  * more room above. No session, or a disabled field, is a plain textarea.
  *
@@ -86,7 +94,7 @@ export function MentionTextarea({
   const [caret, setCaret] = useState(0);
   const [collapsed, setCollapsed] = useState(true);
   const [seed, setSeed] = useState<MentionAccount[] | null>(null);
-  const [remote, setRemote] = useState<MentionAccount[] | null>(null);
+  const [remote, setRemote] = useState<MentionPage | null>(null);
   const [highlight, setHighlight] = useState(0);
   const [closedKey, setClosedKey] = useState<string | null>(null);
   const [placeAbove, setPlaceAbove] = useState(false);
@@ -101,7 +109,10 @@ export function MentionTextarea({
       : mention.query === ''
         ? seed
         : seed.filter((row) => row.username.toLowerCase().startsWith(mention.query));
-  const shown = mention !== null && mention.query !== '' && remote !== null ? remote : filtered;
+  const shown =
+    mention !== null && mention.query !== '' && remote !== null && remote.query === mention.query
+      ? remote.rows
+      : filtered;
   const shownKey = shown.map((row) => row.id).join('\n');
   const open = mention !== null && closedKey !== dismissKey && shown.length > 0;
   const activeIndex = Math.min(highlight, Math.max(shown.length - 1, 0));
@@ -140,13 +151,13 @@ export function MentionTextarea({
       void searchMentionAccounts(session, prefix)
         .then((rows) => {
           if (!cancelled) {
-            setRemote(rows);
+            setRemote({ query: prefix, rows });
             setHighlight(0);
           }
         })
         .catch(() => {
           if (!cancelled) {
-            setRemote([]);
+            setRemote({ query: prefix, rows: [] });
           }
         });
     }, 150);
@@ -226,7 +237,8 @@ export function MentionTextarea({
   };
 
   const insertAt = (token: NonNullable<typeof mention>, account: MentionAccount): void => {
-    const next = value.slice(0, token.start) + `@${account.username} ` + value.slice(token.end);
+    const end = value.charAt(token.end) === ' ' ? token.end + 1 : token.end;
+    const next = value.slice(0, token.start) + `@${account.username} ` + value.slice(end);
     const caretAt = token.start + account.username.length + 2;
     pendingCaret.current = caretAt;
     setCaret(caretAt);

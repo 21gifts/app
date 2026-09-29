@@ -458,6 +458,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'mention-inserted',
+    image: 'welcome-mention-inserted.png',
+    visual: 'state-welcome-mention-inserted',
+    needle: 'state /welcome mention-inserted',
+  },
+  {
+    route: '/welcome',
+    id: 'mention-inserted-reply',
+    image: 'welcome-mention-inserted-reply.png',
+    visual: 'state-welcome-mention-inserted-reply',
+    needle: 'state /welcome mention-inserted-reply',
+  },
+  {
+    route: '/welcome',
+    id: 'mention-inserted-ask',
+    image: 'welcome-mention-inserted-ask.png',
+    visual: 'state-welcome-mention-inserted-ask',
+    needle: 'state /welcome mention-inserted-ask',
+  },
+  {
+    route: '/welcome',
     id: 'laws',
     image: 'welcome-laws.png',
     visual: 'state-welcome-laws',
@@ -3405,6 +3426,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'mention-inserted',
+    image: 'messages-id-mention-inserted.png',
+    visual: 'state-messages-id-mention-inserted',
+    needle: 'state /messages/[id] mention-inserted',
+  },
+  {
+    route: '/messages/[id]',
     id: 'place',
     image: 'messages-id-place.png',
     visual: 'state-messages-id-place',
@@ -3710,6 +3738,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-mention-suggest.png',
     visual: 'state-shops-mention-suggest',
     needle: 'state /shops mention-suggest',
+  },
+  {
+    route: '/shops',
+    id: 'mention-inserted',
+    image: 'shops-mention-inserted.png',
+    visual: 'state-shops-mention-inserted',
+    needle: 'state /shops mention-inserted',
   },
   {
     route: '/shops',

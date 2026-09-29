@@ -331,6 +331,75 @@ describe('MentionTextarea', () => {
     });
   });
 
+  it('drops a stale server page in the same update as the next letter', async () => {
+    search.mockImplementation(async (_token: string, query: string) => {
+      if (query === '') {
+        return PEOPLE;
+      }
+      if (query === 'a') {
+        return [PEOPLE[2]!];
+      }
+      return PEOPLE.filter((row) => row.username.startsWith(query));
+    });
+    useAuthStore.setState({ session: 'sess', account: null });
+    const sawStale = { current: false };
+    const watching = { current: false };
+    function Field(): ReactElement {
+      const [value, setValue] = useState('@a');
+      const root = useRef<HTMLDivElement>(null);
+      useLayoutEffect(() => {
+        if (!watching.current || root.current === null) {
+          return;
+        }
+        if (root.current.querySelector('[role="option"][aria-label="@ashton"]') !== null) {
+          sawStale.current = true;
+        }
+      });
+      return (
+        <div ref={root}>
+          <MentionTextarea
+            value={value}
+            onChange={setValue}
+            ariaLabel="Your message"
+            wrapperClassName="relative"
+            className="w-full"
+          />
+        </div>
+      );
+    }
+    renderWithLocale(<Field />);
+    typeInto('@a');
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: '@ashton' })).toBeTruthy();
+      expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
+    });
+    watching.current = true;
+    typeInto('@ad');
+    expect(sawStale.current).toBe(false);
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@ashton' })).toBeNull();
+  });
+
+  it('does not leave a second space when the token already has one', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    const onChange = vi.fn();
+    renderWithLocale(
+      <MentionTextarea
+        value="hi @ad there"
+        onChange={onChange}
+        ariaLabel="Your message"
+        wrapperClassName="relative"
+        className="w-full"
+      />,
+    );
+    const box = screen.getByRole('textbox') as HTMLTextAreaElement;
+    box.setSelectionRange(6, 6);
+    fireEvent.select(box);
+    fireEvent.mouseDown(await screen.findByRole('option', { name: '@ada' }));
+    expect(onChange).toHaveBeenCalledWith('hi @ada there');
+  });
+
   it('closes the list in the same update that inserts a name', async () => {
     search.mockResolvedValue(PEOPLE);
     useAuthStore.setState({ session: 'sess', account: null });

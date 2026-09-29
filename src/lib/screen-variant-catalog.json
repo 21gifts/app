@@ -330,6 +330,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:mention-inserted",
+    "label": "/welcome mention-inserted",
+    "visual": "state-welcome-mention-inserted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:mention-inserted-reply",
+    "label": "/welcome mention-inserted-reply",
+    "visual": "state-welcome-mention-inserted-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:mention-inserted-ask",
+    "label": "/welcome mention-inserted-ask",
+    "visual": "state-welcome-mention-inserted-ask",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:laws",
     "label": "/welcome laws",
     "visual": "state-welcome-laws",
@@ -2856,6 +2874,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:mention-inserted",
+    "label": "/messages/[id] mention-inserted",
+    "visual": "state-messages-id-mention-inserted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:place",
     "label": "/messages/[id] place",
     "visual": "state-messages-id-place",
@@ -3117,6 +3141,12 @@
     "id": "/shops:mention-suggest",
     "label": "/shops mention-suggest",
     "visual": "state-shops-mention-suggest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:mention-inserted",
+    "label": "/shops mention-inserted",
+    "visual": "state-shops-mention-inserted",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

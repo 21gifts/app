@@ -536,6 +536,24 @@ Ask for money is on the text step, the message contains `@`, and the People list
 
 ![21.gifts welcome ask mention suggestions](images/welcome-mention-suggest-ask.png)
 
+### Variant: mention-inserted
+
+Choosing `@ada` from that open list writes `@ada ` into the post composer and closes the list.
+
+![21.gifts welcome mention inserted](images/welcome-mention-inserted.png)
+
+### Variant: mention-inserted-reply
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts welcome reply mention inserted](images/welcome-mention-inserted-reply.png)
+
+### Variant: mention-inserted-ask
+
+Choosing `@ada` from that open list writes `@ada ` into the ask message and closes the list.
+
+![21.gifts welcome ask mention inserted](images/welcome-mention-inserted-ask.png)
+
 ### Variant: laws
 
 First visit: the dismissible living-room laws hint box is visible (two laws plus links to **Living room rules** and **Contact**). Idle screenshots after dismiss omit it.
@@ -1596,6 +1614,12 @@ Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** s
 The shop post composer contains `@` and the People list is open, with `@ada`.
 
 ![21.gifts shops mention suggestions](images/shops-mention-suggest.png)
+
+### Variant: mention-inserted
+
+Choosing `@ada` from that open list writes `@ada ` into the shop post composer and closes the list.
+
+![21.gifts shops mention inserted](images/shops-mention-inserted.png)
 
 ### Variant: sunday
 
@@ -3526,6 +3550,12 @@ Valid known UUID. Thread may be parent-only when replies are empty. Card with au
 Signed in. The root note is expanded, the reaction field contains `@`, and the People list is open.
 
 ![21.gifts public message mention suggestions](images/messages-id-mention-suggest.png)
+
+### Variant: mention-inserted
+
+Choosing `@ada` from that open list writes `@ada ` into the reaction field and closes the list.
+
+![21.gifts public message mention inserted](images/messages-id-mention-inserted.png)
 
 ### Variant: place
 
