@@ -65,6 +65,9 @@ const OPTION_ROW_CLASS =
  * usernames that start with those letters. A new letter drops the previous
  * server page in that same update. Choosing one inserts `@username ` and
  * closes the list. A space already after the token stays a single space.
+ * Escape, Tab, or a click outside keeps that `@` closed until that
+ * character is gone. The caret sits after the inserted space even when
+ * the text was already that handle.
  * The list sits under the field, and
  * above it only when this list would not fit underneath and there is
  * more room above. No session, or a disabled field, is a plain textarea.
@@ -172,10 +175,14 @@ export function MentionTextarea({
   }, [tokenKey]);
 
   useEffect(() => {
-    if (mention === null && closedKey !== null) {
+    if (closedKey === null) {
+      return;
+    }
+    const index = Number(closedKey);
+    if (!Number.isInteger(index) || value.charAt(index) !== '@') {
       setClosedKey(null);
     }
-  }, [mention, closedKey]);
+  }, [value, closedKey]);
 
   useLayoutEffect(() => {
     if (!open) {
@@ -242,7 +249,14 @@ export function MentionTextarea({
     const caretAt = token.start + account.username.length + 2;
     pendingCaret.current = caretAt;
     setCaret(caretAt);
-    setClosedKey(String(token.start));
+    if (next === value) {
+      const node = localRef.current;
+      /* v8 ignore next 3 -- insert runs only after the textarea is mounted */
+      if (node !== null) {
+        node.setSelectionRange(caretAt, caretAt);
+      }
+      pendingCaret.current = null;
+    }
     onChange(next);
   };
 
@@ -277,9 +291,11 @@ export function MentionTextarea({
     if (event.key === 'Enter') {
       event.preventDefault();
       const account = shown[activeIndex];
-      if (account !== undefined) {
-        insertAt(mention, account);
+      /* v8 ignore next 3 -- the list is open only while a row is shown */
+      if (account === undefined) {
+        return;
       }
+      insertAt(mention, account);
       return;
     }
     if (event.key === 'Escape') {
@@ -355,9 +371,11 @@ export function MentionTextarea({
                 }
                 onMouseDown={(event) => {
                   event.preventDefault();
-                  if (mention !== null) {
-                    insertAt(mention, account);
+                  /* v8 ignore next 3 -- the option is rendered only while a mention token is active */
+                  if (mention === null) {
+                    return;
                   }
+                  insertAt(mention, account);
                 }}
               >
                 <span className="font-medium">@{account.username}</span>

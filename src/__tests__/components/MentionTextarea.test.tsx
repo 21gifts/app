@@ -192,6 +192,12 @@ describe('MentionTextarea', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
     typeInto('see @a');
     expect(screen.queryByRole('listbox')).toBeNull();
+    typeInto('@');
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' });
+    typeInto('@ ');
+    typeInto('@');
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 
   it('hides the list when the prefetch fails or the prefix matches nobody', async () => {
@@ -378,6 +384,30 @@ describe('MentionTextarea', () => {
     expect(sawStale.current).toBe(false);
     expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
     expect(screen.queryByRole('option', { name: '@ashton' })).toBeNull();
+  });
+
+  it('moves the caret when the inserted handle is already in the field', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('hi @ada there');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = screen.getByRole('textbox') as HTMLTextAreaElement;
+    box.setSelectionRange(7, 7);
+    fireEvent.select(box);
+    fireEvent.mouseDown(await screen.findByRole('option', { name: '@ada' }));
+    expect(box.selectionStart).toBe(8);
+    expect(box.value).toBe('hi @ada there');
   });
 
   it('does not leave a second space when the token already has one', async () => {
