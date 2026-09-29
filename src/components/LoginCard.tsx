@@ -1,18 +1,18 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, Field } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The `/login` card: Log in, account choice, unknown passkey, preparing,
- * error, or in-app browser escape.
+ * The `/login` card: Log in, account choice, unknown passkey, name,
+ * preparing, error, or in-app browser escape.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`,
@@ -26,6 +26,8 @@ export function LoginCard(): ReactElement {
   const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
   const passkey = usePasskeyLogin();
   const [inApp, setInApp] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameInvalid, setNameInvalid] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
@@ -57,6 +59,25 @@ export function LoginCard(): ReactElement {
             return;
           }
           passkey.retry();
+        }}
+      />
+    );
+  } else if (passkey.status === 'name') {
+    body = (
+      <NameView
+        draft={nameDraft}
+        error={nameInvalid ? 'invalid' : passkey.nameError}
+        onDraftChange={(value) => {
+          setNameDraft(value);
+          setNameInvalid(false);
+        }}
+        onSubmit={() => {
+          if (nameDraft.trim() === '') {
+            setNameInvalid(true);
+            return;
+          }
+          setNameInvalid(false);
+          passkey.submitName(nameDraft);
         }}
       />
     );
@@ -106,7 +127,7 @@ function StartView({ onLogin }: StartViewProps): ReactElement {
 interface ChoiceViewProps {
   /** Authenticate only; never falls through to register. */
   onAuthenticate: () => void;
-  /** Create a passkey with no view key. */
+  /** Open the name form; does not start create. */
   onRegister: () => void;
 }
 
@@ -138,7 +159,7 @@ function ChoiceView({ onAuthenticate, onRegister }: ChoiceViewProps): ReactEleme
 
 /** Props for {@link UnknownView}. */
 interface UnknownViewProps {
-  /** Create a passkey with no view key. */
+  /** Open the name form; does not start create. */
   onRegister: () => void;
   /** Authenticate-first login; never creates an account. */
   onRetry: () => void;
@@ -146,7 +167,7 @@ interface UnknownViewProps {
 
 /**
  * After authenticate finish `Unknown credential`: the offered passkey is not an account.
- * **Open a new account** creates; **Try again** calls login.
+ * **Open a new account** opens the name form; **Try again** calls login.
  *
  * @param props - See {@link UnknownViewProps}.
  * @returns The unknown-credential view.
@@ -164,6 +185,62 @@ function UnknownView({ onRegister, onRetry }: UnknownViewProps): ReactElement {
       <Button type="button" variant="secondary" onClick={onRetry}>
         {t('login.retry')}
       </Button>
+    </>
+  );
+}
+
+/** Props for {@link NameView}. */
+interface NameViewProps {
+  /** Current typed name. */
+  draft: string;
+  /** Shown under the field when set. */
+  error: 'invalid' | 'taken' | null;
+  /** Called when the field changes. */
+  onDraftChange: (value: string) => void;
+  /** Called to submit a non-empty draft. */
+  onSubmit: () => void;
+}
+
+/**
+ * Name form before a new-account create ceremony.
+ *
+ * @param props - See {@link NameViewProps}.
+ * @returns The name view.
+ */
+function NameView({ draft, error, onDraftChange, onSubmit }: NameViewProps): ReactElement {
+  const { t } = useTranslations();
+
+  const handleSubmit = (event: FormEvent): void => {
+    event.preventDefault();
+    onSubmit();
+  };
+
+  return (
+    <>
+      <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      <h1 className="text-center text-lg font-medium text-app-fg">{t('login.nameHeading')}</h1>
+      <p className="text-sm text-app-muted text-center">{t('login.nameBody')}</p>
+      <form className="flex w-full flex-col items-stretch gap-3" onSubmit={handleSubmit}>
+        <Field
+          label={t('login.nameLabel')}
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          maxLength={32}
+          value={draft}
+          aria-invalid={error !== null}
+          onChange={(event) => {
+            onDraftChange(event.target.value);
+          }}
+        />
+        {error !== null ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t(error === 'taken' ? 'login.nameTaken' : 'login.nameInvalid')}
+          </p>
+        ) : null}
+        <Button type="submit">{t('login.nameSubmit')}</Button>
+      </form>
     </>
   );
 }

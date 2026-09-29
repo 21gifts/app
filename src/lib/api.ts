@@ -2899,18 +2899,31 @@ export async function deletePushSubscription(
  * Starts a passkey registration ceremony.
  *
  * @param viewKey - Optional 64-hex public view key to claim an existing profile.
- * When set (non-empty), POSTs JSON `{ viewKey }`; otherwise POSTs with no body.
+ * When set (non-empty), POSTs JSON `{ viewKey }` and ignores `name`.
+ * @param name - Optional already-normalized username for a new account. Used only
+ * when `viewKey` is absent or empty: a non-empty string POSTs JSON `{ name }`.
+ * Otherwise POSTs with no body.
  * @returns Challenge id plus WebAuthn creation options JSON.
  * @throws Error with the api `{ error }` string when present on non-2xx, otherwise
  * a status fallback; or when the body fails validation.
  */
-export async function startPasskeyRegistration(viewKey?: string): Promise<PasskeyBegin> {
-  const response =
-    viewKey !== undefined && viewKey !== ''
+export async function startPasskeyRegistration(
+  viewKey?: string,
+  name?: string,
+): Promise<PasskeyBegin> {
+  const hasViewKey = viewKey !== undefined && viewKey !== '';
+  const hasName = name !== undefined && name !== '';
+  const response = hasViewKey
+    ? await fetch('/auth/passkey/register/begin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ viewKey }),
+      })
+    : hasName
       ? await fetch('/auth/passkey/register/begin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ viewKey }),
+          body: JSON.stringify({ name }),
         })
       : await fetch('/auth/passkey/register/begin', { method: 'POST' });
   if (!response.ok) {
@@ -2929,6 +2942,7 @@ export async function startPasskeyRegistration(viewKey?: string): Promise<Passke
  * @param credential - Browser attestation JSON (`PublicKeyCredential.toJSON()`).
  * @returns Token plus account (`linkingKey` is null).
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
+ * @throws Error `'Username is already in use'` on 409 with that exact api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
  */
 export async function finishPasskeyRegistration(
@@ -2941,6 +2955,12 @@ export async function finishPasskeyRegistration(
     body: JSON.stringify({ challengeId, credential }),
   });
   await throwIfWrongAccount(response);
+  if (response.status === 409) {
+    const raw = await readApiError(response);
+    if (raw === 'Username is already in use') {
+      throw new Error(raw);
+    }
+  }
   if (!response.ok) {
     throw new Error(`Failed to finish passkey registration: ${response.status}`);
   }
