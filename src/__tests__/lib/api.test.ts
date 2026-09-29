@@ -4037,6 +4037,11 @@ describe('finishPasskeySeed', () => {
     await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).resolves.toEqual(account);
   });
 
+  it('rejects a 200 body with account and an extra field', async () => {
+    stubFetch({ ok: true, status: 200, body: { account, extra: true } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
   it('rejects an object that is not an account', async () => {
     stubFetch({ ok: true, status: 200, body: { nope: true } });
     await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();

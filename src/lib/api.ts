@@ -3015,6 +3015,7 @@ export async function startPasskeySeed(sessionToken: string): Promise<PasskeyBeg
 /**
  * Seed finish is not login. The body is the owner account, or that same
  * account under one `account` key when the body has no top-level `id`.
+ * A further top-level field is not this form.
  *
  * @param body - Parsed JSON.
  * @returns The value to validate as an {@link Account}.
@@ -3026,7 +3027,7 @@ function ownerAccountBody(body: unknown): unknown {
   if ('id' in body) {
     return body;
   }
-  if ('account' in body) {
+  if (Object.keys(body).length === 1 && Object.keys(body)[0] === 'account') {
     return (body as { account: unknown }).account;
   }
   return body;
