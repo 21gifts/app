@@ -9043,11 +9043,10 @@ test.describe('profile activity chart variants', () => {
     await page
       .locator('input[name="profile-banner"]')
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
-    await expect(
-      page.getByText(
-        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
-      ),
-    ).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     await shotScreen(page, 'state-profile-banner-not-wide');
   });
 

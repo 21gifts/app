@@ -15,9 +15,10 @@ import { NameForm } from '@/components/NameForm';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
 import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { WideImageCropper } from '@/components/WideImageCropper';
 import { Button, Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
-import { prepareForumPhoto } from '@/lib/forum-photo';
+import { isForumPhotoFile, prepareForumPhoto } from '@/lib/forum-photo';
 import {
   fetchAboutMePhoto,
   fetchMember,
@@ -57,6 +58,7 @@ function ProfileImages({
   const [bannerSettled, setBannerSettled] = useState(false);
   const [saving, setSaving] = useState<'picture' | 'banner' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bannerCropFile, setBannerCropFile] = useState<File | null>(null);
   const pictureInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const loadPictureRef = useRef(loadPicture);
@@ -119,31 +121,22 @@ function ProfileImages({
     };
   }, []);
 
-  const saveFile = (file: File, wide: boolean): void => {
-    setSaving(wide ? 'banner' : 'picture');
+  const savePicture = (file: File): void => {
+    setSaving('picture');
     setError(null);
     void (async () => {
       try {
-        const result =
-          wide === true
-            ? await prepareForumPhoto(file, { wide: true })
-            : await prepareForumPhoto(file);
+        const result = await prepareForumPhoto(file);
         if (!result.ok) {
           setError(
             result.error === 'tooLarge'
               ? t('profile.about.errorTooLarge')
-              : result.error === 'notWide'
-                ? t('profile.about.errorNotWide')
-                : t('profile.about.errorUnsupported'),
+              : t('profile.about.errorUnsupported'),
           );
           return;
         }
         const payload = { contentType: result.photo.contentType, data: result.photo.data };
-        if (wide) {
-          await onSaveBanner(payload);
-        } else {
-          await onSavePicture(payload);
-        }
+        await onSavePicture(payload);
       } catch {
         setError(t('profile.about.error'));
       } finally {
@@ -156,22 +149,61 @@ function ProfileImages({
     const file = event.target.files?.[0];
     event.target.value = '';
     if (file !== undefined) {
-      saveFile(file, false);
+      savePicture(file);
     }
   };
 
   const onBannerFile = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (file !== undefined) {
-      saveFile(file, true);
+    if (file === undefined) {
+      return;
+    }
+    if (!isForumPhotoFile(file)) {
+      setError(t('profile.about.errorUnsupported'));
+      return;
+    }
+    setBannerCropFile(file);
+    setError(null);
+  };
+
+  const saveBannerCrop = async (photo: {
+    contentType: 'image/jpeg';
+    data: string;
+  }): Promise<void> => {
+    setSaving('banner');
+    setError(null);
+    try {
+      await onSaveBanner(photo);
+      setBannerCropFile(null);
+    } catch {
+      setError(t('profile.about.error'));
+    } finally {
+      setSaving(null);
     }
   };
 
   const overlapped = pictureUrl !== null && bannerUrl !== null;
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      {bannerUrl !== null ? (
+      {bannerCropFile !== null ? (
+        <WideImageCropper
+          file={bannerCropFile}
+          busy={saving === 'banner'}
+          onConfirm={(photo) => {
+            void saveBannerCrop(photo);
+          }}
+          onCancel={() => setBannerCropFile(null)}
+          onError={(cropError) => {
+            if (cropError === 'unsupported') {
+              setBannerCropFile(null);
+              setError(t('profile.about.errorUnsupported'));
+              return;
+            }
+            setError(t('profile.about.errorTooLarge'));
+          }}
+        />
+      ) : bannerUrl !== null ? (
         <div className={`relative w-full${overlapped ? ' mb-8' : ''}`}>
           {/* eslint-disable-next-line @next/next/no-img-element -- blob URL from the wide image */}
           <img
@@ -194,13 +226,7 @@ function ProfileImages({
           variant="secondary"
           size="lg"
           disabled={saving !== null}
-          icon={
-            saving === 'banner' ? (
-              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-            ) : (
-              <ImagePlus aria-hidden="true" className="h-4 w-4" />
-            )
-          }
+          icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
           onClick={() => {
             bannerInputRef.current?.click();
           }}

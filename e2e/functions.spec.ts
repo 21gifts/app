@@ -11185,3 +11185,132 @@ test('Function: RepaymentPlanChart — dates run from the first day to the last'
   await expect(page.getByText('Per day', { exact: true })).toBeVisible();
   await expect(page.getByText('Still owed', { exact: true })).toBeVisible();
 });
+
+/** Signed-in profile with an empty wide-image slot and the cropper open on a portrait. */
+async function openWideImageCrop(page: Page, puts: unknown[]): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        donatedSats: 0,
+        receivedSats: 0,
+        donatedOverTime: [],
+        receivedOverTime: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
+      }),
+    });
+  });
+  await page.route(/\/pictures\/me$/, async (route) => {
+    await route.fulfill({ status: 404, body: '' });
+  });
+  await page.route(/\/banners\/me$/, async (route) => {
+    if (route.request().method() === 'PUT') {
+      puts.push(route.request().postDataJSON());
+      await route.fulfill({ status: 204, body: '' });
+      return;
+    }
+    await route.fulfill({ status: 404, body: '' });
+  });
+  await page.goto('/profile');
+  await expect(page.getByText('alice@21.gifts')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+  await page
+    .locator('input[name="profile-banner"]')
+    .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+  await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+}
+
+test('Function: initialBannerCrop — a portrait opens a centered 5:2 frame', async ({ page }) => {
+  await openWideImageCrop(page, []);
+  const frame = page.getByRole('group', { name: 'Drag the photo to choose the wide image' });
+  await expect(frame.locator('img')).toHaveAttribute('style', /width/);
+  await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+});
+
+test('Function: panBannerCrop — dragging the frame moves the photo', async ({ page }) => {
+  await openWideImageCrop(page, []);
+  const frame = page.getByRole('group', { name: 'Drag the photo to choose the wide image' });
+  const img = frame.locator('img');
+  const before = await img.getAttribute('style');
+  const box = await frame.boundingBox();
+  if (box === null) {
+    throw new Error('crop frame has no box');
+  }
+  await page.mouse.move(box.x + box.width / 2, box.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height - 8);
+  await page.mouse.up();
+  await expect(img).not.toHaveAttribute('style', before ?? '');
+});
+
+test('Function: zoomBannerCrop — the wheel changes the frame', async ({ page }) => {
+  await openWideImageCrop(page, []);
+  const frame = page.getByRole('group', { name: 'Drag the photo to choose the wide image' });
+  const img = frame.locator('img');
+  const before = await img.getAttribute('style');
+  await frame.hover();
+  await page.mouse.wheel(0, -200);
+  await expect(img).not.toHaveAttribute('style', before ?? '');
+});
+
+test('Function: outputBannerSize — confirming sends a wide jpeg', async ({ page }) => {
+  const puts: unknown[] = [];
+  await openWideImageCrop(page, puts);
+  await page.getByRole('button', { name: 'Use this crop' }).click();
+  await expect.poll(() => puts.length).toBe(1);
+  const body = puts[0] as { photo?: { contentType?: string; data?: string } };
+  expect(body.photo?.contentType).toBe('image/jpeg');
+  expect(body.photo?.data?.length ?? 0).toBeGreaterThan(16);
+});
+
+test('Function: encodeWideBanner — the saved wide image is raw jpeg base64', async ({ page }) => {
+  const puts: unknown[] = [];
+  await openWideImageCrop(page, puts);
+  await page.getByRole('button', { name: 'Use this crop' }).click();
+  await expect.poll(() => puts.length).toBe(1);
+  const body = puts[0] as { photo?: { contentType?: string; data?: string } };
+  expect(body.photo?.contentType).toBe('image/jpeg');
+  expect(body.photo?.data?.startsWith('data:')).toBe(false);
+});
+
+test('Function: WideImageCropper — cancel restores add a wide image', async ({ page }) => {
+  const puts: unknown[] = [];
+  await openWideImageCrop(page, puts);
+  await page.getByRole('button', { name: 'Cancel crop' }).click();
+  await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+  await expect(page.getByText('Drag the photo to choose the wide image')).toHaveCount(0);
+  expect(puts).toEqual([]);
+});

@@ -98,8 +98,59 @@ vi.mock('@/lib/api', () => ({
   postMessageInvoice: vi.fn(),
 }));
 
+vi.mock('@/components/WideImageCropper', () => ({
+  WideImageCropper: ({
+    file,
+    busy,
+    onConfirm,
+    onCancel,
+    onError,
+  }: {
+    file: File;
+    busy?: boolean;
+    onConfirm: (photo: { contentType: 'image/jpeg'; data: string }) => void;
+    onCancel: () => void;
+    onError: (error: 'unsupported' | 'tooLarge') => void;
+  }) => (
+    <div>
+      <p>Drag the photo to choose the wide image</p>
+      <span>{file.name}</span>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          onConfirm({ contentType: 'image/jpeg', data: 'wide' });
+        }}
+      >
+        Use this crop
+      </button>
+      <button type="button" disabled={busy} onClick={onCancel}>
+        Cancel crop
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onError('tooLarge');
+        }}
+      >
+        Crop too large
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onError('unsupported');
+        }}
+      >
+        Crop unsupported
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock('@/lib/forum-photo', () => ({
   prepareForumPhoto: vi.fn(),
+  isForumPhotoFile: (file: File): boolean =>
+    file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp',
 }));
 
 vi.mock('@/lib/push', () => ({
@@ -812,10 +863,12 @@ describe('ProfileScreen', () => {
       });
     });
     fireEvent.change(inputs[2] as HTMLInputElement, { target: { files: [file] } });
+    expect(prepareForumPhoto).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
       expect(putWideBanner).toHaveBeenCalledWith('tok', {
         contentType: 'image/jpeg',
-        data: 'pic',
+        data: 'wide',
       });
     });
   });
@@ -846,9 +899,8 @@ describe('ProfileScreen', () => {
     });
   });
 
-  it('saves a wide image from the empty-slot button and explains a portrait', async () => {
+  it('frames a wide image from the empty-slot button instead of rejecting it', async () => {
     vi.mocked(putWideBanner).mockClear();
-    vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'notWide' });
     renderWithLocale(<ProfileScreen />);
     await screen.findByRole('button', { name: 'Add a wide image' });
     const input = document.querySelector('input[name="profile-banner"]');
@@ -856,29 +908,37 @@ describe('ProfileScreen', () => {
       type: 'image/jpeg',
     });
     fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
-    expect(
-      await screen.findByText(
-        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(prepareForumPhoto).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel crop' }));
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
     expect(putWideBanner).not.toHaveBeenCalled();
-    vi.mocked(prepareForumPhoto).mockResolvedValue({
-      ok: true,
-      photo: {
-        contentType: 'image/jpeg',
-        data: 'wide',
-        previewUrl: 'data:image/jpeg;base64,wide',
-      },
-    });
+
+    fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crop too large' }));
+    expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Crop unsupported' }));
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+
     vi.mocked(putWideBanner).mockResolvedValue(undefined);
     fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
-      expect(prepareForumPhoto).toHaveBeenCalledWith(file, { wide: true });
       expect(putWideBanner).toHaveBeenCalledWith('tok', {
         contentType: 'image/jpeg',
         data: 'wide',
       });
     });
+    vi.mocked(putWideBanner).mockRejectedValueOnce(new Error('no'));
+    const again = document.querySelector('input[name="profile-banner"]');
+    fireEvent.change(again as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
+    expect(await screen.findByText('Could not save. Please try again.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
   });
 
   it('ignores an empty file choice and explains a bad or failed save', async () => {
@@ -893,9 +953,13 @@ describe('ProfileScreen', () => {
     fireEvent.change(photoInput, { target: { files: [] } });
     fireEvent.change(bannerInput, { target: { files: [] } });
     expect(prepareForumPhoto).not.toHaveBeenCalled();
+    const gif = new File([new Uint8Array([1])], 'note.gif', { type: 'image/gif' });
+    fireEvent.change(bannerInput, { target: { files: [gif] } });
+    expect(await screen.findByText('Use a JPEG, PNG, or WebP photo')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
     vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'tooLarge' });
     const file = new File([new Uint8Array([1])], 'big.jpg', { type: 'image/jpeg' });
-    fireEvent.change(bannerInput, { target: { files: [file] } });
+    fireEvent.change(photoInput, { target: { files: [file] } });
     expect(await screen.findByText('Keep photos under 1 MB')).toBeTruthy();
     vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'unsupported' });
     fireEvent.change(photoInput, { target: { files: [file] } });

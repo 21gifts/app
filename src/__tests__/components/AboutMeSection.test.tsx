@@ -5,8 +5,59 @@ import { prepareForumPhoto } from '@/lib/forum-photo';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('@/components/WideImageCropper', () => ({
+  WideImageCropper: ({
+    file,
+    busy,
+    onConfirm,
+    onCancel,
+    onError,
+  }: {
+    file: File;
+    busy?: boolean;
+    onConfirm: (photo: { contentType: 'image/jpeg'; data: string }) => void;
+    onCancel: () => void;
+    onError: (error: 'unsupported' | 'tooLarge') => void;
+  }) => (
+    <div>
+      <p>Drag the photo to choose the wide image</p>
+      <span>{file.name}</span>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          onConfirm({ contentType: 'image/jpeg', data: 'wide' });
+        }}
+      >
+        Use this crop
+      </button>
+      <button type="button" disabled={busy} onClick={onCancel}>
+        Cancel crop
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onError('tooLarge');
+        }}
+      >
+        Crop too large
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onError('unsupported');
+        }}
+      >
+        Crop unsupported
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock('@/lib/forum-photo', () => ({
   prepareForumPhoto: vi.fn(),
+  isForumPhotoFile: (file: File): boolean =>
+    file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp',
 }));
 
 const prepareMock = vi.mocked(prepareForumPhoto);
@@ -25,8 +76,8 @@ function stubUrlObjectMethods(): void {
   });
 }
 
-function jpegFile(): File {
-  return new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', { type: 'image/jpeg' });
+function jpegFile(name = 'shot.jpg'): File {
+  return new File([new Uint8Array([0xff, 0xd8, 0xff])], name, { type: 'image/jpeg' });
 }
 
 const PROFILE_URL = 'https://example.test/view/abc';
@@ -911,14 +962,6 @@ describe('AboutMeSection', () => {
   });
 
   it('saves a wide image on its own and can clear it', async () => {
-    prepareMock.mockResolvedValue({
-      ok: true,
-      photo: {
-        contentType: 'image/jpeg',
-        data: 'wide',
-        previewUrl: 'data:image/jpeg;base64,wide',
-      },
-    });
     const onSaveBanner = vi.fn().mockResolvedValue(undefined);
     const loadBanner = vi.fn().mockRejectedValue(new Error('missing'));
     renderWithLocale(
@@ -932,6 +975,9 @@ describe('AboutMeSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
     const inputs = document.querySelectorAll('input[type="file"]');
     fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
+    expect(prepareMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
       expect(onSaveBanner).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'wide' });
     });
@@ -945,26 +991,16 @@ describe('AboutMeSection', () => {
   });
 
   it('shows the wide-image error and the save error', async () => {
-    prepareMock.mockResolvedValue({ ok: false, error: 'notWide' });
-    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    const onSaveBanner = vi.fn().mockRejectedValueOnce(new Error('nope'));
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
     const inputs = document.querySelectorAll('input[type="file"]');
     fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe(
-        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
-      );
-    });
-    prepareMock.mockResolvedValue({
-      ok: true,
-      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
-    });
-    onSaveBanner.mockRejectedValueOnce(new Error('nope'));
-    fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
     });
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
   });
 
   function openEditor(): void {
@@ -1219,21 +1255,15 @@ describe('AboutMeSection', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('replaces a stored wide image and ignores a stale prepare', async () => {
+  it('replaces a stored wide image and ignores a stale save', async () => {
     const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
-    let resolveFirst: (value: Awaited<ReturnType<typeof prepareForumPhoto>>) => void = () =>
-      undefined;
-    prepareMock.mockImplementationOnce(
+    let resolveSave: (() => void) | undefined;
+    const onSaveBanner = vi.fn(
       () =>
-        new Promise((resolve) => {
-          resolveFirst = resolve;
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
         }),
     );
-    prepareMock.mockResolvedValueOnce({
-      ok: true,
-      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
-    });
-    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(
       <AboutMeSection
         mode="owner"
@@ -1245,23 +1275,23 @@ describe('AboutMeSection', () => {
     openEditor();
     expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
     const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [jpegFile()] } });
-    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.change(input, { target: { files: [jpegFile('first.jpg')] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
-      expect(onSaveBanner).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'wide' });
+      expect(onSaveBanner).toHaveBeenCalledTimes(1);
     });
+    fireEvent.change(input, { target: { files: [jpegFile('second.jpg')] } });
+    expect(screen.getByText('second.jpg')).toBeTruthy();
     await act(async () => {
-      resolveFirst({
-        ok: true,
-        photo: { contentType: 'image/jpeg', data: 'old', previewUrl: 'data:image/jpeg;base64,old' },
-      });
+      resolveSave?.();
     });
     expect(onSaveBanner).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('second.jpg')).toBeTruthy();
   });
 
   it('ignores a stale failure while saving a profile photo or a wide image', async () => {
     let rejectPicture: (err: Error) => void = () => undefined;
-    let rejectBanner: (err: Error) => void = () => undefined;
     prepareMock.mockImplementationOnce(
       () =>
         new Promise((_resolve, reject) => {
@@ -1287,37 +1317,31 @@ describe('AboutMeSection', () => {
     expect(screen.queryByRole('alert')).toBeNull();
 
     cleanup();
-    prepareMock.mockImplementationOnce(
+    let rejectSave: (err: Error) => void = () => undefined;
+    const onSaveBanner = vi.fn(
       () =>
-        new Promise((_resolve, reject) => {
-          rejectBanner = reject;
+        new Promise<void>((_resolve, reject) => {
+          rejectSave = reject;
         }),
     );
-    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
     openEditor();
     const banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
-    fireEvent.change(banner, { target: { files: [jpegFile()] } });
-    prepareMock.mockResolvedValueOnce({
-      ok: true,
-      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
-    });
-    fireEvent.change(banner, { target: { files: [jpegFile()] } });
+    fireEvent.change(banner, { target: { files: [jpegFile('first.jpg')] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
       expect(onSaveBanner).toHaveBeenCalledTimes(1);
     });
+    fireEvent.change(banner, { target: { files: [jpegFile('second.jpg')] } });
     await act(async () => {
-      rejectBanner(new Error('late'));
+      rejectSave(new Error('late'));
     });
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('second.jpg')).toBeTruthy();
   });
 
-  it('ignores a wide-image prepare that loses to a newer pick', async () => {
+  it('ignores a wide-image save that loses to a newer pick', async () => {
     const resolveSave: Array<() => void> = [];
-    prepareMock.mockResolvedValue({
-      ok: true,
-      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
-    });
     const onSaveBanner = vi.fn(
       () =>
         new Promise<void>((resolve) => {
@@ -1327,11 +1351,12 @@ describe('AboutMeSection', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
     openEditor();
     const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.change(input, { target: { files: [jpegFile('first.jpg')] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
       expect(onSaveBanner).toHaveBeenCalledTimes(1);
     });
-    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.change(input, { target: { files: [jpegFile('second.jpg')] } });
     const finishFirst = resolveSave[0];
     if (finishFirst === undefined) {
       throw new Error('save did not start');
@@ -1340,6 +1365,7 @@ describe('AboutMeSection', () => {
       finishFirst();
     });
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('second.jpg')).toBeTruthy();
   });
 
   it('reports a wide image that is too large, unsupported, or fails to clear', async () => {
@@ -1352,16 +1378,19 @@ describe('AboutMeSection', () => {
     const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [] } });
     expect(prepareMock).not.toHaveBeenCalled();
-    prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
-    fireEvent.change(input, { target: { files: [jpegFile()] } });
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'note.gif', { type: 'image/gif' })] },
     });
-    prepareMock.mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
     fireEvent.change(input, { target: { files: [jpegFile()] } });
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Crop too large' }));
+    expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Crop unsupported' }));
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+    expect(prepareMock).not.toHaveBeenCalled();
   });
 
   it('clears a stored wide image and shows an error when clearing fails', async () => {
@@ -1382,12 +1411,9 @@ describe('AboutMeSection', () => {
       expect(onSaveBanner).toHaveBeenCalledWith(null);
     });
     expect(screen.queryByAltText('Wide profile image')).toBeNull();
-    prepareMock.mockResolvedValue({
-      ok: true,
-      photo: { contentType: 'image/jpeg', data: 'wide', previewUrl: 'data:image/jpeg;base64,wide' },
-    });
     const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
       expect(screen.getByAltText('Wide profile image')).toBeTruthy();
     });
