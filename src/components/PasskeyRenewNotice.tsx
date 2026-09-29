@@ -69,10 +69,17 @@ export function PasskeyRenewNotice(): ReactElement | null {
         setStep('explain');
         return;
       }
-      if (result.account !== undefined && useAuthStore.getState().session === session) {
-        setAccount(result.account);
+      const open = result.account;
+      if (
+        open !== undefined &&
+        open.passkeyRenewFailed === true &&
+        useAuthStore.getState().session === session
+      ) {
+        setAccount(open);
+        setStep('failed');
+        return;
       }
-      setStep('failed');
+      setStep('explain');
     } finally {
       setBusy(false);
     }

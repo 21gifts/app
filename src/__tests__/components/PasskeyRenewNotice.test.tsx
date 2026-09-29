@@ -123,8 +123,38 @@ describe('PasskeyRenewNotice', () => {
     expect(useAuthStore.getState().session).toBeNull();
   });
 
-  it('closes after a failure is confirmed and does not start again', async () => {
+  it('returns to the explanation when a failure was not recorded', async () => {
     vi.mocked(renewPasskey).mockResolvedValue({ outcome: 'failed', kind: 'generic' });
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(<PasskeyRenewNotice />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+    expect(useAuthStore.getState().account).toEqual(account);
+  });
+
+  it('returns to the explanation when the returned account has no open failure', async () => {
+    vi.mocked(renewPasskey).mockResolvedValue({
+      outcome: 'failed',
+      kind: 'generic',
+      account,
+    });
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(<PasskeyRenewNotice />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+    expect(useAuthStore.getState().account).toEqual(account);
+    expect(useAuthStore.getState().account?.passkeyRenewFailed).toBe(false);
+  });
+
+  it('closes after a failure is confirmed and does not start again', async () => {
+    const open = { ...account, passkeyRenewFailed: true };
+    vi.mocked(renewPasskey).mockResolvedValue({
+      outcome: 'failed',
+      kind: 'generic',
+      account: open,
+    });
     vi.mocked(postPasskeyRenewAck).mockResolvedValue({
       ...account,
       passkeyRenewClosed: true,

@@ -228,6 +228,17 @@ describe('renewPasskey', () => {
     await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
   });
 
+  it('returns the open failure account after an HTTP seed error', async () => {
+    const open = { ...account, passkeyRenewFailed: true };
+    vi.mocked(startPasskeySeed).mockRejectedValueOnce(
+      new Error('Failed to start passkey seed: 409'),
+    );
+    vi.mocked(fetchMe).mockResolvedValueOnce(open);
+    const result = await renewPasskey('tok');
+    expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+    expect(result).toEqual({ outcome: 'failed', kind: 'generic', account: open });
+  });
+
   it('returns the open failure account from the report', async () => {
     const open = { ...account, passkeyRenewFailed: true };
     vi.mocked(postPasskeyRenewReport).mockResolvedValueOnce(open);
