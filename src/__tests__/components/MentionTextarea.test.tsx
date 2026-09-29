@@ -473,6 +473,77 @@ describe('MentionTextarea', () => {
     expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
   });
 
+  it('does not insert a handle that would pass the length limit', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    const onChange = vi.fn();
+    renderWithLocale(
+      <MentionTextarea
+        value="@"
+        onChange={onChange}
+        maxLength={4}
+        ariaLabel="Your message"
+        wrapperClassName="relative"
+        className="w-full"
+      />,
+    );
+    const box = typeInto('@');
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    onChange.mockClear();
+    fireEvent.keyDown(box, { key: 'Enter' });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('listbox', { name: 'People' })).toBeTruthy();
+    expect(box.value).toBe('@');
+  });
+
+  it('inserts a handle that fits the length limit exactly', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    const onChange = vi.fn();
+    renderWithLocale(
+      <MentionTextarea
+        value="@"
+        onChange={onChange}
+        maxLength={'@ada '.length}
+        ariaLabel="Your message"
+        wrapperClassName="relative"
+        className="w-full"
+      />,
+    );
+    const box = typeInto('@');
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    onChange.mockClear();
+    fireEvent.keyDown(box, { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith('@ada ');
+    expect(box.value).toBe('@');
+  });
+
+  it('leaves an in-progress composition to the input method', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    function Field(): ReactElement {
+      const [value, setValue] = useState('@');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative"
+          className="w-full"
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const box = typeInto('@');
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    fireEvent.keyDown(box, { key: 'Enter', isComposing: true });
+    expect(box.value).toBe('@');
+    expect(screen.getByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.keyDown(box, { key: 'Enter', keyCode: 229 });
+    expect(box.value).toBe('@');
+    expect(screen.getByRole('listbox', { name: 'People' })).toBeTruthy();
+  });
+
   it('places the caret after an inserted name and hides a failed prefix search', async () => {
     search.mockImplementation(async (_token: string, query: string) => {
       if (query === '') {

@@ -65,9 +65,10 @@ const OPTION_ROW_CLASS =
  * usernames that start with those letters. A new letter drops the previous
  * server page in that same update. Choosing one inserts `@username ` and
  * closes the list. A space already after the token stays a single space.
- * Escape, Tab, or a click outside keeps that `@` closed until that
- * character is gone. The caret sits after the inserted space even when
- * the text was already that handle.
+ * A choice that would pass the length limit is not inserted. Keys during
+ * text composition stay with the input method. Escape, Tab, or a click
+ * outside keeps that `@` closed until that character is gone. The caret
+ * sits after the inserted space even when the text was already that handle.
  * The list sits under the field, and
  * above it only when this list would not fit underneath and there is
  * more room above. No session, or a disabled field, is a plain textarea.
@@ -246,6 +247,9 @@ export function MentionTextarea({
   const insertAt = (token: NonNullable<typeof mention>, account: MentionAccount): void => {
     const end = value.charAt(token.end) === ' ' ? token.end + 1 : token.end;
     const next = value.slice(0, token.start) + `@${account.username} ` + value.slice(end);
+    if (maxLength !== undefined && next.length > maxLength) {
+      return;
+    }
     const caretAt = token.start + account.username.length + 2;
     pendingCaret.current = caretAt;
     setCaret(caretAt);
@@ -262,6 +266,9 @@ export function MentionTextarea({
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
     if (!open) {
+      return;
+    }
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) {
       return;
     }
     /* v8 ignore next 3 -- the list is open only while a mention token is active */
