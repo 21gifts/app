@@ -11255,7 +11255,7 @@ async function openWideImageCrop(page: Page, puts: unknown[]): Promise<void> {
 test('Function: initialBannerCrop — a portrait opens a centered 5:2 frame', async ({ page }) => {
   await openWideImageCrop(page, []);
   const frame = page.getByRole('group', { name: 'Drag the photo to choose the wide image' });
-  await expect(frame.locator('img')).toHaveAttribute('style', /width/);
+  await expect(frame.locator('image')).toHaveAttribute('width', /./);
   await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
 });
@@ -11263,8 +11263,8 @@ test('Function: initialBannerCrop — a portrait opens a centered 5:2 frame', as
 test('Function: panBannerCrop — dragging the frame moves the photo', async ({ page }) => {
   await openWideImageCrop(page, []);
   const frame = page.getByRole('group', { name: 'Drag the photo to choose the wide image' });
-  const img = frame.locator('img');
-  const before = await img.getAttribute('style');
+  const img = frame.locator('image');
+  const before = await img.getAttribute('y');
   const box = await frame.boundingBox();
   if (box === null) {
     throw new Error('crop frame has no box');
@@ -11273,17 +11273,17 @@ test('Function: panBannerCrop — dragging the frame moves the photo', async ({ 
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height - 8);
   await page.mouse.up();
-  await expect(img).not.toHaveAttribute('style', before ?? '');
+  await expect(img).not.toHaveAttribute('y', before ?? '');
 });
 
 test('Function: zoomBannerCrop — the wheel changes the frame', async ({ page }) => {
   await openWideImageCrop(page, []);
   const frame = page.getByRole('group', { name: 'Drag the photo to choose the wide image' });
-  const img = frame.locator('img');
-  const before = await img.getAttribute('style');
+  const img = frame.locator('image');
+  const before = await img.getAttribute('width');
   await frame.hover();
   await page.mouse.wheel(0, -200);
-  await expect(img).not.toHaveAttribute('style', before ?? '');
+  await expect(img).not.toHaveAttribute('width', before ?? '');
 });
 
 test('Function: outputBannerSize — confirming sends a wide jpeg', async ({ page }) => {

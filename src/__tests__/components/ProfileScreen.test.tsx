@@ -973,6 +973,54 @@ describe('ProfileScreen', () => {
     expect(await screen.findByText('Could not save. Please try again.')).toBeTruthy();
   });
 
+  it('keeps the wide-image save locked when the profile photo finishes first', async () => {
+    let releasePicture: () => void = () => undefined;
+    let releaseBanner: () => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockReturnValue(
+      new Promise((resolve) => {
+        releasePicture = () => {
+          resolve(undefined);
+        };
+      }),
+    );
+    vi.mocked(putWideBanner).mockReturnValue(
+      new Promise((resolve) => {
+        releaseBanner = () => {
+          resolve(undefined);
+        };
+      }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a wide image' });
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'tall.jpg', { type: 'image/jpeg' });
+    fireEvent.change(bannerInput, { target: { files: [file] } });
+    fireEvent.change(photoInput, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
+    await waitFor(() => {
+      expect(putProfilePhoto).toHaveBeenCalledTimes(1);
+      expect(putWideBanner).toHaveBeenCalledTimes(1);
+    });
+    const useCrop = screen.getByRole('button', { name: 'Use this crop' }) as HTMLButtonElement;
+    expect(useCrop.disabled).toBe(true);
+    await act(async () => {
+      releasePicture();
+    });
+    expect(useCrop.disabled).toBe(true);
+    expect(putWideBanner).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      releaseBanner();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+    });
+  });
+
   it('shows a spinner on the picture button while that save is in flight', async () => {
     let release: () => void = () => undefined;
     vi.mocked(prepareForumPhoto).mockResolvedValue({

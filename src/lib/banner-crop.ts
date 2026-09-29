@@ -119,6 +119,7 @@ export function outputBannerSize(cropWidth: number): { width: number; height: nu
   return { width, height };
 }
 
+/** Result of {@link encodeWideBanner}. */
 export type WideBannerEncodeResult =
   | { ok: true; photo: { contentType: 'image/jpeg'; data: string; previewUrl: string } }
   | { ok: false; error: 'tooLarge' | 'unsupported' };

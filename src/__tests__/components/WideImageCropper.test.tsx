@@ -97,10 +97,10 @@ describe('WideImageCropper', () => {
       <WideImageCropper file={jpeg()} onConfirm={vi.fn()} onCancel={vi.fn()} onError={vi.fn()} />,
     );
     expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
-    const img = frame().querySelector('img');
+    const img = frame().querySelector('image');
     await enabledUse();
-    expect(img?.style.width).toBe('250px');
-    expect(img?.style.top).toBe('-75px');
+    expect(img?.getAttribute('width')).toBe('250');
+    expect(img?.getAttribute('y')).toBe('-75');
   });
 
   it('leaves the photo unplaced until the frame has width', async () => {
@@ -110,7 +110,7 @@ describe('WideImageCropper', () => {
       <WideImageCropper file={jpeg()} onConfirm={vi.fn()} onCancel={vi.fn()} onError={vi.fn()} />,
     );
     await enabledUse();
-    expect(frame().querySelector('img')?.getAttribute('style')).toBeNull();
+    expect(frame().querySelector('image')?.getAttribute('width')).toBeNull();
   });
 
   it('cancels without a photo and ignores a confirm before decode', async () => {
@@ -252,17 +252,17 @@ describe('WideImageCropper', () => {
       <WideImageCropper file={jpeg()} onConfirm={vi.fn()} onCancel={vi.fn()} onError={vi.fn()} />,
     );
     await enabledUse();
-    const img = frame().querySelector('img') as HTMLImageElement;
-    expect(img.style.top).toBe('-75px');
+    const img = frame().querySelector('image') as SVGImageElement;
+    expect(img.getAttribute('y')).toBe('-75');
     fireEvent.pointerDown(frame(), { pointerId: 1, clientX: 40, clientY: 10 });
     fireEvent.pointerMove(frame(), { pointerId: 1, clientX: 40, clientY: 30 });
-    expect(img.style.top).toBe('-55px');
+    expect(img.getAttribute('y')).toBe('-55');
     fireEvent.pointerUp(frame(), { pointerId: 1 });
 
     fireEvent.pointerDown(frame(), { pointerId: 1, clientX: 0, clientY: 0 });
     fireEvent.pointerDown(frame(), { pointerId: 2, clientX: 0, clientY: 0 });
     fireEvent.pointerMove(frame(), { pointerId: 2, clientX: 10, clientY: 0 });
-    expect(img.style.width).toBe('250px');
+    expect(img.getAttribute('width')).toBe('250');
     fireEvent.pointerUp(frame(), { pointerId: 2 });
     fireEvent.pointerUp(frame(), { pointerId: 1 });
 
@@ -271,18 +271,18 @@ describe('WideImageCropper', () => {
     fireEvent.pointerDown(frame(), { pointerId: 3, clientX: 40, clientY: 30 });
     fireEvent.pointerUp(frame(), { pointerId: 3 });
     fireEvent.pointerMove(frame(), { pointerId: 2, clientX: 0, clientY: 0 });
-    expect(img.style.width).toBe('250px');
+    expect(img.getAttribute('width')).toBe('250');
     fireEvent.pointerMove(frame(), { pointerId: 2, clientX: 120, clientY: 0 });
-    expect(Number.parseFloat(img.style.width)).toBeGreaterThan(250);
+    expect(Number.parseFloat(img.getAttribute('width') ?? '')).toBeGreaterThan(250);
     fireEvent.pointerCancel(frame(), { pointerId: 1 });
     fireEvent.pointerCancel(frame(), { pointerId: 2 });
 
-    const zoomed = Number.parseFloat(img.style.width);
+    const zoomed = Number.parseFloat(img.getAttribute('width') ?? '');
     fireEvent.wheel(frame(), { deltaY: -40 });
-    const wider = Number.parseFloat(img.style.width);
+    const wider = Number.parseFloat(img.getAttribute('width') ?? '');
     expect(wider).toBeGreaterThan(zoomed);
     fireEvent.wheel(frame(), { deltaY: 40 });
-    expect(Number.parseFloat(img.style.width)).toBeLessThan(wider);
+    expect(Number.parseFloat(img.getAttribute('width') ?? '')).toBeLessThan(wider);
   });
 
   it('ignores a drag whose frame has no width and a move after the photo is replaced', async () => {
@@ -303,7 +303,7 @@ describe('WideImageCropper', () => {
     stubRect(0, 100);
     fireEvent.pointerDown(frame(), { pointerId: 1, clientX: 10, clientY: 10 });
     fireEvent.pointerMove(frame(), { pointerId: 1, clientX: 80, clientY: 40 });
-    expect(frame().querySelector('img')?.style.top).toBe('-75px');
+    expect(frame().querySelector('image')?.getAttribute('y')).toBe('-75');
     rerender(
       <WideImageCropper
         file={jpeg('b.jpg')}
@@ -365,7 +365,7 @@ describe('WideImageCropper', () => {
       />,
     );
     await waitFor(() => {
-      expect(frame().querySelector('img')).toBeTruthy();
+      expect(frame().querySelector('image')).toBeTruthy();
     });
     const use = screen.getByRole('button', { name: 'Use this crop' }) as HTMLButtonElement;
     const cancel = screen.getByRole('button', { name: 'Cancel crop' }) as HTMLButtonElement;
@@ -385,7 +385,7 @@ describe('WideImageCropper', () => {
     act(() => {
       FakeResizeObserver.last?.fire();
     });
-    expect(frame().querySelector('img')?.style.width).toBe('500px');
+    expect(frame().querySelector('image')?.getAttribute('width')).toBe('500');
     first.unmount();
     expect(FakeResizeObserver.last?.disconnect).toHaveBeenCalled();
 
@@ -395,7 +395,7 @@ describe('WideImageCropper', () => {
       <WideImageCropper file={jpeg()} onConfirm={vi.fn()} onCancel={vi.fn()} onError={vi.fn()} />,
     );
     await enabledUse();
-    expect(frame().querySelector('img')?.style.width).toBe('180px');
+    expect(frame().querySelector('image')?.getAttribute('width')).toBe('180');
   });
 
   it('revokes the preview when the file changes', async () => {

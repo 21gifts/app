@@ -102,21 +102,21 @@ function pointerDistance(pointers: Map<number, PointerPt>): number {
  *
  * @param view - Current crop and source size, or `null` while decoding.
  * @param frameWidth - Frame width in CSS pixels.
- * @returns Absolute image position, or `undefined` when there is nothing to place.
+ * @returns SVG image box, or `undefined` when there is nothing to place.
  */
-function placedImageStyle(
+function placedImageBox(
   view: { crop: BannerCrop; imageWidth: number; imageHeight: number } | null,
   frameWidth: number,
-): { width: number; height: number; left: number; top: number } | undefined {
+): { x: number; y: number; width: number; height: number } | undefined {
   if (view === null || frameWidth <= 0) {
     return undefined;
   }
   const scale = frameWidth / view.crop.width;
   return {
+    x: -view.crop.x * scale,
+    y: -view.crop.y * scale,
     width: view.imageWidth * scale,
     height: view.imageHeight * scale,
-    left: -view.crop.x * scale,
-    top: -view.crop.y * scale,
   };
 }
 
@@ -313,7 +313,7 @@ export function WideImageCropper(props: {
     onError(result.error);
   };
 
-  const imgStyle = placedImageStyle(view, frameWidth);
+  const imageBox = placedImageBox(view, frameWidth);
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -329,8 +329,9 @@ export function WideImageCropper(props: {
         onWheel={onWheel}
       >
         {previewUrl !== null ? (
-          // eslint-disable-next-line @next/next/no-img-element -- blob URL from the picked wide image
-          <img src={previewUrl} alt="" className="absolute max-w-none" style={imgStyle} />
+          <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
+            <image href={previewUrl} preserveAspectRatio="none" {...(imageBox ?? {})} />
+          </svg>
         ) : null}
       </div>
       <p className="text-center text-sm text-app-muted">{t('profile.about.bannerCropHint')}</p>

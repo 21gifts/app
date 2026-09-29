@@ -57,6 +57,9 @@ function ProfileImages({
   const [pictureSettled, setPictureSettled] = useState(false);
   const [bannerSettled, setBannerSettled] = useState(false);
   const [saving, setSaving] = useState<'picture' | 'banner' | null>(null);
+  const releaseSaving = (kind: 'picture' | 'banner'): void => {
+    setSaving((current) => (current === kind ? null : current));
+  };
   const [error, setError] = useState<string | null>(null);
   const [bannerCropFile, setBannerCropFile] = useState<File | null>(null);
   const pictureInputRef = useRef<HTMLInputElement>(null);
@@ -140,7 +143,7 @@ function ProfileImages({
       } catch {
         setError(t('profile.about.error'));
       } finally {
-        setSaving(null);
+        releaseSaving('picture');
       }
     })();
   };
@@ -179,7 +182,7 @@ function ProfileImages({
     } catch {
       setError(t('profile.about.error'));
     } finally {
-      setSaving(null);
+      releaseSaving('banner');
     }
   };
 
@@ -189,7 +192,7 @@ function ProfileImages({
       {bannerCropFile !== null ? (
         <WideImageCropper
           file={bannerCropFile}
-          busy={saving === 'banner'}
+          busy={saving !== null}
           onConfirm={(photo) => {
             void saveBannerCrop(photo);
           }}
