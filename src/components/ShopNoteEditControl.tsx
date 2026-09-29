@@ -149,6 +149,7 @@ export function ShopNoteEditControl({
   const [photosReady, setPhotosReady] = useState(false);
   const ownedPhotoUrls = useRef<string[]>([]);
   const openEditorRef = useRef<(() => void) | null>(null);
+  const openingRef = useRef(false);
   // Bytes read before the feed revokes preview URLs. A later step can fail
   // and leave this panel open; the next save must not fetch those URLs again.
   const keptStillBytes = useRef(new Map<string, KeptStillBytes>());
@@ -186,50 +187,63 @@ export function ShopNoteEditControl({
   const token = session;
 
   async function openEditor(): Promise<void> {
-    keptStillBytes.current.clear();
-    setDraft(stripShopHashtag(message.text));
-    setPlace(message.place ?? null);
-    setUsername(message.shopAccount?.username ?? '');
-    setPhotoDrafts([]);
-    setSaveError(false);
-    setHistory(null);
-    setHistoryError(false);
-    let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
-    if (photos.length < message.photoCount) {
-      try {
-        const loaded: string[] = [];
-        for (let index = 0; index < message.photoCount; index += 1) {
-          const blob = await fetchMessagePhoto(token, message.id, index);
-          const url = URL.createObjectURL(blob);
-          ownedPhotoUrls.current.push(url);
-          loaded.push(url);
-        }
-        photos = loaded;
-      } catch {
-        revokeOwnedPhotos();
-        setPhotosReady(false);
-        setSaveError(true);
-        setOpen(true);
-        return;
-      }
+    if (openingRef.current) {
+      return;
     }
-    setPhotosReady(true);
-    const video =
-      existingVideoUrl ??
-      (message.hasVideo ? forumVideoSrc(message.id, message.videoContentType) : '');
-    setPhotoBaseline(photos);
-    setKept([
-      ...photos.map((url) => ({ url, kind: 'photo' as const })),
-      ...(video !== '' ? [{ url: video, kind: 'video' as const }] : []),
-    ]);
-    setOpen(true);
-    void fetchShopNoteEdits(token, message.id)
-      .then((rows) => {
-        setHistory(rows);
-      })
-      .catch(() => {
-        setHistoryError(true);
-      });
+    openingRef.current = true;
+    try {
+      keptStillBytes.current.clear();
+      setDraft(stripShopHashtag(message.text));
+      setPlace(message.place ?? null);
+      setUsername(message.shopAccount?.username ?? '');
+      setPhotoDrafts([]);
+      setSaveError(false);
+      setHistory(null);
+      setHistoryError(false);
+      let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
+      if (photos.length < message.photoCount) {
+        setKept([]);
+        setPhotoBaseline([]);
+        revokeOwnedPhotos();
+        try {
+          const loaded: string[] = [];
+          for (let index = 0; index < message.photoCount; index += 1) {
+            const blob = await fetchMessagePhoto(token, message.id, index);
+            const url = URL.createObjectURL(blob);
+            ownedPhotoUrls.current.push(url);
+            loaded.push(url);
+          }
+          photos = loaded;
+        } catch {
+          setKept([]);
+          setPhotoBaseline([]);
+          revokeOwnedPhotos();
+          setPhotosReady(false);
+          setSaveError(true);
+          setOpen(true);
+          return;
+        }
+      }
+      setPhotosReady(true);
+      const video =
+        existingVideoUrl ??
+        (message.hasVideo ? forumVideoSrc(message.id, message.videoContentType) : '');
+      setPhotoBaseline(photos);
+      setKept([
+        ...photos.map((url) => ({ url, kind: 'photo' as const })),
+        ...(video !== '' ? [{ url: video, kind: 'video' as const }] : []),
+      ]);
+      setOpen(true);
+      void fetchShopNoteEdits(token, message.id)
+        .then((rows) => {
+          setHistory(rows);
+        })
+        .catch(() => {
+          setHistoryError(true);
+        });
+    } finally {
+      openingRef.current = false;
+    }
   }
 
   openEditorRef.current = () => {

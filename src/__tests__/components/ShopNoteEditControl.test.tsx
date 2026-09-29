@@ -473,6 +473,76 @@ describe('ShopNoteEditControl', () => {
     expect(document.querySelector('video')).toBeNull();
   });
 
+  it('ignores a second pencil click while the stills are still loading', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let release: (blob: Blob) => void = () => {};
+    vi.mocked(fetchMessagePhoto).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    const pencil = screen.getByRole('button', { name: 'Edit shop note' });
+    fireEvent.click(pencil);
+    fireEvent.click(pencil);
+    expect(fetchMessagePhoto).toHaveBeenCalledTimes(1);
+    release(new Blob([Uint8Array.of(1)]));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+  });
+
+  it('saves a text change after a failed reopen instead of reading revoked stills', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:loaded'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    vi.mocked(fetchMessagePhoto).mockResolvedValueOnce(new Blob([Uint8Array.of(1)]));
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:loaded');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    vi.mocked(fetchMessagePhoto).mockRejectedValueOnce(new Error('nope'));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(screen.queryByRole('img')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessageShopText).toHaveBeenCalledWith('token', 'shop1', 'Cafe Sol');
+    });
+  });
+
   it('does not open on mount for a reply', () => {
     signIn();
     renderWithLocale(
