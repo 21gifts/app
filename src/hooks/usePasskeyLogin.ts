@@ -22,6 +22,26 @@ import {
 import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
 import { useAuthStore } from '@/stores/auth-store';
 
+/** Exact api 409 when the chosen username is taken during register. */
+const USERNAME_TAKEN = 'Username is already in use';
+
+/** Exact api 400 when register-begin rejects the username charset or length. */
+const USERNAME_INVALID = 'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot';
+
+/**
+ * Trim, lowercase, then the api username charset and length.
+ *
+ * @param raw - The typed name.
+ * @returns The normalized username, or `null` when it is empty or invalid.
+ */
+function normalizeUsername(raw: string): string | null {
+  const normalized = raw.trim().toLowerCase();
+  if (!/^[a-z0-9][a-z0-9._-]{0,31}$/.test(normalized)) {
+    return null;
+  }
+  return normalized;
+}
+
 /**
  * Discrete states of the passkey login flow.
  *
@@ -30,8 +50,11 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * `unknown` is authenticate finish rejected the credential the phone offered
  * because the server returned `Unknown credential`.
+ *
+ * `name` is the username form after `register()` with no view key, before create.
  */
-export type PasskeyStatus = 'idle' | 'starting' | 'error' | 'unsupported' | 'choice' | 'unknown';
+export type PasskeyStatus =
+  'idle' | 'starting' | 'error' | 'unsupported' | 'choice' | 'unknown' | 'name';
 
 /** Public surface returned by {@link usePasskeyLogin}. */
 export interface UsePasskeyLogin {
@@ -45,9 +68,16 @@ export interface UsePasskeyLogin {
   login: () => void;
   /**
    * Create a new discoverable passkey and sign in.
-   * Optional `viewKey` claims an existing public profile during registration.
+   * With no view key, opens the name step and does not start the ceremony.
+   * Optional `viewKey` claims an existing public profile during registration
+   * and never shows the name step.
    */
   register: (viewKey?: string) => void;
+  /**
+   * Submit a typed name for a new account. Normalizes first; invalid input
+   * stays on `name` and does not call the network.
+   */
+  submitName: (raw: string) => void;
   /** Sign in with an existing passkey. */
   authenticate: () => void;
   /** Repeats the originating flow after an error. The single-button path restarts login. */
@@ -56,14 +86,17 @@ export interface UsePasskeyLogin {
   cancel: () => void;
   /** Last `Error.message` when `status === 'error'`, otherwise `null`. */
   error: string | null;
+  /** Username problem while `status === 'name'`, otherwise `null`. */
+  nameError: 'invalid' | 'taken' | null;
 }
 
 /**
  * Whether the user dismissed the WebAuthn prompt (not an app error).
  *
  * Picker dismiss is `NotAllowedError`; `AbortController.abort()` is
- * `AbortError`. Both return to `unknown` while that card was shown, else
- * `choice` when a choice was offered, else idle rather than the error card.
+ * `AbortError`. A named create returns to `name`. Otherwise both return to
+ * `unknown` while that card was shown, else `choice` when a choice was
+ * offered, else idle rather than the error card.
  *
  * @param error - Unknown rejection.
  * @returns True when the ceremony was dismissed.
@@ -295,11 +328,12 @@ class SupersededError extends Error {
 /**
  * Drives passkey register / authenticate. A run id ignores superseded clicks.
  *
- * @returns Status plus login, register, authenticate, retry, cancel, and error.
+ * @returns Status plus login, register, submitName, authenticate, retry, cancel, and error.
  */
 export function usePasskeyLogin(): UsePasskeyLogin {
   const [status, setStatus] = useState<PasskeyStatus>('idle');
   const [lastError, setLastError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<'invalid' | 'taken' | null>(null);
   const runIdRef = useRef(0);
   const lastKindRef = useRef<'register' | 'authenticate'>('authenticate');
   const entryKindRef = useRef<'login' | 'register' | 'authenticate'>('login');
@@ -307,6 +341,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const abortRef = useRef<AbortController | null>(null);
   const choiceOfferedRef = useRef(false);
   const unknownOfferedRef = useRef(false);
+  const nameOfferedRef = useRef(false);
   const setAuth = useAuthStore((state) => state.setAuth);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setWrongAccount = useAuthStore((state) => state.setWrongAccount);
@@ -323,6 +358,8 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     abortRef.current = null;
     choiceOfferedRef.current = false;
     unknownOfferedRef.current = false;
+    nameOfferedRef.current = false;
+    setNameError(null);
     setLastError(null);
     setStatus('idle');
   }, []);
@@ -339,6 +376,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       const controller = new AbortController();
       abortRef.current = controller;
       const runId = ++runIdRef.current;
+      setNameError(null);
       setLastError(null);
       setStatus('starting');
       return { runId, controller };
@@ -347,11 +385,19 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   );
 
   const completeRegistration = useCallback(
-    async (runId: number, controller: AbortController, viewKey?: string): Promise<void> => {
+    async (
+      runId: number,
+      controller: AbortController,
+      viewKey?: string,
+      name?: string,
+    ): Promise<void> => {
       guard(runId);
       let begin: Awaited<ReturnType<typeof startPasskeyRegistration>>;
       try {
-        begin = await startPasskeyRegistration(viewKey);
+        begin =
+          viewKey !== undefined && viewKey !== ''
+            ? await startPasskeyRegistration(viewKey)
+            : await startPasskeyRegistration(undefined, name);
       } catch (error: unknown) {
         reportDiagnostic({
           event: 'client.passkey.register.begin',
@@ -579,10 +625,29 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         return;
       }
       if (isUserCancel(error)) {
+        setNameError(null);
         setLastError(null);
         setStatus(
-          unknownOfferedRef.current ? 'unknown' : choiceOfferedRef.current ? 'choice' : 'idle',
+          nameOfferedRef.current
+            ? 'name'
+            : unknownOfferedRef.current
+              ? 'unknown'
+              : choiceOfferedRef.current
+                ? 'choice'
+                : 'idle',
         );
+        return;
+      }
+      if (error instanceof Error && error.message === USERNAME_TAKEN) {
+        setNameError('taken');
+        setLastError(null);
+        setStatus('name');
+        return;
+      }
+      if (error instanceof Error && error.message === USERNAME_INVALID) {
+        setNameError('invalid');
+        setLastError(null);
+        setStatus('name');
         return;
       }
       if (isWrongAccountError(error)) {
@@ -616,11 +681,46 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         return;
       }
       entryKindRef.current = 'register';
+      lastKindRef.current = 'register';
       lastViewKeyRef.current = viewKey;
+      if (viewKey === undefined || viewKey === '') {
+        nameOfferedRef.current = true;
+        setNameError(null);
+        setLastError(null);
+        setStatus('name');
+        return;
+      }
+      nameOfferedRef.current = false;
       const { runId, controller } = beginRun('register');
       void completeRegistration(runId, controller, viewKey).catch((error: unknown) => {
         finishWithError(runId, error);
       });
+    },
+    [beginRun, completeRegistration, finishWithError],
+  );
+
+  const submitName = useCallback(
+    (raw: string): void => {
+      if (isInAppBrowser()) {
+        setStatus('unsupported');
+        return;
+      }
+      const normalized = normalizeUsername(raw);
+      if (normalized === null) {
+        setNameError('invalid');
+        setLastError(null);
+        setStatus('name');
+        return;
+      }
+      entryKindRef.current = 'register';
+      lastViewKeyRef.current = undefined;
+      nameOfferedRef.current = true;
+      const { runId, controller } = beginRun('register');
+      void completeRegistration(runId, controller, undefined, normalized).catch(
+        (error: unknown) => {
+          finishWithError(runId, error);
+        },
+      );
     },
     [beginRun, completeRegistration, finishWithError],
   );
@@ -694,6 +794,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       abortRef.current = null;
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
+      nameOfferedRef.current = false;
     };
   }, []);
 
@@ -701,9 +802,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
     status,
     login,
     register,
+    submitName,
     authenticate,
     retry,
     cancel,
     error: status === 'error' ? lastError : null,
+    nameError: status === 'name' ? nameError : null,
   };
 }

@@ -240,7 +240,7 @@ PRF missing. Alert **This browser cannot create a recovery phrase. Try another b
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. When the phone reports iOS below 18, the card shows the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures omit that line. Phone pictures include it, because those baselines use an iPhone user agent below iOS 18. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. When the phone reports iOS below 18, the card shows the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures omit that line. Phone pictures include it, because those baselines use an iPhone user agent below iOS 18. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `iosPasskeyBlock`, `openInSystemBrowser`.
 
@@ -264,7 +264,7 @@ Login begin or finish failed. Copy **Something went wrong. Please try again.** (
 
 ### Variant: ios-version
 
-After **Open a new account** on iOS below 18, the alert is exactly **iOS 17.5.1 is installed. Sign-in needs at least iOS 18.** Button **Try again**. The muted status line is then not also shown. No account is created.
+**Open a new account** opens the name form even on iOS below 18. After a valid name is submitted and the create ceremony is dismissed, the alert is exactly **iOS 17.5.1 is installed. Sign-in needs at least iOS 18.** Button **Try again**. The muted status line is then not also shown. No account is created.
 
 ![21.gifts login ios version](images/login-ios-version.png)
 
@@ -276,15 +276,21 @@ GET `/me` 403 with the api wrong-account copy, or passkey finish with that same 
 
 ### Variant: unknown
 
-Passkey authenticate finish 400 `{ "error": "Unknown credential" }`. Heading **This passkey is not an account** (`login.unknownHeading`), muted sentence **This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.** (`login.unknownBody`), primary **Open a new account** and secondary **Try again**. Phone pictures also show the installed-iOS line. **Try again** starts authenticate-first login and does not create an account. Dismissing that create ceremony returns to this card. Dismissing the Try again login prompt stays on this card and does not open the account-choice card.
+Passkey authenticate finish 400 `{ "error": "Unknown credential" }`. Heading **This passkey is not an account** (`login.unknownHeading`), muted sentence **This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.** (`login.unknownBody`), primary **Open a new account** and secondary **Try again**. **Open a new account** opens the name form. It does not start create immediately. Phone pictures also show the installed-iOS line. **Try again** starts authenticate-first login and does not create an account. Dismissing the create ceremony returns to the name form, not to this card. Dismissing the Try again login prompt stays on this card and does not open the account-choice card.
 
 ![21.gifts login unknown](images/login-unknown.png)
 
 ### Variant: choice
 
-After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account** and **Open a new account**. Phone pictures also show the muted installed-iOS line. No account is created until the visitor clicks **Open a new account** and completes the create ceremony. On iOS below 18 that create does not complete, and the card shows the version sentence as the alert.
+After **Log in**, the browser reports `NotAllowedError` (no discoverable passkey, or the visitor dismissed the picker). Heading **Do you already have an account?** with labeled **Log in with existing account** and **Open a new account**. Creating an account starts only after the name form, not on the choice click. **Open a new account** opens the name form. Phone pictures also show the muted installed-iOS line. On iOS below 18 the name form still opens, and submitting a valid name does not complete create; the card then shows the version sentence as the alert.
 
 ![21.gifts login choice](images/login-choice.png)
+
+### Variant: name
+
+Heading **Choose your name**. This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase. Label **Name**, Button **Continue**.
+
+![21.gifts login name](images/login-name.png)
 
 ### Variant: in-app
 

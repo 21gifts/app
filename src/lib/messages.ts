@@ -220,6 +220,13 @@ const en = {
   'login.choiceHeading': 'Do you already have an account?',
   'login.existing': 'Log in with existing account',
   'login.create': 'Open a new account',
+  'login.nameHeading': 'Choose your name',
+  'login.nameBody':
+    'This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase.',
+  'login.nameLabel': 'Name',
+  'login.nameSubmit': 'Continue',
+  'login.nameInvalid': 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+  'login.nameTaken': 'That username is already in use.',
   'login.unknownHeading': 'This passkey is not an account',
   'login.unknownBody':
     'This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.',
@@ -1169,6 +1176,13 @@ const de = {
   'login.choiceHeading': 'Haben Sie schon ein Konto?',
   'login.existing': 'Mit bestehendem Konto einloggen',
   'login.create': 'Ein neues Konto eröffnen',
+  'login.nameHeading': 'Wählen Sie Ihren Namen',
+  'login.nameBody':
+    'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
+  'login.nameLabel': 'Name',
+  'login.nameSubmit': 'Weiter',
+  'login.nameInvalid': '1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt.',
+  'login.nameTaken': 'Dieser Benutzername ist schon vergeben.',
   'login.unknownHeading': 'Dieser Passkey ist kein Konto',
   'login.unknownBody':
     'Dieses Telefon hat einen Passkey angeboten, den 21.gifts nicht kennt. Eröffnen Sie ein neues Konto. Bietet das Telefon denselben Passkey erneut an, löschen Sie den gespeicherten 21.gifts-Passkey in den Passwort-Einstellungen und versuchen Sie es erneut.',
@@ -2138,6 +2152,13 @@ const es = {
   'login.choiceHeading': '¿Ya tienes una cuenta?',
   'login.existing': 'Iniciar sesión con una cuenta existente',
   'login.create': 'Abrir una cuenta nueva',
+  'login.nameHeading': 'Elige tu nombre',
+  'login.nameBody':
+    'Este nombre se guarda en la llave de acceso. También es el nombre de tu cuenta y tu usuario de 21.gifts. De 1 a 32 caracteres: letras, dígitos, guion, guion bajo o punto. Se guarda en minúsculas.',
+  'login.nameLabel': 'Nombre',
+  'login.nameSubmit': 'Continuar',
+  'login.nameInvalid': 'De 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto.',
+  'login.nameTaken': 'Ese usuario ya está en uso.',
   'login.unknownHeading': 'Esta llave de acceso no es una cuenta',
   'login.unknownBody':
     'Este teléfono ofreció una llave de acceso que 21.gifts no reconoce. Abra una cuenta nueva. Si el teléfono vuelve a ofrecer la misma llave, borre la llave de acceso guardada de 21.gifts en los ajustes de contraseñas y vuelva a intentarlo.',
@@ -3089,6 +3110,13 @@ const fil = {
   'login.choiceHeading': 'May account ka na ba?',
   'login.existing': 'Mag-log in gamit ang existing account',
   'login.create': 'Magbukas ng bagong account',
+  'login.nameHeading': 'Piliin ang pangalan mo',
+  'login.nameBody':
+    'Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok. Naka-lowercase ito.',
+  'login.nameLabel': 'Pangalan',
+  'login.nameSubmit': 'Magpatuloy',
+  'login.nameInvalid': '1–32 character: a-z, 0-9, hyphen, underscore, o tuldok.',
+  'login.nameTaken': 'Ginagamit na ang username na iyan.',
   'login.unknownHeading': 'Hindi account ang passkey na ito',
   'login.unknownBody':
     'Nag-alok ang teleponong ito ng passkey na hindi kinikilala ng 21.gifts. Magbukas ng bagong account. Kapag inalok ulit ng telepono ang parehong passkey, burahin ang naka-save na 21.gifts passkey sa mga setting ng password, tapos subukan ulit.',

@@ -72,6 +72,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:name",
+    "label": "/login name",
+    "visual": "state-login-name",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:in-app",
     "label": "/login in-app",
     "visual": "state-login-in-app",
