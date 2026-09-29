@@ -1412,7 +1412,7 @@ const de = {
   'login.nameTaken': 'Dieser Benutzername ist schon vergeben.',
   'login.unknownHeading': 'Dieser Passkey ist kein Konto',
   'login.unknownBody':
-    'Dieses Telefon hat einen Passkey angeboten, den 21.gifts nicht kennt. Eröffnen Sie ein neues Konto. Bietet das Telefon denselben Passkey erneut an, löschen Sie den gespeicherten 21.gifts-Passkey in den Passwort-Einstellungen und versuchen Sie es erneut.',
+    'Dieses Telefon hat einen Passkey angeboten, den 21.gifts nicht kennt. Erstelle ein neues Konto. Bietet das Telefon denselben Passkey erneut an, lösche den gespeicherten 21.gifts-Passkey in den Passwort-Einstellungen und versuch es noch einmal.',
   'login.inAppHeading': 'Diese Seite im Browser öffnen',
   'login.inAppBody':
     'Passkeys funktionieren in Telegram und anderen Browsern innerhalb von Apps nicht. Öffne diese Seite in Safari oder Chrome, um dich anzumelden.',
