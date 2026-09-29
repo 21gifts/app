@@ -1990,10 +1990,7 @@ const server = http.createServer(async (req, res) => {
         json(res, 404, { error: 'This profile could not be found.' });
         return;
       }
-      if (
-        typeof claimed.passkeyCredentialId === 'string' &&
-        claimed.passkeyCredentialId !== ''
-      ) {
+      if (typeof claimed.passkeyCredentialId === 'string' && claimed.passkeyCredentialId !== '') {
         json(res, 409, { error: 'This profile already has a passkey' });
         return;
       }

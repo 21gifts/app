@@ -94,7 +94,10 @@ async function confirmNewAccount(page: Page): Promise<string> {
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
   await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
-  const handle = `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.slice(0, 32);
+  const handle = `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.slice(
+    0,
+    32,
+  );
   await page.getByRole('textbox', { name: 'Name' }).fill(handle);
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
