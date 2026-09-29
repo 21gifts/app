@@ -596,7 +596,7 @@ describe('InboxLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Pay ₿21')).toBeTruthy();
     const signal = threadMock.mock.calls[1]?.[2]?.signal;
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(signal?.aborted).toBe(true);
     await act(async () => {
       await Promise.resolve();

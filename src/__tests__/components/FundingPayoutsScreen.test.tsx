@@ -100,7 +100,7 @@ describe('FundingPayoutsScreen', () => {
     renderWithLocale(<FundingPayoutsScreen />);
     expect(screen.getByRole('heading', { name: 'Payout per person' })).toBeTruthy();
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Moderation' }).getAttribute('href')).toBe('/moderate');
+    expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
   });
 

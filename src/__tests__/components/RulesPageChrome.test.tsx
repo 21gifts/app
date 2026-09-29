@@ -12,6 +12,8 @@ vi.mock('next/navigation', () => ({
     replace,
     refresh,
   }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
 vi.mock('next/link', () => ({
@@ -57,7 +59,9 @@ describe('RulesPageChrome', () => {
       </RulesPageChrome>,
     );
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
-    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
     expect(screen.queryByRole('button', { name: 'Menu' })).toBeNull();
     expect(screen.getByText('rules body')).toBeTruthy();
   });
@@ -123,7 +127,9 @@ describe('RulesPageChrome', () => {
       </RulesPageChrome>,
     );
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
-    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
     expect(screen.queryByRole('button', { name: 'Menu' })).toBeNull();
   });
 });

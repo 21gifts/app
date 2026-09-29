@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
+import { X } from 'lucide-react';
 import { type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -17,6 +17,8 @@ import {
 
 /**
  * In-place paid-reaction pay page that replaces the reply composer.
+ *
+ * Close stays on this view. It is not the top-left back arrow.
  *
  * @param props - Preview, invoice, waiting flag, and cancel handler.
  * @returns The pay page element.
@@ -83,10 +85,10 @@ export function ForumReplyPayPage({
           type="button"
           size="sm"
           variant="ghost"
-          aria-label={t('forum.payBack')}
+          aria-label={t('forum.payClose')}
           onClick={onCancel}
         >
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+          <X aria-hidden="true" className="h-4 w-4" />
         </IconButton>
       </div>
       {preview.trim() !== '' ? (

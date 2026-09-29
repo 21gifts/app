@@ -5,6 +5,7 @@ import { RulesSetup } from '@/components/RulesSetup';
 import { agreeToRules } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { RULES_CHAPTER_IDS } from '@/lib/rules-chapters';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -34,10 +35,16 @@ const oneChapter = [<p key="body">rules-body</p>];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetViewHistory();
   useAuthStore.setState({ session: 'sess', account: baseAccount });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  resetViewHistory();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  cleanup();
+});
 
 describe('RulesSetup', () => {
   it('renders nothing when there is no account', () => {
@@ -67,6 +74,7 @@ describe('RulesSetup', () => {
     expect(screen.getByText('chapter-one')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'I agree to these rules' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Back to the forum' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -76,6 +84,18 @@ describe('RulesSetup', () => {
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('labels the chapter 0 arrow Back when this tab has a previous view', () => {
+    recordCurrentView('/shops');
+    Object.defineProperty(window.history, 'length', {
+      configurable: true,
+      value: window.history.length + 1,
+    });
+    recordCurrentView('/setup/rules');
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
+    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Back to the forum' })).toBeNull();
   });
 
   it('advances chapters without posting until the last agree', () => {
@@ -124,14 +144,32 @@ describe('RulesSetup', () => {
     });
   });
 
+  it('opens the forum from chapter 0 when this tab has no earlier view', () => {
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Back to the forum' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back to the forum' }));
+    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(historyBack).not.toHaveBeenCalled();
+    expect(screen.getByText('chapter-one')).toBeTruthy();
+  });
+
   it('shows an icon-only back control after the first chapter', () => {
     renderWithLocale(
       <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
     );
+    expect(screen.getAllByRole('button', { name: 'Back to the forum' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
+    expect(screen.getAllByRole('button', { name: 'Back' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Back to the forum' })).toBeNull();
     const back = screen.getByRole('button', { name: 'Back' });
     expect(back).toBeTruthy();
     expect(screen.queryByText('Back')).toBeNull();

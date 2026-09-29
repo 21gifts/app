@@ -1,7 +1,15 @@
 'use client';
 
-import { ArrowLeft, ImagePlus, Loader2, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from 'react';
+import { ImagePlus, Loader2, X } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactElement,
+} from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -9,6 +17,7 @@ import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumGoalCurrency } from '@/lib/api-types';
 import {
@@ -112,6 +121,7 @@ export function ForumAskWizard({
   const [creditPhase, setCreditPhase] = useState<CreditAskPhase>('amount');
   const [termPreset, setTermPreset] = useState<CreditTermPreset>(30);
   const [customDays, setCustomDays] = useState('');
+  const { setOverride } = useChromeBack();
   const termDays = parseCreditTermDays(termPreset, customDays);
   const bitcoinAsk = draftUnit !== 'fiat';
   const currencyCode: ForumGoalCurrency = bitcoinAsk ? 'BTC' : fiat;
@@ -129,6 +139,26 @@ export function ForumAskWizard({
     onCreditTermDays?.(askObligation === 'credit' ? termDays : null);
   }, [askObligation, onCreditTermDays, termDays]);
   const creditInside = askObligation === 'credit' && step === 1 && creditPhase !== 'amount';
+  const stepBack = useCallback((): void => {
+    if (creditInside) {
+      setCreditPhase(previousCreditPhase(creditPhase));
+      return;
+    }
+    if (askObligation === 'credit' && step === 2) {
+      setCreditPhase('confirmCan');
+    }
+    onStepChange((step - 1) as ForumAskStep);
+  }, [askObligation, creditInside, creditPhase, onStepChange, step]);
+  useLayoutEffect(() => {
+    if (step > 1 || creditInside) {
+      setOverride({ labelKey: 'forum.askBack', onClick: stepBack, disabled: posting });
+    } else {
+      setOverride(null);
+    }
+    return (): void => {
+      setOverride(null);
+    };
+  }, [creditInside, posting, setOverride, step, stepBack]);
   const stepTitle = creditInside
     ? t(
         creditPhase === 'currency'
@@ -161,27 +191,6 @@ export function ForumAskWizard({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        {step > 1 || creditInside ? (
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('forum.askBack')}
-            disabled={posting}
-            onClick={() => {
-              if (creditInside) {
-                setCreditPhase(previousCreditPhase(creditPhase));
-                return;
-              }
-              if (askObligation === 'credit' && step === 2) {
-                setCreditPhase('confirmCan');
-              }
-              onStepChange((step - 1) as ForumAskStep);
-            }}
-          >
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-        ) : null}
         <h2 className="min-w-0 flex-1 text-lg font-semibold text-app-fg">{stepTitle}</h2>
         <p className="shrink-0 text-xs text-app-subtle">
           {t('forum.askStepOf', { step: shownStep, total: shownTotal })}

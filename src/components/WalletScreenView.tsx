@@ -10,7 +10,7 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
-import { WALLET_BACK_FALLBACK } from '@/lib/wallet-return';
+import { goToPreviousView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 
@@ -94,27 +94,15 @@ export function WalletScreenView({
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
   const stepBack = (): void => {
-    if (surface === 'phrase') {
-      if (showGrid) {
-        hidePhrase();
-        return;
-      }
-      if (window.history.length > 1) {
-        window.history.back();
-        return;
-      }
-      window.location.assign('/wallet');
+    if (surface === 'phrase' && showGrid) {
+      hidePhrase();
       return;
     }
-    if (detailsRef.current?.open === true) {
+    if (surface !== 'phrase' && detailsRef.current?.open === true) {
       detailsRef.current.open = false;
       return;
     }
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    window.location.assign(WALLET_BACK_FALLBACK);
+    goToPreviousView();
   };
   const hasError = error === 'prfUnsupported' || error === 'timeout' || error === 'generic';
   const errorCopy =
@@ -199,7 +187,7 @@ export function WalletScreenView({
   const card = (
     <Card surface={false}>
       <AppShellTopLeft>
-        <ProfileChromeLeft backHref="/wallet" backLabelKey="nav.back" onBackClick={stepBack} />
+        <ProfileChromeLeft onBackClick={stepBack} />
       </AppShellTopLeft>
       {surface === 'phrase' ? (
         <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">

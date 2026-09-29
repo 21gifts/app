@@ -8,9 +8,7 @@ vi.mock('@/components/PosScreen', () => ({
   PosAmount: () => <div data-testid="pos-amount" />,
 }));
 vi.mock('@/components/ProfileChromeLeft', () => ({
-  ProfileChromeLeft: ({ backHref }: { backHref?: string }) => (
-    <div data-testid="profile-chrome-left">{backHref}</div>
-  ),
+  ProfileChromeLeft: () => <div data-testid="profile-chrome-left" />,
 }));
 vi.mock('@/components/OnboardingGate', () => ({
   OnboardingGate: ({ children }: { children: ReactNode }) => children,
@@ -22,10 +20,10 @@ vi.mock('@/components/SignedInChrome', () => ({
 afterEach(cleanup);
 
 describe('PosAmountPage', () => {
-  it('renders the amount form and returns to the till', () => {
+  it('renders the amount form inside chrome', () => {
     const { container } = renderWithLocale(<PosAmountPage />);
     expect(screen.getByTestId('pos-amount')).toBeTruthy();
-    expect(screen.getByTestId('profile-chrome-left').textContent).toBe('/pos');
+    expect(screen.getByTestId('profile-chrome-left')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');

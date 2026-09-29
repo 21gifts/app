@@ -4,11 +4,16 @@ import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { ForumHomeWordmark } from '@/components/ForumHomeWordmark';
 import { OnboardingGate } from '@/components/OnboardingGate';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useTranslations } from '@/components/LocaleProvider';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
 import { PageChrome } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
+
+function WelcomeTopLeft(): ReactElement {
+  return <ProfileChromeLeft hideWithoutHistory wordmark={<ForumHomeWordmark />} />;
+}
 
 function WelcomeTopRight(): ReactElement {
   const { t } = useTranslations();
@@ -30,7 +35,7 @@ function WelcomeTopRight(): ReactElement {
  */
 export default function WelcomePage(): ReactElement {
   return (
-    <PageChrome topLeft={<ForumHomeWordmark />} topRight={<WelcomeTopRight />}>
+    <PageChrome topLeft={<WelcomeTopLeft />} topRight={<WelcomeTopRight />}>
       <OnboardingGate screen="welcome" allowGuest>
         <WelcomeScreen />
       </OnboardingGate>

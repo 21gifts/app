@@ -1,23 +1,15 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { type ReactElement } from 'react';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 
 /**
- * Client `/messages` chrome: forum back on the list, All conversations on an
- * open thread.
+ * Client `/messages` chrome. Always the shared previous-view arrow; the stack
+ * records the list then the open thread, so a thread opened from the list
+ * returns there. A thread opened from somewhere else returns there.
  *
- * Reads `?c=`. A non-empty `c` is an open thread; missing or empty `c` is the
- * list.
- *
- * @returns {@link ProfileChromeLeft} for the current inbox view.
+ * @returns {@link ProfileChromeLeft} for the inbox chrome.
  */
 export function MessagesChromeLeft(): ReactElement {
-  const searchParams = useSearchParams();
-  const openId = searchParams.get('c');
-  if (openId !== null && openId !== '') {
-    return <ProfileChromeLeft backHref="/messages" backLabelKey="inbox.back" />;
-  }
   return <ProfileChromeLeft />;
 }

@@ -2422,7 +2422,7 @@ test.describe('onboarding screens', () => {
     await expect(payPage).toBeVisible();
     await expect(payPage.getByText(REACTION_ANSWER)).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
     await expect(page.getByText(/Pay ₿21/)).toBeVisible();
     expect(await insideShell(page.getByText(REACTION_NOTE_TEXT))).toBe(true);
     await shotScreen(page, 'state-welcome-reaction-pay');
@@ -2466,7 +2466,7 @@ test.describe('onboarding screens', () => {
     if (mobile) {
       await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     }
-    expect(await insideShell(page.getByRole('button', { name: 'Back' }))).toBe(true);
+    expect(await insideShell(page.getByRole('button', { name: 'Close' }))).toBe(true);
     expect(await insideShell(page.getByText(/Pay ₿21/))).toBe(true);
     expect(await insideShell(payControl)).toBe(true);
     expect(await insideShell(waiting)).toBe(true);

@@ -4,7 +4,7 @@ import { type ReactElement, type ReactNode } from 'react';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
-import { PageChrome, Wordmark } from '@/components/ui';
+import { PageChrome } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -29,7 +29,10 @@ export function RulesPageChrome({ children }: { children: ReactNode }): ReactEle
   }
 
   return (
-    <PageChrome topLeft={<Wordmark href="/" />} topRight={<LanguageSwitcher tone="light" />}>
+    <PageChrome
+      topLeft={<ProfileChromeLeft wordmarkHref="/" />}
+      topRight={<LanguageSwitcher tone="light" />}
+    >
       {children}
     </PageChrome>
   );

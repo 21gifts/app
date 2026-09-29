@@ -9,13 +9,13 @@ vi.mock('next/link', () => ({
   default: ({
     href,
     children,
-    onClick,
+    ...rest
   }: {
     href: string;
     children: ReactNode;
-    onClick?: () => void;
+    [key: string]: unknown;
   }) => (
-    <a href={href} onClick={onClick}>
+    <a href={href} {...rest}>
       {children}
     </a>
   ),
@@ -42,6 +42,12 @@ describe('MarketingHeader', () => {
   it('links the wordmark home and Log in to /login', () => {
     renderWithLocale(<MarketingHeader />);
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).className).toContain(
+      'text-paper/70',
+    );
     expect(screen.getByRole('link', { name: 'Stats', hidden: true }).getAttribute('href')).toBe(
       '/stats',
     );

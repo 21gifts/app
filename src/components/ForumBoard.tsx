@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  ArrowLeft,
   ArrowUp,
   Check,
   Gift,
@@ -447,10 +446,10 @@ function ForumPaySheet({
             type="button"
             size="sm"
             variant="ghost"
-            aria-label={t('forum.payBack')}
+            aria-label={t('forum.payClose')}
             onClick={onPayCancel}
           >
-            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            <X aria-hidden="true" className="h-4 w-4" />
           </IconButton>
         </div>
         <AmountEntry
@@ -506,10 +505,10 @@ function ForumPaySheet({
           type="button"
           size="sm"
           variant="ghost"
-          aria-label={t('forum.payBack')}
+          aria-label={t('forum.payClose')}
           onClick={onPayCancel}
         >
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+          <X aria-hidden="true" className="h-4 w-4" />
         </IconButton>
       </div>
       <p className="px-10 text-center text-sm text-app-muted">

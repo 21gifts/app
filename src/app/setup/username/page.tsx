@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { OnboardingGate } from '@/components/OnboardingGate';
+import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { UsernameSetup } from '@/components/UsernameSetup';
 import { Wordmark } from '@/components/ui';
@@ -12,7 +13,12 @@ import { Wordmark } from '@/components/ui';
  */
 export default function UsernameSetupPage(): ReactElement {
   return (
-    <AppShell mode="fill" align="start" topLeft={<Wordmark />} topRight={<SignedInChrome />}>
+    <AppShell
+      mode="fill"
+      align="start"
+      topLeft={<ProfileChromeLeft wordmark={<Wordmark />} />}
+      topRight={<SignedInChrome />}
+    >
       <OnboardingGate screen="username">
         <UsernameSetup />
       </OnboardingGate>

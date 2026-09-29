@@ -171,8 +171,7 @@ describe('FundingApplyScreen', () => {
       screen.getByText('First, write a short About me so people can get to know you.'),
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
-    const back = screen.getByRole('link', { name: 'Back to grants' });
-    expect(back.getAttribute('href')).toBe('/grants');
+    expect(screen.queryByRole('link', { name: 'Back to grants' })).toBeNull();
     expect(screen.queryByText('Back to grants')).toBeNull();
   });
 
@@ -324,9 +323,7 @@ describe('FundingApplyScreen', () => {
     expect(await screen.findByText('When your posts match, you can apply again.')).toBeTruthy();
     expect(applyMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Back to grants' }).getAttribute('href')).toBe(
-      '/grants',
-    );
+    expect(screen.queryByRole('link', { name: 'Back to grants' })).toBeNull();
     expect(screen.queryByText('Back to grants')).toBeNull();
   });
 
