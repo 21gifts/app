@@ -91,6 +91,33 @@ describe('MentionTextarea', () => {
     expect(search).not.toHaveBeenCalled();
   });
 
+  it('keeps a closed composer unwrapped until the list opens', async () => {
+    search.mockResolvedValue(PEOPLE);
+    useAuthStore.setState({ session: 'sess', account: null });
+    const closed = 'h-12 min-w-0 flex-1 w-full block resize-none';
+    function Field(): ReactElement {
+      const [value, setValue] = useState('');
+      return (
+        <MentionTextarea
+          value={value}
+          onChange={setValue}
+          ariaLabel="Your message"
+          wrapperClassName="relative min-w-0 flex-1"
+          className={closed}
+        />
+      );
+    }
+    renderWithLocale(<Field />);
+    const idle = screen.getByRole('textbox');
+    expect(idle.className).toBe(closed);
+    expect(idle.parentElement?.classList.contains('relative')).toBe(false);
+    typeInto('@');
+    const open = await screen.findByRole('textbox');
+    expect(open.className).toBe('block min-w-0 w-full h-12 resize-none');
+    expect(open.parentElement?.classList.contains('relative')).toBe(true);
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+  });
+
   it('shows the first people as soon as @ is typed and inserts the chosen name', async () => {
     search.mockResolvedValue(PEOPLE);
     useAuthStore.setState({ session: 'sess', account: null });

@@ -59,6 +59,27 @@ const OPTION_ROW_CLASS =
   'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover';
 
 /**
+ * Field classes while the list is open.
+ *
+ * The closed field keeps the caller's classes and is not wrapped, so a
+ * resting composer matches the plain textarea. The open field fills the
+ * relative wrapper instead of being its own flex item.
+ *
+ * @param className - Classes for the closed textarea.
+ * @returns Classes for the textarea inside the open wrapper.
+ */
+function openFieldClass(className: string): string {
+  const rest = className
+    .split(/\s+/)
+    .filter(
+      (token) =>
+        token !== 'flex-1' && token !== 'min-w-0' && token !== 'w-full' && token !== 'block',
+    )
+    .join(' ');
+  return `block min-w-0 w-full ${rest}`.trim();
+}
+
+/**
  * Forum composer field that suggests people as soon as `@` is typed.
  *
  * An empty token shows the prefetched first page. A longer token shows
@@ -339,6 +360,42 @@ export function MentionTextarea({
     }
   };
 
+  const field = (
+    <textarea
+      ref={(node) => {
+        localRef.current = node;
+        if (textareaRef !== undefined) {
+          textareaRef.current = node;
+        }
+      }}
+      aria-label={ariaLabel}
+      aria-controls={open ? listId : undefined}
+      aria-activedescendant={open ? `${listId}-${String(activeIndex)}` : undefined}
+      {...(placeholder === undefined ? {} : { placeholder })}
+      value={value}
+      onChange={(event) => {
+        onChange(event.target.value);
+        sync(event.target);
+      }}
+      onSelect={(event) => {
+        sync(event.currentTarget);
+      }}
+      onKeyDown={onKeyDown}
+      onKeyUp={(event) => {
+        sync(event.currentTarget);
+      }}
+      onClick={(event) => {
+        sync(event.currentTarget);
+      }}
+      {...(maxLength === undefined ? {} : { maxLength })}
+      {...(rows === undefined ? {} : { rows })}
+      disabled={disabled}
+      className={open ? openFieldClass(className) : className}
+    />
+  );
+  if (!open) {
+    return field;
+  }
   return (
     <div
       ref={rootRef}
@@ -347,77 +404,45 @@ export function MentionTextarea({
         event.stopPropagation();
       }}
     >
-      <textarea
-        ref={(node) => {
-          localRef.current = node;
-          if (textareaRef !== undefined) {
-            textareaRef.current = node;
-          }
-        }}
-        aria-label={ariaLabel}
-        aria-controls={open ? listId : undefined}
-        aria-activedescendant={open ? `${listId}-${String(activeIndex)}` : undefined}
-        {...(placeholder === undefined ? {} : { placeholder })}
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value);
-          sync(event.target);
-        }}
-        onSelect={(event) => {
-          sync(event.currentTarget);
-        }}
-        onKeyDown={onKeyDown}
-        onKeyUp={(event) => {
-          sync(event.currentTarget);
-        }}
-        onClick={(event) => {
-          sync(event.currentTarget);
-        }}
-        {...(maxLength === undefined ? {} : { maxLength })}
-        {...(rows === undefined ? {} : { rows })}
-        disabled={disabled}
-        className={`block min-w-0 ${className}`}
-      />
-      {open ? (
-        <ul
-          ref={listRef}
-          id={listId}
-          role="listbox"
-          aria-label={t('forum.mentionSuggest')}
-          className={`absolute left-0 right-0 z-50 rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${
-            placeAbove ? 'bottom-full mb-2' : 'top-full mt-2'
-          }`}
-        >
-          {shown.map((account, index) => (
-            <li key={account.id} role="presentation">
-              <button
-                type="button"
-                id={`${listId}-${String(index)}`}
-                tabIndex={-1}
-                role="option"
-                aria-selected={index === activeIndex}
-                aria-label={`@${account.username}`}
-                className={
-                  index === activeIndex ? `${OPTION_ROW_CLASS} bg-app-hover` : OPTION_ROW_CLASS
+      {field}
+      <ul
+        ref={listRef}
+        id={listId}
+        role="listbox"
+        aria-label={t('forum.mentionSuggest')}
+        className={`absolute left-0 right-0 z-50 rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${
+          placeAbove ? 'bottom-full mb-2' : 'top-full mt-2'
+        }`}
+      >
+        {shown.map((account, index) => (
+          <li key={account.id} role="presentation">
+            <button
+              type="button"
+              id={`${listId}-${String(index)}`}
+              tabIndex={-1}
+              role="option"
+              aria-selected={index === activeIndex}
+              aria-label={`@${account.username}`}
+              className={
+                index === activeIndex ? `${OPTION_ROW_CLASS} bg-app-hover` : OPTION_ROW_CLASS
+              }
+              onMouseDown={(event) => {
+                event.preventDefault();
+                /* v8 ignore next 3 -- the option is rendered only while a mention token is active */
+                if (mention === null) {
+                  return;
                 }
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  /* v8 ignore next 3 -- the option is rendered only while a mention token is active */
-                  if (mention === null) {
-                    return;
-                  }
-                  insertAt(mention, account);
-                }}
-              >
-                <span className="font-medium">@{account.username}</span>
-                {account.name !== account.username ? (
-                  <span className="text-app-muted">{account.name}</span>
-                ) : null}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+                insertAt(mention, account);
+              }}
+            >
+              <span className="font-medium">@{account.username}</span>
+              {account.name !== account.username ? (
+                <span className="text-app-muted">{account.name}</span>
+              ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
