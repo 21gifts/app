@@ -4059,6 +4059,50 @@ describe('postPasskeyRenewReport', () => {
     });
   });
 
+  it('posts public authenticator facts when they are known', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
+    await postPasskeyRenewReport('sess', {
+      stage: 'ceremony',
+      outcome: 'failed',
+      errorName: 'prfUnsupported',
+      errorCode: null,
+      httpStatus: null,
+      message: 'wallet.prfUnsupported',
+      authenticatorAttachment: 'cross-platform',
+      transports: 'internal,usb',
+      aaguid: 'ab'.repeat(16),
+      prfEnabled: false,
+      prfPresent: false,
+      extensions: 'prf',
+      authenticatorFlags: 0,
+      publicKeyAlgorithm: -7,
+      residentKey: true,
+      hmacSecret: false,
+      credProtect: 'userVerificationRequired',
+      clientCapabilities: 'hybridTransport,prf',
+    });
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      stage: 'ceremony',
+      outcome: 'failed',
+      errorName: 'prfUnsupported',
+      errorCode: null,
+      httpStatus: null,
+      message: 'wallet.prfUnsupported',
+      authenticatorAttachment: 'cross-platform',
+      transports: 'internal,usb',
+      aaguid: 'ab'.repeat(16),
+      prfEnabled: false,
+      prfPresent: false,
+      extensions: 'prf',
+      authenticatorFlags: 0,
+      publicKeyAlgorithm: -7,
+      residentKey: true,
+      hmacSecret: false,
+      credProtect: 'userVerificationRequired',
+      clientCapabilities: 'hybridTransport,prf',
+    });
+  });
+
   it('throws on a non-ok response', async () => {
     stubFetch({ ok: false, status: 400, body: {} });
     await expect(

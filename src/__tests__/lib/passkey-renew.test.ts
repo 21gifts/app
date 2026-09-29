@@ -73,6 +73,7 @@ beforeEach(() => {
       get: vi.fn(),
     },
   });
+  vi.stubGlobal('PublicKeyCredential', undefined);
 });
 
 afterEach(() => {
@@ -145,13 +146,34 @@ describe('renewPasskey', () => {
     expect(postPasskeyRenewReport).not.toHaveBeenCalled();
   });
 
+  it('reports browser capabilities that are true', async () => {
+    vi.stubGlobal('PublicKeyCredential', {
+      getClientCapabilities: async () => ({
+        prf: true,
+        hybridTransport: true,
+        conditionalGet: false,
+      }),
+    });
+    const denied = Object.assign(new Error('nope'), { name: 'NotAllowedError' });
+    vi.mocked(navigator.credentials.create).mockRejectedValueOnce(denied);
+    await renewPasskey('tok');
+    expect(postPasskeyRenewReport).toHaveBeenCalledWith(
+      'tok',
+      expect.objectContaining({ clientCapabilities: 'hybridTransport,prf' }),
+    );
+  });
+
   it('reports a missing PRF as prfUnsupported', async () => {
     vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
     const result = await renewPasskey('tok');
     expect(result).toEqual({ outcome: 'failed', kind: 'prfUnsupported' });
     expect(postPasskeyRenewReport).toHaveBeenCalledWith(
       'tok',
-      expect.objectContaining({ errorName: 'prfUnsupported', message: 'wallet.prfUnsupported' }),
+      expect.objectContaining({
+        errorName: 'prfUnsupported',
+        message: 'wallet.prfUnsupported',
+        prfPresent: false,
+      }),
     );
   });
 

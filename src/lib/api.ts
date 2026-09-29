@@ -3012,11 +3012,36 @@ export type PasskeyRenewReportBody = {
   errorCode: string | null;
   httpStatus: number | null;
   message: string;
+  /** `platform` or `cross-platform`. Omitted when unknown. */
+  authenticatorAttachment?: 'platform' | 'cross-platform';
+  /** Sorted allowlisted transports. Omitted when none. */
+  transports?: string;
+  /** 32 lowercase hex authenticator id. Omitted when unknown. */
+  aaguid?: string;
+  /** Browser `prf.enabled`. Omitted when unknown. */
+  prfEnabled?: boolean;
+  /** Whether PRF output was present. Omitted when unknown. */
+  prfPresent?: boolean;
+  /** Sorted allowlisted extension names. Omitted when none. */
+  extensions?: string;
+  /** WebAuthn flags byte, 0–255. Omitted when unknown. Zero is sent. */
+  authenticatorFlags?: number;
+  /** COSE public-key algorithm. Omitted when unknown. */
+  publicKeyAlgorithm?: number;
+  /** `credProps.rk`. Omitted when unknown. */
+  residentKey?: boolean;
+  /** hmac-secret supported. Omitted when unknown. */
+  hmacSecret?: boolean;
+  /** Allowlisted credProtect policy. Omitted when unknown. */
+  credProtect?: string;
+  /** Sorted browser capabilities that are true. Omitted when none. */
+  clientCapabilities?: string;
 };
 
 /**
- * Reports a passkey-renew ceremony failure or cancel. Body is only the six
- * safe fields; never a phrase, PRF bytes, credential, challenge, or session.
+ * Reports a passkey-renew ceremony failure or cancel. Body is the six safe
+ * fields plus optional public authenticator facts and browser capability
+ * names. Never a phrase, PRF bytes, credential, challenge, or session.
  *
  * @param sessionToken - Bearer session.
  * @param body - Safe report fields.
@@ -3040,6 +3065,26 @@ export async function postPasskeyRenewReport(
       errorCode: body.errorCode,
       httpStatus: body.httpStatus,
       message: body.message,
+      ...(body.authenticatorAttachment === undefined
+        ? {}
+        : { authenticatorAttachment: body.authenticatorAttachment }),
+      ...(body.transports === undefined ? {} : { transports: body.transports }),
+      ...(body.aaguid === undefined ? {} : { aaguid: body.aaguid }),
+      ...(body.prfEnabled === undefined ? {} : { prfEnabled: body.prfEnabled }),
+      ...(body.prfPresent === undefined ? {} : { prfPresent: body.prfPresent }),
+      ...(body.extensions === undefined ? {} : { extensions: body.extensions }),
+      ...(body.authenticatorFlags === undefined
+        ? {}
+        : { authenticatorFlags: body.authenticatorFlags }),
+      ...(body.publicKeyAlgorithm === undefined
+        ? {}
+        : { publicKeyAlgorithm: body.publicKeyAlgorithm }),
+      ...(body.residentKey === undefined ? {} : { residentKey: body.residentKey }),
+      ...(body.hmacSecret === undefined ? {} : { hmacSecret: body.hmacSecret }),
+      ...(body.credProtect === undefined ? {} : { credProtect: body.credProtect }),
+      ...(body.clientCapabilities === undefined
+        ? {}
+        : { clientCapabilities: body.clientCapabilities }),
     }),
   });
   if (!response.ok) {

@@ -221,7 +221,7 @@
 
 ## Endpoint: POST /me/passkey-renew/report
 
-- **Purpose:** Same-origin proxy of api `POST /me/passkey-renew/report`. Stores a browser ceremony failure or cancel. The body is only the six safe fields.
+- **Purpose:** Same-origin proxy of api `POST /me/passkey-renew/report`. Stores a browser ceremony failure or cancel. The body is the six safe fields plus optional public authenticator facts and browser capability names.
 - **Errors:** Upstream 401 or 400, or 502 if the api is unreachable.
 - **Used by:** `postPasskeyRenewReport`.
 - **Auth:** Bearer.

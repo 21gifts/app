@@ -1,6 +1,12 @@
 import { fetchMe, finishPasskeySeed, postPasskeyRenewReport, startPasskeySeed } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { reportDiagnostic } from '@/lib/diagnostics';
+import {
+  passkeyRenewClientCapabilities,
+  passkeyRenewDebug,
+  passkeyRenewDebugFields,
+  type PasskeyRenewDebug,
+} from '@/lib/passkey-renew-debug';
 import { classifyWebAuthnError, obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import { creationOptionsFromJSON, credentialToJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
@@ -68,8 +74,10 @@ async function reportRenew(
   stage: 'begin' | 'ceremony' | 'finish',
   outcome: 'failed' | 'cancelled',
   err: unknown,
+  debug: PasskeyRenewDebug | null = null,
 ): Promise<Account | null> {
   try {
+    const clientCapabilities = await passkeyRenewClientCapabilities();
     return await postPasskeyRenewReport(sessionToken, {
       stage,
       outcome,
@@ -77,6 +85,8 @@ async function reportRenew(
       errorCode: errorCodeOf(err),
       httpStatus: null,
       message: errorMessageOf(err),
+      ...passkeyRenewDebugFields(debug),
+      ...(clientCapabilities === null ? {} : { clientCapabilities }),
     });
   } catch {
     // A failed report must not hide the local failure.
@@ -205,6 +215,7 @@ async function mergePrfExtension(
 export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewResult> {
   let stage: 'begin' | 'ceremony' | 'finish' = 'begin';
   let challengeId: string | undefined;
+  let debug: PasskeyRenewDebug | null = null;
   try {
     const begin = await startPasskeySeed(sessionToken);
     challengeId = begin.challengeId;
@@ -233,18 +244,20 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
       });
       return { outcome: 'cancelled' };
     }
+    debug = passkeyRenewDebug(credential, null);
     const prfFirst = await obtainPrfFirst(credential);
     if (!isCurrentSession(sessionToken)) {
       return { outcome: 'cancelled' };
     }
     if (!prfFirst) {
+      debug = passkeyRenewDebug(credential, false);
       reportDiagnostic({
         event: 'client.passkey.seed.prf',
         prfPresent: false,
         stage: 'seed',
       });
       const prfErr = Object.assign(new Error('wallet.prfUnsupported'), { name: 'prfUnsupported' });
-      const reported = await reportRenew(sessionToken, 'ceremony', 'failed', prfErr);
+      const reported = await reportRenew(sessionToken, 'ceremony', 'failed', prfErr, debug);
       return storedOrFailed(sessionToken, prfErr, reported);
     }
     reportDiagnostic({
@@ -268,10 +281,10 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
       return storedOrFailed(sessionToken, err, null);
     }
     if (classifyWebAuthnError(err) === 'cancel') {
-      await reportRenew(sessionToken, 'ceremony', 'cancelled', err);
+      await reportRenew(sessionToken, 'ceremony', 'cancelled', err, debug);
       return { outcome: 'cancelled' };
     }
-    const reported = await reportRenew(sessionToken, stage, 'failed', err);
+    const reported = await reportRenew(sessionToken, stage, 'failed', err, debug);
     return storedOrFailed(sessionToken, err, reported);
   }
 }

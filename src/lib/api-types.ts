@@ -91,6 +91,11 @@ export const accountSchema = z.object({
   /** True after the member confirmed a failed renew. The gate stays closed. */
   passkeyRenewClosed: z.boolean().optional(),
   /**
+   * True when the open failure is a passkey that did not yield the
+   * recovery-phrase key. Optional; missing means false.
+   */
+  passkeyRenewPrfUnsupported: z.boolean().optional(),
+  /**
    * True after the owner has posted at least one forum note. Optional so current
    * develop api bodies still parse; the introduce overlay only opens when this
    * is strictly `false`.
@@ -152,6 +157,7 @@ export const accountSchema = z.object({
  * omitted or false means no seed has been stored yet. The app does not use it
  * to choose Add versus Show. The renew gate is `walletRequired === false` and
  * `passkeyRenewClosed !== true`. `passkeyRenewFailed` only selects the failure
+ * step. `passkeyRenewPrfUnsupported` selects the missing-key wording on that
  * step. `walletBackupSeenAt` is epoch ms the api may
  * record; the app does not read it. `passkeyCredentialId` is set once a seed
  * passkey exists; missing or null means no seed.
