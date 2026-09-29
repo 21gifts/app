@@ -15,6 +15,7 @@ import {
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
+  NoteDeletedError,
   postMessage,
   postMessageInvoice,
 } from '@/lib/api';
@@ -590,6 +591,13 @@ export function PublicMessageThread(props: {
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
+      if (err instanceof NoteDeletedError) {
+        /* v8 ignore next 3 -- reply error after the thread was closed */
+        if (expandedIdRef.current === parentId) {
+          setReplyFormError('deleted');
+        }
+        return;
+      }
       if (expandedIdRef.current === parentId) {
         setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
@@ -731,6 +739,10 @@ export function PublicMessageThread(props: {
         setReplyFormError('request');
         return;
       }
+      if (err instanceof NoteDeletedError) {
+        setReplyFormError('deleted');
+        return;
+      }
       setReplyFormError(
         err instanceof Error && /1[-–]8000 characters/i.test(err.message)
           ? 'tooLong'
@@ -831,6 +843,10 @@ export function PublicMessageThread(props: {
               return null;
             }
             setPayError('request');
+            return null;
+          }
+          if (err instanceof NoteDeletedError) {
+            setPayError('deleted');
             return null;
           }
           setPayError(

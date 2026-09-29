@@ -69,6 +69,7 @@ import {
   fetchPlaces,
   postMessage,
   fetchComposeTarget,
+  NoteDeletedError,
   postMessageInvoice,
   getRepayment,
   postRepaymentInvoice,
@@ -1937,9 +1938,8 @@ describe('postMessageInvoice', () => {
 
   it('throws on 404', async () => {
     stubFetch({ ok: false, status: 404, body: {} });
-    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
-      'Could not start the Bitcoin payment',
-    );
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(NoteDeletedError);
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow('This note was deleted');
   });
 
   it('throws on 503', async () => {
@@ -2233,6 +2233,16 @@ describe('postMessage', () => {
   it('throws on a non-400 non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Could not post your message');
+  });
+
+  it('throws NoteDeletedError on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toBeInstanceOf(
+      NoteDeletedError,
+    );
+    await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toThrow(
+      'This note was deleted',
+    );
   });
 
   it('throws MissingRequirementsError on 409', async () => {

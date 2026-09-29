@@ -1151,6 +1151,12 @@ The payment request failed. The alert says **Could not post your message**. The 
 
 ![21.gifts welcome reaction error](images/welcome-reaction-error.png)
 
+### Variant: reaction-deleted
+
+The payment request failed because the note was deleted. The alert says **This note was deleted.**, the typed sentence is still in the field, and no pay sheet is open.
+
+![21.gifts welcome reaction deleted](images/welcome-reaction-deleted.png)
+
 ### Variant: reaction-rate-limit
 
 The payment request was rate-limited. The alert says **Too many messages. Please wait a moment and try again.** The typed sentence is still in the field.
@@ -1507,6 +1513,12 @@ Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the s
 Payable reply, Gift amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. No payment QR and no invoice-step **Pay with Wallet of Satoshi** button.
 
 ![21.gifts welcome pay author wallet](images/welcome-pay-author-wallet.png)
+
+### Variant: pay-deleted
+
+Payable reply, Gift amount submitted, but the note was deleted. The pay sheet stays on the amount form and shows **This note was deleted.**, with no payment QR and no invoice-step Pay button.
+
+![21.gifts welcome pay deleted](images/welcome-pay-deleted.png)
 
 ### Variant: role-hint
 
@@ -2389,9 +2401,27 @@ Wide image only. Stub GET `/banners/me` with the wide scene. No profile photo, s
 
 ### Variant: banner-not-wide
 
-Choosing a square portrait for the wide image. Alert **Use an image at least 640 px wide and at least 1.5 times as wide as it is tall**. Both add buttons stay. Needle `state-profile-banner-not-wide`.
+Choosing a square portrait for the wide image opens the 5:2 cropper (**Drag the photo to choose the wide image**, labeled **Use this crop**, X with accessible name **Cancel crop**). **Add a wide image** is hidden. **Add a profile photo** stays. Needle `state-profile-banner-not-wide`.
 
 ![21.gifts profile banner not wide](images/profile-banner-not-wide.png)
+
+### Variant: banner-crop-saving
+
+The wide-image cropper stays open while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Add a wide image** stays hidden. **Add a profile photo** stays, disabled, without a spinner. Needle `state-profile-banner-crop-saving`.
+
+![21.gifts profile banner crop saving](images/profile-banner-crop-saving.png)
+
+### Variant: banner-crop-save-error
+
+PUT `/banners/me` answers 500 after **Use this crop**. Alert **Could not save. Please try again.** The cropper stays open (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). Needle `state-profile-banner-crop-save-error`.
+
+![21.gifts profile banner crop save error](images/profile-banner-crop-save-error.png)
+
+### Variant: banner-crop-too-large
+
+**Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-banner-crop-too-large`.
+
+![21.gifts profile banner crop too large](images/profile-banner-crop-too-large.png)
 
 ### Variant: picture-unsupported
 
@@ -2428,6 +2458,30 @@ Owner editor opened from variant **images**. The same three stubs are loaded (sq
 Owner in the About me textarea editor. From the empty CTA, click **Write your About me** (empty→Write is enough). Needle: `getByRole('textbox', { name: 'About me' })` / **Save About me** icon button. Save/cancel are icon-only IconButtons (`getByRole` + catalog text is not visible). textarea uses `text-base`. The empty editor still shows three icon-only attaches: **Add a photo** (`profile.about.attach`), **Add a profile photo** (`profile.about.portrait`), and **Add a wide image** (`profile.about.banner`). No picture is stored yet, so **Remove profile photo**, **Remove wide image**, and **Remove photo** are absent.
 
 ![21.gifts profile About me editing](images/profile-about-editing.png)
+
+### Variant: about-banner-crop
+
+About me editor with the wide-image cropper inside it. From the empty CTA, **Write your About me**, then a square portrait on the editor wide-image input. The cropper sits under the textarea (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). The header **Add a wide image** stays, because that crop belongs to the header. Needle `state-profile-about-banner-crop`.
+
+![21.gifts profile About me banner crop](images/profile-about-banner-crop.png)
+
+### Variant: about-banner-crop-saving
+
+Same editor cropper while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Save About me** is disabled and is not the spinning control. Needle `state-profile-about-banner-crop-saving`.
+
+![21.gifts profile About me banner crop saving](images/profile-about-banner-crop-saving.png)
+
+### Variant: about-banner-crop-save-error
+
+Same editor cropper after PUT `/banners/me` answers 500. Alert **Could not save. Please try again.** The cropper stays open. Needle `state-profile-about-banner-crop-save-error`.
+
+![21.gifts profile About me banner crop save error](images/profile-about-banner-crop-save-error.png)
+
+### Variant: about-banner-crop-too-large
+
+Same editor cropper after **Use this crop** encodes a JPEG over 1 MB. Alert **Keep photos under 1 MB**. The cropper stays open. Needle `state-profile-about-banner-crop-too-large`.
+
+![21.gifts profile About me banner crop too large](images/profile-about-banner-crop-too-large.png)
 
 ### Variant: about-save-error
 

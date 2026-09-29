@@ -98,8 +98,59 @@ vi.mock('@/lib/api', () => ({
   postMessageInvoice: vi.fn(),
 }));
 
+vi.mock('@/components/WideImageCropper', () => ({
+  WideImageCropper: ({
+    file,
+    busy,
+    onConfirm,
+    onCancel,
+    onError,
+  }: {
+    file: File;
+    busy?: boolean;
+    onConfirm: (photo: { contentType: 'image/jpeg'; data: string }) => void;
+    onCancel: () => void;
+    onError: (error: 'unsupported' | 'tooLarge') => void;
+  }) => (
+    <div>
+      <p>Drag the photo to choose the wide image</p>
+      <span>{file.name}</span>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          onConfirm({ contentType: 'image/jpeg', data: 'wide' });
+        }}
+      >
+        Use this crop
+      </button>
+      <button type="button" disabled={busy} onClick={onCancel}>
+        Cancel crop
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onError('tooLarge');
+        }}
+      >
+        Crop too large
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onError('unsupported');
+        }}
+      >
+        Crop unsupported
+      </button>
+    </div>
+  ),
+}));
+
 vi.mock('@/lib/forum-photo', () => ({
   prepareForumPhoto: vi.fn(),
+  isForumPhotoFile: (file: File): boolean =>
+    file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp',
 }));
 
 vi.mock('@/lib/push', () => ({
@@ -812,10 +863,12 @@ describe('ProfileScreen', () => {
       });
     });
     fireEvent.change(inputs[2] as HTMLInputElement, { target: { files: [file] } });
+    expect(prepareForumPhoto).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
       expect(putWideBanner).toHaveBeenCalledWith('tok', {
         contentType: 'image/jpeg',
-        data: 'pic',
+        data: 'wide',
       });
     });
   });
@@ -846,9 +899,8 @@ describe('ProfileScreen', () => {
     });
   });
 
-  it('saves a wide image from the empty-slot button and explains a portrait', async () => {
+  it('frames a wide image from the empty-slot button instead of rejecting it', async () => {
     vi.mocked(putWideBanner).mockClear();
-    vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'notWide' });
     renderWithLocale(<ProfileScreen />);
     await screen.findByRole('button', { name: 'Add a wide image' });
     const input = document.querySelector('input[name="profile-banner"]');
@@ -856,29 +908,37 @@ describe('ProfileScreen', () => {
       type: 'image/jpeg',
     });
     fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
-    expect(
-      await screen.findByText(
-        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
-      ),
-    ).toBeTruthy();
+    expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(prepareForumPhoto).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel crop' }));
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
     expect(putWideBanner).not.toHaveBeenCalled();
-    vi.mocked(prepareForumPhoto).mockResolvedValue({
-      ok: true,
-      photo: {
-        contentType: 'image/jpeg',
-        data: 'wide',
-        previewUrl: 'data:image/jpeg;base64,wide',
-      },
-    });
+
+    fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crop too large' }));
+    expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Crop unsupported' }));
+    expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+
     vi.mocked(putWideBanner).mockResolvedValue(undefined);
     fireEvent.change(input as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
-      expect(prepareForumPhoto).toHaveBeenCalledWith(file, { wide: true });
       expect(putWideBanner).toHaveBeenCalledWith('tok', {
         contentType: 'image/jpeg',
         data: 'wide',
       });
     });
+    vi.mocked(putWideBanner).mockRejectedValueOnce(new Error('no'));
+    const again = document.querySelector('input[name="profile-banner"]');
+    fireEvent.change(again as HTMLInputElement, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
+    expect(await screen.findByText('Could not save. Please try again.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
   });
 
   it('ignores an empty file choice and explains a bad or failed save', async () => {
@@ -893,9 +953,13 @@ describe('ProfileScreen', () => {
     fireEvent.change(photoInput, { target: { files: [] } });
     fireEvent.change(bannerInput, { target: { files: [] } });
     expect(prepareForumPhoto).not.toHaveBeenCalled();
+    const gif = new File([new Uint8Array([1])], 'note.gif', { type: 'image/gif' });
+    fireEvent.change(bannerInput, { target: { files: [gif] } });
+    expect(await screen.findByText('Use a JPEG, PNG, or WebP photo')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
     vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'tooLarge' });
     const file = new File([new Uint8Array([1])], 'big.jpg', { type: 'image/jpeg' });
-    fireEvent.change(bannerInput, { target: { files: [file] } });
+    fireEvent.change(photoInput, { target: { files: [file] } });
     expect(await screen.findByText('Keep photos under 1 MB')).toBeTruthy();
     vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'unsupported' });
     fireEvent.change(photoInput, { target: { files: [file] } });
@@ -907,6 +971,344 @@ describe('ProfileScreen', () => {
     vi.mocked(putProfilePhoto).mockRejectedValue(new Error('no'));
     fireEvent.change(photoInput, { target: { files: [file] } });
     expect(await screen.findByText('Could not save. Please try again.')).toBeTruthy();
+  });
+
+  it('ignores a profile-photo choice while the wide image is saving', async () => {
+    let releaseBanner: () => void = () => undefined;
+    vi.mocked(putProfilePhoto).mockClear();
+    vi.mocked(putWideBanner).mockClear();
+    vi.mocked(prepareForumPhoto).mockClear();
+    vi.mocked(putWideBanner).mockReturnValue(
+      new Promise((resolve) => {
+        releaseBanner = () => {
+          resolve(undefined);
+        };
+      }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a wide image' });
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const wide = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'tall.jpg', {
+      type: 'image/jpeg',
+    });
+    const portrait = new File([new Uint8Array([1])], 'face.jpg', { type: 'image/jpeg' });
+    fireEvent.change(bannerInput, { target: { files: [wide] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
+    await waitFor(() => {
+      expect(putWideBanner).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.change(photoInput, { target: { files: [portrait] } });
+    fireEvent.change(bannerInput, { target: { files: [portrait] } });
+    expect(prepareForumPhoto).not.toHaveBeenCalled();
+    expect(putProfilePhoto).not.toHaveBeenCalled();
+    expect(screen.getByText('tall.jpg')).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Use this crop' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    await act(async () => {
+      releaseBanner();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+    });
+    expect(putWideBanner).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a wide-image choice while the profile photo is saving', async () => {
+    let releasePicture: () => void = () => undefined;
+    vi.mocked(putProfilePhoto).mockClear();
+    vi.mocked(putWideBanner).mockClear();
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockReturnValue(
+      new Promise((resolve) => {
+        releasePicture = () => {
+          resolve(undefined);
+        };
+      }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a profile photo' });
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'tall.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(photoInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(putProfilePhoto).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.change(bannerInput, { target: { files: [file] } });
+    expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+    expect(putWideBanner).not.toHaveBeenCalled();
+    await act(async () => {
+      releasePicture();
+    });
+    expect(await screen.findByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+  });
+
+  it('keeps the chosen wide image when only the profile photo is saved', async () => {
+    vi.mocked(putProfilePhoto).mockClear();
+    vi.mocked(putWideBanner).mockClear();
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a wide image' });
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'tall.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(bannerInput, { target: { files: [file] } });
+    fireEvent.change(photoInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(putProfilePhoto).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText('tall.jpg')).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Use this crop' }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(putWideBanner).not.toHaveBeenCalled();
+  });
+
+  it('keeps the header crop when About me saves the profile photo', async () => {
+    vi.mocked(putProfilePhoto).mockClear();
+    vi.mocked(putWideBanner).mockClear();
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a wide image' });
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
+    const wide = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'header.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(bannerInput, { target: { files: [wide] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    const aboutPicture = [...document.querySelectorAll('input[type="file"]')].filter(
+      (input) => input.getAttribute('name') === null,
+    )[1] as HTMLInputElement;
+    const portrait = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'face.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(aboutPicture, { target: { files: [portrait] } });
+    await waitFor(() => {
+      expect(putProfilePhoto).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText('header.jpg')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use this crop' })).toBeTruthy();
+    expect(putWideBanner).not.toHaveBeenCalled();
+  });
+
+  it('replaces a stored picture only after the reloaded one is ready', async () => {
+    let created = 0;
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: (): string => {
+        created += 1;
+        return `blob:slot-${created}`;
+      },
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([2])], { type: 'image/png' }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    expect((await screen.findByAltText('Profile photo')).getAttribute('src')).toBe('blob:slot-1');
+    expect(screen.getByAltText('Wide profile image').getAttribute('src')).toBe('blob:slot-2');
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([3])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([4])], { type: 'image/png' }),
+    );
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    fireEvent.change(photoInput, {
+      target: {
+        files: [new File([new Uint8Array([1])], 'face.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Profile photo').getAttribute('src')).toBe('blob:slot-3');
+    });
+    expect(screen.getByAltText('Wide profile image').getAttribute('src')).toBe('blob:slot-4');
+    expect(revoke).toHaveBeenCalledWith('blob:slot-1');
+    expect(revoke).toHaveBeenCalledWith('blob:slot-2');
+  });
+
+  it('clears a stored header picture when the reload fails', async () => {
+    let created = 0;
+    const revoke = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: (): string => {
+        created += 1;
+        return `blob:slot-${created}`;
+      },
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: revoke,
+    });
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([2])], { type: 'image/png' }),
+    );
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    expect((await screen.findByAltText('Profile photo')).getAttribute('src')).toBe('blob:slot-1');
+    expect(screen.getByAltText('Wide profile image').className).toContain('aspect-[5/2]');
+    fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
+    expect(await screen.findByRole('button', { name: 'Remove profile photo' })).toBeTruthy();
+    vi.mocked(fetchProfilePhoto).mockRejectedValue(new Error('gone'));
+    vi.mocked(fetchWideBanner).mockRejectedValue(new Error('gone'));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove profile photo' }));
+    await waitFor(() => {
+      expect(screen.getByText('Add a profile photo')).toBeTruthy();
+    });
+    expect(screen.getByText('Add a wide image')).toBeTruthy();
+    expect(
+      [...document.querySelectorAll('img')].some((img) => img.className.includes('aspect-[5/2]')),
+    ).toBe(false);
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(revoke).toHaveBeenCalledWith('blob:slot-1');
+    expect(revoke).toHaveBeenCalledWith('blob:slot-2');
+  });
+
+  it('clears a stored header picture when the reload is not an image', async () => {
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([2])], { type: 'image/png' }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'application/json' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(new Blob([], { type: 'image/jpeg' }));
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    fireEvent.change(photoInput, {
+      target: { files: [new File([new Uint8Array([1])], 'face.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByText('Add a profile photo')).toBeTruthy();
+    });
+    expect(screen.getByText('Add a wide image')).toBeTruthy();
+    expect(screen.queryByAltText('Profile photo')).toBeNull();
+    expect(
+      [...document.querySelectorAll('img')].some((img) => img.className.includes('aspect-[5/2]')),
+    ).toBe(false);
+  });
+
+  it('hides add buttons while a reload from an empty slot is in flight', async () => {
+    vi.mocked(putWideBanner).mockClear();
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    let resolveBanner: (blob: Blob) => void = () => undefined;
+    vi.mocked(fetchWideBanner).mockReturnValue(
+      new Promise((resolve) => {
+        resolveBanner = resolve;
+      }),
+    );
+    vi.mocked(fetchProfilePhoto).mockReturnValue(new Promise(() => undefined));
+    vi.mocked(putWideBanner).mockResolvedValue(undefined);
+    const bannerInput = document.querySelector('input[name="profile-banner"]') as HTMLInputElement;
+    fireEvent.change(bannerInput, {
+      target: {
+        files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'tall.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
+    await waitFor(() => {
+      expect(putWideBanner).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    });
+    await act(async () => {
+      resolveBanner(new Blob([new Uint8Array([2])], { type: 'image/png' }));
+    });
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+  });
+
+  it('does not drop a newer picture when an older load fails', async () => {
+    let rejectPicture: (err: Error) => void = () => undefined;
+    let rejectBanner: (err: Error) => void = () => undefined;
+    vi.mocked(fetchProfilePhoto).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectPicture = reject;
+      }),
+    );
+    vi.mocked(fetchWideBanner).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectBanner = reject;
+      }),
+    );
+    renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(fetchProfilePhoto).toHaveBeenCalled();
+    });
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(fetchWideBanner).mockResolvedValue(
+      new Blob([new Uint8Array([2])], { type: 'image/png' }),
+    );
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    const photoInput = document.querySelector('input[name="profile-photo"]') as HTMLInputElement;
+    fireEvent.change(photoInput, {
+      target: { files: [new File([new Uint8Array([1])], 'face.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    await act(async () => {
+      rejectPicture(new Error('late'));
+      rejectBanner(new Error('late'));
+    });
+    expect(screen.getByAltText('Profile photo')).toBeTruthy();
+    expect(screen.getByAltText('Wide profile image')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
   });
 
   it('shows a spinner on the picture button while that save is in flight', async () => {

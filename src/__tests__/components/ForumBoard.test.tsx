@@ -2299,6 +2299,27 @@ describe('ForumBoard', () => {
     );
   });
 
+  it('shows pay deleted error', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payError="deleted"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+  });
+
   it('shows pay author-wallet error', () => {
     renderWithLocale(
       <ForumBoard
@@ -5695,7 +5716,7 @@ describe('ForumBoard', () => {
     expect(onReplyAmountDraftChange).toHaveBeenCalledWith('21');
   });
 
-  it('shows replyFormError tooLong, request, and rateLimit when expanded', () => {
+  it('shows replyFormError tooLong, request, rateLimit, and deleted when expanded', () => {
     const { rerender } = renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -5813,6 +5834,30 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       'Too many messages. Please wait a moment and try again.',
     );
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId="m1"
+            replies={[]}
+            replyFormError="deleted"
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
   });
 
   it('calls onRefresh after a pull of at least 56px at the top of the page', () => {

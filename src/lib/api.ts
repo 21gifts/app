@@ -100,6 +100,16 @@ export class WrongAccountError extends Error {
 }
 
 /**
+ * Api 404 on a missing or deleted forum note (reply parent or invoice target).
+ */
+export class NoteDeletedError extends Error {
+  constructor() {
+    super('This note was deleted');
+    this.name = 'NoteDeletedError';
+  }
+}
+
+/**
  * True for {@link WrongAccountError} or any `Error` whose message is exactly
  * {@link WRONG_ACCOUNT_ERROR}.
  *
@@ -1892,6 +1902,7 @@ function forumAskGoalFields(
  * `goalRepayable: true` on a credit Ask (omitted on a donation), and optional
  * `place` pin (omit when unset; replies must not send it).
  * @returns The created {@link ForumMessage}.
+ * @throws {@link NoteDeletedError} on 404 (missing or deleted `inReplyTo` parent).
  * @throws Error when the api rejects the body (400, 403, or 429) — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
  * on 409, on any other non-2xx status, or when the body fails
@@ -1968,6 +1979,9 @@ export async function postMessage(
       throw missing;
     }
     throw new Error('Could not post your message');
+  }
+  if (response.status === 404) {
+    throw new NoteDeletedError();
   }
   if (!response.ok) {
     throw new Error('Could not post your message');
@@ -2105,7 +2119,8 @@ export async function fetchComposeTarget(
  * @param text - Optional NIP-57 comment shown as the gift reply body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
  * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
- * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
+ * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
+ * @throws Error with collapsed visitor copy on 400/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
  * {@link messageInvoiceSchema}.
  */
@@ -2152,7 +2167,7 @@ export async function postMessageInvoice(
     throw new Error('Could not start the Bitcoin payment');
   }
   if (response.status === 404) {
-    throw new Error('Could not start the Bitcoin payment');
+    throw new NoteDeletedError();
   }
   if (response.status === 503) {
     throw new Error('Could not start the Bitcoin payment');

@@ -2698,6 +2698,28 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-reaction-error');
   });
 
+  test('state /welcome reaction-deleted', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const alert = page.getByText('This note was deleted.');
+    await expect(alert).toBeVisible();
+    await alert.evaluate((node) => {
+      node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    expect(await insideShell(alert)).toBe(true);
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
+    await shotScreen(page, 'state-welcome-reaction-deleted');
+  });
+
   test('state /welcome reaction-rate-limit', async ({ page }) => {
     await installReactionThread(page, [REACTION_REPLY]);
     await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
@@ -8802,6 +8824,37 @@ test.describe('profile activity chart variants', () => {
     });
   }
 
+  /**
+   * Header inputs are named. The editor's unnamed inputs are the note photo,
+   * the profile photo, then the wide image.
+   */
+  async function chooseEditorWideImage(page: Page): Promise<void> {
+    await page.getByRole('button', { name: 'Write your About me' }).click();
+    await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
+    await page
+      .locator('input[type="file"]:not([name])')
+      .nth(2)
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+    await expect(
+      page
+        .getByRole('button', { name: 'Add a wide image' })
+        .filter({ hasText: 'Add a wide image' }),
+    ).toBeVisible();
+  }
+
+  /** The editor cropper sits under the chart. Bring that block into the viewport shot. */
+  async function frameEditorWideCrop(page: Page): Promise<void> {
+    const about = page.getByRole('textbox', { name: 'About me' });
+    await about.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await expect(about).toBeInViewport();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeInViewport();
+  }
+
   test('profile receive', async ({ page }) => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_RECEIVE_STATS);
@@ -9043,12 +9096,87 @@ test.describe('profile activity chart variants', () => {
     await page
       .locator('input[name="profile-banner"]')
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
-    await expect(
-      page.getByText(
-        'Use an image at least 640 px wide and at least 1.5 times as wide as it is tall',
-      ),
-    ).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     await shotScreen(page, 'state-profile-banner-not-wide');
+  });
+
+  test('profile banner-crop-saving', async ({ page }) => {
+    // state-profile-banner-crop-saving
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await openProfile(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const portrait = page.getByRole('button', { name: 'Add a profile photo' });
+    await expect(portrait).toBeDisabled();
+    await expect(portrait.locator('.animate-spin')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
+    await shotScreen(page, 'state-profile-banner-crop-saving');
+    release?.();
+  });
+
+  test('profile banner-crop-save-error', async ({ page }) => {
+    // state-profile-banner-crop-save-error
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await openProfile(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-profile-banner-crop-save-error');
+  });
+
+  test('profile banner-crop-too-large', async ({ page }) => {
+    // state-profile-banner-crop-too-large
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page
+      .locator('input[name="profile-banner"]')
+      .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
+    await shotScreen(page, 'state-profile-banner-crop-too-large');
   });
 
   test('profile picture-unsupported', async ({ page }) => {
@@ -9189,6 +9317,84 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
     await shotScreen(page, 'state-profile-about-editing');
+  });
+
+  test('profile about-banner-crop', async ({ page }) => {
+    // state-profile-about-banner-crop
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    await frameEditorWideCrop(page);
+    await shotScreen(page, 'state-profile-about-banner-crop');
+  });
+
+  test('profile about-banner-crop-saving', async ({ page }) => {
+    // state-profile-about-banner-crop-saving
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    let release: (() => void) | undefined;
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() !== 'PUT') {
+        await route.fallback();
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    const confirm = page.getByRole('button', { name: 'Use this crop' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(confirm.locator('.animate-spin')).toBeVisible();
+    const save = page.getByRole('button', { name: 'Save About me' });
+    await expect(save).toBeDisabled();
+    await expect(save.locator('.animate-spin')).toHaveCount(0);
+    await frameEditorWideCrop(page);
+    await expect(confirm.locator('.animate-spin')).toBeInViewport();
+    await shotScreen(page, 'state-profile-about-banner-crop-saving');
+    release?.();
+  });
+
+  test('profile about-banner-crop-save-error', async ({ page }) => {
+    // state-profile-about-banner-crop-save-error
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await page.route(/\/banners\/me$/, async (route) => {
+      if (route.request().method() === 'PUT') {
+        await route.fulfill({ status: 500, body: 'no' });
+        return;
+      }
+      await route.fallback();
+    });
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await expect(page.getByText('Could not save. Please try again.')).toBeInViewport();
+    await shotScreen(page, 'state-profile-about-banner-crop-save-error');
+  });
+
+  test('profile about-banner-crop-too-large', async ({ page }) => {
+    // state-profile-about-banner-crop-too-large
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await seedAdaProfile(page, { aboutMe: null, aboutMeHasPhoto: false });
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await chooseEditorWideImage(page);
+    await page.getByRole('button', { name: 'Use this crop' }).click();
+    await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
+    await frameEditorWideCrop(page);
+    await expect(page.getByText('Keep photos under 1 MB')).toBeInViewport();
+    await shotScreen(page, 'state-profile-about-banner-crop-too-large');
   });
 
   test('profile about-save-error', async ({ page }) => {
@@ -13145,6 +13351,81 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-pay-author-wallet');
+  });
+
+  test('welcome pay-deleted', async ({ page }) => {
+    await stubWalletLocationAssign(page);
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const url = route.request().url();
+      if (
+        url.includes('/invoice') ||
+        url.includes('/replies') ||
+        route.request().method() !== 'GET'
+      ) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-pay',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-pay/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-pay',
+              name: 'Carol',
+              text: 'A payable reply',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/r-pay/invoice', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    const replyCard = page.locator('[data-reply-id="r-pay"]');
+    await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await replyCard.getByLabel('Amount').fill('21');
+    await submitPayAmount(page);
+    await expect(page.getByText('This note was deleted.')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-pay-deleted');
   });
 
   test('welcome role-hint', async ({ page }) => {

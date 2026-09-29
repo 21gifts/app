@@ -36,6 +36,7 @@ import {
   fetchReplies,
   PublicForumUnauthorizedError,
   markNotificationRead,
+  NoteDeletedError,
   postMessage,
   fetchComposeTarget,
   postMessageInvoice,
@@ -1980,6 +1981,10 @@ export function ForumLoader({
             setPayError('request');
             return null;
           }
+          if (err instanceof NoteDeletedError) {
+            setPayError('deleted');
+            return null;
+          }
           setPayError(
             isRateLimitError(err)
               ? 'rateLimit'
@@ -2154,6 +2159,13 @@ export function ForumLoader({
         await runComposePay(trimmed, parentId, 1, isRetry);
         return;
       }
+      if (err instanceof NoteDeletedError) {
+        /* v8 ignore next 3 -- reply error after the thread was closed */
+        if (expandedIdRef.current === parentId) {
+          setReplyFormError('deleted');
+        }
+        return;
+      }
       /* v8 ignore next 3 -- reply error after the thread was closed */
       if (expandedIdRef.current === parentId) {
         setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
@@ -2217,6 +2229,13 @@ export function ForumLoader({
           return;
         }
         setReplyFormError('request');
+        return;
+      }
+      if (err instanceof NoteDeletedError) {
+        /* v8 ignore next 3 -- reply error after the thread was closed */
+        if (expandedIdRef.current === parentId) {
+          setReplyFormError('deleted');
+        }
         return;
       }
       if (expandedIdRef.current === parentId) {
