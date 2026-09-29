@@ -470,6 +470,30 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: renew
+
+Signed in, no seed yet. The dialog explains that the device will ask for a passkey and that nothing changes until the member confirms. **Continue** is the only action. There is no close control.
+
+![21.gifts welcome renew](images/welcome-renew.png)
+
+### Variant: renew-passkey
+
+After **Continue**. The dialog says the device is showing the passkey prompt. The member confirms that prompt on the device. There is no second button.
+
+![21.gifts welcome renew passkey](images/welcome-renew-passkey.png)
+
+### Variant: renew-ok
+
+The passkey was renewed. The dialog says it worked. **OK** closes it and the living room is usable.
+
+![21.gifts welcome renew ok](images/welcome-renew-ok.png)
+
+### Variant: renew-failed
+
+The renewal did not work. **OK** confirms that and closes the dialog. The renew does not start again. The account still has no seed.
+
+![21.gifts welcome renew failed](images/welcome-renew-failed.png)
+
 ### Variant: sunday
 
 Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.

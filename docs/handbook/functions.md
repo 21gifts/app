@@ -1795,7 +1795,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** GET `/me` with the bearer session.
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `Account` or `null` on 401. Throws `WrongAccountError` on 403 with the duplicate-account api string. Other non-2xx throw the generic fetch-account error.
-- **Used by:** `useHydrateSession`.
+- **Used by:** `useHydrateSession`, `renewPasskey`.
 
 ## Function: fetchPublicForumMessages
 
@@ -2609,10 +2609,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/auth/passkey/{register,authenticate,replace,seed}/{begin,finish}` re-export the eight passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed}/{begin,finish}` re-export the eight passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText, cached }` or 400/404/503/502 from the 21.gifts api.
-- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), passkey begin/finish (register, authenticate, replace, and seed), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), today's repayment (`POST /messages/[id]/repayment`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), and staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`).
+- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), renew report (`POST /me/passkey-renew/report`), renew acknowledgement (`POST /me/passkey-renew/ack`), passkey begin/finish (register, authenticate, replace, and seed), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), today's repayment (`POST /messages/[id]/repayment`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), and staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`).
 
 ## Function: PUT
 
@@ -2997,14 +2997,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Turn api creation-options JSON into `navigator.credentials.create` input, including `excludeCredentials` when present and client `extensions` (PRF `eval.first` as base64url) via `applyClientExtensions`.
 - **Inputs:** Record from `POST /auth/passkey/register/begin` or `POST /auth/passkey/seed/begin`.
 - **Returns / side effects:** `PublicKeyCredentialCreationOptions`. Uses native parse when present. Throws if a descriptor list is present but not an array, or is non-empty but has no valid `public-key` entries (invalid type or id is skipped; all skipped → TypeError), including before native parse.
-- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+- **Used by:** `usePasskeyLogin.register`, `renewPasskey`.
 
 ## Function: credentialToJSON
 
 - **Purpose:** Serialise a `PublicKeyCredential` for the api finish body. Drops `clientExtensionResults.prf` so PRF bytes never leave the tab.
 - **Inputs:** Browser credential from create/get.
 - **Returns / side effects:** JSON record without `prf` results. Uses native `toJSON` when present, then strips `prf`.
-- **Used by:** `usePasskeyLogin`, `useWalletPhrase`.
+- **Used by:** `usePasskeyLogin`, `renewPasskey`.
 
 ## Function: finishPasskeyAuthentication
 
@@ -3053,7 +3053,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST one allowlisted client diagnostic to `/diagnostics`. Drops fields that fail the pattern instead of shortening them.
 - **Inputs:** Event name plus optional name, message, stage, status, path, challenge id, account id, and whether a PRF output was present.
 - **Returns / side effects:** void. Fire-and-forget `fetch` with `keepalive`. Never throws. Never sends PRF bytes, the recovery phrase, or a session token.
-- **Used by:** `DiagnosticsListener`, `usePasskeyLogin`, and `useWalletPhrase`.
+- **Used by:** `DiagnosticsListener`, `usePasskeyLogin`, `renewPasskey`, and `useWalletPhrase`.
 
 ## Function: proxyAuthPasskeyRegisterBeginPost
 
@@ -3102,14 +3102,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/auth/passkey/seed/begin` with Bearer and an empty body.
 - **Inputs:** Session token.
 - **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx, including 409.
-- **Used by:** `useWalletPhrase.activate`.
+- **Used by:** `renewPasskey`.
 
 ## Function: finishPasskeySeed
 
 - **Purpose:** POST `/auth/passkey/seed/finish` with Bearer and `{ challengeId, credential }`.
 - **Inputs:** Session token, challenge id, credential JSON.
 - **Returns / side effects:** 200 is the owner account JSON itself (`accountSchema`, not `{ account }`, no new token), including `passkeyCredentialId`. Throws on non-2xx.
-- **Used by:** `useWalletPhrase.activate`.
+- **Used by:** `renewPasskey`.
 
 ## Function: postWalletBackupSeen
 
@@ -3117,6 +3117,48 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session token.
 - **Returns / side effects:** Owner `Account`. Throws on non-2xx.
 - **Used by:** The helper remains. `useWalletPhrase` does not call it.
+
+## Function: postPasskeyRenewReport
+
+- **Purpose:** POST `/me/passkey-renew/report` with Bearer and the six safe fields only.
+- **Inputs:** Session token and `{ stage, outcome, errorName, errorCode, httpStatus, message }`.
+- **Returns / side effects:** Owner `Account`. Throws `Could not report passkey renew` on non-2xx. Never sends a phrase, PRF bytes, credential, or token in the body.
+- **Used by:** `renewPasskey` for browser-only ceremony failures and cancels.
+
+## Function: postPasskeyRenewAck
+
+- **Purpose:** POST `/me/passkey-renew/ack` with Bearer.
+- **Inputs:** Session token.
+- **Returns / side effects:** Owner `Account`. Throws `Could not acknowledge passkey renew` on non-2xx.
+- **Used by:** `PasskeyRenewNotice` OK button.
+
+## Function: renewPasskey
+
+- **Purpose:** Runs the seed-passkey ceremony for a member who has no seed yet.
+- **Inputs:** Session token.
+- **Returns / side effects:** `ok` with the account and in-memory PRF bytes, `cancelled`, `stored` when reload already shows a seed, or `failed` with a wallet error kind. `failed` includes the owner account when that account has an open renew failure. HTTP seed failures are not reported again. Posts allowlisted seed diagnostics and never sends PRF bytes, the phrase, or the session token. Does not persist the phrase.
+- **Used by:** `useWalletPhrase.activate` and `PasskeyRenewNotice`.
+
+## Function: PasskeyRenewNotice
+
+- **Purpose:** Guided blocking renew while `walletRequired` is false: explain, confirm, device passkey prompt, then a success or failure confirmation.
+- **Inputs:** None. Reads the auth store and translations. `?visual=renew-passkey` and `?visual=renew-ok` force those steps for screenshots.
+- **Returns / side effects:** No dismiss control on the explanation. **Continue** starts the ceremony. Cancelling the device prompt returns to the explanation and is not a logged failure. Success stores the account only after **OK**. A failed ceremony stores the returned account and stays on the failure step only when that account has an open failure and the session is unchanged, so a remount stays there. An HTTP seed error that did not record a failure returns to the explanation. Failure **OK** stores the acknowledged account only while that same session is still current, then the dialog closes and does not start again. Null once success is confirmed, a failure was acknowledged, or `passkeyRenewClosed` is true.
+- **Used by:** `AppShell` when `walletRequired === false` and `passkeyRenewClosed` is not true.
+
+## Function: proxyMePasskeyRenewReportPost
+
+- **Purpose:** Proxies POST `/me/passkey-renew/report`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/passkey-renew/report`.
+
+## Function: proxyMePasskeyRenewAckPost
+
+- **Purpose:** Proxies POST `/me/passkey-renew/ack`.
+- **Inputs:** Incoming `Request` with Bearer.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/me/passkey-renew/ack`.
 
 ## Function: proxyAuthPasskeyReplaceBeginPost
 
@@ -3158,7 +3200,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** SHA-256 of UTF-8 `21gifts-nostr-v1`.
 - **Inputs:** None.
 - **Returns / side effects:** 32-byte `Uint8Array`.
-- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin.register`, `renewPasskey`.
 
 ## Function: readPrfFirst
 
@@ -3179,7 +3221,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Prefer create() PRF; else get() with allowCredentials and eval.first salt.
 - **Inputs:** The new `PublicKeyCredential`.
 - **Returns / side effects:** Bytes or `null`.
-- **Used by:** `usePasskeyLogin.register`, `useWalletPhrase.activate`.
+- **Used by:** `usePasskeyLogin.register`, `renewPasskey`.
 
 ## Function: obtainPrfFirstFromGet
 
@@ -3193,7 +3235,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Map WebAuthn failures to timeout / cancel / generic.
 - **Inputs:** Unknown rejection.
 - **Returns / side effects:** Discriminant string.
-- **Used by:** `useWalletPhrase`.
+- **Used by:** `useWalletPhrase`, `renewPasskey`.
 
 ## Function: rememberSessionPhrase
 
@@ -3227,7 +3269,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Add or show the recovery phrase. `/wallet` does not render the words. `/wallet/phrase` does. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
-- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `startPasskeySeed`, `credentials.create` with PRF, `obtainPrfFirst`, no finish when that is null, otherwise `finishPasskeySeed`, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. No Confirm, no Continue.
+- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `renewPasskey`, then `mnemonicFromPrfFirst` on the in-memory PRF bytes, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. No Confirm, no Continue.
 - **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreenView

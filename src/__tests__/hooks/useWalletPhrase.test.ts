@@ -132,6 +132,72 @@ describe('useWalletPhrase', () => {
     expect(peekSessionPhrase()).toBeNull();
   });
 
+  it('maps a thrown phrase error through the wallet error kinds', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('wallet.prfUnsupported'));
+    const prf = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await prf.result.current.activate();
+    });
+    expect(prf.result.current.error).toBe('prfUnsupported');
+
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(
+      Object.assign(new Error('slow'), { name: 'TimeoutError' }),
+    );
+    const timed = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await timed.result.current.activate();
+    });
+    expect(timed.result.current.error).toBe('timeout');
+
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(
+      Object.assign(new Error('nope'), { name: 'NotAllowedError' }),
+    );
+    const cancelled = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await cancelled.result.current.activate();
+    });
+    expect(cancelled.result.current.error).toBeNull();
+    expect(cancelled.result.current.status).toBe('idle');
+
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce('nope');
+    const plain = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await plain.result.current.activate();
+    });
+    expect(plain.result.current.error).toBe('generic');
+  });
+
+  it('clears the wallet error when the session ends while deriving the phrase', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockImplementation(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      throw new Error('boom');
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+  });
+
+  it('omits a derivation failure whose name is not a string', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce({ name: 1 });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('generic');
+    const finishes = fetchMock.mock.calls
+      .map((call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string })
+      .filter((body) => body.event === 'client.passkey.seed.finish');
+    expect(finishes).toEqual([{ event: 'client.passkey.seed.finish', stage: 'seed' }]);
+    fetchMock.mockRestore();
+  });
+
   it('keeps the seed account when word derivation throws', async () => {
     vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('boom'));
     const { result } = renderHook(() => useWalletPhrase());

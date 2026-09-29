@@ -219,6 +219,20 @@
 - **Used by:** `postWalletBackupSeen`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/passkey-renew/report
+
+- **Purpose:** Same-origin proxy of api `POST /me/passkey-renew/report`. Stores a browser ceremony failure or cancel. The body is only the six safe fields.
+- **Errors:** Upstream 401 or 400, or 502 if the api is unreachable.
+- **Used by:** `postPasskeyRenewReport`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /me/passkey-renew/ack
+
+- **Purpose:** Same-origin proxy of api `POST /me/passkey-renew/ack`. Acknowledges the failure notice so it is not shown again.
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `postPasskeyRenewAck`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/setup/skip
 
 - **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).

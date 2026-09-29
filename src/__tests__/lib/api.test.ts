@@ -79,6 +79,8 @@ import {
   setAmountUnit,
   postPushSubscription,
   postWalletBackupSeen,
+  postPasskeyRenewAck,
+  postPasskeyRenewReport,
   agreeToRules,
   putAboutMe,
   setLightningAddress,
@@ -4024,6 +4026,69 @@ describe('postWalletBackupSeen', () => {
   it('throws on a non-ok response', async () => {
     stubFetch({ ok: false, status: 401, body: {} });
     await expect(postWalletBackupSeen('sess')).rejects.toThrow('Could not save wallet backup');
+  });
+});
+
+describe('postPasskeyRenewReport', () => {
+  it('posts only the six safe fields', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
+    await expect(
+      postPasskeyRenewReport('sess', {
+        stage: 'ceremony',
+        outcome: 'failed',
+        errorName: 'NotAllowedError',
+        errorCode: null,
+        httpStatus: null,
+        message: 'The device refused',
+      }),
+    ).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith('/me/passkey-renew/report', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        stage: 'ceremony',
+        outcome: 'failed',
+        errorName: 'NotAllowedError',
+        errorCode: null,
+        httpStatus: null,
+        message: 'The device refused',
+      }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(
+      postPasskeyRenewReport('sess', {
+        stage: 'begin',
+        outcome: 'failed',
+        errorName: 'Error',
+        errorCode: null,
+        httpStatus: null,
+        message: 'nope',
+      }),
+    ).rejects.toThrow('Could not report passkey renew');
+  });
+});
+
+describe('postPasskeyRenewAck', () => {
+  it('returns the updated account', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
+    await expect(postPasskeyRenewAck('sess')).resolves.toEqual(account);
+    expect(fetchMock).toHaveBeenCalledWith('/me/passkey-renew/ack', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(postPasskeyRenewAck('sess')).rejects.toThrow(
+      'Could not acknowledge passkey renew',
+    );
   });
 });
 

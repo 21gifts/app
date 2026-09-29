@@ -10,6 +10,8 @@ import {
 } from '@/components/AppShell';
 import { Card } from '@/components/ui/Card';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { useAuthStore } from '@/stores/auth-store';
+import type { Account } from '@/lib/api-types';
 
 afterEach(cleanup);
 
@@ -34,6 +36,38 @@ function ScrollerProbe(): ReactElement {
 }
 
 describe('AppShell', () => {
+  it('shows Renew passkey when the signed-in account has no seed', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc',
+        linkingKey: null,
+        role: 'basis',
+        name: null,
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        walletRequired: false,
+      } as Account,
+    });
+    renderWithLocale(
+      <AppShell mode="fill">
+        <p>Body</p>
+      </AppShell>,
+    );
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    useAuthStore.setState({ session: null, account: null });
+  });
+
   it('fill renders footer as a sibling of the inner scroller', () => {
     const { container } = renderWithLocale(
       <AppShell mode="fill">

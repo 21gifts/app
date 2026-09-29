@@ -2039,6 +2039,39 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (
+    method === 'POST' &&
+    (pathName === '/me/passkey-renew/report' || pathName === '/me/passkey-renew/ack')
+  ) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const hasSeed =
+      typeof account.passkeyCredentialId === 'string' && account.passkeyCredentialId !== '';
+    if (pathName === '/me/passkey-renew/report') {
+      let outcome = '';
+      try {
+        const parsed = JSON.parse(rawBody);
+        if (typeof parsed?.outcome === 'string') {
+          outcome = parsed.outcome;
+        }
+      } catch {
+        outcome = '';
+      }
+      if (!hasSeed && outcome === 'failed') {
+        account.passkeyRenewFailed = true;
+      }
+    } else if (!hasSeed && account.passkeyRenewFailed === true) {
+      account.passkeyRenewFailed = false;
+      account.passkeyRenewClosed = true;
+    }
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'POST' && pathName === '/auth/passkey/replace/begin') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -2170,6 +2203,7 @@ const server = http.createServer(async (req, res) => {
     byPasskeyCredential.set(credId, account);
     account.passkeyCredentialId = credId;
     account.walletRequired = true;
+    account.passkeyRenewClosed = false;
     json(res, 200, account);
     return;
   }

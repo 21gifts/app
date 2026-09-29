@@ -251,6 +251,26 @@ export async function proxyMeWalletBackupSeenPost(request: Request): Promise<Res
 }
 
 /**
+ * Proxies POST /me/passkey-renew/report to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON body).
+ * @returns The upstream response.
+ */
+export async function proxyMePasskeyRenewReportPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/passkey-renew/report');
+}
+
+/**
+ * Proxies POST /me/passkey-renew/ack to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMePasskeyRenewAckPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/passkey-renew/ack');
+}
+
+/**
  * Proxies GET /members/:accountId to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
