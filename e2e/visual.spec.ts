@@ -8815,7 +8815,11 @@ test.describe('profile activity chart variants', () => {
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
     await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
-    await expect(page.getByRole('button', { name: 'Add a wide image' }).first()).toBeVisible();
+    await expect(
+      page
+        .getByRole('button', { name: 'Add a wide image' })
+        .filter({ hasText: 'Add a wide image' }),
+    ).toBeVisible();
   }
 
   /** The editor cropper sits under the chart. Bring that block into the viewport shot. */
