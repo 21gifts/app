@@ -110,6 +110,7 @@ describe('MentionTextarea', () => {
     renderWithLocale(<Field />);
     const idle = screen.getByRole('textbox');
     expect(idle.className).toBe(closed);
+    expect(idle.parentElement?.classList.contains('contents')).toBe(true);
     expect(idle.parentElement?.classList.contains('relative')).toBe(false);
     typeInto('@');
     const open = await screen.findByRole('textbox');

@@ -61,9 +61,10 @@ const OPTION_ROW_CLASS =
 /**
  * Field classes while the list is open.
  *
- * The closed field keeps the caller's classes and is not wrapped, so a
- * resting composer matches the plain textarea. The open field fills the
- * relative wrapper instead of being its own flex item.
+ * The closed field keeps the caller's classes. Its frame generates no box,
+ * so a resting composer matches the plain textarea and the field does not
+ * remount when the list opens. The open field fills the relative wrapper
+ * instead of being its own flex item.
  *
  * @param className - Classes for the closed textarea.
  * @returns Classes for the textarea inside the open wrapper.
@@ -96,7 +97,8 @@ function openFieldClass(className: string): string {
  * more room above. No session, or a disabled field, is a plain textarea.
  *
  * @param props - Value, change handler, and textarea attributes.
- * @returns The field and, when a mention token is active, the list.
+ * @returns The field. While a mention token is active, the same field inside
+ * the relative frame, with the list.
  */
 export function MentionTextarea({
   value,
@@ -393,56 +395,59 @@ export function MentionTextarea({
       className={open ? openFieldClass(className) : className}
     />
   );
-  if (!open) {
-    return field;
-  }
   return (
     <div
       ref={rootRef}
-      className={wrapperClassName}
-      onMouseDown={(event) => {
-        event.stopPropagation();
-      }}
+      className={open ? wrapperClassName : 'contents'}
+      onMouseDown={
+        open
+          ? (event) => {
+              event.stopPropagation();
+            }
+          : undefined
+      }
     >
       {field}
-      <ul
-        ref={listRef}
-        id={listId}
-        role="listbox"
-        aria-label={t('forum.mentionSuggest')}
-        className={`absolute left-0 right-0 z-50 rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${
-          placeAbove ? 'bottom-full mb-2' : 'top-full mt-2'
-        }`}
-      >
-        {shown.map((account, index) => (
-          <li key={account.id} role="presentation">
-            <button
-              type="button"
-              id={`${listId}-${String(index)}`}
-              tabIndex={-1}
-              role="option"
-              aria-selected={index === activeIndex}
-              aria-label={`@${account.username}`}
-              className={
-                index === activeIndex ? `${OPTION_ROW_CLASS} bg-app-hover` : OPTION_ROW_CLASS
-              }
-              onMouseDown={(event) => {
-                event.preventDefault();
-                /* v8 ignore next 3 -- the option is rendered only while a mention token is active */
-                if (mention === null) {
-                  return;
+      {open ? (
+        <ul
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          aria-label={t('forum.mentionSuggest')}
+          className={`absolute left-0 right-0 z-50 rounded-xl border border-app-border bg-app-card p-2 shadow-lg ${
+            placeAbove ? 'bottom-full mb-2' : 'top-full mt-2'
+          }`}
+        >
+          {shown.map((account, index) => (
+            <li key={account.id} role="presentation">
+              <button
+                type="button"
+                id={`${listId}-${String(index)}`}
+                tabIndex={-1}
+                role="option"
+                aria-selected={index === activeIndex}
+                aria-label={`@${account.username}`}
+                className={
+                  index === activeIndex ? `${OPTION_ROW_CLASS} bg-app-hover` : OPTION_ROW_CLASS
                 }
-                insertAt(mention, account);
-              }}
-            >
-              <span className="font-medium">@{account.username}</span>
-              {account.name !== account.username ? (
-                <span className="text-app-muted">{account.name}</span>
-              ) : null}
-            </button>
-          </li>
-        ))}
-      </ul>
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  /* v8 ignore next 3 -- the option is rendered only while a mention token is active */
+                  if (mention === null) {
+                    return;
+                  }
+                  insertAt(mention, account);
+                }}
+              >
+                <span className="font-medium">@{account.username}</span>
+                {account.name !== account.username ? (
+                  <span className="text-app-muted">{account.name}</span>
+                ) : null}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
