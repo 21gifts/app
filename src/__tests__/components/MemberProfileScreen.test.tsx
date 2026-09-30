@@ -7,6 +7,8 @@ import {
   NoteDeletedError,
   fetchGiftStats,
   fetchMemberPosts,
+  fetchShopNoteEdits,
+  setMessageShopText,
   fetchMemberReplies,
   fetchMessagePhoto,
   fetchPublicMessage,
@@ -72,6 +74,8 @@ vi.mock('@/lib/api', () => ({
   postTrustConfirm: vi.fn(),
   postTrustAppoint: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchShopNoteEdits: vi.fn(),
+  setMessageShopText: vi.fn(),
 }));
 
 let hydrateReady = true;
@@ -201,6 +205,30 @@ async function openPostsShowingNote(feedNote: ForumMessage = note): Promise<void
   await screen.findByText(feedNote.text);
 }
 
+/** Shop text is split from the shop chip, so the raw stored line is not one node. */
+async function openShopPosts(feedNote: ForumMessage): Promise<void> {
+  vi.mocked(fetchMemberPosts).mockResolvedValue([feedNote]);
+  const postsButton = screen.getByRole('button', { name: /posts?/ });
+  if (postsButton.getAttribute('aria-pressed') !== 'true') {
+    fireEvent.click(postsButton);
+  }
+  await screen.findByText('Cafe Luna');
+}
+
+function stubShopPhotoFetch(): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({
+      ok: true,
+      blob: () =>
+        Promise.resolve({
+          type: 'image/jpeg',
+          arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+        }),
+    })),
+  );
+}
+
 async function openPostsShowingPhotoNote(): Promise<void> {
   vi.mocked(fetchMemberPosts).mockResolvedValue([{ ...note, hasPhoto: true, photoCount: 1 }]);
   const postsButton = screen.getByRole('button', { name: /posts?/ });
@@ -316,6 +344,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   await act(async () => {
     await Promise.resolve();
@@ -3831,5 +3860,130 @@ describe('MemberProfileScreen', () => {
       expect(within(replyCard).queryByLabelText('Amount')).toBeNull();
     });
     expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+  });
+
+  it('shows the shop pencil on a moderator’s post list and applies a saved note', async () => {
+    const shopPost: ForumMessage = {
+      ...note,
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    };
+    useAuthStore.setState({ session: 'sess', account: null });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    await openShopPosts(shopPost);
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    cleanup();
+
+    useAuthStore.setState({ session: 'sess', account });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    await openShopPosts(shopPost);
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    cleanup();
+
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopPost,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      place: { lat: 1, lng: 2, label: 'Stall' },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    });
+    vi.mocked(fetchMemberPosts).mockResolvedValue([
+      shopPost,
+      {
+        ...note,
+        id: '44444444-4444-4444-8444-444444444444',
+        text: 'Other note',
+        sats: 0,
+        payable: false,
+      },
+    ]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 2 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /posts?/ }));
+    await screen.findByText('Cafe Luna');
+    await screen.findByText('Other note');
+    const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '0 reactions', pressed: false }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    });
+  });
+
+  it('drops stored photo addresses when a shop post’s pictures change', async () => {
+    const shopPost: ForumMessage = {
+      ...note,
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+    };
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopPost,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    stubShopPhotoFetch();
+    vi.mocked(fetchMemberPosts).mockResolvedValue([
+      shopPost,
+      {
+        ...note,
+        id: '44444444-4444-4444-8444-444444444444',
+        text: 'Other note',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+        photoCount: 1,
+      },
+    ]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 2 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /posts?/ }));
+    await screen.findByText('Cafe Luna');
+    await waitFor(() => {
+      const photos = screen.getAllByAltText('Photo from Carol');
+      expect(photos).toHaveLength(2);
+      for (const photo of photos) {
+        expect(photo.getAttribute('src')).toBe('blob:mock');
+      }
+    });
+    vi.mocked(URL.revokeObjectURL).mockClear();
+    const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(URL.revokeObjectURL).toHaveBeenCalled();
+    });
   });
 });
