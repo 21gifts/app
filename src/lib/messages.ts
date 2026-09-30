@@ -1274,7 +1274,7 @@ const de = {
   'home.headline1': 'Hilf Menschen',
   'home.headline2': 'mit Bitcoin',
   'home.lead':
-    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge und Reaktionen. Wenn du jemanden unterstützen möchtest, wählst du einen Beitrag aus und schickst Bitcoin an die Wallet dieser Person.',
+    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge und Reaktionen. Wenn du jemanden unterstützen möchtest, wählst du eine Reaktion aus und schickst Bitcoin an die Wallet der Person, die sie geschrieben hat.',
   'home.ctaAsk': 'Selbst um Hilfe bitten',
   'home.ctaSend': 'Bitcoin verschenken',
   'home.howKicker': 'Bitcoin verschenken',
@@ -2275,7 +2275,7 @@ const de = {
   'home.previewKicker': 'Nach der Anmeldung',
   'home.previewTitle': 'So kommt dein Geschenk an',
   'home.previewStep1': 'Beitrag im Wohnzimmer öffnen',
-  'home.previewStep2': 'Beitrag mit Geschenk-Symbol auswählen',
+  'home.previewStep2': 'Reaktion mit Geschenk-Symbol auswählen',
   'home.previewStep3': 'Betrag eingeben und mit deiner Wallet bezahlen',
   'home.previewWalletTitle': 'Wohin der Bitcoin geht',
   'home.previewWalletBody': 'Die empfangende Person hat ihre Wallet-Adresse selbst hinterlegt.',
@@ -2284,7 +2284,7 @@ const de = {
   'home.give1Title': 'Anmelden und umsehen',
   'home.give1Body':
     'Melde dich an, öffne einen Beitrag im Wohnzimmer und lies die Reaktionen darunter.',
-  'home.give2Title': 'Einen Beitrag auswählen',
+  'home.give2Title': 'Eine Reaktion auswählen',
   'home.give2Body':
     'Bei einer Reaktion mit Geschenk-Symbol kannst du Bitcoin an die Person schicken, die sie geschrieben hat.',
   'home.give3Title': 'Betrag wählen und bezahlen',
