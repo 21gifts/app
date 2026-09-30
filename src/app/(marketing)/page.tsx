@@ -74,15 +74,15 @@ export default async function Home(): Promise<ReactElement> {
               {t('home.lead')}
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
+              <ButtonLink href="/login" variant="accent" tone="dark">
+                {t('home.ctaAsk')} <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </ButtonLink>
               <ButtonLink
                 href={localizedPublicPath(locale, '/donate')}
-                variant="accent"
+                variant="secondary"
                 tone="dark"
               >
-                {t('home.ctaSend')} <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </ButtonLink>
-              <ButtonLink href="/login" variant="secondary" tone="dark">
-                {t('home.ctaAsk')}
+                {t('home.ctaSend')}
               </ButtonLink>
               <PwaInstall tone="dark" placement="hero" />
             </div>

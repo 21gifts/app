@@ -15,7 +15,7 @@ test('Function: middleware — URL language overrides a conflicting cookie', asy
 
 test('Function: localizedPublicPath — giving links keep the page language', async ({ page }) => {
   await page.goto('/es');
-  await expect(page.getByRole('link', { name: 'Regalar Bitcoin' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Donar Bitcoin' })).toHaveAttribute(
     'href',
     '/es/donate',
   );
@@ -51,28 +51,28 @@ test('language switching updates the preview, navigation, and footer in every la
     {
       option: 'Español',
       locale: 'es',
-      preview: 'Así llega tu regalo',
+      preview: 'Así llega tu donación',
       navigation: 'Cómo funciona',
       verse: 'Mateo 10:8',
     },
     {
       option: 'Filipino',
       locale: 'fil',
-      preview: 'Ganito nakakarating ang regalo mo',
+      preview: 'Ganito nakakarating ang donasyon mo',
       navigation: 'Paano ito gumagana',
       verse: 'Mateo 10:8',
     },
     {
       option: 'English',
       locale: 'en',
-      preview: 'How your gift reaches someone',
+      preview: 'How your donation arrives',
       navigation: 'How it works',
       verse: 'Matthew 10:8',
     },
     {
       option: 'Deutsch',
       locale: 'de',
-      preview: 'So kommt dein Geschenk an',
+      preview: 'So kommt deine Spende an',
       navigation: "So funktioniert's",
       verse: 'Matthäus 10,8',
     },

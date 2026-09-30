@@ -128,23 +128,24 @@ const en = {
   'home.lead':
     "In the forum, people share what they're going through. Sign in and read their posts. If you want to support someone, simply react to a post and enter the amount you want to donate. The satoshis are then sent directly from you to the person and arrive within seconds.",
   'home.ctaAsk': 'Ask for help',
-  'home.ctaSend': 'Give Bitcoin',
-  'home.howKicker': 'Giving on 21.gifts',
-  'home.howTitle': 'How to give someone Bitcoin',
+  'home.ctaSend': 'Donate Bitcoin',
+  'home.howKicker': 'Donate Bitcoin',
+  'home.howTitle': 'How to donate Bitcoin to someone',
   'home.howLead': 'Sign in and read the forum. You decide who to help and how much to send.',
   'home.step1Title': 'Log in',
   'home.step1Body':
     'One tap in your browser. It uses a secure login stored on your device, or creates one. That is your account — there is nothing else to remember.',
   'home.step2Title': 'Add a Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Tell us where gifts should land, for example',
+  'home.step2BodyBefore': 'Enter the address where donations should arrive, for example',
   'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin from Wallet of Satoshi.',
   'home.step3Title': 'Post and receive help',
   'home.step3Body':
     'Once you are logged in, write a post in the forum. Others can react to it with an amount — the Bitcoin lands in your Wallet of Satoshi, not ours. The platform never touches the money.',
-  'home.whyKicker': 'Why we built it this way',
+  'home.whyKicker': 'Where your donation goes',
   'home.whyTitle': 'The person you help controls their wallet',
   'home.why1Title': 'You decide who to help',
-  'home.why1Body': 'Read their words first. 21.gifts never assigns your gift to someone else.',
+  'home.why1Body':
+    'Read what the person writes first. 21.gifts never passes your donation on to anyone else.',
   'home.why2Title': 'No password to remember',
   'home.why2Body':
     'You sign in with your device. If you lose access there and in any synced copy, we cannot recover your account yet.',
@@ -153,19 +154,19 @@ const en = {
     'The person you help adds their own Wallet of Satoshi address. Your payment goes there.',
   'home.why4Title': '21.gifts takes no share',
   'home.why4Body':
-    'We keep none of a person-to-person gift. Supporting the website uses a separate address.',
+    'We keep none of a person-to-person donation. Supporting the website uses a separate address.',
   'home.projectKicker': 'Keep the project running',
   'home.projectTitle': 'Want to support 21.gifts?',
   'home.projectLead':
-    "A gift from the forum goes to the person who wrote the post. If you'd like to support the website itself, use this separate address.",
+    'If you want to support the website itself, you can send to this address. It is separate from the donations in the forum.',
   'home.faqKicker': 'Good to know',
   'home.faqTitle': 'Questions about 21.gifts?',
   'home.faq1Q': 'Do I need to sign in to read the forum?',
   'home.faq1A':
-    'Yes. You need to sign in to read the forum. To receive gifts yourself, add a Wallet of Satoshi address.',
-  'home.faq2Q': 'Does 21.gifts take a cut?',
+    'Yes. You sign in for the forum. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
+  'home.faq2Q': 'Does 21.gifts keep any of my donation?',
   'home.faq2A':
-    'No. 21.gifts takes no share of a gift between people. Your wallet provider or the payment network may charge fees.',
+    'No. 21.gifts takes no share of a donation between people. Your wallet provider or the payment network may charge fees.',
   'home.faq3Q': 'Do I need a password?',
   'home.faq3A':
     'No. You sign in with your device instead of creating a 21.gifts password. Never share your recovery words.',
@@ -177,17 +178,17 @@ const en = {
     "The person who wrote the post. Write a reaction under it and add an amount. The Bitcoin goes to that person's wallet address.",
   'home.faq6Q': 'Why Bitcoin?',
   'home.faq6A':
-    'Bitcoin lets you send small gifts directly to a chosen wallet address, even across borders. 21.gifts does not hold the payment; wallet fees may apply.',
+    'So you can send even small amounts directly to the chosen wallet address. 21.gifts does not hold the donation. Your wallet provider may charge fees.',
   'home.faq7Q': 'Is this regulated, and how do taxes work?',
   'home.faq7A':
-    '21.gifts does not hold the gift. Rules and tax treatment depend on where you live and your circumstances; check the requirements that apply to you.',
+    '21.gifts does not hold the donation. Which rules and taxes apply depends on where you live and your situation. Check the requirements that apply to you.',
   'home.faq8Q': 'What does ₿1 mean here?',
   'home.faq8A':
     'On 21.gifts, ₿1 means one sat, the smallest Bitcoin unit. One Bitcoin has 100 million sats.',
   'about.kicker': 'About',
   'about.heading': 'What 21.gifts stands for',
   'about.lead':
-    'People can ask for help in the forum and give Bitcoin to one another. Three convictions guide the project.',
+    'In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.',
   'about.verse': 'Freely you have received; freely give.',
   'about.verseRef': 'Matthew 10:8',
   'about.conv1Num': '1',
@@ -195,20 +196,20 @@ const en = {
   'about.conv1Body':
     'For us, giving is part of Christian faith. Jesus speaks of helping people in need as something we do (Matthew 6:2). First John 3:17 and James 2:17 also remind us to act when we see someone struggling. How much to give is a personal choice before God (2 Corinthians 9:7).',
   'about.conv1Body2':
-    'Help is not always money. It can be a conversation, a visit or a warm coat. 21.gifts makes one kind of help possible: a gift of Bitcoin from one person to another.',
+    'Help does not always mean giving money. Sometimes a conversation, a visit or a warm coat is what counts. Matthew 25 reminds us of people who are hungry, sick, strangers or in prison. 21.gifts makes one form of help possible: a money donation directly from one person to another.',
   'about.conv1Verse':
     'Dear children, let us not love with words or speech but with actions and in truth.',
   'about.conv1VerseRef': '1 John 3:18',
   'about.conv2Num': '2',
   'about.conv2Title': 'From one person to another',
   'about.conv2Body':
-    'You choose whom to help. The recipient adds the wallet address where they want to receive Bitcoin. 21.gifts takes no share and never holds the gift. Their address still works without this website.',
+    'You choose whom you donate to. The person has added their wallet address so your Bitcoin donation reaches them. 21.gifts takes no share. They can keep using their address without our website.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Why Bitcoin?',
   'about.conv3Body':
-    "Bitcoin lets you send even small amounts across borders to someone's wallet address. You pay from your own wallet; 21.gifts never holds the gift. Wallet providers may charge fees.",
+    'With Bitcoin you can send even small amounts to people in other countries. The person needs a wallet address for this. You pay with your wallet; 21.gifts does not hold the donation.',
   'about.ctaForum': 'Go to the forum',
-  'donate.pageTitle': 'Give Bitcoin to someone',
+  'donate.pageTitle': 'Help someone',
   'donate.lead':
     'Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.',
   'donate.continue': 'Open the forum',
@@ -715,7 +716,7 @@ const en = {
   'rules.wanted1': 'A thank-you: short, specific, and without the next request attached.',
   'rules.wanted2': 'A calm, honest note that makes giving feel easy rather than heavy.',
   'rules.wanted3': 'A quiet tone — no escalation, no countdown, no audience.',
-  'rules.wanted4': 'Questions about how gifting works here, and patient answers to them.',
+  'rules.wanted4': 'Questions about how donating works here, and patient answers to them.',
   'rules.wanted5': 'Humor and warmth that put no one under pressure.',
   'rules.wanted6':
     'Honoring a note that meant something to you — freely, and without the author asking for it.',
@@ -771,7 +772,7 @@ const en = {
     'Illegal content, sexual content involving minors, gore, pornography, shock material.',
   'rules.forbiddenOther3': 'Doxxing, threats, stalking, hate against a person or a group.',
   'rules.forbiddenOther4':
-    'Spam, advertising, recruiting, extra accounts created to collect more gifts.',
+    'Spam, advertising, recruiting, extra accounts to collect more donations.',
   'rules.forbiddenOther5':
     'Posing as the 21.gifts team. Support will never write to you in the forum.',
   'rules.houseHeading': 'Our house',
@@ -1086,11 +1087,11 @@ const en = {
   'home.heroKicker': 'From one person to another',
   'home.metaTitle': 'Help people with Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Read posts, react to someone you want to help and send Bitcoin to their wallet. 21.gifts never holds the gift or takes a share.',
-  'home.heroProof': '21.gifts takes no share of gifts between people.',
+    "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.",
+  'home.heroProof': 'The person receives your donation. 21.gifts keeps no share.',
   'home.previewLabel': 'How it works',
   'home.previewKicker': 'After you sign in',
-  'home.previewTitle': 'How your gift reaches someone',
+  'home.previewTitle': 'How your donation arrives',
   'home.previewStep1': 'Read a post in the forum',
   'home.previewStep2': 'React and donate',
   'home.previewStep3': 'Send from your wallet',
@@ -1103,7 +1104,7 @@ const en = {
   'home.give1Body': 'Open a post in the forum and read what the person shares.',
   'home.give2Title': 'React',
   'home.give2Body':
-    'Tap the arrow under the post, write a few words and add an amount. The gift is for the person who wrote the post.',
+    'Tap the arrow under the post, write a few words and enter an amount. The donation is for the person who wrote the post.',
   'home.give3Title': 'Pay from your wallet',
   'home.give3Body': 'Open Wallet of Satoshi or scan the QR code with your wallet.',
   'home.receiveTitle': 'Need help yourself?',
@@ -1117,11 +1118,11 @@ const en = {
   'home.discoverBitcoinTitle': 'Why Bitcoin?',
   'home.discoverBitcoinBody':
     'Your Bitcoin goes to the wallet address the recipient added. 21.gifts never holds it.',
-  'home.discoverTrustKicker': 'Before you give',
-  'home.discoverTrustTitle': 'Where does the gift go?',
+  'home.discoverTrustKicker': 'Before you donate',
+  'home.discoverTrustTitle': 'Where does the donation go?',
   'home.discoverTrustBody':
     "To the person who wrote the post you reacted to. Here's how the payment works.",
-  'donate.metaTitle': 'Give Bitcoin to someone | 21.gifts',
+  'donate.metaTitle': 'Donate Bitcoin and help someone | 21.gifts',
   'wallet.activate': 'Activate recovery phrase',
   'wallet.activateHint':
     'Create a new passkey on this device so 21.gifts can show your 12-word recovery phrase. Your previous passkey will stop working.',
@@ -1278,24 +1279,24 @@ const de = {
     'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, kannst du einfach auf einen Beitrag reagieren und die Summe angeben, die du spenden möchtest. Die Satoshis werden dann direkt von dir an die Person gesendet und sind innerhalb von Sekunden vor Ort.',
   'home.ctaAsk': 'Selbst um Hilfe bitten',
   'home.ctaSend': 'Bitcoin spenden',
-  'home.howKicker': 'Bitcoin verschenken',
-  'home.howTitle': 'So schenkst du jemandem Bitcoin',
+  'home.howKicker': 'Bitcoin spenden',
+  'home.howTitle': 'So spendest du jemandem Bitcoin',
   'home.howLead':
     'Beim ersten Besuch richtest du dein Konto ein. Danach findest du im Wohnzimmer Beiträge und Antworten.',
   'home.step1Title': 'Anmelden',
   'home.step1Body':
     'Melde dich auf deinem Gerät an. Dein Zugang bleibt dort oder in dessen Synchronisierung. Ein zusätzliches Passwort für 21.gifts brauchst du nicht.',
   'home.step2Title': 'Adresse aus Wallet of Satoshi hinterlegen',
-  'home.step2BodyBefore': 'Trage die Adresse ein, an der Geschenke ankommen sollen, zum Beispiel',
+  'home.step2BodyBefore': 'Trage die Adresse ein, an der Spenden ankommen sollen, zum Beispiel',
   'home.step2BodyAfter': '. An diese Adresse können andere dir Bitcoin schicken.',
   'home.step3Title': 'Schreiben und Hilfe empfangen',
   'home.step3Body':
     'Schreibe im Wohnzimmer, was dich beschäftigt. Wer dich unterstützen möchte, reagiert auf deinen Beitrag mit einem Betrag und schickt Bitcoin an deine Wallet-Adresse. 21.gifts verwahrt die Zahlung nicht.',
-  'home.whyKicker': 'Wohin dein Geschenk geht',
+  'home.whyKicker': 'Wohin deine Spende geht',
   'home.whyTitle': 'Die Person bestimmt ihre Empfangsadresse',
   'home.why1Title': 'Du entscheidest, wem du hilfst',
   'home.why1Body':
-    'Lies zuerst, was die Person schreibt. 21.gifts gibt dein Geschenk nie an jemand anderen weiter.',
+    'Lies zuerst, was die Person schreibt. 21.gifts gibt deine Spende nie an jemand anderen weiter.',
   'home.why2Title': 'Die Person hinterlegt ihre Adresse',
   'home.why2Body':
     'Bei der Anmeldung gibt sie an, unter welcher Wallet-Adresse Bitcoin bei ihr ankommen soll.',
@@ -1308,13 +1309,13 @@ const de = {
   'home.projectKicker': '21.gifts unterstützen',
   'home.projectTitle': 'Auch 21.gifts braucht Unterstützung',
   'home.projectLead':
-    'Wenn du die Seite selbst unterstützen möchtest, kannst du an diese Adresse senden. Sie ist getrennt von den Geschenken im Wohnzimmer.',
+    'Wenn du die Seite selbst unterstützen möchtest, kannst du an diese Adresse senden. Sie ist getrennt von den Spenden im Wohnzimmer.',
   'home.faqKicker': 'Gut zu wissen',
   'home.faqTitle': 'Häufige Fragen',
   'home.faq1Q': 'Brauche ich ein Konto, um das Wohnzimmer zu sehen?',
   'home.faq1A':
-    'Ja. Für das Wohnzimmer meldest du dich an. Wenn du selbst Bitcoin-Geschenke empfangen möchtest, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.',
-  'home.faq2Q': 'Behält 21.gifts etwas von meinem Geschenk?',
+    'Ja. Für das Wohnzimmer meldest du dich an. Wenn du selbst Bitcoin-Spenden empfangen möchtest, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.',
+  'home.faq2Q': 'Behält 21.gifts etwas von meiner Spende?',
   'home.faq2A':
     '21.gifts behält keinen Anteil ein. Für deine Wallet oder das Zahlungsnetzwerk können eigene Gebühren anfallen.',
   'home.faq3Q': 'Speichert 21.gifts mein Passwort?',
@@ -1328,17 +1329,17 @@ const de = {
     'Die Person, die den Beitrag geschrieben hat. Schreib eine Reaktion darunter und gib einen Betrag an. Dein Bitcoin geht an ihre Wallet-Adresse.',
   'home.faq6Q': 'Warum Bitcoin?',
   'home.faq6A':
-    'Damit du auch kleine Beträge direkt an die gewählte Wallet-Adresse schicken kannst. 21.gifts verwahrt das Geschenk nicht. Dein Wallet-Anbieter kann Gebühren berechnen.',
+    'Damit du auch kleine Beträge direkt an die gewählte Wallet-Adresse schicken kannst. 21.gifts verwahrt die Spende nicht. Dein Wallet-Anbieter kann Gebühren berechnen.',
   'home.faq7Q': 'Ist das reguliert, und wie sieht es mit Steuern aus?',
   'home.faq7A':
-    '21.gifts verwahrt das Geschenk nicht. Welche Regeln und Steuern gelten, hängt von deinem Wohnort und deiner Situation ab. Prüfe die für dich geltenden Anforderungen.',
+    '21.gifts verwahrt die Spende nicht. Welche Regeln und Steuern gelten, hängt von deinem Wohnort und deiner Situation ab. Prüfe die für dich geltenden Anforderungen.',
   'home.faq8Q': 'Was bedeutet ₿1 hier?',
   'home.faq8A':
     'Auf 21.gifts steht ₿1 für einen Sat, die kleinste Bitcoin-Einheit. 100 Millionen Sats ergeben einen Bitcoin.',
   'about.kicker': 'Die Idee',
   'about.heading': 'Wofür 21.gifts steht',
   'about.lead':
-    'Im Wohnzimmer können Menschen um Hilfe bitten und einander Bitcoin schenken. Hinter 21.gifts stehen drei Überzeugungen.',
+    'Im Wohnzimmer können Menschen um Hilfe bitten und einander Bitcoin spenden. Hinter 21.gifts stehen drei Überzeugungen.',
   'about.verse': "Umsonst habt ihr's empfangen, umsonst gebt es auch.",
   'about.verseRef': 'Matthäus 10,8',
   'about.conv1Num': '1',
@@ -1346,18 +1347,18 @@ const de = {
   'about.conv1Body':
     'Für uns gehört Geben zum christlichen Glauben. Jesus spricht in Matthäus 6,2 vom Geben wie von etwas Selbstverständlichem. Auch 1. Johannes 3,17 und Jakobus 2,17 erinnern uns daran, Menschen in Not nicht allein zu lassen. Wie viel wir geben, entscheiden wir selbst vor Gott (2. Korinther 9,7).',
   'about.conv1Body2':
-    'Helfen heißt nicht immer Geld geben. Manchmal zählen ein Gespräch, ein Besuch oder ein warmer Mantel. Matthäus 25 erinnert an Menschen, die hungrig, krank, fremd oder gefangen sind. 21.gifts macht eine Form der Hilfe möglich: ein Geldgeschenk direkt von einem Menschen an einen anderen.',
+    'Helfen heißt nicht immer Geld geben. Manchmal zählen ein Gespräch, ein Besuch oder ein warmer Mantel. Matthäus 25 erinnert an Menschen, die hungrig, krank, fremd oder gefangen sind. 21.gifts macht eine Form der Hilfe möglich: eine Geldspende direkt von einem Menschen an einen anderen.',
   'about.conv1Verse':
     'Meine Kinder, lasst uns nicht lieben mit Worten noch mit der Zunge, sondern mit der Tat und mit der Wahrheit.',
   'about.conv1VerseRef': '1. Johannes 3,18',
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkt von Mensch zu Mensch',
   'about.conv2Body':
-    'Du suchst selbst aus, wem du etwas schenkst. Die Person hat ihre Wallet-Adresse hinterlegt, damit dein Bitcoin-Geschenk bei ihr ankommt. 21.gifts nimmt keinen Anteil. Ihre Adresse kann sie auch ohne unsere Website weiter nutzen.',
+    'Du suchst selbst aus, wem du etwas spendest. Die Person hat ihre Wallet-Adresse hinterlegt, damit deine Bitcoin-Spende bei ihr ankommt. 21.gifts nimmt keinen Anteil. Ihre Adresse kann sie auch ohne unsere Website weiter nutzen.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Warum Bitcoin?',
   'about.conv3Body':
-    'Mit Bitcoin lassen sich auch kleine Beträge an Menschen in anderen Ländern schicken. Die Person braucht dafür eine Wallet-Adresse. Du bezahlst mit deiner Wallet; 21.gifts verwahrt das Geschenk nicht.',
+    'Mit Bitcoin lassen sich auch kleine Beträge an Menschen in anderen Ländern schicken. Die Person braucht dafür eine Wallet-Adresse. Du bezahlst mit deiner Wallet; 21.gifts verwahrt die Spende nicht.',
   'about.ctaForum': 'Zum Wohnzimmer',
   'donate.pageTitle': 'Jemandem helfen',
   'donate.lead':
@@ -1875,7 +1876,7 @@ const de = {
   'rules.wanted1': 'Ein Dankeschön: kurz, konkret und ohne die nächste Bitte im Schlepptau.',
   'rules.wanted2': 'Eine ruhige, ehrliche Nachricht, die das Geben leicht macht statt schwer.',
   'rules.wanted3': 'Ein gelassener Ton — ohne Steigerung, ohne Countdown, ohne Publikum.',
-  'rules.wanted4': 'Fragen, wie Schenken hier funktioniert, und geduldige Antworten darauf.',
+  'rules.wanted4': 'Fragen, wie Spenden hier funktioniert, und geduldige Antworten darauf.',
   'rules.wanted5': 'Humor und Wärme, die niemanden unter Druck setzen.',
   'rules.wanted6':
     'Eine Nachricht würdigen, die Ihnen etwas bedeutet hat — freiwillig und ohne dass der Autor darum gebeten hätte.',
@@ -1934,7 +1935,7 @@ const de = {
   'rules.forbiddenOther2':
     'Illegale Inhalte, sexuelle Inhalte mit Minderjährigen, Gore, Pornografie, Schockmaterial.',
   'rules.forbiddenOther3': 'Doxxing, Drohungen, Stalking, Hass gegen eine Person oder eine Gruppe.',
-  'rules.forbiddenOther4': 'Spam, Werbung, Anwerben, Zusatzkonten, um mehr Geschenke einzusammeln.',
+  'rules.forbiddenOther4': 'Spam, Werbung, Anwerben, Zusatzkonten, um mehr Spenden einzusammeln.',
   'rules.forbiddenOther5':
     'Sich als 21.gifts-Team ausgeben. Der Support schreibt Ihnen nie im Forum.',
   'rules.houseHeading': 'Unser Haus',
@@ -2271,11 +2272,11 @@ const de = {
   'home.heroKicker': 'Direkt von Mensch zu Mensch',
   'home.metaTitle': 'Hilf Menschen mit Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Lies, was Menschen erzählen, reagiere auf einen Beitrag und verschenke Bitcoin direkt an die Wallet der Person. 21.gifts verwahrt dein Geschenk nicht und behält keinen Anteil.',
-  'home.heroProof': 'Die Person bekommt dein Geschenk. 21.gifts behält keinen Anteil.',
+    'Lies, was Menschen erzählen, reagiere auf einen Beitrag und spende Bitcoin direkt an die Wallet der Person. 21.gifts verwahrt deine Spende nicht und behält keinen Anteil.',
+  'home.heroProof': 'Die Person bekommt deine Spende. 21.gifts behält keinen Anteil.',
   'home.previewLabel': 'Der Ablauf',
   'home.previewKicker': 'Nach der Anmeldung',
-  'home.previewTitle': 'So kommt dein Geschenk an',
+  'home.previewTitle': 'So kommt deine Spende an',
   'home.previewStep1': 'Beitrag im Wohnzimmer lesen',
   'home.previewStep2': 'Reagieren und spenden',
   'home.previewStep3': 'Mit deiner Wallet verschicken',
@@ -2288,7 +2289,7 @@ const de = {
     'Melde dich an, öffne einen Beitrag im Wohnzimmer und lies, was die Person erzählt.',
   'home.give2Title': 'Reagieren',
   'home.give2Body':
-    'Tippe unter dem Beitrag auf den Pfeil, schreib ein paar Worte und gib einen Betrag an. Das Geschenk ist für die Person, die den Beitrag geschrieben hat.',
+    'Tippe unter dem Beitrag auf den Pfeil, schreib ein paar Worte und gib einen Betrag an. Die Spende ist für die Person, die den Beitrag geschrieben hat.',
   'home.give3Title': 'Bezahlen',
   'home.give3Body':
     'Öffne Wallet of Satoshi oder scanne am Computer den QR-Code mit deiner Wallet.',
@@ -2308,7 +2309,7 @@ const de = {
   'home.discoverTrustTitle': 'Bei wem kommt es an?',
   'home.discoverTrustBody':
     'Bei der Person, auf deren Beitrag du reagierst. So funktioniert die Zahlung.',
-  'donate.metaTitle': 'Bitcoin verschenken und jemandem helfen | 21.gifts',
+  'donate.metaTitle': 'Bitcoin spenden und jemandem helfen | 21.gifts',
   'wallet.activate': 'Wiederherstellungssatz aktivieren',
   'wallet.activateHint':
     'Erstellen Sie einen neuen Passkey auf diesem Gerät, damit 21.gifts Ihren 12-Wörter-Wiederherstellungssatz anzeigen kann. Der bisherige Passkey funktioniert danach nicht mehr.',
@@ -2453,24 +2454,24 @@ const es = {
   'home.lead':
     'En el foro, la gente cuenta lo que está viviendo. Inicia sesión y lee sus publicaciones. Si quieres apoyar a alguien, simplemente reacciona a una publicación e indica la cantidad que quieres donar. Los satoshis se envían directamente de ti a esa persona y llegan en segundos.',
   'home.ctaAsk': 'Pedir ayuda',
-  'home.ctaSend': 'Regalar Bitcoin',
-  'home.howKicker': 'Regala Bitcoin en 21.gifts',
-  'home.howTitle': 'Cómo regalar Bitcoin a alguien',
+  'home.ctaSend': 'Donar Bitcoin',
+  'home.howKicker': 'Dona Bitcoin',
+  'home.howTitle': 'Así donas Bitcoin a alguien',
   'home.howLead': 'Inicia sesión y lee el foro. Tú eliges a quién ayudar y cuánto enviar.',
   'home.step1Title': 'Iniciar sesión',
   'home.step1Body':
     'Inicia sesión desde tu dispositivo. Tu acceso queda allí o en su sincronización. No necesitas otra contraseña para 21.gifts.',
   'home.step2Title': 'Añade tu dirección de Wallet of Satoshi',
-  'home.step2BodyBefore': 'Indica dónde quieres recibir los regalos, por ejemplo',
+  'home.step2BodyBefore': 'Indica la dirección donde deben llegar las donaciones, por ejemplo',
   'home.step2BodyAfter': '. Otras personas podrán enviarte Bitcoin a esa dirección.',
   'home.step3Title': 'Publica y recibe ayuda',
   'home.step3Body':
     'Cuenta en la comunidad qué te preocupa. Si alguien quiere apoyarte, reacciona a tu publicación con un importe y envía Bitcoin a tu dirección. 21.gifts no guarda el pago.',
-  'home.whyKicker': 'Por qué lo hicimos así',
+  'home.whyKicker': 'Adónde va tu donación',
   'home.whyTitle': 'Quien recibe controla su propia cartera',
   'home.why1Title': 'Tú eliges a quién ayudar',
   'home.why1Body':
-    'Lee primero lo que cuenta cada persona. 21.gifts no asigna tu regalo a nadie más.',
+    'Lee primero lo que escribe la persona. 21.gifts nunca pasa tu donación a otra persona.',
   'home.why2Title': 'Sin contraseña que recordar',
   'home.why2Body':
     'Inicias sesión con tu dispositivo. Si pierdes el acceso allí y en todas las copias sincronizadas, todavía no podemos recuperar tu cuenta.',
@@ -2479,19 +2480,19 @@ const es = {
     'La persona que ayudas añade su propia dirección de Wallet of Satoshi. El pago va allí.',
   'home.why4Title': '21.gifts no se queda con una parte',
   'home.why4Body':
-    'No retenemos nada de los regalos entre personas. Si quieres apoyar esta web, hay una dirección aparte.',
+    'No retenemos nada de las donaciones entre personas. Si quieres apoyar esta web, hay una dirección aparte.',
   'home.projectKicker': 'Sostener el proyecto',
   'home.projectTitle': '¿Quieres apoyar a 21.gifts?',
   'home.projectLead':
-    'Un regalo enviado desde el foro va a quien escribió la publicación. Si quieres apoyar esta web, utiliza esta dirección aparte.',
+    'Si quieres apoyar la web en sí, puedes enviar a esta dirección. Está separada de las donaciones del foro.',
   'home.faqKicker': 'Conviene saber',
   'home.faqTitle': '¿Tienes preguntas sobre 21.gifts?',
   'home.faq1Q': '¿Tengo que iniciar sesión para leer el foro?',
   'home.faq1A':
-    'Sí. Para leer el foro debes iniciar sesión. Si también quieres recibir regalos, añade tu dirección de Wallet of Satoshi.',
-  'home.faq2Q': '¿Se queda 21.gifts con una parte?',
+    'Sí. Para el foro inicias sesión. Si quieres recibir donaciones en Bitcoin, añade además una dirección de Wallet of Satoshi.',
+  'home.faq2Q': '¿Se queda 21.gifts con algo de mi donación?',
   'home.faq2A':
-    'No. 21.gifts no se queda con parte de los regalos entre personas. Tu proveedor de cartera o la red de pago pueden cobrar comisiones.',
+    'No. 21.gifts no se queda con parte de las donaciones entre personas. Tu proveedor de cartera o la red de pago pueden cobrar comisiones.',
   'home.faq3Q': '¿Necesito una contraseña?',
   'home.faq3A':
     'No. Inicias sesión con tu dispositivo sin crear una contraseña para 21.gifts. Nunca compartas tus palabras de recuperación.',
@@ -2503,17 +2504,17 @@ const es = {
     'Quien escribió la publicación. Escribe una reacción debajo e indica un importe. El Bitcoin va a la dirección de cartera de esa persona.',
   'home.faq6Q': '¿Por qué Bitcoin?',
   'home.faq6A':
-    'Con Bitcoin puedes enviar incluso pequeños regalos a una cartera elegida, también a otro país. 21.gifts no guarda el pago; puede haber comisiones de la cartera.',
+    'Para que puedas enviar incluso cantidades pequeñas directamente a la dirección de cartera elegida. 21.gifts no guarda la donación. Tu proveedor de cartera puede cobrar comisiones.',
   'home.faq7Q': '¿Está regulado y cómo funcionan los impuestos?',
   'home.faq7A':
-    '21.gifts no custodia el regalo. Las normas y los impuestos dependen de dónde vives y de tu situación; comprueba qué requisitos se aplican a tu caso.',
+    '21.gifts no guarda la donación. Las normas y los impuestos que se aplican dependen de dónde vives y de tu situación. Comprueba los requisitos que te corresponden.',
   'home.faq8Q': '¿Qué significa ₿1 aquí?',
   'home.faq8A':
     'En 21.gifts, ₿1 representa un sat, la unidad más pequeña de Bitcoin. Un Bitcoin equivale a 100 millones de sats.',
   'about.kicker': 'La idea',
   'about.heading': 'Lo que mueve a 21.gifts',
   'about.lead':
-    'En el foro, las personas pueden pedir ayuda y regalarse Bitcoin. Tres convicciones guían el proyecto.',
+    'En el foro, las personas pueden pedir ayuda y donarse Bitcoin entre sí. Detrás de 21.gifts hay tres convicciones.',
   'about.verse': 'De gracia recibisteis, dad de gracia.',
   'about.verseRef': 'Mateo 10:8',
   'about.conv1Num': '1',
@@ -2521,19 +2522,19 @@ const es = {
   'about.conv1Body':
     'Para nosotros, ayudar a quien lo necesita forma parte de la fe cristiana. Jesús habla de dar como algo que hacemos (Mateo 6:2). También 1 Juan 3:17 y Santiago 2:17 nos recuerdan que la fe se demuestra con hechos. Cada persona decide cuánto dar ante Dios (2 Corintios 9:7).',
   'about.conv1Body2':
-    'Ayudar no siempre significa dar dinero. A veces basta una conversación, una visita o un abrigo. 21.gifts hace posible una forma de ayuda: regalar Bitcoin directamente a otra persona.',
+    'Ayudar no siempre significa dar dinero. A veces cuenta una conversación, una visita o un abrigo. Mateo 25 recuerda a las personas que tienen hambre, están enfermas, son extranjeras o están presas. 21.gifts hace posible una forma de ayuda: una donación de dinero directamente de una persona a otra.',
   'about.conv1Verse': 'Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
   'about.conv2Title': 'De persona a persona',
   'about.conv2Body':
-    'Tú eliges a quién ayudar. Quien recibe añade la dirección de cartera donde quiere recibir Bitcoin. 21.gifts no se queda con una parte ni guarda el regalo. Esa dirección sigue funcionando sin esta web.',
+    'Tú eliges a quién donas. La persona ha añadido su dirección de cartera para que tu donación en Bitcoin le llegue. 21.gifts no se queda con ninguna parte. Puede seguir usando su dirección sin nuestra web.',
   'about.conv3Num': '3',
   'about.conv3Title': '¿Por qué Bitcoin?',
   'about.conv3Body':
-    'Bitcoin permite enviar incluso pequeñas cantidades a la cartera de alguien en otro país. Pagas desde tu propia cartera; 21.gifts no guarda el regalo. El proveedor de cartera puede cobrar comisiones.',
+    'Con Bitcoin se pueden enviar incluso pequeñas cantidades a personas de otros países. Para ello, la persona necesita una dirección de cartera. Pagas con tu cartera; 21.gifts no guarda la donación.',
   'about.ctaForum': 'Ir al foro',
-  'donate.pageTitle': 'Regala Bitcoin a alguien',
+  'donate.pageTitle': 'Ayuda a alguien',
   'donate.lead':
     'Inicia sesión y abre una publicación en el foro. Escribe una reacción debajo, indica un importe y paga desde tu cartera. El Bitcoin va a quien escribió la publicación.',
   'donate.continue': 'Ir al foro',
@@ -3045,7 +3046,7 @@ const es = {
   'rules.wanted1': 'Un gracias: corto, concreto y sin la siguiente petición pegada.',
   'rules.wanted2': 'Una nota tranquila y honesta que hace que dar se sienta fácil, no pesado.',
   'rules.wanted3': 'Un tono sereno — sin escalada, sin cuenta atrás, sin público.',
-  'rules.wanted4': 'Preguntas sobre cómo funcionan los regalos aquí, y respuestas pacientes.',
+  'rules.wanted4': 'Preguntas sobre cómo funcionan aquí las donaciones, y respuestas pacientes.',
   'rules.wanted5': 'Humor y calidez que no presionan a nadie.',
   'rules.wanted6':
     'Reconocer una nota que significó algo para ti — libremente, y sin que el autor lo haya pedido.',
@@ -3100,7 +3101,7 @@ const es = {
     'Contenido ilegal, contenido sexual con menores, gore, pornografía, material de impacto.',
   'rules.forbiddenOther3': 'Doxxing, amenazas, acoso, odio contra una persona o un grupo.',
   'rules.forbiddenOther4':
-    'Spam, publicidad, reclutamiento, cuentas adicionales creadas para recibir más regalos.',
+    'Spam, publicidad, captación, cuentas adicionales para recaudar más donaciones.',
   'rules.forbiddenOther5':
     'Hacerse pasar por el equipo de 21.gifts. El soporte nunca te escribirá en el foro.',
   'rules.houseHeading': 'Nuestra casa',
@@ -3422,11 +3423,11 @@ const es = {
   'home.heroKicker': 'De persona a persona',
   'home.metaTitle': 'Ayuda a otras personas con Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Lee publicaciones, reacciona a quien quieras ayudar y envía Bitcoin a su cartera. 21.gifts no guarda el regalo ni se queda con una parte.',
-  'home.heroProof': '21.gifts no se queda con parte de los regalos entre personas.',
+    'Lee lo que cuenta la gente, reacciona a una publicación y dona Bitcoin directamente a la cartera de la persona. 21.gifts no guarda tu donación ni se queda con ninguna parte.',
+  'home.heroProof': 'La persona recibe tu donación. 21.gifts no se queda con ninguna parte.',
   'home.previewLabel': 'Así funciona',
   'home.previewKicker': 'Después de iniciar sesión',
-  'home.previewTitle': 'Así llega tu regalo',
+  'home.previewTitle': 'Así llega tu donación',
   'home.previewStep1': 'Lee una publicación en el foro',
   'home.previewStep2': 'Reacciona y dona',
   'home.previewStep3': 'Envía desde tu cartera',
@@ -3439,7 +3440,7 @@ const es = {
   'home.give1Body': 'Abre una publicación en el foro y lee lo que cuenta esa persona.',
   'home.give2Title': 'Reacciona',
   'home.give2Body':
-    'Toca la flecha debajo de la publicación, escribe unas palabras e indica un importe. El regalo es para quien escribió la publicación.',
+    'Toca la flecha debajo de la publicación, escribe unas palabras e indica un importe. La donación es para quien escribió la publicación.',
   'home.give3Title': 'Paga desde tu cartera',
   'home.give3Body': 'Abre Wallet of Satoshi o escanea el código QR con tu cartera.',
   'home.receiveTitle': '¿Necesitas ayuda?',
@@ -3455,10 +3456,10 @@ const es = {
   'home.discoverBitcoinBody':
     'El Bitcoin va a la dirección de cartera que añadió quien lo recibe. 21.gifts no lo guarda.',
   'home.discoverTrustKicker': 'Antes de dar',
-  'home.discoverTrustTitle': '¿Adónde llega tu regalo?',
+  'home.discoverTrustTitle': '¿Adónde llega tu donación?',
   'home.discoverTrustBody':
     'A quien escribió la publicación a la que reaccionas. Aquí te explicamos cómo funciona el pago.',
-  'donate.metaTitle': 'Regala Bitcoin a alguien | 21.gifts',
+  'donate.metaTitle': 'Dona Bitcoin y ayuda a alguien | 21.gifts',
   'wallet.activate': 'Activar frase de recuperación',
   'wallet.activateHint':
     'Crea una passkey nueva en este dispositivo para que 21.gifts pueda mostrar tu frase de recuperación de 12 palabras. La passkey anterior dejará de funcionar.',
@@ -3606,25 +3607,25 @@ const fil = {
   'home.lead':
     'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in at basahin ang mga post nila. Kung gusto mong tumulong sa isang tao, mag-react lang sa isang post at ilagay ang halagang gusto mong i-donate. Direktang ipapadala mula sa iyo ang satoshis sa taong iyon at darating ito sa loob ng ilang segundo.',
   'home.ctaAsk': 'Humiling ng tulong',
-  'home.ctaSend': 'Magbigay ng Bitcoin',
-  'home.howKicker': 'Pagbibigay sa 21.gifts',
-  'home.howTitle': 'Paano magbigay ng Bitcoin',
+  'home.ctaSend': 'Mag-donate ng Bitcoin',
+  'home.howKicker': 'Mag-donate ng Bitcoin',
+  'home.howTitle': 'Ganito ka magdo-donate ng Bitcoin sa isang tao',
   'home.howLead':
-    'Mag-log in at basahin ang forum. Ikaw ang pipili kung sino ang tutulungan at kung magkano ang ibibigay.',
+    'Mag-log in at basahin ang forum. Ikaw ang pipili kung sino ang tutulungan at kung magkano ang ido-donate.',
   'home.step1Title': 'Mag-log in',
   'home.step1Body':
     'Mag-log in sa iyong device. Doon mananatili ang access mo o sa sync nito. Hindi mo kailangan ng hiwalay na password para sa 21.gifts.',
   'home.step2Title': 'Idagdag ang iyong Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Ilagay ang address kung saan mo gustong tumanggap ng regalo, halimbawa',
+  'home.step2BodyBefore': 'Ilagay ang address kung saan dapat dumating ang mga donasyon, halimbawa',
   'home.step2BodyAfter': '. Maaari kang padalhan ng Bitcoin sa address na iyon.',
   'home.step3Title': 'Mag-post at tumanggap ng tulong',
   'home.step3Body':
     'Ikuwento sa komunidad ang pinagdaraanan mo. Kung may gustong tumulong sa iyo, magre-react siya sa post mo na may halaga at magpapadala ng Bitcoin sa address mo. Hindi iniingatan ng 21.gifts ang bayad.',
-  'home.whyKicker': 'Bakit ganito ang ginawa namin',
+  'home.whyKicker': 'Saan napupunta ang donasyon mo',
   'home.whyTitle': 'Ang tatanggap ang may kontrol sa sarili niyang wallet',
   'home.why1Title': 'Ikaw ang pipili ng tutulungan',
   'home.why1Body':
-    'Basahin muna ang sinabi nila. Hindi ibibigay ng 21.gifts ang regalo mo sa ibang tao.',
+    'Basahin muna ang isinulat ng tao. Hindi kailanman ipapasa ng 21.gifts ang donasyon mo sa iba.',
   'home.why2Title': 'Walang password na kailangang tandaan',
   'home.why2Body':
     'Sa device mo ka magla-log in. Kung mawala ang access doon at sa lahat ng naka-sync na kopya, hindi pa namin maibabalik ang account mo.',
@@ -3633,19 +3634,19 @@ const fil = {
     'Sariling Wallet of Satoshi address ang inilalagay ng tatanggap. Doon napupunta ang bayad mo.',
   'home.why4Title': 'Walang bahaging kinukuha ang 21.gifts',
   'home.why4Body':
-    'Wala kaming kinukuha sa regalong ibinibigay mo sa kapwa. May hiwalay na address kung gusto mong suportahan ang website.',
+    'Wala kaming kinukuha sa donasyong ipinapadala mo sa kapwa. May hiwalay na address kung gusto mong suportahan ang website.',
   'home.projectKicker': 'Suportahan ang proyekto',
   'home.projectTitle': 'Gusto mo ring suportahan ang 21.gifts?',
   'home.projectLead':
-    'Sa sumulat ng post mapupunta ang regalo sa forum. Kung gusto mong suportahan ang website mismo, gamitin ang hiwalay na address na ito.',
+    'Kung gusto mong suportahan ang website mismo, puwede kang magpadala sa address na ito. Hiwalay ito sa mga donasyon sa forum.',
   'home.faqKicker': 'Mahalagang malaman',
   'home.faqTitle': 'May tanong ka tungkol sa 21.gifts?',
   'home.faq1Q': 'Kailangan bang mag-log in para mabasa ang forum?',
   'home.faq1A':
-    'Oo. Kailangan mong mag-log in para mabasa ang forum. Kung gusto mo ring tumanggap ng regalo, ilagay ang iyong Wallet of Satoshi address.',
-  'home.faq2Q': 'May kinukuha bang bahagi ang 21.gifts?',
+    'Oo. Mag-log in ka para sa forum. Kung gusto mo ring tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address.',
+  'home.faq2Q': 'May kinukuha ba ang 21.gifts sa donasyon ko?',
   'home.faq2A':
-    'Wala. Hindi kumukuha ng bahagi ang 21.gifts sa mga regalong ibinibigay sa kapwa. Maaaring maningil ang wallet provider o ang payment network.',
+    'Wala. Hindi kumukuha ng bahagi ang 21.gifts sa mga donasyong ipinapadala sa kapwa. Maaaring maningil ang wallet provider o ang payment network.',
   'home.faq3Q': 'Kailangan ko ba ng password?',
   'home.faq3A':
     'Hindi. Gamit ang device mo ang pag-log in, kaya hindi ka gagawa ng password para sa 21.gifts. Huwag ibahagi ang mga recovery word mo.',
@@ -3657,17 +3658,17 @@ const fil = {
     'Ang sumulat ng post. Sumulat ng reaksyon sa ilalim nito at maglagay ng halaga. Sa wallet address niya mapupunta ang Bitcoin.',
   'home.faq6Q': 'Bakit Bitcoin?',
   'home.faq6A':
-    'Sa Bitcoin, puwede kang magpadala ng maliit na regalo sa napili mong wallet address, kahit nasa ibang bansa ang tatanggap. Hindi hinahawakan ng 21.gifts ang bayad; maaaring may singil ang wallet provider.',
+    'Para makapagpadala ka ng kahit maliit na halaga direkta sa napiling wallet address. Hindi hinahawakan ng 21.gifts ang donasyon. Maaaring maningil ang wallet provider mo.',
   'home.faq7Q': 'Regulado ba ito, at paano ang buwis?',
   'home.faq7A':
-    'Hindi hinahawakan ng 21.gifts ang regalo. Nakadepende sa lugar at sitwasyon mo ang mga tuntunin at buwis; alamin ang mga kinakailangang naaangkop sa iyo.',
+    'Hindi hinahawakan ng 21.gifts ang donasyon. Nakadepende sa tinitirhan at sitwasyon mo kung aling mga tuntunin at buwis ang naaangkop. Alamin ang mga kinakailangang naaangkop sa iyo.',
   'home.faq8Q': 'Ano ang ibig sabihin ng ₿1 dito?',
   'home.faq8A':
     'Sa 21.gifts, ang ₿1 ay isang sat, ang pinakamaliit na yunit ng Bitcoin. May 100 milyong sat sa isang Bitcoin.',
   'about.kicker': 'Ang layunin',
   'about.heading': 'Ang pinaninindigan ng 21.gifts',
   'about.lead':
-    "Sa forum, puwedeng humingi ng tulong at magbigay ng Bitcoin ang mga tao sa isa't isa. Tatlong paniniwala ang gabay ng proyekto.",
+    "Sa forum, puwedeng humingi ng tulong ang mga tao at mag-donate ng Bitcoin sa isa't isa. Tatlong paniniwala ang nasa likod ng 21.gifts.",
   'about.verse': 'Yamang tumanggap kayo nang walang bayad, magbigay naman kayo nang walang bayad.',
   'about.verseRef': 'Mateo 10:8',
   'about.conv1Num': '1',
@@ -3675,20 +3676,20 @@ const fil = {
   'about.conv1Body':
     'Para sa amin, bahagi ng pananampalatayang Kristiyano ang pagtulong sa nangangailangan. Binanggit ni Jesus ang pagbibigay bilang isang gawain natin (Mateo 6:2). Paalala rin ang 1 Juan 3:17 at Santiago 2:17 na kumilos kapag may nakikita tayong nangangailangan. Nasa bawat tao kung magkano ang ibibigay niya sa harap ng Diyos (2 Corinto 9:7).',
   'about.conv1Body2':
-    'Hindi lang pera ang maibibigay. Maaaring oras, pagdalaw o isang mainit na damit ang kailangan ng isang tao. Isang uri ng tulong ang ginagawa ng 21.gifts: regalong Bitcoin mula sa isang tao patungo sa iba.',
+    'Hindi laging pera ang ibig sabihin ng pagtulong. Minsan, isang kuwentuhan, isang pagdalaw o isang mainit na damit ang mahalaga. Ipinapaalala ng Mateo 25 ang mga taong gutom, may sakit, dayuhan o nakakulong. Isang uri ng tulong ang ginagawang posible ng 21.gifts: donasyong pera direkta mula sa isang tao patungo sa iba.',
   'about.conv1Verse':
     'Mga anak, huwag tayong magmahal sa pamamagitan lamang ng salita, subalit ipakita rin natin ang tunay na pag-ibig sa pamamagitan ng gawa.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkta sa taong tinutulungan',
   'about.conv2Body':
-    'Ikaw ang pipili ng tutulungan. Ilalagay ng tatanggap ang sarili niyang wallet address para doon matanggap ang Bitcoin. Hindi kumukuha ng bahagi ang 21.gifts at hindi nito hinahawakan ang regalo. Magagamit pa rin niya ang address kahit wala na ang website.',
+    'Ikaw ang pipili kung kanino ka magdo-donate. Inilagay ng tao ang wallet address niya para makarating sa kanya ang Bitcoin donation mo. Walang bahaging kinukuha ang 21.gifts. Magagamit pa rin niya ang address niya kahit wala ang website namin.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bakit Bitcoin?',
   'about.conv3Body':
-    'Puwedeng magpadala ng kahit maliit na halaga sa wallet ng tao sa ibang bansa gamit ang Bitcoin. Mula sa sarili mong wallet ang bayad; hindi ito hinahawakan ng 21.gifts. Maaaring maningil ang wallet provider.',
+    'Sa Bitcoin, puwedeng magpadala ng kahit maliit na halaga sa mga tao sa ibang bansa. Kailangan ng tao ng wallet address para dito. Magbabayad ka gamit ang wallet mo; hindi hinahawakan ng 21.gifts ang donasyon.',
   'about.ctaForum': 'Pumunta sa forum',
-  'donate.pageTitle': 'Magbigay ng Bitcoin sa kapwa',
+  'donate.pageTitle': 'Tumulong sa kapwa',
   'donate.lead':
     'Mag-log in at buksan ang isang post sa forum. Sumulat ng reaksyon sa ilalim nito, maglagay ng halaga at magbayad gamit ang wallet mo. Sa sumulat ng post mapupunta ang Bitcoin.',
   'donate.continue': 'Buksan ang forum',
@@ -4203,7 +4204,7 @@ const fil = {
   'rules.wanted2':
     'Isang kalmado at tapat na mensahe na nagpapagaan sa pagbibigay, hindi nagpapabigat.',
   'rules.wanted3': 'Mahinahong tono — walang pag-iinit, walang countdown, walang manonood.',
-  'rules.wanted4': 'Mga tanong kung paano gumagana ang pagbibigay dito, at mga matiyagang sagot.',
+  'rules.wanted4': 'Mga tanong kung paano gumagana ang pagdo-donate dito, at mga matiyagang sagot.',
   'rules.wanted5': 'Katatawanan at init na walang ipinipilit kaninuman.',
   'rules.wanted6':
     'Pagpapahalaga sa isang mensaheng may saysay sa iyo — kusang-loob, at hindi hiningi ng sumulat.',
@@ -4263,7 +4264,7 @@ const fil = {
     'Ilegal na content, sekswal na content na may kinalaman sa menor de edad, gore, pornograpiya, shock material.',
   'rules.forbiddenOther3': 'Doxxing, pananakot, stalking, pagkamuhi laban sa isang tao o grupo.',
   'rules.forbiddenOther4':
-    'Spam, advertising, recruiting, dagdag na account para makakuha ng mas maraming regalo.',
+    'Spam, advertising, recruiting, dagdag na account para makakolekta ng mas maraming donasyon.',
   'rules.forbiddenOther5':
     'Pagpapanggap na 21.gifts team. Hindi kailanman susulat sa iyo ang support sa forum.',
   'rules.houseHeading': 'Ang bahay namin',
@@ -4583,11 +4584,11 @@ const fil = {
   'home.heroKicker': 'Mula sa iyo, diretso sa kapwa',
   'home.metaTitle': 'Tumulong sa kapwa gamit ang Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Basahin ang mga post, mag-react sa gusto mong tulungan at magpadala ng Bitcoin sa kanyang wallet. Hindi hinahawakan ng 21.gifts ang regalo o kumukuha ng bahagi.',
-  'home.heroProof': 'Hindi kumukuha ng bahagi ang 21.gifts sa regalong ipinapadala mo.',
+    'Basahin ang ikinukuwento ng mga tao, mag-react sa isang post at mag-donate ng Bitcoin direkta sa wallet ng tao. Hindi hinahawakan ng 21.gifts ang donasyon mo at wala itong kinukuhang bahagi.',
+  'home.heroProof': 'Sa tao mapupunta ang donasyon mo. Walang bahaging kinukuha ang 21.gifts.',
   'home.previewLabel': 'Ganito ang paraan',
   'home.previewKicker': 'Pagkatapos mong mag-log in',
-  'home.previewTitle': 'Ganito nakakarating ang regalo mo',
+  'home.previewTitle': 'Ganito nakakarating ang donasyon mo',
   'home.previewStep1': 'Magbasa ng post sa forum',
   'home.previewStep2': 'Mag-react at mag-donate',
   'home.previewStep3': 'Ipadala gamit ang wallet mo',
@@ -4600,7 +4601,7 @@ const fil = {
   'home.give1Body': 'Buksan ang isang post sa forum at basahin ang ikinukuwento ng tao.',
   'home.give2Title': 'Mag-react',
   'home.give2Body':
-    'I-tap ang arrow sa ilalim ng post, sumulat ng ilang salita at maglagay ng halaga. Para sa sumulat ng post ang regalo.',
+    'I-tap ang arrow sa ilalim ng post, sumulat ng ilang salita at maglagay ng halaga. Para sa sumulat ng post ang donasyon.',
   'home.give3Title': 'Magbayad gamit ang wallet mo',
   'home.give3Body': 'Buksan ang Wallet of Satoshi o i-scan ang QR code gamit ang wallet mo.',
   'home.receiveTitle': 'Kailangan mo rin ba ng tulong?',
@@ -4615,11 +4616,11 @@ const fil = {
   'home.discoverBitcoinTitle': 'Bakit Bitcoin?',
   'home.discoverBitcoinBody':
     'Sa wallet address na inilagay ng tatanggap mapupunta ang Bitcoin mo. Hindi ito hinahawakan ng 21.gifts.',
-  'home.discoverTrustKicker': 'Bago magbigay',
-  'home.discoverTrustTitle': 'Saan napupunta ang regalo?',
+  'home.discoverTrustKicker': 'Bago mag-donate',
+  'home.discoverTrustTitle': 'Saan napupunta ang donasyon?',
   'home.discoverTrustBody':
     'Sa sumulat ng post na nire-react-an mo. Alamin dito kung paano gumagana ang bayad.',
-  'donate.metaTitle': 'Magbigay ng Bitcoin sa kapwa | 21.gifts',
+  'donate.metaTitle': 'Mag-donate ng Bitcoin at tumulong sa kapwa | 21.gifts',
   'wallet.activate': 'I-activate ang recovery phrase',
   'wallet.activateHint':
     'Gumawa ng bagong passkey sa device na ito para maipakita ng 21.gifts ang 12-word recovery phrase mo. Hindi na gagana ang dating passkey.',

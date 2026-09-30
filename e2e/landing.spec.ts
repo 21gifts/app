@@ -5,7 +5,7 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /Help people.*with Bitcoin/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Give Bitcoin' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Donate Bitcoin' })).toHaveAttribute(
     'href',
     '/en/donate',
   );

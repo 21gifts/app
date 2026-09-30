@@ -45,14 +45,14 @@ afterEach(cleanup);
 describe('DonatePage', () => {
   it('publishes the canonical URL for the localized gift entry', async () => {
     expect(await generateMetadata()).toMatchObject({
-      title: 'Give Bitcoin to someone | 21.gifts',
+      title: 'Donate Bitcoin and help someone | 21.gifts',
       alternates: { canonical: '/en/donate', languages: { fil: '/fil/donate' } },
     });
   });
 
   it('renders the page heading', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByRole('heading', { name: 'Give Bitcoin to someone' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Help someone' })).toBeTruthy();
   });
 
   it('renders the explainer lead', async () => {

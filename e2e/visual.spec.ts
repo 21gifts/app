@@ -1067,7 +1067,7 @@ test.describe('screen baselines', () => {
 
   test('screen /donate', async ({ page }) => {
     await page.goto('/donate');
-    await expect(page.getByRole('heading', { name: 'Give Bitcoin to someone' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Help someone' })).toBeVisible();
     await shotScreen(page, 'screen-donate');
   });
 
