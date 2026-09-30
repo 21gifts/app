@@ -1517,7 +1517,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns to unknown when register is dismissed after unknown', async () => {
+  it('returns to the name form when a named create is dismissed after unknown', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     stubSignalUnknownCredential();
     vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
@@ -1596,7 +1596,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns to unknown when register is dismissed after choice then unknown', async () => {
+  it('returns to the name form when dismissed after choice then unknown', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     stubSignalUnknownCredential();
     const get = vi
@@ -1796,7 +1796,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns to choice when register is cancelled after a choice', async () => {
+  it('returns to the name form when a named create is cancelled after a choice', async () => {
     vi.stubGlobal('navigator', {
       ...navigator,
       credentials: {
