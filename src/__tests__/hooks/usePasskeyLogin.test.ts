@@ -348,6 +348,422 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('fails an old Android register when create itself is NotAllowedError', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'cd'.repeat(32);
+    const accountId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa', user: { name: accountId } },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        create: vi.fn().mockRejectedValue(new DOMException('', 'NotAllowedError')),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('login.androidVersion');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'NotAllowedError',
+        message: 'Android 8.1.0 below 9 at create',
+        prfPresent: false,
+        challengeId,
+        accountId,
+      },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('fails an old Android register when the extra key prompt is NotAllowedError', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ab'.repeat(32);
+    const accountId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa', user: { name: accountId } },
+    });
+    vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new DOMException('', 'NotAllowedError'));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        create: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('login.androidVersion');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'NotAllowedError',
+        message: 'Android 8.1.0 below 9 at prf',
+        prfPresent: false,
+        challengeId,
+        accountId,
+      },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('names the Android version when an old Android returns no extra key', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        create: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('login.androidVersion');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.prf')).toEqual([
+      {
+        event: 'client.passkey.register.prf',
+        prfPresent: false,
+        stage: 'register',
+        message: 'Android 8.1.0 below 9 at prf.absent',
+        challengeId,
+      },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('names the installed Android version on a failed login without blocking', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { event?: string; message?: string },
+    );
+    const failed = bodies.filter((body) => body.event === 'client.passkey.login.fail');
+    expect(failed[0]?.message?.startsWith('Android 14')).toBe(true);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('appends the browser text when an old Android create is NotAllowedError', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'cd'.repeat(32);
+    const accountId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
+    vi.mocked(startPasskeyRegistration).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa', user: { name: accountId } },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        create: vi.fn().mockRejectedValue(new DOMException('(timed out)', 'NotAllowedError')),
+        get: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+    });
+    expect(finishPasskeyRegistration).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('login.androidVersion');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'NotAllowedError',
+        message: 'Android 8.1.0 below 9 at create. timed out',
+        prfPresent: false,
+        challengeId,
+        accountId,
+      },
+    ]);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('prefixes a plain Android login failure that does not name the OS', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(finishPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('choice');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { event?: string; message?: string },
+    );
+    const failed = bodies.filter((body) => body.event === 'client.passkey.login.fail');
+    expect(failed[0]?.message).toBe('Android 14. no');
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps an Android login failure that is only the OS label', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('Android 14', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(finishPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('choice');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { event?: string; message?: string },
+    );
+    const failed = bodies.filter((body) => body.event === 'client.passkey.login.fail');
+    expect(failed[0]?.message).toBe('Android 14');
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps an Android login failure that already starts with the OS label and a space', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('Android 14 already', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(finishPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('choice');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { event?: string; message?: string },
+    );
+    const failed = bodies.filter((body) => body.event === 'client.passkey.login.fail');
+    expect(failed[0]?.message).toBe('Android 14 already');
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps an Android login failure that already starts with the OS label and a period', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('Android 14. already', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(finishPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('choice');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { event?: string; message?: string },
+    );
+    const failed = bodies.filter((body) => body.event === 'client.passkey.login.fail');
+    expect(failed[0]?.message).toBe('Android 14. already');
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('leaves a desktop login failure unprefixed', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0',
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('no', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { event?: string; message?: string },
+    );
+    const failed = bodies.filter((body) => body.event === 'client.passkey.login.fail');
+    expect(failed[0]?.message).toBe('no');
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  it('names the installed iOS version on a failed login without blocking', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    const challengeId = 'ef'.repeat(32);
+    vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+      challengeId,
+      options: { challenge: 'aa' },
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+      credentials: {
+        get: vi.fn().mockRejectedValue(new DOMException('', 'NotAllowedError')),
+        create: vi.fn(),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(result.current.status).toBe('choice');
+    expect(result.current.error).toBeNull();
+    const bodies = fetchMock.mock.calls.map(
+      (call) =>
+        JSON.parse(String((call[1] as RequestInit).body)) as { event?: string; message?: string },
+    );
+    const failed = bodies.filter((body) => body.event === 'client.passkey.login.fail');
+    expect(failed[0]?.message?.startsWith('iOS 18.0')).toBe(true);
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
   it('reports a cancelled PRF prompt and does not finish registration', async () => {
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')

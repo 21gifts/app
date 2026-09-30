@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { iosPasskeyBlock } from '@/lib/ios-passkey';
+import { iosInstalledVersion, iosPasskeyBlock } from '@/lib/ios-passkey';
 
 describe('iosPasskeyBlock', () => {
   it('returns null for a non-iOS browser', () => {
@@ -36,5 +36,20 @@ describe('iosPasskeyBlock', () => {
   it('returns null on iOS 18 and newer', () => {
     expect(iosPasskeyBlock('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)')).toBeNull();
     expect(iosPasskeyBlock('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0_1 like Mac OS X)')).toBeNull();
+  });
+});
+
+describe('iosInstalledVersion', () => {
+  it('returns null when the user agent is not a string', () => {
+    expect(iosInstalledVersion(undefined as unknown as string)).toBeNull();
+  });
+
+  it('returns the installed version for iOS 18 and iOS 17.5.1', () => {
+    expect(iosInstalledVersion('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)')).toBe(
+      '18.0',
+    );
+    expect(iosInstalledVersion('Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)')).toBe(
+      '17.5.1',
+    );
   });
 });

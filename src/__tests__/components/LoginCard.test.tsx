@@ -110,6 +110,36 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('shows the Android version as the error when registration could not finish', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+    mockPasskey('error', 'login.androidVersion');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Android 8.1.0 is installed. Sign-in needs at least Android 9.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows the generic error when the iOS version key does not match the mounted Android', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+    mockPasskey('error', 'login.iosVersion');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Something went wrong. Please try again.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('shows a single Log in button when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
