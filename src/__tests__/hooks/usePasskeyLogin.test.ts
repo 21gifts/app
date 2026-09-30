@@ -2,6 +2,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { obtainPrfFirst } from '@/lib/prf-mnemonic';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import { bytesToBase64Url } from '@/lib/webauthn-browser';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   finishPasskeyAuthentication,
@@ -30,11 +31,15 @@ vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
 }));
 
-vi.mock('@/lib/webauthn-browser', () => ({
-  creationOptionsFromJSON: vi.fn().mockReturnValue({ challenge: new ArrayBuffer(1) }),
-  requestOptionsFromJSON: vi.fn().mockReturnValue({ challenge: new ArrayBuffer(1) }),
-  credentialToJSON: vi.fn().mockReturnValue({ id: 'cred' }),
-}));
+vi.mock('@/lib/webauthn-browser', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/webauthn-browser')>();
+  return {
+    ...actual,
+    creationOptionsFromJSON: vi.fn().mockReturnValue({ challenge: new ArrayBuffer(1) }),
+    requestOptionsFromJSON: vi.fn().mockReturnValue({ challenge: new ArrayBuffer(1) }),
+    credentialToJSON: vi.fn().mockReturnValue({ id: 'cred' }),
+  };
+});
 
 vi.mock('@/lib/prf-mnemonic', () => ({
   obtainPrfFirst: vi.fn().mockResolvedValue(new Uint8Array(32).fill(7)),
@@ -174,7 +179,10 @@ describe('usePasskeyLogin', () => {
     const accountId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId,
-      options: { challenge: 'aa', user: { name: accountId } },
+      options: {
+        challenge: 'aa',
+        user: { id: bytesToBase64Url(new TextEncoder().encode(accountId)), name: 'ada' },
+      },
     });
     vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
     vi.stubGlobal('navigator', {
@@ -223,7 +231,10 @@ describe('usePasskeyLogin', () => {
     const accountId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId,
-      options: { challenge: 'aa', user: { name: accountId } },
+      options: {
+        challenge: 'aa',
+        user: { id: bytesToBase64Url(new TextEncoder().encode(accountId)), name: 'ada' },
+      },
     });
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -903,7 +914,10 @@ describe('usePasskeyLogin', () => {
     const accountId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId,
-      options: { challenge: 'aa', user: { name: accountId } },
+      options: {
+        challenge: 'aa',
+        user: { id: bytesToBase64Url(new TextEncoder().encode(accountId)), name: 'ada' },
+      },
     });
     vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new DOMException('no', 'NotAllowedError'));
     vi.stubGlobal('navigator', {
@@ -1030,7 +1044,10 @@ describe('usePasskeyLogin', () => {
       challengeId: 'cd'.repeat(32),
       options: {
         challenge: 'aa',
-        user: { name: 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff' },
+        user: {
+          id: bytesToBase64Url(new TextEncoder().encode('bbbbbbbb-cccc-dddd-eeee-ffffffffffff')),
+          name: 'ada',
+        },
       },
     });
     vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new TypeError('Boom'));
@@ -2566,7 +2583,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('records a string account id and ignores a null or non-string name', async () => {
+  it('records a decoded string user.id and ignores a null user or a non-string id', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -2579,10 +2596,15 @@ describe('usePasskeyLogin', () => {
     vi.mocked(startPasskeyRegistration)
       .mockResolvedValueOnce({
         challengeId: 'ab'.repeat(32),
-        options: { user: { name: accountId } },
+        options: {
+          user: {
+            id: bytesToBase64Url(new TextEncoder().encode(accountId)),
+            name: 'ada',
+          },
+        },
       })
       .mockResolvedValueOnce({ challengeId: 'ch', options: { user: null } })
-      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: { name: 4 } } });
+      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: { id: 4 } } });
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
@@ -2599,7 +2621,9 @@ describe('usePasskeyLogin', () => {
     const bodies = fetchMock.mock.calls.map(
       (call) => JSON.parse(String((call[1] as RequestInit).body)) as { accountId?: string },
     );
-    expect(bodies.some((body) => body.accountId === accountId)).toBe(true);
+    expect(bodies.map((body) => body.accountId).filter((id) => id !== undefined)).toEqual([
+      accountId,
+    ]);
     fetchMock.mockRestore();
     vi.unstubAllGlobals();
   });
