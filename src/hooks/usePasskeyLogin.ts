@@ -10,8 +10,9 @@ import {
   startPasskeyRegistration,
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
+import { androidInstalledVersion, androidPasskeyBlock } from '@/lib/android-passkey';
 import { isInAppBrowser } from '@/lib/in-app-browser';
-import { iosPasskeyBlock } from '@/lib/ios-passkey';
+import { iosInstalledVersion, iosPasskeyBlock } from '@/lib/ios-passkey';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
@@ -144,8 +145,24 @@ function iosRegisterBlocked(): boolean {
   return iosPasskeyBlock(navigator.userAgent) !== null;
 }
 
+/**
+ * True when this Android device is too old to finish a new-account passkey.
+ *
+ * @returns Whether register must fail with `login.androidVersion`.
+ */
+function androidRegisterBlocked(): boolean {
+  /* v8 ignore next 3 -- client hook: navigator exists whenever this runs */
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  return androidPasskeyBlock(navigator.userAgent) !== null;
+}
+
 /** Where an old-iOS register stopped. `prf.absent` means create returned no extra key. */
 type IosRegisterStop = 'create' | 'prf' | 'prf.absent';
+
+/** Where an old-Android register stopped. `prf.absent` means create returned no extra key. */
+type AndroidRegisterStop = 'create' | 'prf' | 'prf.absent';
 
 /**
  * Keep the browser text that the diagnostic allowlist accepts.
@@ -157,6 +174,27 @@ function diagnosticAllowlistText(value: string): string {
     .replace(/ +/g, ' ')
     .trim()
     .slice(0, 120);
+}
+
+/**
+ * Prefix plus browser text, always inside the 120-character allowlist.
+ * A version token longer than the budget keeps the prefix only.
+ *
+ * @param prefix - OS label or register stop, already plain text.
+ * @param extra - Allowlisted browser text. Empty keeps the prefix.
+ */
+function diagnosticWithPrefix(prefix: string, extra: string): string {
+  const room = 120 - prefix.length - 2;
+  /* v8 ignore next 3 -- components are capped at 8, and extra is non-empty */
+  if (extra === '' || room < 1) {
+    return diagnosticAllowlistText(prefix);
+  }
+  const clipped = extra.slice(0, room).trim();
+  /* v8 ignore next 3 -- extra is already trimmed */
+  if (clipped === '') {
+    return diagnosticAllowlistText(prefix);
+  }
+  return diagnosticAllowlistText(`${prefix}. ${clipped}`);
 }
 
 /**
@@ -173,19 +211,68 @@ function iosDebugMessage(step: IosRegisterStop, error?: unknown): string {
   }
   const prefix = `iOS ${block.installed} below ${block.required} at ${step}`;
   if (error === undefined) {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
   const raw = diagnosticMessage(error);
   /* v8 ignore next 3 -- a DOMException message is a string */
   if (raw === undefined) {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
   const safe = diagnosticAllowlistText(raw);
   if (safe === '') {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
-  const clipped = safe.slice(0, 120 - prefix.length - 2).trim();
-  return `${prefix}. ${clipped}`;
+  return diagnosticWithPrefix(prefix, safe);
+}
+
+/**
+ * Version, stop, and the browser text, inside the 120-character allowlist.
+ *
+ * @param step - Which part of register stopped.
+ * @param error - Ceremony rejection, when there is one.
+ */
+function androidDebugMessage(step: AndroidRegisterStop, error?: unknown): string {
+  const block = androidPasskeyBlock(navigator.userAgent);
+  /* v8 ignore next 3 -- caller already requires a parsed Android version below 9 */
+  if (block === null) {
+    return `Android unknown below 9 at ${step}`;
+  }
+  const prefix = `Android ${block.installed} below ${block.required} at ${step}`;
+  if (error === undefined) {
+    return diagnosticAllowlistText(prefix);
+  }
+  const raw = diagnosticMessage(error);
+  /* v8 ignore next 3 -- a DOMException message is a string */
+  if (raw === undefined) {
+    return diagnosticAllowlistText(prefix);
+  }
+  const safe = diagnosticAllowlistText(raw);
+  if (safe === '') {
+    return diagnosticAllowlistText(prefix);
+  }
+  return diagnosticWithPrefix(prefix, safe);
+}
+
+/**
+ * Installed OS label for a failed login or register diagnostic, or null on
+ * desktop and when the user agent has no version token.
+ *
+ * @returns `iOS 18.0` or `Android 14`, preferring iOS when both would match.
+ */
+function failedAttemptOsLabel(): string | null {
+  /* v8 ignore next 3 -- client hook: navigator exists whenever this runs */
+  if (typeof navigator === 'undefined' || typeof navigator.userAgent !== 'string') {
+    return null;
+  }
+  const ios = iosInstalledVersion(navigator.userAgent);
+  if (ios !== null) {
+    return `iOS ${ios}`;
+  }
+  const android = androidInstalledVersion(navigator.userAgent);
+  if (android !== null) {
+    return `Android ${android}`;
+  }
+  return null;
 }
 
 /**
@@ -219,12 +306,26 @@ function reportFailedAttempt(
     report.name = name;
   }
   const raw = diagnosticMessage(error);
+  let safe = '';
   /* v8 ignore next 3 -- Error and DOMException have a string message */
   if (raw !== undefined) {
-    const safe = diagnosticAllowlistText(raw);
+    safe = diagnosticAllowlistText(raw);
+  }
+  const osLabel = failedAttemptOsLabel();
+  if (osLabel === null) {
     if (safe !== '') {
       report.message = safe;
     }
+  } else if (
+    safe === osLabel ||
+    safe.startsWith(`${osLabel} `) ||
+    safe.startsWith(`${osLabel}. `)
+  ) {
+    report.message = safe.slice(0, 120);
+  } else if (safe === '') {
+    report.message = diagnosticAllowlistText(osLabel);
+  } else {
+    report.message = diagnosticWithPrefix(osLabel, safe);
   }
   reportDiagnostic(report);
 }
@@ -244,6 +345,37 @@ function iosRegisterReport(
     stage: 'register',
     prfPresent: false,
     message: iosDebugMessage(step, error),
+    challengeId: started.challengeId,
+  };
+  const accountId = accountIdFromOptions(started.options);
+  if (accountId !== undefined) {
+    report.accountId = accountId;
+  }
+  if (error !== undefined) {
+    const name = diagnosticName(error);
+    /* v8 ignore next 3 -- a DOMException name is a string */
+    if (name !== undefined) {
+      report.name = name;
+    }
+  }
+  return report;
+}
+
+/**
+ * Everything the allowlist can hold for an old-Android register that did not finish.
+ * The server adds the user agent. No secret, challenge, or credential bytes.
+ */
+function androidRegisterReport(
+  step: AndroidRegisterStop,
+  started: { challengeId: string; options: Record<string, unknown> },
+  error?: unknown,
+): DiagnosticReport {
+  const report: DiagnosticReport = {
+    event:
+      step === 'prf.absent' ? 'client.passkey.register.prf' : 'client.passkey.register.ceremony',
+    stage: 'register',
+    prfPresent: false,
+    message: androidDebugMessage(step, error),
     challengeId: started.challengeId,
   };
   const accountId = accountIdFromOptions(started.options);
@@ -388,6 +520,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
           reportDiagnostic(iosRegisterReport('create', begin, error));
           throw new Error('login.iosVersion');
         }
+        if (isUserCancel(error) && androidRegisterBlocked()) {
+          reportDiagnostic(androidRegisterReport('create', begin, error));
+          throw new Error('login.androidVersion');
+        }
         const accountId = accountIdFromOptions(begin.options);
         if (isUserCancel(error)) {
           reportFailedAttempt('client.passkey.register.fail', 'register', error, {
@@ -426,6 +562,10 @@ export function usePasskeyLogin(): UsePasskeyLogin {
           reportDiagnostic(iosRegisterReport('prf', begin, error));
           throw new Error('login.iosVersion');
         }
+        if (isUserCancel(error) && androidRegisterBlocked()) {
+          reportDiagnostic(androidRegisterReport('prf', begin, error));
+          throw new Error('login.androidVersion');
+        }
         const accountId = accountIdFromOptions(begin.options);
         if (isUserCancel(error)) {
           reportFailedAttempt('client.passkey.register.fail', 'register', error, {
@@ -446,16 +586,20 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       guard(runId);
       if (prfFirst === null) {
-        reportDiagnostic(
-          iosRegisterBlocked()
-            ? iosRegisterReport('prf.absent', begin)
-            : {
-                event: 'client.passkey.register.prf',
-                prfPresent: false,
-                stage: 'register',
-              },
-        );
-        throw new Error(iosRegisterBlocked() ? 'login.iosVersion' : 'wallet.prfUnsupported');
+        if (iosRegisterBlocked()) {
+          reportDiagnostic(iosRegisterReport('prf.absent', begin));
+          throw new Error('login.iosVersion');
+        }
+        if (androidRegisterBlocked()) {
+          reportDiagnostic(androidRegisterReport('prf.absent', begin));
+          throw new Error('login.androidVersion');
+        }
+        reportDiagnostic({
+          event: 'client.passkey.register.prf',
+          prfPresent: false,
+          stage: 'register',
+        });
+        throw new Error('wallet.prfUnsupported');
       }
       reportDiagnostic({
         event: 'client.passkey.register.prf',

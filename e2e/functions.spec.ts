@@ -3980,6 +3980,207 @@ test('Function: iosPasskeyBlock — iOS 18 hides the version line', async ({ pag
   await expect(page.getByRole('status')).toHaveCount(0);
 });
 
+test('Function: androidPasskeyBlock — Android below 9 names the installed version', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('status')).toHaveText(
+    'Android 8.1.0 is installed. Sign-in needs at least Android 9.',
+  );
+});
+
+test('Function: androidPasskeyBlock — Android 9 hides the version line', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 9; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+
+test('Function: androidInstalledVersion — Android 14 names the installed OS on a failed login', async ({
+  page,
+}) => {
+  const posted: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    posted.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+  });
+  await page.addInitScript(() => {
+    const pk = globalThis.PublicKeyCredential as unknown as {
+      parseCreationOptionsFromJSON?: unknown;
+      parseRequestOptionsFromJSON?: unknown;
+    };
+    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+      Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+    }
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => {
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+        get: async (options?: CredentialRequestOptions) => {
+          const publicKey = options?.publicKey;
+          const challenge = publicKey?.challenge;
+          const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+          if (!publicKey || !isBytes) {
+            throw new Error('invalid request options');
+          }
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+      },
+    });
+  });
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        challengeId: 'ch',
+        options: {
+          challenge: 'aa',
+          rpId: 'localhost',
+          userVerification: 'required',
+        },
+      }),
+    });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
+  await expect
+    .poll(() => {
+      for (const raw of posted) {
+        try {
+          const body = JSON.parse(raw) as { event?: string; message?: string };
+          if (
+            body.event === 'client.passkey.login.fail' &&
+            body.message?.startsWith('Android 14')
+          ) {
+            return true;
+          }
+        } catch {
+          continue;
+        }
+      }
+      return false;
+    })
+    .toBe(true);
+});
+
+test('Function: iosInstalledVersion — iOS 18 names the installed OS on a failed login', async ({
+  page,
+}) => {
+  const posted: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    posted.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    });
+  });
+  await page.addInitScript(() => {
+    const pk = globalThis.PublicKeyCredential as unknown as {
+      parseCreationOptionsFromJSON?: unknown;
+      parseRequestOptionsFromJSON?: unknown;
+    };
+    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+      Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+    }
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => {
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+        get: async (options?: CredentialRequestOptions) => {
+          const publicKey = options?.publicKey;
+          const challenge = publicKey?.challenge;
+          const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+          if (!publicKey || !isBytes) {
+            throw new Error('invalid request options');
+          }
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+      },
+    });
+  });
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        challengeId: 'ch',
+        options: {
+          challenge: 'aa',
+          rpId: 'localhost',
+          userVerification: 'required',
+        },
+      }),
+    });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect
+    .poll(() => {
+      for (const raw of posted) {
+        try {
+          const body = JSON.parse(raw) as { event?: string; message?: string };
+          if (body.event === 'client.passkey.login.fail' && body.message?.startsWith('iOS 18.0')) {
+            return true;
+          }
+        } catch {
+          continue;
+        }
+      }
+      return false;
+    })
+    .toBe(true);
+});
+
 test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page }) => {
   await page.addInitScript(() => {
     Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });

@@ -136,6 +136,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'android-version',
+    image: 'login-android-version.png',
+    visual: 'state-login-android-version',
+    needle: 'Android 8.1.0 is installed. Sign-in needs at least Android 9.',
+  },
+  {
+    route: '/login',
     id: 'wrong-account',
     image: 'login-wrong-account.png',
     visual: 'state-login-wrong-account',

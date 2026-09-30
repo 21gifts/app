@@ -214,6 +214,8 @@ const en = {
   'login.preparing': 'Preparing your login…',
   'login.error': 'Something went wrong. Please try again.',
   'login.iosVersion': 'iOS {version} is installed. Sign-in needs at least iOS {required}.',
+  'login.androidVersion':
+    'Android {version} is installed. Sign-in needs at least Android {required}.',
   'login.wrongAccount':
     'You signed in with the wrong account. Please try again with the correct account.',
   'login.retry': 'Try again',
@@ -1163,6 +1165,8 @@ const de = {
   'login.error': 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
   'login.iosVersion':
     'Installiert ist iOS {version}. Für die Anmeldung braucht es mindestens iOS {required}.',
+  'login.androidVersion':
+    'Installiert ist Android {version}. Für die Anmeldung braucht es mindestens Android {required}.',
   'login.wrongAccount':
     'Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto.',
   'login.retry': 'Erneut versuchen',
@@ -2132,6 +2136,8 @@ const es = {
   'login.error': 'Algo salió mal. Inténtalo de nuevo.',
   'login.iosVersion':
     'Este dispositivo tiene iOS {version}. Para iniciar sesión hace falta como mínimo iOS {required}.',
+  'login.androidVersion':
+    'Este dispositivo tiene Android {version}. Para iniciar sesión hace falta como mínimo Android {required}.',
   'login.wrongAccount':
     'Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta.',
   'login.retry': 'Intentar de nuevo',
@@ -3083,6 +3089,8 @@ const fil = {
   'login.error': 'May nangyaring mali. Subukan ulit.',
   'login.iosVersion':
     'Naka-install ang iOS {version}. Kailangan ng hindi bababa sa iOS {required} para makapag-log in.',
+  'login.androidVersion':
+    'Naka-install ang Android {version}. Kailangan ng hindi bababa sa Android {required} para makapag-log in.',
   'login.wrongAccount':
     'Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account.',
   'login.retry': 'Subukan ulit',
