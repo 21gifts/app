@@ -2001,7 +2001,7 @@ A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is
 
 ### Variant: edit-place
 
-The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
 
 ![21.gifts shops edit place](images/shops-edit-place.png)
 
