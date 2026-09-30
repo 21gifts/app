@@ -15,6 +15,7 @@ import { iosPasskeyBlock } from '@/lib/ios-passkey';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
+  base64UrlToBytes,
   creationOptionsFromJSON,
   credentialToJSON,
   requestOptionsFromJSON,
@@ -155,13 +156,21 @@ function diagnosticMessage(error: unknown): string | undefined {
   return typeof message === 'string' ? message : undefined;
 }
 
+/** Account id from base64url `user.id`. */
 function accountIdFromOptions(options: Record<string, unknown>): string | undefined {
   const user = options['user'];
   if (user === null || typeof user !== 'object') {
     return undefined;
   }
-  const name = (user as { name?: unknown }).name;
-  return typeof name === 'string' ? name : undefined;
+  const id = (user as { id?: unknown }).id;
+  if (typeof id !== 'string') {
+    return undefined;
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(base64UrlToBytes(id));
+  } catch {
+    return undefined;
+  }
 }
 
 /**
