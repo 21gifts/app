@@ -275,6 +275,17 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByRole('button', { name: 'Post' })).toBeTruthy();
     expect(screen.getByText('1')).toBeTruthy();
+    rerender(
+      <ShopAddWizard
+        {...props({
+          mode: 'edit',
+          resetToken: 1,
+          keptMedia: [{ url: 'blob:still', kind: 'photo' }],
+        })}
+      />,
+    );
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Post' })).toBeNull();
   });
 
   it('lists people when the shop text starts with @', async () => {
