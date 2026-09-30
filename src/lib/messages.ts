@@ -3,17 +3,18 @@ import type { Locale } from '@/lib/locale';
 const en = {
   'happyland.title': 'Happyland in Tondo',
   'happyland.intro':
-    'Happyland is a neighborhood in Tondo, Manila. Father Severin writes about narrow lanes, small homes and families who earn a living from things others throw away.',
+    'Happyland is in Tondo, Manila. Father Severin tells of narrow paths, little room to live, and people who earn money from things that have been thrown away.',
   'happyland.daily':
-    'Some families collect and sort discarded items to earn a living. What others no longer need can still have value here.',
+    'What others throw away is a source of income for some families. They collect and sort what can still be used.',
   'happyland.observation':
     'One extreme example is the collection of discarded chicken bones with varying amounts of meat still attached. These are cooked again and sold as “pagpag”. I, Father Severin, a moderator, have witnessed this several times myself.',
   'happyland.poverty':
-    'One room may have to serve as a kitchen, bedroom and place for the family to gather.',
-  'happyland.lanes': 'Narrow, uneven paths wind between the homes.',
+    'Cooking, sleeping, sitting together: all of this often has to fit into a single small room.',
+  'happyland.lanes':
+    'Narrow, uneven paths run between the houses. Father Severin describes what everyday life looks like there.',
   'happyland.kicker': 'Tondo · Manila',
-  'happyland.dailyTitle': 'Making a living from discarded things',
-  'happyland.povertyTitle': 'One room for everyday life',
+  'happyland.dailyTitle': 'What others throw away',
+  'happyland.povertyTitle': 'Living in a cramped space',
   'happyland.photo0.alt': 'People walking along a street lined with homes and small shops.',
   'happyland.photo0.caption':
     'Happyland’s main street, lined with homes and small shops. Photograph by Father Severin.',
@@ -131,45 +132,46 @@ const en = {
   'home.ctaSend': 'Donate Bitcoin',
   'home.howKicker': 'Donate Bitcoin',
   'home.howTitle': 'How to donate Bitcoin to someone',
-  'home.howLead': 'Sign in and read the forum. You decide who to help and how much to send.',
+  'home.howLead':
+    'On your first visit, you set up your account. After that, you will find posts and replies in the forum.',
   'home.step1Title': 'Log in',
   'home.step1Body':
-    'One tap in your browser. It uses a secure login stored on your device, or creates one. That is your account — there is nothing else to remember.',
+    'Sign in on your device. Your access stays there or in its sync. You do not need an additional password for 21.gifts.',
   'home.step2Title': 'Add a Wallet of Satoshi address',
   'home.step2BodyBefore': 'Enter the address where donations should arrive, for example',
-  'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin from Wallet of Satoshi.',
+  'home.step2BodyAfter': '. Others can send you Bitcoin to this address.',
   'home.step3Title': 'Post and receive help',
   'home.step3Body':
-    'Once you are logged in, write a post in the forum. Others can react to it with an amount — the Bitcoin lands in your Wallet of Satoshi, not ours. The platform never touches the money.',
+    'Write in the forum what is on your mind. Whoever wants to support you reacts to your post with an amount and sends Bitcoin to your wallet address. 21.gifts does not hold the payment.',
   'home.whyKicker': 'Where your donation goes',
   'home.whyTitle': 'The person you help controls their wallet',
   'home.why1Title': 'You decide who to help',
   'home.why1Body':
     'Read what the person writes first. 21.gifts never passes your donation on to anyone else.',
-  'home.why2Title': 'No password to remember',
+  'home.why2Title': 'The person provides their address',
   'home.why2Body':
-    'You sign in with your device. If you lose access there and in any synced copy, we cannot recover your account yet.',
-  'home.why3Title': 'Their address, not ours',
+    'When signing up, they specify the wallet address where Bitcoin should reach them.',
+  'home.why3Title': 'You pay from your wallet',
   'home.why3Body':
-    'The person you help adds their own Wallet of Satoshi address. Your payment goes there.',
+    'You set the amount and confirm the payment yourself. On a computer, you can scan the QR code.',
   'home.why4Title': '21.gifts takes no share',
   'home.why4Body':
-    'We keep none of a person-to-person donation. Supporting the website uses a separate address.',
-  'home.projectKicker': 'Keep the project running',
-  'home.projectTitle': 'Want to support 21.gifts?',
+    'There is a separate address for running the site. Fees from your wallet may still apply.',
+  'home.projectKicker': 'Support 21.gifts',
+  'home.projectTitle': '21.gifts also needs support',
   'home.projectLead':
     'If you want to support the website itself, you can send to this address. It is separate from the donations in the forum.',
   'home.faqKicker': 'Good to know',
-  'home.faqTitle': 'Questions about 21.gifts?',
+  'home.faqTitle': 'Frequently asked questions',
   'home.faq1Q': 'Do I need to sign in to read the forum?',
   'home.faq1A':
     'Yes. You sign in for the forum. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
   'home.faq2Q': 'Does 21.gifts keep any of my donation?',
   'home.faq2A':
     'No. 21.gifts takes no share of a donation between people. Your wallet provider or the payment network may charge fees.',
-  'home.faq3Q': 'Do I need a password?',
+  'home.faq3Q': 'Does 21.gifts store my password?',
   'home.faq3A':
-    'No. You sign in with your device instead of creating a 21.gifts password. Never share your recovery words.',
+    'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
   'home.faq4Q': 'What if I lose my device?',
   'home.faq4A':
     'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
@@ -185,7 +187,7 @@ const en = {
   'home.faq8Q': 'What does ₿1 mean here?',
   'home.faq8A':
     'On 21.gifts, ₿1 means one sat, the smallest Bitcoin unit. One Bitcoin has 100 million sats.',
-  'about.kicker': 'About',
+  'about.kicker': 'The idea',
   'about.heading': 'What 21.gifts stands for',
   'about.lead':
     'In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.',
@@ -201,7 +203,7 @@ const en = {
     'Dear children, let us not love with words or speech but with actions and in truth.',
   'about.conv1VerseRef': '1 John 3:18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'From one person to another',
+  'about.conv2Title': 'Directly from person to person',
   'about.conv2Body':
     'You choose whom you donate to. The person has added their wallet address so your Bitcoin donation reaches them. 21.gifts takes no share. They can keep using their address without our website.',
   'about.conv3Num': '3',
@@ -1075,16 +1077,16 @@ const en = {
   'trustChain.waitingConfirm': 'Waiting for another moderator to confirm.',
   'trustChain.alreadyOnChain': 'Already on the Trust Chain.',
   'happyland.lanesTitle': 'Paths through the neighborhood',
-  'happyland.source': 'Based on Father Severin’s account of Happyland.',
+  'happyland.source': 'Based on the accounts of Father Severin.',
   'happyland.photoAlt': 'Several people together at a food stall in Happyland',
   'happyland.photoCaption': 'At a food stall in Happyland',
   'happyland.streetAlt': 'People walking along a street lined with homes and small shops',
   'happyland.streetCaption': 'A street in Happyland. Photograph by Father Severin',
   'happyland.homeAlt': 'Two adults and three children in a small living space',
   'happyland.homeCaption': 'A family at home',
-  'happyland.householdAlt': 'A woman beside pans, buckets and household supplies',
+  'happyland.householdAlt': 'A woman beside cooking utensils and water containers',
   'happyland.householdCaption': 'Household supplies in a compact room',
-  'home.heroKicker': 'From one person to another',
+  'home.heroKicker': 'Directly from person to person',
   'home.metaTitle': 'Help people with Bitcoin | 21.gifts',
   'home.metaDescription':
     "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.",
@@ -1096,8 +1098,7 @@ const en = {
   'home.previewStep2': 'React and donate',
   'home.previewStep3': 'Send from your wallet',
   'home.previewWalletTitle': 'Where the Bitcoin goes',
-  'home.previewWalletBody':
-    'The person adds their own wallet address. 21.gifts does not hold the payment.',
+  'home.previewWalletBody': 'The receiving person has added their own wallet address.',
   'home.previewFrom': 'Your wallet',
   'home.previewTo': 'Their wallet',
   'home.give1Title': 'Sign in and read',
@@ -1109,17 +1110,16 @@ const en = {
   'home.give3Body': 'Open Wallet of Satoshi or scan the QR code with your wallet.',
   'home.receiveTitle': 'Need help yourself?',
   'home.receiveBody': 'Sign in, add a Wallet of Satoshi address and tell the forum what you need.',
-  'home.discoverTitle': 'Get to know 21.gifts',
-  'home.discoverStoryKicker': 'A place in Manila',
+  'home.discoverTitle': "What's behind 21.gifts",
+  'home.discoverStoryKicker': 'Happyland in Manila',
   'home.discoverStoryTitle': 'Happyland · Tondo',
   'home.discoverStoryBody':
-    'In Tondo, Manila, Father Severin describes the everyday life of families in Happyland.',
+    'Father Severin tells of families in Happyland and how they manage everyday life.',
   'home.discoverBitcoinKicker': 'The payment',
   'home.discoverBitcoinTitle': 'Why Bitcoin?',
-  'home.discoverBitcoinBody':
-    'Your Bitcoin goes to the wallet address the recipient added. 21.gifts never holds it.',
-  'home.discoverTrustKicker': 'Before you donate',
-  'home.discoverTrustTitle': 'Where does the donation go?',
+  'home.discoverBitcoinBody': "Even small amounts can be sent to the person's wallet address.",
+  'home.discoverTrustKicker': 'The path of the money',
+  'home.discoverTrustTitle': 'Who receives it?',
   'home.discoverTrustBody':
     "To the person who wrote the post you reacted to. Here's how the payment works.",
   'donate.metaTitle': 'Donate Bitcoin and help someone | 21.gifts',
@@ -2327,17 +2327,18 @@ const de = {
 const es = {
   'happyland.title': 'Happyland en Tondo',
   'happyland.intro':
-    'Happyland es un barrio de Tondo, en Manila. El padre Severin cuenta cómo se vive entre calles estrechas, casas con poco espacio y trabajos que aprovechan lo que otros desechan.',
+    'Happyland está en Tondo, Manila. El padre Severin cuenta sobre calles estrechas, poco espacio para vivir y personas que ganan dinero con cosas que otros tiran.',
   'happyland.daily':
-    'Algunas familias recogen y separan objetos desechados para ganarse la vida. Lo que otros tiran todavía puede servir.',
+    'Lo que otros desechan es una fuente de ingresos para algunas familias. Recogen y separan lo que todavía se puede aprovechar.',
   'happyland.observation':
     'Un ejemplo extremo es la recogida de huesos de pollo desechados que aún tienen distintas cantidades de carne. Se vuelven a cocinar y se venden como «pagpag». Yo, el padre Severin, moderador, lo he presenciado personalmente varias veces.',
   'happyland.poverty':
-    'Una sola habitación puede ser cocina, dormitorio y lugar de encuentro para toda la familia.',
-  'happyland.lanes': 'Entre las casas serpentean pasos estrechos y desiguales.',
+    'Cocinar, dormir, reunirse: todo eso a menudo tiene que caber en una sola habitación pequeña.',
+  'happyland.lanes':
+    'Entre las casas hay caminos estrechos y desiguales. El padre Severin describe cómo es la vida cotidiana allí.',
   'happyland.kicker': 'Tondo · Manila',
-  'happyland.dailyTitle': 'Vivir de lo que otros desechan',
-  'happyland.povertyTitle': 'Una habitación para la vida diaria',
+  'happyland.dailyTitle': 'Lo que otros desechan',
+  'happyland.povertyTitle': 'Vivir en un espacio reducido',
   'happyland.photo0.alt': 'Personas caminando por una calle con viviendas y pequeñas tiendas.',
   'happyland.photo0.caption':
     'La calle principal de Happyland, con viviendas y pequeñas tiendas. Fotografía del padre Severin.',
@@ -2457,7 +2458,8 @@ const es = {
   'home.ctaSend': 'Donar Bitcoin',
   'home.howKicker': 'Dona Bitcoin',
   'home.howTitle': 'Así donas Bitcoin a alguien',
-  'home.howLead': 'Inicia sesión y lee el foro. Tú eliges a quién ayudar y cuánto enviar.',
+  'home.howLead':
+    'En tu primera visita, configuras tu cuenta. Después encontrarás publicaciones y respuestas en el foro.',
   'home.step1Title': 'Iniciar sesión',
   'home.step1Body':
     'Inicia sesión desde tu dispositivo. Tu acceso queda allí o en su sincronización. No necesitas otra contraseña para 21.gifts.',
@@ -2466,36 +2468,36 @@ const es = {
   'home.step2BodyAfter': '. Otras personas podrán enviarte Bitcoin a esa dirección.',
   'home.step3Title': 'Publica y recibe ayuda',
   'home.step3Body':
-    'Cuenta en la comunidad qué te preocupa. Si alguien quiere apoyarte, reacciona a tu publicación con un importe y envía Bitcoin a tu dirección. 21.gifts no guarda el pago.',
+    'Cuenta en el foro qué te preocupa. Quien quiera apoyarte reacciona a tu publicación con un importe y envía Bitcoin a tu dirección de cartera. 21.gifts no guarda el pago.',
   'home.whyKicker': 'Adónde va tu donación',
   'home.whyTitle': 'Quien recibe controla su propia cartera',
   'home.why1Title': 'Tú eliges a quién ayudar',
   'home.why1Body':
     'Lee primero lo que escribe la persona. 21.gifts nunca pasa tu donación a otra persona.',
-  'home.why2Title': 'Sin contraseña que recordar',
+  'home.why2Title': 'La persona indica su dirección',
   'home.why2Body':
-    'Inicias sesión con tu dispositivo. Si pierdes el acceso allí y en todas las copias sincronizadas, todavía no podemos recuperar tu cuenta.',
-  'home.why3Title': 'Su dirección, no la nuestra',
+    'Al registrarse, la persona indica la dirección de cartera a la que debe llegarle el Bitcoin.',
+  'home.why3Title': 'Pagas desde tu cartera',
   'home.why3Body':
-    'La persona que ayudas añade su propia dirección de Wallet of Satoshi. El pago va allí.',
+    'Tú fijas el importe y confirmas el pago. En el ordenador puedes escanear el código QR.',
   'home.why4Title': '21.gifts no se queda con una parte',
   'home.why4Body':
-    'No retenemos nada de las donaciones entre personas. Si quieres apoyar esta web, hay una dirección aparte.',
-  'home.projectKicker': 'Sostener el proyecto',
-  'home.projectTitle': '¿Quieres apoyar a 21.gifts?',
+    'Para el funcionamiento del sitio hay una dirección separada. Aun así, pueden aplicarse comisiones de tu cartera.',
+  'home.projectKicker': 'Apoyar a 21.gifts',
+  'home.projectTitle': '21.gifts también necesita apoyo',
   'home.projectLead':
     'Si quieres apoyar la web en sí, puedes enviar a esta dirección. Está separada de las donaciones del foro.',
   'home.faqKicker': 'Conviene saber',
-  'home.faqTitle': '¿Tienes preguntas sobre 21.gifts?',
+  'home.faqTitle': 'Preguntas frecuentes',
   'home.faq1Q': '¿Tengo que iniciar sesión para leer el foro?',
   'home.faq1A':
     'Sí. Para el foro inicias sesión. Si quieres recibir donaciones en Bitcoin, añade además una dirección de Wallet of Satoshi.',
   'home.faq2Q': '¿Se queda 21.gifts con algo de mi donación?',
   'home.faq2A':
     'No. 21.gifts no se queda con parte de las donaciones entre personas. Tu proveedor de cartera o la red de pago pueden cobrar comisiones.',
-  'home.faq3Q': '¿Necesito una contraseña?',
+  'home.faq3Q': '¿Guarda 21.gifts mi contraseña?',
   'home.faq3A':
-    'No. Inicias sesión con tu dispositivo sin crear una contraseña para 21.gifts. Nunca compartas tus palabras de recuperación.',
+    'No creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Nunca compartas tus palabras de recuperación.',
   'home.faq4Q': '¿Y si pierdo mi dispositivo?',
   'home.faq4A':
     'Si pierdes el acceso en tu dispositivo y en todas las copias sincronizadas, todavía no podemos recuperar tu cuenta. Comprueba cómo guarda tu dispositivo el acceso.',
@@ -2512,7 +2514,7 @@ const es = {
   'home.faq8A':
     'En 21.gifts, ₿1 representa un sat, la unidad más pequeña de Bitcoin. Un Bitcoin equivale a 100 millones de sats.',
   'about.kicker': 'La idea',
-  'about.heading': 'Lo que mueve a 21.gifts',
+  'about.heading': 'Lo que representa 21.gifts',
   'about.lead':
     'En el foro, las personas pueden pedir ayuda y donarse Bitcoin entre sí. Detrás de 21.gifts hay tres convicciones.',
   'about.verse': 'De gracia recibisteis, dad de gracia.',
@@ -2520,13 +2522,13 @@ const es = {
   'about.conv1Num': '1',
   'about.conv1Title': 'Dar forma parte de la fe',
   'about.conv1Body':
-    'Para nosotros, ayudar a quien lo necesita forma parte de la fe cristiana. Jesús habla de dar como algo que hacemos (Mateo 6:2). También 1 Juan 3:17 y Santiago 2:17 nos recuerdan que la fe se demuestra con hechos. Cada persona decide cuánto dar ante Dios (2 Corintios 9:7).',
+    'Para nosotros, ayudar a quien lo necesita forma parte de la fe cristiana. Jesús habla de dar como algo que hacemos (Mateo 6:2). También 1 Juan 3:17 y Santiago 2:17 nos recuerdan no dejar solas a las personas necesitadas. Cada persona decide cuánto dar ante Dios (2 Corintios 9:7).',
   'about.conv1Body2':
-    'Ayudar no siempre significa dar dinero. A veces cuenta una conversación, una visita o un abrigo. Mateo 25 recuerda a las personas que tienen hambre, están enfermas, son extranjeras o están presas. 21.gifts hace posible una forma de ayuda: una donación de dinero directamente de una persona a otra.',
+    'Ayudar no siempre significa dar dinero. A veces cuenta una conversación, una visita o un abrigo cálido. Mateo 25 recuerda a las personas que tienen hambre, están enfermas, son extranjeras o están presas. 21.gifts hace posible una forma de ayuda: una donación de dinero directamente de una persona a otra.',
   'about.conv1Verse': 'Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'De persona a persona',
+  'about.conv2Title': 'Directamente de persona a persona',
   'about.conv2Body':
     'Tú eliges a quién donas. La persona ha añadido su dirección de cartera para que tu donación en Bitcoin le llegue. 21.gifts no se queda con ninguna parte. Puede seguir usando su dirección sin nuestra web.',
   'about.conv3Num': '3',
@@ -3410,8 +3412,8 @@ const es = {
   'trustChain.actionFailed': 'No se pudo actualizar a este miembro. Inténtalo de nuevo.',
   'trustChain.waitingConfirm': 'Esperando a que otra persona moderadora confirme.',
   'trustChain.alreadyOnChain': 'Ya está en la cadena de confianza.',
-  'happyland.lanesTitle': 'Caminos entre las casas',
-  'happyland.source': 'Basado en el relato del padre Severin sobre Happyland.',
+  'happyland.lanesTitle': 'Caminos por el barrio',
+  'happyland.source': 'Basado en el relato del padre Severin.',
   'happyland.photoAlt': 'Varias personas junto a un puesto de comida en Happyland',
   'happyland.photoCaption': 'En un puesto de comida de Happyland',
   'happyland.streetAlt': 'Personas en una calle con viviendas y pequeñas tiendas',
@@ -3420,7 +3422,7 @@ const es = {
   'happyland.homeCaption': 'Una familia en casa',
   'happyland.householdAlt': 'Una mujer junto a utensilios de cocina y recipientes de agua',
   'happyland.householdCaption': 'Enseres domésticos en un espacio reducido',
-  'home.heroKicker': 'De persona a persona',
+  'home.heroKicker': 'Directamente de persona a persona',
   'home.metaTitle': 'Ayuda a otras personas con Bitcoin | 21.gifts',
   'home.metaDescription':
     'Lee lo que cuenta la gente, reacciona a una publicación y dona Bitcoin directamente a la cartera de la persona. 21.gifts no guarda tu donación ni se queda con ninguna parte.',
@@ -3432,8 +3434,7 @@ const es = {
   'home.previewStep2': 'Reacciona y dona',
   'home.previewStep3': 'Envía desde tu cartera',
   'home.previewWalletTitle': 'Adónde va el Bitcoin',
-  'home.previewWalletBody':
-    'Cada persona añade su propia dirección de cartera. 21.gifts no guarda el pago.',
+  'home.previewWalletBody': 'La persona que recibe ha añadido su propia dirección de cartera.',
   'home.previewFrom': 'Tu cartera',
   'home.previewTo': 'Cartera de quien recibe',
   'home.give1Title': 'Entra y lee',
@@ -3446,17 +3447,17 @@ const es = {
   'home.receiveTitle': '¿Necesitas ayuda?',
   'home.receiveBody':
     'Inicia sesión, añade una dirección de Wallet of Satoshi y cuenta en el foro qué necesitas.',
-  'home.discoverTitle': 'Conoce mejor 21.gifts',
-  'home.discoverStoryKicker': 'Un lugar de Manila',
+  'home.discoverTitle': 'Lo que hay detrás de 21.gifts',
+  'home.discoverStoryKicker': 'Happyland en Manila',
   'home.discoverStoryTitle': 'Happyland · Tondo',
   'home.discoverStoryBody':
-    'En Tondo, Manila, el padre Severin describe la vida cotidiana de las familias de Happyland.',
+    'El padre Severin cuenta sobre familias en Happyland y cómo llevan su vida diaria.',
   'home.discoverBitcoinKicker': 'El pago',
   'home.discoverBitcoinTitle': '¿Por qué Bitcoin?',
   'home.discoverBitcoinBody':
-    'El Bitcoin va a la dirección de cartera que añadió quien lo recibe. 21.gifts no lo guarda.',
-  'home.discoverTrustKicker': 'Antes de dar',
-  'home.discoverTrustTitle': '¿Adónde llega tu donación?',
+    'Incluso pequeñas cantidades se pueden enviar a la dirección de cartera de la persona.',
+  'home.discoverTrustKicker': 'El camino del dinero',
+  'home.discoverTrustTitle': '¿Quién lo recibe?',
   'home.discoverTrustBody':
     'A quien escribió la publicación a la que reaccionas. Aquí te explicamos cómo funciona el pago.',
   'donate.metaTitle': 'Dona Bitcoin y ayuda a alguien | 21.gifts',
@@ -3477,17 +3478,18 @@ const es = {
 const fil = {
   'happyland.title': 'Happyland sa Tondo',
   'happyland.intro':
-    'Nasa Tondo, Maynila ang Happyland. Isinalaysay ni Padre Severin ang buhay sa makikitid na daan at maliliit na tirahan, kung saan may mga pamilyang kumikita sa mga itinapon ng iba.',
+    'Nasa Tondo, Maynila ang Happyland. Isinasalaysay ni Padre Severin ang tungkol sa makikitid na daan, kakaunting puwang para tumira, at mga taong kumikita ng pera mula sa mga bagay na itinapon.',
   'happyland.daily':
-    'May mga pamilyang nangongolekta at nag-uuri ng mga itinapon para kumita. May pakinabang pa ang mga bagay na hindi na kailangan ng iba.',
+    'Ang itinatapon ng iba ay pinagkakakitaan ng ilang pamilya. Nangongolekta at nag-uuri sila ng mga bagay na magagamit pa.',
   'happyland.observation':
     'Isang matinding halimbawa ang pangongolekta ng mga itinapong buto ng manok na may natitira pang karne. Niluluto itong muli at ibinebenta bilang “pagpag”. Ako, si Padre Severin, isang moderator, ay ilang beses nang personal na nakasaksi nito.',
   'happyland.poverty':
-    'Sa iisang kuwarto maaaring magluto, matulog at magsama-sama ang buong pamilya.',
-  'happyland.lanes': 'Makikitid at hindi pantay ang mga daang nag-uugnay sa mga bahay.',
+    'Ang pagluluto, pagtulog, at pagsasama-sama — kadalasan kailangang magkasya ang lahat ng ito sa iisang maliit na kuwarto.',
+  'happyland.lanes':
+    'May makikitid at hindi pantay na daan sa pagitan ng mga bahay. Inilalarawan ni Padre Severin kung ano ang hitsura ng pang-araw-araw na buhay doon.',
   'happyland.kicker': 'Tondo · Manila',
-  'happyland.dailyTitle': 'Kabuhayan mula sa mga itinapon',
-  'happyland.povertyTitle': 'Isang kuwarto para sa araw-araw',
+  'happyland.dailyTitle': 'Ang itinatapon ng iba',
+  'happyland.povertyTitle': 'Pamumuhay sa masikip na espasyo',
   'happyland.photo0.alt':
     'Mga taong naglalakad sa kalyeng may mga tahanan at maliliit na tindahan.',
   'happyland.photo0.caption':
@@ -3611,7 +3613,7 @@ const fil = {
   'home.howKicker': 'Mag-donate ng Bitcoin',
   'home.howTitle': 'Ganito ka magdo-donate ng Bitcoin sa isang tao',
   'home.howLead':
-    'Mag-log in at basahin ang forum. Ikaw ang pipili kung sino ang tutulungan at kung magkano ang ido-donate.',
+    'Sa unang pagbisita mo, ise-set up mo ang account mo. Pagkatapos, makikita mo ang mga post at tugon sa forum.',
   'home.step1Title': 'Mag-log in',
   'home.step1Body':
     'Mag-log in sa iyong device. Doon mananatili ang access mo o sa sync nito. Hindi mo kailangan ng hiwalay na password para sa 21.gifts.',
@@ -3620,36 +3622,36 @@ const fil = {
   'home.step2BodyAfter': '. Maaari kang padalhan ng Bitcoin sa address na iyon.',
   'home.step3Title': 'Mag-post at tumanggap ng tulong',
   'home.step3Body':
-    'Ikuwento sa komunidad ang pinagdaraanan mo. Kung may gustong tumulong sa iyo, magre-react siya sa post mo na may halaga at magpapadala ng Bitcoin sa address mo. Hindi iniingatan ng 21.gifts ang bayad.',
+    'Isulat sa forum ang iyong pinagdaraanan. Ang gustong tumulong sa iyo ay magre-react sa post mo nang may halaga at magpapadala ng Bitcoin sa iyong wallet address. Hindi iniingatan ng 21.gifts ang bayad.',
   'home.whyKicker': 'Saan napupunta ang donasyon mo',
   'home.whyTitle': 'Ang tatanggap ang may kontrol sa sarili niyang wallet',
   'home.why1Title': 'Ikaw ang pipili ng tutulungan',
   'home.why1Body':
     'Basahin muna ang isinulat ng tao. Hindi kailanman ipapasa ng 21.gifts ang donasyon mo sa iba.',
-  'home.why2Title': 'Walang password na kailangang tandaan',
+  'home.why2Title': 'Inilalagay ng tao ang kanyang address',
   'home.why2Body':
-    'Sa device mo ka magla-log in. Kung mawala ang access doon at sa lahat ng naka-sync na kopya, hindi pa namin maibabalik ang account mo.',
-  'home.why3Title': 'Address nila, hindi sa amin',
+    'Sa pag-sign up, itinuturo niya ang wallet address kung saan dapat dumating ang Bitcoin sa kanya.',
+  'home.why3Title': 'Nagbabayad ka gamit ang wallet mo',
   'home.why3Body':
-    'Sariling Wallet of Satoshi address ang inilalagay ng tatanggap. Doon napupunta ang bayad mo.',
+    'Ikaw ang magtatakda ng halaga at magkukumpirma ng bayad. Sa computer, puwede mong i-scan ang QR code.',
   'home.why4Title': 'Walang bahaging kinukuha ang 21.gifts',
   'home.why4Body':
-    'Wala kaming kinukuha sa donasyong ipinapadala mo sa kapwa. May hiwalay na address kung gusto mong suportahan ang website.',
-  'home.projectKicker': 'Suportahan ang proyekto',
-  'home.projectTitle': 'Gusto mo ring suportahan ang 21.gifts?',
+    'May hiwalay na address para sa pagpapatakbo ng site. Maaari pa ring magkaroon ng bayad mula sa wallet mo.',
+  'home.projectKicker': 'Suportahan ang 21.gifts',
+  'home.projectTitle': 'Kailangan din ng suporta ang 21.gifts',
   'home.projectLead':
     'Kung gusto mong suportahan ang website mismo, puwede kang magpadala sa address na ito. Hiwalay ito sa mga donasyon sa forum.',
   'home.faqKicker': 'Mahalagang malaman',
-  'home.faqTitle': 'May tanong ka tungkol sa 21.gifts?',
+  'home.faqTitle': 'Mga madalas itanong',
   'home.faq1Q': 'Kailangan bang mag-log in para mabasa ang forum?',
   'home.faq1A':
     'Oo. Mag-log in ka para sa forum. Kung gusto mo ring tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address.',
   'home.faq2Q': 'May kinukuha ba ang 21.gifts sa donasyon ko?',
   'home.faq2A':
     'Wala. Hindi kumukuha ng bahagi ang 21.gifts sa mga donasyong ipinapadala sa kapwa. Maaaring maningil ang wallet provider o ang payment network.',
-  'home.faq3Q': 'Kailangan ko ba ng password?',
+  'home.faq3Q': 'Iniimbak ba ng 21.gifts ang password ko?',
   'home.faq3A':
-    'Hindi. Gamit ang device mo ang pag-log in, kaya hindi ka gagawa ng password para sa 21.gifts. Huwag ibahagi ang mga recovery word mo.',
+    'Hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Huwag kailanman ibahagi ang iyong mga recovery word.',
   'home.faq4Q': 'Paano kung mawala ang device ko?',
   'home.faq4A':
     'Kung mawala ang access sa device mo at sa lahat ng naka-sync na kopya, hindi pa namin maibabalik ang account. Alamin kung paano bina-back up ng device mo ang pag-log in.',
@@ -3665,7 +3667,7 @@ const fil = {
   'home.faq8Q': 'Ano ang ibig sabihin ng ₿1 dito?',
   'home.faq8A':
     'Sa 21.gifts, ang ₿1 ay isang sat, ang pinakamaliit na yunit ng Bitcoin. May 100 milyong sat sa isang Bitcoin.',
-  'about.kicker': 'Ang layunin',
+  'about.kicker': 'Ang ideya',
   'about.heading': 'Ang pinaninindigan ng 21.gifts',
   'about.lead':
     "Sa forum, puwedeng humingi ng tulong ang mga tao at mag-donate ng Bitcoin sa isa't isa. Tatlong paniniwala ang nasa likod ng 21.gifts.",
@@ -3681,7 +3683,7 @@ const fil = {
     'Mga anak, huwag tayong magmahal sa pamamagitan lamang ng salita, subalit ipakita rin natin ang tunay na pag-ibig sa pamamagitan ng gawa.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'Direkta sa taong tinutulungan',
+  'about.conv2Title': 'Direkta mula sa isang tao patungo sa iba',
   'about.conv2Body':
     'Ikaw ang pipili kung kanino ka magdo-donate. Inilagay ng tao ang wallet address niya para makarating sa kanya ang Bitcoin donation mo. Walang bahaging kinukuha ang 21.gifts. Magagamit pa rin niya ang address niya kahit wala ang website namin.',
   'about.conv3Num': '3',
@@ -4571,8 +4573,8 @@ const fil = {
   'trustChain.actionFailed': 'Hindi ma-update ang miyembrong ito. Subukan ulit.',
   'trustChain.waitingConfirm': 'Naghihintay ng kumpirmasyon mula sa ibang moderator.',
   'trustChain.alreadyOnChain': 'Nasa Trust Chain na.',
-  'happyland.lanesTitle': 'Mga daan sa pagitan ng mga bahay',
-  'happyland.source': 'Batay sa salaysay ni Padre Severin tungkol sa Happyland.',
+  'happyland.lanesTitle': 'Mga daan sa kapitbahayan',
+  'happyland.source': 'Batay sa salaysay ni Padre Severin.',
   'happyland.photoAlt': 'Ilang tao sa isang tindahan ng pagkain sa Happyland',
   'happyland.photoCaption': 'Sa isang tindahan ng pagkain sa Happyland',
   'happyland.streetAlt': 'Mga taong naglalakad sa kalyeng may mga tahanan at maliliit na tindahan',
@@ -4581,7 +4583,7 @@ const fil = {
   'happyland.homeCaption': 'Isang pamilya sa kanilang tahanan',
   'happyland.householdAlt': 'Isang babae sa tabi ng mga gamit sa pagluluto at lalagyan ng tubig',
   'happyland.householdCaption': 'Mga gamit sa bahay sa isang maliit na silid',
-  'home.heroKicker': 'Mula sa iyo, diretso sa kapwa',
+  'home.heroKicker': 'Direkta mula sa isang tao patungo sa iba',
   'home.metaTitle': 'Tumulong sa kapwa gamit ang Bitcoin | 21.gifts',
   'home.metaDescription':
     'Basahin ang ikinukuwento ng mga tao, mag-react sa isang post at mag-donate ng Bitcoin direkta sa wallet ng tao. Hindi hinahawakan ng 21.gifts ang donasyon mo at wala itong kinukuhang bahagi.',
@@ -4593,8 +4595,7 @@ const fil = {
   'home.previewStep2': 'Mag-react at mag-donate',
   'home.previewStep3': 'Ipadala gamit ang wallet mo',
   'home.previewWalletTitle': 'Saan napupunta ang Bitcoin',
-  'home.previewWalletBody':
-    'Sariling wallet address ang inilalagay ng tatanggap. Hindi hinahawakan ng 21.gifts ang bayad.',
+  'home.previewWalletBody': 'Inilagay mismo ng tumatanggap ang kanyang sariling wallet address.',
   'home.previewFrom': 'Wallet mo',
   'home.previewTo': 'Wallet ng tatanggap',
   'home.give1Title': 'Mag-log in at magbasa',
@@ -4607,17 +4608,17 @@ const fil = {
   'home.receiveTitle': 'Kailangan mo rin ba ng tulong?',
   'home.receiveBody':
     'Mag-log in, ilagay ang iyong Wallet of Satoshi address at sabihin sa forum kung ano ang kailangan mo.',
-  'home.discoverTitle': 'Kilalanin ang 21.gifts',
-  'home.discoverStoryKicker': 'Isang lugar sa Maynila',
+  'home.discoverTitle': 'Ang nasa likod ng 21.gifts',
+  'home.discoverStoryKicker': 'Happyland sa Maynila',
   'home.discoverStoryTitle': 'Happyland · Tondo',
   'home.discoverStoryBody':
-    'Isinalaysay ni Padre Severin ang araw-araw na buhay ng mga pamilya sa Happyland, Tondo.',
+    'Isinalaysay ni Padre Severin ang mga pamilya sa Happyland at kung paano nila pinamamahalaan ang kanilang araw-araw na buhay.',
   'home.discoverBitcoinKicker': 'Ang bayad',
   'home.discoverBitcoinTitle': 'Bakit Bitcoin?',
   'home.discoverBitcoinBody':
-    'Sa wallet address na inilagay ng tatanggap mapupunta ang Bitcoin mo. Hindi ito hinahawakan ng 21.gifts.',
-  'home.discoverTrustKicker': 'Bago mag-donate',
-  'home.discoverTrustTitle': 'Saan napupunta ang donasyon?',
+    'Kahit maliit na halaga ay puwedeng ipadala sa wallet address ng tao.',
+  'home.discoverTrustKicker': 'Ang daan ng pera',
+  'home.discoverTrustTitle': 'Sino ang tumatanggap nito?',
   'home.discoverTrustBody':
     'Sa sumulat ng post na nire-react-an mo. Alamin dito kung paano gumagana ang bayad.',
   'donate.metaTitle': 'Mag-donate ng Bitcoin at tumulong sa kapwa | 21.gifts',

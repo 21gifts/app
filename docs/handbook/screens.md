@@ -46,7 +46,7 @@ The only state: imprint plus privacy, marketing chrome.
 
 - **Purpose:** Public foundation of the house — three convictions and Matthew 10:8.
 - **URL:** `/about` — public marketing page (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark and a language switcher (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow), kicker **About**, heading **What 21.gifts stands for**, a short lead, the Matthew 10:8 verse, then three numbered convictions (Giving is part of faith with 1 John 3:18; From one person to another; Why Bitcoin?) and **Go to the forum** (`/welcome`). Visitor copy comes from the catalog.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark and a language switcher (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow), kicker **The idea**, heading **What 21.gifts stands for**, a short lead, the Matthew 10:8 verse, then three numbered convictions (Giving is part of faith with 1 John 3:18; Directly from person to person; Why Bitcoin?) and **Go to the forum** (`/welcome`). Visitor copy comes from the catalog.
 - **Actions:** Change language. Read the convictions. Open **Go to the forum** (`/welcome`). Header **Log in** goes to `/login`.
 - **Calls:** `AboutPage` inside `MarketingLayout`, `LanguageSwitcher`, `ButtonLink`.
 

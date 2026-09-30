@@ -90,7 +90,7 @@ describe('Home', () => {
 
   it('renders a donate-to-project heading', async () => {
     renderWithLocale(await Home());
-    expect(screen.getByRole('heading', { name: 'Want to support 21.gifts?' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '21.gifts also needs support' })).toBeTruthy();
   });
 
   it('exposes the project Wallet of Satoshi address as a lightning link', async () => {
@@ -105,8 +105,8 @@ describe('Home', () => {
       '#happyland',
     );
     expect(screen.getByRole('link', { name: /Why Bitcoin/i }).getAttribute('href')).toBe('#why');
-    expect(
-      screen.getByRole('link', { name: /Where does the donation go/i }).getAttribute('href'),
-    ).toBe('#faq');
+    expect(screen.getByRole('link', { name: /Who receives it/i }).getAttribute('href')).toBe(
+      '#faq',
+    );
   });
 });
