@@ -234,7 +234,7 @@
 
 ## Function: Home
 
-- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from `/donate` forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Give Bitcoin**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Give Bitcoin, all via `translate` for the negotiated locale.
+- **Purpose:** Next.js page for `/`. Marketing landing: pitch, how it works, why, project donate (`#project`, address `21gifts@walletofsatoshi.com` for running 21.gifts itself — distinct from `/donate` forum gifts), FAQ, CTAs to `/login` (**Ask for help**) and `/donate` (**Donate Bitcoin**), plus `PwaInstall` (`tone="dark"` `placement="hero"`) after Donate Bitcoin, all via `translate` for the negotiated locale.
 - **Inputs:** None. Calls `getRequestLocale()`.
 - **Returns / side effects:** The home screen element.
 - **Used by:** Route `/`.
@@ -388,7 +388,7 @@
 
 ## Function: DonatePage
 
-- **Purpose:** Next.js page for `/donate`. Guest-visible Give Bitcoin explainer: read a forum post, write a reaction under it with an amount, then pay from your wallet; CTA to `/welcome`. No address/amount form and no QR.
+- **Purpose:** Next.js page for `/donate`. Guest-visible donation explainer: read a forum post, write a reaction under it with an amount, then pay from your wallet; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
 - **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
 - **Used by:**
