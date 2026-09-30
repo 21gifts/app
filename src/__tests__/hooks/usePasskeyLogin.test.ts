@@ -2209,13 +2209,10 @@ describe('usePasskeyLogin', () => {
       result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
-    const ceremonyBodies = (): Array<{ event?: string }> =>
-      fetchMock.mock.calls
-        .map(
-          (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
-        )
-        .filter((body) => body.event === 'client.passkey.register.ceremony');
-    expect(ceremonyBodies()).toEqual([
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
       {
         event: 'client.passkey.register.ceremony',
         stage: 'register',
@@ -2234,7 +2231,10 @@ describe('usePasskeyLogin', () => {
       result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
-    expect(ceremonyBodies()).toEqual([
+    const later = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(later.filter((body) => body.event === 'client.passkey.register.ceremony')).toEqual([
       {
         event: 'client.passkey.register.ceremony',
         stage: 'register',
