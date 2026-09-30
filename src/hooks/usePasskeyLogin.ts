@@ -82,7 +82,11 @@ export interface UsePasskeyLogin {
   submitName: (raw: string) => void;
   /** Sign in with an existing passkey. */
   authenticate: () => void;
-  /** Repeats the originating flow after an error. The single-button path restarts login. */
+  /**
+   * After an error, a named create returns to the name form and does not
+   * start create. `register(viewKey)` sends the same key. `authenticate`
+   * repeats authenticate. The single login button repeats login.
+   */
   retry: () => void;
   /** Aborts an in-flight WebAuthn prompt. */
   cancel: () => void;

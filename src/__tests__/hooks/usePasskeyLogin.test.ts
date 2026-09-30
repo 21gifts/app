@@ -2232,7 +2232,7 @@ describe('usePasskeyLogin', () => {
     expect(vi.mocked(startPasskeyRegistration)).not.toHaveBeenCalled();
   });
 
-  it('retries register after a failed register', async () => {
+  it('retry after a failed named create returns to the name form', async () => {
     vi.mocked(startPasskeyRegistration).mockRejectedValue(new Error('nope'));
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {

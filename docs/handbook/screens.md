@@ -300,7 +300,7 @@ Heading **Choose your name**. This name is saved in the passkey. It is also your
 
 ### Variant: name-invalid
 
-Pressing Continue with an empty name, or a name outside 1–32 characters of a-z, 0-9, hyphen, underscore, or dot, stays on this form. Alert: Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot. (`login.nameInvalid`). The passkey dialog does not open. The muted iOS or Android line is not shown.
+Pressing Continue with an empty name, or a name that after trim and lowercase does not match `/^[a-z0-9][a-z0-9._-]{0,31}$/` (a lone underscore and a leading dot are rejected), stays on this form. Alert: Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot. (`login.nameInvalid`). The passkey dialog does not open. The muted iOS or Android line is not shown.
 
 ![21.gifts login name invalid](images/login-name-invalid.png)
 
