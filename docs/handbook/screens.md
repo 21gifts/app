@@ -325,7 +325,7 @@ Open the light language switcher top-right. Custom listbox with endonym rows (En
 ## Screen: /donate
 
 - **URL:** `/donate` — public, no auth gate.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark the localized public home when unsigned, `/welcome` when a session is hydrated — not marketing header). Heading **Give Bitcoin to someone**, short lead reading reactions and choosing the Gift icon on a payable reaction, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark the localized public home when unsigned, `/welcome` when a session is hydrated — not marketing header). Heading **Give Bitcoin to someone**, short lead about writing a reaction under a post with an amount and paying from your wallet, CTA **Open the forum** (`/welcome`). No address/amount form. No QR.
 - **Actions:** Change language. Open the forum. Unsigned visitors hitting `/welcome` are sent to `/login` by OnboardingGate.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `DonatePage`, `ButtonLink`, `LanguageSwitcher`.
 

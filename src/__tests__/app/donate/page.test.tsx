@@ -57,7 +57,7 @@ describe('DonatePage', () => {
 
   it('renders the explainer lead', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByText(/Read the reactions beneath it/i)).toBeTruthy();
+    expect(screen.getByText(/Write a reaction under it, add an amount/i)).toBeTruthy();
   });
 
   it('links Open the forum to /welcome', async () => {
