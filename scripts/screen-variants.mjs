@@ -2025,6 +2025,20 @@ export const SCREEN_VARIANTS = [
     needle: 'state-members-sticker-failed',
   },
   {
+    route: '/members/[accountId]',
+    id: 'shop-edit',
+    image: 'members-shop-edit.png',
+    visual: 'state-members-shop-edit',
+    needle: "shotScreen(page, 'state-members-shop-edit')",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'shop-edit-open',
+    image: 'members-shop-edit-open.png',
+    visual: 'state-members-shop-edit-open',
+    needle: "shotScreen(page, 'state-members-shop-edit-open')",
+  },
+  {
     route: '/profile',
     id: 'receive',
     image: 'profile-receive.png',
@@ -3549,6 +3563,20 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-signed-in.png',
     visual: 'state-messages-id-signed-in',
     needle: "getByRole('button', { name: 'Menu' })",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'shop-edit',
+    image: 'messages-id-shop-edit.png',
+    visual: 'state-messages-id-shop-edit',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit')",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'shop-edit-open',
+    image: 'messages-id-shop-edit-open.png',
+    visual: 'state-messages-id-shop-edit-open',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-open')",
   },
   {
     route: '/messages/[id]',

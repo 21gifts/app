@@ -99,7 +99,7 @@ const STEP_KEY = {
  * are photos, place, text, an optional 21.gifts username, then a summary
  * whose send control submits the note. The text step lists people as
  * soon as `@` is typed. Adding a shop shows Next on the photo step.
- * Edit mode still shows Cancel there.
+ * Edit mode shows an icon-only Close (X) there. Its accessible name is Cancel.
  *
  * @param props - Draft fields and the send callback.
  * @returns The button, or the current step.
@@ -376,9 +376,17 @@ export function ShopAddWizard({
       ) : null}
       <div className="flex flex-wrap gap-2">
         {step === 1 && cancelEdit !== undefined ? (
-          <Button type="button" variant="secondary" disabled={posting} onClick={cancelEdit}>
-            {t('shops.cancel')}
-          </Button>
+          <IconButton
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={posting}
+            aria-label={t('shops.cancel')}
+            title={t('shops.cancel')}
+            onClick={cancelEdit}
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
         ) : null}
         {step < 5 ? (
           // A new node, not the summary control. Reusing the clicked button

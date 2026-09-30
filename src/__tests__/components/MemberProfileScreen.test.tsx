@@ -3946,6 +3946,8 @@ describe('MemberProfileScreen', () => {
       text: 'Cafe Sol\n\n#21GiftsShop',
     });
     stubShopPhotoFetch();
+    let photoUrl = 0;
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:profile-${photoUrl++}`);
     vi.mocked(fetchMemberPosts).mockResolvedValue([
       shopPost,
       {
@@ -3963,27 +3965,38 @@ describe('MemberProfileScreen', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: /posts?/ }));
     await screen.findByText('Cafe Luna');
+    const shopCard = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
+    const otherCard = document.querySelector(
+      '[data-message-id="44444444-4444-4444-8444-444444444444"]',
+    ) as HTMLElement;
     await waitFor(() => {
-      const photos = screen.getAllByAltText('Photo from Carol');
-      expect(photos).toHaveLength(2);
-      for (const photo of photos) {
-        expect(photo.getAttribute('src')).toBe('blob:mock');
-      }
+      expect(within(shopCard).getByAltText('Photo from Carol').getAttribute('src')).toMatch(
+        /^blob:profile-/,
+      );
+      expect(within(otherCard).getByAltText('Photo from Carol').getAttribute('src')).toMatch(
+        /^blob:profile-/,
+      );
     });
+    const shopSrc = within(shopCard).getByAltText('Photo from Carol').getAttribute('src');
+    const otherSrc = within(otherCard).getByAltText('Photo from Carol').getAttribute('src');
+    expect(shopSrc).not.toBe(otherSrc);
     vi.mocked(URL.revokeObjectURL).mockClear();
-    const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
-    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
-    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
-    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
-    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
-    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+    fireEvent.click(within(shopCard).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(shopCard).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(shopCard).getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'Cafe Sol' },
     });
-    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
-    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
-    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(shopCard).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(URL.revokeObjectURL).toHaveBeenCalled();
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith(shopSrc);
     });
+    expect(URL.revokeObjectURL).not.toHaveBeenCalledWith(otherSrc);
+    expect(
+      vi.mocked(URL.revokeObjectURL).mock.calls.filter((call) => call[0] === shopSrc),
+    ).toHaveLength(1);
   });
 });

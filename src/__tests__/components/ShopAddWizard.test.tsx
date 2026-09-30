@@ -256,6 +256,7 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(onRemoveKept).toHaveBeenCalledWith(0);
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:clip');
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();

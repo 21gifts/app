@@ -117,6 +117,47 @@ async function stillFromUrl(url: string): Promise<KeptStillBytes> {
 }
 
 /**
+ * Copy already-shown stills onto addresses this editor owns.
+ * A partial save revokes the feed addresses. These copies stay.
+ * A failed copy revokes only the copies, never the feed addresses.
+ */
+async function ownFeedStills(
+  feedUrls: readonly string[],
+  owned: string[],
+  cache: Map<string, KeptStillBytes>,
+): Promise<string[]> {
+  for (const url of owned) {
+    URL.revokeObjectURL(url);
+  }
+  owned.length = 0;
+  const copies: string[] = [];
+  try {
+    for (const feedUrl of feedUrls) {
+      const response = await fetch(feedUrl);
+      if (!response.ok) {
+        throw new Error('Could not save shop note');
+      }
+      const blob = await response.blob();
+      const copy = URL.createObjectURL(blob);
+      owned.push(copy);
+      copies.push(copy);
+      cache.set(copy, {
+        contentType: keptStillType(blob.type),
+        data: encodeBytes(new Uint8Array(await blob.arrayBuffer())),
+      });
+    }
+    return copies;
+  } catch (error) {
+    for (const url of owned) {
+      URL.revokeObjectURL(url);
+    }
+    owned.length = 0;
+    cache.clear();
+    throw error;
+  }
+}
+
+/**
  * Moderator-only editor and edit history on a shop note. The pencil opens the
  * same steps as adding a shop, filled with the current text, place, pictures,
  * and 21.gifts user. Absent on replies, hidden notes, non-shop text, and ranks
@@ -218,6 +259,17 @@ export function ShopNoteEditControl({
           setKept([]);
           setPhotoBaseline([]);
           revokeOwnedPhotos();
+          setPhotosReady(false);
+          setSaveError(true);
+          setOpen(true);
+          return;
+        }
+      } else if (photos.length > 0) {
+        try {
+          photos = await ownFeedStills(photos, ownedPhotoUrls.current, keptStillBytes.current);
+        } catch {
+          setKept([]);
+          setPhotoBaseline([]);
           setPhotosReady(false);
           setSaveError(true);
           setOpen(true);

@@ -1908,6 +1908,8 @@ describe('PublicMessageThread', () => {
       },
     ]);
     stubShopPhotoFetch();
+    let photoUrl = 0;
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:thread-${photoUrl++}`);
     vi.mocked(fetchMessagePhoto).mockResolvedValue(
       new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
     );
@@ -1917,7 +1919,7 @@ describe('PublicMessageThread', () => {
     });
     renderThread({ root: shopRoot });
     await waitFor(() => {
-      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:thread');
+      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toMatch(/^blob:thread-/);
       expect(screen.getByText('A photo reply')).toBeTruthy();
       expect(fetchMessagePhoto).toHaveBeenCalledWith(
         'sess',
@@ -1926,6 +1928,14 @@ describe('PublicMessageThread', () => {
       );
       expect(vi.mocked(URL.createObjectURL).mock.calls.length).toBeGreaterThanOrEqual(2);
     });
+    const shopSrc = screen.getByAltText('Photo from Carol').getAttribute('src');
+    // The reply still is stored, but that card does not paint an img. Keep every
+    // address created before the editor except the shop photo on screen.
+    const otherSrcs = vi
+      .mocked(URL.createObjectURL)
+      .mock.results.map((result) => String(result.value))
+      .filter((src) => src !== shopSrc);
+    expect(otherSrcs.length).toBeGreaterThan(0);
     vi.mocked(URL.revokeObjectURL).mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
@@ -1938,7 +1948,13 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(URL.revokeObjectURL).toHaveBeenCalled();
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith(shopSrc);
     });
+    for (const src of otherSrcs) {
+      expect(URL.revokeObjectURL).not.toHaveBeenCalledWith(src);
+    }
+    expect(
+      vi.mocked(URL.revokeObjectURL).mock.calls.filter((call) => call[0] === shopSrc),
+    ).toHaveLength(1);
   });
 });

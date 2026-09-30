@@ -40,6 +40,23 @@ function keptStillReads(fetchMock: {
   return fetchMock.mock.calls.filter((call) => call[0] === 'blob:kept').length;
 }
 
+/** jsdom has no object URLs. Each call returns a new address the editor can own. */
+function mockOwnedPhotoUrls(): { revoke: ReturnType<typeof vi.fn> } {
+  let next = 0;
+  const revoke = vi.fn();
+  Object.defineProperty(URL, 'createObjectURL', {
+    configurable: true,
+    writable: true,
+    value: vi.fn(() => `blob:copy-${next++}`),
+  });
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    configurable: true,
+    writable: true,
+    value: revoke,
+  });
+  return { revoke };
+}
+
 function renderEdit(ui: ReactElement) {
   return renderWithLocale(
     <ChromeBackProvider>
@@ -196,6 +213,7 @@ describe('ShopNoteEditControl', () => {
     expect(screen.queryByText('Edit shop note')).toBeNull();
     fireEvent.keyDown(pencil, { key: 'Enter' });
     fireEvent.click(pencil);
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
     fireEvent.click(pencil);
@@ -331,6 +349,7 @@ describe('ShopNoteEditControl', () => {
       }),
     );
     const onUpdated = vi.fn();
+    mockOwnedPhotoUrls();
     renderWithLocale(
       <ShopNoteEditControl
         message={{
@@ -344,7 +363,9 @@ describe('ShopNoteEditControl', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
-    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const stills = [...document.querySelectorAll('img')].map((img) => img.getAttribute('src'));
+    expect(stills).toEqual(['blob:copy-0', 'blob:copy-1']);
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:video');
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -400,10 +421,10 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
-  it('clears a user and stills and shows a photo read failure', async () => {
+  it('opens on a photo read failure without the feed stills', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.mocked(setMessageShopAccount).mockResolvedValue({ ...shopMessage });
+    const { revoke } = mockOwnedPhotoUrls();
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -415,6 +436,8 @@ describe('ShopNoteEditControl', () => {
       <ShopNoteEditControl
         message={{
           ...shopMessage,
+          hasPhoto: true,
+          photoCount: 2,
           shopAccount: { id: 'old', username: 'old', name: 'Old' },
         }}
         existingPhotos={['blob:kept', 'blob:other']}
@@ -422,16 +445,53 @@ describe('ShopNoteEditControl', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[0]!);
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect((await screen.findByRole('alert')).textContent).toContain(
       'Could not save this shop note',
     );
+    expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+    expect(revoke).not.toHaveBeenCalledWith('blob:kept');
+    expect(revoke).not.toHaveBeenCalledWith('blob:other');
+    vi.unstubAllGlobals();
+  });
+
+  it('drops a partial still copy when a later feed still cannot be read', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const { revoke } = mockOwnedPhotoUrls();
+    let calls = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            ok: true,
+            blob: () =>
+              Promise.resolve({
+                type: 'image/png',
+                arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+              }),
+          };
+        }
+        return { ok: false, blob: () => Promise.resolve(new Blob()) };
+      }),
+    );
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 2 }}
+        existingPhotos={['blob:kept', 'blob:other']}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(revoke).toHaveBeenCalledWith('blob:copy-0');
+    expect(revoke).not.toHaveBeenCalledWith('blob:kept');
+    expect(revoke).not.toHaveBeenCalledWith('blob:other');
+    expect(screen.queryByRole('img')).toBeNull();
     vi.unstubAllGlobals();
   });
 
@@ -478,6 +538,50 @@ describe('ShopNoteEditControl', () => {
       'Could not save this shop note',
     );
     expect(document.querySelector('video')).toBeNull();
+  });
+
+  it('shows a save error when a loaded still cannot be read back', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:loaded'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob([Uint8Array.of(1)]));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === 'blob:loaded') {
+          return { ok: false };
+        }
+        return { ok: true, json: async () => ({ accounts: [] }) };
+      }),
+    );
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:loaded');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(setMessageShopText).not.toHaveBeenCalled();
+    expect(setMessageShopPhotos).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('ignores a second pencil click while the stills are still loading', async () => {
@@ -530,6 +634,7 @@ describe('ShopNoteEditControl', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:loaded');
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     vi.mocked(fetchMessagePhoto).mockRejectedValueOnce(new Error('nope'));
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
@@ -701,6 +806,7 @@ describe('ShopNoteEditControl', () => {
       hasPhoto: false,
       photoCount: 0,
     });
+    mockOwnedPhotoUrls();
     renderEdit(
       <ShopNoteEditControl
         message={{
@@ -714,6 +820,7 @@ describe('ShopNoteEditControl', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -769,6 +876,7 @@ describe('ShopNoteEditControl', () => {
       json: async () => ({ accounts: [] }),
     }));
     vi.stubGlobal('fetch', fetchMock);
+    mockOwnedPhotoUrls();
     renderWithLocale(
       <ShopNoteEditControl
         message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
@@ -777,6 +885,7 @@ describe('ShopNoteEditControl', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
@@ -831,5 +940,39 @@ describe('ShopNoteEditControl', () => {
       expect(prepareForumPhoto).toHaveBeenCalledTimes(11);
     });
     expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+  });
+
+  it('replaces the previous still copies when the editor opens again', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const { revoke } = mockOwnedPhotoUrls();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        blob: () =>
+          Promise.resolve({
+            type: 'image/jpeg',
+            arrayBuffer: () => Promise.resolve(Uint8Array.of(3).buffer),
+          }),
+      })),
+    );
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        existingPhotos={['blob:kept']}
+        onUpdated={vi.fn()}
+      />,
+    );
+    const pencil = screen.getByRole('button', { name: 'Edit shop note' });
+    fireEvent.click(pencil);
+    expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:copy-0');
+    fireEvent.click(pencil);
+    expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
+    fireEvent.click(pencil);
+    expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:copy-1');
+    expect(revoke).toHaveBeenCalledWith('blob:copy-0');
+    expect(revoke).not.toHaveBeenCalledWith('blob:kept');
+    vi.unstubAllGlobals();
   });
 });
