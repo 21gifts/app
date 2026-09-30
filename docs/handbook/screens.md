@@ -2121,9 +2121,15 @@ A moderator session. **Add a place** on the Cafe Luna note is open. A pin and na
 
 ### Variant: staff-account
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is empty. **Save account** is visible. There is no alert.
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible. There is no alert.
 
 ![21.gifts shops staff account](images/shops-staff-account.png)
+
+### Variant: staff-account-chosen
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open. Choosing `@ada` from the People list writes `@ada` into the username field and keeps the list on that prefix. **Save account** is visible. There is no alert.
+
+![21.gifts shops staff account chosen](images/shops-staff-account-chosen.png)
 
 ### Variant: staff-account-set
 
@@ -3225,6 +3231,24 @@ Open Direct thread. Eleven files → **You can add up to 10 photos**.
 
 ![21.gifts inbox thread error too many](images/messages-thread-error-too-many.png)
 
+### Variant: thread-mention-suggest
+
+Open thread. The message field contains `@` and the People list is open. Choosing a person does not notify them.
+
+![21.gifts inbox thread mention suggestions](images/messages-thread-mention-suggest.png)
+
+### Variant: thread-mention-inserted
+
+Open thread. Choosing `@ada` from that list writes `@ada ` into the message field and closes the list.
+
+![21.gifts inbox thread mention inserted](images/messages-thread-mention-inserted.png)
+
+### Variant: thread-mention
+
+Open thread. The incoming message **Hello @ada** stores a profile mark. **View profile** on that name opens the member. It does not notify them.
+
+![21.gifts inbox thread mention](images/messages-thread-mention.png)
+
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
@@ -3773,6 +3797,24 @@ Moderator. Empty thread. Encoded JPEG over 1 MB → **Keep photos under 1 MB**.
 Moderator. Empty thread. Eleven files → **You can add up to 10 photos**.
 
 ![21.gifts moderator group error too many](images/moderate-group-error-too-many.png)
+
+### Variant: mention-suggest
+
+Moderator. Loaded group thread. The message field contains `@` and the People list is open. Choosing a person does not notify them.
+
+![21.gifts moderator group mention suggestions](images/moderate-group-mention-suggest.png)
+
+### Variant: mention-inserted
+
+Moderator. Choosing `@ada` from that list writes `@ada ` into the message field and closes the list.
+
+![21.gifts moderator group mention inserted](images/moderate-group-mention-inserted.png)
+
+### Variant: mention
+
+Moderator. The incoming message **Hello @ada** stores a profile mark. **View profile** on that name opens the member. It does not notify them.
+
+![21.gifts moderator group mention](images/moderate-group-mention.png)
 
 ### Variant: translate
 

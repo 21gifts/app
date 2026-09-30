@@ -22,14 +22,26 @@ export interface TextMention {
   accountId: string;
 }
 
-function MentionButton({ accountId, text }: { accountId: string; text: string }): ReactElement {
+function MentionButton({
+  accountId,
+  text,
+  onButton,
+}: {
+  accountId: string;
+  text: string;
+  onButton: boolean;
+}): ReactElement {
   const router = useRouter();
   const { t } = useTranslations();
   return (
     <button
       type="button"
       aria-label={t('forum.authorProfile')}
-      className="text-sm font-medium text-app-fg underline underline-offset-2"
+      className={
+        onButton
+          ? 'text-sm font-medium text-app-btn-fg underline underline-offset-2'
+          : 'text-sm font-medium text-app-fg underline underline-offset-2'
+      }
       onClick={(event) => {
         event.stopPropagation();
         router.push(`/members/${accountId}`);
@@ -40,7 +52,11 @@ function MentionButton({ accountId, text }: { accountId: string; text: string })
   );
 }
 
-function mentionNodes(value: string, mentions: readonly TextMention[]): ReactNode {
+function mentionNodes(
+  value: string,
+  mentions: readonly TextMention[],
+  onButton: boolean,
+): ReactNode {
   const byName = new Map(
     mentions.map((mention) => [mention.username.toLowerCase(), mention.accountId]),
   );
@@ -68,7 +84,12 @@ function mentionNodes(value: string, mentions: readonly TextMention[]): ReactNod
       if (accountId !== undefined) {
         flush();
         nodes.push(
-          <MentionButton key={`m-${String(i)}`} accountId={accountId} text={value.slice(i, end)} />,
+          <MentionButton
+            key={`m-${String(i)}`}
+            accountId={accountId}
+            text={value.slice(i, end)}
+            onButton={onButton}
+          />,
         );
         i = end;
         continue;
@@ -119,11 +140,12 @@ export function LinkedText({
 }: LinkedTextProps): ReactElement {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const linked = mentions !== undefined && mentions.length > 0;
+  const onButton = className.split(/\s+/).includes('text-app-btn-fg');
 
   if (plain) {
     return (
       <p className={className}>
-        {linked ? mentionNodes(text, mentions) : <span>{text}</span>}
+        {linked ? mentionNodes(text, mentions, onButton) : <span>{text}</span>}
         {rest.suffix}
       </p>
     );
@@ -181,7 +203,9 @@ export function LinkedText({
         {segments.map((segment, index) => {
           if (segment.kind === 'text') {
             return linked ? (
-              <span key={`t-${String(index)}`}>{mentionNodes(segment.value, mentions)}</span>
+              <span key={`t-${String(index)}`}>
+                {mentionNodes(segment.value, mentions, onButton)}
+              </span>
             ) : (
               <span key={`t-${String(index)}`}>{segment.value}</span>
             );

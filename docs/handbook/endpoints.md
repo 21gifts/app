@@ -580,7 +580,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. Used so the forum composer can suggest people while `@` is being typed.
 - **Errors:** Upstream 401/400/409, or 502 if the api is unreachable.
-- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, and ask-for-money composers.
+- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, and from `ShopAccountControl`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /forum/notifications
