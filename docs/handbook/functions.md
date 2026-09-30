@@ -4770,12 +4770,6 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Input:** Receives the marketing page locale and reads the place portrait and observations from the shared English, German, Spanish or Filipino catalog.
 - **Output:** Renders a place portrait, four photographs from the original 21.gifts Happyland page in balanced frames, a source link, and three observations.
 
-## Function: localizedPublicPath
-
-- **Purpose:** Keeps each Happyland photograph and its localized caption together in a semantic figure.
-- **Input:** Receives approved image metadata, the active message catalog and optional layout classes.
-- **Output:** Renders a directly served WebP with intrinsic dimensions, descriptive alternative text and a visible caption. Eager loading keeps the photographs visible in the embedded local preview.
-
 ## Function: fiatDraftForSats
 
 - **Purpose:** Fiat typing draft for an exact sat amount. Two decimals when they round-trip through `fiatToSats`, otherwise more fraction digits so toggling back returns the same sats. Null when no digit count does.
@@ -4858,6 +4852,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/fiat`.
 - **Inputs:** Incoming `Request` with JSON `{ fiat, onlyIfUnset }`.
 - **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored fiat value.
+- **Used by:** Route POST `/me/fiat`.
 
 ## Function: HabitTrackerPage
 
@@ -4901,7 +4896,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The JSON body when the response is OK. Throws the api `error` string when that field is a string, otherwise `'Could not save the habit tracker. Please try again.'`.
 - **Used by:** `MemberHabits`.
 
-- **Used by:** Route POST `/me/fiat`.- **Purpose:** Builds a stable public URL for one supported language and one of Home, About, Donate, or Rules.
+## Function: localizedPublicPath
+
+- **Purpose:** Builds a stable public URL for one supported language and one of Home, About, Donate, or Rules.
 - **Inputs:** A supported locale and one localized public path.
 - **Returns:** A language-prefixed path such as `/de/about`; used by metadata, links, and the language switcher.
 

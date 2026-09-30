@@ -1275,7 +1275,7 @@ const de = {
   'home.headline1': 'Hilf Menschen',
   'home.headline2': 'mit Bitcoin',
   'home.lead':
-    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, schreibst du eine Reaktion unter den Beitrag und gibst einen Betrag an. Der Bitcoin geht an die Wallet der Person, die den Beitrag geschrieben hat.',
+    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, kannst du einfach auf einen Beitrag reagieren und die Summe angeben, die du spenden möchtest. Die Satoshis werden dann direkt von dir an die Person gesendet und sind innerhalb von Sekunden vor Ort.',
   'home.ctaAsk': 'Selbst um Hilfe bitten',
   'home.ctaSend': 'Bitcoin verschenken',
   'home.howKicker': 'Bitcoin verschenken',
@@ -1293,8 +1293,9 @@ const de = {
     'Schreibe im Wohnzimmer, was dich beschäftigt. Wer dich unterstützen möchte, reagiert auf deinen Beitrag mit einem Betrag und schickt Bitcoin an deine Wallet-Adresse. 21.gifts verwahrt die Zahlung nicht.',
   'home.whyKicker': 'Wohin dein Geschenk geht',
   'home.whyTitle': 'Die Person bestimmt ihre Empfangsadresse',
-  'home.why1Title': 'Du wählst die Antwort',
-  'home.why1Body': 'Das Geschenk gehört der Person, die diese Antwort geschrieben hat.',
+  'home.why1Title': 'Du entscheidest, wem du hilfst',
+  'home.why1Body':
+    'Lies zuerst, was die Person schreibt. 21.gifts gibt dein Geschenk nie an jemand anderen weiter.',
   'home.why2Title': 'Die Person hinterlegt ihre Adresse',
   'home.why2Body':
     'Bei der Anmeldung gibt sie an, unter welcher Wallet-Adresse Bitcoin bei ihr ankommen soll.',
