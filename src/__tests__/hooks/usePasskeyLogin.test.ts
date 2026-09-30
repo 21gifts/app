@@ -119,6 +119,7 @@ beforeEach(() => {
   vi.mocked(finishPasskeyRegistration).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyAuthentication).mockReset().mockResolvedValue({ token: 'tok', account });
+  vi.mocked(obtainPrfFirst).mockReset().mockResolvedValue(new Uint8Array(32).fill(7));
   vi.mocked(rememberSessionPhrase).mockClear();
   const ctor = globalThis.PublicKeyCredential as unknown;
   if (typeof ctor === 'function' || (typeof ctor === 'object' && ctor !== null)) {
@@ -188,6 +189,11 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.register();
     });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('login.iosVersion');
@@ -231,6 +237,11 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.register();
     });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('login.iosVersion');
@@ -268,6 +279,10 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.register();
     });
+    expect(result.current.status).toBe('name');
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
     const bodies = fetchMock.mock.calls.map(
       (call) => JSON.parse(String((call[1] as RequestInit).body)) as { message?: string },
     );
@@ -294,6 +309,10 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     const bodies = fetchMock.mock.calls.map(
       (call) =>
@@ -329,6 +348,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
@@ -865,6 +889,7 @@ describe('usePasskeyLogin', () => {
         stage: 'register',
         name: 'NotAllowedError',
         message: 'no',
+        challengeId: 'ch',
       },
     ]);
     fetchMock.mockRestore();
@@ -893,8 +918,12 @@ describe('usePasskeyLogin', () => {
     await act(async () => {
       result.current.register();
     });
+    expect(result.current.status).toBe('name');
+    await act(async () => {
+      result.current.submitName('Ada');
+    });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
-    expect(result.current.status).toBe('idle');
+    expect(result.current.status).toBe('name');
     const bodies = fetchMock.mock.calls.map(
       (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
     );
@@ -2597,8 +2626,14 @@ describe('usePasskeyLogin', () => {
       result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
+    const createCalls = vi.mocked(navigator.credentials.create).mock.calls.length;
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(vi.mocked(navigator.credentials.create).mock.calls.length).toBe(createCalls);
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
     await act(async () => {
