@@ -62,10 +62,21 @@ const catalog = SCREEN_VARIANTS.map((variant) => ({
   visual: variant.visual,
   combos: variantComboIds(variant),
 }));
-fs.writeFileSync(
-  path.join(ROOT, 'src', 'lib', 'screen-variant-catalog.json'),
-  `${JSON.stringify(catalog, null, 2)}\n`,
-);
+const catalogPath = path.join(ROOT, 'src', 'lib', 'screen-variant-catalog.json');
+// Skip the write when the content is unchanged so a build does not reformat
+// a clean checkout.
+let catalogUnchanged = false;
+if (fs.existsSync(catalogPath)) {
+  try {
+    const existing = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+    catalogUnchanged = JSON.stringify(existing) === JSON.stringify(catalog);
+  } catch {
+    catalogUnchanged = false;
+  }
+}
+if (!catalogUnchanged) {
+  fs.writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+}
 
 if (missing.length > 0) {
   console.error('Handbook image sync failed — missing visual baselines:');
