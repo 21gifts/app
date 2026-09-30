@@ -1954,12 +1954,16 @@ describe('usePasskeyLogin', () => {
   });
 
   it('returns to idle when the user cancels', async () => {
+    const accountId = 'cccccccc-dddd-eeee-ffff-000000000001';
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId: 'ch',
       options: {
         challenge: 'aa',
         user: {
-          id: bytesToBase64Url(new TextEncoder().encode('cccccccc-dddd-eeee-ffff-000000000001')),
+          id: bytesToBase64Url(new TextEncoder().encode(accountId)),
           name: 'ada',
         },
       },
@@ -1977,6 +1981,19 @@ describe('usePasskeyLogin', () => {
       result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('name');
+    const bodies = fetchMock.mock.calls.map(
+      (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+    );
+    expect(bodies.filter((body) => body.event === 'client.passkey.register.fail')).toEqual([
+      {
+        event: 'client.passkey.register.fail',
+        stage: 'register',
+        name: 'NotAllowedError',
+        message: 'no',
+        accountId,
+      },
+    ]);
+    fetchMock.mockRestore();
     vi.unstubAllGlobals();
   });
 
@@ -2653,12 +2670,16 @@ describe('usePasskeyLogin', () => {
   });
 
   it('reports a ceremony error that is not a cancel', async () => {
+    const accountId = 'dddddddd-eeee-ffff-0000-111111111111';
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
     vi.mocked(startPasskeyRegistration).mockResolvedValueOnce({
       challengeId: 'ch',
       options: {
         challenge: 'aa',
         user: {
-          id: bytesToBase64Url(new TextEncoder().encode('dddddddd-eeee-ffff-0000-111111111111')),
+          id: bytesToBase64Url(new TextEncoder().encode(accountId)),
           name: 'ada',
         },
       },
@@ -2676,6 +2697,21 @@ describe('usePasskeyLogin', () => {
       result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
+    const ceremonyBodies = (): Array<{ event?: string }> =>
+      fetchMock.mock.calls
+        .map(
+          (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+        )
+        .filter((body) => body.event === 'client.passkey.register.ceremony');
+    expect(ceremonyBodies()).toEqual([
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'TypeError',
+        message: 'blocked',
+        accountId,
+      },
+    ]);
     const createCalls = vi.mocked(navigator.credentials.create).mock.calls.length;
     await act(async () => {
       result.current.register();
@@ -2686,10 +2722,26 @@ describe('usePasskeyLogin', () => {
       result.current.submitName('Ada');
     });
     expect(result.current.status).toBe('error');
+    expect(ceremonyBodies()).toEqual([
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'TypeError',
+        message: 'blocked',
+        accountId,
+      },
+      {
+        event: 'client.passkey.register.ceremony',
+        stage: 'register',
+        name: 'TypeError',
+        message: 'blocked',
+      },
+    ]);
     await act(async () => {
       result.current.authenticate();
     });
     expect(result.current.status).toBe('error');
+    fetchMock.mockRestore();
     vi.unstubAllGlobals();
   });
 
