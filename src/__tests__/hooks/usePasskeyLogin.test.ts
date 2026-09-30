@@ -1470,7 +1470,10 @@ describe('usePasskeyLogin', () => {
       challengeId: 'ch',
       options: {
         challenge: 'aa',
-        user: { name: 'cccccccc-dddd-eeee-ffff-000000000001' },
+        user: {
+          id: bytesToBase64Url(new TextEncoder().encode('cccccccc-dddd-eeee-ffff-000000000001')),
+          name: 'ada',
+        },
       },
     });
     vi.stubGlobal('navigator', {
@@ -2166,7 +2169,10 @@ describe('usePasskeyLogin', () => {
       challengeId: 'ch',
       options: {
         challenge: 'aa',
-        user: { name: 'dddddddd-eeee-ffff-0000-111111111111' },
+        user: {
+          id: bytesToBase64Url(new TextEncoder().encode('dddddddd-eeee-ffff-0000-111111111111')),
+          name: 'ada',
+        },
       },
     });
     vi.stubGlobal('navigator', {
