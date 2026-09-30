@@ -259,6 +259,17 @@ describe('ShopAccountControl', () => {
     expect(searchMentionAccounts).toHaveBeenCalledWith('token', '');
   });
 
+  it('selects a person from the keyboard click', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    fireEvent.click(await screen.findByRole('option', { name: '@luna' }));
+    expect((screen.getByLabelText('Username') as HTMLInputElement).value).toBe('@luna');
+  });
+
   it('hides suggestions when the field is no longer a username', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(searchMentionAccounts).mockResolvedValue([
@@ -355,6 +366,31 @@ describe('ShopAccountControl', () => {
     await waitFor(() => {
       expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
     });
+  });
+
+  it('shows the current prefix again while the same search is retried', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    let prefixCalls = 0;
+    vi.mocked(searchMentionAccounts).mockImplementation((_token, query) => {
+      if (query === '') {
+        return Promise.resolve([{ id: 'acc-ada', username: 'ada', name: 'Ada' }]);
+      }
+      prefixCalls += 1;
+      if (prefixCalls === 1) {
+        return Promise.reject(new Error('offline'));
+      }
+      return new Promise(() => undefined);
+    });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@a' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
+    });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@' } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@a' } });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
   });
 
   it('keeps the current prefix when an older prefix search fails', async () => {
@@ -470,6 +506,98 @@ describe('ShopAccountControl', () => {
       HTMLElement.prototype.getBoundingClientRect = originalRect;
       window.innerHeight = originalHeight;
       window.innerWidth = originalWidth;
+    }
+  });
+
+  it('drops rows until the panel fits under the chrome', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalViewport = window.visualViewport;
+    const listeners: Record<string, EventListener> = {};
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        offsetTop: 0,
+        height: 400,
+        addEventListener(type: string, listener: EventListener) {
+          listeners[type] = listener;
+        },
+        removeEventListener(type: string) {
+          delete listeners[type];
+        },
+      },
+    });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      const element = this as HTMLElement;
+      if (element.hasAttribute('data-app-chrome')) {
+        return {
+          top: 0,
+          bottom: 64,
+          left: 0,
+          right: 390,
+          width: 390,
+          height: 64,
+          x: 0,
+          y: 0,
+          toJSON() {
+            return {};
+          },
+        } as DOMRect;
+      }
+      if (element.className.includes('fixed')) {
+        return {
+          top: 0,
+          bottom: 900,
+          left: 8,
+          right: 296,
+          width: 288,
+          height: 900,
+          x: 8,
+          y: 0,
+          toJSON() {
+            return {};
+          },
+        } as DOMRect;
+      }
+      return {
+        top: 300,
+        bottom: 344,
+        left: 16,
+        right: 56,
+        width: 40,
+        height: 44,
+        x: 16,
+        y: 300,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+      vi.mocked(searchMentionAccounts).mockResolvedValue(
+        Array.from({ length: 8 }, (_, index) => ({
+          id: `acc-${index}`,
+          username: `user${index}`,
+          name: `User ${index}`,
+        })),
+      );
+      renderWithLocale(
+        <div data-app-frame>
+          <div data-app-chrome />
+          <ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />
+        </div>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+      await waitFor(() => {
+        expect(screen.getAllByRole('option')).toHaveLength(1);
+      });
+      listeners['resize']?.(new Event('resize'));
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      Object.defineProperty(window, 'visualViewport', {
+        configurable: true,
+        value: originalViewport,
+      });
     }
   });
 });

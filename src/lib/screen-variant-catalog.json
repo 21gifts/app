@@ -2454,6 +2454,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-mention",
+    "label": "/messages thread-mention",
+    "visual": "state-messages-thread-mention",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/notifications:default",
     "label": "/notifications default",
     "visual": "screen-notifications",
@@ -2931,6 +2937,12 @@
     "id": "/moderate/group:mention-inserted",
     "label": "/moderate/group mention-inserted",
     "visual": "state-moderate-group-mention-inserted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:mention",
+    "label": "/moderate/group mention",
+    "visual": "state-moderate-group-mention",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3705,6 +3717,12 @@
     "id": "/shops:staff-account",
     "label": "/shops staff-account",
     "visual": "state-shops-staff-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-account-chosen",
+    "label": "/shops staff-account-chosen",
+    "visual": "state-shops-staff-account-chosen",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

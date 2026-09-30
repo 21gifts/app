@@ -2125,6 +2125,12 @@ A moderator session. One Cafe Luna shop note. **Add an account** is open. The us
 
 ![21.gifts shops staff account](images/shops-staff-account.png)
 
+### Variant: staff-account-chosen
+
+A moderator session. One Cafe Luna shop note. **Add an account** is open. Choosing `@ada` from the People list writes `@ada` into the username field and keeps the list on that prefix. **Save account** is visible. There is no alert.
+
+![21.gifts shops staff account chosen](images/shops-staff-account-chosen.png)
+
 ### Variant: staff-account-set
 
 A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' }`. The card shows the `@luna` link to `/members/acc-luna` and footer **Edit account**. The account panel is closed.
@@ -3237,6 +3243,12 @@ Open thread. Choosing `@ada` from that list writes `@ada ` into the message fiel
 
 ![21.gifts inbox thread mention inserted](images/messages-thread-mention-inserted.png)
 
+### Variant: thread-mention
+
+Open thread. The incoming message **Hello @ada** stores a profile mark. **View profile** on that name opens the member. It does not notify them.
+
+![21.gifts inbox thread mention](images/messages-thread-mention.png)
+
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
@@ -3797,6 +3809,12 @@ Moderator. Loaded group thread. The message field contains `@` and the People li
 Moderator. Choosing `@ada` from that list writes `@ada ` into the message field and closes the list.
 
 ![21.gifts moderator group mention inserted](images/moderate-group-mention-inserted.png)
+
+### Variant: mention
+
+Moderator. The incoming message **Hello @ada** stores a profile mark. **View profile** on that name opens the member. It does not notify them.
+
+![21.gifts moderator group mention](images/moderate-group-mention.png)
 
 ### Variant: translate
 

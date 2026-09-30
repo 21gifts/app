@@ -77,14 +77,30 @@ type PanelPlace =
  */
 function placePanel(anchor: HTMLElement): PanelPlace {
   const rect = anchor.getBoundingClientRect();
+  const viewport = window.visualViewport;
+  const viewTop = viewport?.offsetTop ?? 0;
+  const viewHeight = viewport?.height ?? window.innerHeight;
+  const viewBottom = viewTop + viewHeight;
   const width = Math.min(288, window.innerWidth - 16);
   const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
-  const below = window.innerHeight - rect.bottom;
-  const above = rect.top;
+  const below = viewBottom - rect.bottom;
+  const above = rect.top - viewTop;
   if (below < 480 && above > below) {
     return { side: 'above', bottom: window.innerHeight - rect.top + 8, left, width };
   }
   return { side: 'below', top: rect.bottom + 8, left, width };
+}
+
+/** Visible band under the app chrome, inside the visual viewport. */
+function visibleBand(anchor: HTMLElement): { top: number; bottom: number } {
+  const viewport = window.visualViewport;
+  const viewTop = viewport?.offsetTop ?? 0;
+  const viewBottom = viewTop + (viewport?.height ?? window.innerHeight);
+  const frame = anchor.closest('[data-app-frame]');
+  const chrome = frame?.querySelector('[data-app-chrome]');
+  const chromeBottom =
+    chrome instanceof HTMLElement ? chrome.getBoundingClientRect().bottom : viewTop;
+  return { top: Math.max(viewTop, chromeBottom), bottom: viewBottom };
 }
 
 /** Props for the shops-feed staff account editor. */
@@ -128,7 +144,9 @@ export function ShopAccountControl({
     rows: readonly ShopSuggestion[];
   } | null>(null);
   const [panel, setPanel] = useState<PanelPlace | null>(null);
+  const [rowLimit, setRowLimit] = useState(SUGGESTION_LIMIT);
   const anchorRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const query = open && session !== null ? mentionQuery(draft) : null;
 
@@ -141,6 +159,9 @@ export function ShopAccountControl({
     const current = session;
     const requested = query;
     let cancelled = false;
+    if (requested !== '') {
+      setRemote(null);
+    }
     void searchMentionAccounts(current, requested)
       .then((rows) => {
         if (cancelled) {
@@ -168,6 +189,12 @@ export function ShopAccountControl({
   }, [open, query, session]);
 
   useLayoutEffect(() => {
+    setRowLimit(SUGGESTION_LIMIT);
+  }, [query]);
+
+  const placed = panel !== null;
+
+  useLayoutEffect(() => {
     if (!open) {
       return;
     }
@@ -176,15 +203,29 @@ export function ShopAccountControl({
       if (anchor !== null) {
         setPanel(placePanel(anchor));
       }
+      const box = panelRef.current;
+      if (!placed || anchor === null || box === null || rowLimit <= 1) {
+        return;
+      }
+      const band = visibleBand(anchor);
+      const rect = box.getBoundingClientRect();
+      if (rect.top < band.top || rect.bottom > band.bottom) {
+        setRowLimit(rowLimit - 1);
+      }
     };
     place();
+    const viewport = window.visualViewport;
     window.addEventListener('resize', place);
     window.addEventListener('scroll', place, true);
+    viewport?.addEventListener('resize', place);
+    viewport?.addEventListener('scroll', place);
     return () => {
       window.removeEventListener('resize', place);
       window.removeEventListener('scroll', place, true);
+      viewport?.removeEventListener('resize', place);
+      viewport?.removeEventListener('scroll', place);
     };
-  }, [open]);
+  }, [open, rowLimit, seed, remote, query, placed]);
 
   if (
     message.parentId !== undefined ||
@@ -206,7 +247,7 @@ export function ShopAccountControl({
         : remote !== null && remote.query === query
           ? remote.rows
           : seed.filter((row) => row.username.toLowerCase().startsWith(query))
-  ).slice(0, SUGGESTION_LIMIT);
+  ).slice(0, rowLimit);
   const ariaLabel = hasAccount ? t('forum.editShopAccount') : t('forum.addShopAccount');
 
   const saveUsername = async (): Promise<void> => {
@@ -282,7 +323,8 @@ export function ShopAccountControl({
       </IconButton>
       {open && panel !== null ? (
         <div
-          className="fixed z-30 rounded-2xl border border-app-border bg-app-card-muted p-3"
+          ref={panelRef}
+          className="fixed z-50 rounded-2xl border border-app-border bg-app-card-muted p-3"
           style={
             panel.side === 'above'
               ? { bottom: panel.bottom, left: panel.left, width: panel.width }
@@ -297,6 +339,7 @@ export function ShopAccountControl({
             disabled={saving}
             onChange={(event) => {
               setDraft(event.target.value);
+              setRemote(null);
               setErrorKey(null);
             }}
             className="mt-0 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
@@ -320,6 +363,12 @@ export function ShopAccountControl({
                     onMouseDown={(event) => {
                       event.preventDefault();
                       setDraft(`@${row.username}`);
+                      setRemote(null);
+                      setErrorKey(null);
+                    }}
+                    onClick={() => {
+                      setDraft(`@${row.username}`);
+                      setRemote(null);
                       setErrorKey(null);
                     }}
                   >

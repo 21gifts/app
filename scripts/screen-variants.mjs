@@ -2935,6 +2935,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state /messages thread-mention-inserted',
   },
   {
+    route: '/messages',
+    id: 'thread-mention',
+    image: 'messages-thread-mention.png',
+    visual: 'state-messages-thread-mention',
+    needle: "shotScreen(page, 'state-messages-thread-mention')",
+  },
+  {
     route: '/notifications',
     id: 'default',
     image: 'notifications.png',
@@ -3493,6 +3500,13 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group-mention-inserted.png',
     visual: 'state-moderate-group-mention-inserted',
     needle: 'state /moderate/group mention-inserted',
+  },
+  {
+    route: '/moderate/group',
+    id: 'mention',
+    image: 'moderate-group-mention.png',
+    visual: 'state-moderate-group-mention',
+    needle: "shotScreen(page, 'state-moderate-group-mention')",
   },
   {
     route: '/moderate/group',
@@ -4396,6 +4410,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-staff-account.png',
     visual: 'state-shops-staff-account',
     needle: "shotScreen(page, 'state-shops-staff-account')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-account-chosen',
+    image: 'shops-staff-account-chosen.png',
+    visual: 'state-shops-staff-account-chosen',
+    needle: "shotScreen(page, 'state-shops-staff-account-chosen')",
   },
   {
     route: '/shops',
