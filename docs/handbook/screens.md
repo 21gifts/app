@@ -1634,7 +1634,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: shop-edit-text
 
-**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled. **History** still says there are no edits yet.
+**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
 
 ![21.gifts welcome shop edit text](images/welcome-shop-edit-text.png)
 
@@ -1719,7 +1719,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 
 ### Variant: map-edit-text
 
-**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+**Next** again. Step **3 / 5 · Text** is open. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit text](images/shops-map-edit-text.png)
 
@@ -2007,7 +2007,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: edit-text
 
-**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled. **History** still says there are no edits yet.
+**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
 
 ![21.gifts shops edit text](images/shops-edit-text.png)
 
@@ -2451,13 +2451,13 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: shop-edit-text
 
-**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet.
+**Next** again. Step **3 / 5 · Text** is open.
 
 ![21.gifts member shop edit text](images/members-shop-edit-text.png)
 
 ### Variant: shop-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty.
 
 ![21.gifts member shop edit user](images/members-shop-edit-user.png)
 
