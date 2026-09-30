@@ -27,19 +27,19 @@ interface ShopSuggestion {
  * Username prefix after a leading `@`, or `null` when the field is not a mention.
  *
  * Empty string means the field is exactly `@` and the first suggestion page applies.
+ * Any space, including a trailing one, is not a username and closes the list.
  *
  * @param draft - Current field value.
  * @returns The lowercase prefix, `""`, or `null`.
  */
 function mentionQuery(draft: string): string | null {
-  const trimmed = draft.trim();
-  if (!trimmed.startsWith('@')) {
-    return null;
-  }
-  const query = trimmed.slice(1).toLowerCase();
-  if (query === '') {
+  if (draft === '@') {
     return '';
   }
+  if (!draft.startsWith('@') || draft.includes(' ')) {
+    return null;
+  }
+  const query = draft.slice(1).toLowerCase();
   if (!USERNAME_PREFIX.test(query)) {
     return null;
   }

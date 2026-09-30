@@ -273,6 +273,111 @@ describe('ShopAccountControl', () => {
     });
   });
 
+  it('closes the list when the field is @ followed by a space', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@ ' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+  });
+
+  it('closes the list when a username has a trailing space', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('option', { name: '@luna' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@luna ' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('option', { name: '@luna' })).toBeNull();
+    });
+  });
+
+  it('closes the list when the field does not start with @', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+  });
+
+  it('closes the list when the prefix is not a username', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-ada', username: 'ada', name: 'Ada' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@.ada' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+  });
+
+  it('hides the list when the first page fails', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockRejectedValue(new Error('offline'));
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    await waitFor(() => {
+      expect(searchMentionAccounts).toHaveBeenCalledWith('token', '');
+    });
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('drops the filtered rows when a prefix search fails', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockImplementation(async (_token, query) => {
+      if (query === '') {
+        return [{ id: 'acc-ada', username: 'ada', name: 'Ada' }];
+      }
+      throw new Error('offline');
+    });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@a' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
+    });
+  });
+
+  it('ignores a failed search after the field has moved on', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    let rejectSearch: (error: Error) => void = () => undefined;
+    vi.mocked(searchMentionAccounts).mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectSearch = reject;
+        }),
+    );
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    await waitFor(() => {
+      expect(searchMentionAccounts).toHaveBeenCalledWith('token', '');
+    });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
+    rejectSearch(new Error('late'));
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+  });
+
   it('drops usernames that do not start with the typed prefix', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(searchMentionAccounts).mockImplementation(async (_token, query) => {
