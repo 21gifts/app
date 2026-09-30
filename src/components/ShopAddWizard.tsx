@@ -133,8 +133,16 @@ export function ShopAddWizard({
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
   // The summary control replaces Next in the same spot. Ignore that same click.
   const [summaryArmed, setSummaryArmed] = useState(false);
+  // Skip the mount run. useState already opened on the right step, and
+  // repeating it undoes a Next click from the same turn the editor opened.
+  const appliedReset = useRef(`${mode}:${String(resetToken)}`);
 
   useEffect(() => {
+    const key = `${mode}:${String(resetToken)}`;
+    if (appliedReset.current === key) {
+      return;
+    }
+    appliedReset.current = key;
     setStep(mode === 'edit' ? 1 : 'closed');
   }, [resetToken, mode]);
 
