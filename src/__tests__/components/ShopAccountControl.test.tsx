@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { setMessageShopAccount } from '@/lib/api';
@@ -357,25 +357,34 @@ describe('ShopAccountControl', () => {
     });
   });
 
-  it('ignores a failed search after the field has moved on', async () => {
+  it('keeps the current prefix when an older prefix search fails', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-    let rejectSearch: (error: Error) => void = () => undefined;
-    vi.mocked(searchMentionAccounts).mockImplementation(
-      () =>
-        new Promise((_resolve, reject) => {
-          rejectSearch = reject;
-        }),
-    );
+    let rejectFirstPrefix: ((error: Error) => void) | undefined;
+    vi.mocked(searchMentionAccounts).mockImplementation((_token, query) => {
+      if (query === '') {
+        return Promise.resolve([{ id: 'acc-ada', username: 'ada', name: 'Ada' }]);
+      }
+      if (query === 'a' && rejectFirstPrefix === undefined) {
+        return new Promise((_resolve, reject) => {
+          rejectFirstPrefix = reject;
+        });
+      }
+      return new Promise(() => undefined);
+    });
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@a' } });
     await waitFor(() => {
-      expect(searchMentionAccounts).toHaveBeenCalledWith('token', '');
+      expect(rejectFirstPrefix).toBeTypeOf('function');
     });
-    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
-    rejectSearch(new Error('late'));
-    await waitFor(() => {
-      expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@ab' } });
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@a' } });
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+    await act(async () => {
+      rejectFirstPrefix?.(new Error('late'));
     });
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
   });
 
   it('drops usernames that do not start with the typed prefix', async () => {
