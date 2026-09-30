@@ -392,7 +392,10 @@ describe('usePasskeyLogin', () => {
     const accountId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId,
-      options: { challenge: 'aa', user: { name: accountId } },
+      options: {
+        challenge: 'aa',
+        user: { id: bytesToBase64Url(new TextEncoder().encode(accountId)), name: 'ada' },
+      },
     });
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -406,6 +409,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
@@ -436,7 +444,10 @@ describe('usePasskeyLogin', () => {
     const accountId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId,
-      options: { challenge: 'aa', user: { name: accountId } },
+      options: {
+        challenge: 'aa',
+        user: { id: bytesToBase64Url(new TextEncoder().encode(accountId)), name: 'ada' },
+      },
     });
     vi.mocked(obtainPrfFirst).mockRejectedValueOnce(new DOMException('', 'NotAllowedError'));
     vi.stubGlobal('navigator', {
@@ -451,6 +462,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
@@ -495,6 +511,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
@@ -557,7 +578,10 @@ describe('usePasskeyLogin', () => {
     const accountId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId,
-      options: { challenge: 'aa', user: { name: accountId } },
+      options: {
+        challenge: 'aa',
+        user: { id: bytesToBase64Url(new TextEncoder().encode(accountId)), name: 'ada' },
+      },
     });
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -571,6 +595,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
@@ -776,7 +805,10 @@ describe('usePasskeyLogin', () => {
     const accountId = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
     vi.mocked(startPasskeyRegistration).mockResolvedValue({
       challengeId,
-      options: { challenge: 'aa', user: { name: accountId } },
+      options: {
+        challenge: 'aa',
+        user: { id: bytesToBase64Url(new TextEncoder().encode(accountId)), name: 'ada' },
+      },
     });
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -789,6 +821,11 @@ describe('usePasskeyLogin', () => {
     const { result } = renderHook(() => usePasskeyLogin());
     await act(async () => {
       result.current.register();
+    });
+    expect(result.current.status).toBe('name');
+    expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.submitName('Ada');
     });
     expect(finishPasskeyRegistration).not.toHaveBeenCalled();
     expect(result.current.status).toBe('error');
