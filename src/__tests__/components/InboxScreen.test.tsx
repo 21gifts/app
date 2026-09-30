@@ -1,4 +1,5 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -11,8 +12,10 @@ import {
 } from '@/components/InboxScreen';
 import { fetchPublicMessage } from '@/lib/api';
 import type { Conversation, ConversationMessage, ForumMessage } from '@/lib/api-types';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import { getCatalog } from '@/lib/messages';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
@@ -46,6 +49,10 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
 }));
 
+vi.mock('@/lib/mention-search', () => ({
+  searchMentionAccounts: vi.fn(async () => []),
+}));
+
 vi.mock('@/lib/note-translate', () => ({
   fetchTranslateAvailable: vi.fn().mockResolvedValue(true),
   translateNote: vi.fn(),
@@ -63,6 +70,9 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.setState({ session: null, account: null });
+  vi.mocked(searchMentionAccounts).mockReset();
+  vi.mocked(searchMentionAccounts).mockResolvedValue([]);
   Object.defineProperty(navigator, 'userAgent', {
     configurable: true,
     value: originalUserAgent,
@@ -869,6 +879,66 @@ describe('InboxScreen', () => {
     expect(screen.queryByText('Send')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(onPost).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the marked person profile from the message', () => {
+    renderWithLocale(
+      <InboxScreen
+        {...inboxScreenProps({
+          messages: [
+            {
+              ...MESSAGE,
+              text: 'Ask @luna',
+              mentions: [{ username: 'luna', accountId: 'acc-luna' }],
+            },
+          ],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    expect(push).toHaveBeenCalledWith('/members/acc-luna');
+  });
+
+  it('keeps a marked name readable on the sender bubble', () => {
+    renderWithLocale(
+      <InboxScreen
+        {...inboxScreenProps({
+          messages: [
+            {
+              ...MESSAGE,
+              fromMe: true,
+              text: 'Ask @luna',
+              mentions: [{ username: 'luna', accountId: 'acc-luna' }],
+            },
+          ],
+        })}
+      />,
+    );
+    const mark = screen.getByRole('button', { name: 'View profile' });
+    const classes = mark.className.split(/\s+/);
+    expect(classes).toContain('text-app-btn-fg');
+    expect(classes).not.toContain('text-app-fg');
+  });
+
+  it('suggests a person in the composer and inserts the handle', async () => {
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    ]);
+    useAuthStore.setState({ session: 'token', account: null });
+    function Harness(): ReactElement {
+      const [draft, setDraft] = useState('');
+      return <InboxScreen {...inboxScreenProps({ draft, onDraftChange: setDraft })} />;
+    }
+    renderWithLocale(<Harness />);
+    const box = screen.getByLabelText('Your message') as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: '@', selectionStart: 1, selectionEnd: 1 } });
+    box.setSelectionRange(1, 1);
+    fireEvent.select(box);
+    expect(await screen.findByRole('option', { name: '@luna' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('option', { name: '@luna' }));
+    await waitFor(() => {
+      expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('@luna ');
+    });
   });
 
   it('shows tooLong and request alerts and a posting spinner', () => {

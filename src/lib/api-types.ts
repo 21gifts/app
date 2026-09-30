@@ -831,6 +831,18 @@ export const conversationMessageSchema = z.object({
   accountId: z.string().min(1).optional(),
   /** Optional id of the thread message this row is a paid gift for (moderator-group stipend rows). */
   giftFor: z.string().min(1).optional(),
+  /**
+   * Profile links in the body. Present when the text marks a username.
+   * These marks do not notify the person.
+   */
+  mentions: z
+    .array(
+      z.object({
+        username: z.string().min(1),
+        accountId: z.string().min(1),
+      }),
+    )
+    .optional(),
 });
 
 /**

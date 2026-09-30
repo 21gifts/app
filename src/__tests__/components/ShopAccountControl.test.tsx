@@ -3,10 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { setMessageShopAccount } from '@/lib/api';
 import type { Account, ForumMessage } from '@/lib/api-types';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({ setMessageShopAccount: vi.fn() }));
+vi.mock('@/lib/mention-search', () => ({
+  searchMentionAccounts: vi.fn(async () => []),
+}));
 
 const account: Account = {
   id: 'acc_1',
@@ -47,6 +51,8 @@ afterEach(() => {
   cleanup();
   useAuthStore.getState().clearAuth();
   vi.clearAllMocks();
+  vi.mocked(searchMentionAccounts).mockReset();
+  vi.mocked(searchMentionAccounts).mockResolvedValue([]);
 });
 
 describe('ShopAccountControl', () => {
@@ -158,6 +164,7 @@ describe('ShopAccountControl', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit account' }));
+    expect((screen.getByLabelText('Username') as HTMLInputElement).value).toBe('@luna');
     fireEvent.click(screen.getByRole('button', { name: 'Remove account' }));
     await waitFor(() => {
       expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', null);
@@ -235,5 +242,34 @@ describe('ShopAccountControl', () => {
     expect(screen.getByRole('alert').textContent).toContain(
       'The account could not be saved. Please try again.',
     );
+  });
+
+  it('opens with @ and fills the chosen person', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect((screen.getByLabelText('Username') as HTMLInputElement).value).toBe('@');
+    expect(await screen.findByRole('option', { name: '@luna' })).toBeTruthy();
+    expect(screen.getByText('Luna')).toBeTruthy();
+    fireEvent.mouseDown(screen.getByRole('option', { name: '@luna' }));
+    expect((screen.getByLabelText('Username') as HTMLInputElement).value).toBe('@luna');
+    expect(searchMentionAccounts).toHaveBeenCalledWith('token', '');
+  });
+
+  it('hides suggestions when the field is no longer a username', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-luna', username: 'luna', name: 'Luna' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('listbox', { name: 'People' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@luna shop' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
   });
 });

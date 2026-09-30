@@ -1,14 +1,76 @@
 'use client';
 
 import { User, X } from 'lucide-react';
-import { useState, type ReactElement } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { setMessageShopAccount } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { isShopNote } from '@/lib/forum-shop';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
+
+const USERNAME_PREFIX = /^[a-z0-9][a-z0-9._-]{0,31}$/;
+
+/** One account the shop field can attach. */
+interface ShopSuggestion {
+  id: string;
+  username: string;
+  name: string;
+}
+
+/**
+ * Username prefix after a leading `@`, or `null` when the field is not a mention.
+ *
+ * Empty string means the field is exactly `@` and the first suggestion page applies.
+ *
+ * @param draft - Current field value.
+ * @returns The lowercase prefix, `""`, or `null`.
+ */
+function mentionQuery(draft: string): string | null {
+  const trimmed = draft.trim();
+  if (!trimmed.startsWith('@')) {
+    return null;
+  }
+  const query = trimmed.slice(1).toLowerCase();
+  if (query === '') {
+    return '';
+  }
+  if (!USERNAME_PREFIX.test(query)) {
+    return null;
+  }
+  return query;
+}
+
+/**
+ * Field value when the panel opens.
+ *
+ * An attached account keeps its `@username`. A new account starts at `@`
+ * so the suggestion list can open immediately.
+ *
+ * @param username - Saved username, when the note already has an account.
+ * @returns The draft, always starting with `@`.
+ */
+function draftFor(username: string | undefined): string {
+  return username === undefined || username === '' ? '@' : `@${username}`;
+}
+
+/**
+ * Keep the suggestion panel inside the viewport.
+ *
+ * The control sits in a note footer. A wide absolute panel there scrolls the
+ * page sideways on a phone. A fixed box does not.
+ *
+ * @param anchor - The account button.
+ * @returns Top, left, and width in viewport pixels.
+ */
+function placePanel(anchor: HTMLElement): { top: number; left: number; width: number } {
+  const rect = anchor.getBoundingClientRect();
+  const width = Math.min(288, window.innerWidth - 16);
+  const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+  return { top: rect.bottom + 8, left, width };
+}
 
 /** Props for the shops-feed staff account editor. */
 export interface ShopAccountControlProps {
@@ -25,6 +87,11 @@ export interface ShopAccountControlProps {
  * Moderator-only shop-account editor on a shop note. Absent on replies, hidden
  * notes, non-shop text, and ranks below moderator.
  *
+ * The open field starts with `@`. Suggestions from the same account list as a
+ * forum post appear immediately. Choosing one fills `@username`. Saving still
+ * sends the username without `@`. The panel is fixed to the viewport so a
+ * phone does not scroll sideways.
+ *
  * @param props - Note and successful-save callback.
  * @returns The compact account control, or null when it must not edit.
  */
@@ -37,8 +104,55 @@ export function ShopAccountControl({
   const { t } = useTranslations();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState(message.shopAccount?.username ?? '');
+  const [draft, setDraft] = useState(draftFor(message.shopAccount?.username));
   const [errorKey, setErrorKey] = useState<'missing' | 'failed' | null>(null);
+  const [suggestions, setSuggestions] = useState<readonly ShopSuggestion[]>([]);
+  const [panel, setPanel] = useState<{ top: number; left: number; width: number } | null>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const query = open && session !== null ? mentionQuery(draft) : null;
+
+  useEffect(() => {
+    if (session === null || !open || query === null) {
+      setSuggestions([]);
+      return;
+    }
+    const current = session;
+    let cancelled = false;
+    void searchMentionAccounts(current, query)
+      .then((rows) => {
+        if (!cancelled) {
+          setSuggestions(rows);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSuggestions([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, query, session]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+    const place = (): void => {
+      const anchor = anchorRef.current;
+      if (anchor !== null) {
+        setPanel(placePanel(anchor));
+      }
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open]);
 
   if (
     message.parentId !== undefined ||
@@ -98,6 +212,7 @@ export function ShopAccountControl({
 
   return (
     <div
+      ref={anchorRef}
       className="relative shrink-0"
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
@@ -113,7 +228,8 @@ export function ShopAccountControl({
         onClick={() => {
           setOpen((current) => {
             if (!current) {
-              setDraft(message.shopAccount?.username ?? '');
+              setDraft(draftFor(message.shopAccount?.username));
+              setSuggestions([]);
               setErrorKey(null);
             }
             return !current;
@@ -122,18 +238,55 @@ export function ShopAccountControl({
       >
         <User aria-hidden="true" className="h-4 w-4 shrink-0" />
       </IconButton>
-      {open ? (
-        <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
+      {open && panel !== null ? (
+        <div
+          className="fixed z-30 max-h-[min(24rem,70vh)] overflow-y-auto rounded-2xl border border-app-border bg-app-card-muted p-3"
+          style={{ top: panel.top, left: panel.left, width: panel.width }}
+        >
           <input
             type="text"
             aria-label={t('forum.shopAccountLabel')}
+            aria-controls={suggestions.length > 0 ? listId : undefined}
+            aria-expanded={suggestions.length > 0}
             value={draft}
             disabled={saving}
             onChange={(event) => {
               setDraft(event.target.value);
+              setErrorKey(null);
             }}
             className="mt-0 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
           />
+          {suggestions.length > 0 ? (
+            <ul
+              id={listId}
+              role="listbox"
+              aria-label={t('forum.mentionSuggest')}
+              className="mt-2 rounded-xl border border-app-border bg-app-card p-2"
+            >
+              {suggestions.map((row) => (
+                <li key={row.id} role="presentation">
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={draft.trim().toLowerCase() === `@${row.username.toLowerCase()}`}
+                    aria-label={`@${row.username}`}
+                    disabled={saving}
+                    className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      setDraft(`@${row.username}`);
+                      setErrorKey(null);
+                    }}
+                  >
+                    <span className="font-medium">@{row.username}</span>
+                    {row.name !== row.username ? (
+                      <span className="text-app-muted">{row.name}</span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {errorKey !== null ? (
             <p role="alert" className="mt-3 text-sm text-app-danger">
               {errorKey === 'missing'

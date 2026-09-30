@@ -16739,6 +16739,7 @@ test.describe('shops screens', () => {
 
   test('shops staff-account', async ({ page }) => {
     await seedAda(page, 'moderator');
+    await fulfillMentionPeople(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -16763,7 +16764,10 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await expect(note.getByText('Cafe Luna')).toBeVisible();
     await note.getByRole('button', { name: 'Add an account' }).click();
-    await expect(note.getByLabel('Username')).toHaveValue('');
+    await expect(note.getByLabel('Username')).toHaveValue('@');
+    await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
+    await expect(page.getByText('Ada Lovelace')).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
     await expect(note.getByRole('alert')).toHaveCount(0);
@@ -16804,6 +16808,7 @@ test.describe('shops screens', () => {
 
   test('shops staff-account-error', async ({ page }) => {
     await seedAda(page, 'moderator');
+    await fulfillMentionPeople(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -16842,6 +16847,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add an account' }).click();
     await note.getByLabel('Username').fill('missing');
+    await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
     await note.getByRole('button', { name: 'Save account' }).click();
     await expect(note.getByRole('alert')).toHaveText('No account with that username.');
     const save = note.getByRole('button', { name: 'Save account' });

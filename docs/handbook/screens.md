@@ -2121,7 +2121,7 @@ A moderator session. **Add a place** on the Cafe Luna note is open. A pin and na
 
 ### Variant: staff-account
 
-A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is empty. **Save account** is visible. There is no alert.
+A moderator session. One Cafe Luna shop note. **Add an account** is open. The username field is `@`. The People list shows `@ada` Ada Lovelace and `@adam` Adam. **Save account** is visible. There is no alert.
 
 ![21.gifts shops staff account](images/shops-staff-account.png)
 

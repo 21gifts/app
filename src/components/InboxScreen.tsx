@@ -18,6 +18,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
@@ -1039,6 +1040,7 @@ export function InboxScreen({
                     fiat={fiat}
                     truncate={false}
                     conversationId={openId}
+                    {...(message.mentions === undefined ? {} : { mentions: message.mentions })}
                     className={
                       message.fromMe
                         ? 'mt-2 whitespace-pre-wrap text-sm text-app-btn-fg'
@@ -1168,14 +1170,15 @@ export function InboxScreen({
                 />
               </>
             ) : null}
-            <textarea
-              aria-label={t('inbox.composerLabel')}
+            <MentionTextarea
+              ariaLabel={t('inbox.composerLabel')}
               placeholder={t('inbox.placeholder')}
               value={draft}
-              onChange={(event) => onDraftChange(event.target.value)}
+              onChange={onDraftChange}
               maxLength={CONTACT_MESSAGE_MAX_LENGTH}
               rows={2}
               disabled={posting || messagesLoading}
+              wrapperClassName="relative min-w-0 flex-1"
               className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
             />
             <IconButton
