@@ -1674,6 +1674,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shop-edit",
+    "label": "/members/[accountId] shop-edit",
+    "visual": "state-members-shop-edit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-open",
+    "label": "/members/[accountId] shop-edit-open",
+    "visual": "state-members-shop-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",
@@ -2979,6 +2991,18 @@
     "id": "/messages/[id]:signed-in",
     "label": "/messages/[id] signed-in",
     "visual": "state-messages-id-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit",
+    "label": "/messages/[id] shop-edit",
+    "visual": "state-messages-id-shop-edit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-open",
+    "label": "/messages/[id] shop-edit-open",
+    "visual": "state-messages-id-shop-edit-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
