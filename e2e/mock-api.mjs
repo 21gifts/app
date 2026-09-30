@@ -12,7 +12,7 @@ const HOST = '127.0.0.1';
 
 /** @type {Map<string, object>} */
 const byToken = new Map();
-/** @type {Map<string, { type: 'register' | 'authenticate' | 'replace' | 'seed', account?: object, requestedName?: string, claimAccountId?: string }>} */
+/** @type {Map<string, { type: 'register' | 'authenticate' | 'replace' | 'seed', account?: object, requestedName?: string, claimAccountId?: string, accountId?: string }>} */
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
@@ -1955,6 +1955,24 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/e2e/unclaimed-profile') {
+    const account = newAccount(null);
+    account.name = 'Ada';
+    let username;
+    do {
+      username = `ada${hex(randomBytes(8))}`;
+    } while (usernameTaken(username, ''));
+    account.username = username;
+    account.lightningAddress = 'ada@walletofsatoshi.com';
+    account.rulesAgreedAt = Date.now();
+    account.forumLawsDismissed = true;
+    afterFieldWrite(account);
+    const token = hex(randomBytes(32));
+    byToken.set(token, account);
+    json(res, 200, { viewKey: account.viewKey, id: account.id, name: 'Ada' });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/auth/passkey/register/begin') {
     const challengeId = hex(randomBytes(32));
     let parsed = null;
@@ -2031,15 +2049,15 @@ const server = http.createServer(async (req, res) => {
         json(res, 409, { error: 'Username is already in use' });
         return;
       }
-      const userId = hex(randomBytes(16));
-      byPasskey.set(challengeId, { type: 'register', requestedName: normalized });
+      const accountId = `acc_${hex(randomBytes(8))}`;
+      byPasskey.set(challengeId, { type: 'register', requestedName: normalized, accountId });
       json(res, 200, {
         challengeId,
         options: {
           challenge: b64url(randomBytes(32)),
           rp: { id: 'localhost', name: '21.gifts' },
           user: {
-            id: b64url(Buffer.from(userId, 'hex')),
+            id: b64url(Buffer.from(accountId)),
             name: normalized,
             displayName: normalized,
           },
@@ -2051,14 +2069,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const userId = hex(randomBytes(16));
-    byPasskey.set(challengeId, { type: 'register' });
+    const accountId = `acc_${hex(randomBytes(8))}`;
+    byPasskey.set(challengeId, { type: 'register', accountId });
     json(res, 200, {
       challengeId,
       options: {
         challenge: b64url(randomBytes(32)),
         rp: { id: 'localhost', name: '21.gifts' },
-        user: { id: b64url(Buffer.from(userId, 'hex')), name: userId, displayName: '21.gifts' },
+        user: {
+          id: b64url(Buffer.from(accountId)),
+          name: accountId,
+          displayName: '21.gifts',
+        },
         pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
         authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
         extensions: { prf: {} },
@@ -2147,6 +2169,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         account = newAccount(null);
+        account.id = pending.accountId;
         account.name = pending.requestedName;
         account.username = pending.requestedName;
         account.passkeyCredentialId = credId;
@@ -2154,6 +2177,7 @@ const server = http.createServer(async (req, res) => {
         afterFieldWrite(account);
       } else {
         account = newAccount(null);
+        account.id = pending.accountId;
         account.passkeyCredentialId = credId;
         byPasskeyCredential.set(credId, account);
       }
