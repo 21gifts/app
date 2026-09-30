@@ -5,8 +5,8 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
-  Gift,
   MessageCircle,
+  Reply,
   Search,
   UserRound,
   Wallet,
@@ -140,7 +140,7 @@ export default async function Home(): Promise<ReactElement> {
                         {t('home.previewStep2')}
                       </span>
                     </span>
-                    <Gift aria-hidden="true" className="h-5 w-5 shrink-0 text-[#b76100]" />
+                    <Reply aria-hidden="true" className="h-5 w-5 shrink-0 text-[#b76100]" />
                   </div>
                   <div className="ml-5 flex h-8 items-center border-l border-ink/20 pl-3">
                     <ArrowDown aria-hidden="true" className="h-4 w-4 text-ink/50" />

@@ -34,12 +34,12 @@ describe('Home', () => {
 
   it('explains the direct gift and shows an honest non-interactive preview', async () => {
     renderWithLocale(await Home());
-    expect(screen.getByText(/Sign in to read their posts and reactions/i)).toBeTruthy();
+    expect(screen.getByText(/Sign in to read their posts/i)).toBeTruthy();
     expect(screen.getByText('How it works')).toBeTruthy();
     expect(screen.getByText('Where the Bitcoin goes')).toBeTruthy();
     expect(screen.getByText('Your wallet')).toBeTruthy();
     expect(screen.getByText('Their wallet')).toBeTruthy();
-    expect(screen.getByText('Choose a reaction with the gift icon')).toBeTruthy();
+    expect(screen.getByText('Write a reaction and add an amount')).toBeTruthy();
     expect(document.querySelectorAll('img[src="/bitcoin-symbol.svg"]')).toHaveLength(5);
     expect(screen.queryByRole('spinbutton')).toBeNull();
     expect(screen.queryByRole('button', { name: /pay with/i })).toBeNull();

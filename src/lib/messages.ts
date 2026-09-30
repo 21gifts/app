@@ -126,7 +126,7 @@ const en = {
   'home.headline1': 'Help people',
   'home.headline2': 'with Bitcoin',
   'home.lead':
-    "In the forum, people share what they're going through. Sign in to read their posts and reactions. If you want to help, choose a reaction and send Bitcoin to the wallet of the person who wrote it.",
+    "In the forum, people share what they're going through. Sign in to read their posts. If you want to help someone, write a reaction under their post and add an amount. The Bitcoin goes to the wallet of the person who wrote the post.",
   'home.ctaAsk': 'Ask for help',
   'home.ctaSend': 'Give Bitcoin',
   'home.howKicker': 'Giving on 21.gifts',
@@ -140,7 +140,7 @@ const en = {
   'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin from Wallet of Satoshi.',
   'home.step3Title': 'Post and receive help',
   'home.step3Body':
-    'Once you are logged in, write a post in the forum. Others can send Bitcoin to a payable reaction — it lands in the author’s Wallet of Satoshi, not ours. The platform never touches the money.',
+    'Once you are logged in, write a post in the forum. Others can react to it with an amount — the Bitcoin lands in your Wallet of Satoshi, not ours. The platform never touches the money.',
   'home.whyKicker': 'Why we built it this way',
   'home.whyTitle': 'The person you help controls their wallet',
   'home.why1Title': 'You decide who to help',
@@ -157,7 +157,7 @@ const en = {
   'home.projectKicker': 'Keep the project running',
   'home.projectTitle': 'Want to support 21.gifts?',
   'home.projectLead':
-    "A gift from the forum goes to the person who wrote the reaction you chose. If you'd like to support the website itself, use this separate address.",
+    "A gift from the forum goes to the person who wrote the post. If you'd like to support the website itself, use this separate address.",
   'home.faqKicker': 'Good to know',
   'home.faqTitle': 'Questions about 21.gifts?',
   'home.faq1Q': 'Do I need to sign in to read the forum?',
@@ -174,7 +174,7 @@ const en = {
     'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
   'home.faq5Q': 'Who receives the Bitcoin?',
   'home.faq5A':
-    'Choose a reaction with the gift icon. The Bitcoin goes to the wallet address of the person who wrote it.',
+    "The person who wrote the post. Write a reaction under it and add an amount. The Bitcoin goes to that person's wallet address.",
   'home.faq6Q': 'Why Bitcoin?',
   'home.faq6A':
     'Bitcoin lets you send small gifts directly to a chosen wallet address, even across borders. 21.gifts does not hold the payment; wallet fees may apply.',
@@ -210,7 +210,7 @@ const en = {
   'about.ctaForum': 'Go to the forum',
   'donate.pageTitle': 'Give Bitcoin to someone',
   'donate.lead':
-    'Sign in and open a post in the forum. Read the reactions beneath it, then choose one with a gift icon. Enter an amount and pay from your wallet.',
+    'Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.',
   'donate.continue': 'Open the forum',
   'notFound.body': 'This page does not exist.',
   'notFound.back': 'Back home',
@@ -1086,25 +1086,26 @@ const en = {
   'home.heroKicker': 'From one person to another',
   'home.metaTitle': 'Help people with Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Read posts and reactions, choose someone to help and send Bitcoin to their wallet. 21.gifts never holds the gift or takes a share.',
+    'Read posts, react to someone you want to help and send Bitcoin to their wallet. 21.gifts never holds the gift or takes a share.',
   'home.heroProof': '21.gifts takes no share of gifts between people.',
   'home.previewLabel': 'How it works',
   'home.previewKicker': 'After you sign in',
   'home.previewTitle': 'How your gift reaches someone',
   'home.previewStep1': 'Read a post in the forum',
-  'home.previewStep2': 'Choose a reaction with the gift icon',
-  'home.previewStep3': 'Enter an amount and pay from your wallet',
+  'home.previewStep2': 'Write a reaction and add an amount',
+  'home.previewStep3': 'Pay from your wallet',
   'home.previewWalletTitle': 'Where the Bitcoin goes',
   'home.previewWalletBody':
     'The person adds their own wallet address. 21.gifts does not hold the payment.',
   'home.previewFrom': 'Your wallet',
   'home.previewTo': 'Their wallet',
   'home.give1Title': 'Sign in and read',
-  'home.give1Body': 'Open a post in the forum and read the reactions beneath it.',
-  'home.give2Title': 'Choose a person',
-  'home.give2Body': 'Tap the gift icon on their reaction. The gift is for the person who wrote it.',
+  'home.give1Body': 'Open a post in the forum and read what the person shares.',
+  'home.give2Title': 'Write a reaction',
+  'home.give2Body':
+    'Tap the arrow under the post, write a few words and add an amount. The gift is for the person who wrote the post.',
   'home.give3Title': 'Pay from your wallet',
-  'home.give3Body': 'Enter an amount. Open Wallet of Satoshi or scan the QR code with your wallet.',
+  'home.give3Body': 'Open Wallet of Satoshi or scan the QR code with your wallet.',
   'home.receiveTitle': 'Need help yourself?',
   'home.receiveBody': 'Sign in, add a Wallet of Satoshi address and tell the forum what you need.',
   'home.discoverTitle': 'Get to know 21.gifts',
@@ -1119,7 +1120,7 @@ const en = {
   'home.discoverTrustKicker': 'Before you give',
   'home.discoverTrustTitle': 'Where does the gift go?',
   'home.discoverTrustBody':
-    "To the person who wrote the reaction you chose. Here's how the payment works.",
+    "To the person who wrote the post you reacted to. Here's how the payment works.",
   'donate.metaTitle': 'Give Bitcoin to someone | 21.gifts',
   'wallet.activate': 'Activate recovery phrase',
   'wallet.activateHint':
@@ -1274,7 +1275,7 @@ const de = {
   'home.headline1': 'Hilf Menschen',
   'home.headline2': 'mit Bitcoin',
   'home.lead':
-    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge und Reaktionen. Wenn du jemanden unterstützen möchtest, wählst du eine Reaktion aus und schickst Bitcoin an die Wallet der Person, die sie geschrieben hat.',
+    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, schreibst du eine Reaktion unter den Beitrag und gibst einen Betrag an. Der Bitcoin geht an die Wallet der Person, die den Beitrag geschrieben hat.',
   'home.ctaAsk': 'Selbst um Hilfe bitten',
   'home.ctaSend': 'Bitcoin verschenken',
   'home.howKicker': 'Bitcoin verschenken',
@@ -1289,7 +1290,7 @@ const de = {
   'home.step2BodyAfter': '. An diese Adresse können andere dir Bitcoin schicken.',
   'home.step3Title': 'Schreiben und Hilfe empfangen',
   'home.step3Body':
-    'Schreibe im Wohnzimmer, was dich beschäftigt. Wenn jemand eine deiner Antworten unterstützen möchte, kann die Person Bitcoin an deine Wallet-Adresse schicken. 21.gifts verwahrt die Zahlung nicht.',
+    'Schreibe im Wohnzimmer, was dich beschäftigt. Wer dich unterstützen möchte, reagiert auf deinen Beitrag mit einem Betrag und schickt Bitcoin an deine Wallet-Adresse. 21.gifts verwahrt die Zahlung nicht.',
   'home.whyKicker': 'Wohin dein Geschenk geht',
   'home.whyTitle': 'Die Person bestimmt ihre Empfangsadresse',
   'home.why1Title': 'Du wählst die Antwort',
@@ -1323,7 +1324,7 @@ const de = {
     'Wenn dein Zugang auf dem Gerät und in jeder Synchronisierung verloren ist, können wir dein Konto derzeit nicht wiederherstellen. Prüfe deshalb, wie dein Gerät den Zugang sichert.',
   'home.faq5Q': 'Wer bekommt den Bitcoin?',
   'home.faq5A':
-    'Wähle eine Reaktion mit Geschenk-Symbol aus. Dein Bitcoin geht an die Wallet-Adresse der Person, die sie geschrieben hat.',
+    'Die Person, die den Beitrag geschrieben hat. Schreib eine Reaktion darunter und gib einen Betrag an. Dein Bitcoin geht an ihre Wallet-Adresse.',
   'home.faq6Q': 'Warum Bitcoin?',
   'home.faq6A':
     'Damit du auch kleine Beträge direkt an die gewählte Wallet-Adresse schicken kannst. 21.gifts verwahrt das Geschenk nicht. Dein Wallet-Anbieter kann Gebühren berechnen.',
@@ -1359,7 +1360,7 @@ const de = {
   'about.ctaForum': 'Zum Wohnzimmer',
   'donate.pageTitle': 'Jemandem helfen',
   'donate.lead':
-    'Melde dich an und öffne einen Beitrag im Wohnzimmer. Lies die Reaktionen darunter und tippe bei einer Reaktion auf das Geschenk-Symbol. Dann gibst du den Betrag ein und bezahlst mit deiner Wallet.',
+    'Melde dich an und öffne einen Beitrag im Wohnzimmer. Schreib eine Reaktion darunter, gib einen Betrag an und bezahle mit deiner Wallet. Der Bitcoin geht an die Person, die den Beitrag geschrieben hat.',
   'donate.continue': 'Zum Wohnzimmer',
   'notFound.body': 'Diese Seite gibt es nicht.',
   'notFound.back': 'Zur Startseite',
@@ -2269,27 +2270,27 @@ const de = {
   'home.heroKicker': 'Direkt von Mensch zu Mensch',
   'home.metaTitle': 'Hilf Menschen mit Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Lies, was Menschen erzählen, wähle eine Antwort aus und verschenke Bitcoin direkt an ihre Wallet. 21.gifts verwahrt dein Geschenk nicht und behält keinen Anteil.',
+    'Lies, was Menschen erzählen, reagiere auf einen Beitrag und verschenke Bitcoin direkt an die Wallet der Person. 21.gifts verwahrt dein Geschenk nicht und behält keinen Anteil.',
   'home.heroProof': 'Die Person bekommt dein Geschenk. 21.gifts behält keinen Anteil.',
   'home.previewLabel': 'Der Ablauf',
   'home.previewKicker': 'Nach der Anmeldung',
   'home.previewTitle': 'So kommt dein Geschenk an',
   'home.previewStep1': 'Beitrag im Wohnzimmer öffnen',
-  'home.previewStep2': 'Reaktion mit Geschenk-Symbol auswählen',
-  'home.previewStep3': 'Betrag eingeben und mit deiner Wallet bezahlen',
+  'home.previewStep2': 'Reaktion schreiben und Betrag angeben',
+  'home.previewStep3': 'Mit deiner Wallet bezahlen',
   'home.previewWalletTitle': 'Wohin der Bitcoin geht',
   'home.previewWalletBody': 'Die empfangende Person hat ihre Wallet-Adresse selbst hinterlegt.',
   'home.previewFrom': 'Deine Wallet',
   'home.previewTo': 'Wallet der Person',
   'home.give1Title': 'Anmelden und umsehen',
   'home.give1Body':
-    'Melde dich an, öffne einen Beitrag im Wohnzimmer und lies die Reaktionen darunter.',
-  'home.give2Title': 'Eine Reaktion auswählen',
+    'Melde dich an, öffne einen Beitrag im Wohnzimmer und lies, was die Person erzählt.',
+  'home.give2Title': 'Eine Reaktion schreiben',
   'home.give2Body':
-    'Bei einer Reaktion mit Geschenk-Symbol kannst du Bitcoin an die Person schicken, die sie geschrieben hat.',
-  'home.give3Title': 'Betrag wählen und bezahlen',
+    'Tippe unter dem Beitrag auf den Pfeil, schreib ein paar Worte und gib einen Betrag an. Das Geschenk ist für die Person, die den Beitrag geschrieben hat.',
+  'home.give3Title': 'Bezahlen',
   'home.give3Body':
-    'Gib den Betrag ein. Öffne Wallet of Satoshi oder scanne am Computer den QR-Code mit deiner Wallet.',
+    'Öffne Wallet of Satoshi oder scanne am Computer den QR-Code mit deiner Wallet.',
   'home.receiveTitle': 'Du möchtest selbst um Hilfe bitten?',
   'home.receiveBody':
     'Melde dich an, hinterlege deine Wallet-Adresse und erzähl im Wohnzimmer, was du brauchst.',
@@ -2305,7 +2306,7 @@ const de = {
   'home.discoverTrustKicker': 'Der Weg des Geldes',
   'home.discoverTrustTitle': 'Bei wem kommt es an?',
   'home.discoverTrustBody':
-    'Bei der Person, deren Antwort du ausgewählt hast. So funktioniert die Zahlung.',
+    'Bei der Person, auf deren Beitrag du reagierst. So funktioniert die Zahlung.',
   'donate.metaTitle': 'Bitcoin verschenken und jemandem helfen | 21.gifts',
   'wallet.activate': 'Wiederherstellungssatz aktivieren',
   'wallet.activateHint':
@@ -2449,7 +2450,7 @@ const es = {
   'home.headline1': 'Ayuda a otras personas',
   'home.headline2': 'con Bitcoin',
   'home.lead':
-    'En el foro, la gente cuenta lo que está viviendo. Inicia sesión para leer las publicaciones y las reacciones. Si quieres ayudar, elige una reacción y envía Bitcoin a la cartera de quien la escribió.',
+    'En el foro, la gente cuenta lo que está viviendo. Inicia sesión para leer sus publicaciones. Si quieres ayudar a alguien, escribe una reacción debajo de su publicación e indica un importe. El Bitcoin va a la cartera de quien escribió la publicación.',
   'home.ctaAsk': 'Pedir ayuda',
   'home.ctaSend': 'Regalar Bitcoin',
   'home.howKicker': 'Regala Bitcoin en 21.gifts',
@@ -2463,7 +2464,7 @@ const es = {
   'home.step2BodyAfter': '. Otras personas podrán enviarte Bitcoin a esa dirección.',
   'home.step3Title': 'Publica y recibe ayuda',
   'home.step3Body':
-    'Cuenta en la comunidad qué te preocupa. Si alguien quiere apoyar una de tus respuestas, puede enviar Bitcoin a tu dirección. 21.gifts no guarda el pago.',
+    'Cuenta en la comunidad qué te preocupa. Si alguien quiere apoyarte, reacciona a tu publicación con un importe y envía Bitcoin a tu dirección. 21.gifts no guarda el pago.',
   'home.whyKicker': 'Por qué lo hicimos así',
   'home.whyTitle': 'Quien recibe controla su propia cartera',
   'home.why1Title': 'Tú eliges a quién ayudar',
@@ -2481,7 +2482,7 @@ const es = {
   'home.projectKicker': 'Sostener el proyecto',
   'home.projectTitle': '¿Quieres apoyar a 21.gifts?',
   'home.projectLead':
-    'Un regalo enviado desde el foro va a quien escribió la reacción que elegiste. Si quieres apoyar esta web, utiliza esta dirección aparte.',
+    'Un regalo enviado desde el foro va a quien escribió la publicación. Si quieres apoyar esta web, utiliza esta dirección aparte.',
   'home.faqKicker': 'Conviene saber',
   'home.faqTitle': '¿Tienes preguntas sobre 21.gifts?',
   'home.faq1Q': '¿Tengo que iniciar sesión para leer el foro?',
@@ -2498,7 +2499,7 @@ const es = {
     'Si pierdes el acceso en tu dispositivo y en todas las copias sincronizadas, todavía no podemos recuperar tu cuenta. Comprueba cómo guarda tu dispositivo el acceso.',
   'home.faq5Q': '¿Quién recibe el Bitcoin?',
   'home.faq5A':
-    'Elige una reacción con el icono de regalo. El Bitcoin va a la dirección de cartera de quien la escribió.',
+    'Quien escribió la publicación. Escribe una reacción debajo e indica un importe. El Bitcoin va a la dirección de cartera de esa persona.',
   'home.faq6Q': '¿Por qué Bitcoin?',
   'home.faq6A':
     'Con Bitcoin puedes enviar incluso pequeños regalos a una cartera elegida, también a otro país. 21.gifts no guarda el pago; puede haber comisiones de la cartera.',
@@ -2533,7 +2534,7 @@ const es = {
   'about.ctaForum': 'Ir al foro',
   'donate.pageTitle': 'Regala Bitcoin a alguien',
   'donate.lead':
-    'Inicia sesión y abre una publicación en el foro. Lee las reacciones y toca el icono de regalo en la que elijas. Después indica cuánto quieres enviar y paga desde tu cartera.',
+    'Inicia sesión y abre una publicación en el foro. Escribe una reacción debajo, indica un importe y paga desde tu cartera. El Bitcoin va a quien escribió la publicación.',
   'donate.continue': 'Ir al foro',
   'notFound.body': 'Esta página no existe.',
   'notFound.back': 'Volver al inicio',
@@ -3420,26 +3421,26 @@ const es = {
   'home.heroKicker': 'De persona a persona',
   'home.metaTitle': 'Ayuda a otras personas con Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Lee publicaciones y reacciones, elige a quién ayudar y envía Bitcoin a su cartera. 21.gifts no guarda el regalo ni se queda con una parte.',
+    'Lee publicaciones, reacciona a quien quieras ayudar y envía Bitcoin a su cartera. 21.gifts no guarda el regalo ni se queda con una parte.',
   'home.heroProof': '21.gifts no se queda con parte de los regalos entre personas.',
   'home.previewLabel': 'Así funciona',
   'home.previewKicker': 'Después de iniciar sesión',
   'home.previewTitle': 'Así llega tu regalo',
   'home.previewStep1': 'Lee una publicación en el foro',
-  'home.previewStep2': 'Elige una reacción con el icono de regalo',
-  'home.previewStep3': 'Indica el importe y paga desde tu cartera',
+  'home.previewStep2': 'Escribe una reacción e indica un importe',
+  'home.previewStep3': 'Paga desde tu cartera',
   'home.previewWalletTitle': 'Adónde va el Bitcoin',
   'home.previewWalletBody':
     'Cada persona añade su propia dirección de cartera. 21.gifts no guarda el pago.',
   'home.previewFrom': 'Tu cartera',
   'home.previewTo': 'Cartera de quien recibe',
   'home.give1Title': 'Entra y lee',
-  'home.give1Body': 'Abre una publicación en el foro y lee las reacciones que hay debajo.',
-  'home.give2Title': 'Elige a una persona',
-  'home.give2Body': 'Toca el icono de regalo en su reacción. El Bitcoin es para quien la escribió.',
+  'home.give1Body': 'Abre una publicación en el foro y lee lo que cuenta esa persona.',
+  'home.give2Title': 'Escribe una reacción',
+  'home.give2Body':
+    'Toca la flecha debajo de la publicación, escribe unas palabras e indica un importe. El regalo es para quien escribió la publicación.',
   'home.give3Title': 'Paga desde tu cartera',
-  'home.give3Body':
-    'Indica el importe. Abre Wallet of Satoshi o escanea el código QR con tu cartera.',
+  'home.give3Body': 'Abre Wallet of Satoshi o escanea el código QR con tu cartera.',
   'home.receiveTitle': '¿Necesitas ayuda?',
   'home.receiveBody':
     'Inicia sesión, añade una dirección de Wallet of Satoshi y cuenta en el foro qué necesitas.',
@@ -3455,7 +3456,7 @@ const es = {
   'home.discoverTrustKicker': 'Antes de dar',
   'home.discoverTrustTitle': '¿Adónde llega tu regalo?',
   'home.discoverTrustBody':
-    'A quien escribió la reacción que elegiste. Aquí te explicamos cómo funciona el pago.',
+    'A quien escribió la publicación a la que reaccionas. Aquí te explicamos cómo funciona el pago.',
   'donate.metaTitle': 'Regala Bitcoin a alguien | 21.gifts',
   'wallet.activate': 'Activar frase de recuperación',
   'wallet.activateHint':
@@ -3602,7 +3603,7 @@ const fil = {
   'home.headline1': 'Tumulong sa kapwa',
   'home.headline2': 'gamit ang Bitcoin',
   'home.lead':
-    'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in para basahin ang mga post at reaksyon. Kapag may gusto kang tulungan, pumili ng reaksyon at magpadala ng Bitcoin sa wallet ng sumulat nito.',
+    'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in para basahin ang mga post nila. Kapag may gusto kang tulungan, sumulat ng reaksyon sa ilalim ng post niya at maglagay ng halaga. Sa wallet ng sumulat ng post mapupunta ang Bitcoin.',
   'home.ctaAsk': 'Humiling ng tulong',
   'home.ctaSend': 'Magbigay ng Bitcoin',
   'home.howKicker': 'Pagbibigay sa 21.gifts',
@@ -3617,7 +3618,7 @@ const fil = {
   'home.step2BodyAfter': '. Maaari kang padalhan ng Bitcoin sa address na iyon.',
   'home.step3Title': 'Mag-post at tumanggap ng tulong',
   'home.step3Body':
-    'Ikuwento sa komunidad ang pinagdaraanan mo. Kung may gustong tumulong sa isa sa mga sagot mo, maaari siyang magpadala ng Bitcoin sa address mo. Hindi iniingatan ng 21.gifts ang bayad.',
+    'Ikuwento sa komunidad ang pinagdaraanan mo. Kung may gustong tumulong sa iyo, magre-react siya sa post mo na may halaga at magpapadala ng Bitcoin sa address mo. Hindi iniingatan ng 21.gifts ang bayad.',
   'home.whyKicker': 'Bakit ganito ang ginawa namin',
   'home.whyTitle': 'Ang tatanggap ang may kontrol sa sarili niyang wallet',
   'home.why1Title': 'Ikaw ang pipili ng tutulungan',
@@ -3635,7 +3636,7 @@ const fil = {
   'home.projectKicker': 'Suportahan ang proyekto',
   'home.projectTitle': 'Gusto mo ring suportahan ang 21.gifts?',
   'home.projectLead':
-    'Sa sumulat ng napili mong reaksyon mapupunta ang regalo sa forum. Kung gusto mong suportahan ang website mismo, gamitin ang hiwalay na address na ito.',
+    'Sa sumulat ng post mapupunta ang regalo sa forum. Kung gusto mong suportahan ang website mismo, gamitin ang hiwalay na address na ito.',
   'home.faqKicker': 'Mahalagang malaman',
   'home.faqTitle': 'May tanong ka tungkol sa 21.gifts?',
   'home.faq1Q': 'Kailangan bang mag-log in para mabasa ang forum?',
@@ -3652,7 +3653,7 @@ const fil = {
     'Kung mawala ang access sa device mo at sa lahat ng naka-sync na kopya, hindi pa namin maibabalik ang account. Alamin kung paano bina-back up ng device mo ang pag-log in.',
   'home.faq5Q': 'Sino ang tatanggap ng Bitcoin?',
   'home.faq5A':
-    'Pumili ng reaksyong may icon na hugis regalo. Sa wallet address ng sumulat nito mapupunta ang Bitcoin.',
+    'Ang sumulat ng post. Sumulat ng reaksyon sa ilalim nito at maglagay ng halaga. Sa wallet address niya mapupunta ang Bitcoin.',
   'home.faq6Q': 'Bakit Bitcoin?',
   'home.faq6A':
     'Sa Bitcoin, puwede kang magpadala ng maliit na regalo sa napili mong wallet address, kahit nasa ibang bansa ang tatanggap. Hindi hinahawakan ng 21.gifts ang bayad; maaaring may singil ang wallet provider.',
@@ -3688,7 +3689,7 @@ const fil = {
   'about.ctaForum': 'Pumunta sa forum',
   'donate.pageTitle': 'Magbigay ng Bitcoin sa kapwa',
   'donate.lead':
-    'Mag-log in at buksan ang isang post sa forum. Basahin ang mga reaksyon at i-tap ang gift icon sa napili mo. Ilagay ang halaga at magbayad gamit ang wallet mo.',
+    'Mag-log in at buksan ang isang post sa forum. Sumulat ng reaksyon sa ilalim nito, maglagay ng halaga at magbayad gamit ang wallet mo. Sa sumulat ng post mapupunta ang Bitcoin.',
   'donate.continue': 'Buksan ang forum',
   'notFound.body': 'Walang ganitong page.',
   'notFound.back': 'Bumalik sa home',
@@ -4581,27 +4582,26 @@ const fil = {
   'home.heroKicker': 'Mula sa iyo, diretso sa kapwa',
   'home.metaTitle': 'Tumulong sa kapwa gamit ang Bitcoin | 21.gifts',
   'home.metaDescription':
-    'Basahin ang mga post at reaksyon, piliin ang tutulungan at magpadala ng Bitcoin sa kanyang wallet. Hindi hinahawakan ng 21.gifts ang regalo o kumukuha ng bahagi.',
+    'Basahin ang mga post, mag-react sa gusto mong tulungan at magpadala ng Bitcoin sa kanyang wallet. Hindi hinahawakan ng 21.gifts ang regalo o kumukuha ng bahagi.',
   'home.heroProof': 'Hindi kumukuha ng bahagi ang 21.gifts sa regalong ipinapadala mo.',
   'home.previewLabel': 'Ganito ang paraan',
   'home.previewKicker': 'Pagkatapos mong mag-log in',
   'home.previewTitle': 'Ganito nakakarating ang regalo mo',
   'home.previewStep1': 'Magbasa ng post sa forum',
-  'home.previewStep2': 'Pumili ng reaksyong may icon na hugis regalo',
-  'home.previewStep3': 'Ilagay ang halaga at magbayad gamit ang wallet mo',
+  'home.previewStep2': 'Sumulat ng reaksyon at maglagay ng halaga',
+  'home.previewStep3': 'Magbayad gamit ang wallet mo',
   'home.previewWalletTitle': 'Saan napupunta ang Bitcoin',
   'home.previewWalletBody':
     'Sariling wallet address ang inilalagay ng tatanggap. Hindi hinahawakan ng 21.gifts ang bayad.',
   'home.previewFrom': 'Wallet mo',
   'home.previewTo': 'Wallet ng tatanggap',
   'home.give1Title': 'Mag-log in at magbasa',
-  'home.give1Body': 'Buksan ang isang post sa forum at basahin ang mga reaksyon sa ilalim nito.',
-  'home.give2Title': 'Piliin ang tutulungan',
+  'home.give1Body': 'Buksan ang isang post sa forum at basahin ang ikinukuwento ng tao.',
+  'home.give2Title': 'Sumulat ng reaksyon',
   'home.give2Body':
-    'I-tap ang icon na hugis regalo sa kanyang reaksyon. Sa sumulat nito mapupunta ang regalo.',
+    'I-tap ang arrow sa ilalim ng post, sumulat ng ilang salita at maglagay ng halaga. Para sa sumulat ng post ang regalo.',
   'home.give3Title': 'Magbayad gamit ang wallet mo',
-  'home.give3Body':
-    'Ilagay ang halaga. Buksan ang Wallet of Satoshi o i-scan ang QR code gamit ang wallet mo.',
+  'home.give3Body': 'Buksan ang Wallet of Satoshi o i-scan ang QR code gamit ang wallet mo.',
   'home.receiveTitle': 'Kailangan mo rin ba ng tulong?',
   'home.receiveBody':
     'Mag-log in, ilagay ang iyong Wallet of Satoshi address at sabihin sa forum kung ano ang kailangan mo.',
@@ -4617,7 +4617,7 @@ const fil = {
   'home.discoverTrustKicker': 'Bago magbigay',
   'home.discoverTrustTitle': 'Saan napupunta ang regalo?',
   'home.discoverTrustBody':
-    'Sa sumulat ng reaksyong pinili mo. Alamin dito kung paano gumagana ang bayad.',
+    'Sa sumulat ng post na nire-react-an mo. Alamin dito kung paano gumagana ang bayad.',
   'donate.metaTitle': 'Magbigay ng Bitcoin sa kapwa | 21.gifts',
   'wallet.activate': 'I-activate ang recovery phrase',
   'wallet.activateHint':

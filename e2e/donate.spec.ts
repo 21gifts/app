@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('donate page explains how to give via the forum', async ({ page }) => {
   await page.goto('/donate');
   await expect(page.getByRole('heading', { name: 'Give Bitcoin to someone' })).toBeVisible();
-  await expect(page.getByText(/Read the reactions beneath it/)).toBeVisible();
+  await expect(page.getByText(/Write a reaction under it, add an amount/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open the forum' })).toHaveAttribute(
     'href',
     '/welcome',
