@@ -513,6 +513,8 @@ describe('ShopAccountControl', () => {
     const originalRect = HTMLElement.prototype.getBoundingClientRect;
     const originalViewport = window.visualViewport;
     const listeners: Record<string, EventListener> = {};
+    let panelTop = 0;
+    let panelHeight = 100;
     Object.defineProperty(window, 'visualViewport', {
       configurable: true,
       value: {
@@ -544,15 +546,16 @@ describe('ShopAccountControl', () => {
         } as DOMRect;
       }
       if (element.className.includes('fixed')) {
+        const top = panelTop;
         return {
-          top: 0,
-          bottom: 900,
+          top,
+          bottom: top + panelHeight,
           left: 8,
           right: 296,
           width: 288,
-          height: 900,
+          height: panelHeight,
           x: 8,
-          y: 0,
+          y: top,
           toJSON() {
             return {};
           },
@@ -588,10 +591,16 @@ describe('ShopAccountControl', () => {
         </div>,
       );
       fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+      const field = await screen.findByLabelText('Username');
       await waitFor(() => {
         expect(screen.queryAllByRole('option')).toHaveLength(0);
+        expect((field.parentElement as HTMLElement).style.top).toBe('64px');
       });
+      panelTop = 64;
+      panelHeight = 900;
       listeners['resize']?.(new Event('resize'));
+      expect(screen.queryAllByRole('option')).toHaveLength(0);
+      expect((field.parentElement as HTMLElement).style.top).toBe('64px');
     } finally {
       HTMLElement.prototype.getBoundingClientRect = originalRect;
       Object.defineProperty(window, 'visualViewport', {

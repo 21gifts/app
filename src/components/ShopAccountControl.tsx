@@ -109,10 +109,10 @@ function visibleBand(anchor: HTMLElement): { top: number; bottom: number } {
  * Dropping rows cannot help once none remain. The box is pinned by its top
  * edge so it cannot sit on the chrome, even when it is taller than the band.
  *
- * @param place - Position chosen from the button.
+ * @param place - Position chosen from the button. Its left and width are kept.
  * @param rect - Measured panel box.
  * @param band - Visible band under the chrome.
- * @returns The same place when it already fits, otherwise a top-pinned box.
+ * @returns A top-pinned box under the chrome.
  */
 function clampIntoBand(
   place: PanelPlace,
@@ -125,9 +125,6 @@ function clampIntoBand(
   }
   if (top + rect.height > band.bottom) {
     top = Math.max(band.top, band.bottom - rect.height);
-  }
-  if (top === rect.top) {
-    return place;
   }
   return { side: 'below', top, left: place.left, width: place.width };
 }
@@ -229,10 +226,7 @@ export function ShopAccountControl({
       return;
     }
     const place = (): void => {
-      const anchor = anchorRef.current;
-      if (anchor === null) {
-        return;
-      }
+      const anchor = anchorRef.current as HTMLDivElement;
       let next = placePanel(anchor);
       const box = panelRef.current;
       if (placed && box !== null) {
