@@ -417,7 +417,10 @@ update stuff
 ### Styling
 
 - **Tailwind CSS only.** No CSS files beyond `src/app/globals.css`, no CSS
-  modules, no styled-components, no inline `style` attributes.
+  modules, no styled-components, no inline `style` attributes. The only
+  exception is a `style` attribute that sets viewport-measured `top`,
+  `bottom`, `left`, and `width` on a `fixed` overlay. Those four numbers
+  are the clamped box; `top-full` and `bottom-full` do not compute them.
 - Utility classes live directly on the JSX elements.
 - Visual language (shells, tokens, type, chrome, control grammar) lives in
   `docs/ui.md`. New or migrated surfaces compose those parts. Raw

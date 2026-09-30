@@ -272,4 +272,90 @@ describe('ShopAccountControl', () => {
       expect(screen.queryByRole('listbox')).toBeNull();
     });
   });
+
+  it('drops usernames that do not start with the typed prefix', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockImplementation(async (_token, query) => {
+      if (query === '') {
+        return [
+          { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+          { id: 'acc-luna', username: 'luna', name: 'Luna' },
+        ];
+      }
+      return new Promise(() => undefined);
+    });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('option', { name: '@luna' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: '@a' } });
+    expect(screen.queryByRole('option', { name: '@luna' })).toBeNull();
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+  });
+
+  it('shows at most eight people', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue(
+      Array.from({ length: 9 }, (_, index) => ({
+        id: `acc-${index}`,
+        username: `user${index}`,
+        name: `User ${index}`,
+      })),
+    );
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(await screen.findByRole('option', { name: '@user0' })).toBeTruthy();
+    expect(screen.getAllByRole('option')).toHaveLength(8);
+    expect(screen.queryByRole('option', { name: '@user8' })).toBeNull();
+  });
+
+  it('omits the display name when it matches the username', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([
+      { id: 'acc-ada', username: 'ada', name: 'ada' },
+    ]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const option = await screen.findByRole('option', { name: '@ada' });
+    expect(option.querySelectorAll('span')).toHaveLength(1);
+  });
+
+  it('opens the panel upward when the button is low on the screen', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalHeight = window.innerHeight;
+    const originalWidth = window.innerWidth;
+    window.innerHeight = 768;
+    window.innerWidth = 390;
+    HTMLElement.prototype.getBoundingClientRect = () =>
+      ({
+        top: 700,
+        bottom: 744,
+        left: 16,
+        right: 56,
+        width: 40,
+        height: 44,
+        x: 16,
+        y: 700,
+        toJSON() {
+          return {};
+        },
+      }) as DOMRect;
+    try {
+      useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+      vi.mocked(searchMentionAccounts).mockResolvedValue([
+        { id: 'acc-luna', username: 'luna', name: 'Luna' },
+      ]);
+      renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+      const field = await screen.findByLabelText('Username');
+      const panel = field.parentElement;
+      expect(panel).not.toBeNull();
+      expect(panel?.className).toContain('fixed');
+      expect((panel as HTMLElement).style.bottom).toBe('76px');
+      expect((panel as HTMLElement).style.top).toBe('');
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerHeight = originalHeight;
+      window.innerWidth = originalWidth;
+    }
+  });
 });

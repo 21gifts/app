@@ -3225,6 +3225,18 @@ Open Direct thread. Eleven files → **You can add up to 10 photos**.
 
 ![21.gifts inbox thread error too many](images/messages-thread-error-too-many.png)
 
+### Variant: thread-mention-suggest
+
+Open thread. The message field contains `@` and the People list is open. Choosing a person does not notify them.
+
+![21.gifts inbox thread mention suggestions](images/messages-thread-mention-suggest.png)
+
+### Variant: thread-mention-inserted
+
+Open thread. Choosing `@ada` from that list writes `@ada ` into the message field and closes the list.
+
+![21.gifts inbox thread mention inserted](images/messages-thread-mention-inserted.png)
+
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
@@ -3773,6 +3785,18 @@ Moderator. Empty thread. Encoded JPEG over 1 MB → **Keep photos under 1 MB**.
 Moderator. Empty thread. Eleven files → **You can add up to 10 photos**.
 
 ![21.gifts moderator group error too many](images/moderate-group-error-too-many.png)
+
+### Variant: mention-suggest
+
+Moderator. Loaded group thread. The message field contains `@` and the People list is open. Choosing a person does not notify them.
+
+![21.gifts moderator group mention suggestions](images/moderate-group-mention-suggest.png)
+
+### Variant: mention-inserted
+
+Moderator. Choosing `@ada` from that list writes `@ada ` into the message field and closes the list.
+
+![21.gifts moderator group mention inserted](images/moderate-group-mention-inserted.png)
 
 ### Variant: translate
 

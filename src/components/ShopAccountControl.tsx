@@ -59,13 +59,10 @@ function draftFor(username: string | undefined): string {
   return username === undefined || username === '' ? '@' : `@${username}`;
 }
 
-/** Where the suggestion panel sits. One edge is set; the other stays unset. */
-interface PanelPlace {
-  top: number | null;
-  bottom: number | null;
-  left: number;
-  width: number;
-}
+/** Where the suggestion panel sits: below the button, or above it. */
+type PanelPlace =
+  | { side: 'below'; top: number; left: number; width: number }
+  | { side: 'above'; bottom: number; left: number; width: number };
 
 /**
  * Keep the suggestion panel inside the viewport.
@@ -85,9 +82,9 @@ function placePanel(anchor: HTMLElement): PanelPlace {
   const below = window.innerHeight - rect.bottom;
   const above = rect.top;
   if (below < 480 && above > below) {
-    return { top: null, bottom: window.innerHeight - rect.top + 8, left, width };
+    return { side: 'above', bottom: window.innerHeight - rect.top + 8, left, width };
   }
-  return { top: rect.bottom + 8, bottom: null, left, width };
+  return { side: 'below', top: rect.bottom + 8, left, width };
 }
 
 /** Props for the shops-feed staff account editor. */
@@ -106,7 +103,8 @@ export interface ShopAccountControlProps {
  * notes, non-shop text, and ranks below moderator.
  *
  * The open field starts with `@`. Suggestions from the same account list as a
- * forum post appear immediately. Choosing one fills `@username`. Saving still
+ * forum post appear immediately. A typed prefix keeps only usernames that
+ * start with it, before the next page returns. Choosing one fills `@username`. Saving still
  * sends the username without `@`. The panel is fixed to the viewport so a
  * phone does not scroll sideways.
  *
@@ -124,7 +122,11 @@ export function ShopAccountControl({
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(draftFor(message.shopAccount?.username));
   const [errorKey, setErrorKey] = useState<'missing' | 'failed' | null>(null);
-  const [suggestions, setSuggestions] = useState<readonly ShopSuggestion[]>([]);
+  const [seed, setSeed] = useState<readonly ShopSuggestion[]>([]);
+  const [remote, setRemote] = useState<{
+    query: string;
+    rows: readonly ShopSuggestion[];
+  } | null>(null);
   const [panel, setPanel] = useState<PanelPlace | null>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const listId = useId();
@@ -132,21 +134,33 @@ export function ShopAccountControl({
 
   useEffect(() => {
     if (session === null || !open || query === null) {
-      setSuggestions([]);
+      setSeed([]);
+      setRemote(null);
       return;
     }
     const current = session;
+    const requested = query;
     let cancelled = false;
-    void searchMentionAccounts(current, query)
+    void searchMentionAccounts(current, requested)
       .then((rows) => {
-        if (!cancelled) {
-          setSuggestions(rows);
+        if (cancelled) {
+          return;
         }
+        if (requested === '') {
+          setSeed(rows);
+          return;
+        }
+        setRemote({ query: requested, rows });
       })
       .catch(() => {
-        if (!cancelled) {
-          setSuggestions([]);
+        if (cancelled) {
+          return;
         }
+        if (requested === '') {
+          setSeed([]);
+          return;
+        }
+        setRemote({ query: requested, rows: [] });
       });
     return () => {
       cancelled = true;
@@ -184,6 +198,15 @@ export function ShopAccountControl({
 
   const token = session;
   const hasAccount = message.shopAccount !== undefined;
+  const shown = (
+    query === null
+      ? []
+      : query === ''
+        ? seed
+        : remote !== null && remote.query === query
+          ? remote.rows
+          : seed.filter((row) => row.username.toLowerCase().startsWith(query))
+  ).slice(0, SUGGESTION_LIMIT);
   const ariaLabel = hasAccount ? t('forum.editShopAccount') : t('forum.addShopAccount');
 
   const saveUsername = async (): Promise<void> => {
@@ -247,7 +270,8 @@ export function ShopAccountControl({
           setOpen((current) => {
             if (!current) {
               setDraft(draftFor(message.shopAccount?.username));
-              setSuggestions([]);
+              setSeed([]);
+              setRemote(null);
               setErrorKey(null);
             }
             return !current;
@@ -259,16 +283,16 @@ export function ShopAccountControl({
       {open && panel !== null ? (
         <div
           className="fixed z-30 rounded-2xl border border-app-border bg-app-card-muted p-3"
-          style={{
-            ...(panel.top === null ? { bottom: panel.bottom ?? 0 } : { top: panel.top }),
-            left: panel.left,
-            width: panel.width,
-          }}
+          style={
+            panel.side === 'above'
+              ? { bottom: panel.bottom, left: panel.left, width: panel.width }
+              : { top: panel.top, left: panel.left, width: panel.width }
+          }
         >
           <input
             type="text"
             aria-label={t('forum.shopAccountLabel')}
-            aria-controls={suggestions.length > 0 ? listId : undefined}
+            aria-controls={shown.length > 0 ? listId : undefined}
             value={draft}
             disabled={saving}
             onChange={(event) => {
@@ -277,14 +301,14 @@ export function ShopAccountControl({
             }}
             className="mt-0 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
           />
-          {suggestions.length > 0 ? (
+          {shown.length > 0 ? (
             <ul
               id={listId}
               role="listbox"
               aria-label={t('forum.mentionSuggest')}
               className="mt-2 rounded-xl border border-app-border bg-app-card p-2"
             >
-              {suggestions.slice(0, SUGGESTION_LIMIT).map((row) => (
+              {shown.map((row) => (
                 <li key={row.id} role="presentation">
                   <button
                     type="button"

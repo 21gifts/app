@@ -2442,6 +2442,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-mention-suggest",
+    "label": "/messages thread-mention-suggest",
+    "visual": "state-messages-thread-mention-suggest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-mention-inserted",
+    "label": "/messages thread-mention-inserted",
+    "visual": "state-messages-thread-mention-inserted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/notifications:default",
     "label": "/notifications default",
     "visual": "screen-notifications",
@@ -2907,6 +2919,18 @@
     "id": "/moderate/group:error-too-many",
     "label": "/moderate/group error-too-many",
     "visual": "state-moderate-group-error-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:mention-suggest",
+    "label": "/moderate/group mention-suggest",
+    "visual": "state-moderate-group-mention-suggest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:mention-inserted",
+    "label": "/moderate/group mention-inserted",
+    "visual": "state-moderate-group-mention-inserted",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

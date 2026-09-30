@@ -17275,6 +17275,102 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread');
   });
 
+  test('state /messages thread-mention-suggest', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto('/messages?c=conv-21');
+    const field = page.getByRole('textbox', { name: 'Your message' });
+    await expect(field).toBeVisible();
+    await field.fill('@');
+    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-mention-suggest');
+  });
+
+  test('state /messages thread-mention-inserted', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillMentionPeople(page);
+    await page.goto('/messages?c=conv-21');
+    const field = page.getByRole('textbox', { name: 'Your message' });
+    await expect(field).toBeVisible();
+    await chooseMentionAda(page, field);
+    await shotScreen(page, 'state-messages-thread-mention-inserted');
+  });
+
   test('state /messages thread-translate', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -19467,6 +19563,50 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByText('Hello mods')).toBeVisible();
     await shotScreen(page, 'screen-moderate-group');
+  });
+
+  test('state /moderate/group mention-suggest', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'm1',
+        name: 'Ada',
+        text: 'Hello mods',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+      },
+    ]);
+    await fulfillMentionPeople(page);
+    await page.goto('/moderate/group');
+    const field = page.getByRole('textbox', { name: 'Your message' });
+    await expect(field).toBeVisible();
+    await field.fill('@');
+    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@ada', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-moderate-group-mention-suggest');
+  });
+
+  test('state /moderate/group mention-inserted', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await mockGroup(page);
+    await mockThread(page, [
+      {
+        id: 'm1',
+        name: 'Ada',
+        text: 'Hello mods',
+        createdAt: '2026-08-28T15:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+      },
+    ]);
+    await fulfillMentionPeople(page);
+    await page.goto('/moderate/group');
+    const field = page.getByRole('textbox', { name: 'Your message' });
+    await expect(field).toBeVisible();
+    await chooseMentionAda(page, field);
+    await shotScreen(page, 'state-moderate-group-mention-inserted');
   });
 
   test('state /moderate/group sunday', async ({ page }) => {

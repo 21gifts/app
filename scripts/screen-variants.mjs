@@ -2921,6 +2921,20 @@ export const SCREEN_VARIANTS = [
     needle: 'You can add up to 10 photos',
   },
   {
+    route: '/messages',
+    id: 'thread-mention-suggest',
+    image: 'messages-thread-mention-suggest.png',
+    visual: 'state-messages-thread-mention-suggest',
+    needle: 'state /messages thread-mention-suggest',
+  },
+  {
+    route: '/messages',
+    id: 'thread-mention-inserted',
+    image: 'messages-thread-mention-inserted.png',
+    visual: 'state-messages-thread-mention-inserted',
+    needle: 'state /messages thread-mention-inserted',
+  },
+  {
     route: '/notifications',
     id: 'default',
     image: 'notifications.png',
@@ -3465,6 +3479,20 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-group-error-too-many.png',
     visual: 'state-moderate-group-error-too-many',
     needle: 'You can add up to 10 photos',
+  },
+  {
+    route: '/moderate/group',
+    id: 'mention-suggest',
+    image: 'moderate-group-mention-suggest.png',
+    visual: 'state-moderate-group-mention-suggest',
+    needle: 'state /moderate/group mention-suggest',
+  },
+  {
+    route: '/moderate/group',
+    id: 'mention-inserted',
+    image: 'moderate-group-mention-inserted.png',
+    visual: 'state-moderate-group-mention-inserted',
+    needle: 'state /moderate/group mention-inserted',
   },
   {
     route: '/moderate/group',
