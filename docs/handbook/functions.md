@@ -3185,7 +3185,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/auth/passkey/seed/finish` with Bearer and `{ challengeId, credential }`.
 - **Inputs:** Session token, challenge id, credential JSON.
-- **Returns / side effects:** 200 is the owner account JSON itself (`accountSchema`, not `{ account }`, no new token), including `passkeyCredentialId`. Throws on non-2xx.
+- **Returns / side effects:** The owner account (`accountSchema`), including `passkeyCredentialId`. A 200 body is that account, or the same account under one `account` key when the body has no top-level `id`. `account` only holds when it is the only top-level field; a further field is not an account. No new token. Login is a different call. Throws on non-2xx or a body that is not an account.
 - **Used by:** `renewPasskey`.
 
 ## Function: postWalletBackupSeen
