@@ -2277,7 +2277,7 @@ const de = {
   'home.previewKicker': 'Nach der Anmeldung',
   'home.previewTitle': 'So kommt dein Geschenk an',
   'home.previewStep1': 'Beitrag im Wohnzimmer öffnen',
-  'home.previewStep2': 'Reaktion schreiben und Betrag angeben',
+  'home.previewStep2': 'Reagieren und spenden',
   'home.previewStep3': 'Mit deiner Wallet bezahlen',
   'home.previewWalletTitle': 'Wohin der Bitcoin geht',
   'home.previewWalletBody': 'Die empfangende Person hat ihre Wallet-Adresse selbst hinterlegt.',
