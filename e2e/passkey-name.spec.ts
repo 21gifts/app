@@ -9,9 +9,9 @@ type FakeWebAuthnOptions = {
 
 type PasskeyCapture = {
   createCount: number;
-  name?: string;
-  displayName?: string;
-  userId?: string;
+  name: string | undefined;
+  displayName: string | undefined;
+  userId: string | undefined;
 };
 
 function uniqueMixedHandle(): string {
@@ -206,7 +206,9 @@ test('passkey name taken handle stays on the form without create', async ({ page
     const beginResponse = await beginResponsePromise;
     expect(beginResponse.status()).toBe(409);
     expect(await beginResponse.json()).toEqual({ error: 'Username is already in use' });
-    await expect(page2.getByRole('alert')).toHaveText('That username is already in use.');
+    await expect(
+      page2.getByRole('alert').filter({ hasText: 'That username is already in use.' }),
+    ).toHaveText('That username is already in use.');
     expect((await passkeyCapture(page2)).createCount).toBe(0);
     await expect(page2.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
   } finally {
@@ -229,7 +231,7 @@ test('passkey name empty and invalid values do not open the passkey dialog', asy
   const expectRejected = async (): Promise<void> => {
     expect(registerBegins).toEqual([]);
     expect((await passkeyCapture(page)).createCount).toBe(0);
-    await expect(page.getByRole('alert')).toHaveText(NAME_INVALID);
+    await expect(page.getByRole('alert').filter({ hasText: NAME_INVALID })).toHaveText(NAME_INVALID);
     await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
   };
 
