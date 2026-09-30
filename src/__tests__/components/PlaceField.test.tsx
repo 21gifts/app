@@ -201,6 +201,26 @@ describe('PlaceField', () => {
     });
   });
 
+  it('clears a hidden preview from the open pin without a staff commit', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    const onChange = vi.fn();
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 1, lng: 2, label: 'Stall' }}
+        disabled={false}
+        showPreview={false}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
+    expect(onChange).toHaveBeenCalledWith(null);
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    });
+  });
+
   it('keeps the unavailable panel open when removing a pin fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const onCommit = vi.fn().mockRejectedValue(new Error('denied'));

@@ -4,6 +4,9 @@ import {
   deleteMessage,
   setMessagePlace,
   setMessageShopAccount,
+  setMessageShopText,
+  setMessageShopPhotos,
+  fetchShopNoteEdits,
   deletePushSubscription,
   dismissForumLaws,
   fetchConversation,
@@ -1420,6 +1423,15 @@ describe('fetchPlaces', () => {
     await expect(fetchPlaces('tok')).resolves.toEqual([placeRow]);
   });
 
+  it('keeps a shop flag on a pin', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { places: [{ ...placeRow, shop: true }] },
+    });
+    await expect(fetchPlaces('tok')).resolves.toEqual([{ ...placeRow, shop: true }]);
+  });
+
   it('rejects on status 500', async () => {
     stubFetch({
       ok: false,
@@ -1991,6 +2003,19 @@ describe('postMessage', () => {
     expect(JSON.parse(String(without.body))).not.toHaveProperty('place');
   });
 
+  it('sends shopUsername without a leading @ and omits a blank handle', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('tok', { text: 'Cafe', shopUsername: '@Luna' });
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual(
+      expect.objectContaining({ text: 'Cafe', shopUsername: 'Luna' }),
+    );
+    fetchMock.mockClear();
+    await postMessage('tok', { text: 'Cafe', shopUsername: '  @  ' });
+    expect(
+      JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body)),
+    ).not.toHaveProperty('shopUsername');
+  });
+
   it('posts the text and returns the validated message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
     await expect(postMessage('sess', { text: 'Hello from Ada' })).resolves.toEqual(
@@ -2214,6 +2239,13 @@ describe('postMessage', () => {
     await expect(postMessage('sess', { text: 'x' })).rejects.toThrow('Message too long');
   });
 
+  it('throws the api error message on a 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'No account with that username' } });
+    await expect(postMessage('sess', { text: 'x', shopUsername: 'missing' })).rejects.toThrow(
+      'No account with that username',
+    );
+  });
+
   it('throws the unpaid-reply copy on 403', async () => {
     stubFetch({ ok: false, status: 403, body: { error: 'A reply needs a Bitcoin payment' } });
     await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toThrow(
@@ -2320,6 +2352,17 @@ describe('postMessageVideo', () => {
     expect(empty.get('placeLat')).toBeNull();
     expect(empty.get('placeLng')).toBeNull();
     expect(empty.get('placeLabel')).toBeNull();
+    expect(empty.get('shopUsername')).toBeNull();
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', { text: 'Hello from Ada', video: file, shopUsername: '@Luna' });
+    const withShop = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((withShop.body as FormData).get('shopUsername')).toBe('Luna');
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', { text: 'Hello from Ada', video: file, shopUsername: ' @ ' });
+    const blankShop = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((blankShop.body as FormData).get('shopUsername')).toBeNull();
   });
 
   it('posts multipart video and optional poster and returns the validated message', async () => {
@@ -2451,6 +2494,14 @@ describe('postMessageVideo', () => {
     await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
       'Too many messages',
     );
+  });
+
+  it('throws the api error message on a 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'No account with that username' } });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    await expect(
+      postMessageVideo('sess', { text: 'x', video, shopUsername: 'missing' }),
+    ).rejects.toThrow('No account with that username');
   });
 
   it('falls back when a 400 body is not an error envelope', async () => {
@@ -3895,6 +3946,67 @@ describe('startPasskeyRegistration', () => {
     });
   });
 
+  it('posts JSON name when provided without a viewKey', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(undefined, 'ada')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'ada' }),
+    });
+  });
+
+  it('ignores name when viewKey is non-empty', async () => {
+    const viewKey = 'a'.repeat(64);
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(viewKey, 'ada')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ viewKey }),
+    });
+  });
+
+  it('posts JSON name when viewKey is empty', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration('', 'ada')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'ada' }),
+    });
+  });
+
+  it('posts with no body when name is empty', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(undefined, '')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+  });
+
+  it('throws the exact invalid-username string on 400', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: {
+        error: 'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+      },
+    });
+    await expect(startPasskeyRegistration(undefined, 'ada')).rejects.toThrow(
+      'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+    );
+  });
+
+  it('throws the exact taken-username string on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'Username is already in use' },
+    });
+    await expect(startPasskeyRegistration(undefined, 'ada')).rejects.toThrow(
+      'Username is already in use',
+    );
+  });
+
   it('throws the body error on 409', async () => {
     stubFetch({
       ok: false,
@@ -3941,6 +4053,25 @@ describe('finishPasskeyRegistration', () => {
     stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
     await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
       'Failed to finish passkey registration: 403',
+    );
+  });
+
+  it('throws the exact taken-username string on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Username is already in use' } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow('Username is already in use');
+  });
+
+  it('throws the generic finish error on 409 with another body', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'This profile already has a passkey' } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
+      'Failed to finish passkey registration: 409',
+    );
+  });
+
+  it('throws the generic finish error on 409 without an error string', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
+      'Failed to finish passkey registration: 409',
     );
   });
 });
@@ -4877,6 +5008,94 @@ describe('setMessageShopAccount', () => {
     await expect(setMessageShopAccount('token', 'm1', null)).rejects.toThrow(
       'Could not save account',
     );
+  });
+});
+
+describe('setMessageShopText', () => {
+  it('patches the draft and returns the parsed message', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, text: 'Cafe Sol\n\n#21GiftsShop' },
+    });
+    await expect(setMessageShopText('token', 'a/b', 'Cafe Sol')).resolves.toEqual({
+      ...parsedForumMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/text', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text: 'Cafe Sol' }),
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
+    await expect(setMessageShopText('token', 'm1', 'Cafe')).rejects.toThrow(
+      'Could not save shop note',
+    );
+  });
+});
+
+describe('setMessageShopPhotos', () => {
+  it('patches stills and omits a blank capture time', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, hasPhoto: true, photoCount: 1 },
+    });
+    await expect(
+      setMessageShopPhotos('token', 'a/b', [
+        { contentType: 'image/jpeg', data: 'abc', takenAt: '2020-01-01T00:00:00+00:00' },
+        { contentType: 'image/png', data: 'def', takenAt: '' },
+      ]),
+    ).resolves.toEqual({ ...parsedForumMessage, hasPhoto: true, photoCount: 1 });
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/photos', {
+      method: 'PATCH',
+      headers: {
+        Authorization: 'Bearer token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        photos: [
+          { contentType: 'image/jpeg', data: 'abc', takenAt: '2020-01-01T00:00:00+00:00' },
+          { contentType: 'image/png', data: 'def' },
+        ],
+      }),
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
+      'Could not save shop note',
+    );
+  });
+});
+
+describe('fetchShopNoteEdits', () => {
+  it('returns the parsed history', async () => {
+    const edit = {
+      id: 'e1',
+      createdAt: '2026-08-28T13:00:00.000Z',
+      field: 'text',
+      before: 'Cafe',
+      after: 'Cafe Sol',
+      actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { edits: [edit] } });
+    await expect(fetchShopNoteEdits('token', 'a/b')).resolves.toEqual([edit]);
+    expect(fetchMock).toHaveBeenCalledWith('/forum/messages/a%2Fb/edits', {
+      headers: { Authorization: 'Bearer token' },
+    });
+  });
+
+  it('throws when the response is not ok', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchShopNoteEdits('token', 'm1')).rejects.toThrow('Could not load edit history');
   });
 });
 

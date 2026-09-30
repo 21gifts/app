@@ -72,7 +72,7 @@
 
 ## Endpoint: POST /auth/passkey/register/begin
 
-- **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`. Optional JSON body `{ viewKey }` (64 hex) claims an existing public profile; omit the body for a new registration.
+- **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`. A new account posts JSON `{ name }`. `{ viewKey }` (64 hex) claims an existing public profile and sends no `name`. The empty body remains the old unnamed path; the new-account path of this app does not use it.
 - **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable.
 - **Used by:** `startPasskeyRegistration`.
 - **Auth:** Public.
@@ -580,7 +580,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. Used so the forum composer can suggest people while `@` is being typed.
 - **Errors:** Upstream 401/400/409, or 502 if the api is unreachable.
-- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, and ask-for-money composers.
+- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, and from `ShopAccountControl`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /forum/notifications
@@ -729,6 +729,27 @@
 - **Auth:** Forwards Bearer authorization; the API requires live moderator role.
 - **Returns:** Upstream 200 public message JSON, with `place` omitted when cleared.
 - **Errors:** 401/403/404/400/503 with `{ "error": string }`; unreachable api is 502.
+
+## Endpoint: PATCH /forum/messages/[id]/photos
+
+- **Purpose:** Same-origin moderation proxy to PATCH /messages/:id/photos with JSON `{ photos }`. An empty list clears stills. A video on the note stays, and this write does not add an edit-history row.
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
+- **Returns:** Upstream 200 public message JSON.
+- **Errors:** 401/403/404/400/503 with `{ "error": string }`; unreachable api is 502. Sunday in the device zone is refused by the API.
+
+## Endpoint: PATCH /forum/messages/[id]/text
+
+- **Purpose:** Same-origin moderation proxy to PATCH /messages/:id/text with JSON `{ text }`. The API keeps `#21GiftsShop` on the stored body and records the change.
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
+- **Returns:** Upstream 200 public message JSON.
+- **Errors:** 401/403/404/400/503 with `{ "error": string }`; unreachable api is 502. Sunday in the device zone is refused by the API.
+
+## Endpoint: GET /forum/messages/[id]/edits
+
+- **Purpose:** Same-origin moderation proxy to GET /messages/:id/edits. Returns who changed the shop note text, place, or account, and when.
+- **Auth:** Forwards Bearer authorization; the API requires live moderator role.
+- **Returns:** Upstream 200 `{ edits }` newest first. An empty list is `{ edits: [] }`.
+- **Errors:** 401/403/404/503 with `{ "error": string }`; unreachable api is 502. This read is not a Sunday write.
 
 ## Endpoint: PATCH /forum/messages/[id]/shop-account
 

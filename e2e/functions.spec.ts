@@ -365,7 +365,6 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await stubWalletLocationAssign(page);
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
@@ -497,28 +496,30 @@ async function seedGermanNoteWelcome(page: Page): Promise<void> {
   });
 }
 
-async function confirmNewAccount(page: Page): Promise<void> {
+async function confirmNewAccount(page: Page): Promise<string> {
   await expect(
     page.getByRole('heading', { name: 'Do you already have an account?' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Open a new account' }).click();
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
+  const handle = `a${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.slice(
+    0,
+    32,
+  );
+  await page.getByRole('textbox', { name: 'Name' }).fill(handle);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  return handle;
 }
 
-async function signInViaStub(page: Page, _request: APIRequestContext): Promise<void> {
+async function signInViaStub(page: Page, _request: APIRequestContext): Promise<string> {
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  const handle = await confirmNewAccount(page);
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
-}
-
-async function saveOnboardingName(page: Page): Promise<void> {
-  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  return handle;
 }
 
 async function saveOnboardingUsername(page: Page): Promise<void> {
@@ -606,13 +607,13 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await openSignedInMenu(page);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
@@ -639,6 +640,16 @@ async function loginHttp(request: APIRequestContext): Promise<string> {
   });
   expect(seen.status()).toBe(200);
   return body.token;
+}
+
+async function signInUnnamed(page: Page, request: APIRequestContext): Promise<void> {
+  const token = await loginHttp(request);
+  await page.addInitScript((session: string) => {
+    localStorage['21gifts.session'] = session;
+  }, token);
+  await page.goto('/setup/name');
+  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
 test('Function: GET — healthz is ok', async ({ request }) => {
@@ -1018,12 +1029,11 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
 });
 
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
-  await signInViaStub(page, request);
-  await saveOnboardingName(page);
+  const handle = await signInViaStub(page, request);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
   await expect(page.getByLabel('Your message')).toBeVisible();
@@ -1045,7 +1055,6 @@ test('Function: postContact — sending from contact shows the official thread',
   request,
 }) => {
   await signInViaStub(page, request);
-  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
@@ -1057,18 +1066,18 @@ test('Function: postContact — sending from contact shows the official thread',
   await expect(page.getByText(body)).toBeVisible();
 });
 
-async function reachWelcome(page: Page, request: APIRequestContext): Promise<void> {
-  await signInViaStub(page, request);
-  await saveOnboardingName(page);
+async function reachWelcome(page: Page, request: APIRequestContext): Promise<string> {
+  const handle = await signInViaStub(page, request);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  return handle;
 }
 
-async function reachWelcomeVerified(page: Page, request: APIRequestContext): Promise<void> {
-  await reachWelcome(page, request);
+async function reachWelcomeVerified(page: Page, request: APIRequestContext): Promise<string> {
+  const handle = await reachWelcome(page, request);
   await page.route(/\/me$/, async (route) => {
     const res = await route.fetch();
     const body = (await res.json()) as Record<string, unknown>;
@@ -1081,6 +1090,7 @@ async function reachWelcomeVerified(page: Page, request: APIRequestContext): Pro
   await page.reload();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  return handle;
 }
 
 async function attachTinyJpeg(page: Page): Promise<void> {
@@ -1088,7 +1098,11 @@ async function attachTinyJpeg(page: Page): Promise<void> {
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
 }
 
-async function postAndExpectPhotoRow(page: Page, caption?: string): Promise<string> {
+async function postAndExpectPhotoRow(
+  page: Page,
+  author: string,
+  caption?: string,
+): Promise<string> {
   const posted = page.waitForResponse((response) => {
     if (response.request().method() !== 'POST' || !response.ok()) {
       return false;
@@ -1105,7 +1119,7 @@ async function postAndExpectPhotoRow(page: Page, caption?: string): Promise<stri
   expect(created.text).toBe(caption ?? '');
   const row = page.locator(`li[data-message-id="${created.id}"]`);
   await expect(row).toBeVisible();
-  await expect(row.getByRole('img', { name: 'Photo from Ada' })).toBeVisible({
+  await expect(row.getByRole('img', { name: `Photo from ${author}` })).toBeVisible({
     timeout: 10_000,
   });
   if (caption !== undefined) {
@@ -1130,27 +1144,27 @@ test('Function: prepareForumPhoto — attaching a jpeg shows a preview then post
   page,
   request,
 }) => {
-  await reachWelcomeVerified(page, request);
+  const handle = await reachWelcomeVerified(page, request);
   await attachTinyJpeg(page);
-  await postAndExpectPhotoRow(page);
+  await postAndExpectPhotoRow(page, handle);
 });
 
 test('Function: isForumPhotoFile — photo-only post does not require text', async ({
   page,
   request,
 }) => {
-  await reachWelcomeVerified(page, request);
+  const handle = await reachWelcomeVerified(page, request);
   await attachTinyJpeg(page);
   await expect(page.getByLabel('Your message')).toHaveValue('');
-  await postAndExpectPhotoRow(page);
+  await postAndExpectPhotoRow(page, handle);
 });
 
 test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
-  await reachWelcomeVerified(page, request);
+  const handle = await reachWelcomeVerified(page, request);
   const caption = `Caption ${Date.now()}`;
   await page.getByLabel('Your message').fill(caption);
   await attachTinyJpeg(page);
-  await postAndExpectPhotoRow(page, caption);
+  await postAndExpectPhotoRow(page, handle, caption);
 });
 
 test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ page }) => {
@@ -1360,7 +1374,7 @@ test('Function: fetchViewAboutMePhoto — public view shows the About me photo',
 test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -1381,7 +1395,7 @@ test('Function: skipSetup — Skip on name setup advances without a name', async
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await page.goto('/setup/name');
   await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
   await page.getByRole('button', { name: 'Skip' }).click();
@@ -1391,7 +1405,7 @@ test('Function: skipSetup — Skip on name setup advances without a name', async
 });
 
 test('Function: NameForm — Skip is absent on the rules setup screen', async ({ page, request }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
   await page.getByRole('button', { name: 'Skip' }).click();
@@ -1514,7 +1528,7 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
@@ -1533,7 +1547,6 @@ test('Function: RequirementsOverlay — forum post without a lightning-address o
   request,
 }) => {
   await signInViaStub(page, request);
-  await saveOnboardingName(page);
   await page.getByRole('button', { name: 'Skip' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
@@ -1919,7 +1932,7 @@ test('Function: nextPostRequirement — rules before name before lightning-addre
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await expect(page).toHaveURL(/\/setup\/name/);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
@@ -1934,7 +1947,7 @@ test('Function: nextContactRequirement — contact still opens name overlay with
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
   await page.getByRole('button', { name: 'Skip' }).click();
@@ -2174,7 +2187,6 @@ test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agre
 
 test('Function: dismissForumLaws — welcome laws hint dismisses', async ({ page, request }) => {
   await signInViaStub(page, request);
-  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
@@ -2196,12 +2208,11 @@ test('Function: agreeToRules — signed-in rules screen records agreement', asyn
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
-  await saveOnboardingName(page);
+  const handle = await signInViaStub(page, request);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
 });
 
 test('Function: RulesSetup — agree button is visible on the rules screen', async ({ page }) => {
@@ -2333,7 +2344,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
 });
 
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -2341,7 +2352,7 @@ test('Function: NameForm — signed-in form saves a display name', async ({ page
 });
 
 test('Function: setName — signed-in form saves a display name', async ({ page, request }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Ada')).toBeVisible();
@@ -2377,12 +2388,11 @@ test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi
   page,
   request,
 }) => {
-  await signInViaStub(page, request);
-  await saveOnboardingName(page);
+  const handle = await signInViaStub(page, request);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
 });
 
 test('Function: DELETE — DELETE /me/lightning-address clears the address', async ({ request }) => {
@@ -4394,7 +4404,7 @@ test('Function: useAuthStore — live login reaches the signed-in view', async (
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -4407,17 +4417,16 @@ test('Function: saveSession — live login persists the session token', async ({
 test('Function: loadSession — reload keeps the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
 test('Function: LightningAddressForm — link reaches welcome', async ({ page, request }) => {
-  await signInViaStub(page, request);
-  await saveOnboardingName(page);
+  const handle = await signInViaStub(page, request);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
 });
 
@@ -4432,7 +4441,6 @@ test('Function: clearSession — log out returns to the start action', async ({ 
 test('Function: ForumBoard — welcome forum is the pay surface', async ({ page, request }) => {
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
@@ -4475,7 +4483,6 @@ test('Function: RulesDocument — only free donations rule is visible', async ({
 test('Function: ForumLoader — welcome forum is the pay surface', async ({ page, request }) => {
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
@@ -4535,7 +4542,6 @@ test('Function: shownFiatForSats — pay sheet sends the shown amounts', async (
   await stubWalletLocationAssign(page);
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await saveOnboardingName(page);
   await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
@@ -5243,7 +5249,7 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5261,7 +5267,7 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5299,14 +5305,21 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
   await installFakeWebAuthn(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
-  await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  const handle = await confirmNewAccount(page);
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
   expect(token).toBeTruthy();
   const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
-  expect(((await me.json()) as { linkingKey: string | null }).linkingKey).toBeNull();
+  const body = (await me.json()) as {
+    name: string;
+    username: string;
+    linkingKey: string | null;
+  };
+  expect(body.name).toBe(handle);
+  expect(body.username).toBe(handle);
+  expect(body.linkingKey).toBeNull();
 });
 
 test('Function: creationOptionsFromJSON — create passkey reaches the signed-in view', async ({
@@ -5316,7 +5329,7 @@ test('Function: creationOptionsFromJSON — create passkey reaches the signed-in
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5325,7 +5338,7 @@ test('Function: credentialToJSON — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5334,7 +5347,7 @@ test('Function: base64UrlToBytes — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5343,7 +5356,7 @@ test('Function: bytesToBase64Url — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/name/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5688,7 +5701,7 @@ test('Function: UsernameSetup — username screen heading is visible', async ({ 
 });
 
 test('Function: setUsername — signed-in form saves a username', async ({ page, request }) => {
-  await signInViaStub(page, request);
+  await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
 });
@@ -7367,12 +7380,12 @@ test('Function: saveUnpaidSeenAt — opening No gifts yet clears the unpaid coun
   );
 });
 
-test('Function: OnboardingGate — login sends a new account to the name screen', async ({
+test('Function: OnboardingGate — login sends a new account to the address screen', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
 });
 
 test('Function: OnboardingGate — name and address without agreement go to rules', async ({
@@ -7407,20 +7420,20 @@ test('Function: OnboardingGate — name and address without agreement go to rule
   await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: nextOnboardingPath — login sends a new account to the name screen', async ({
+test('Function: nextOnboardingPath — login sends a new account to the address screen', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
 });
 
-test('Function: hasDisplayName — login sends a new account to the name screen', async ({
+test('Function: hasDisplayName — login sends a new account to the address screen', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
 });
 
 test('Function: hasLightningAddress — named account without address stays on address screen', async ({
@@ -7455,10 +7468,10 @@ test('Function: hasLightningAddress — named account without address stays on a
   await expect(page).toHaveURL(/\/setup\/address/);
 });
 
-test('Function: useHydrateSession — reload keeps the name screen', async ({ page, request }) => {
+test('Function: useHydrateSession — reload keeps the address screen', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
 });
 
 test('Function: LogoutButton — log out returns to login', async ({ page, request }) => {
@@ -7566,7 +7579,7 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
 
 test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/name/);
+  await expect(page).toHaveURL(/\/setup\/address/);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
@@ -10117,6 +10130,27 @@ test('Function: proxyMessagesShopAccountPatch — unauthenticated shop-account p
   request,
 }) => {
   const response = await request.patch('/forum/messages/[id]/shop-account');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: proxyMessagesTextPatch — unauthenticated text patch is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.patch('/forum/messages/[id]/text');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: proxyMessagesPhotosPatch — unauthenticated photo patch is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.patch('/forum/messages/[id]/photos');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: proxyMessagesEditsGet — unauthenticated edit history is forwarded and denied', async ({
+  request,
+}) => {
+  const response = await request.get('/forum/messages/[id]/edits');
   expect(response.status()).toBe(401);
 });
 

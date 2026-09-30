@@ -46,6 +46,9 @@ vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
+  setMessageShopText: vi.fn(),
+  setMessageShopPhotos: vi.fn(),
+  fetchShopNoteEdits: vi.fn(),
   fetchMessages: vi.fn(),
   fetchPublicForumMessages: vi.fn(),
   fetchPublicMessage: vi.fn(),
@@ -82,6 +85,7 @@ vi.mock('@/lib/forum-photo', () => ({
 vi.mock('@/lib/forum-video', () => ({
   isForumVideoFile: vi.fn(() => false),
   prepareForumVideo: vi.fn(),
+  forumVideoSrc: (id: string) => `/messages/${id}/video.mp4`,
 }));
 
 import {
@@ -107,6 +111,8 @@ import {
   setLightningAddress,
   setMessagePlace,
   setMessageShopAccount,
+  setMessageShopText,
+  fetchShopNoteEdits,
   setName,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -287,6 +293,21 @@ const EMPTY_STATS: GiftStats = {
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const originalUserAgent = navigator.userAgent;
+
+function submitShopWizard(text: string, username?: string): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  if (text !== '') {
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: text } });
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  if (username !== undefined) {
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: username } });
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+}
 
 function chooseForumMode(name: string | RegExp): void {
   fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
@@ -1117,7 +1138,8 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Hello from Ada')).toBeNull();
     expect(screen.getByRole('link', { name: '#Shop' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Ask for money' })).toBeNull();
-    expect(screen.getByLabelText('Your message')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    expect(screen.queryByLabelText('Your message')).toBeNull();
   });
 
   it('feed="shops" shows shops.empty when no listed note is a shop', async () => {
@@ -1155,10 +1177,32 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
-    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    submitShopWizard('Cafe Luna');
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+    });
+    expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+  });
+
+  it('feed="shops" sends an optional shop username', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    submitShopWizard('Cafe Luna', '@Luna');
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Cafe Luna\n\n#21GiftsShop',
+        shopUsername: 'Luna',
+      });
     });
   });
 
@@ -1172,8 +1216,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Cafe Luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    submitShopWizard('Cafe Luna');
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
       expect(invoiceMock).toHaveBeenCalledWith(
@@ -1225,13 +1268,111 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    fireEvent.change(screen.getByLabelText('Your message'), {
-      target: { value: 'Cafe Luna\n\n#21GiftsShop' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    submitShopWizard('Cafe Luna\n\n#21GiftsShop');
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
     });
+  });
+
+  it('feed="shops" posts a basis shop username after the compose fee', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-paid',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    submitShopWizard('Cafe Luna', 'luna');
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
+    });
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: 'Cafe Luna\n\n#21GiftsShop',
+        shopUsername: 'luna',
+      });
+    });
+  });
+
+  it('feed="shops" photo step has no cancel and keeps a prepared video', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    const file = new File(['v'], 'clip.mp4', { type: 'video/mp4' });
+    isVideoMock.mockReturnValue(true);
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster: new Blob(['p']), previewUrl: 'blob:shop-video' },
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
+  });
+
+  it('feed="shops" keeps the draft when the photo step is open', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderForumWithChrome(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: 'Cafe Luna' } });
+    expect(
+      within(screen.getByLabelText('Shop text').closest('form') as HTMLElement).queryByRole(
+        'button',
+        { name: 'Back' },
+      ),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect((screen.getByLabelText('Shop text') as HTMLTextAreaElement).value).toBe('Cafe Luna');
+  });
+
+  it('feed="shops" refuses an empty summary', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    });
+    submitShopWizard('');
+    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    expect(postMock).not.toHaveBeenCalled();
   });
 
   it('feed="shops" first fetch sends hashtag 21GiftsShop', async () => {
@@ -1282,14 +1423,122 @@ describe('ForumLoader', () => {
       account: { ...account, role: 'moderator', forumLawsDismissed: true },
     });
     fetchMock.mockResolvedValue(
-      forumPage([{ ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 }]),
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: true,
+        },
+      ]),
     );
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    await waitFor(() => {
+      expect(card.querySelector('video')?.getAttribute('poster')).toBe('blob:mock');
+    });
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
+    expect(within(card).getByRole('button', { name: 'Edit shop note' })).toBeTruthy();
+  });
+
+  it('updates the listed shop note text and leaves the other note', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+        },
+        {
+          ...SAMPLE,
+          id: 'shop2',
+          text: 'Other stall\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        blob: () =>
+          Promise.resolve({
+            type: 'image/jpeg',
+            arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+          }),
+      })),
+    );
+    vi.mocked(setMessageShopText).mockResolvedValueOnce({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      sats: 5,
+      hasPhoto: true,
+      photoCount: 1,
+      place: { lat: 1, lng: 2, label: 'Stall' },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+    });
+    expect(within(card).getByRole('button', { name: 'Edit place' })).toBeTruthy();
+    expect(screen.getByText('Other stall')).toBeTruthy();
+    vi.mocked(setMessageShopText).mockResolvedValueOnce({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Norte\n\n#21GiftsShop',
+      sats: 5,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Norte' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Norte')).toBeTruthy();
+    });
+    expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
+    await waitFor(() => {
+      expect(photoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
   });
 
   it('does not put a staff place control on living-room notes', async () => {

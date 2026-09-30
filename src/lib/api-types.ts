@@ -512,6 +512,7 @@ export const forumPlacesResponseSchema = z.object({
       name: z.string().min(1),
       createdAt: z.string().min(1),
       accountId: z.string().min(1).optional(),
+      shop: z.boolean().optional(),
     }),
   ),
 });
@@ -524,6 +525,8 @@ export type ForumPlaceRow = ForumPlacePin & {
   name: string;
   createdAt: string;
   accountId?: string | undefined;
+  /** True when the note is a shop. Omitted by an older api. */
+  shop?: boolean | undefined;
 };
 
 /**
@@ -828,6 +831,18 @@ export const conversationMessageSchema = z.object({
   accountId: z.string().min(1).optional(),
   /** Optional id of the thread message this row is a paid gift for (moderator-group stipend rows). */
   giftFor: z.string().min(1).optional(),
+  /**
+   * Profile links in the body. Present when the text marks a username.
+   * These marks do not notify the person.
+   */
+  mentions: z
+    .array(
+      z.object({
+        username: z.string().min(1),
+        accountId: z.string().min(1),
+      }),
+    )
+    .optional(),
 });
 
 /**

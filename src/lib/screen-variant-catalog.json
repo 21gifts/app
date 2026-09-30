@@ -78,6 +78,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:name",
+    "label": "/login name",
+    "visual": "state-login-name",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:name-invalid",
+    "label": "/login name-invalid",
+    "visual": "state-login-name-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:name-taken",
+    "label": "/login name-taken",
+    "visual": "state-login-name-taken",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:in-app",
     "label": "/login in-app",
     "visual": "state-login-in-app",
@@ -1674,6 +1692,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shop-edit",
+    "label": "/members/[accountId] shop-edit",
+    "visual": "state-members-shop-edit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-open",
+    "label": "/members/[accountId] shop-edit-open",
+    "visual": "state-members-shop-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-place",
+    "label": "/members/[accountId] shop-edit-place",
+    "visual": "state-members-shop-edit-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-text",
+    "label": "/members/[accountId] shop-edit-text",
+    "visual": "state-members-shop-edit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-user",
+    "label": "/members/[accountId] shop-edit-user",
+    "visual": "state-members-shop-edit-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-summary",
+    "label": "/members/[accountId] shop-edit-summary",
+    "visual": "state-members-shop-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:receive",
     "label": "/profile receive",
     "visual": "state-profile-receive",
@@ -2388,6 +2442,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-mention-suggest",
+    "label": "/messages thread-mention-suggest",
+    "visual": "state-messages-thread-mention-suggest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-mention-inserted",
+    "label": "/messages thread-mention-inserted",
+    "visual": "state-messages-thread-mention-inserted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-mention",
+    "label": "/messages thread-mention",
+    "visual": "state-messages-thread-mention",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/notifications:default",
     "label": "/notifications default",
     "visual": "screen-notifications",
@@ -2856,6 +2928,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/group:mention-suggest",
+    "label": "/moderate/group mention-suggest",
+    "visual": "state-moderate-group-mention-suggest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:mention-inserted",
+    "label": "/moderate/group mention-inserted",
+    "visual": "state-moderate-group-mention-inserted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/group:mention",
+    "label": "/moderate/group mention",
+    "visual": "state-moderate-group-mention",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/group:translate",
     "label": "/moderate/group translate",
     "visual": "state-moderate-group-translate",
@@ -2979,6 +3069,42 @@
     "id": "/messages/[id]:signed-in",
     "label": "/messages/[id] signed-in",
     "visual": "state-messages-id-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit",
+    "label": "/messages/[id] shop-edit",
+    "visual": "state-messages-id-shop-edit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-open",
+    "label": "/messages/[id] shop-edit-open",
+    "visual": "state-messages-id-shop-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-place",
+    "label": "/messages/[id] shop-edit-place",
+    "visual": "state-messages-id-shop-edit-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-text",
+    "label": "/messages/[id] shop-edit-text",
+    "visual": "state-messages-id-shop-edit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-user",
+    "label": "/messages/[id] shop-edit-user",
+    "visual": "state-messages-id-shop-edit-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-summary",
+    "label": "/messages/[id] shop-edit-summary",
+    "visual": "state-messages-id-shop-edit-summary",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3174,6 +3300,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:shop-edit",
+    "label": "/welcome shop-edit",
+    "visual": "state-welcome-shop-edit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-open",
+    "label": "/welcome shop-edit-open",
+    "visual": "state-welcome-shop-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-place",
+    "label": "/welcome shop-edit-place",
+    "visual": "state-welcome-shop-edit-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-text",
+    "label": "/welcome shop-edit-text",
+    "visual": "state-welcome-shop-edit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-user",
+    "label": "/welcome shop-edit-user",
+    "visual": "state-welcome-shop-edit-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-summary",
+    "label": "/welcome shop-edit-summary",
+    "visual": "state-welcome-shop-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:default",
     "label": "/shops default",
     "visual": "screen-shops",
@@ -3213,6 +3375,48 @@
     "id": "/shops:map",
     "label": "/shops map",
     "visual": "state-shops-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-staff",
+    "label": "/shops map-staff",
+    "visual": "state-shops-map-staff",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-open",
+    "label": "/shops map-edit-open",
+    "visual": "state-shops-map-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-place",
+    "label": "/shops map-edit-place",
+    "visual": "state-shops-map-edit-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-text",
+    "label": "/shops map-edit-text",
+    "visual": "state-shops-map-edit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-user",
+    "label": "/shops map-edit-user",
+    "visual": "state-shops-map-edit-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-summary",
+    "label": "/shops map-edit-summary",
+    "visual": "state-shops-map-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-load-failed",
+    "label": "/shops map-edit-load-failed",
+    "visual": "state-shops-map-edit-load-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3261,6 +3465,72 @@
     "id": "/shops:table",
     "label": "/shops table",
     "visual": "state-shops-table",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-staff",
+    "label": "/shops table-staff",
+    "visual": "state-shops-table-staff",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-open",
+    "label": "/shops table-edit-open",
+    "visual": "state-shops-table-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-place",
+    "label": "/shops table-edit-place",
+    "visual": "state-shops-table-edit-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-text",
+    "label": "/shops table-edit-text",
+    "visual": "state-shops-table-edit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-user",
+    "label": "/shops table-edit-user",
+    "visual": "state-shops-table-edit-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-summary",
+    "label": "/shops table-edit-summary",
+    "visual": "state-shops-table-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-photos",
+    "label": "/shops add-photos",
+    "visual": "state-shops-add-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-place",
+    "label": "/shops add-place",
+    "visual": "state-shops-add-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-text",
+    "label": "/shops add-text",
+    "visual": "state-shops-add-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-user",
+    "label": "/shops add-user",
+    "visual": "state-shops-add-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-summary",
+    "label": "/shops add-summary",
+    "visual": "state-shops-add-summary",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3402,9 +3672,57 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:edit-open",
+    "label": "/shops edit-open",
+    "visual": "state-shops-edit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-place",
+    "label": "/shops edit-place",
+    "visual": "state-shops-edit-place",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-text",
+    "label": "/shops edit-text",
+    "visual": "state-shops-edit-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-user",
+    "label": "/shops edit-user",
+    "visual": "state-shops-edit-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-summary",
+    "label": "/shops edit-summary",
+    "visual": "state-shops-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-save-error",
+    "label": "/shops edit-save-error",
+    "visual": "state-shops-edit-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-history-error",
+    "label": "/shops edit-history-error",
+    "visual": "state-shops-edit-history-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:staff-account",
     "label": "/shops staff-account",
     "visual": "state-shops-staff-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-account-chosen",
+    "label": "/shops staff-account-chosen",
+    "visual": "state-shops-staff-account-chosen",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

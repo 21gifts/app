@@ -7,13 +7,21 @@ import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', () => ({
   fetchPlaces: vi.fn(),
+  fetchForumMessage: vi.fn(),
+  fetchShopNoteEdits: vi.fn(),
+  fetchMessagePhoto: vi.fn(),
+  setMessagePlace: vi.fn(),
+  setMessageShopAccount: vi.fn(),
+  setMessageShopPhotos: vi.fn(),
+  setMessageShopText: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => new URLSearchParams(window.location.search),
 }));
 
-import { fetchPlaces } from '@/lib/api';
+import { fetchForumMessage, fetchPlaces, fetchShopNoteEdits, setMessageShopText } from '@/lib/api';
+import type { Account, ForumMessage } from '@/lib/api-types';
 
 const fetchPlacesMock = vi.mocked(fetchPlaces);
 
@@ -330,5 +338,124 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen embedded />);
     expect(await screen.findByText('No places yet.')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Map' })).toBeNull();
+  });
+
+  it('edits a shop pin and refuses a missing, plain, or failed note', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    };
+    useAuthStore.setState({ session: 'tok', account: null });
+    fetchPlacesMock.mockResolvedValue([
+      { ...ROW, shop: true },
+      { ...ROW, id: 'm-2', label: 'Other', shop: true },
+      { ...ROW, id: 'm-plain', label: 'Plain' },
+    ]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ ...note, id: 'm-2', text: 'Hello' })
+      .mockRejectedValueOnce(new Error('down'))
+      .mockResolvedValueOnce(note);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      place: { lat: 3, lng: 4, label: 'Stall' },
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    useAuthStore.setState({ session: 'tok', account: { ...moderator, role: 'basis' } });
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    const pencils = await screen.findAllByRole('button', { name: 'Edit shop note' });
+    expect(pencils).toHaveLength(2);
+    fireEvent.click(pencils[0]!);
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not load this shop note',
+    );
+    fireEvent.click(pencils[1]!);
+    await waitFor(() => {
+      expect(screen.getAllByRole('alert')).toHaveLength(2);
+    });
+    fireEvent.click(pencils[0]!);
+    await waitFor(() => {
+      expect(screen.getAllByRole('alert')).toHaveLength(2);
+    });
+    fireEvent.click(pencils[0]!);
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByRole('link', { name: 'Ada · Stall' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
+
+    const saveOpened = async (value: string): Promise<void> => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Edit shop note' })[0]!);
+      fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+        target: { value },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    };
+
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe Norte\n\n#21GiftsShop',
+      place: { lat: 3, lng: 4, label: null },
+    });
+    await saveOpened('Cafe Norte');
+    expect(await screen.findByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeTruthy();
+
+    const withoutPlace: ForumMessage = { ...note, text: 'Cafe Sur\n\n#21GiftsShop' };
+    delete withoutPlace.place;
+    vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
+    await saveOpened('Cafe Sur');
+    await waitFor(() => {
+      expect(screen.queryByRole('link', { name: 'Ada · 3.00000, 4.00000' })).toBeNull();
+    });
+    expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
+    useAuthStore.setState({ session: null, account: null });
+    await waitFor(() => {
+      expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);
+    });
   });
 });

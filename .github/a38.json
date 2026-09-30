@@ -1,0 +1,63 @@
+{
+  "schema": "a38/v1",
+  "standard": "A38",
+  "documentation": "docs/a38.md",
+  "mode": "enforce",
+  "jobs": [
+    {
+      "id": "lint",
+      "name": "Lint",
+      "timeout_s": 600,
+      "workflow": ".github/workflows/ci.yaml",
+      "job": "lint",
+      "executor": {
+        "adapter": "commands",
+        "config": {
+          "env": { "CI": "true" },
+          "npm": {
+            "node_major": 22,
+            "canaries": ["next/package.json", "eslint/package.json", "prettier/package.json"]
+          },
+          "steps": [["npm", "run", "lint"]]
+        }
+      }
+    }
+  ],
+  "exclusions": [
+    {
+      "workflow": ".github/workflows/ci.yaml",
+      "job": "check",
+      "reason": "GitHub-hosted PR suite (typecheck, handbook completeness, e2e completeness, screenshot baselines, Vitest coverage, production build). This public repository does not measure that work locally."
+    },
+    {
+      "workflow": ".github/workflows/ci.yaml",
+      "job": "e2e",
+      "reason": "This job runs Playwright end-to-end behavior tests inside the GitHub-hosted mcr.microsoft.com/playwright:v1.61.1-noble container against Linux Chromium baselines and is not measured locally as an A38 author report."
+    },
+    {
+      "workflow": ".github/workflows/ci.yaml",
+      "job": "visual",
+      "reason": "This job runs Playwright visual regression tests across four GitHub-hosted matrix combinations (desktop-light, desktop-dark, mobile-light, mobile-dark) against Linux Chromium baselines and is not measured locally as an A38 author report."
+    },
+    {
+      "workflow": ".github/workflows/deploy-dev.yaml",
+      "job": "build-and-deploy",
+      "reason": "This job builds and pushes a production Docker image and dispatches a deploy to the DEV environment, a production-credential path that is not an author-measured test."
+    },
+    {
+      "workflow": ".github/workflows/deploy-prd.yaml",
+      "job": "build-and-deploy",
+      "reason": "This job builds and pushes a production Docker image and dispatches a deploy to the PRD environment, a production-credential path that is not an author-measured test."
+    },
+    {
+      "workflow": ".github/workflows/auto-release-pr.yaml",
+      "job": "create-release-pr",
+      "reason": "This job is a housekeeping bot that opens the develop to main release pull request and performs no author-measurable testing."
+    },
+    {
+      "workflow": ".github/workflows/a38-guard.yml",
+      "job": "guard",
+      "reason": "This job is the A38 guard itself, which audits the author report rather than being part of it."
+    }
+  ]
+}

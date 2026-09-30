@@ -8,6 +8,8 @@ import {
   NoteDeletedError,
   fetchGiftStats,
   fetchMessagePhoto,
+  fetchShopNoteEdits,
+  setMessageShopText,
   fetchPublicMessage,
   fetchReplies,
   postMessage,
@@ -48,6 +50,8 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchShopNoteEdits: vi.fn(),
+  setMessageShopText: vi.fn(),
   deleteMessage: vi.fn(),
   setLightningAddress: vi.fn(),
   setName: vi.fn(),
@@ -209,9 +213,24 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
+
+function stubShopPhotoFetch(): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => ({
+      ok: true,
+      blob: () =>
+        Promise.resolve({
+          type: 'image/jpeg',
+          arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+        }),
+    })),
+  );
+}
 
 const NO_RATE_SHOWN = {
   amountUsd: null,
@@ -1819,5 +1838,123 @@ describe('PublicMessageThread', () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
     expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
+  it('shows the shop pencil to a moderator and applies a saved note', async () => {
+    const shopRoot: ForumMessage = {
+      ...root,
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    };
+    renderThread({ root: shopRoot });
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    cleanup();
+
+    signIn();
+    renderThread({ root: shopRoot });
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    cleanup();
+
+    signIn({ role: 'moderator' });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopRoot,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      place: { lat: 1, lng: 2, label: 'Stall' },
+      shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
+    });
+    renderThread({ root: shopRoot });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Sol')).toBeTruthy();
+    });
+  });
+
+  it('drops the public note’s photo address after a shop edit', async () => {
+    const shopRoot: ForumMessage = {
+      ...root,
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+      hasPhoto: true,
+      photoCount: 1,
+      replyCount: 1,
+    };
+    signIn({ role: 'moderator' });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchReplies).mockResolvedValue([
+      {
+        ...root,
+        id: '99999999-9999-4999-8999-999999999999',
+        name: 'Ada',
+        accountId: 'acc_ada',
+        text: 'A photo reply',
+        sats: 0,
+        payable: false,
+        parentId: MESSAGE_ID,
+        hasPhoto: true,
+        photoCount: 1,
+        replyCount: 0,
+      },
+    ]);
+    stubShopPhotoFetch();
+    let photoUrl = 0;
+    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:thread-${photoUrl++}`);
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(
+      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
+    );
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopRoot,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    renderThread({ root: shopRoot });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toMatch(/^blob:thread-/);
+      expect(screen.getByText('A photo reply')).toBeTruthy();
+      expect(fetchMessagePhoto).toHaveBeenCalledWith(
+        'sess',
+        '99999999-9999-4999-8999-999999999999',
+        0,
+      );
+      expect(vi.mocked(URL.createObjectURL).mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+    const shopSrc = screen.getByAltText('Photo from Carol').getAttribute('src');
+    // The reply still is stored, but that card does not paint an img. Keep every
+    // address created before the editor except the shop photo on screen.
+    const otherSrcs = vi
+      .mocked(URL.createObjectURL)
+      .mock.results.map((result) => String(result.value))
+      .filter((src) => src !== shopSrc);
+    expect(otherSrcs.length).toBeGreaterThan(0);
+    vi.mocked(URL.revokeObjectURL).mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith(shopSrc);
+    });
+    for (const src of otherSrcs) {
+      expect(URL.revokeObjectURL).not.toHaveBeenCalledWith(src);
+    }
+    expect(
+      vi.mocked(URL.revokeObjectURL).mock.calls.filter((call) => call[0] === shopSrc),
+    ).toHaveLength(1);
   });
 });

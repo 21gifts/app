@@ -686,6 +686,13 @@ describe('conversationMessageSchema', () => {
       photoCount: 0,
     };
     expect(conversationMessageSchema.parse(message)).toEqual(message);
+    expect(
+      conversationMessageSchema.parse({
+        ...message,
+        text: 'Ask @luna',
+        mentions: [{ username: 'luna', accountId: 'acc-luna' }],
+      }).mentions,
+    ).toEqual([{ username: 'luna', accountId: 'acc-luna' }]);
     expect(conversationThreadSchema.parse({ messages: [message] })).toEqual({
       messages: [message],
     });

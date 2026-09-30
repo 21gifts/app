@@ -148,10 +148,12 @@ beforeEach(() => {
     status: 'idle',
     login: vi.fn(),
     register: vi.fn(),
+    submitName: vi.fn(),
     authenticate: vi.fn(),
     retry: vi.fn(),
     cancel,
     error: null,
+    nameError: null,
   });
   useAuthStore.setState({
     session: 'tok',

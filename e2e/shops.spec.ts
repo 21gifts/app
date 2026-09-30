@@ -85,7 +85,8 @@ test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
     });
   });
   await page.goto('/shops');
-  await expect(page.getByLabel('Your message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
+  await expect(page.getByLabel('Your message')).toHaveCount(0);
   await page.getByRole('button', { name: 'Map' }).click();
   await expect(page.getByText('No places yet.')).toBeVisible();
   await expect(page.getByLabel('Your message')).toHaveCount(0);
@@ -121,13 +122,40 @@ test('Function: ShopsPage — heading is visible', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
 });
 
+test('Function: ShopAddWizard — steps then summary', async ({ page }) => {
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops');
+  await expect(page.getByLabel('Your message')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Cafe Luna');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('21.gifts username').fill('@luna');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+  await expect(page.getByText('@luna')).toBeVisible();
+  await expect(page.getByText('Cafe Luna')).toBeVisible();
+  await expect(page.locator('form').getByRole('button', { name: 'Back' })).toHaveCount(0);
+  await page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next' })).toBeVisible();
+});
+
 test('Function: ShopsScreen — lead is visible', async ({ page }) => {
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
   await page.goto('/shops');
   await expect(
     page.getByText(
-      'Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.',
+      'Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.',
     ),
   ).toBeVisible();
 });
@@ -265,12 +293,17 @@ test('Function: ensureShopHashtag — compose appends the tag', async ({ page })
     });
   });
   await page.goto('/shops');
-  await page.getByLabel('Your message').fill('Cafe Luna');
-  await page
-    .getByLabel('Your message')
-    .locator('xpath=ancestor::form')
-    .getByRole('button', { name: 'Post', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Cafe Luna');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
+  await expect(post).toBeEnabled();
+  await post.evaluate((element) => {
+    (element as unknown as { click: () => void }).click();
+  });
   const invoiceReq = await invoiced;
   const parsed = invoiceReq.postDataJSON() as { text?: string };
   expect(typeof parsed.text === 'string' ? parsed.text : '').toContain('#21GiftsShop');
@@ -387,6 +420,169 @@ const STAFF_SHOP_NOTE = {
   hasPhoto: false,
   role: 'basis',
 };
+
+test('Function: ShopNoteEditControl — moderator sees the pencil; basis does not', async ({
+  page,
+}) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.goto('/shops');
+  await expect(
+    page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit shop note' }),
+  ).toBeVisible();
+
+  await seedAda(page, 'basis');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.goto('/shops');
+  await expect(
+    page.locator('[data-message-id="m-staff"]').getByRole('button', { name: 'Edit shop note' }),
+  ).toHaveCount(0);
+});
+
+test('Function: fetchShopNoteEdits — opening the pencil shows who edited the note', async ({
+  page,
+}) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          edits: [
+            {
+              id: 'e1',
+              createdAt: '2026-08-28T13:00:00.000Z',
+              field: 'text',
+              before: 'Old\n\n#21GiftsShop',
+              after: 'Cafe Luna\n\n#21GiftsShop',
+              actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+            },
+          ],
+        }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Edit shop note' }).click();
+  await expect(note.getByRole('heading', { name: 'History' })).toBeVisible();
+  await expect(note.getByText(/Ada ·/)).toBeVisible();
+  await expect(note.getByText('Old → Cafe Luna')).toBeVisible();
+});
+
+test('Function: setMessageShopPhotos — moderator save replaces stills', async ({ page }) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [{ ...STAFF_SHOP_NOTE, hasPhoto: true, photoCount: 1 }]);
+  await page.route('**/messages/m-staff/photo*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+    });
+  });
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    },
+  );
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/photos'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...STAFF_SHOP_NOTE, hasPhoto: false, photoCount: 0 }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await expect(note.getByRole('img').first()).toBeVisible();
+  await note.getByRole('button', { name: 'Edit shop note' }).click();
+  await note.getByRole('button', { name: 'Remove photo' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  const save = note.getByRole('button', { name: 'Save changes' });
+  await expect(save).toBeEnabled();
+  const patched = page.waitForRequest(
+    (req) =>
+      req.method() === 'PATCH' &&
+      new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/photos'),
+  );
+  await save.evaluate((element) => {
+    (element as unknown as { click: () => void }).click();
+  });
+  const photosReq = await patched;
+  expect(photosReq.postDataJSON()).toEqual({ photos: [] });
+});
+
+test('Function: setMessageShopText — moderator save updates the shop note', async ({ page }) => {
+  await seedAda(page, 'moderator');
+  await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/edits'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    },
+  );
+  await page.route(
+    (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/text'),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.continue();
+        return;
+      }
+      const body = route.request().postDataJSON() as { text?: string };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...STAFF_SHOP_NOTE,
+          text: `${body.text ?? ''}\n\n#21GiftsShop`,
+        }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  const note = page.locator('[data-message-id="m-staff"]');
+  await note.getByRole('button', { name: 'Edit shop note' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByLabel('Shop text').fill('Cafe Sol');
+  await note.getByRole('button', { name: 'Next' }).click();
+  await note.getByRole('button', { name: 'Next' }).click();
+  const save = note.getByRole('button', { name: 'Save changes' });
+  await expect(save).toBeEnabled();
+  const patched = page.waitForRequest(
+    (req) =>
+      req.method() === 'PATCH' &&
+      new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/text'),
+  );
+  await save.evaluate((element) => {
+    (element as unknown as { click: () => void }).click();
+  });
+  const textReq = await patched;
+  expect(textReq.postDataJSON()).toEqual({ text: 'Cafe Sol' });
+  await expect(note.getByText('Cafe Sol')).toBeVisible();
+});
 
 test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', async ({ page }) => {
   await stubPlaceMap(page);

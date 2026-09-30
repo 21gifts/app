@@ -1933,10 +1933,13 @@ function forumAskGoalFields(
  * notes), optional `goalCurrency` plus `goalAmount` (top-level Ask; omitted
  * on replies and when either is unset; never `goalSats`), optional
  * `goalRepayable: true` on a credit Ask (omitted on a donation), and optional
- * `place` pin (omit when unset; replies must not send it).
+ * `place` pin (omit when unset; replies must not send it), and optional
+ * `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
- * @throws {@link NoteDeletedError} on 404 (missing or deleted `inReplyTo` parent).
- * @throws Error when the api rejects the body (400, 403, or 429) — the api
+ * @throws {@link NoteDeletedError} on 404 unless the api error is exactly
+ * `No account with that username`.
+ * @throws Error when the api rejects the body (400, 403, or 429), or on 404
+ * whose error is exactly `No account with that username` — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
  * on 409, on any other non-2xx status, or when the body fails
  * {@link forumMessageSchema} validation.
@@ -1953,6 +1956,7 @@ export async function postMessage(
     goalRepayable?: true;
     goalTermDays?: number;
     place?: ForumPlacePin;
+    shopUsername?: string;
   },
 ): Promise<ForumMessage> {
   const sourceStills =
@@ -1977,6 +1981,7 @@ export async function postMessage(
     input.goalRepayable,
     input.goalTermDays,
   );
+  const shopUsername = input.shopUsername?.trim().replace(/^@/, '') ?? '';
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: {
@@ -1990,6 +1995,7 @@ export async function postMessage(
       ...(inReplyTo !== undefined ? { inReplyTo } : {}),
       ...(askGoal === null ? {} : askGoal),
       ...(inReplyTo === undefined && input.place !== undefined ? { place: input.place } : {}),
+      ...(shopUsername === '' ? {} : { shopUsername }),
     }),
   });
   if (response.status === 400 || response.status === 429) {
@@ -2014,6 +2020,10 @@ export async function postMessage(
     throw new Error('Could not post your message');
   }
   if (response.status === 404) {
+    const raw = await readApiError(response);
+    if (raw === 'No account with that username') {
+      throw new Error(toUserFacingError(raw));
+    }
     throw new NoteDeletedError();
   }
   if (!response.ok) {
@@ -2029,9 +2039,10 @@ export async function postMessage(
  * @param input - Text, video file, optional JPEG poster, optional
  * `goalCurrency` plus `goalAmount` (omitted from the form when either is
  * unset; never `goalSats`), optional `goalRepayable: true` on a credit Ask,
- * and optional `place` pin (omit when unset; form fields only when set).
+ * and optional `place` pin (omit when unset; form fields only when set),
+ * and optional `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
- * @throws Error when the api rejects the body (400 or 429) — the api error
+ * @throws Error when the api rejects the body (400, 404, or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
  * when the body fails {@link forumMessageSchema} validation.
  */
@@ -2046,6 +2057,7 @@ export async function postMessageVideo(
     goalRepayable?: true;
     goalTermDays?: number;
     place?: ForumPlacePin;
+    shopUsername?: string;
   },
 ): Promise<ForumMessage> {
   const form = new FormData();
@@ -2078,12 +2090,16 @@ export async function postMessageVideo(
       form.set('placeLabel', input.place.label);
     }
   }
+  const shopUsername = input.shopUsername?.trim().replace(/^@/, '') ?? '';
+  if (shopUsername !== '') {
+    form.set('shopUsername', shopUsername);
+  }
   const response = await fetch('/forum/messages', {
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
     body: form,
   });
-  if (response.status === 400 || response.status === 429) {
+  if (response.status === 400 || response.status === 404 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }
@@ -2899,18 +2915,31 @@ export async function deletePushSubscription(
  * Starts a passkey registration ceremony.
  *
  * @param viewKey - Optional 64-hex public view key to claim an existing profile.
- * When set (non-empty), POSTs JSON `{ viewKey }`; otherwise POSTs with no body.
+ * When set (non-empty), POSTs JSON `{ viewKey }` and ignores `name`.
+ * @param name - Optional already-normalized username for a new account. Used only
+ * when `viewKey` is absent or empty: a non-empty string POSTs JSON `{ name }`.
+ * Otherwise POSTs with no body.
  * @returns Challenge id plus WebAuthn creation options JSON.
  * @throws Error with the api `{ error }` string when present on non-2xx, otherwise
  * a status fallback; or when the body fails validation.
  */
-export async function startPasskeyRegistration(viewKey?: string): Promise<PasskeyBegin> {
-  const response =
-    viewKey !== undefined && viewKey !== ''
+export async function startPasskeyRegistration(
+  viewKey?: string,
+  name?: string,
+): Promise<PasskeyBegin> {
+  const hasViewKey = viewKey !== undefined && viewKey !== '';
+  const hasName = name !== undefined && name !== '';
+  const response = hasViewKey
+    ? await fetch('/auth/passkey/register/begin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ viewKey }),
+      })
+    : hasName
       ? await fetch('/auth/passkey/register/begin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ viewKey }),
+          body: JSON.stringify({ name }),
         })
       : await fetch('/auth/passkey/register/begin', { method: 'POST' });
   if (!response.ok) {
@@ -2929,6 +2958,7 @@ export async function startPasskeyRegistration(viewKey?: string): Promise<Passke
  * @param credential - Browser attestation JSON (`PublicKeyCredential.toJSON()`).
  * @returns Token plus account (`linkingKey` is null).
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
+ * @throws Error `'Username is already in use'` on 409 with that exact api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
  */
 export async function finishPasskeyRegistration(
@@ -2941,6 +2971,12 @@ export async function finishPasskeyRegistration(
     body: JSON.stringify({ challengeId, credential }),
   });
   await throwIfWrongAccount(response);
+  if (response.status === 409) {
+    const raw = await readApiError(response);
+    if (raw === 'Username is already in use') {
+      throw new Error(raw);
+    }
+  }
   if (!response.ok) {
     throw new Error(`Failed to finish passkey registration: ${response.status}`);
   }
@@ -3267,4 +3303,120 @@ export async function setMessageShopAccount(
     throw new Error('Could not save account');
   }
   return forumMessageSchema.parse(await response.json());
+}
+
+/**
+ * Replaces the stills on a shop note (moderator session).
+ *
+ * An empty list clears stills. Video on the note is left in place.
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @param photos - JPEG, PNG, or WebP stills, at most 10.
+ * @returns The updated {@link ForumMessage}.
+ * @throws Error `Could not save shop note` on a non-2xx status or a body that
+ * fails {@link forumMessageSchema}.
+ */
+export async function setMessageShopPhotos(
+  sessionToken: string,
+  messageId: string,
+  photos: { contentType: string; data: string; takenAt?: string | null }[],
+): Promise<ForumMessage> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/photos`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
+    },
+    body: JSON.stringify({
+      photos: photos.map((photo) => ({
+        contentType: photo.contentType,
+        data: photo.data,
+        ...(typeof photo.takenAt === 'string' && photo.takenAt !== ''
+          ? { takenAt: photo.takenAt }
+          : {}),
+      })),
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save shop note');
+  }
+  return forumMessageSchema.parse(await response.json());
+}
+
+/** One staff edit of a shop note, newest first when listed. */
+export const shopNoteEditSchema = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  field: z.enum(['text', 'place', 'shopAccount']),
+  before: z.unknown(),
+  after: z.unknown(),
+  actor: z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    role: z.string().nullable(),
+  }),
+});
+
+/** Parsed `GET /forum/messages/:id/edits` row. */
+export type ShopNoteEdit = z.infer<typeof shopNoteEditSchema>;
+
+const shopNoteEditsSchema = z.object({ edits: z.array(shopNoteEditSchema) });
+
+/**
+ * Replaces the visible text of a shop note (moderator session).
+ *
+ * The stored body keeps `#21GiftsShop`. This sends the draft as typed.
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @param text - New visible body. The shop tag may be omitted.
+ * @returns The updated {@link ForumMessage}.
+ * @throws Error `Could not save shop note` on a non-2xx status or a body that
+ * fails {@link forumMessageSchema}.
+ */
+export async function setMessageShopText(
+  sessionToken: string,
+  messageId: string,
+  text: string,
+): Promise<ForumMessage> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/text`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
+    },
+    body: JSON.stringify({ text }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save shop note');
+  }
+  return forumMessageSchema.parse(await response.json());
+}
+
+/**
+ * Loads the staff edit history of one shop note.
+ *
+ * @param sessionToken - Bearer session.
+ * @param messageId - Forum message UUID.
+ * @returns Newest-first edits. An empty list means nobody has edited it.
+ * @throws Error `Could not load edit history` on a non-2xx status or a body
+ * that fails {@link shopNoteEditSchema}.
+ */
+export async function fetchShopNoteEdits(
+  sessionToken: string,
+  messageId: string,
+): Promise<ShopNoteEdit[]> {
+  const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}/edits`, {
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      ...deviceTimeZoneHeader(),
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Could not load edit history');
+  }
+  return shopNoteEditsSchema.parse(await response.json()).edits;
 }

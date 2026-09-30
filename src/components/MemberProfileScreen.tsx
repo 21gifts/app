@@ -295,6 +295,7 @@ export function MemberProfileScreen({
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
+  const [photoEpoch, setPhotoEpoch] = useState(0);
 
   const photoSource: ForumMessage[] = [];
   if (activity === 'posts' && posts !== null) {
@@ -399,7 +400,7 @@ export function MemberProfileScreen({
     return () => {
       cancelled = true;
     };
-  }, [photoIdsKey, session]);
+  }, [photoEpoch, photoIdsKey, session]);
 
   useEffect(() => {
     return () => {
@@ -1297,7 +1298,62 @@ export function MemberProfileScreen({
       ) : (
         <>
           {activity === 'posts' ? (
-            <ForumBoard {...IDLE_BOARD} messages={activityMessages} {...sharedForumProps} />
+            <ForumBoard
+              {...IDLE_BOARD}
+              messages={activityMessages}
+              {...sharedForumProps}
+              {...(account !== null && roleAtLeast(account.role, 'moderator')
+                ? {
+                    shopNoteEdit: true as const,
+                    onShopNoteUpdated: (updated: ForumMessage) => {
+                      setPhotoUrls((prev) => {
+                        const prefix = `${updated.id}:`;
+                        let changed = false;
+                        const next = { ...prev };
+                        for (const [key, url] of Object.entries(next)) {
+                          if (!key.startsWith(prefix)) {
+                            continue;
+                          }
+                          URL.revokeObjectURL(url);
+                          delete next[key];
+                          changed = true;
+                        }
+                        return changed ? next : prev;
+                      });
+                      setPhotoEpoch((n) => n + 1);
+                      setPosts((prev) => {
+                        /* v8 ignore next 3 -- the pencil mounts only after the post list has loaded */
+                        if (prev === null) {
+                          return prev;
+                        }
+                        return prev.map((row) => {
+                          if (row.id !== updated.id) {
+                            return row;
+                          }
+                          const next = {
+                            ...row,
+                            text: updated.text,
+                            hasPhoto: updated.hasPhoto,
+                            photoCount: updated.photoCount,
+                            hasVideo: updated.hasVideo,
+                          };
+                          if (updated.place === undefined) {
+                            delete next.place;
+                          } else {
+                            next.place = updated.place;
+                          }
+                          if (updated.shopAccount === undefined) {
+                            delete next.shopAccount;
+                          } else {
+                            next.shopAccount = updated.shopAccount;
+                          }
+                          return next;
+                        });
+                      });
+                    },
+                  }
+                : {})}
+            />
           ) : (
             <ForumBoard
               {...IDLE_BOARD}

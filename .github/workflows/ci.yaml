@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 concurrency:
@@ -14,8 +14,28 @@ permissions:
 
 # Each job must finish within 10 minutes; do not raise the timeout.
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
   check:
-    name: Typecheck, Lint, Handbook, E2E-check, Screenshots, Test (100% coverage), Build
+    name: Typecheck, Handbook, E2E-check, Screenshots, Test (100% coverage), Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -33,9 +53,6 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
 
       - name: Handbook completeness
         run: npm run handbook:check
