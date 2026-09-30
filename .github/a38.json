@@ -5,11 +5,11 @@
   "mode": "enforce",
   "jobs": [
     {
-      "id": "check",
-      "name": "Typecheck, Lint, Handbook, E2E-check, Screenshots, Test (100% coverage), Build",
-      "timeout_s": 900,
+      "id": "lint",
+      "name": "Lint",
+      "timeout_s": 600,
       "workflow": ".github/workflows/ci.yaml",
-      "job": "check",
+      "job": "lint",
       "executor": {
         "adapter": "commands",
         "config": {
@@ -18,26 +18,21 @@
             "node_major": 22,
             "canaries": [
               "next/package.json",
-              "typescript/lib/typescript.js",
-              "vitest/package.json",
-              "prettier/package.json",
-              "eslint/package.json"
+              "eslint/package.json",
+              "prettier/package.json"
             ]
           },
-          "steps": [
-            ["npm", "run", "typecheck"],
-            ["npm", "run", "lint"],
-            ["npm", "run", "handbook:check"],
-            ["npm", "run", "e2e:check"],
-            ["npm", "run", "screenshot:check"],
-            ["npm", "run", "test:coverage"],
-            ["npm", "run", "build"]
-          ]
+          "steps": [["npm", "run", "lint"]]
         }
       }
     }
   ],
   "exclusions": [
+    {
+      "workflow": ".github/workflows/ci.yaml",
+      "job": "check",
+      "reason": "GitHub-hosted PR suite (typecheck, handbook completeness, e2e completeness, screenshot baselines, Vitest coverage, production build). This public repository does not measure that work locally."
+    },
     {
       "workflow": ".github/workflows/ci.yaml",
       "job": "e2e",

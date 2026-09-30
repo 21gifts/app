@@ -16,7 +16,8 @@
     "ignored_workflows": [".github/workflows/a38-guard.yml"],
     "required_checks": {
       ".github/workflows/ci.yaml": [
-        "Typecheck, Lint, Handbook, E2E-check, Screenshots, Test (100% coverage), Build",
+        "Lint",
+        "Typecheck, Handbook, E2E-check, Screenshots, Test (100% coverage), Build",
         "E2E (behavior)",
         "Visual (desktop-light)",
         "Visual (desktop-dark)",
