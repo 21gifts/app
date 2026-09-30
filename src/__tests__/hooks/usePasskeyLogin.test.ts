@@ -889,7 +889,6 @@ describe('usePasskeyLogin', () => {
         stage: 'register',
         name: 'NotAllowedError',
         message: 'no',
-        challengeId: 'ch',
       },
     ]);
     fetchMock.mockRestore();
