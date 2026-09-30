@@ -126,7 +126,7 @@ const en = {
   'home.headline1': 'Help people',
   'home.headline2': 'with Bitcoin',
   'home.lead':
-    "In the forum, people share what they're going through. Sign in to read their posts. If you want to help someone, write a reaction under their post and add an amount. The Bitcoin goes to the wallet of the person who wrote the post.",
+    "In the forum, people share what they're going through. Sign in and read their posts. If you want to support someone, simply react to a post and enter the amount you want to donate. The satoshis are then sent directly from you to the person and arrive within seconds.",
   'home.ctaAsk': 'Ask for help',
   'home.ctaSend': 'Give Bitcoin',
   'home.howKicker': 'Giving on 21.gifts',
@@ -1092,8 +1092,8 @@ const en = {
   'home.previewKicker': 'After you sign in',
   'home.previewTitle': 'How your gift reaches someone',
   'home.previewStep1': 'Read a post in the forum',
-  'home.previewStep2': 'Write a reaction and add an amount',
-  'home.previewStep3': 'Pay from your wallet',
+  'home.previewStep2': 'React and donate',
+  'home.previewStep3': 'Send from your wallet',
   'home.previewWalletTitle': 'Where the Bitcoin goes',
   'home.previewWalletBody':
     'The person adds their own wallet address. 21.gifts does not hold the payment.',
@@ -1101,7 +1101,7 @@ const en = {
   'home.previewTo': 'Their wallet',
   'home.give1Title': 'Sign in and read',
   'home.give1Body': 'Open a post in the forum and read what the person shares.',
-  'home.give2Title': 'Write a reaction',
+  'home.give2Title': 'React',
   'home.give2Body':
     'Tap the arrow under the post, write a few words and add an amount. The gift is for the person who wrote the post.',
   'home.give3Title': 'Pay from your wallet',
@@ -2276,9 +2276,9 @@ const de = {
   'home.previewLabel': 'Der Ablauf',
   'home.previewKicker': 'Nach der Anmeldung',
   'home.previewTitle': 'So kommt dein Geschenk an',
-  'home.previewStep1': 'Beitrag im Wohnzimmer öffnen',
+  'home.previewStep1': 'Beitrag im Wohnzimmer lesen',
   'home.previewStep2': 'Reagieren und spenden',
-  'home.previewStep3': 'Mit deiner Wallet bezahlen',
+  'home.previewStep3': 'Mit deiner Wallet verschicken',
   'home.previewWalletTitle': 'Wohin der Bitcoin geht',
   'home.previewWalletBody': 'Die empfangende Person hat ihre Wallet-Adresse selbst hinterlegt.',
   'home.previewFrom': 'Deine Wallet',
@@ -2286,7 +2286,7 @@ const de = {
   'home.give1Title': 'Anmelden und umsehen',
   'home.give1Body':
     'Melde dich an, öffne einen Beitrag im Wohnzimmer und lies, was die Person erzählt.',
-  'home.give2Title': 'Eine Reaktion schreiben',
+  'home.give2Title': 'Reagieren',
   'home.give2Body':
     'Tippe unter dem Beitrag auf den Pfeil, schreib ein paar Worte und gib einen Betrag an. Das Geschenk ist für die Person, die den Beitrag geschrieben hat.',
   'home.give3Title': 'Bezahlen',
@@ -2451,7 +2451,7 @@ const es = {
   'home.headline1': 'Ayuda a otras personas',
   'home.headline2': 'con Bitcoin',
   'home.lead':
-    'En el foro, la gente cuenta lo que está viviendo. Inicia sesión para leer sus publicaciones. Si quieres ayudar a alguien, escribe una reacción debajo de su publicación e indica un importe. El Bitcoin va a la cartera de quien escribió la publicación.',
+    'En el foro, la gente cuenta lo que está viviendo. Inicia sesión y lee sus publicaciones. Si quieres apoyar a alguien, simplemente reacciona a una publicación e indica la cantidad que quieres donar. Los satoshis se envían directamente de ti a esa persona y llegan en segundos.',
   'home.ctaAsk': 'Pedir ayuda',
   'home.ctaSend': 'Regalar Bitcoin',
   'home.howKicker': 'Regala Bitcoin en 21.gifts',
@@ -3428,8 +3428,8 @@ const es = {
   'home.previewKicker': 'Después de iniciar sesión',
   'home.previewTitle': 'Así llega tu regalo',
   'home.previewStep1': 'Lee una publicación en el foro',
-  'home.previewStep2': 'Escribe una reacción e indica un importe',
-  'home.previewStep3': 'Paga desde tu cartera',
+  'home.previewStep2': 'Reacciona y dona',
+  'home.previewStep3': 'Envía desde tu cartera',
   'home.previewWalletTitle': 'Adónde va el Bitcoin',
   'home.previewWalletBody':
     'Cada persona añade su propia dirección de cartera. 21.gifts no guarda el pago.',
@@ -3437,7 +3437,7 @@ const es = {
   'home.previewTo': 'Cartera de quien recibe',
   'home.give1Title': 'Entra y lee',
   'home.give1Body': 'Abre una publicación en el foro y lee lo que cuenta esa persona.',
-  'home.give2Title': 'Escribe una reacción',
+  'home.give2Title': 'Reacciona',
   'home.give2Body':
     'Toca la flecha debajo de la publicación, escribe unas palabras e indica un importe. El regalo es para quien escribió la publicación.',
   'home.give3Title': 'Paga desde tu cartera',
@@ -3604,7 +3604,7 @@ const fil = {
   'home.headline1': 'Tumulong sa kapwa',
   'home.headline2': 'gamit ang Bitcoin',
   'home.lead':
-    'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in para basahin ang mga post nila. Kapag may gusto kang tulungan, sumulat ng reaksyon sa ilalim ng post niya at maglagay ng halaga. Sa wallet ng sumulat ng post mapupunta ang Bitcoin.',
+    'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in at basahin ang mga post nila. Kung gusto mong tumulong sa isang tao, mag-react lang sa isang post at ilagay ang halagang gusto mong i-donate. Direktang ipapadala mula sa iyo ang satoshis sa taong iyon at darating ito sa loob ng ilang segundo.',
   'home.ctaAsk': 'Humiling ng tulong',
   'home.ctaSend': 'Magbigay ng Bitcoin',
   'home.howKicker': 'Pagbibigay sa 21.gifts',
@@ -4589,8 +4589,8 @@ const fil = {
   'home.previewKicker': 'Pagkatapos mong mag-log in',
   'home.previewTitle': 'Ganito nakakarating ang regalo mo',
   'home.previewStep1': 'Magbasa ng post sa forum',
-  'home.previewStep2': 'Sumulat ng reaksyon at maglagay ng halaga',
-  'home.previewStep3': 'Magbayad gamit ang wallet mo',
+  'home.previewStep2': 'Mag-react at mag-donate',
+  'home.previewStep3': 'Ipadala gamit ang wallet mo',
   'home.previewWalletTitle': 'Saan napupunta ang Bitcoin',
   'home.previewWalletBody':
     'Sariling wallet address ang inilalagay ng tatanggap. Hindi hinahawakan ng 21.gifts ang bayad.',
@@ -4598,7 +4598,7 @@ const fil = {
   'home.previewTo': 'Wallet ng tatanggap',
   'home.give1Title': 'Mag-log in at magbasa',
   'home.give1Body': 'Buksan ang isang post sa forum at basahin ang ikinukuwento ng tao.',
-  'home.give2Title': 'Sumulat ng reaksyon',
+  'home.give2Title': 'Mag-react',
   'home.give2Body':
     'I-tap ang arrow sa ilalim ng post, sumulat ng ilang salita at maglagay ng halaga. Para sa sumulat ng post ang regalo.',
   'home.give3Title': 'Magbayad gamit ang wallet mo',
