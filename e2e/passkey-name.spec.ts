@@ -216,9 +216,7 @@ test('passkey name taken handle stays on the form without create', async ({ page
   }
 });
 
-test('passkey name empty and invalid values do not open the passkey dialog', async ({
-  page,
-}) => {
+test('passkey name empty and invalid values do not open the passkey dialog', async ({ page }) => {
   const registerBegins: string[] = [];
   page.on('request', (req) => {
     if (isRegisterBegin(req.url())) {
@@ -231,7 +229,9 @@ test('passkey name empty and invalid values do not open the passkey dialog', asy
   const expectRejected = async (): Promise<void> => {
     expect(registerBegins).toEqual([]);
     expect((await passkeyCapture(page)).createCount).toBe(0);
-    await expect(page.getByRole('alert').filter({ hasText: NAME_INVALID })).toHaveText(NAME_INVALID);
+    await expect(page.getByRole('alert').filter({ hasText: NAME_INVALID })).toHaveText(
+      NAME_INVALID,
+    );
     await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
   };
 
