@@ -1277,7 +1277,7 @@ const de = {
   'home.lead':
     'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, kannst du einfach auf einen Beitrag reagieren und die Summe angeben, die du spenden möchtest. Die Satoshis werden dann direkt von dir an die Person gesendet und sind innerhalb von Sekunden vor Ort.',
   'home.ctaAsk': 'Selbst um Hilfe bitten',
-  'home.ctaSend': 'Bitcoin verschenken',
+  'home.ctaSend': 'Bitcoin spenden',
   'home.howKicker': 'Bitcoin verschenken',
   'home.howTitle': 'So schenkst du jemandem Bitcoin',
   'home.howLead':
@@ -1405,9 +1405,9 @@ const de = {
   'login.choiceHeading': 'Hast du schon ein Konto?',
   'login.existing': 'Mit meinem Konto anmelden',
   'login.create': 'Neues Konto erstellen',
-  'login.nameHeading': 'Wählen Sie Ihren Namen',
+  'login.nameHeading': 'Wähle deinen Namen',
   'login.nameBody':
-    'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
+    'Dieser Name wird im Passkey gespeichert. Er ist auch dein Kontoname und dein 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Weiter',
   'login.nameInvalid': '1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt.',
