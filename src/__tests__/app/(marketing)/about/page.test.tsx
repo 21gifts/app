@@ -41,7 +41,7 @@ describe('AboutPage', () => {
     renderWithLocale(await AboutPage());
     expect(screen.getByRole('heading', { name: 'What 21.gifts stands for' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Giving is part of faith' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'From one person to another' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Directly from person to person' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Why Bitcoin?' })).toBeTruthy();
     expect(
       screen.getByText(

@@ -37,7 +37,7 @@ test('Function: publicPathFromUrl — switching language keeps the current page'
   await page.getByRole('option', { name: 'Español' }).click();
   await expect(page).toHaveURL(/\/es\/about$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-  await expect(page.getByRole('heading', { name: 'Lo que mueve a 21.gifts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Lo que representa 21.gifts' })).toBeVisible();
   await expect(page.getByRole('contentinfo')).toContainText('Mateo 10:8');
   await expect(page.getByRole('contentinfo')).not.toContainText('Matthäus 10,8');
   await expect(page.getByRole('navigation', { name: 'Principal' })).toContainText('Cómo funciona');

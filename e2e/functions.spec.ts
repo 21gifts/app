@@ -3300,7 +3300,7 @@ test('Function: RootLayout — landing renders', async ({ page }) => {
 test('Function: Home — landing renders the pitch', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Want to support 21.gifts?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '21.gifts also needs support' })).toBeVisible();
   await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
     'href',
     'lightning:21gifts@walletofsatoshi.com',

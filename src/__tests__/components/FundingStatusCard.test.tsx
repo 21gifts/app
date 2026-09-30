@@ -129,7 +129,7 @@ describe('FundingStatusCard', () => {
       ),
     ).toBeNull();
     expect(screen.queryByText('Giving is part of faith')).toBeNull();
-    expect(screen.queryByText('From one person to another')).toBeNull();
+    expect(screen.queryByText('Directly from person to person')).toBeNull();
     expect(screen.queryByText('Why Bitcoin?')).toBeNull();
     expect(
       screen.queryByText(
@@ -180,7 +180,7 @@ describe('FundingStatusCard', () => {
     renderWithLocale(<FundingStatusCard />);
     expect(screen.queryByText('You are not admitted to daily 21.gifts grant payouts.')).toBeNull();
     expect(screen.queryByText('Giving is part of faith')).toBeNull();
-    expect(screen.queryByText('From one person to another')).toBeNull();
+    expect(screen.queryByText('Directly from person to person')).toBeNull();
     expect(screen.queryByText('Why Bitcoin?')).toBeNull();
     expect(
       screen.queryByText(
