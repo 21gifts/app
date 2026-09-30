@@ -367,9 +367,9 @@
 
 ## Function: LoginCard
 
-- **Purpose:** Login UI: one **Log in** button (authenticate-first), an account-choice card after browser `NotAllowedError` (**Log in with existing account** / **Open a new account**), preparing, error, or an in-app browser escape card via `InAppBrowserView` (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`. A new account is created only after **Open a new account** and a completed create ceremony. Error uses `login.error` plus **Try again**, except a wrong-account 403 (`wrongAccount` or passkey error equal to that api string) which uses `login.wrongAccount` with the same layout. **Try again** on that hint calls `clearWrongAccount` then `passkey.login` (never `retry`, so it cannot create another account). Generic errors still call `passkey.retry`.
-- **Inputs:** Uses `usePasskeyLogin`, `useAuthStore`, `isInAppBrowser`, and `InAppBrowserView`.
-- **Returns / side effects:** React element covering idle/choice/starting/error/wrong-account/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card.
+- **Purpose:** Login UI: one **Log in** button (authenticate-first), an account-choice card after browser `NotAllowedError` (**Log in with existing account** / **Open a new account**), an unknown-passkey card after authenticate finish `Unknown credential` (heading `login.unknownHeading`, muted `login.unknownBody`, **Open a new account** and secondary **Try again** that calls `passkey.login`; dismissing the Try again login prompt stays on this card and does not open the account-choice card), preparing, error, or an in-app browser escape card via `InAppBrowserView` (**Open in browser** + **Copy link**, no passkey ceremony). After success, `OnboardingGate` leaves `/login`. A new account is created only after **Open a new account** and a completed create ceremony. Error uses `login.error` plus **Try again**, except a wrong-account 403 (`wrongAccount` or passkey error equal to that api string) which uses `login.wrongAccount` with the same layout. **Try again** on that hint calls `clearWrongAccount` then `passkey.login` (never `retry`, so it cannot create another account). Generic errors still call `passkey.retry`. When the mounted user agent is iOS below 18, Start, Choice, and Unknown show a muted `login.iosVersion` line (installed version and minimum iOS 18). When the mounted user agent is Android below 9, Start, Choice, and Unknown show a muted `login.androidVersion` line (installed version and minimum Android 9). iOS is chosen when both would match. The alert is that same sentence when `passkey.error` is `login.iosVersion` or `login.androidVersion`, and the muted line is then hidden. Other errors keep their own copy and still show the muted line. The line is absent until after mount. Desktop pictures omit it. Phone pictures include it, because those baselines use an iPhone user agent below iOS 18.
+- **Inputs:** Uses `usePasskeyLogin`, `useAuthStore`, `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, and `InAppBrowserView`.
+- **Returns / side effects:** React element covering idle/choice/unknown/starting/error/wrong-account/in-app. A signed-in account shows the preparing spinner until redirect. Detects in-app browsers after mount; never starts WebAuthn from the in-app card.
 - **Used by:** Screen `/login`.
 
 ## Function: LoginPage
@@ -682,6 +682,34 @@
 - **Inputs:** None (reads `navigator.userAgent`).
 - **Returns / side effects:** `boolean`. No network.
 - **Used by:** `PushToggle` only.
+
+## Function: iosPasskeyBlock
+
+- **Purpose:** Read an iPhone, iPad, or iPod user agent and decide whether a new account can finish. iOS 18 is the first version with the extra key this sign-in needs. Older iOS returns the installed version and the minimum. Other browsers, iOS 18 or newer, and an iOS user agent with no version token return null.
+- **Inputs:** `userAgent` string (`navigator.userAgent`).
+- **Returns / side effects:** `{ installed, required }` where `required` is `18` and `installed` is `major.minor` or `major.minor.patch`, or null. No network and no DOM writes.
+- **Used by:** `LoginCard` (muted line after mount) and `usePasskeyLogin` (a new account that cannot finish fails with `login.iosVersion` and is not stored).
+
+## Function: iosInstalledVersion
+
+- **Purpose:** Read the installed iOS version from an iPhone, iPad, or iPod user agent, including iOS 18 and newer. `iosPasskeyBlock` still returns null on those newer versions.
+- **Inputs:** `userAgent` string.
+- **Returns / side effects:** Installed string (`major.minor` or `major.minor.patch`), or null when the token is missing or the browser is not iOS. No network.
+- **Used by:** `usePasskeyLogin`, which puts that version at the front of a failed login or register diagnostic.
+
+## Function: androidPasskeyBlock
+
+- **Purpose:** Android below 9 cannot finish a new-account passkey. Android 9 is the first version whose passkeys can carry the extra key. Older Android returns the installed version and the minimum. Android 9 and newer, other browsers, and an Android user agent with no version token return null.
+- **Inputs:** `userAgent` string.
+- **Returns / side effects:** `{ installed, required }` where `required` is `9` and `installed` is major, major.minor, or major.minor.patch, or null. No network.
+- **Used by:** `LoginCard` (muted line after mount) and `usePasskeyLogin` (a new account that cannot finish fails with `login.androidVersion` and is not stored).
+
+## Function: androidInstalledVersion
+
+- **Purpose:** Read the installed Android version, including Android 9 and newer. `androidPasskeyBlock` still returns null on those newer versions.
+- **Inputs:** `userAgent` string.
+- **Returns / side effects:** Installed string, or null when the token is missing. No network.
+- **Used by:** `usePasskeyLogin`, which puts that version at the front of a failed login or register diagnostic.
 
 ## Function: shouldOfferIosInstall
 
@@ -1063,7 +1091,7 @@
 
 - **Purpose:** Public passkey claim control under the `/view/[viewKey]` card. Unclaimed invites (`hasPasskey` false) bind a passkey to the existing profile (name + Wallet of Satoshi already set), including when another 21.gifts session is already signed in.
 - **Inputs:** `viewKey` (64 lowercase hex) and `hasPasskey` from the public profile. Uses `usePasskeyLogin`, `useAuthStore`, `useRouter`, `isInAppBrowser`, and `InAppBrowserView`.
-- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Claimed (`hasPasskey` true) → `null` (even in Telegram, even if signed in). In-app on mount or `unsupported` → same card chrome as login wrapping `InAppBrowserView` (no yellow **Activate**). Else in a real browser: yellow banner with `view.activationRequired` and **Activate** (`view.activate`) even when `account !== null`; click sets a claim-attempted flag, `cancel` + `clearAuth` when a session exists, then `register(viewKey)` (stays on the view page). Success → `router.replace(nextOnboardingPath(account))` only when that claim was attempted (pre-existing sessions do not redirect on mount). 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()`; after that attempt the yellow **Activate** banner does not return (successful login hides the control; a dismissed prompt keeps the already-claimed copy). Other errors / starting stay visible even with a session → `view.claimError` + **Try again** (`view.retry`) or spinner.
+- **Returns / side effects:** Waits for `useHydrateSession` `ready`. Claimed (`hasPasskey` true) → `null` (even in Telegram, even if signed in). In-app on mount or `unsupported` → same card chrome as login wrapping `InAppBrowserView` (no yellow **Activate**). Else in a real browser: yellow banner with `view.activationRequired` and **Activate** (`view.activate`) even when `account !== null`; click sets a claim-attempted flag, `cancel` + `clearAuth` when a session exists, then `register(viewKey)` (stays on the view page). Success → `router.replace(nextOnboardingPath(account))` only when that claim was attempted (pre-existing sessions do not redirect on mount). 409 → `view.alreadyClaimed` plus Fingerprint that calls `authenticate()`; after that attempt the yellow **Activate** banner does not return (successful login hides the control; a dismissed prompt keeps the already-claimed copy). Status `unknown` shows `view.claimError` and **Try again** calls `authenticate()`, never `register`, and never the login unknown card. Other errors / starting stay visible even with a session → `view.claimError` + **Try again** (`view.retry`) or spinner.
 - **Used by:** `ViewProfileLoader` (ready state only).
 
 ## Function: fetchViewProfile
@@ -1523,6 +1551,20 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** `error` unknown.
 - **Returns / side effects:** `true` for that instance or exact message; `false` otherwise.
 - **Used by:** `useHydrateSession`, `usePasskeyLogin`.
+
+## Function: UnknownCredentialError
+
+- **Purpose:** Typed error for api 400 when authenticate finish rejects a credential the server does not store (`Unknown credential`).
+- **Inputs:** None; message is the exact api English string.
+- **Returns / side effects:** Error instance named `UnknownCredentialError`. `usePasskeyLogin` may signal the credential unknown and sets status `unknown`. `LoginCard` shows the unknown login card. `ViewProfileClaim` shows `view.claimError` and **Try again** calls `authenticate()`, never `register`.
+- **Used by:** `finishPasskeyAuthentication`, `usePasskeyLogin`.
+
+## Function: isUnknownCredentialError
+
+- **Purpose:** Detects an unknown-credential rejection (`UnknownCredentialError` or an `Error` whose message is exactly `UNKNOWN_CREDENTIAL_ERROR`).
+- **Inputs:** `error` unknown.
+- **Returns / side effects:** `true` for that instance or exact message; `false` otherwise.
+- **Used by:** `usePasskeyLogin`.
 
 ## Function: nextPostRequirement
 
@@ -3073,7 +3115,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/auth/passkey/authenticate/finish` and parse the session.
 - **Inputs:** `challengeId` and credential JSON.
-- **Returns / side effects:** `{ token, account }`. Throws `WrongAccountError` on 403 with the duplicate-account api string. Other non-2xx stay status fallbacks.
+- **Returns / side effects:** `{ token, account }`. Throws `WrongAccountError` on 403 with the duplicate-account api string. A 400 body exactly `Unknown credential` throws `UnknownCredentialError`. Other non-2xx stay status fallbacks.
 - **Used by:** `usePasskeyLogin.authenticate`.
 
 ## Function: finishPasskeyRegistration
@@ -3171,7 +3213,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/auth/passkey/seed/finish` with Bearer and `{ challengeId, credential }`.
 - **Inputs:** Session token, challenge id, credential JSON.
-- **Returns / side effects:** 200 is the owner account JSON itself (`accountSchema`, not `{ account }`, no new token), including `passkeyCredentialId`. Throws on non-2xx.
+- **Returns / side effects:** The owner account (`accountSchema`), including `passkeyCredentialId`. A 200 body is that account, or the same account under one `account` key when the body has no top-level `id`. `account` only holds when it is the only top-level field; a further field is not an account. No new token. Login is a different call. Throws on non-2xx or a body that is not an account.
 - **Used by:** `renewPasskey`.
 
 ## Function: postWalletBackupSeen
@@ -3400,9 +3442,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey login. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) starts create. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session, sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration. `register` requires WebAuthn PRF on create; missing PRF aborts with `wallet.prfUnsupported` and does not finish. The words are discarded. `login` / `authenticate` call `clearSessionPhrase`.
-- **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`).
-- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported | choice`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. After a choice button, `retry` repeats that ceremony. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag.
+- **Purpose:** Client hook for passkey login. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) starts create. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. Status `unknown` is authenticate finish `Unknown credential`: the hook calls `signalUnknownCredential` best-effort with the ceremony `rpId` and `credential.id` before showing it, and a later user-cancel returns to `unknown` while that flag is set. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session, sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration. `register` requires WebAuthn PRF on create; missing PRF aborts with `wallet.prfUnsupported` and does not finish. The words are discarded. `login` / `authenticate` call `clearSessionPhrase`. On iPhone, iPad, or iPod below iOS 18, `register` still does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when the begin options name one, and message `iOS <installed> below 18 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `iOS <installed> below 18 at prf.absent`. Both throw `login.iosVersion` instead of a silent cancel or `wallet.prfUnsupported`. On Android below 9, `register` does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when the begin options name one, and message `Android <installed> below 9 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `Android <installed> below 9 at prf.absent`. Both throw `login.androidVersion` instead of a silent cancel or `wallet.prfUnsupported`. Every failed login posts `client.passkey.login.fail` before the card changes, even when no account id exists: the browser `name`, the allowlisted `message` when that text fits, and the begin `challengeId` when it is 64 hex. That row is written when `credentials.get` throws, when the assertion is missing, and when an in-app browser stops the ceremony first (stage `login` or `authenticate`, message `in-app browser`). A dismissed register that is not an old-iOS or old-Android stop posts `client.passkey.register.fail` with those fields, and `accountId` only when begin named one. A failed login row and a dismissed register that is not an old-iOS or old-Android stop prefix the allowlisted message with `iOS <installed>` or `Android <installed>` when the user agent parses (iOS preferred), including versions new enough to pass the gate. Desktop and a user agent with no version token stay unprefixed. Status still becomes `choice`, `idle`, or `unsupported` as before. Begin and finish failures keep their own rows and do not need an account id.
+- **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`, `iosPasskeyBlock` and `androidPasskeyBlock` on register, and `iosInstalledVersion` and `androidInstalledVersion` when a failed attempt is reported).
+- **Returns / side effects:** `{ status, login, register, authenticate, retry, cancel, error }` with `status` in `idle | starting | error | unsupported | choice | unknown`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `retry` repeats `login` when the visitor used the single button. After a choice button, `retry` repeats that ceremony. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
 ## Function: fetchComposeTarget

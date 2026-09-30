@@ -72,6 +72,74 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
+  it('shows the installed iOS version when the phone is below iOS 18', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)',
+    });
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('status')).toHaveProperty(
+      'textContent',
+      'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+    );
+  });
+
+  it('hides the iOS version note on iOS 18', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
+    });
+    renderWithLocale(<LoginCard />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows the iOS version as the error when registration could not finish', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)',
+    });
+    mockPasskey('error', 'login.iosVersion');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows the Android version as the error when registration could not finish', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+    mockPasskey('error', 'login.androidVersion');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Android 8.1.0 is installed. Sign-in needs at least Android 9.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows the generic error when the iOS version key does not match the mounted Android', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value:
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+    mockPasskey('error', 'login.iosVersion');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Something went wrong. Please try again.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('shows a single Log in button when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
@@ -89,6 +157,24 @@ describe('LoginCard', () => {
     expect(registerSpy).toHaveBeenCalledTimes(1);
     expect(registerSpy).toHaveBeenCalledWith();
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
+  });
+
+  it('shows the unknown-passkey heading and create button', () => {
+    mockPasskey('unknown');
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('heading', { name: 'This passkey is not an account' })).toBeTruthy();
+    expect(
+      screen.getByText(
+        'This phone offered a passkey that 21.gifts does not recognize. Open a new account. If the phone offers that same passkey again, delete the saved 21.gifts passkey in your password settings, then try again.',
+      ),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
+    expect(registerSpy).toHaveBeenCalledTimes(1);
+    expect(registerSpy).toHaveBeenCalledWith();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(loginSpy).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
   it('shows a loading state while a passkey ceremony starts', () => {

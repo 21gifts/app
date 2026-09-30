@@ -49,8 +49,11 @@ import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   finishPasskeySeed,
+  isUnknownCredentialError,
   isWrongAccountError,
   LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
+  UNKNOWN_CREDENTIAL_ERROR,
+  UnknownCredentialError,
   WRONG_ACCOUNT_ERROR,
   WrongAccountError,
   listHiddenMessages,
@@ -3983,6 +3986,20 @@ describe('finishPasskeyAuthentication', () => {
       'Failed to finish passkey authentication: 403',
     );
   });
+
+  it('throws UnknownCredentialError on 400 with the unknown-credential body', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: UNKNOWN_CREDENTIAL_ERROR } });
+    const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(UnknownCredentialError);
+    expect(isUnknownCredentialError(error)).toBe(true);
+  });
+
+  it('throws the generic finish error on 400 with another error string', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'expired challenge' } });
+    const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
+    expect(error).toEqual(new Error('Failed to finish passkey authentication: 400'));
+    expect(isUnknownCredentialError(error)).toBe(false);
+  });
 });
 
 describe('startPasskeySeed', () => {
@@ -4013,6 +4030,36 @@ describe('finishPasskeySeed', () => {
       },
       body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
     });
+  });
+
+  it('reads an owner account nested under account', async () => {
+    stubFetch({ ok: true, status: 200, body: { account } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).resolves.toEqual(account);
+  });
+
+  it('rejects a 200 body with account and an extra field', async () => {
+    stubFetch({ ok: true, status: 200, body: { account, extra: true } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
+  it('rejects an object that is not an account', async () => {
+    stubFetch({ ok: true, status: 200, body: { nope: true } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
+  it('rejects a nested body that is not an account', async () => {
+    stubFetch({ ok: true, status: 200, body: { account: { nope: true } } });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
+  it('rejects a 200 body that is not an object', async () => {
+    stubFetch({ ok: true, status: 200, body: null });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
+  });
+
+  it('rejects a 200 array body', async () => {
+    stubFetch({ ok: true, status: 200, body: [] });
+    await expect(finishPasskeySeed('sess', 'ch', { id: 'cred' })).rejects.toThrow();
   });
 
   it('throws on a non-ok response', async () => {
@@ -4159,6 +4206,22 @@ describe('isWrongAccountError', () => {
     expect(isWrongAccountError(new Error('nope'))).toBe(false);
     expect(isWrongAccountError('nope')).toBe(false);
     expect(isWrongAccountError(null)).toBe(false);
+  });
+});
+
+describe('isUnknownCredentialError', () => {
+  it('is true for UnknownCredentialError instances', () => {
+    expect(isUnknownCredentialError(new UnknownCredentialError())).toBe(true);
+  });
+
+  it('is true for Error whose message is the api string', () => {
+    expect(isUnknownCredentialError(new Error(UNKNOWN_CREDENTIAL_ERROR))).toBe(true);
+  });
+
+  it('is false for other values', () => {
+    expect(isUnknownCredentialError(new Error('nope'))).toBe(false);
+    expect(isUnknownCredentialError('nope')).toBe(false);
+    expect(isUnknownCredentialError(null)).toBe(false);
   });
 });
 

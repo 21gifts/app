@@ -48,9 +48,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:ios-version",
+    "label": "/login ios-version",
+    "visual": "state-login-ios-version",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:android-version",
+    "label": "/login android-version",
+    "visual": "state-login-android-version",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:wrong-account",
     "label": "/login wrong-account",
     "visual": "state-login-wrong-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:unknown",
+    "label": "/login unknown",
+    "visual": "state-login-unknown",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

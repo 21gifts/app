@@ -3851,6 +3851,99 @@ test('Function: WrongAccountError — leftover session shows the retry hint', as
   await expectWrongAccountHint(page);
 });
 
+/** Authenticate finish Unknown credential shows the new-account card. */
+async function expectUnknownPasskeyCard(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const pk = globalThis.PublicKeyCredential as unknown as {
+      parseCreationOptionsFromJSON?: unknown;
+      parseRequestOptionsFromJSON?: unknown;
+      signalUnknownCredential?: unknown;
+    };
+    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+      Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+      Object.defineProperty(pk, 'signalUnknownCredential', {
+        value: async () => undefined,
+        configurable: true,
+      });
+    }
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => {
+          throw new Error('create must not run on the login unknown path');
+        },
+        get: async (options?: CredentialRequestOptions) => {
+          const publicKey = options?.publicKey;
+          const challenge = publicKey?.challenge;
+          const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+          if (!publicKey || !isBytes) {
+            throw new Error('invalid request options');
+          }
+          return {
+            id: 'cred',
+            type: 'public-key',
+            toJSON() {
+              return {
+                id: 'cred',
+                rawId: 'cred',
+                type: 'public-key',
+                response: {},
+                clientExtensionResults: {},
+              };
+            },
+          };
+        },
+      },
+    });
+  });
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        challengeId: 'ch',
+        options: {
+          challenge: 'aa',
+          rpId: 'localhost',
+          userVerification: 'required',
+        },
+      }),
+    });
+  });
+  await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Unknown credential' }),
+    });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page.getByRole('heading', { name: 'This passkey is not an account' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+  await expect(page.getByText('Something went wrong. Please try again.')).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+}
+
+test('Function: isUnknownCredentialError — unknown passkey shows the new-account card', async ({
+  page,
+}) => {
+  await expectUnknownPasskeyCard(page);
+});
+
+test('Function: UnknownCredentialError — unknown passkey shows the new-account card', async ({
+  page,
+}) => {
+  await expectUnknownPasskeyCard(page);
+});
+
 test('Function: InAppBrowserView — Telegram WebView shows Open in browser', async ({ page }) => {
   await page.addInitScript(() => {
     Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
@@ -3858,6 +3951,234 @@ test('Function: InAppBrowserView — Telegram WebView shows Open in browser', as
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Open this page in your browser' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open in browser' })).toBeVisible();
+});
+
+test('Function: iosPasskeyBlock — iOS below 18 names the installed version', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('status')).toHaveText(
+    'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+  );
+});
+
+test('Function: iosPasskeyBlock — iOS 18 hides the version line', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+
+test('Function: androidPasskeyBlock — Android below 9 names the installed version', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 8.1.0; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('status')).toHaveText(
+    'Android 8.1.0 is installed. Sign-in needs at least Android 9.',
+  );
+});
+
+test('Function: androidPasskeyBlock — Android 9 hides the version line', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 9; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+
+test('Function: androidInstalledVersion — Android 14 names the installed OS on a failed login', async ({
+  page,
+}) => {
+  const posted: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    posted.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    });
+  });
+  await page.addInitScript(() => {
+    const pk = globalThis.PublicKeyCredential as unknown as {
+      parseCreationOptionsFromJSON?: unknown;
+      parseRequestOptionsFromJSON?: unknown;
+    };
+    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+      Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+    }
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => {
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+        get: async (options?: CredentialRequestOptions) => {
+          const publicKey = options?.publicKey;
+          const challenge = publicKey?.challenge;
+          const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+          if (!publicKey || !isBytes) {
+            throw new Error('invalid request options');
+          }
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+      },
+    });
+  });
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        challengeId: 'ch',
+        options: {
+          challenge: 'aa',
+          rpId: 'localhost',
+          userVerification: 'required',
+        },
+      }),
+    });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
+  await expect
+    .poll(() => {
+      for (const raw of posted) {
+        try {
+          const body = JSON.parse(raw) as { event?: string; message?: string };
+          if (
+            body.event === 'client.passkey.login.fail' &&
+            body.message?.startsWith('Android 14')
+          ) {
+            return true;
+          }
+        } catch {
+          continue;
+        }
+      }
+      return false;
+    })
+    .toBe(true);
+});
+
+test('Function: iosInstalledVersion — iOS 18 names the installed OS on a failed login', async ({
+  page,
+}) => {
+  const posted: string[] = [];
+  await page.route('**/diagnostics', async (route) => {
+    posted.push(route.request().postData() ?? '');
+    await route.fulfill({ status: 204, body: '' });
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    });
+  });
+  await page.addInitScript(() => {
+    const pk = globalThis.PublicKeyCredential as unknown as {
+      parseCreationOptionsFromJSON?: unknown;
+      parseRequestOptionsFromJSON?: unknown;
+    };
+    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+      Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+    }
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => {
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+        get: async (options?: CredentialRequestOptions) => {
+          const publicKey = options?.publicKey;
+          const challenge = publicKey?.challenge;
+          const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+          if (!publicKey || !isBytes) {
+            throw new Error('invalid request options');
+          }
+          throw new DOMException('No credentials', 'NotAllowedError');
+        },
+      },
+    });
+  });
+  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        challengeId: 'ch',
+        options: {
+          challenge: 'aa',
+          rpId: 'localhost',
+          userVerification: 'required',
+        },
+      }),
+    });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+  await expect
+    .poll(() => {
+      for (const raw of posted) {
+        try {
+          const body = JSON.parse(raw) as { event?: string; message?: string };
+          if (body.event === 'client.passkey.login.fail' && body.message?.startsWith('iOS 18.0')) {
+            return true;
+          }
+        } catch {
+          continue;
+        }
+      }
+      return false;
+    })
+    .toBe(true);
 });
 
 test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page }) => {
@@ -4845,13 +5166,48 @@ test('Function: proxyDiagnosticsPost — POST /diagnostics is accepted', async (
   expect(res.status()).toBe(204);
 });
 
+/**
+ * Open `/login` and wait until the diagnostics effect is listening.
+ * `goto` can resolve on `load` before that effect runs, so an error
+ * dispatched immediately is missed.
+ */
+async function openLoginWithDiagnostics(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const marked = window as unknown as { __diagLive: number };
+    marked.__diagLive = 0;
+    type TrackedListener = (
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) => void;
+    const origAdd = window.addEventListener.bind(window) as TrackedListener;
+    const origRemove = window.removeEventListener.bind(window) as TrackedListener;
+    const trackAdd: TrackedListener = (type, listener, options) => {
+      if (type === 'error') {
+        marked.__diagLive += 1;
+      }
+      origAdd(type, listener, options);
+    };
+    const trackRemove: TrackedListener = (type, listener, options) => {
+      if (type === 'error') {
+        marked.__diagLive -= 1;
+      }
+      origRemove(type, listener, options);
+    };
+    window.addEventListener = trackAdd as typeof window.addEventListener;
+    window.removeEventListener = trackRemove as typeof window.removeEventListener;
+  });
+  await page.goto('/login');
+  await page.waitForFunction(() => (window as unknown as { __diagLive: number }).__diagLive > 0);
+}
+
 test('Function: reportDiagnostic — a window error is posted', async ({ page }) => {
   const bodies: string[] = [];
   await page.route('**/diagnostics', async (route) => {
     bodies.push(route.request().postData() ?? '');
     await route.fulfill({ status: 204, body: '' });
   });
-  await page.goto('/login');
+  await openLoginWithDiagnostics(page);
   await page.evaluate(() => {
     const error = new TypeError('Boom');
     window.dispatchEvent(new ErrorEvent('error', { error, message: error.message }));
@@ -4866,7 +5222,7 @@ test('Function: DiagnosticsListener — an unhandled rejection is posted', async
     bodies.push(route.request().postData() ?? '');
     await route.fulfill({ status: 204, body: '' });
   });
-  await page.goto('/login');
+  await openLoginWithDiagnostics(page);
   await page.evaluate(() => {
     const reason = new Error('Later');
     window.dispatchEvent(

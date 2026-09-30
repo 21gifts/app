@@ -129,10 +129,31 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'ios-version',
+    image: 'login-ios-version.png',
+    visual: 'state-login-ios-version',
+    needle: 'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+  },
+  {
+    route: '/login',
+    id: 'android-version',
+    image: 'login-android-version.png',
+    visual: 'state-login-android-version',
+    needle: 'Android 8.1.0 is installed. Sign-in needs at least Android 9.',
+  },
+  {
+    route: '/login',
     id: 'wrong-account',
     image: 'login-wrong-account.png',
     visual: 'state-login-wrong-account',
     needle: 'You signed in with the wrong account. Please try again with the correct account.',
+  },
+  {
+    route: '/login',
+    id: 'unknown',
+    image: 'login-unknown.png',
+    visual: 'state-login-unknown',
+    needle: 'This passkey is not an account',
   },
   {
     route: '/login',
