@@ -512,7 +512,10 @@ icon-only when the table says labeled) is an undeclared deviation.
 The signed-in **Menu** trigger stays labeled (icon plus visible Menu word).
 **Log out**, **Continue**, **I agree to these rules**,
 **Activate**, **Try again**, pay-sheet **Pay**, and sentence-length
-links stay labeled.
+links stay labeled. Shop wizard **Add a shop**, step **Next**, summary
+**Post**, and **Save changes** stay labeled in that same column. The photo
+step's Close (X) is icon-only, accessible name Cancel, the same dismiss as
+pay-sheet Close, and it is not a second back arrow.
 
 Reviewers follow `Review.md` and `docs/ui.md`.
 

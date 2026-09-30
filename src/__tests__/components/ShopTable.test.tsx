@@ -17,9 +17,16 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
+  fetchShopNoteEdits: vi.fn(),
+  fetchMessagePhoto: vi.fn(),
+  setMessagePlace: vi.fn(),
+  setMessageShopAccount: vi.fn(),
+  setMessageShopPhotos: vi.fn(),
+  setMessageShopText: vi.fn(),
 }));
 
-import { fetchMessages } from '@/lib/api';
+import { fetchMessages, fetchShopNoteEdits, setMessageShopText } from '@/lib/api';
+import type { Account } from '@/lib/api-types';
 
 const fetchMessagesMock = vi.mocked(fetchMessages);
 
@@ -183,5 +190,49 @@ describe('ShopTable', () => {
     fetchMessagesMock.mockResolvedValueOnce({ messages: [], nextCursor: null });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('No shops yet — add the first one.')).toBeTruthy();
+  });
+
+  it('lets a moderator edit a row and leaves the other shop', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchMessagesMock.mockResolvedValue({
+      messages: [SHOP, { ...SHOP, id: 'm-2', text: 'Other stall\n\n#21GiftsShop' }],
+      nextCursor: null,
+    });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...SHOP,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    renderWithLocale(<ShopTable />);
+    const pencils = await screen.findAllByRole('button', { name: 'Edit shop note' });
+    expect(pencils).toHaveLength(2);
+    fireEvent.click(pencils[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByText('Cafe Sol')).toBeTruthy();
+    expect(screen.getByText('Other stall')).toBeTruthy();
   });
 });

@@ -89,6 +89,16 @@ for (const file of files) {
       `${rel}: forum.askBack is only allowed in messages, ForumAskWizard, and ViewHistoryRoot`,
     );
   }
+  if (
+    source.includes('shops.back') &&
+    rel !== 'src/lib/messages.ts' &&
+    rel !== 'src/components/ShopAddWizard.tsx' &&
+    rel !== 'src/components/ViewHistoryRoot.tsx'
+  ) {
+    failures.push(
+      `${rel}: shops.back is only allowed in messages, ShopAddWizard, and ViewHistoryRoot`,
+    );
+  }
   if (source.includes('notFound.back') && rel !== 'src/lib/messages.ts') {
     failures.push(`${rel}: notFound.back is only allowed in src/lib/messages.ts`);
   }

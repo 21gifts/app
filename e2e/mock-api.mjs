@@ -517,6 +517,55 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'PATCH' && /^\/messages\/[^/]+\/text$/.test(pathName)) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, { id: decodeURIComponent(pathName.split('/')[2] ?? ''), text: '' });
+    return;
+  }
+
+  if (method === 'PATCH' && /^\/messages\/[^/]+\/photos$/.test(pathName)) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, {
+      id: decodeURIComponent(pathName.split('/')[2] ?? ''),
+      hasPhoto: false,
+      photoCount: 0,
+    });
+    return;
+  }
+
+  if (method === 'GET' && /^\/messages\/[^/]+\/edits$/.test(pathName)) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, { edits: [] });
+    return;
+  }
+
   if (method === 'DELETE' && /^\/messages\/[^/]+$/.test(pathName)) {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

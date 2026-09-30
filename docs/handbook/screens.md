@@ -478,9 +478,9 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — when `account.setup` is null (name and address may be saved or skipped; username is required; living-room rules agreement is required). New passkey accounts reach this after name, username, address, and rules. The phrase is not on that path.
-- **What the user sees:** Chrome is the page-frame header. The top-left arrow is omitted only when this tab has no earlier in-app view; otherwise it returns to that view. An ask step uses that same slot. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". A signed-out visit keeps the wordmark, shows **Log in**, and does not show the member menu. Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes plus unpaid moderator notes plus top-level notes with `goalSats` > 0, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden), timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, Wallet of Satoshi address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
-- **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `fetchGiftStats`, `latestRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`.
+- **What the user sees:** Chrome is the page-frame header. The top-left arrow is omitted only when this tab has no earlier in-app view; otherwise it returns to that view. An ask step uses that same slot. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". A signed-out visit keeps the wordmark, shows **Log in**, and does not show the member menu. Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes plus unpaid moderator notes plus top-level notes with `goalSats` > 0, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
+- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, edit a shop note when the session is a moderator, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, Wallet of Satoshi address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
+- **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `ShopNoteEditControl`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `fetchGiftStats`, `latestRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`.
 
 ### Variant: default
 
@@ -1614,34 +1614,70 @@ Ada's paid note includes `#21GiftsShop`. The card shows a `#Shop` pill linking t
 
 ![21.gifts welcome shop-tag](images/welcome-shop-tag.png)
 
+### Variant: shop-edit
+
+A moderator session. One top-level shop note **Cafe Luna**. The footer shows **Edit shop note** after copy. The editor is closed.
+
+![21.gifts welcome shop edit](images/welcome-shop-edit.png)
+
+### Variant: shop-edit-open
+
+A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is open and **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word.
+
+![21.gifts welcome shop edit open](images/welcome-shop-edit-open.png)
+
+### Variant: shop-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
+
+![21.gifts welcome shop edit place](images/welcome-shop-edit-place.png)
+
+### Variant: shop-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
+
+![21.gifts welcome shop edit text](images/welcome-shop-edit-text.png)
+
+### Variant: shop-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user](images/welcome-shop-edit-user.png)
+
+### Variant: shop-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
+
+![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
+
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop the same way you write a living-room post. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. **Table** has columns **Name**, **Place**, and **Operator**. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, the composer sits under the pill as a shop post only (**Add a photo or video**, **Add a place**, text, and **Post**). There is no **Ask for money** pill. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. **Table** has columns **Name**, **Place**, and **Operator**. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. From the place step of **Add a shop** or **Edit shop note**, that same arrow returns to the previous step and is disabled while the note is sending. The form has no **Back** button. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsViewSwitch`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`.
 
 ### Variant: default
 
-Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** selected, composer (mode selector absent), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
+Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** selected, **Add a shop** (no living-room composer), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
 
 ![21.gifts shops](images/shops.png)
 
 ### Variant: mention-suggest
 
-The shop post composer contains `@` and the People list is open, with `@ada`.
+**Add a shop** is open on **3 / 5 · Text**. **Shop text** contains `@` and the People list is open, with `@ada`.
 
 ![21.gifts shops mention suggestions](images/shops-mention-suggest.png)
 
 ### Variant: mention-suggest-reply
 
-A shop note is expanded, its reaction field contains `@`, and the People list is open.
+A shop note is expanded, its reaction field contains `@`, and the People list is open. **Add a shop** stays closed.
 
 ![21.gifts shops reply mention suggestions](images/shops-mention-suggest-reply.png)
 
 ### Variant: mention-inserted
 
-Choosing `@ada` from that open list writes `@ada ` into the shop post composer and closes the list.
+Choosing `@ada` from that open list writes `@ada ` into **Shop text** and closes the list.
 
 ![21.gifts shops mention inserted](images/shops-mention-inserted.png)
 
@@ -1653,7 +1689,7 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 
 ### Variant: sunday
 
-Device-local Sunday. The **Post** / **Map** / **Table** pill stays. The shop composer is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
+Device-local Sunday. The **Post** / **Map** / **Table** pill stays. **Add a shop** is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
 
 ![21.gifts shops sunday](images/shops-sunday.png)
 
@@ -1662,6 +1698,48 @@ Device-local Sunday. The **Post** / **Map** / **Table** pill stays. The shop com
 The **Map** option is selected. The post composer is gone. The place list is visible without a second **Map** heading. No map key, so the frame stays empty.
 
 ![21.gifts shops map](images/shops-map.png)
+
+### Variant: map-staff
+
+A moderator session. **Map** is selected. The pin is a shop, so **Edit shop note** sits beside **Ada · Happyland**. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map staff](images/shops-map-staff.png)
+
+### Variant: map-edit-open
+
+A moderator clicked **Edit shop note** beside **Ada · Happyland**. Step **1 / 5 · Photos** is open. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. **Map** stays selected. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map edit open](images/shops-map-edit-open.png)
+
+### Variant: map-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map. **History** still says there are no edits yet. The photo step's Close (X) is gone. **Map** stays selected. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map edit place](images/shops-map-edit-place.png)
+
+### Variant: map-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit text](images/shops-map-edit-text.png)
+
+### Variant: map-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit user](images/shops-map-edit-user.png)
+
+### Variant: map-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
+
+### Variant: map-edit-load-failed
+
+A moderator clicked **Edit shop note** beside **Ada · Happyland**. The note did not load. The alert **Could not load this shop note** is visible. The editor is not open. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit load failed](images/shops-map-edit-load-failed.png)
 
 ### Variant: map-with-key
 
@@ -1710,6 +1788,72 @@ The **Map** option is selected. The post composer is gone. The place list is vis
 The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland**, operator **@luna**.
 
 ![21.gifts shops table](images/shops-table.png)
+
+### Variant: table-staff
+
+A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Cafe Luna**. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table staff](images/shops-table-staff.png)
+
+### Variant: table-edit-open
+
+A moderator clicked **Edit shop note** beside **Cafe Luna**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit open](images/shops-table-edit-open.png)
+
+### Variant: table-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the table. **History** still says there are no edits yet. The photo step's Close (X) is gone. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit place](images/shops-table-edit-place.png)
+
+### Variant: table-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit text](images/shops-table-edit-text.png)
+
+### Variant: table-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit user](images/shops-table-edit-user.png)
+
+### Variant: table-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit summary](images/shops-table-edit-summary.png)
+
+### Variant: add-photos
+
+**Add a shop** is open on step **1 / 5 · Photos**. **Next** is the only button. The shop list is empty.
+
+![21.gifts shops add photos](images/shops-add-photos.png)
+
+### Variant: add-place
+
+**Add a shop** is open on step **2 / 5 · Place**. **Add a place** is closed. **Next** is the only button on the card. The shop list is empty.
+
+![21.gifts shops add place](images/shops-add-place.png)
+
+### Variant: add-text
+
+**Add a shop** is open on step **3 / 5 · Text**. Place was skipped. **Next** is the only button on the card.
+
+![21.gifts shops add text](images/shops-add-text.png)
+
+### Variant: add-user
+
+**Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is empty. **Next** is the only button on the card.
+
+![21.gifts shops add user](images/shops-add-user.png)
+
+### Variant: add-summary
+
+**Add a shop** is open on step **5 / 5 · Summary**. Photos, place, text, and the user were skipped. **Post** is the only button on the card.
+
+![21.gifts shops add summary](images/shops-add-summary.png)
 
 ### Variant: table-more
 
@@ -1803,7 +1947,7 @@ One shop note whose place has no label. The card shows a MapPin link **14.60000,
 
 ### Variant: composer-place
 
-**Add a place** is open on an empty shop list and the map key is empty, so the panel says **The map is not available.**
+**Add a shop**, then **Next**, opens step **2 / 5 · Place**. **Add a place** is open on an empty shop list and the map key is empty, so the panel says **The map is not available.** The shop list is still empty.
 
 ![21.gifts shops composer place](images/shops-composer-place.png)
 
@@ -1821,7 +1965,7 @@ One shop note whose place has no label. The card shows a MapPin link **14.60000,
 
 ### Variant: composer-place-set
 
-A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The panel is closed. The shop list is still empty.
+A pin named **Stall** was confirmed, then **Add a place** closed. That name is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
 
 ![21.gifts shops composer place set](images/shops-composer-place-set.png)
 
@@ -1839,15 +1983,57 @@ A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove 
 
 ### Variant: composer-place-set-coords
 
-A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000** with **Remove place**. The panel is closed. The shop list is still empty.
+A pin with no name was confirmed, then **Add a place** closed. **14.50000, 120.90000** is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
 
 ![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
 
 ### Variant: staff-place
 
-A moderator session. One Cafe Luna shop note with no pin. The note footer shows **Add a place** and **Add an account**. The map panel is closed. The account panel is closed.
+A moderator session. One Cafe Luna shop note with no pin. **Edit shop note** is on the note. The note footer shows **Add a place** and **Add an account**. The map panel is closed. The account panel is closed.
 
 ![21.gifts shops staff place](images/shops-staff-place.png)
+
+### Variant: edit-open
+
+A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is open. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. **Next** is labeled. **History** is under the card.
+
+![21.gifts shops edit open](images/shops-edit-open.png)
+
+### Variant: edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
+
+![21.gifts shops edit place](images/shops-edit-place.png)
+
+### Variant: edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
+
+![21.gifts shops edit text](images/shops-edit-text.png)
+
+### Variant: edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+
+![21.gifts shops edit user](images/shops-edit-user.png)
+
+### Variant: edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** is under the card.
+
+![21.gifts shops edit summary](images/shops-edit-summary.png)
+
+### Variant: edit-save-error
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** failed. The editor stays open. The alert **Could not save this shop note** is visible.
+
+![21.gifts shops edit save error](images/shops-edit-save-error.png)
+
+### Variant: edit-history-error
+
+A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. The photo step stays open and still dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word.
+
+![21.gifts shops edit history error](images/shops-edit-history-error.png)
 
 ### Variant: staff-place-unavailable
 
@@ -1983,7 +2169,7 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 - **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the chart never says **Loading…** and has no retry control. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and in the footer icon row with react / copy on feed notes and replies via `TranslatableNoteBody` (`controlSlotId`), which portals `NoteTranslate`, when the language differs from the UI locale. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for the gift-day rate when a feed amount or ask has no stored string for the visitor's currency, and for unsent previews (a stored string is shown as-is; no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. No edit controls.
+- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit. A moderator sees **Edit shop note** on a shop post in the posts feed.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -2244,6 +2430,42 @@ Same overlay while **Download** is making the file (here PNG, whose canvas encod
 Same overlay after **Download** failed (here PNG with a browser that cannot encode the canvas): `role="alert"` **Could not create the file. Please try again.** above **Download**; the next try clears it. Mobile combos open the same overlay as desktop.
 
 ![21.gifts member shop sticker failed](images/members-sticker-failed.png)
+
+### Variant: shop-edit
+
+A moderator viewing another member. The posts feed is open and holds one shop post **Cafe Luna**. The footer shows **Edit shop note**. The editor is closed. The identity card has no edit.
+
+![21.gifts member shop edit](images/members-shop-edit.png)
+
+### Variant: shop-edit-open
+
+The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. The closed pencil does not cover this result.
+
+![21.gifts member shop edit open](images/members-shop-edit-open.png)
+
+### Variant: shop-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
+
+![21.gifts member shop edit place](images/members-shop-edit-place.png)
+
+### Variant: shop-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open.
+
+![21.gifts member shop edit text](images/members-shop-edit-text.png)
+
+### Variant: shop-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty.
+
+![21.gifts member shop edit user](images/members-shop-edit-user.png)
+
+### Variant: shop-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
+
+![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
 
 ## Screen: /pos
 
@@ -3586,9 +3808,9 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 
 ## Screen: /messages/[id]
 
-- **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. A top-level note with a positive `goalSats` shows `ForumGoalBar` (orange through 100%, green overflow; not on replies). Signed-in (hydrated session and account): same per-note actions as `/welcome` (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). A founder or moderator opening a soft-hidden note (root or highlighted reply) sees the note plus `forum.hiddenNotice` (who hid it and when) instead of `view.missing`; React/Gift/Delete/reply composer are omitted on that card. A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note) even though the top-level composer is hidden; extra gifts and Gift-open stay on the card (`payHost: card`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): `ProfileChromeLeft` with wordmark → `/` and one arrow to the previous in-app view, or `/welcome` when this tab has none, plus light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate). A posted goal bar uses the frozen snapshot when that string exists, otherwise the gift-day rate. The pay sheet and an unpaid invoice preview still use the gift-day rate. Signed-in: **Translate** (Languages icon) sits in the footer icon row with react / copy. Unsigned `PublicThreadCard` stacks Translate under the body (no footer row). **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
+- **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. A top-level note with a positive `goalSats` shows `ForumGoalBar` (orange through 100%, green overflow; not on replies). Signed-in (hydrated session and account): same per-note actions as `/welcome` (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, **Edit shop note** on a top-level shop note when the viewer is a moderator, author link when `accountId`). A founder or moderator opening a soft-hidden note (root or highlighted reply) sees the note plus `forum.hiddenNotice` (who hid it and when) instead of `view.missing`; React/Gift/Delete/reply composer are omitted on that card. A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note) even though the top-level composer is hidden; extra gifts and Gift-open stay on the card (`payHost: card`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): `ProfileChromeLeft` with wordmark → `/` and one arrow to the previous in-app view, or `/welcome` when this tab has none, plus light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate). A posted goal bar uses the frozen snapshot when that string exists, otherwise the gift-day rate. The pay sheet and an unpaid invoice preview still use the gift-day rate. Signed-in: **Translate** (Languages icon) sits in the footer icon row with react / copy. Unsigned `PublicThreadCard` stacks Translate under the body (no footer row). **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
 - **Inputs:** Dynamic route `id` (UUID). After hydrate: any session loads `GET /forum/messages/:id` (`fetchForumMessage`) and Bearer replies (a hidden note is still 404 for a non-moderator). No session uses `GET /public-messages/:id` and public replies, and the author name stays text. A session shows the member link for a 21.gifts author on the note, a reaction, a quote name (the rest of the quote still opens the note), and the same on hidden notes and the pin list. The public note video has its own fullscreen button, including a narrow portrait clip. If the opened note has `parentId`, a second GET loads that parent, then its replies. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Opening a hidden reply UUID as staff still shows the parent, live replies, AND the opened hidden reply (merged if Bearer replies omit it). Both URLs stay valid (no redirect). Signed-in also auto-expands via Bearer `GET /forum/messages/:id/replies`. Optional photo via `fetchPublicMessagePhoto` or signed-in `fetchMessagePhoto` (via `PublicMessageThread`) → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags. Unsigned/non-staff hidden ids stay `view.missing`.
-- **Actions:** Change language (unsigned), or open **Menu** (signed-in). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Unsigned **Log in** → `/login` (`login.submit`) below the thread. Signed-in visitors have no second back link below the thread, plus the per-note actions above (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, author link when `accountId`). A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`). On fetch error, **Try again**. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
+- **Actions:** Change language (unsigned), or open **Menu** (signed-in). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Unsigned **Log in** → `/login` (`login.submit`) below the thread. Signed-in visitors have no second back link below the thread, plus the per-note actions above (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, **Edit shop note** on a top-level shop note when the viewer is a moderator, author link when `accountId`). A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`). On fetch error, **Try again**. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
 - **Calls:** `PublicMessagePage`, `PublicMessageChrome`, `PublicMessageLoader`, `PublicThreadCard`, `PublicMessageThread`, `ForumGoalBar`, `forumGoalPercent`, `ForumQuotedBody`, `NoteTranslate`, `LanguageSwitcher`.
@@ -3670,6 +3892,42 @@ Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGall
 Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` when this tab has none) + wordmark → `/welcome`. The wordmark is not that control. **Menu** top-right (**Home** first). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). Posts do not show Gift or an envelope.
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
+
+### Variant: shop-edit
+
+A moderator session on a top-level shop note **Cafe Luna**. The footer shows **Edit shop note**. The editor is closed.
+
+![21.gifts public message shop edit](images/messages-id-shop-edit.png)
+
+### Variant: shop-edit-open
+
+The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. The closed pencil does not cover this result.
+
+![21.gifts public message shop edit open](images/messages-id-shop-edit-open.png)
+
+### Variant: shop-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
+
+![21.gifts public message shop edit place](images/messages-id-shop-edit-place.png)
+
+### Variant: shop-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit text](images/messages-id-shop-edit-text.png)
+
+### Variant: shop-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user](images/messages-id-shop-edit-user.png)
+
+### Variant: shop-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit summary](images/messages-id-shop-edit-summary.png)
 
 ### Variant: sunday
 

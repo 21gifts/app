@@ -21,7 +21,7 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
-import { isReplyPaymentExempt } from '@/lib/roles';
+import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
   latestRateDay,
@@ -215,6 +215,7 @@ export function PublicMessageThread(props: {
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
+  const [photoEpoch, setPhotoEpoch] = useState(0);
 
   const photoSource: ForumMessage[] = [note];
   if (replies !== null) {
@@ -317,7 +318,7 @@ export function PublicMessageThread(props: {
     return () => {
       cancelled = true;
     };
-  }, [photoIdsKey, session]);
+  }, [photoEpoch, photoIdsKey, session]);
 
   useEffect(() => {
     return () => {
@@ -1052,6 +1053,52 @@ export function PublicMessageThread(props: {
         {...IDLE_BOARD}
         messages={[note]}
         truncate={false}
+        {...(account !== null && roleAtLeast(account.role, 'moderator')
+          ? {
+              shopNoteEdit: true as const,
+              onShopNoteUpdated: (updated: ForumMessage) => {
+                setPhotoUrls((prev) => {
+                  const prefix = `${updated.id}:`;
+                  let changed = false;
+                  const next = { ...prev };
+                  for (const [key, url] of Object.entries(next)) {
+                    if (!key.startsWith(prefix)) {
+                      continue;
+                    }
+                    URL.revokeObjectURL(url);
+                    delete next[key];
+                    changed = true;
+                  }
+                  return changed ? next : prev;
+                });
+                setPhotoEpoch((n) => n + 1);
+                setNote((prev) => {
+                  /* v8 ignore next 3 -- the thread pencil edits only the note on screen */
+                  if (prev.id !== updated.id) {
+                    return prev;
+                  }
+                  const next = {
+                    ...prev,
+                    text: updated.text,
+                    hasPhoto: updated.hasPhoto,
+                    photoCount: updated.photoCount,
+                    hasVideo: updated.hasVideo,
+                  };
+                  if (updated.place === undefined) {
+                    delete next.place;
+                  } else {
+                    next.place = updated.place;
+                  }
+                  if (updated.shopAccount === undefined) {
+                    delete next.shopAccount;
+                  } else {
+                    next.shopAccount = updated.shopAccount;
+                  }
+                  return next;
+                });
+              },
+            }
+          : {})}
         photoUrls={photoUrls}
         rateDay={rateDay}
         payMessageId={payMessageId}
