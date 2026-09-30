@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
@@ -934,11 +934,8 @@ describe('InboxScreen', () => {
     fireEvent.change(box, { target: { value: '@', selectionStart: 1, selectionEnd: 1 } });
     box.setSelectionRange(1, 1);
     fireEvent.select(box);
-    expect(await screen.findByRole('option', { name: '@luna' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('option', { name: '@luna' }));
-    await waitFor(() => {
-      expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('@luna ');
-    });
+    fireEvent.mouseDown(await screen.findByRole('option', { name: '@luna' }));
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('@luna ');
   });
 
   it('shows tooLong and request alerts and a posting spinner', () => {
