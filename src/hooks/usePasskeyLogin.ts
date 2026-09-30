@@ -11,6 +11,7 @@ import {
   WRONG_ACCOUNT_ERROR,
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { iosPasskeyBlock } from '@/lib/ios-passkey';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
 import {
@@ -18,7 +19,7 @@ import {
   credentialToJSON,
   requestOptionsFromJSON,
 } from '@/lib/webauthn-browser';
-import { reportDiagnostic } from '@/lib/diagnostics';
+import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -128,6 +129,135 @@ function accountIdFromOptions(options: Record<string, unknown>): string | undefi
   }
   const name = (user as { name?: unknown }).name;
   return typeof name === 'string' ? name : undefined;
+}
+
+/**
+ * True when this iPhone or iPad is too old to finish passkey sign-in.
+ *
+ * @returns Whether register must fail with `login.iosVersion`.
+ */
+function iosRegisterBlocked(): boolean {
+  /* v8 ignore next 3 -- client hook: navigator exists whenever this runs */
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  return iosPasskeyBlock(navigator.userAgent) !== null;
+}
+
+/** Where an old-iOS register stopped. `prf.absent` means create returned no extra key. */
+type IosRegisterStop = 'create' | 'prf' | 'prf.absent';
+
+/**
+ * Keep the browser text that the diagnostic allowlist accepts.
+ * Other characters become spaces so the whole message is not dropped.
+ */
+function diagnosticAllowlistText(value: string): string {
+  return value
+    .replace(/[^A-Za-z0-9._: -]+/g, ' ')
+    .replace(/ +/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
+/**
+ * Version, stop, and the browser text, inside the 120-character allowlist.
+ *
+ * @param step - Which part of register stopped.
+ * @param error - Ceremony rejection, when there is one.
+ */
+function iosDebugMessage(step: IosRegisterStop, error?: unknown): string {
+  const block = iosPasskeyBlock(navigator.userAgent);
+  /* v8 ignore next 3 -- caller already requires a parsed iOS version below 18 */
+  if (block === null) {
+    return `iOS unknown below 18 at ${step}`;
+  }
+  const prefix = `iOS ${block.installed} below ${block.required} at ${step}`;
+  if (error === undefined) {
+    return prefix;
+  }
+  const raw = diagnosticMessage(error);
+  /* v8 ignore next 3 -- a DOMException message is a string */
+  if (raw === undefined) {
+    return prefix;
+  }
+  const safe = diagnosticAllowlistText(raw);
+  if (safe === '') {
+    return prefix;
+  }
+  const clipped = safe.slice(0, 120 - prefix.length - 2).trim();
+  return `${prefix}. ${clipped}`;
+}
+
+/**
+ * One diagnostic row for a login or register that did not finish.
+ * An account id is optional. Its absence must not skip the row.
+ * The server adds the user agent. No secret, challenge, or credential bytes.
+ *
+ * @param event - `client.passkey.login.fail` or `client.passkey.register.fail`.
+ * @param stage - Which entry failed.
+ * @param error - Browser or client error. Name and allowlisted text are kept.
+ * @param ids - Challenge id and, when begin named one, the account id.
+ */
+function reportFailedAttempt(
+  event: 'client.passkey.login.fail' | 'client.passkey.register.fail',
+  stage: 'login' | 'authenticate' | 'register',
+  error: unknown,
+  ids?: { challengeId?: string; accountId?: string },
+): void {
+  const report: DiagnosticReport = { event, stage };
+  const challengeId = ids?.challengeId;
+  if (challengeId !== undefined) {
+    report.challengeId = challengeId;
+  }
+  const accountId = ids?.accountId;
+  if (accountId !== undefined) {
+    report.accountId = accountId;
+  }
+  const name = diagnosticName(error);
+  /* v8 ignore next 3 -- Error and DOMException have a string name */
+  if (name !== undefined) {
+    report.name = name;
+  }
+  const raw = diagnosticMessage(error);
+  /* v8 ignore next 3 -- Error and DOMException have a string message */
+  if (raw !== undefined) {
+    const safe = diagnosticAllowlistText(raw);
+    if (safe !== '') {
+      report.message = safe;
+    }
+  }
+  reportDiagnostic(report);
+}
+
+/**
+ * Everything the allowlist can hold for an old-iOS register that did not finish.
+ * The server adds the user agent. No secret, challenge, or credential bytes.
+ */
+function iosRegisterReport(
+  step: IosRegisterStop,
+  started: { challengeId: string; options: Record<string, unknown> },
+  error?: unknown,
+): DiagnosticReport {
+  const report: DiagnosticReport = {
+    event:
+      step === 'prf.absent' ? 'client.passkey.register.prf' : 'client.passkey.register.ceremony',
+    stage: 'register',
+    prfPresent: false,
+    message: iosDebugMessage(step, error),
+    challengeId: started.challengeId,
+  };
+  const accountId = accountIdFromOptions(started.options);
+  if (accountId !== undefined) {
+    report.accountId = accountId;
+  }
+  if (error !== undefined) {
+    const name = diagnosticName(error);
+    /* v8 ignore next 3 -- a DOMException name is a string */
+    if (name !== undefined) {
+      report.name = name;
+    }
+  }
+  return report;
 }
 
 /**
@@ -254,16 +384,26 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       try {
         credential = await navigator.credentials.create(request);
       } catch (error: unknown) {
-        reportDiagnostic(
-          isUserCancel(error)
-            ? { event: 'client.passkey.cancel', stage: 'register', name: diagnosticName(error) }
-            : {
-                event: 'client.passkey.register.ceremony',
-                stage: 'register',
-                name: diagnosticName(error),
-                message: diagnosticMessage(error),
-              },
-        );
+        if (isUserCancel(error) && iosRegisterBlocked()) {
+          reportDiagnostic(iosRegisterReport('create', begin, error));
+          throw new Error('login.iosVersion');
+        }
+        const accountId = accountIdFromOptions(begin.options);
+        if (isUserCancel(error)) {
+          reportFailedAttempt('client.passkey.register.fail', 'register', error, {
+            challengeId: begin.challengeId,
+            ...(accountId === undefined ? {} : { accountId }),
+          });
+        } else {
+          reportDiagnostic({
+            event: 'client.passkey.register.ceremony',
+            stage: 'register',
+            name: diagnosticName(error),
+            message: diagnosticMessage(error),
+            challengeId: begin.challengeId,
+            ...(accountId === undefined ? {} : { accountId }),
+          });
+        }
         throw error;
       }
       guard(runId);
@@ -282,26 +422,40 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       try {
         prfFirst = await obtainPrfFirst(publicKeyCredential);
       } catch (error: unknown) {
-        reportDiagnostic(
-          isUserCancel(error)
-            ? { event: 'client.passkey.cancel', stage: 'register', name: diagnosticName(error) }
-            : {
-                event: 'client.passkey.register.ceremony',
-                stage: 'register',
-                name: diagnosticName(error),
-                message: diagnosticMessage(error),
-              },
-        );
+        if (isUserCancel(error) && iosRegisterBlocked()) {
+          reportDiagnostic(iosRegisterReport('prf', begin, error));
+          throw new Error('login.iosVersion');
+        }
+        const accountId = accountIdFromOptions(begin.options);
+        if (isUserCancel(error)) {
+          reportFailedAttempt('client.passkey.register.fail', 'register', error, {
+            challengeId: begin.challengeId,
+            ...(accountId === undefined ? {} : { accountId }),
+          });
+        } else {
+          reportDiagnostic({
+            event: 'client.passkey.register.ceremony',
+            stage: 'register',
+            name: diagnosticName(error),
+            message: diagnosticMessage(error),
+            challengeId: begin.challengeId,
+            ...(accountId === undefined ? {} : { accountId }),
+          });
+        }
         throw error;
       }
       guard(runId);
       if (prfFirst === null) {
-        reportDiagnostic({
-          event: 'client.passkey.register.prf',
-          prfPresent: false,
-          stage: 'register',
-        });
-        throw new Error('wallet.prfUnsupported');
+        reportDiagnostic(
+          iosRegisterBlocked()
+            ? iosRegisterReport('prf.absent', begin)
+            : {
+                event: 'client.passkey.register.prf',
+                prfPresent: false,
+                stage: 'register',
+              },
+        );
+        throw new Error(iosRegisterBlocked() ? 'login.iosVersion' : 'wallet.prfUnsupported');
       }
       reportDiagnostic({
         event: 'client.passkey.register.prf',
@@ -365,31 +519,23 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       try {
         credential = await navigator.credentials.get(request);
       } catch (error: unknown) {
-        reportDiagnostic(
-          isUserCancel(error)
-            ? {
-                event: 'client.passkey.cancel',
-                stage: 'authenticate',
-                name: diagnosticName(error),
-              }
-            : {
-                event: 'client.passkey.authenticate.ceremony',
-                stage: 'authenticate',
-                name: diagnosticName(error),
-                message: diagnosticMessage(error),
-              },
+        reportFailedAttempt(
+          'client.passkey.login.fail',
+          entryKindRef.current === 'login' ? 'login' : 'authenticate',
+          error,
+          { challengeId: begin.challengeId },
         );
         throw error;
       }
       guard(runId);
       if (credential === null || credential.type !== 'public-key') {
         const error = new Error('Passkey assertion returned no credential');
-        reportDiagnostic({
-          event: 'client.passkey.authenticate.ceremony',
-          stage: 'authenticate',
-          name: diagnosticName(error),
-          message: diagnosticMessage(error),
-        });
+        reportFailedAttempt(
+          'client.passkey.login.fail',
+          entryKindRef.current === 'login' ? 'login' : 'authenticate',
+          error,
+          { challengeId: begin.challengeId },
+        );
         throw error;
       }
       const publicKeyCredential = credential as PublicKeyCredential;
@@ -461,6 +607,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const register = useCallback(
     (viewKey?: string): void => {
       if (isInAppBrowser()) {
+        reportFailedAttempt(
+          'client.passkey.register.fail',
+          'register',
+          new Error('in-app browser'),
+        );
         setStatus('unsupported');
         return;
       }
@@ -477,6 +628,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const authenticate = useCallback((): void => {
     clearSessionPhrase();
     if (isInAppBrowser()) {
+      reportFailedAttempt('client.passkey.login.fail', 'authenticate', new Error('in-app browser'));
       setStatus('unsupported');
       return;
     }
@@ -490,6 +642,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
   const login = useCallback((): void => {
     clearSessionPhrase();
     if (isInAppBrowser()) {
+      reportFailedAttempt('client.passkey.login.fail', 'login', new Error('in-app browser'));
       setStatus('unsupported');
       return;
     }

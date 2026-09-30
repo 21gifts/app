@@ -8,6 +8,7 @@ import { Button, Card } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import { iosPasskeyBlock, type IosPasskeyBlock } from '@/lib/ios-passkey';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -26,9 +27,11 @@ export function LoginCard(): ReactElement {
   const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
   const passkey = usePasskeyLogin();
   const [inApp, setInApp] = useState(false);
+  const [iosBlock, setIosBlock] = useState<IosPasskeyBlock | null>(null);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
+    setIosBlock(iosPasskeyBlock(navigator.userAgent));
   }, []);
 
   useEffect(() => {
@@ -50,6 +53,8 @@ export function LoginCard(): ReactElement {
     body = (
       <ErrorView
         wrongAccount={wrongAccountHint}
+        iosBlock={iosBlock}
+        iosVersionError={passkey.error === 'login.iosVersion'}
         onRetry={() => {
           clearWrongAccount();
           if (wrongAccountHint) {
@@ -61,22 +66,52 @@ export function LoginCard(): ReactElement {
       />
     );
   } else if (passkey.status === 'unknown') {
-    body = <UnknownView onRegister={() => passkey.register()} onRetry={passkey.login} />;
+    body = (
+      <UnknownView
+        iosBlock={iosBlock}
+        onRegister={() => passkey.register()}
+        onRetry={passkey.login}
+      />
+    );
   } else if (passkey.status === 'choice') {
     body = (
-      <ChoiceView onAuthenticate={passkey.authenticate} onRegister={() => passkey.register()} />
+      <ChoiceView
+        iosBlock={iosBlock}
+        onAuthenticate={passkey.authenticate}
+        onRegister={() => passkey.register()}
+      />
     );
   } else {
-    body = <StartView onLogin={passkey.login} />;
+    body = <StartView onLogin={passkey.login} iosBlock={iosBlock} />;
   }
 
   return <Card surface={false}>{body}</Card>;
+}
+
+/**
+ * Installed iOS version when it is below the sign-in minimum. Hidden otherwise.
+ *
+ * @param props - Parsed block, or null.
+ * @returns The info line, or null.
+ */
+function IosVersionNote({ block }: { block: IosPasskeyBlock | null }): ReactElement | null {
+  const { t } = useTranslations();
+  if (block === null) {
+    return null;
+  }
+  return (
+    <p role="status" className="text-center text-sm text-app-muted">
+      {t('login.iosVersion', { version: block.installed, required: block.required })}
+    </p>
+  );
 }
 
 /** Props for {@link StartView}. */
 interface StartViewProps {
   /** Called to start authenticate-first login. */
   onLogin: () => void;
+  /** Old iOS notice, or null. */
+  iosBlock: IosPasskeyBlock | null;
 }
 
 /**
@@ -85,12 +120,13 @@ interface StartViewProps {
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({ onLogin }: StartViewProps): ReactElement {
+function StartView({ onLogin, iosBlock }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
       <h1 className="text-center text-lg font-medium text-app-fg">{t('login.heading')}</h1>
+      <IosVersionNote block={iosBlock} />
       <Button
         type="button"
         onClick={onLogin}
@@ -108,6 +144,8 @@ interface ChoiceViewProps {
   onAuthenticate: () => void;
   /** Create a passkey with no view key. */
   onRegister: () => void;
+  /** Old iOS notice, or null. */
+  iosBlock: IosPasskeyBlock | null;
 }
 
 /**
@@ -116,12 +154,13 @@ interface ChoiceViewProps {
  * @param props - See {@link ChoiceViewProps}.
  * @returns The choice view.
  */
-function ChoiceView({ onAuthenticate, onRegister }: ChoiceViewProps): ReactElement {
+function ChoiceView({ onAuthenticate, onRegister, iosBlock }: ChoiceViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
       <h1 className="text-center text-lg font-medium text-app-fg">{t('login.choiceHeading')}</h1>
+      <IosVersionNote block={iosBlock} />
       <Button
         type="button"
         onClick={onAuthenticate}
@@ -142,6 +181,8 @@ interface UnknownViewProps {
   onRegister: () => void;
   /** Authenticate-first login; never creates an account. */
   onRetry: () => void;
+  /** Old iOS notice, or null. */
+  iosBlock: IosPasskeyBlock | null;
 }
 
 /**
@@ -151,13 +192,14 @@ interface UnknownViewProps {
  * @param props - See {@link UnknownViewProps}.
  * @returns The unknown-credential view.
  */
-function UnknownView({ onRegister, onRetry }: UnknownViewProps): ReactElement {
+function UnknownView({ onRegister, onRetry, iosBlock }: UnknownViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
       <h1 className="text-lg font-medium text-center text-app-fg">{t('login.unknownHeading')}</h1>
       <p className="text-sm text-app-muted text-center">{t('login.unknownBody')}</p>
+      <IosVersionNote block={iosBlock} />
       <Button type="button" onClick={onRegister}>
         {t('login.create')}
       </Button>
@@ -189,6 +231,10 @@ interface ErrorViewProps {
   onRetry: () => void;
   /** When true, show the dedicated wrong-account copy instead of `login.error`. */
   wrongAccount: boolean;
+  /** Old iOS notice, or null. */
+  iosBlock: IosPasskeyBlock | null;
+  /** When true, the alert is the installed-version sentence. */
+  iosVersionError: boolean;
 }
 
 /**
@@ -198,14 +244,25 @@ interface ErrorViewProps {
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
  */
-function ErrorView({ onRetry, wrongAccount }: ErrorViewProps): ReactElement {
+function ErrorView({
+  onRetry,
+  wrongAccount,
+  iosBlock,
+  iosVersionError,
+}: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
+  const alert = wrongAccount
+    ? t('login.wrongAccount')
+    : iosVersionError && iosBlock !== null
+      ? t('login.iosVersion', { version: iosBlock.installed, required: iosBlock.required })
+      : t('login.error');
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />
       <p role="alert" className="text-center text-sm text-app-danger">
-        {t(wrongAccount ? 'login.wrongAccount' : 'login.error')}
+        {alert}
       </p>
+      {iosVersionError ? null : <IosVersionNote block={iosBlock} />}
       <Button type="button" onClick={onRetry}>
         {t('login.retry')}
       </Button>

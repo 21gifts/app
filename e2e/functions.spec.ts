@@ -3953,6 +3953,33 @@ test('Function: InAppBrowserView — Telegram WebView shows Open in browser', as
   await expect(page.getByRole('button', { name: 'Open in browser' })).toBeVisible();
 });
 
+test('Function: iosPasskeyBlock — iOS below 18 names the installed version', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('status')).toHaveText(
+    'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+  );
+});
+
+test('Function: iosPasskeyBlock — iOS 18 hides the version line', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      get: () =>
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    });
+  });
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('status')).toHaveCount(0);
+});
+
 test('Function: isInAppBrowser — Telegram WebView hides Log in', async ({ page }) => {
   await page.addInitScript(() => {
     Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });

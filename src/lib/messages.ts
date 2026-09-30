@@ -213,6 +213,7 @@ const en = {
   'login.submit': 'Log in',
   'login.preparing': 'Preparing your login…',
   'login.error': 'Something went wrong. Please try again.',
+  'login.iosVersion': 'iOS {version} is installed. Sign-in needs at least iOS {required}.',
   'login.wrongAccount':
     'You signed in with the wrong account. Please try again with the correct account.',
   'login.retry': 'Try again',
@@ -1160,6 +1161,8 @@ const de = {
   'login.submit': 'Anmelden',
   'login.preparing': 'Anmeldung wird vorbereitet…',
   'login.error': 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+  'login.iosVersion':
+    'Installiert ist iOS {version}. Für die Anmeldung braucht es mindestens iOS {required}.',
   'login.wrongAccount':
     'Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto.',
   'login.retry': 'Erneut versuchen',
@@ -2127,6 +2130,8 @@ const es = {
   'login.submit': 'Iniciar sesión',
   'login.preparing': 'Preparando tu inicio de sesión…',
   'login.error': 'Algo salió mal. Inténtalo de nuevo.',
+  'login.iosVersion':
+    'Este dispositivo tiene iOS {version}. Para iniciar sesión hace falta como mínimo iOS {required}.',
   'login.wrongAccount':
     'Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta.',
   'login.retry': 'Intentar de nuevo',
@@ -3076,6 +3081,8 @@ const fil = {
   'login.submit': 'Mag-log in',
   'login.preparing': 'Inihahanda ang login mo…',
   'login.error': 'May nangyaring mali. Subukan ulit.',
+  'login.iosVersion':
+    'Naka-install ang iOS {version}. Kailangan ng hindi bababa sa iOS {required} para makapag-log in.',
   'login.wrongAccount':
     'Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account.',
   'login.retry': 'Subukan ulit',

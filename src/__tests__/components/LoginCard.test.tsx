@@ -72,6 +72,44 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
+  it('shows the installed iOS version when the phone is below iOS 18', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)',
+    });
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('status')).toHaveProperty(
+      'textContent',
+      'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+    );
+  });
+
+  it('hides the iOS version note on iOS 18', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
+    });
+    renderWithLocale(<LoginCard />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('shows the iOS version as the error when registration could not finish', async () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X)',
+    });
+    mockPasskey('error', 'login.iosVersion');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('shows a single Log in button when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));

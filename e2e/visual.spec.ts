@@ -1779,6 +1779,91 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-choice');
   });
 
+  test('login ios version', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+      });
+    });
+    await page.addInitScript(() => {
+      const pk = globalThis.PublicKeyCredential as unknown as {
+        parseCreationOptionsFromJSON?: unknown;
+        parseRequestOptionsFromJSON?: unknown;
+      };
+      if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+        Object.defineProperty(pk, 'parseCreationOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+        Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+          value: undefined,
+          configurable: true,
+        });
+      }
+      Object.defineProperty(navigator, 'credentials', {
+        configurable: true,
+        value: {
+          create: async () => {
+            throw new DOMException('No credentials', 'NotAllowedError');
+          },
+          get: async (options?: CredentialRequestOptions) => {
+            const publicKey = options?.publicKey;
+            const challenge = publicKey?.challenge;
+            const isBytes = challenge instanceof ArrayBuffer || ArrayBuffer.isView(challenge);
+            if (!publicKey || !isBytes) {
+              throw new Error('invalid request options');
+            }
+            throw new DOMException('No credentials', 'NotAllowedError');
+          },
+        },
+      });
+    });
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          challengeId: 'ch',
+          options: {
+            challenge: 'aa',
+            rpId: 'localhost',
+            userVerification: 'required',
+          },
+        }),
+      });
+    });
+    await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          challengeId: 'ch-reg',
+          options: {
+            challenge: 'aa',
+            rp: { name: '21.gifts', id: 'localhost' },
+            user: { id: 'aa', name: 'acc', displayName: 'acc' },
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+          },
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Do you already have an account?' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Open a new account' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+      }),
+    ).toBeVisible();
+    await expect(page.locator('p[role="status"]')).toHaveCount(0);
+    await shotScreen(page, 'state-login-ios-version');
+  });
+
   test('login in-app', async ({ page }) => {
     await page.addInitScript(() => {
       Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });

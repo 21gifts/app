@@ -129,6 +129,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'ios-version',
+    image: 'login-ios-version.png',
+    visual: 'state-login-ios-version',
+    needle: 'iOS 17.5.1 is installed. Sign-in needs at least iOS 18.',
+  },
+  {
+    route: '/login',
     id: 'wrong-account',
     image: 'login-wrong-account.png',
     visual: 'state-login-wrong-account',
