@@ -122,7 +122,7 @@ describe('ModerateHandbookScreen', () => {
       expect(screen.getByText('Please keep a record of the daily payments')).toBeTruthy();
       expect(screen.getByText('New members are capped at 1 USD per day.')).toBeTruthy();
       expect(screen.getByText('Giving is part of faith')).toBeTruthy();
-      expect(screen.getByText('From one person to another')).toBeTruthy();
+      expect(screen.getByText('Directly from person to person')).toBeTruthy();
       expect(screen.getByText('Why Bitcoin?')).toBeTruthy();
     },
   );

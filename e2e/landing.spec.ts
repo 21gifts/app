@@ -26,7 +26,7 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
 
 test('landing shows the project donate address', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Want to support 21.gifts?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '21.gifts also needs support' })).toBeVisible();
   await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
     'href',
     'lightning:21gifts@walletofsatoshi.com',
@@ -102,8 +102,8 @@ test('Happyland uses the original people photographs with equal gallery frames',
   expect(new Set(frames.map(({ height }) => height)).size).toBe(1);
   await expect(section.locator('article')).toHaveCount(3);
   for (const title of [
-    'Making a living from discarded things',
-    'One room for everyday life',
+    'What others throw away',
+    'Living in a cramped space',
     'Paths through the neighborhood',
   ]) {
     await expect(section.getByRole('heading', { name: title, exact: true })).toBeVisible();
