@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * `/donate` — Give Bitcoin explainer: open the forum, choose a payable reaction, then send Bitcoin.
+ * `/donate` — Give Bitcoin explainer: open a forum post, write a reaction with an amount, then pay.
  *
  * @returns The donate screen.
  */
