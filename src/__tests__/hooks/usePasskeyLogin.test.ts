@@ -1465,7 +1465,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns to idle when the user cancels', async () => {
+  it('returns to the name form when a named create is cancelled', async () => {
     const accountId = 'cccccccc-dddd-eeee-ffff-000000000001';
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')

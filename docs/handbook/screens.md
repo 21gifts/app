@@ -300,7 +300,7 @@ Pressing Continue with an empty name, or a name outside 1–32 characters of a-z
 
 ### Variant: name-taken
 
-A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). The passkey dialog does not open. The muted iOS line is not shown.
+A valid name whose username is already in use stays on this form. Alert: That username is already in use. (`login.nameTaken`). When registration begin reports that, the passkey dialog does not open. When registration finish reports the same text after the dialog, this form shows the same alert. The muted iOS line is not shown.
 
 ![21.gifts login name taken](images/login-name-taken.png)
 
