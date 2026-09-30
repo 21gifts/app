@@ -2095,7 +2095,7 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
-  it('records a decoded string user.id and ignores a null user or a non-string id', async () => {
+  it('records a decoded user.id and ignores a null, non-string, or undecodable id', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -2116,8 +2116,29 @@ describe('usePasskeyLogin', () => {
         },
       })
       .mockResolvedValueOnce({ challengeId: 'ch', options: { user: null } })
-      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: { id: 4 } } });
+      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: { id: 4 } } })
+      .mockResolvedValueOnce({ challengeId: 'ch', options: { user: 'ada' } })
+      .mockResolvedValueOnce({
+        challengeId: 'ch',
+        options: { user: { id: '###', name: 'ada' } },
+      })
+      .mockResolvedValueOnce({
+        challengeId: 'ch',
+        options: { user: { id: bytesToBase64Url(Uint8Array.of(0xff)), name: 'ada' } },
+      });
     const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+      result.current.submitName('Ada');
+    });
+    await act(async () => {
+      result.current.register();
+      result.current.submitName('Ada');
+    });
+    await act(async () => {
+      result.current.register();
+      result.current.submitName('Ada');
+    });
     await act(async () => {
       result.current.register();
       result.current.submitName('Ada');
