@@ -15867,7 +15867,10 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
-    await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByText('Stall', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
     await shotScreen(page, 'state-shops-composer-place-set');
   });
 
@@ -15919,7 +15922,10 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByRole('button', { name: 'Use this place' }).click();
-    await expect(page.getByText('14.50000, 120.90000', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByText('14.50000, 120.90000', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
     await shotScreen(page, 'state-shops-composer-place-set-coords');
   });
 

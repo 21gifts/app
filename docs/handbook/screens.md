@@ -1965,7 +1965,7 @@ One shop note whose place has no label. The card shows a MapPin link **14.60000,
 
 ### Variant: composer-place-set
 
-A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The panel is closed. The shop list is still empty.
+A pin named **Stall** was confirmed, then **Add a place** closed. That name is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
 
 ![21.gifts shops composer place set](images/shops-composer-place-set.png)
 
@@ -1983,7 +1983,7 @@ A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove 
 
 ### Variant: composer-place-set-coords
 
-A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000** with **Remove place**. The panel is closed. The shop list is still empty.
+A pin with no name was confirmed, then **Add a place** closed. **14.50000, 120.90000** is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
 
 ![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
 
