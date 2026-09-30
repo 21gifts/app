@@ -319,7 +319,9 @@ export function ShopAddWizard({
           ) : null}
         </div>
       ) : null}
-      {step === 2 ? <PlaceField place={place} disabled={posting} onChange={onPlaceChange} /> : null}
+      {step === 2 ? (
+        <PlaceField place={place} disabled={posting} onChange={onPlaceChange} showPreview={false} />
+      ) : null}
       {step === 3 ? (
         <MentionTextarea
           ariaLabel={t('shops.textLabel')}

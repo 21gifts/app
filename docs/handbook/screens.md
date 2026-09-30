@@ -1626,6 +1626,30 @@ A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is
 
 ![21.gifts welcome shop edit open](images/welcome-shop-edit-open.png)
 
+### Variant: shop-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
+
+![21.gifts welcome shop edit place](images/welcome-shop-edit-place.png)
+
+### Variant: shop-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit text](images/welcome-shop-edit-text.png)
+
+### Variant: shop-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit user](images/welcome-shop-edit-user.png)
+
+### Variant: shop-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+
+![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
+
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
@@ -1686,6 +1710,30 @@ A moderator session. **Map** is selected. The pin is a shop, so **Edit shop note
 A moderator clicked **Edit shop note** beside **Ada · Happyland**. Step **1 / 5 · Photos** is open. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. **Map** stays selected. No map key, so the frame stays empty. No second **Map** heading.
 
 ![21.gifts shops map edit open](images/shops-map-edit-open.png)
+
+### Variant: map-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map. **History** still says there are no edits yet. The photo step's Close (X) is gone. **Map** stays selected. No map key, so the frame stays empty. No second **Map** heading.
+
+![21.gifts shops map edit place](images/shops-map-edit-place.png)
+
+### Variant: map-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit text](images/shops-map-edit-text.png)
+
+### Variant: map-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit user](images/shops-map-edit-user.png)
+
+### Variant: map-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+
+![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
 
 ### Variant: map-edit-load-failed
 
@@ -1752,6 +1800,30 @@ A moderator session. **Table** is selected. **Edit shop note** sits beside the n
 A moderator clicked **Edit shop note** beside **Cafe Luna**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit open](images/shops-table-edit-open.png)
+
+### Variant: table-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the table. **History** still says there are no edits yet. The photo step's Close (X) is gone. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit place](images/shops-table-edit-place.png)
+
+### Variant: table-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit text](images/shops-table-edit-text.png)
+
+### Variant: table-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit user](images/shops-table-edit-user.png)
+
+### Variant: table-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+
+![21.gifts shops table edit summary](images/shops-table-edit-summary.png)
 
 ### Variant: add-photos
 
@@ -1926,6 +1998,30 @@ A moderator session. One Cafe Luna shop note with no pin. **Edit shop note** is 
 A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is open, the text is already filled, and **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. **Save changes** is on the last step.
 
 ![21.gifts shops edit open](images/shops-edit-open.png)
+
+### Variant: edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step. **Save changes** is on the last step.
+
+![21.gifts shops edit place](images/shops-edit-place.png)
+
+### Variant: edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. The shop text is already filled. **History** still says there are no edits yet.
+
+![21.gifts shops edit text](images/shops-edit-text.png)
+
+### Variant: edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+
+![21.gifts shops edit user](images/shops-edit-user.png)
+
+### Variant: edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+
+![21.gifts shops edit summary](images/shops-edit-summary.png)
 
 ### Variant: edit-save-error
 
@@ -2346,6 +2442,30 @@ A moderator viewing another member. The posts feed is open and holds one shop po
 The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. The closed pencil does not cover this result.
 
 ![21.gifts member shop edit open](images/members-shop-edit-open.png)
+
+### Variant: shop-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
+
+![21.gifts member shop edit place](images/members-shop-edit-place.png)
+
+### Variant: shop-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet.
+
+![21.gifts member shop edit text](images/members-shop-edit-text.png)
+
+### Variant: shop-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+
+![21.gifts member shop edit user](images/members-shop-edit-user.png)
+
+### Variant: shop-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+
+![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
 
 ## Screen: /pos
 
@@ -3784,6 +3904,30 @@ A moderator session on a top-level shop note **Cafe Luna**. The footer shows **E
 The same moderator clicked **Edit shop note**. Step **1 / 5 · Photos** is open. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. The closed pencil does not cover this result.
 
 ![21.gifts public message shop edit open](images/messages-id-shop-edit-open.png)
+
+### Variant: shop-edit-place
+
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The closed pencil does not cover this result.
+
+![21.gifts public message shop edit place](images/messages-id-shop-edit-place.png)
+
+### Variant: shop-edit-text
+
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit text](images/messages-id-shop-edit-text.png)
+
+### Variant: shop-edit-user
+
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username is empty. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit user](images/messages-id-shop-edit-user.png)
+
+### Variant: shop-edit-summary
+
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+
+![21.gifts public message shop edit summary](images/messages-id-shop-edit-summary.png)
 
 ### Variant: sunday
 

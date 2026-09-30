@@ -2778,6 +2778,23 @@ test.describe('onboarding screens', () => {
     await expect(history).toBeVisible();
     await history.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-open');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('2 / 5 · Place')).toBeVisible();
+    await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-place');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-text');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-user');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
+    await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-summary');
   });
 
   test('state /welcome laws', async ({ page }) => {
@@ -5296,6 +5313,23 @@ test.describe('onboarding screens', () => {
     await expect(history).toBeVisible();
     await history.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-open');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('2 / 5 · Place')).toBeVisible();
+    await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-place');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-text');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-user');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
+    await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-summary');
   });
 
   /** Posts open on Carol's profile, her note expanded, reaction field ready. */
@@ -8948,6 +8982,23 @@ test.describe('onboarding screens', () => {
     await expect(history).toBeVisible();
     await history.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-open');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('2 / 5 · Place')).toBeVisible();
+    await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-place');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-text');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-user');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
+    await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-summary');
   });
 
   test('state /messages sunday', async ({ page }) => {
@@ -15110,6 +15161,23 @@ test.describe('shops screens', () => {
     // The map frame fills the window. Scroll the opened editor into that window.
     await history.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-map-edit-open');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('2 / 5 · Place')).toBeVisible();
+    await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-place');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-text');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-user');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
+    await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-summary');
   });
 
   test('shops map-edit-load-failed', async ({ page }) => {
@@ -15400,6 +15468,23 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
     await shotScreen(page, 'state-shops-table-edit-open');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('2 / 5 · Place')).toBeVisible();
+    await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-place');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-text');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-user');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
+    await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-summary');
   });
 
   const shopTableRow = {
@@ -15906,6 +15991,23 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('heading', { name: 'History' })).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
     await shotScreen(page, 'state-shops-edit-open');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('2 / 5 · Place')).toBeVisible();
+    await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-place');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-text');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    await page.getByText('4 / 5 · 21.gifts user').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-user');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
+    await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-summary');
   });
 
   test('shops edit-save-error', async ({ page }) => {
