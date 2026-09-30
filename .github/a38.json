@@ -16,11 +16,7 @@
           "env": { "CI": "true" },
           "npm": {
             "node_major": 22,
-            "canaries": [
-              "next/package.json",
-              "eslint/package.json",
-              "prettier/package.json"
-            ]
+            "canaries": ["next/package.json", "eslint/package.json", "prettier/package.json"]
           },
           "steps": [["npm", "run", "lint"]]
         }
