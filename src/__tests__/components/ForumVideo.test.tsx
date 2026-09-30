@@ -27,6 +27,15 @@ describe('ForumVideo', () => {
     }
     fireEvent.click(video);
     expect(onClick).toHaveBeenCalledTimes(1);
+    const play = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(video, 'play', { configurable: true, value: play });
+    expect(screen.queryByText('Play')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+    expect(play).toHaveBeenCalledTimes(1);
+    fireEvent.play(video);
+    expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
+    fireEvent.pause(video);
+    expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
     const requestFullscreen = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(frame, 'requestFullscreen', {
       configurable: true,
@@ -45,6 +54,22 @@ describe('ForumVideo', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Leave full screen' }));
     expect(exitFullscreen).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards play and pause when the caller listens', () => {
+    const onPlay = vi.fn();
+    const onPause = vi.fn();
+    renderWithLocale(
+      <ForumVideo src="/messages/clip/video.mp4" onPlay={onPlay} onPause={onPause} />,
+    );
+    const video = document.querySelector('video');
+    if (!(video instanceof HTMLVideoElement)) {
+      throw new Error('missing video');
+    }
+    fireEvent.play(video);
+    expect(onPlay).toHaveBeenCalledTimes(1);
+    fireEvent.pause(video);
+    expect(onPause).toHaveBeenCalledTimes(1);
   });
 
   it('uses the webkit video call when the frame cannot request fullscreen', () => {

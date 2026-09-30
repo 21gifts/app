@@ -1,12 +1,12 @@
 'use client';
 
-import { Maximize, Minimize } from 'lucide-react';
+import { Maximize, Minimize, Play } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement, type VideoHTMLAttributes } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui';
 
 /**
- * Playable note video with one fullscreen control.
+ * Playable note video with a visible play button and one fullscreen control.
  *
  * Native fullscreen is hidden (`controlsList="nofullscreen"`). The button
  * calls `requestFullscreen` on the frame that also holds the button, or
@@ -17,11 +17,12 @@ import { IconButton } from '@/components/ui';
  * @returns The video and its fullscreen button.
  */
 export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactElement {
-  const { className, onClick, ...rest } = props;
+  const { className, onClick, onPlay, onPause, ...rest } = props;
   const { t } = useTranslations();
   const frameRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
+  const [paused, setPaused] = useState(true);
 
   useEffect(() => {
     const sync = (): void => {
@@ -63,12 +64,35 @@ export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactE
           event.stopPropagation();
           onClick?.(event);
         }}
+        onPlay={(event) => {
+          setPaused(false);
+          onPlay?.(event);
+        }}
+        onPause={(event) => {
+          setPaused(true);
+          onPause?.(event);
+        }}
       />
+      {paused ? (
+        <button
+          type="button"
+          aria-label={t('forum.videoPlay')}
+          className="absolute inset-0 z-10 flex items-center justify-center"
+          onClick={(event) => {
+            event.stopPropagation();
+            void videoRef.current?.play();
+          }}
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white">
+            <Play aria-hidden="true" className="h-6 w-6 fill-current" />
+          </span>
+        </button>
+      ) : null}
       <IconButton
         type="button"
         size="sm"
         variant="secondary"
-        className="absolute end-2 top-4 z-10"
+        className="absolute end-2 top-4 z-20"
         aria-label={fullscreen ? t('forum.videoExitFullscreen') : t('forum.videoFullscreen')}
         onClick={(event) => {
           event.stopPropagation();
