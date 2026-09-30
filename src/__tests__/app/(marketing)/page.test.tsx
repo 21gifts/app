@@ -82,9 +82,9 @@ describe('Home', () => {
     for (const link of links) expect(link.getAttribute('href')).toBe('/login');
   });
 
-  it('links Give Bitcoin to donate', async () => {
+  it('links Donate Bitcoin to donate', async () => {
     renderWithLocale(await Home());
-    const link = screen.getByRole('link', { name: 'Give Bitcoin' });
+    const link = screen.getByRole('link', { name: 'Donate Bitcoin' });
     expect(link.getAttribute('href')).toBe('/en/donate');
   });
 
@@ -105,8 +105,8 @@ describe('Home', () => {
       '#happyland',
     );
     expect(screen.getByRole('link', { name: /Why Bitcoin/i }).getAttribute('href')).toBe('#why');
-    expect(screen.getByRole('link', { name: /Where does the gift go/i }).getAttribute('href')).toBe(
-      '#faq',
-    );
+    expect(
+      screen.getByRole('link', { name: /Where does the donation go/i }).getAttribute('href'),
+    ).toBe('#faq');
   });
 });
