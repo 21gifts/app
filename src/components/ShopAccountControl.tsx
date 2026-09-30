@@ -103,6 +103,35 @@ function visibleBand(anchor: HTMLElement): { top: number; bottom: number } {
   return { top: Math.max(viewTop, chromeBottom), bottom: viewBottom };
 }
 
+/**
+ * Move a panel that still crosses the chrome fully under it.
+ *
+ * Dropping rows cannot help once none remain. The box is pinned by its top
+ * edge so it cannot sit on the chrome, even when it is taller than the band.
+ *
+ * @param place - Position chosen from the button.
+ * @param rect - Measured panel box.
+ * @param band - Visible band under the chrome.
+ * @returns The same place when it already fits, otherwise a top-pinned box.
+ */
+function clampIntoBand(
+  place: PanelPlace,
+  rect: DOMRect,
+  band: { top: number; bottom: number },
+): PanelPlace {
+  let top = rect.top;
+  if (top < band.top) {
+    top = band.top;
+  }
+  if (top + rect.height > band.bottom) {
+    top = Math.max(band.top, band.bottom - rect.height);
+  }
+  if (top === rect.top) {
+    return place;
+  }
+  return { side: 'below', top, left: place.left, width: place.width };
+}
+
 /** Props for the shops-feed staff account editor. */
 export interface ShopAccountControlProps {
   /** Top-level shop note to attach an account to. */
@@ -122,7 +151,8 @@ export interface ShopAccountControlProps {
  * forum post appear immediately. A typed prefix keeps only usernames that
  * start with it, before the next page returns. Choosing one fills `@username`. Saving still
  * sends the username without `@`. The panel is fixed to the viewport so a
- * phone does not scroll sideways.
+ * phone does not scroll sideways. Rows drop until the box fits under the
+ * app chrome, and the list hides rather than covering that chrome.
  *
  * @param props - Note and successful-save callback.
  * @returns The compact account control, or null when it must not edit.
@@ -200,18 +230,23 @@ export function ShopAccountControl({
     }
     const place = (): void => {
       const anchor = anchorRef.current;
-      if (anchor !== null) {
-        setPanel(placePanel(anchor));
-      }
-      const box = panelRef.current;
-      if (!placed || anchor === null || box === null || rowLimit <= 1) {
+      if (anchor === null) {
         return;
       }
-      const band = visibleBand(anchor);
-      const rect = box.getBoundingClientRect();
-      if (rect.top < band.top || rect.bottom > band.bottom) {
-        setRowLimit(rowLimit - 1);
+      let next = placePanel(anchor);
+      const box = panelRef.current;
+      if (placed && box !== null) {
+        const band = visibleBand(anchor);
+        const rect = box.getBoundingClientRect();
+        if (rect.top < band.top || rect.bottom > band.bottom) {
+          if (rowLimit > 0) {
+            setRowLimit(rowLimit - 1);
+          } else {
+            next = clampIntoBand(next, rect, band);
+          }
+        }
       }
+      setPanel(next);
     };
     place();
     const viewport = window.visualViewport;

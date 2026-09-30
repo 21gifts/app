@@ -589,7 +589,7 @@ describe('ShopAccountControl', () => {
       );
       fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
       await waitFor(() => {
-        expect(screen.getAllByRole('option')).toHaveLength(1);
+        expect(screen.queryAllByRole('option')).toHaveLength(0);
       });
       listeners['resize']?.(new Event('resize'));
     } finally {
