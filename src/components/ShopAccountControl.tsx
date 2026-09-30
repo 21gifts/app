@@ -13,6 +13,9 @@ import { useAuthStore } from '@/stores/auth-store';
 
 const USERNAME_PREFIX = /^[a-z0-9][a-z0-9._-]{0,31}$/;
 
+/** First rows only. A longer list would be a second scroller, which the page forbids. */
+const SUGGESTION_LIMIT = 8;
+
 /** One account the shop field can attach. */
 interface ShopSuggestion {
   id: string;
@@ -56,20 +59,35 @@ function draftFor(username: string | undefined): string {
   return username === undefined || username === '' ? '@' : `@${username}`;
 }
 
+/** Where the suggestion panel sits. One edge is set; the other stays unset. */
+interface PanelPlace {
+  top: number | null;
+  bottom: number | null;
+  left: number;
+  width: number;
+}
+
 /**
  * Keep the suggestion panel inside the viewport.
  *
  * The control sits in a note footer. A wide absolute panel there scrolls the
- * page sideways on a phone. A fixed box does not.
+ * page sideways on a phone. A fixed box does not. The page has one scroller,
+ * so this panel does not scroll on its own. When the button is low on the
+ * screen, the panel opens upward.
  *
  * @param anchor - The account button.
- * @returns Top, left, and width in viewport pixels.
+ * @returns The fixed box, either below or above the button.
  */
-function placePanel(anchor: HTMLElement): { top: number; left: number; width: number } {
+function placePanel(anchor: HTMLElement): PanelPlace {
   const rect = anchor.getBoundingClientRect();
   const width = Math.min(288, window.innerWidth - 16);
   const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
-  return { top: rect.bottom + 8, left, width };
+  const below = window.innerHeight - rect.bottom;
+  const above = rect.top;
+  if (below < 480 && above > below) {
+    return { top: null, bottom: window.innerHeight - rect.top + 8, left, width };
+  }
+  return { top: rect.bottom + 8, bottom: null, left, width };
 }
 
 /** Props for the shops-feed staff account editor. */
@@ -107,7 +125,7 @@ export function ShopAccountControl({
   const [draft, setDraft] = useState(draftFor(message.shopAccount?.username));
   const [errorKey, setErrorKey] = useState<'missing' | 'failed' | null>(null);
   const [suggestions, setSuggestions] = useState<readonly ShopSuggestion[]>([]);
-  const [panel, setPanel] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [panel, setPanel] = useState<PanelPlace | null>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const query = open && session !== null ? mentionQuery(draft) : null;
@@ -240,14 +258,17 @@ export function ShopAccountControl({
       </IconButton>
       {open && panel !== null ? (
         <div
-          className="fixed z-30 max-h-[min(24rem,70vh)] overflow-y-auto rounded-2xl border border-app-border bg-app-card-muted p-3"
-          style={{ top: panel.top, left: panel.left, width: panel.width }}
+          className="fixed z-30 rounded-2xl border border-app-border bg-app-card-muted p-3"
+          style={{
+            ...(panel.top === null ? { bottom: panel.bottom ?? 0 } : { top: panel.top }),
+            left: panel.left,
+            width: panel.width,
+          }}
         >
           <input
             type="text"
             aria-label={t('forum.shopAccountLabel')}
             aria-controls={suggestions.length > 0 ? listId : undefined}
-            aria-expanded={suggestions.length > 0}
             value={draft}
             disabled={saving}
             onChange={(event) => {
@@ -263,7 +284,7 @@ export function ShopAccountControl({
               aria-label={t('forum.mentionSuggest')}
               className="mt-2 rounded-xl border border-app-border bg-app-card p-2"
             >
-              {suggestions.map((row) => (
+              {suggestions.slice(0, SUGGESTION_LIMIT).map((row) => (
                 <li key={row.id} role="presentation">
                   <button
                     type="button"
