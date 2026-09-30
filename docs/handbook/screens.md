@@ -1646,7 +1646,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
 
 ![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
 
@@ -1731,7 +1731,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 
 ### Variant: map-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet. **Map** stays selected. No second **Map** heading.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**. **Map** stays selected. No second **Map** heading.
 
 ![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
 
@@ -1821,7 +1821,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ### Variant: table-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit summary](images/shops-table-edit-summary.png)
 
@@ -1947,7 +1947,7 @@ One shop note whose place has no label. The card shows a MapPin link **14.60000,
 
 ### Variant: composer-place
 
-**Add a shop**, then **Next**, opens step **2 / 5 · Place**. **Add a place** is open on an empty shop list and the map key is empty, so the panel says **The map is not available.** **Next** is the only button on the card.
+**Add a shop**, then **Next**, opens step **2 / 5 · Place**. **Add a place** is open on an empty shop list and the map key is empty, so the panel says **The map is not available.** The shop list is still empty.
 
 ![21.gifts shops composer place](images/shops-composer-place.png)
 
@@ -1995,13 +1995,13 @@ A moderator session. One Cafe Luna shop note with no pin. **Edit shop note** is 
 
 ### Variant: edit-open
 
-A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is open, the text is already filled, and **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. **Save changes** is on the last step.
+A moderator clicked **Edit shop note** on Cafe Luna. Step **1 / 5 · Photos** is open. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. **Next** is labeled. **History** is under the card.
 
 ![21.gifts shops edit open](images/shops-edit-open.png)
 
 ### Variant: edit-place
 
-The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step. **Save changes** is on the last step.
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History** still says there are no edits yet. The photo step's Close (X) is gone. The top-left arrow returns to the photo step.
 
 ![21.gifts shops edit place](images/shops-edit-place.png)
 
@@ -2019,7 +2019,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** is under the card.
 
 ![21.gifts shops edit summary](images/shops-edit-summary.png)
 
@@ -2463,7 +2463,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: shop-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
+**Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
 
 ![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
 

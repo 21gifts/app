@@ -149,6 +149,9 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add a place' })).toBeTruthy();
+    expect(screen.queryByText('Stall')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: 'Cafe Luna' } });
     expect(onDraftChange).toHaveBeenCalledWith('Cafe Luna');
@@ -270,6 +273,7 @@ describe('ShopAddWizard', () => {
     );
     expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));

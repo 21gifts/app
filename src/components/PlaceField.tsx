@@ -366,7 +366,7 @@ export function PlaceField(props: {
                     {t('forum.placeSaveFailed')}
                   </p>
                 ) : null}
-                {props.onCommit !== undefined && !showPreview && props.place !== null ? (
+                {!showPreview && props.place !== null ? (
                   <IconButton
                     type="button"
                     size="sm"
@@ -419,7 +419,7 @@ export function PlaceField(props: {
                     {t('forum.placeDone')}
                   </Button>
                 ) : null}
-                {props.onCommit !== undefined && !showPreview && props.place !== null ? (
+                {!showPreview && props.place !== null ? (
                   <IconButton
                     type="button"
                     size="sm"

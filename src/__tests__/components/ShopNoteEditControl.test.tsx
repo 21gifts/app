@@ -389,7 +389,8 @@ describe('ShopNoteEditControl', () => {
     const removeButtons = screen.getAllByRole('button', { name: 'Remove photo' });
     fireEvent.click(removeButtons[removeButtons.length - 1]!);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'Cafe Sol' },
@@ -822,7 +823,8 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'Cafe Sol' },
