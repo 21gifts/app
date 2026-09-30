@@ -3946,6 +3946,67 @@ describe('startPasskeyRegistration', () => {
     });
   });
 
+  it('posts JSON name when provided without a viewKey', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(undefined, 'ada')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'ada' }),
+    });
+  });
+
+  it('ignores name when viewKey is non-empty', async () => {
+    const viewKey = 'a'.repeat(64);
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(viewKey, 'ada')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ viewKey }),
+    });
+  });
+
+  it('posts JSON name when viewKey is empty', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration('', 'ada')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'ada' }),
+    });
+  });
+
+  it('posts with no body when name is empty', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
+    await expect(startPasskeyRegistration(undefined, '')).resolves.toEqual(passkeyBegin);
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+  });
+
+  it('throws the exact invalid-username string on 400', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: {
+        error: 'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+      },
+    });
+    await expect(startPasskeyRegistration(undefined, 'ada')).rejects.toThrow(
+      'Username must be 1–32 characters of a-z, 0-9, hyphen, underscore, or dot',
+    );
+  });
+
+  it('throws the exact taken-username string on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'Username is already in use' },
+    });
+    await expect(startPasskeyRegistration(undefined, 'ada')).rejects.toThrow(
+      'Username is already in use',
+    );
+  });
+
   it('throws the body error on 409', async () => {
     stubFetch({
       ok: false,
@@ -3992,6 +4053,25 @@ describe('finishPasskeyRegistration', () => {
     stubFetch({ ok: false, status: 403, body: { error: 'forbidden' } });
     await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
       'Failed to finish passkey registration: 403',
+    );
+  });
+
+  it('throws the exact taken-username string on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Username is already in use' } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow('Username is already in use');
+  });
+
+  it('throws the generic finish error on 409 with another body', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'This profile already has a passkey' } });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
+      'Failed to finish passkey registration: 409',
+    );
+  });
+
+  it('throws the generic finish error on 409 without an error string', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toThrow(
+      'Failed to finish passkey registration: 409',
     );
   });
 });
