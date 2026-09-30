@@ -177,6 +177,27 @@ function diagnosticAllowlistText(value: string): string {
 }
 
 /**
+ * Prefix plus browser text, always inside the 120-character allowlist.
+ * A version token longer than the budget keeps the prefix only.
+ *
+ * @param prefix - OS label or register stop, already plain text.
+ * @param extra - Allowlisted browser text. Empty keeps the prefix.
+ */
+function diagnosticWithPrefix(prefix: string, extra: string): string {
+  const room = 120 - prefix.length - 2;
+  /* v8 ignore next 3 -- components are capped at 8, and extra is non-empty */
+  if (extra === '' || room < 1) {
+    return diagnosticAllowlistText(prefix);
+  }
+  const clipped = extra.slice(0, room).trim();
+  /* v8 ignore next 3 -- extra is already trimmed */
+  if (clipped === '') {
+    return diagnosticAllowlistText(prefix);
+  }
+  return diagnosticAllowlistText(`${prefix}. ${clipped}`);
+}
+
+/**
  * Version, stop, and the browser text, inside the 120-character allowlist.
  *
  * @param step - Which part of register stopped.
@@ -190,19 +211,18 @@ function iosDebugMessage(step: IosRegisterStop, error?: unknown): string {
   }
   const prefix = `iOS ${block.installed} below ${block.required} at ${step}`;
   if (error === undefined) {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
   const raw = diagnosticMessage(error);
   /* v8 ignore next 3 -- a DOMException message is a string */
   if (raw === undefined) {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
   const safe = diagnosticAllowlistText(raw);
   if (safe === '') {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
-  const clipped = safe.slice(0, 120 - prefix.length - 2).trim();
-  return `${prefix}. ${clipped}`;
+  return diagnosticWithPrefix(prefix, safe);
 }
 
 /**
@@ -219,19 +239,18 @@ function androidDebugMessage(step: AndroidRegisterStop, error?: unknown): string
   }
   const prefix = `Android ${block.installed} below ${block.required} at ${step}`;
   if (error === undefined) {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
   const raw = diagnosticMessage(error);
   /* v8 ignore next 3 -- a DOMException message is a string */
   if (raw === undefined) {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
   const safe = diagnosticAllowlistText(raw);
   if (safe === '') {
-    return prefix;
+    return diagnosticAllowlistText(prefix);
   }
-  const clipped = safe.slice(0, 120 - prefix.length - 2).trim();
-  return `${prefix}. ${clipped}`;
+  return diagnosticWithPrefix(prefix, safe);
 }
 
 /**
@@ -304,10 +323,9 @@ function reportFailedAttempt(
   ) {
     report.message = safe.slice(0, 120);
   } else if (safe === '') {
-    report.message = osLabel;
+    report.message = diagnosticAllowlistText(osLabel);
   } else {
-    const clipped = safe.slice(0, 120 - osLabel.length - 2).trim();
-    report.message = `${osLabel}. ${clipped}`;
+    report.message = diagnosticWithPrefix(osLabel, safe);
   }
   reportDiagnostic(report);
 }

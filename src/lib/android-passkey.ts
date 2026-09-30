@@ -24,16 +24,17 @@ function parseAndroidVersion(userAgent: string): { major: number; installed: str
   if (match === null) {
     return null;
   }
-  const major = Number(match[1]);
-  const minor = match[2];
-  const patch = match[3];
+  const majorText = `${match[1]}`.slice(0, 8);
+  const minorText = match[2] === undefined ? undefined : `${match[2]}`.slice(0, 8);
+  const patchText = match[3] === undefined ? undefined : `${match[3]}`.slice(0, 8);
+  const major = Number(majorText);
   let installed: string;
-  if (minor === undefined) {
-    installed = `${match[1]}`;
-  } else if (patch === undefined) {
-    installed = `${match[1]}.${minor}`;
+  if (minorText === undefined) {
+    installed = majorText;
+  } else if (patchText === undefined) {
+    installed = `${majorText}.${minorText}`;
   } else {
-    installed = `${match[1]}.${minor}.${patch}`;
+    installed = `${majorText}.${minorText}.${patchText}`;
   }
   return { major, installed };
 }

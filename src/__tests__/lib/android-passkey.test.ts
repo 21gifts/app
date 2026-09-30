@@ -32,6 +32,15 @@ describe('androidPasskeyBlock', () => {
     });
   });
 
+  it('clips an Android patch longer than eight digits', () => {
+    expect(
+      androidPasskeyBlock(`Mozilla/5.0 (Linux; Android 8.1.${'0'.repeat(40)}; Pixel)`),
+    ).toEqual({
+      installed: '8.1.' + '0'.repeat(8),
+      required: '9',
+    });
+  });
+
   it('returns null on Android 9, 10, and 14', () => {
     expect(androidPasskeyBlock('Mozilla/5.0 (Linux; Android 9; Pixel)')).toBeNull();
     expect(androidPasskeyBlock('Mozilla/5.0 (Linux; Android 10; Pixel)')).toBeNull();

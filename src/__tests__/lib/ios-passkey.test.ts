@@ -22,6 +22,15 @@ describe('iosPasskeyBlock', () => {
     });
   });
 
+  it('clips an iOS patch longer than eight digits', () => {
+    expect(
+      iosPasskeyBlock(`Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_${'1'.repeat(40)} like Mac OS X)`),
+    ).toEqual({
+      installed: '17.5.' + '1'.repeat(8),
+      required: '18',
+    });
+  });
+
   it('reports an old iPad and iPod the same way', () => {
     expect(iosPasskeyBlock('Mozilla/5.0 (iPad; CPU OS 16_1_2 like Mac OS X)')).toEqual({
       installed: '16.1.2',

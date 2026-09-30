@@ -24,10 +24,13 @@ function parseIosVersion(userAgent: string): { major: number; installed: string 
   if (match === null) {
     return null;
   }
-  const major = Number(match[1]);
-  const minor = Number(match[2]);
-  const patch = match[3];
-  const installed = patch === undefined ? `${major}.${minor}` : `${major}.${minor}.${patch}`;
+  const majorText = `${match[1]}`.slice(0, 8);
+  const minorText = `${match[2]}`.slice(0, 8);
+  const patchText = match[3] === undefined ? undefined : `${match[3]}`.slice(0, 8);
+  const major = Number(majorText);
+  const minor = Number(minorText);
+  const installed =
+    patchText === undefined ? `${major}.${minor}` : `${major}.${minor}.${patchText}`;
   return { major, installed };
 }
 
