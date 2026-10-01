@@ -58,18 +58,20 @@ async function readBalance(run: number, conn: WalletConnection): Promise<void> {
 }
 
 /**
- * Closes the connection and marks the store as error when `run` is still current.
+ * Marks the store as error and closes the connection when `run` is still current.
+ * The store write is synchronous so a concurrent logout or reconnect cannot be
+ * overwritten after disconnect awaits.
  *
  * @param run - Run number that owns this failure.
- * @returns Resolves after the store is updated.
+ * @returns Resolves after disconnect completes or fails.
  */
 async function failRun(run: number): Promise<void> {
   if (run !== runCounter) {
     return;
   }
   bumpRun();
-  await dropConnection();
   useWalletStore.getState().setError();
+  await dropConnection();
 }
 
 /**
