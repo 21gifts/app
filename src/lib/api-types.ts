@@ -788,6 +788,11 @@ export type ExternalAuthorProfile = z.infer<typeof externalAuthorProfileSchema>;
 export const messageInvoiceSchema = z.object({
   pr: z.string().min(1),
   amountSats: z.number().int().positive(),
+  /**
+   * Request the member's in-app wallet pays instead of `pr`, or `null` when the
+   * api issued none. Optional so bodies from an api without it still parse.
+   */
+  sparkInvoice: z.string().min(1).nullable().optional(),
 });
 
 /**
@@ -947,6 +952,11 @@ export const conversationInvoiceSchema = z.object({
   pr: z.string().min(1),
   amountSats: z.number().int().positive(),
   messageId: z.string().min(1),
+  /**
+   * Request the member's in-app wallet pays instead of `pr`, or `null` when the
+   * api issued none. Optional so bodies from an api without it still parse.
+   */
+  sparkInvoice: z.string().min(1).nullable().optional(),
 });
 
 /**

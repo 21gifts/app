@@ -18,6 +18,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
@@ -204,6 +205,8 @@ export interface InboxInvoice {
   pr: string;
   /** Whole satoshis on the invoice. */
   amountSats: number;
+  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  sparkInvoice?: string | null;
 }
 
 /** Props for {@link InboxScreen}. */
@@ -1319,8 +1322,18 @@ export function InboxScreen({
               })}
               {preferredFiatSuffix(invoice.amountSats, rateDay, fiat, numberFormat)}
             </p>
-            {showPaymentQr ? <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} /> : null}
-            {walletButton}
+            <WalletPay
+              sparkInvoice={invoice.sparkInvoice}
+              rateDay={rateDay}
+              fallback={
+                <>
+                  {showPaymentQr ? (
+                    <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} />
+                  ) : null}
+                  {walletButton}
+                </>
+              }
+            />
             {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
             {payWaiting ? (
               <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>

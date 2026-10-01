@@ -47,6 +47,7 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
+import { WalletPay } from '@/components/WalletPay';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
@@ -158,6 +159,8 @@ export interface ForumPayInvoice {
   pr: string;
   /** Whole sats confirmed by the api. */
   amountSats: number;
+  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  sparkInvoice?: string | null;
 }
 
 /** Props for {@link ForumBoard}. */
@@ -561,8 +564,18 @@ function ForumPaySheet({
         })}
         {preferredFiatSuffix(invoiceForCard.amountSats, rateDay, fiat, numberFormat)}
       </p>
-      {showPaymentQr ? <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} /> : null}
-      {walletButton}
+      <WalletPay
+        sparkInvoice={invoiceForCard.sparkInvoice}
+        rateDay={rateDay}
+        fallback={
+          <>
+            {showPaymentQr ? (
+              <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
+            ) : null}
+            {walletButton}
+          </>
+        }
+      />
       {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
       {payWaiting ? (
         <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
@@ -1123,6 +1136,7 @@ export function ForumBoard({
                   preview: replyPayPreview,
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
+                  sparkInvoice: payInvoice.sparkInvoice ?? null,
                 }
               : null;
           const reactionPayPage = reactionPay !== null;
@@ -1781,6 +1795,7 @@ export function ForumBoard({
                           preview={reactionPay.preview}
                           amountSats={reactionPay.amountSats}
                           pr={reactionPay.pr}
+                          sparkInvoice={reactionPay.sparkInvoice}
                           payWaiting={payWaiting}
                           payBusy={payBusy}
                           showPaymentQr={showPaymentQr}
