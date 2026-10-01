@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadWalletSdk, WALLET_STORAGE_DIR } from '@/lib/wallet/wallet-sdk';
+import { loadWalletSdk } from '@/lib/wallet/wallet-sdk';
 
 const MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
@@ -78,7 +78,7 @@ describe('loadWalletSdk', () => {
     expect(request.config.network).toBe('mainnet');
     expect(Object.prototype.hasOwnProperty.call(request.config, 'lnurlDomain')).toBe(false);
     expect(request.seed).toEqual({ type: 'mnemonic', mnemonic: MNEMONIC });
-    expect(request.storageDir).toBe(WALLET_STORAGE_DIR);
+    expect(request.storageDir).toBe('21gifts-wallet');
   });
 
   it('getInfo maps balance and identity and drops other fields', async () => {

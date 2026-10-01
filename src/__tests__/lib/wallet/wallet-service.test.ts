@@ -525,3 +525,90 @@ describe('disabled wallet path', () => {
     addSpy.mockRestore();
   });
 });
+
+describe('walletNeedsReload', () => {
+  async function loadFresh(): Promise<{
+    connectWallet: typeof connectWallet;
+    walletNeedsReload: () => boolean;
+    useWalletStore: typeof useWalletStore;
+    rememberSessionPhrase: typeof rememberSessionPhrase;
+  }> {
+    vi.resetModules();
+    const service = await import('@/lib/wallet/wallet-service');
+    const store = await import('@/stores/wallet-store');
+    const tabPhrase = await import('@/lib/tab-phrase');
+    return {
+      connectWallet: service.connectWallet,
+      walletNeedsReload: service.walletNeedsReload,
+      useWalletStore: store.useWalletStore,
+      rememberSessionPhrase: tabPhrase.rememberSessionPhrase,
+    };
+  }
+
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = API_KEY;
+  });
+
+  afterEach(() => {
+    if (ORIGINAL_BREEZ === undefined) {
+      delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    } else {
+      process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+    }
+  });
+
+  it('is false initially', async () => {
+    const { walletNeedsReload } = await loadFresh();
+    expect(walletNeedsReload()).toBe(false);
+  });
+
+  it('stays false after a connect rejection', async () => {
+    const fresh = await loadFresh();
+    fresh.rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = createFakeSdk({
+      connect: async () => {
+        throw new Error('connect failed');
+      },
+    });
+    await expect(fresh.connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(fresh.useWalletStore.getState().status).toBe('error');
+    expect(fresh.walletNeedsReload()).toBe(false);
+  });
+
+  it('stays false after an addEventListener rejection', async () => {
+    const fresh = await loadFresh();
+    fresh.rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = createFakeSdk({
+      addEventListener: async () => {
+        throw new Error('listener failed');
+      },
+    });
+    await expect(fresh.connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(fresh.useWalletStore.getState().status).toBe('error');
+    expect(fresh.walletNeedsReload()).toBe(false);
+  });
+
+  it('stays false after a getInfo rejection', async () => {
+    const fresh = await loadFresh();
+    fresh.rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = createFakeSdk({
+      getInfo: async () => {
+        throw new Error('info failed');
+      },
+    });
+    await expect(fresh.connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(fresh.useWalletStore.getState().status).toBe('error');
+    expect(fresh.walletNeedsReload()).toBe(false);
+  });
+
+  it('is true after the loader rejects', async () => {
+    const fresh = await loadFresh();
+    fresh.rememberSessionPhrase(MNEMONIC);
+    const loadSdk = vi.fn(async () => {
+      throw new Error('load failed');
+    });
+    await expect(fresh.connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(fresh.useWalletStore.getState().status).toBe('error');
+    expect(fresh.walletNeedsReload()).toBe(true);
+  });
+});

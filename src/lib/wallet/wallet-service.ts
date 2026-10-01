@@ -15,6 +15,22 @@ let connection: WalletConnection | null = null;
 let runCounter = 0;
 
 /**
+ * Set when `loadSdk` rejects inside {@link connectWallet}. Never cleared; only a
+ * page reload recovers because the SDK caches a failed initialisation.
+ */
+let sdkLoadFailed = false;
+
+/**
+ * True after the wallet SDK failed to load in this page; only a reload can
+ * recover, because the SDK caches a failed initialisation.
+ *
+ * @returns Whether the page must be reloaded before another connect attempt.
+ */
+export function walletNeedsReload(): boolean {
+  return sdkLoadFailed;
+}
+
+/**
  * Advances the run counter so in-flight work from an older run is ignored.
  *
  * @returns The new run number.
@@ -91,7 +107,10 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
   useWalletStore.getState().setConnecting();
   await dropConnection();
   try {
-    const sdk = await loadSdk();
+    const sdk = await loadSdk().catch((err: unknown) => {
+      sdkLoadFailed = true;
+      throw err;
+    });
     if (run !== runCounter) {
       return;
     }

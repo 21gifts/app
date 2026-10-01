@@ -275,7 +275,7 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
     if (!isCurrentSession(sessionToken)) {
       return { outcome: 'cancelled' };
     }
-    await rememberPhraseFromPrf({
+    void rememberPhraseFromPrf({
       prfFirst,
       credentialId: credential.id,
       account: nextAccount,

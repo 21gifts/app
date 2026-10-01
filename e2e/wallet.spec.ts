@@ -700,6 +700,17 @@ test('Function: WalletBalance — error pin shows Try again', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
+test('Function: walletNeedsReload — error pin keeps Try again in place', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-error');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect(page.getByRole('region', { name: 'Balance' }).getByRole('alert')).toHaveText(
+    'Your wallet could not be opened. Please try again.',
+  );
+  await expect(page).toHaveURL(/\/wallet\?visual=balance-error/);
+});
+
 test('Function: unlockWalletPhrase — locked pin shows Unlock wallet', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet?visual=balance-locked');

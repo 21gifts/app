@@ -173,7 +173,7 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 - **URL:** `/wallet` — signed-in receive address. The recovery phrase is a separate page. When the in-app wallet is enabled by configuration and the account can produce a phrase (`walletRequired` with a `passkeyCredentialId`), a balance block sits under the heading and above the address.
 - **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet** is first. With the wallet configured for an eligible account, the balance region is next: locked shows one line and **Unlock wallet**; connecting shows the pending line; ready shows the Bitcoin balance with the default fiat beside it; error shows a sentence and **Try again**. A reload locks the wallet again because the phrase is kept in tab memory only. Without configuration the screen is as before and there is no balance region. Then the centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. Below that card, the phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
-- **Actions:** **Unlock wallet** asks the device for the passkey and opens the wallet. **Try again** retries opening. **Set an amount** opens `/pos`. **Add recovery phrase** opens `/wallet/phrase`. **Show recovery phrase** opens `/wallet/phrase` and is only inside **Advanced functions**. Open **Menu** (Home, Shops, Point of sale, Profile, Grants, Wallet, …). Back closes **Advanced functions** when that row is open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Actions:** **Unlock wallet** asks the device for the passkey and opens the wallet. **Try again** retries opening, and reloads the page when the wallet's code could not be loaded. **Set an amount** opens `/pos`. **Add recovery phrase** opens `/wallet/phrase`. **Show recovery phrase** opens `/wallet/phrase` and is only inside **Advanced functions**. Open **Menu** (Home, Shops, Point of sale, Profile, Grants, Wallet, …). Back closes **Advanced functions** when that row is open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `useWalletPhrase`.
 
 ### Variant: default
@@ -196,25 +196,25 @@ Account that can already show a phrase. Open **Advanced functions** shows **Show
 
 ### Variant: balance-locked
 
-Pinned fixture (`?visual=balance-locked`), not a live wallet. Region **Balance** with the unlock line and labeled **Unlock wallet** above the address.
+Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. Region **Balance** with the unlock line and labeled **Unlock wallet** above the address.
 
 ![21.gifts wallet balance locked](images/wallet-balance-locked.png)
 
 ### Variant: balance-connecting
 
-Pinned fixture (`?visual=balance-connecting`), not a live wallet. Region **Balance** shows the pending line **Opening your wallet…**.
+Pinned fixture (`?visual=balance-connecting`, Playwright builds only), not a live wallet. Region **Balance** shows the pending line **Opening your wallet…**.
 
 ![21.gifts wallet balance connecting](images/wallet-balance-connecting.png)
 
 ### Variant: balance-ready
 
-Pinned fixture (`?visual=balance-ready`), not a live wallet. Region **Balance** shows the ready fixture `₿21'000` with the default fiat beside it.
+Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wallet. Region **Balance** shows the ready fixture `₿21'000` with the default fiat beside it.
 
 ![21.gifts wallet balance ready](images/wallet-balance-ready.png)
 
 ### Variant: balance-error
 
-Pinned fixture (`?visual=balance-error`), not a live wallet. Region **Balance** shows the open-failed sentence and labeled **Try again**.
+Pinned fixture (`?visual=balance-error`, Playwright builds only), not a live wallet. Region **Balance** shows the open-failed sentence and labeled **Try again**.
 
 ![21.gifts wallet balance error](images/wallet-balance-error.png)
 
