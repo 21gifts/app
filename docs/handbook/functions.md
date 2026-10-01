@@ -3648,7 +3648,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Read tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** String or `null`.
-- **Used by:** The wallet service; `useWalletPhrase`. Implemented in `tab-phrase`.
+- **Used by:** `connectWallet`, `listenForWalletPhrase`, `useWallet.retry`; re-exported from `useWalletPhrase`. Implemented in `tab-phrase`.
 
 ## Function: clearSessionPhrase
 
@@ -3718,7 +3718,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. When reads overlap only the latest one writes. A failed read closes the connection and sets `error`.
 - **Inputs:** None.
 - **Returns / side effects:** void. Updates `useWalletStore`.
-- **Used by:** `connectWallet` (on connect and on `synced`).
+- **Used by:** The `synced` listener that `connectWallet` registers.
 
 ## Function: disconnectWallet
 

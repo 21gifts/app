@@ -47,7 +47,9 @@ async function dropConnection(): Promise<void> {
 
 /**
  * Reads balance from a connection when the captured run is still current and
- * this read is still the latest. A stale read returns without writing.
+ * this read is still the latest. A stale read returns without writing. A
+ * rejection of a stale read is swallowed; a rejection of the latest read under
+ * the current run propagates to the caller.
  *
  * @param run - Run number captured by the caller.
  * @param conn - Connection to query.
@@ -56,11 +58,18 @@ async function dropConnection(): Promise<void> {
 async function readBalance(run: number, conn: WalletConnection): Promise<void> {
   balanceReadCounter += 1;
   const read = balanceReadCounter;
-  const info = await conn.getInfo();
-  if (run !== runCounter || read !== balanceReadCounter) {
-    return;
+  try {
+    const info = await conn.getInfo();
+    if (run !== runCounter || read !== balanceReadCounter) {
+      return;
+    }
+    useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
+  } catch (err: unknown) {
+    if (run !== runCounter || read !== balanceReadCounter) {
+      return;
+    }
+    throw err;
   }
-  useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
 }
 
 /**
