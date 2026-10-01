@@ -382,7 +382,7 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
  *
  * @param details - SDK pay-request details.
  * @param recipient - Address or domain shown on the confirm screen.
- * @returns The `lnurl` target.
+ * @returns The `lnurl` target, or `unsupported` when the bounds leave no whole sat.
  */
 function lnurlTarget(details: LnurlDetails, recipient: string): WalletTarget {
   const minSats = Math.max(1, Math.ceil(details.minSendable / 1000));
