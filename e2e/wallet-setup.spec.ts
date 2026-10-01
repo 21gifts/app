@@ -232,6 +232,13 @@ test.describe('wallet setup dialog', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
+  test('Function: walletSetupInFlight — the intro pin shows no progress line', async ({ page }) => {
+    await signIn(page);
+    await openWallet(page, '?visual=setup-intro');
+    await expect(page.getByRole('button', { name: 'Set up wallet' })).toBeVisible();
+    await expect(page.getByText('Setting up your wallet…')).toHaveCount(0);
+  });
+
   test('Function: needsWalletSetup — unset key shows no setup dialog', async ({ page }) => {
     await signIn(page);
     await openWallet(page);
