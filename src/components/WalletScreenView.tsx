@@ -127,7 +127,7 @@ export function WalletScreenView({
       hidePhrase();
       return;
     }
-    if (surface !== 'phrase' && send?.cancel() === true) {
+    if (surface !== 'phrase' && wallet?.status === 'ready' && send?.cancel() === true) {
       return;
     }
     if (surface !== 'phrase' && detailsRef.current?.open === true) {
