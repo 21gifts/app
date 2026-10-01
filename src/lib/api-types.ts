@@ -165,8 +165,8 @@ export const accountSchema = z.object({
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).
  * `notificationLevel` is `all` (every living-room post, reply, and gift),
- * `active` (posts with gifts), or `mentions` (admin/staff posts and events
- * that involve the owner). Omitted on older api builds; treat as `all`.
+ * `active` (posts with gifts), or `mentions` (replies to the owner, gifts
+ * they receive, and @username marks). Omitted on older api builds; treat as `all`.
  * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
  * builds; treat as `btc`.
  * `locale` is the stored UI language and `fiat` is the stored preferred

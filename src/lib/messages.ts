@@ -569,7 +569,7 @@ const en = {
   'profile.push.level.active': 'Active',
   'profile.push.level.mentions': 'Mentions',
   'profile.push.level.hint':
-    'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is admin posts, replies to you, and gifts you receive, and @username marks.',
+    'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is replies to you, gifts you receive, and @username marks.',
   'profile.push.level.error': 'Could not save notification level.',
   'profile.postCount': '{count, plural, one {# post} other {# posts}}',
   'profile.replyCount': '{count, plural, one {# reaction} other {# reactions}}',
@@ -1559,7 +1559,7 @@ const de = {
   'profile.push.level.active': 'Aktiv',
   'profile.push.level.mentions': 'Erwähnungen',
   'profile.push.level.hint':
-    'Alle Wohnzimmer-Posts, Antworten und Geschenke. Aktiv sind Posts mit Geschenk. Erwähnungen sind Admin-Posts, Antworten auf dich und Geschenke, die du empfängst, und Markierungen mit @benutzername.',
+    'Alle Wohnzimmer-Posts, Antworten und Geschenke. Aktiv sind Posts mit Geschenk. Erwähnungen sind Antworten auf dich, Geschenke, die du empfängst, und Markierungen mit @benutzername.',
   'profile.push.level.error': 'Benachrichtigungsstufe konnte nicht gespeichert werden.',
   'profile.postCount': '{count, plural, one {# Beitrag} other {# Beiträge}}',
   'profile.replyCount': '{count, plural, one {# Reaktion} other {# Reaktionen}}',
@@ -2559,7 +2559,7 @@ const es = {
   'profile.push.level.active': 'Activas',
   'profile.push.level.mentions': 'Menciones',
   'profile.push.level.hint':
-    'Todas las publicaciones, respuestas y regalos del salón. Activas son las publicaciones con regalos. Menciones son publicaciones de administradores, respuestas a ti y regalos que recibes, y marcas con @usuario.',
+    'Todas las publicaciones, respuestas y regalos del salón. Activas son las publicaciones con regalos. Menciones son respuestas a ti, regalos que recibes y marcas con @usuario.',
   'profile.push.level.error': 'No se pudo guardar el nivel de notificaciones.',
   'profile.postCount': '{count, plural, one {# publicación} other {# publicaciones}}',
   'profile.replyCount': '{count, plural, one {# reacción} other {# reacciones}}',
@@ -3549,7 +3549,7 @@ const fil = {
   'profile.push.level.active': 'Aktibo',
   'profile.push.level.mentions': 'Mga pagbanggit',
   'profile.push.level.hint':
-    'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga post ng admin, sagot sa iyo, at mga regalo na natatanggap mo, at mga marka gamit ang @username.',
+    'Lahat ng post, sagot, at regalo sa living room. Aktibo ang mga post na may regalo. Mga pagbanggit ay mga sagot sa iyo, mga regalo na natatanggap mo, at mga marka gamit ang @username.',
   'profile.push.level.error': 'Hindi ma-save ang antas ng notification.',
   'profile.postCount': '{count, plural, one {# post} other {# post}}',
   'profile.replyCount': '{count, plural, one {# reaksyon} other {# reaksyon}}',
