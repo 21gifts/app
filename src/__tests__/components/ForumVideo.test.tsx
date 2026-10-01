@@ -26,6 +26,7 @@ describe('ForumVideo', () => {
     if (!(frame instanceof HTMLElement) || !(video instanceof HTMLVideoElement)) {
       throw new Error('missing video frame');
     }
+    expect(frame.classList.contains('mx-auto')).toBe(true);
     expect(screen.getAllByRole('button', { name: 'Play' })).toHaveLength(1);
     fireEvent.click(video);
     expect(onClick).toHaveBeenCalledTimes(1);

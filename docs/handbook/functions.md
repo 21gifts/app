@@ -1290,9 +1290,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ForumVideo
 
-- **Purpose:** Playable note video. No native controls; one play button while paused; a click on the playing video pauses it; the fullscreen button sits in an absolutely positioned wrapper because the small icon button stays relative; the frame is w-fit so both controls sit on the picture. Click calls `requestFullscreen` on that frame, or `webkitEnterFullscreen` when that API is missing. Composer and ask previews do not use it.
-- **Inputs:** Native video attributes.
-- **Returns / side effects:** The video and the button. No network.
+- **Purpose:** Playable note video. No native controls; one play button while paused; a click on the playing video pauses it; the fullscreen button sits in an absolutely positioned wrapper because the small icon button stays relative; the frame is `mx-auto w-fit` so the picture stays centered and both controls sit on it. The fullscreen button calls `requestFullscreen` on that frame, or `webkitEnterFullscreen` when that API is missing. Composer and ask previews do not use it.
+- **Inputs:** Native video attributes except controls, controlsList, and playsInline.
+- **Returns / side effects:** The video, play button, and fullscreen button. No network.
 - **Used by:** `ForumBoard` feed video, `PublicMessageLoader` public note video.
 
 ## Function: ForumBoard

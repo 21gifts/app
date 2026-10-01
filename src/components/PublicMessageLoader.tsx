@@ -141,8 +141,6 @@ function PublicThreadCard({
         <ForumVideo
           src={forumVideoSrc(note.id, note.videoContentType)}
           poster={photoUrl ?? undefined}
-          controls
-          playsInline
           preload="metadata"
           className="mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
           onError={() => {

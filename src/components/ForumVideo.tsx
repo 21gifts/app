@@ -9,15 +9,16 @@ import { IconButton } from '@/components/ui';
  * Playable note video. No native controls; one play button while paused; a
  * click on the playing video pauses it; the fullscreen button sits in an
  * absolutely positioned wrapper because the small icon button stays relative;
- * the frame is w-fit so both controls sit on the picture.
+ * the frame is `mx-auto w-fit` (centered, and both controls sit on the
+ * picture); the fullscreen button calls `requestFullscreen` on that frame.
  *
  * @param props - Native video attributes. `playsInline` is set here.
  * @returns The video, play control, and fullscreen button.
  */
-export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactElement {
-  const { className, onClick, onPlay, onPause, controls, controlsList, ...rest } = props;
-  void controls;
-  void controlsList;
+export function ForumVideo(
+  props: Omit<VideoHTMLAttributes<HTMLVideoElement>, 'controls' | 'controlsList' | 'playsInline'>,
+): ReactElement {
+  const { className, onClick, onPlay, onPause, ...rest } = props;
   const { t } = useTranslations();
   const frameRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,7 +53,7 @@ export function ForumVideo(props: VideoHTMLAttributes<HTMLVideoElement>): ReactE
   };
 
   return (
-    <div ref={frameRef} className="relative w-fit max-w-full">
+    <div ref={frameRef} className="relative mx-auto w-fit max-w-full">
       <video
         ref={videoRef}
         {...rest}
