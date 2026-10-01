@@ -642,6 +642,19 @@ describe('WalletScreenView send block', () => {
     expect(historyBack).not.toHaveBeenCalled();
   });
 
+  it('Back does not ask the send flow while the wallet is not ready', () => {
+    const send = sendResult(() => true);
+    renderEntry('locked', send);
+    const details = screen.getByText('Advanced functions').closest('details');
+    if (details === null) {
+      throw new Error('missing details');
+    }
+    details.open = true;
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(send.cancel).not.toHaveBeenCalled();
+    expect(details.open).toBe(false);
+  });
+
   it('Back continues to Advanced functions when no send step is open', () => {
     const send = sendResult(() => false);
     renderEntry('ready', send);
