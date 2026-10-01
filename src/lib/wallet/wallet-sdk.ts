@@ -13,6 +13,23 @@
 const WALLET_STORAGE_DIR = '21gifts-wallet';
 
 /**
+ * Set when `sdk.default()` (SDK init) rejects inside {@link loadWalletSdk}.
+ * Never cleared; only a page reload recovers because the SDK caches a failed
+ * initialisation. A rejecting `import()` does not set it.
+ */
+let sdkInitFailed = false;
+
+/**
+ * True after the SDK's initialisation failed in this page; the SDK caches a
+ * failed initialisation, so only a reload recovers.
+ *
+ * @returns Whether the page must be reloaded before another connect attempt.
+ */
+export function walletNeedsReload(): boolean {
+  return sdkInitFailed;
+}
+
+/**
  * Balance and identity returned by a connected wallet.
  */
 export interface WalletInfo {
@@ -72,12 +89,18 @@ export interface WalletSdk {
 /**
  * Dynamically imports the Breez Spark SSR package, initializes it, and returns
  * a narrow {@link WalletSdk} wrapper. The only module that names the package.
+ * A rejected initialisation is remembered for {@link walletNeedsReload}.
  *
  * @returns A {@link WalletSdk} whose `connect` opens a mainnet wallet.
  */
 export async function loadWalletSdk(): Promise<WalletSdk> {
   const sdk = await import('@breeztech/breez-sdk-spark/ssr');
-  await sdk.default();
+  try {
+    await sdk.default();
+  } catch (error: unknown) {
+    sdkInitFailed = true;
+    throw error;
+  }
   return {
     async connect(mnemonic: string, apiKey: string): Promise<WalletConnection> {
       const config = sdk.defaultConfig('mainnet');

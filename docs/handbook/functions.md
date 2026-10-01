@@ -3657,6 +3657,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Clears the module variable. Dispatches `SESSION_PHRASE_EVENT`, which disconnects the wallet.
 - **Used by:** `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
+## Function: sessionPhraseGeneration
+
+- **Purpose:** Counter that changes whenever the tab phrase is remembered or cleared. Lets an asynchronous derivation detect that it was overtaken.
+- **Inputs:** None.
+- **Returns / side effects:** A number.
+- **Used by:** `rememberPhraseFromPrf`. Implemented in `tab-phrase`.
+
 ## Function: resetWalletCeremonyLock
 
 - **Purpose:** Drop the tab-wide wallet WebAuthn lock so a later ceremony can start.
@@ -3668,7 +3675,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Add or show the recovery phrase. `/wallet` does not render the words. `/wallet/phrase` does. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
-- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `renewPasskey`, then `mnemonicFromPrfFirst` on the in-memory PRF bytes, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. `hidePhrase` clears the tab phrase and therefore locks the wallet. No Confirm, no Continue.
+- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `renewPasskey`, then `mnemonicFromPrfFirst` on the in-memory PRF bytes, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. The hook itself does not call `rememberSessionPhrase`; `activate` reaches it through `renewPasskey` when the wallet is configured. `hidePhrase` clears the tab phrase and therefore locks the wallet. No Confirm, no Continue.
 - **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreenView
@@ -3694,21 +3701,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: loadWalletSdk
 
-- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `disconnect`).
+- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `disconnect`). A rejected initialisation is remembered for `walletNeedsReload`.
 - **Inputs:** None.
 - **Returns / side effects:** A `WalletSdk`. Uses `defaultConfig('mainnet')` with the api key, no `lnurlDomain`, and a fixed storage name. The SDK keeps wallet state in IndexedDB; the phrase is passed in memory only.
 - **Used by:** The wallet service as the default loader.
 
 ## Function: connectWallet
 
-- **Purpose:** Connects from the tab phrase. Does nothing without a key or a phrase. Store goes `connecting` → `ready` or `error`. Subscribes to SDK events and refreshes on `synced`. The latest call wins and a superseded connection is closed. A loader failure also marks the page as needing a reload (`walletNeedsReload`).
+- **Purpose:** Connects from the tab phrase. Does nothing without a key or a phrase. Store goes `connecting` → `ready` or `error`. Subscribes to SDK events and refreshes on `synced`. The latest call wins and a superseded connection is closed.
 - **Inputs:** Optional `WalletSdkLoader` (defaults to `loadWalletSdk`).
 - **Returns / side effects:** void. Updates `useWalletStore`.
 - **Used by:** `listenForWalletPhrase`, `useWallet.retry`.
 
 ## Function: refreshWallet
 
-- **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. A failed read closes the connection and sets `error`.
+- **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. When reads overlap only the latest one writes. A failed read closes the connection and sets `error`.
 - **Inputs:** None.
 - **Returns / side effects:** void. Updates `useWalletStore`.
 - **Used by:** `connectWallet` (on connect and on `synced`).
@@ -3722,10 +3729,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: walletNeedsReload
 
-- **Purpose:** True after the wallet SDK failed to load in this page. The SDK caches a failed initialisation, so only a reload recovers.
+- **Purpose:** True only after the SDK's initialisation rejected in this page. The SDK caches a failed initialisation, so only a reload recovers. A failed import alone does not set it.
 - **Inputs:** None.
 - **Returns / side effects:** boolean.
-- **Used by:** `useWallet.retry`.
+- **Used by:** `useWallet.retry`. Implemented in `wallet-sdk`.
 
 ## Function: listenForWalletPhrase
 
@@ -3736,7 +3743,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: rememberPhraseFromPrf
 
-- **Purpose:** Derives the phrase from PRF bytes a passkey response already carried and keeps it in tab memory. Only when the key is configured, the bytes are present, the account is `walletRequired`, the response's credential is the account's `passkeyCredentialId`, and the session is still the one that started it. Never throws, never sends or stores the bytes or the phrase.
+- **Purpose:** Derives the phrase from PRF bytes a passkey response already carried and keeps it in tab memory. Only when the key is configured, the bytes are present, the account is `walletRequired`, the response's credential is the account's `passkeyCredentialId`, and the session is still the one that started it. Never throws, never sends the bytes or the phrase and never stores them persistently (tab memory only). A derivation overtaken by a later remember or clear (`sessionPhraseGeneration`) remembers nothing.
 - **Inputs:** `PhraseSource` (`prfFirst`, `credentialId`, `account`, `sessionToken`).
 - **Returns / side effects:** `true` when the phrase was remembered, else `false`.
 - **Used by:** `usePasskeyLogin` (login and registration), `renewPasskey`, `unlockWalletPhrase`.

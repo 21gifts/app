@@ -60,6 +60,7 @@ vi.mock('@/lib/tab-phrase', () => ({
   rememberSessionPhrase: vi.fn(),
   clearSessionPhrase: vi.fn(),
   peekSessionPhrase: vi.fn(() => null),
+  sessionPhraseGeneration: vi.fn(() => 0),
 }));
 
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;

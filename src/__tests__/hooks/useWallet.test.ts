@@ -2,8 +2,9 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WALLET_VISUAL_FIXTURE_SATS, useWallet } from '@/hooks/useWallet';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
-import { connectWallet, walletNeedsReload } from '@/lib/wallet/wallet-service';
 import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
+import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
+import { connectWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
@@ -17,6 +18,9 @@ vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
   connectWallet: vi.fn(),
+}));
+
+vi.mock('@/lib/wallet/wallet-sdk', () => ({
   walletNeedsReload: vi.fn(() => false),
 }));
 

@@ -1,6 +1,9 @@
 /** In-tab recovery phrase. Never written to localStorage or sent to the API. */
 let sessionMnemonic: string | null = null;
 
+/** Bumps on every remember and clear so async derivation can detect being overtaken. */
+let phraseGenerationValue = 0;
+
 /** Window event dispatched whenever the tab phrase is remembered or cleared. */
 export const SESSION_PHRASE_EVENT = '21gifts:wallet-phrase';
 
@@ -13,12 +16,23 @@ function notifyPhraseListeners(): void {
 }
 
 /**
+ * Counter that changes whenever the tab phrase is remembered or cleared. Lets
+ * an asynchronous derivation detect that it was overtaken.
+ *
+ * @returns The current generation.
+ */
+export function sessionPhraseGeneration(): number {
+  return phraseGenerationValue;
+}
+
+/**
  * Store a derived recovery phrase in tab memory. Wallet does not read this
  * to show the words; hide may still clear it.
  *
  * @param mnemonic - Space-separated BIP-39 words.
  */
 export function rememberSessionPhrase(mnemonic: string): void {
+  phraseGenerationValue += 1;
   sessionMnemonic = mnemonic;
   notifyPhraseListeners();
 }
@@ -36,6 +50,7 @@ export function peekSessionPhrase(): string | null {
  * Drop the in-memory recovery phrase.
  */
 export function clearSessionPhrase(): void {
+  phraseGenerationValue += 1;
   sessionMnemonic = null;
   notifyPhraseListeners();
 }

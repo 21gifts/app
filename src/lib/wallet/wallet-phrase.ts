@@ -5,7 +5,7 @@ import {
   mnemonicFromPrfFirst,
   obtainPrfFirstFromGet,
 } from '@/lib/prf-mnemonic';
-import { rememberSessionPhrase } from '@/lib/tab-phrase';
+import { rememberSessionPhrase, sessionPhraseGeneration } from '@/lib/tab-phrase';
 import { base64UrlToBytes } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -49,7 +49,9 @@ export function canUnlockWallet(
 /**
  * Derives the recovery phrase from PRF bytes and stores it in tab memory when
  * the Breez API key is set, the account is eligible, the credential matches,
- * and the session is still current. Never rejects.
+ * the session is still current, and the tab phrase was not remembered or
+ * cleared during derivation. Never rejects. Never sends the bytes or the
+ * phrase and never stores them persistently (tab memory only).
  *
  * @param source - PRF bytes, credential id, account, and session token.
  * @returns `true` when the phrase was remembered; otherwise `false`.
@@ -69,6 +71,7 @@ export async function rememberPhraseFromPrf(source: PhraseSource): Promise<boole
     if (account.passkeyCredentialId !== credentialId) {
       return false;
     }
+    const generation = sessionPhraseGeneration();
     let mnemonic: string;
     try {
       mnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
@@ -76,6 +79,9 @@ export async function rememberPhraseFromPrf(source: PhraseSource): Promise<boole
       return false;
     }
     if (useAuthStore.getState().session !== sessionToken) {
+      return false;
+    }
+    if (sessionPhraseGeneration() !== generation) {
       return false;
     }
     rememberSessionPhrase(mnemonic);
