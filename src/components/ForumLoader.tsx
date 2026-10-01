@@ -36,6 +36,7 @@ import {
   fetchReplies,
   PublicForumUnauthorizedError,
   markNotificationRead,
+  markNotificationsReadForMessage,
   NoteDeletedError,
   postMessage,
   fetchComposeTarget,
@@ -341,8 +342,9 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * notifications and, when an unread `moderator_appointed` row exists, shows a
  * matching pill that marks that row read and stays on `/welcome` without
  * auto-scroll. Silent refresh keeps an existing list on screen (no loading
- * copy) and does not auto-scroll the newest note. Renders nothing when there
- * is no session.
+ * copy) and does not auto-scroll the newest note. Expanding a note marks that
+ * note's notifications read (`markNotificationsReadForMessage`); collapsing
+ * does not. Renders nothing when there is no session.
  *
  * @param feed - Optional `'living-room'` (default) or `'shops'`.
  * @returns The forum board, or `null` without a session.
@@ -2093,6 +2095,9 @@ export function ForumLoader({
       setReplyAmountDraft('');
       setReplyFormError(null);
       return;
+    }
+    if (session !== null) {
+      void markNotificationsReadForMessage(session, messageId).catch(() => undefined);
     }
     setExpandedId(messageId);
     setReplies(null);

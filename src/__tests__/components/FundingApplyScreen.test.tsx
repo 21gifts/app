@@ -38,6 +38,7 @@ vi.mock('@/lib/api', () => ({
   fetchMemberPosts: vi.fn(),
   postFundingApply: vi.fn(),
   putAboutMe: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 import { fetchMemberPosts, postFundingApply, putAboutMe } from '@/lib/api';

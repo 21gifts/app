@@ -72,6 +72,7 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchNotifications: vi.fn(),
   markNotificationRead: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
@@ -103,6 +104,7 @@ import {
   PublicForumUnauthorizedError,
   NoteDeletedError,
   markNotificationRead,
+  markNotificationsReadForMessage,
   fetchComposeTarget,
   postMessage,
   postMessageInvoice,
@@ -125,6 +127,7 @@ const publicPhotoMock = vi.mocked(fetchPublicMessagePhoto);
 const publicRepliesMock = vi.mocked(fetchPublicReplies);
 const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const markNotificationReadMock = vi.mocked(markNotificationRead);
+const markNotificationsReadForMessageMock = vi.mocked(markNotificationsReadForMessage);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
@@ -337,6 +340,7 @@ beforeEach(() => {
     createdAt: '2026-08-22T12:00:00.000Z',
     readAt: '2026-08-28T13:00:00.000Z',
   });
+  markNotificationsReadForMessageMock.mockResolvedValue({ ok: true, tags: [] });
   isVideoMock.mockReturnValue(false);
   push.mockReset();
   replace.mockReset();
@@ -5680,6 +5684,23 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
     expect(screen.queryByLabelText('Your reaction')).toBeNull();
+  });
+
+  it('marks the note read when expanded and not when collapsed', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(markNotificationsReadForMessageMock).toHaveBeenCalledWith('sess', 'm1');
+    });
+    markNotificationsReadForMessageMock.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect(markNotificationsReadForMessageMock).not.toHaveBeenCalled();
   });
 
   it('loads replies via fetchReplies when a row is expanded', async () => {

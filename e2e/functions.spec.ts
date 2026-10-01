@@ -1029,6 +1029,36 @@ test('Function: proxyNotificationsReadAllPost — POST /forum/notifications/read
   expect((await request.post('/forum/notifications/read-all')).status()).toBe(401);
 });
 
+test('Function: proxyNotificationsReadByMessagePost — POST /forum/notifications/read-by-message without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+});
+
+test('Function: markNotificationsReadForMessage — POST /forum/notifications/read-by-message without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+});
+
+test('Function: pushTagForNotification — POST /forum/notifications/read-by-message without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+});
+
+test('Function: currentPushEndpoint — POST /forum/notifications/read-by-message without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+});
+
+test('Function: closeLocalPushNotifications — POST /forum/notifications/read-by-message without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+});
+
 test('Function: proxyNotificationReadPost — POST /forum/notifications/[id]/read without bearer', async ({
   request,
 }) => {

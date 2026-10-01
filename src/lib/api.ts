@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { closeLocalPushNotifications, currentPushEndpoint } from '@/lib/push';
 import {
   accountSchema,
   contactSchema,
@@ -2756,10 +2757,14 @@ export async function markNotificationRead(
   id: string,
 ): Promise<Notification> {
   try {
-    const response = await fetch(`/forum/notifications/${encodeURIComponent(id)}/read`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    const endpoint = await currentPushEndpoint();
+    const headers: Record<string, string> = { Authorization: `Bearer ${sessionToken}` };
+    const init: RequestInit = { method: 'POST', headers };
+    if (typeof endpoint === 'string' && endpoint !== '') {
+      headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify({ endpoint });
+    }
+    const response = await fetch(`/forum/notifications/${encodeURIComponent(id)}/read`, init);
     if (!response.ok) {
       throw new Error('Could not mark notification as read');
     }
@@ -2778,15 +2783,71 @@ export async function markNotificationRead(
  */
 export async function markAllNotificationsRead(sessionToken: string): Promise<void> {
   try {
-    const response = await fetch('/forum/notifications/read-all', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    const endpoint = await currentPushEndpoint();
+    const headers: Record<string, string> = { Authorization: `Bearer ${sessionToken}` };
+    const init: RequestInit = { method: 'POST', headers };
+    if (typeof endpoint === 'string' && endpoint !== '') {
+      headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify({ endpoint });
+    }
+    const response = await fetch('/forum/notifications/read-all', init);
     if (!response.ok) {
       throw new Error('Could not mark notifications as read');
     }
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      return;
+    }
+    if (body !== null && typeof body === 'object' && 'tags' in body && Array.isArray(body.tags)) {
+      const tags = body.tags.filter((tag): tag is string => typeof tag === 'string');
+      await closeLocalPushNotifications(tags);
+    }
   } catch {
     throw new Error('Could not mark notifications as read');
+  }
+}
+
+/**
+ * Marks every notification for one forum note as read.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param messageId - Forum message id (thread root or reply).
+ * @returns `{ ok: true, tags }` from the api (`tags` defaults to `[]`).
+ * @throws Error with visitor-facing copy when the api is unavailable — same
+ * family as {@link markNotificationRead}.
+ */
+export async function markNotificationsReadForMessage(
+  sessionToken: string,
+  messageId: string,
+): Promise<{ ok: true; tags: string[] }> {
+  try {
+    const endpoint = await currentPushEndpoint();
+    const payload: { messageId: string; endpoint?: string } = { messageId };
+    if (typeof endpoint === 'string' && endpoint !== '') {
+      payload.endpoint = endpoint;
+    }
+    const response = await fetch('/forum/notifications/read-by-message', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error('Could not mark notification as read');
+    }
+    const body: unknown = await response.json();
+    const tags =
+      body !== null && typeof body === 'object' && 'tags' in body && Array.isArray(body.tags)
+        ? body.tags.filter((tag): tag is string => typeof tag === 'string')
+        : [];
+    await closeLocalPushNotifications(tags);
+    return { ok: true, tags };
+  } catch {
+    throw new Error('Could not mark notification as read');
   }
 }
 

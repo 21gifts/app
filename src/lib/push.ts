@@ -2,6 +2,87 @@ import { deletePushSubscription, fetchVapidPublicKey, postPushSubscription } fro
 import { base64UrlToBytes } from '@/lib/webauthn-browser';
 
 /**
+ * Web Push tag for one notification row, matching the api mapping.
+ *
+ * @param row - Notification type and the parent/reply ids the api stamped.
+ * @returns The tag to close, or `null` when the type has no banner tag.
+ */
+export function pushTagForNotification(row: {
+  type: string;
+  parentId: string;
+  replyId: string;
+}): string | null {
+  switch (row.type) {
+    case 'forum_post':
+      return `forum_post:${row.parentId}`;
+    case 'forum_reply':
+      return `forum_reply:${row.replyId}`;
+    case 'forum_mention':
+      return `forum_mention:${row.replyId}`;
+    case 'zap':
+      return `zap:${row.replyId}`;
+    case 'moderator_appointed':
+      return `moderator_appointed:${row.parentId}`;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Current Web Push subscription endpoint for this browser, when one exists.
+ *
+ * @returns The endpoint string, or `undefined` when Push APIs are missing,
+ * the lookup rejects, or the endpoint is empty. Never throws.
+ */
+export async function currentPushEndpoint(): Promise<string | undefined> {
+  try {
+    if (typeof navigator === 'undefined' || typeof navigator.serviceWorker === 'undefined') {
+      return undefined;
+    }
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    const endpoint = subscription?.endpoint;
+    if (typeof endpoint !== 'string' || endpoint === '') {
+      return undefined;
+    }
+    return endpoint;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Close shown Web Push notifications whose `tag` is in `tags`.
+ *
+ * @param tags - Notification tags to close.
+ * @returns Nothing. No-op for an empty list or when `serviceWorker` /
+ * `getNotifications` is missing. Never throws.
+ */
+export async function closeLocalPushNotifications(tags: readonly string[]): Promise<void> {
+  if (tags.length === 0) {
+    return;
+  }
+  try {
+    if (typeof navigator === 'undefined' || typeof navigator.serviceWorker === 'undefined') {
+      return;
+    }
+    const registration = await navigator.serviceWorker.ready;
+    if (typeof registration.getNotifications !== 'function') {
+      return;
+    }
+    const wanted = new Set(tags);
+    const shown = await registration.getNotifications();
+    for (const note of shown) {
+      if (typeof note.tag === 'string' && wanted.has(note.tag)) {
+        note.close();
+      }
+    }
+  } catch {
+    return;
+  }
+}
+
+/**
  * Decode a VAPID application server public key (url-safe base64) to bytes.
  *
  * @param publicKey - Url-safe base64 VAPID public key from the api.

@@ -5,6 +5,7 @@ import { LocaleProvider } from '@/components/LocaleProvider';
 import { NoteTranslate } from '@/components/NoteTranslate';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { markNotificationsReadForMessage } from '@/lib/api';
 import type { Locale } from '@/lib/locale';
 import { getCatalog } from '@/lib/messages';
 import { DEFAULT_NUMBER_FORMAT } from '@/lib/number-format';
@@ -15,6 +16,10 @@ import {
 } from '@/lib/note-translate';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('@/lib/api', () => ({
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
+}));
 
 vi.mock('@/lib/note-translate', () => ({
   fetchTranslateAvailable: vi.fn(),
@@ -31,6 +36,8 @@ beforeEach(() => {
   vi.mocked(fetchTranslateAvailable).mockReset();
   vi.mocked(translateConversationMessage).mockReset();
   vi.mocked(translateNote).mockReset();
+  vi.mocked(markNotificationsReadForMessage).mockClear();
+  vi.mocked(markNotificationsReadForMessage).mockResolvedValue({ ok: true, tags: [] });
   vi.mocked(fetchTranslateAvailable).mockResolvedValue(true);
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
 });
@@ -107,6 +114,48 @@ describe('NoteTranslate', () => {
     fireEvent.click(button);
     expect(button.hasAttribute('disabled')).toBe(true);
     expect(translateNote).toHaveBeenCalledWith(NOTE_ID, 'en', null);
+    await act(async () => {
+      resolveTranslation?.(translated);
+    });
+  });
+
+  it('marks the note read before translation starts when signed in', async () => {
+    useAuthStore.setState({ session: 'tok', account: null, wrongAccount: false });
+    let resolveTranslation: ((text: string) => void) | undefined;
+    vi.mocked(translateNote).mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveTranslation = resolve;
+        }),
+    );
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+
+    expect(markNotificationsReadForMessage).toHaveBeenCalledWith('tok', NOTE_ID);
+    const markReadOrder = vi.mocked(markNotificationsReadForMessage).mock.invocationCallOrder[0];
+    const translateOrder = vi.mocked(translateNote).mock.invocationCallOrder[0];
+    expect(markReadOrder).toBeTypeOf('number');
+    expect(translateOrder).toBeTypeOf('number');
+    expect(markReadOrder as number).toBeLessThan(translateOrder as number);
+
+    await act(async () => {
+      resolveTranslation?.(translated);
+    });
+  });
+
+  it('does not mark the note read before translation when signed out', async () => {
+    let resolveTranslation: ((text: string) => void) | undefined;
+    vi.mocked(translateNote).mockImplementation(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveTranslation = resolve;
+        }),
+    );
+    renderWithLocale(<NoteTranslate messageId={NOTE_ID} text={german} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Translate' }));
+
+    expect(markNotificationsReadForMessage).not.toHaveBeenCalled();
+
     await act(async () => {
       resolveTranslation?.(translated);
     });

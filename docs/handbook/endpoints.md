@@ -604,6 +604,13 @@
 - **Used by:** `markAllNotificationsRead` from `NotificationsLoader`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /forum/notifications/read-by-message
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/read-by-message` (mark notifications for one forum message read). JSON `{ messageId, endpoint? }`; endpoint only when the current push endpoint is a non-empty string.
+- **Errors:** Upstream 401/503, or 502 if the api is unreachable.
+- **Used by:** `markNotificationsReadForMessage` from `ForumLoader` (note becomes expanded), `NoteTranslate` (Translate requested with a session), and `PublicMessageLoader` (signed-in message page ready).
+- **Auth:** Bearer.
+
 ## Endpoint: POST /forum/notifications/[id]/read
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/notifications/:id/read` (mark one notification read).

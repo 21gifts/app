@@ -37,6 +37,7 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchReplies: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
@@ -56,6 +57,7 @@ import {
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
+  markNotificationsReadForMessage,
 } from '@/lib/api';
 import { formatForumTime } from '@/lib/forum-time';
 
@@ -66,6 +68,7 @@ const fetchRepliesPublic = vi.mocked(fetchPublicReplies);
 const fetchRepliesBearer = vi.mocked(fetchReplies);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const deleteMessageMock = vi.mocked(deleteMessage);
+const markReadForMessageMock = vi.mocked(markNotificationsReadForMessage);
 const hydrate = vi.mocked(useHydrateSession);
 
 const EMPTY_STATS: GiftStats = {
@@ -112,6 +115,7 @@ beforeEach(() => {
   fetchRepliesBearer.mockResolvedValue([]);
   fetchGiftStatsMock.mockResolvedValue(EMPTY_STATS);
   deleteMessageMock.mockResolvedValue(undefined);
+  markReadForMessageMock.mockResolvedValue({ ok: true, tags: [] });
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -216,6 +220,44 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByRole('button', { name: 'Copy link to this note' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
+  it('marks the thread root read once a signed-in load is ready', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchMessageBearer.mockResolvedValue(sample);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(markReadForMessageMock).toHaveBeenCalledWith('sess', MESSAGE_ID);
+    });
+    expect(markReadForMessageMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not mark notifications read for a signed-out visitor', async () => {
+    fetchMessage.mockResolvedValue(sample);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(markReadForMessageMock).not.toHaveBeenCalled();
   });
 
   it('shows a place link on a public note, or coordinates when the label is missing', async () => {

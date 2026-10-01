@@ -62,6 +62,7 @@ import {
   WrongAccountError,
   listHiddenMessages,
   markAllNotificationsRead,
+  markNotificationsReadForMessage,
   markConversationRead,
   markNotificationRead,
   openConversation,
@@ -138,6 +139,19 @@ function stubFetch(response: FakeResponse): Mock {
   } as unknown as Response);
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
+}
+
+/** Installs a test navigator and returns an exact descriptor restore. */
+function installNavigator(value: unknown): () => void {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value });
+  return () => {
+    if (descriptor === undefined) {
+      delete (globalThis as { navigator?: unknown }).navigator;
+      return;
+    }
+    Object.defineProperty(globalThis, 'navigator', descriptor);
+  };
 }
 
 afterEach(() => {
@@ -3835,6 +3849,108 @@ describe('markNotificationRead', () => {
       'Could not mark notification as read',
     );
   });
+
+  it('sends the push endpoint when this browser has one', async () => {
+    const read = { ...notification, readAt: '2026-08-28T13:00:00.000Z' };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+          },
+        }),
+      },
+    });
+    try {
+      const fetchMock = stubFetch({ ok: true, status: 200, body: read });
+      await expect(markNotificationRead('sess', 'n1')).resolves.toEqual(read);
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/n1/read', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
+      });
+    } finally {
+      restoreNavigator();
+    }
+  });
+});
+
+describe('markNotificationsReadForMessage', () => {
+  it('posts the message id without an endpoint when service workers are unavailable', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+      await expect(markNotificationsReadForMessage('sess', 'm1')).resolves.toEqual({
+        ok: true,
+        tags: [],
+      });
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-by-message', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageId: 'm1' }),
+      });
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('posts the push endpoint and closes notifications for returned tags', async () => {
+    const matchingClose = vi.fn();
+    const otherClose = vi.fn();
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+      },
+      getNotifications: vi.fn().mockResolvedValue([
+        { tag: 'forum_post:m1', close: matchingClose },
+        { tag: 'forum_post:m2', close: otherClose },
+      ]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: { ready: Promise.resolve(registration) },
+    });
+    try {
+      const fetchMock = stubFetch({
+        ok: true,
+        status: 200,
+        body: { ok: true, tags: ['forum_post:m1'] },
+      });
+      await expect(markNotificationsReadForMessage('sess', 'm1')).resolves.toEqual({
+        ok: true,
+        tags: ['forum_post:m1'],
+      });
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-by-message', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageId: 'm1', endpoint: 'https://push.example/sub' }),
+      });
+      expect(matchingClose).toHaveBeenCalledTimes(1);
+      expect(otherClose).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      stubFetch({ ok: false, status: 503, body: {} });
+      await expect(markNotificationsReadForMessage('sess', 'm1')).rejects.toThrow(
+        'Could not mark notification as read',
+      );
+    } finally {
+      restoreNavigator();
+    }
+  });
 });
 
 describe('markAllNotificationsRead', () => {
@@ -3847,11 +3963,128 @@ describe('markAllNotificationsRead', () => {
     });
   });
 
+  it('does not close local notifications when tags are missing', async () => {
+    const close = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: { ready: Promise.resolve(registration) },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(close).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('closes local notifications for returned tags', async () => {
+    const matchingClose = vi.fn();
+    const otherClose = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([
+        { tag: 'forum_post:m1', close: matchingClose },
+        { tag: 'forum_post:m2', close: otherClose },
+      ]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: { ready: Promise.resolve(registration) },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true, tags: ['forum_post:m1'] } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(matchingClose).toHaveBeenCalledTimes(1);
+      expect(otherClose).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('does not close local notifications when tags are not an array', async () => {
+    const close = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: { ready: Promise.resolve(registration) },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true, tags: 'forum_post:m1' } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(close).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: {} });
     await expect(markAllNotificationsRead('sess')).rejects.toThrow(
       'Could not mark notifications as read',
     );
+  });
+
+  it('sends the push endpoint when this browser has one', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+          },
+          getNotifications: vi.fn().mockResolvedValue([]),
+        }),
+      },
+    });
+    try {
+      const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true, tags: [] } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-all', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
+      });
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('ignores a body that is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new Error('not json')),
+      }),
+    );
+    await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+  });
+
+  it('closes only string tags', async () => {
+    const close = vi.fn();
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+          getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
+        }),
+      },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true, tags: [1, 'forum_post:m1'] } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(close).toHaveBeenCalledTimes(1);
+    } finally {
+      restoreNavigator();
+    }
   });
 });
 

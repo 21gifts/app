@@ -56,6 +56,7 @@ vi.mock('@/lib/api', () => ({
   setLightningAddress: vi.fn(),
   setName: vi.fn(),
   agreeToRules: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 const account: Account = {
