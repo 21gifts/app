@@ -686,8 +686,8 @@
 ## Function: push service worker
 
 - **Purpose:** Push-only service worker at `/sw.js`. A payload whose `type` is `dismiss` closes the named tags, shows and closes a silent `dismiss-ack`, sets the badge to `max(0, floor(unreadCount))` including 0, and returns before the Sunday check. On the device's local Sunday, a push whose `type` is not exactly `conversation` does not stay on screen and does not change the badge: it calls `showNotification` with tag `sunday-quiet` and closes that note in the same `waitUntil`, so the browser does not invent its own banner. Every other push, including a private message, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. A thrown weekday lookup does not pause notifications. No asset or offline cache. A notification click stores a short-lived `21gifts-push-open` entry so a reloaded page can still open the path when `postMessage` was missed.
-- **Inputs:** Push `event` with optional JSON payload (`type`, `title`, `body`, `url`, `tag`, `unreadCount`).
-- **Returns / side effects:** On a non-conversation Sunday push, `event.waitUntil` shows and closes `sunday-quiet`. Otherwise `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients. Notification click closes the note, stores the in-app path in the `21gifts-push-open` cache, then the focused same-origin window (or the first one, if none is focused) is focused and, after that, receives `{ type: '21gifts-push-open', url }` (pathname + search + hash) before `navigate` (only when that function exists and the URL differs; rejection or null still focuses). No window: `clients.openWindow` on the same-origin href. Empty, invalid, or foreign `data.url` becomes `/welcome`.
+- **Inputs:** Push `event` with optional JSON payload (`type`, `title`, `body`, `url`, `tag`, `tags`, `unreadCount`).
+- **Returns / side effects:** When `type` is `dismiss`, closes the named tags, shows and closes a silent `dismiss-ack`, sets the badge to `max(0, floor(unreadCount))` when `unreadCount` is finite, and returns before the Sunday check. On a non-conversation Sunday push, `event.waitUntil` shows and closes `sunday-quiet`. Otherwise `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients. Notification click closes the note, stores the in-app path in the `21gifts-push-open` cache, then the focused same-origin window (or the first one, if none is focused) is focused and, after that, receives `{ type: '21gifts-push-open', url }` (pathname + search + hash) before `navigate` (only when that function exists and the URL differs; rejection or null still focuses). No window: `clients.openWindow` on the same-origin href. Empty, invalid, or foreign `data.url` becomes `/welcome`.
 - **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
 
 ## Function: isStandaloneDisplay
@@ -3765,7 +3765,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: markNotificationRead
 
-- **Purpose:** POST `/forum/notifications/:id/read` with Bearer and parse one notification.
+- **Purpose:** POST `/forum/notifications/:id/read` with Bearer and optional JSON `{ endpoint }` when this browser has a push subscription. `currentPushEndpoint()` is sent only when it is a non-empty string. Parses one notification.
 - **Inputs:** Session token and notification id (encoded in the path).
 - **Returns / side effects:** Updated notification, or throws visitor copy.
 - **Used by:** `NotificationsLoader` on row click; `ForumLoader` when the welcome appointment pill is clicked.
@@ -3782,7 +3782,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/forum/notifications/read-by-message` with Bearer and JSON `{ messageId, endpoint? }`. `endpoint` is sent only when the current push endpoint is a non-empty string. Non-ok throws visitor copy `Could not mark notification as read`. On success, closes local notifications for string `tags`; a missing `tags` field is `[]`.
 - **Inputs:** Session token and forum message id.
 - **Returns / side effects:** `{ ok: true, tags: string[] }`.
-- **Used by:** `ForumLoader` when a note becomes expanded, `NoteTranslate` when Translate is requested with a session, and `PublicMessageLoader` when a signed-in message page is ready.
+- **Used by:** `ForumLoader` when a note becomes expanded, `NoteTranslate` when Translate is requested with a session, `PublicMessageLoader` when a signed-in message page is ready, `MemberProfileScreen` when a profile note becomes expanded, and `PublicMessageThread` when a thread note becomes expanded.
 
 ## Function: activeMention
 

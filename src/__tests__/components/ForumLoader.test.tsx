@@ -88,6 +88,13 @@ vi.mock('@/lib/forum-video', () => ({
   prepareForumVideo: vi.fn(),
   forumVideoSrc: (id: string) => `/messages/${id}/video.mp4`,
 }));
+vi.mock('@/lib/push', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/push')>();
+  return {
+    ...actual,
+    closeLocalPushNotifications: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 import {
   agreeToRules,
@@ -120,6 +127,7 @@ import {
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
+import { closeLocalPushNotifications } from '@/lib/push';
 
 const fetchMock = vi.mocked(fetchMessages);
 const publicListMock = vi.mocked(fetchPublicForumMessages);
@@ -128,6 +136,7 @@ const publicRepliesMock = vi.mocked(fetchPublicReplies);
 const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const markNotificationReadMock = vi.mocked(markNotificationRead);
 const markNotificationsReadForMessageMock = vi.mocked(markNotificationsReadForMessage);
+const closeLocalPushNotificationsMock = vi.mocked(closeLocalPushNotifications);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
@@ -8704,6 +8713,33 @@ describe('ForumLoader', () => {
       expect(markNotificationReadMock).toHaveBeenCalledWith('sess', 'n-mod');
       expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
     });
+    expect(closeLocalPushNotificationsMock).toHaveBeenCalledWith([
+      'moderator_appointed:acc-subject',
+    ]);
+  });
+
+  it('closes local push notifications with an empty list when the read row has no tag', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    fetchNotificationsMock.mockResolvedValue({
+      notifications: [UNREAD_APPOINTED],
+      unreadCount: 1,
+    });
+    markNotificationReadMock.mockResolvedValue({
+      id: 'n-mod',
+      type: 'moderator_proposal',
+      parentId: 'acc-subject',
+      replyId: 'acc-subject',
+      name: 'Cyrill',
+      text: '',
+      createdAt: '2026-08-22T12:00:00.000Z',
+      readAt: '2026-08-28T13:00:00.000Z',
+    });
+    renderWithLocale(<ForumLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'You are a moderator' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
+    });
+    expect(closeLocalPushNotificationsMock).toHaveBeenCalledWith([]);
   });
 
   it('leaves the moderator banner when markNotificationRead rejects', async () => {
@@ -8719,6 +8755,7 @@ describe('ForumLoader', () => {
       expect(markNotificationReadMock).toHaveBeenCalledWith('sess', 'n-mod');
     });
     expect(screen.getByRole('button', { name: 'You are a moderator' })).toBeTruthy();
+    expect(closeLocalPushNotificationsMock).not.toHaveBeenCalled();
   });
 
   it('does not hide the moderator banner after logout during mark-read', async () => {
@@ -8745,6 +8782,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     expect(useAuthStore.getState().session).toBeNull();
+    expect(closeLocalPushNotificationsMock).not.toHaveBeenCalled();
   });
 
   it('hides the moderator banner when fetchNotifications rejects', async () => {

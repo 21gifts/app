@@ -66,6 +66,7 @@ import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
+import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -1315,11 +1316,13 @@ export function ForumLoader({
       return;
     }
     void markNotificationRead(session, id)
-      .then(() => {
+      .then((row) => {
         const current = useAuthStore.getState();
         if (current.session !== session) {
           return;
         }
+        const tag = pushTagForNotification(row);
+        void closeLocalPushNotifications(tag === null ? [] : [tag]);
         setModeratorAppointedId(null);
       })
       .catch(() => undefined);

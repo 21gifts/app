@@ -16,6 +16,7 @@ import {
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchReplies,
+  markNotificationsReadForMessage,
   openConversation,
   postMessage,
   postMessageInvoice,
@@ -1266,6 +1267,7 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    expect(markNotificationsReadForMessage).toHaveBeenCalledWith('sess', note.id);
   });
 
   it('rejects a non-numeric pay amount', async () => {
