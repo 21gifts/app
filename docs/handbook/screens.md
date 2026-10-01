@@ -2893,9 +2893,9 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A moderator or founder with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees a secondary large **Daily payments** link to `/grants/payments`. That link does not load the roster. A moderator does not see it. A moderator or founder with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payments**. Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -2981,6 +2981,43 @@ Signed-in page while `GET /funding/goal` has not returned. Heading, the 10-shop 
 Signed-in page when `GET /funding/goal` fails. Heading and the three sentences stay. Copy **Could not load the shop goal. Please try again.** and button **Try again**. No chart. Needle `state-grants-goals-error`.
 
 ![21.gifts grant goals error](images/grants-goals-error.png)
+
+## Screen: /grants/payments
+
+- **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
+- **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
+- **Actions:** Save the comment. Turn payments On or Off. Add, update, or delete a recipient. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Used by:** Route `/grants/payments` (`DailyPaymentsPage`). The **Daily payments** link on `/grants` is shown only to an initiator or founder.
+
+### Variant: default
+
+Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. Comment **Daily gift**. That address renders as `ada@w...`. Payments **On** is pressed. Needle `Daily payments`.
+
+![21.gifts daily payments](images/grants-payments.png)
+
+### Variant: empty
+
+Founder with an empty recipient list. Sentence **No recipients**. The add form stays. Needle `No recipients`.
+
+![21.gifts daily payments empty](images/grants-payments-empty.png)
+
+### Variant: loading
+
+Founder waiting on `GET /funding/daily-roster`. Copy **Loading…**. Needle `state-grants-payments-loading`.
+
+![21.gifts daily payments loading](images/grants-payments-loading.png)
+
+### Variant: error
+
+Founder when the roster load fails. Copy **Could not load daily payments. Please try again.** and button **Try again**. Needle `Could not load daily payments. Please try again.`
+
+![21.gifts daily payments error](images/grants-payments-error.png)
+
+### Variant: forbidden
+
+Moderator on the direct URL. Heading **Daily payments** and **You cannot change daily payments.** No roster request. Needle `You cannot change daily payments.`
+
+![21.gifts daily payments forbidden](images/grants-payments-forbidden.png)
 
 ## Screen: /profile/apply
 

@@ -1320,3 +1320,27 @@ export const fundingDecisionResultSchema = z.object({
  * Updated account snapshot after a staff funding decision.
  */
 export type FundingDecisionResult = z.infer<typeof fundingDecisionResultSchema>;
+
+/**
+ * Runtime schema for the daily payout roster (`GET /funding/daily-roster`
+ * and the matching POST success bodies).
+ */
+export const dailyRosterSchema = z.object({
+  comment: z.string(),
+  paymentsEnabled: z.boolean(),
+  recipients: z.array(
+    z.object({
+      address: z.string(),
+      amountUsd: z.number(),
+    }),
+  ),
+});
+
+/**
+ * Daily payout comment, payments switch, and recipient list.
+ */
+export interface DailyRoster {
+  comment: string;
+  paymentsEnabled: boolean;
+  recipients: { address: string; amountUsd: number }[];
+}
