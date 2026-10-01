@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { useContext, useState, type ReactElement } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   AppShell,
   AppShellContext,
@@ -14,7 +14,35 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Account } from '@/lib/api-types';
 
+vi.mock('next/navigation', () => ({
+  useRouter: (): { replace: () => void } => ({ replace: () => undefined }),
+}));
+
 afterEach(cleanup);
+
+/** Account that must set up its in-app wallet when the Breez key is set. */
+const WALLET_SETUP_ACCOUNT = {
+  id: 'acc',
+  linkingKey: null,
+  role: 'basis',
+  name: 'Ada',
+  username: 'ada',
+  location: null,
+  lightningAddress: null,
+  lightningAddressVerified: false,
+  forumLawsDismissed: false,
+  createdAt: 1,
+  rulesAgreedAt: 1,
+  viewKey: 'a'.repeat(64),
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+  setup: null,
+  missing: [],
+  walletRequired: true,
+  passkeyCredentialId: 'AQID',
+  sparkPubkey: null,
+  sparkWalletVerified: false,
+} as Account;
 
 /** Footer whose children are new JSX every parent render — used to catch slot update loops. */
 function FlakyFooter(): ReactElement {
@@ -73,6 +101,83 @@ describe('AppShell', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     useAuthStore.setState({ session: null, account: null });
+  });
+
+  it('shows the wallet setup dialog when the key is set and the wallet is not verified', () => {
+    const original = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
+    try {
+      useAuthStore.setState({ session: 'tok', account: WALLET_SETUP_ACCOUNT });
+      renderWithLocale(
+        <AppShell mode="fill">
+          <p>Body</p>
+        </AppShell>,
+      );
+      expect(screen.getByRole('dialog', { name: 'Set up your wallet' })).toBeTruthy();
+      cleanup();
+      useAuthStore.setState({
+        account: { ...WALLET_SETUP_ACCOUNT, sparkWalletVerified: true },
+      });
+      renderWithLocale(
+        <AppShell mode="fill">
+          <p>Body</p>
+        </AppShell>,
+      );
+      expect(screen.queryByRole('dialog')).toBeNull();
+    } finally {
+      if (original === undefined) {
+        delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+      } else {
+        process.env.NEXT_PUBLIC_BREEZ_API_KEY = original;
+      }
+      useAuthStore.setState({ session: null, account: null });
+    }
+  });
+
+  it('shows no wallet setup dialog while the Breez key is unset', () => {
+    useAuthStore.setState({ session: 'tok', account: WALLET_SETUP_ACCOUNT });
+    renderWithLocale(
+      <AppShell mode="fill">
+        <p>Body</p>
+      </AppShell>,
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+    useAuthStore.setState({ session: null, account: null });
+  });
+
+  it('shows a pinned wallet setup view in a Playwright build when signed in', () => {
+    const original = process.env.NEXT_PUBLIC_E2E_NOW;
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet?visual=setup-no-prf');
+    try {
+      renderWithLocale(
+        <AppShell mode="fill">
+          <p>Body</p>
+        </AppShell>,
+      );
+      expect(screen.queryByRole('dialog')).toBeNull();
+      cleanup();
+      useAuthStore.setState({
+        session: 'tok',
+        account: { ...WALLET_SETUP_ACCOUNT, sparkWalletVerified: true },
+      });
+      renderWithLocale(
+        <AppShell mode="fill">
+          <p>Body</p>
+        </AppShell>,
+      );
+      expect(
+        screen.getByRole('dialog', { name: 'This passkey cannot hold a wallet' }),
+      ).toBeTruthy();
+    } finally {
+      if (original === undefined) {
+        delete process.env.NEXT_PUBLIC_E2E_NOW;
+      } else {
+        process.env.NEXT_PUBLIC_E2E_NOW = original;
+      }
+      window.history.replaceState({}, '', '/');
+      useAuthStore.setState({ session: null, account: null });
+    }
   });
 
   it('fill renders footer as a sibling of the inner scroller', () => {

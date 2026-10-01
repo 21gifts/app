@@ -12,7 +12,10 @@ import {
 import { createPortal } from 'react-dom';
 import { DailyPayoutStoppedNotice } from '@/components/DailyPayoutStoppedNotice';
 import { PasskeyRenewNotice } from '@/components/PasskeyRenewNotice';
+import { WalletSetupNotice } from '@/components/WalletSetupNotice';
 import { Scrollport } from '@/components/ui/Scrollport';
+import { walletSetupPin } from '@/hooks/useWalletSetup';
+import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Kept on the API; `fill` and `flow` render the same page-frame geometry. */
@@ -130,6 +133,10 @@ export function AppShell({
   const showPasskeyRenew = useAuthStore(
     (state) => state.account?.walletRequired === false && state.account.passkeyRenewClosed !== true,
   );
+  const showWalletSetup = useAuthStore(
+    (state) =>
+      state.account !== null && (needsWalletSetup(state.account) || walletSetupPin() !== null),
+  );
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const hasRight = topRight !== undefined && topRight !== null;
   const showPageTopLeft = !hasTopLeftPortal && topLeft !== undefined && topLeft !== null;
@@ -157,6 +164,7 @@ export function AppShell({
             </div>
           </div>
           {showPasskeyRenew ? <PasskeyRenewNotice /> : null}
+          {showWalletSetup ? <WalletSetupNotice /> : null}
           <DailyPayoutStoppedNotice />
           <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
           <Scrollport
