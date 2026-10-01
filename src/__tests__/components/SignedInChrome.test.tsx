@@ -378,6 +378,7 @@ describe('SignedInChrome', () => {
     useAuthStore.setState({ session: null, account: null });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();
     fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
     expect(vi.mocked(enablePush)).not.toHaveBeenCalled();
     expect(vi.mocked(resyncPushSubscription)).not.toHaveBeenCalled();
@@ -614,6 +615,9 @@ describe('SignedInChrome', () => {
     expect(count?.className.includes('ml-auto')).toBe(true);
     expect(count?.className.includes('font-semibold')).toBe(true);
     expect(count?.className.includes('lining-nums')).toBe(true);
+    const statistics = screen.getByRole('link', { name: 'Statistics' });
+    expect(statistics.getAttribute('href')).toBe('/statistics');
+    expect(statistics.querySelector('.tabular-nums')).toBeNull();
   });
 
   it('adds open-proposal count to the Moderation menu unread', async () => {

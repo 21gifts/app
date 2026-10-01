@@ -130,6 +130,7 @@ describe('StatisticsScreen', () => {
     expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Statistics' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchShopMock).not.toHaveBeenCalled();
   });
 
   it('shows forbidden copy for a basis account and does not fetch', () => {
@@ -142,23 +143,26 @@ describe('StatisticsScreen', () => {
     expect(fetchShopMock).not.toHaveBeenCalled();
   });
 
-  it('shows the open chart for staff with yesterday officialCount 12', async () => {
-    fetchMock.mockResolvedValue(
-      statsWithDays([{ day: '2026-09-19', giftCount: 40, officialCount: 12 }]),
-    );
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<StatisticsScreen />);
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Statistics' })).toBeTruthy();
-      expect(screen.getByText('12%')).toBeTruthy();
-    });
-    expect(screen.getByText('People by UTC day')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href')).toBe(
-      '/moderate/payouts',
-    );
-    expect(screen.queryByRole('button', { name: /Goal/ })).toBeNull();
-    expect(screen.queryByText('Tap to close')).toBeNull();
-  });
+  it.each(['moderator', 'founder'] as const)(
+    'shows the open chart for a %s account',
+    async (role) => {
+      fetchMock.mockResolvedValue(
+        statsWithDays([{ day: '2026-09-19', giftCount: 40, officialCount: 12 }]),
+      );
+      useAuthStore.setState({ session: 'sess', account: { ...account, role } });
+      renderWithLocale(<StatisticsScreen />);
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'Statistics' })).toBeTruthy();
+        expect(screen.getByText('12%')).toBeTruthy();
+      });
+      expect(screen.getByText('People by UTC day')).toBeTruthy();
+      expect(
+        screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href'),
+      ).toBe('/moderate/payouts');
+      expect(screen.queryByRole('button', { name: /Goal/ })).toBeNull();
+      expect(screen.queryByText('Tap to close')).toBeNull();
+    },
+  );
 
   it('shows loading copy while payout stats are in flight', async () => {
     fetchMock.mockImplementation(() => new Promise(() => undefined));
