@@ -8,6 +8,7 @@ import {
   type PasskeyRenewDebug,
 } from '@/lib/passkey-renew-debug';
 import { classifyWebAuthnError, obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
+import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import { creationOptionsFromJSON, credentialToJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -274,6 +275,12 @@ export async function renewPasskey(sessionToken: string): Promise<PasskeyRenewRe
     if (!isCurrentSession(sessionToken)) {
       return { outcome: 'cancelled' };
     }
+    await rememberPhraseFromPrf({
+      prfFirst,
+      credentialId: credential.id,
+      account: nextAccount,
+      sessionToken,
+    });
     return { outcome: 'ok', account: nextAccount, prfFirst };
   } catch (err) {
     reportSeedDiagnostic(stage, err, challengeId);
