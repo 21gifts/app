@@ -108,6 +108,31 @@ describe('useWalletSetup', () => {
     expect(result.current.view).toBe('error');
   });
 
+  it('reports a joined run that ended before the mount effect instead of staying on progress', async () => {
+    vi.mocked(walletSetupInFlight).mockReturnValue(true);
+    vi.mocked(runWalletSetup).mockResolvedValueOnce('noPrf');
+    const { result } = renderHook(() => useWalletSetup());
+    vi.mocked(walletSetupInFlight).mockReturnValue(false);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.view).toBe('noPrf');
+    expect(runWalletSetup).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows a joined run once under a double effect', async () => {
+    vi.mocked(walletSetupInFlight).mockReturnValue(true);
+    const run = deferred();
+    vi.mocked(runWalletSetup).mockReturnValueOnce(run.promise);
+    const { result } = renderHook(() => useWalletSetup(), { reactStrictMode: true });
+    expect(result.current.view).toBe('progress');
+    await act(async () => {
+      run.resolve('cancelled');
+      await run.promise;
+    });
+    expect(result.current.view).toBe('intro');
+  });
+
   it.each([
     ['noPrf', 'noPrf'],
     ['failed', 'error'],
