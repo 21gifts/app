@@ -377,10 +377,11 @@ app/
 | Branch    | Purpose                            | Deploy target |
 | --------- | ---------------------------------- | ------------- |
 | `develop` | Default branch, active development | DEV           |
+| `staging` | Pre-production staging             | STAGING       |
 | `main`    | Production releases                | PRD           |
 
 - Push to `develop` via **feature branch + PR**
-- `main` is protected — updates flow via an auto-generated Release PR (`develop → main`)
+- `main` is protected — updates flow via auto-generated Release PRs (`develop → staging`, then `staging → main`)
 - Never force-push, never amend published commits
 
 ### Commit messages
@@ -762,9 +763,9 @@ values into the bundles, so the image is built with literal placeholders
 values at container start. The container refuses to start if a referenced
 variable is unset or empty.
 
-| Variable              | DEV                        | PRD                    |
-| --------------------- | -------------------------- | ---------------------- |
-| `NEXT_PUBLIC_API_URL` | `https://dev-api.21.gifts` | `https://api.21.gifts` |
+| Variable              | DEV                        | STAGING                        | PRD                    |
+| --------------------- | -------------------------- | ------------------------------ | ---------------------- |
+| `NEXT_PUBLIC_API_URL` | `https://dev-api.21.gifts` | `https://staging-api.21.gifts` | `https://api.21.gifts` |
 
 `NEXT_PUBLIC_API_URL` is the **upstream api**. The browser calls same-origin
 paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL.
@@ -781,8 +782,9 @@ placeholder. Local and Playwright builds without the arg show `dev`.
 | ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
 | `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                         |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build → push `21gifts/app:staging` → notify → wait for deploy                                                                                                                                                      |
 | `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                       |
-| `auto-release-pr.yaml` | push to `develop`                                                 | Auto-create Release PR (`develop → main`)                                                                                                                                                                                 |
+| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | push to `develop` opens develop → staging; push to `staging` opens staging → main                                                                                                                                         |
 | `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                |
 
 Images target `linux/arm64`.
@@ -799,8 +801,7 @@ Deploy workflows require these GitHub Actions secrets:
 If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, deploy fails loud (the image
 may already be on Hub). After `image-published`, the job waits for the
 infrastructure run whose title is `image-published 21gifts/app:<tag> <sha>`
-and fails if that run does not succeed. The wait is what makes a failed DEV
-deploy visible on the develop→main PR.
+and fails if that run does not succeed. The wait is what makes a failed DEV or staging deploy visible on the release PR (`develop → staging` or `staging → main`).
 
 ## Related repos
 
