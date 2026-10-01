@@ -65,7 +65,8 @@ describe('DailyPayoutStoppedNotice', () => {
         },
       },
     });
-    renderWithLocale(<DailyPayoutStoppedNotice />);
+    const { container } = renderWithLocale(<DailyPayoutStoppedNotice />);
+    expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Daily payout stopped' })).toBeNull();
   });
 
@@ -82,7 +83,8 @@ describe('DailyPayoutStoppedNotice', () => {
         },
       },
     });
-    renderWithLocale(<DailyPayoutStoppedNotice />);
+    const { container } = renderWithLocale(<DailyPayoutStoppedNotice />);
+    expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Daily payout stopped' })).toBeNull();
   });
 
@@ -94,7 +96,8 @@ describe('DailyPayoutStoppedNotice', () => {
         funding: null,
       },
     });
-    renderWithLocale(<DailyPayoutStoppedNotice />);
+    const { container } = renderWithLocale(<DailyPayoutStoppedNotice />);
+    expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Daily payout stopped' })).toBeNull();
   });
 });
