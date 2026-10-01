@@ -1029,6 +1029,7 @@ describe('ForumQuotedBody', () => {
   });
 
   it('shows an external quoted author as a View profile link without a member link', async () => {
+    const onActivate = vi.fn();
     const viaQuoted: ForumMessage = {
       ...quotedNote,
       role: 'basis',
@@ -1044,10 +1045,13 @@ describe('ForumQuotedBody', () => {
         excludeId={PARENT_ID}
         rateDay={null}
         fiat="USD"
+        onActivate={onActivate}
       />,
     );
     const author = await screen.findByRole('link', { name: 'View profile' });
     expect(author.getAttribute('href')).toBe(`/messages/${viaQuoted.id}/author?name=Robin`);
+    fireEvent.click(author);
+    expect(onActivate).not.toHaveBeenCalled();
     expect(
       screen
         .queryAllByRole('link')
