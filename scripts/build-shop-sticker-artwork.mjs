@@ -309,6 +309,229 @@ const items = elements.map((el) => {
   return item;
 });
 
+function assertHasGlyphs(font, str) {
+  for (const ch of str) {
+    if (ch === ' ') continue;
+    if (font.charToGlyph(ch).index === 0) {
+      throw new Error(`shop-sticker artwork: missing glyph ${JSON.stringify(ch)}`);
+    }
+  }
+}
+
+function normaliseElement(el) {
+  const item = { d: svgD(segments(el.d), num) };
+  if (el.fill) item.fill = el.fill;
+  if (el.stroke) {
+    item.stroke = { color: el.stroke, width: Number(num(el.width)) };
+    if (el.join === 'round') item.stroke.roundJoin = true;
+  }
+  if (el.evenodd) item.evenOdd = true;
+  return item;
+}
+
+// Machakos Kikamba shop line, ĩtĩkĩlya + vaa, scan lines mirror the Filipino block,
+// kamera/scan/QR code are the same loanwords the Filipino sticker keeps.
+const KIKAMBA_HEADLINE = 'NĨTŨĨTĨKĨLYA VAA';
+const KIKAMBA_TEXT = [
+  [
+    ['Curious?', 'Open your camera, scan'],
+    ['', 'the QR code – and learn more.'],
+  ],
+  [
+    ['Wĩenda kũmanya?', 'Vingũa'],
+    ['', 'kamera, scan QR code – na ũmanye ĩngĩ.'],
+  ],
+];
+assertHasGlyphs(fonts.ubuntuItalic, KIKAMBA_HEADLINE);
+for (const block of KIKAMBA_TEXT) {
+  for (const [lead, body] of block) {
+    if (lead) assertHasGlyphs(fonts.barlowSemiBold, lead);
+    assertHasGlyphs(fonts.barlowRegular, body);
+  }
+}
+const kikambaElements = [];
+const pushKikamba = (p, fill = COLORS.black) => kikambaElements.push({ d: p.toPathData(3), fill });
+{
+  let size = 39;
+  const baseline = 269;
+  while (size >= 20) {
+    const box = inkBox(textPath(fonts.ubuntuItalic, KIKAMBA_HEADLINE, 0, baseline, size, 0));
+    if (box.x2 - box.x1 <= 399) break;
+    size -= 0.5;
+  }
+  let lo = 0;
+  let hi = 30;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const b = inkBox(textPath(fonts.ubuntuItalic, KIKAMBA_HEADLINE, 0, baseline, size, mid));
+    if (b.x2 - b.x1 > 399) hi = mid;
+    else lo = mid;
+  }
+  pushKikamba(placeLeft(fonts.ubuntuItalic, KIKAMBA_HEADLINE, 297, baseline, size, lo));
+}
+{
+  const kikambaLines = [];
+  let yk = 0;
+  KIKAMBA_TEXT.forEach((block, i) => {
+    if (i > 0) yk += GAP;
+    for (const [lead, body] of block) {
+      kikambaLines.push({ lead, body, y: yk });
+      yk += PITCH;
+    }
+  });
+  const kikambaProbe = new opentype.Path();
+  for (const l of kikambaLines) {
+    kikambaProbe.extend(
+      fonts.barlowRegular.getPath(`${l.lead}${l.lead ? '  ' : ''}${l.body}`, 0, l.y, SIZE),
+    );
+  }
+  const kpb = inkBox(kikambaProbe);
+  const kikambaShift = (BAND_H - (kpb.y2 - kpb.y1)) / 2 - kpb.y1;
+  const kikambaSpace2 = fonts.barlowRegular.getAdvanceWidth('  ', SIZE);
+  for (const l of kikambaLines) {
+    const leadW = l.lead
+      ? fonts.barlowSemiBold.getAdvanceWidth(l.lead, SIZE, { kerning: true }) + kikambaSpace2
+      : 0;
+    const bodyW = fonts.barlowRegular.getAdvanceWidth(l.body, SIZE, { kerning: true });
+    const x = COL_CX - (leadW + bodyW) / 2;
+    if (l.lead) {
+      pushKikamba(
+        fonts.barlowSemiBold.getPath(l.lead, x, l.y + kikambaShift, SIZE, { kerning: true }),
+      );
+    }
+    pushKikamba(
+      fonts.barlowRegular.getPath(l.body, x + leadW, l.y + kikambaShift, SIZE, { kerning: true }),
+    );
+  }
+}
+const kikambaItems = kikambaElements.map(normaliseElement);
+if (kikambaItems.length !== 7) {
+  throw new Error(`SHOP_STICKER_KIKAMBA_TEXT must have 7 elements, got ${kikambaItems.length}`);
+}
+
+// Other second languages use the same headline slot and the same English-plus-local scan block.
+// English-only keeps the English scan lines and drops the local headline. Filipino stays in `elements`.
+const EN_SCAN = [
+  ['Curious?', 'Open your camera, scan'],
+  ['', 'the QR code – and learn more.'],
+];
+const LOCAL_STICKERS = {
+  spanish: {
+    headline: 'SE ACEPTA AQUÍ',
+    blocks: [
+      EN_SCAN,
+      [
+        ['¿Curioso?', 'Abre la cámara, escanea'],
+        ['', 'el código QR – y aprende más.'],
+      ],
+    ],
+    count: 7,
+  },
+  german: {
+    headline: 'HIER AKZEPTIERT',
+    blocks: [
+      EN_SCAN,
+      [
+        ['Neugierig?', 'Öffne die Kamera, scanne'],
+        ['', 'den QR-Code – und erfahre mehr.'],
+      ],
+    ],
+    count: 7,
+  },
+  french: {
+    headline: 'ACCEPTÉ ICI',
+    blocks: [
+      EN_SCAN,
+      [
+        ['Curieux ?', 'Ouvrez la caméra, scannez'],
+        ['', 'le QR code – et apprenez-en plus.'],
+      ],
+    ],
+    count: 7,
+  },
+  english: { headline: null, blocks: [EN_SCAN], count: 3 },
+};
+
+function localTextItems(headline, blocks) {
+  for (const block of blocks) {
+    for (const [lead, body] of block) {
+      if (lead) assertHasGlyphs(fonts.barlowSemiBold, lead);
+      assertHasGlyphs(fonts.barlowRegular, body);
+    }
+  }
+  const out = [];
+  const push = (p) => out.push({ d: p.toPathData(3), fill: COLORS.black });
+  if (headline !== null) {
+    assertHasGlyphs(fonts.ubuntuItalic, headline);
+    let size = 39;
+    const baseline = 269;
+    while (size >= 20) {
+      const box = inkBox(textPath(fonts.ubuntuItalic, headline, 0, baseline, size, 0));
+      if (box.x2 - box.x1 <= 399) break;
+      size -= 0.5;
+    }
+    let lo = 0;
+    let hi = 30;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      const b = inkBox(textPath(fonts.ubuntuItalic, headline, 0, baseline, size, mid));
+      if (b.x2 - b.x1 > 399) hi = mid;
+      else lo = mid;
+    }
+    push(placeLeft(fonts.ubuntuItalic, headline, 297, baseline, size, lo));
+  }
+  const laid = [];
+  let yLine = 0;
+  blocks.forEach((block, i) => {
+    if (i > 0) yLine += GAP;
+    for (const [lead, body] of block) {
+      laid.push({ lead, body, y: yLine });
+      yLine += PITCH;
+    }
+  });
+  const probePath = new opentype.Path();
+  for (const line of laid) {
+    probePath.extend(
+      fonts.barlowRegular.getPath(
+        `${line.lead}${line.lead ? '  ' : ''}${line.body}`,
+        0,
+        line.y,
+        SIZE,
+      ),
+    );
+  }
+  const box = inkBox(probePath);
+  const shift = (BAND_H - (box.y2 - box.y1)) / 2 - box.y1;
+  const space2 = fonts.barlowRegular.getAdvanceWidth('  ', SIZE);
+  for (const line of laid) {
+    const leadW = line.lead
+      ? fonts.barlowSemiBold.getAdvanceWidth(line.lead, SIZE, { kerning: true }) + space2
+      : 0;
+    const bodyW = fonts.barlowRegular.getAdvanceWidth(line.body, SIZE, { kerning: true });
+    const width = leadW + bodyW;
+    if (width > 700) {
+      throw new Error(`scan line too wide (${width.toFixed(1)}): ${line.lead} / ${line.body}`);
+    }
+    const x = COL_CX - width / 2;
+    if (line.lead) {
+      push(fonts.barlowSemiBold.getPath(line.lead, x, line.y + shift, SIZE, { kerning: true }));
+    }
+    push(
+      fonts.barlowRegular.getPath(line.body, x + leadW, line.y + shift, SIZE, { kerning: true }),
+    );
+  }
+  return out.map(normaliseElement);
+}
+
+const localItems = {};
+for (const [name, spec] of Object.entries(LOCAL_STICKERS)) {
+  const laid = localTextItems(spec.headline, spec.blocks);
+  if (laid.length !== spec.count) {
+    throw new Error(`${name} sticker text must have ${spec.count} elements, got ${laid.length}`);
+  }
+  localItems[name] = laid;
+}
+
 // Open CryptoPay mark normalised to width 1, centred on (0, 0)
 const mark = svgD(
   segments(
@@ -358,6 +581,21 @@ export const SHOP_STICKER_QR_BOX = { x: ${num5(QR_X)}, y: ${num5(QR_Y)}, size: $
 
 /** Fixed artwork, painted in order: paper, band, text outlines, bitcoin disc, shop pictogram. */
 export const SHOP_STICKER_ELEMENTS: readonly ShopStickerElement[] = ${JSON.stringify(items)};
+
+/** Kikamba local headline plus English and Kikamba scan-line outlines (replaces Filipino indices 6–12). */
+export const SHOP_STICKER_KIKAMBA_TEXT: readonly ShopStickerElement[] = ${JSON.stringify(kikambaItems)};
+
+/** Spanish local headline plus English and Spanish scan-line outlines (replaces Filipino indices 6–12). */
+export const SHOP_STICKER_SPANISH_TEXT: readonly ShopStickerElement[] = ${JSON.stringify(localItems.spanish)};
+
+/** German local headline plus English and German scan-line outlines (replaces Filipino indices 6–12). */
+export const SHOP_STICKER_GERMAN_TEXT: readonly ShopStickerElement[] = ${JSON.stringify(localItems.german)};
+
+/** French local headline plus English and French scan-line outlines (replaces Filipino indices 6–12). */
+export const SHOP_STICKER_FRENCH_TEXT: readonly ShopStickerElement[] = ${JSON.stringify(localItems.french)};
+
+/** English-only scan-line outlines (replaces Filipino indices 6–12; no second headline). */
+export const SHOP_STICKER_ENGLISH_TEXT: readonly ShopStickerElement[] = ${JSON.stringify(localItems.english)};
 
 /** Open CryptoPay mark (absolute M, L, C, Z), width 1, centred on (0, 0). */
 export const SHOP_STICKER_MARK = ${JSON.stringify(mark)};
