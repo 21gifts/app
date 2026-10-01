@@ -326,6 +326,8 @@ describe('runWalletSetup', () => {
     const { loadSdk, connection } = fakeSdk();
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
     expect(connection.registerAddress).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().account?.username).toBe('ada');
+    expect(needsWalletSetup(useAuthStore.getState().account)).toBe(true);
   });
 
   it('fails when the claim fails and does not register', async () => {

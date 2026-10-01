@@ -179,10 +179,10 @@ async function setupOnce(
       if (!current()) {
         return 'superseded';
       }
-      useAuthStore.getState().setAccount(claimed);
       if (typeof claimed.username !== 'string' || claimed.username === '') {
         return 'failed';
       }
+      useAuthStore.getState().setAccount(claimed);
       username = claimed.username;
     } catch (err: unknown) {
       if (!(err instanceof Error) || err.message !== 'wallet-verified') {
