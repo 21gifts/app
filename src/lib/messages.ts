@@ -581,6 +581,11 @@ const en = {
     'The recovery phrase could not be created or opened. Check this device and try again.',
   'wallet.errorHint':
     'If this keeps happening, try another browser or the device you already used to sign in.',
+  'wallet.balanceHeading': 'Balance',
+  'wallet.locked': 'Unlock your wallet to see your Bitcoin balance.',
+  'wallet.unlock': 'Unlock wallet',
+  'wallet.connecting': 'Opening your wallet…',
+  'wallet.balanceError': 'Your wallet could not be opened. Please try again.',
 
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
@@ -1684,6 +1689,11 @@ const de = {
     'Der Wiederherstellungssatz konnte nicht angelegt oder geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
   'wallet.errorHint':
     'Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben.',
+  'wallet.balanceHeading': 'Guthaben',
+  'wallet.locked': 'Entsperren Sie Ihre Wallet, um Ihr Bitcoin-Guthaben zu sehen.',
+  'wallet.unlock': 'Wallet entsperren',
+  'wallet.connecting': 'Wallet wird geöffnet…',
+  'wallet.balanceError': 'Ihre Wallet konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.',
 
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
@@ -2800,6 +2810,11 @@ const es = {
     'No se pudo crear ni abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
   'wallet.errorHint':
     'Si sigue ocurriendo, prueba otro navegador o el dispositivo con el que ya iniciaste sesión.',
+  'wallet.balanceHeading': 'Saldo',
+  'wallet.locked': 'Desbloquea tu wallet para ver tu saldo de Bitcoin.',
+  'wallet.unlock': 'Desbloquear wallet',
+  'wallet.connecting': 'Abriendo tu wallet…',
+  'wallet.balanceError': 'No se pudo abrir tu wallet. Inténtalo de nuevo.',
 
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
@@ -3904,6 +3919,11 @@ const fil = {
     'Hindi magawa o mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
   'wallet.errorHint':
     'Kung magpatuloy ito, subukan ang ibang browser o ang device na ginamit mo sa pag-sign in.',
+  'wallet.balanceHeading': 'Balanse',
+  'wallet.locked': 'I-unlock ang wallet mo para makita ang balanse mo sa Bitcoin.',
+  'wallet.unlock': 'I-unlock ang wallet',
+  'wallet.connecting': 'Binubuksan ang wallet mo…',
+  'wallet.balanceError': 'Hindi mabuksan ang wallet mo. Pakisubukan ulit.',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',
