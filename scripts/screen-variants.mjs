@@ -2544,6 +2544,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not save. Please try again.',
   },
   {
+    route: '/grants/payments',
+    id: 'pending',
+    image: 'grants-payments-pending.png',
+    visual: 'state-grants-payments-pending',
+    needle: 'state-grants-payments-pending',
+  },
+  {
     route: '/profile/apply',
     id: 'redirect',
     image: 'profile-apply.png',

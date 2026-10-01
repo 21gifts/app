@@ -1097,7 +1097,7 @@ Handbook states: default, about, sunday, photo, location, question, truth, trans
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payments**. An initiator or founder sees the editor form. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. Each recipient row has icon-only update (pencil) and delete (trash). **Save**, **On**, **Off**, **Add**, and **Try again** stay labeled buttons.
 
-Handbook states: default, empty, loading, error, forbidden, invalid.
+Handbook states: default, empty, loading, error, forbidden, invalid, off, invalid-comment, invalid-switch, duplicate, unknown, save-error, pending.
 
 ### `/profile/apply`
 

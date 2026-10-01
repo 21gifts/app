@@ -26,7 +26,6 @@ const SAVE_ERROR_KEYS = [
   'funding.daily.invalidRow',
   'funding.daily.duplicate',
   'funding.daily.unknown',
-  'funding.daily.forbidden',
   'funding.daily.saveError',
 ] as const satisfies readonly MessageKey[];
 
