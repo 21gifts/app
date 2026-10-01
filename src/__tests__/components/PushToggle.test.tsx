@@ -284,7 +284,7 @@ describe('PushToggle', () => {
     );
     expect(
       screen.getByText(
-        'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is admin posts, replies to you, and gifts you receive, and @username marks.',
+        'All living-room posts, replies, and gifts. Active is posts with gifts. Mentions is replies to you, gifts you receive, and @username marks.',
       ),
     ).toBeTruthy();
   });
