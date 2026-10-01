@@ -1,10 +1,29 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import type { UseWalletResult } from '@/hooks/useWallet';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
+import type { FiatRateDay } from '@/lib/stats-money';
 import { resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('@/hooks/useLatestRateDay', () => ({
+  useLatestRateDay: vi.fn(),
+}));
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
+beforeEach(() => {
+  vi.mocked(useLatestRateDay).mockReset().mockReturnValue(RATE_DAY);
+});
 
 afterEach(() => {
   cleanup();
@@ -15,6 +34,40 @@ afterEach(() => {
 });
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
+
+function walletResult(status: UseWalletResult['status']): UseWalletResult {
+  return {
+    status,
+    balanceSats: status === 'ready' ? 21_000 : null,
+    unlock: vi.fn(),
+    retry: vi.fn(),
+  };
+}
+
+function setWalletAccount(): void {
+  useAuthStore.setState({
+    session: 'tok',
+    account: {
+      id: 'acc_wallet',
+      linkingKey: null,
+      role: 'basis',
+      name: 'Ada',
+      username: 'ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: false,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+      passkeyCredentialId: 'credential',
+    },
+  });
+}
 
 describe('WalletScreenView', () => {
   it('renders the wallet heading', () => {
@@ -31,6 +84,76 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
+  });
+
+  it.each([
+    ['locked', 'Unlock your wallet to see your Bitcoin balance.'],
+    ['connecting', 'Opening your wallet…'],
+    ['ready', "₿21'000 · $21.00"],
+    ['error', 'Your wallet could not be opened. Please try again.'],
+  ] as const)('renders the %s balance under the heading and above the address', (status, text) => {
+    setWalletAccount();
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+        wallet={walletResult(status)}
+      />,
+    );
+    const heading = screen.getByRole('heading', { name: 'Wallet' });
+    const balance = screen.getByRole('region', { name: 'Balance' });
+    const address = screen.getByText('ada@21.gifts');
+    expect(balance.textContent).toContain(text);
+    expect(heading.compareDocumentPosition(balance) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(balance.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it("keeps today's entry markup when the wallet is disabled or omitted", () => {
+    const props = {
+      view: 'activate' as const,
+      status: 'idle' as const,
+      error: null,
+      words: [],
+      activate: vi.fn(),
+      showPhrase: vi.fn(),
+      hidePhrase: vi.fn(),
+      retry: vi.fn(),
+    };
+    const omitted = renderWithLocale(<WalletScreenView {...props} />);
+    const originalMarkup = omitted.container.innerHTML;
+    omitted.unmount();
+    const disabled = renderWithLocale(
+      <WalletScreenView {...props} wallet={walletResult('disabled')} />,
+    );
+    expect(disabled.container.innerHTML).toBe(originalMarkup);
+  });
+
+  it('ignores balance state on the phrase surface', () => {
+    renderWithLocale(
+      <WalletScreenView
+        surface="phrase"
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+        wallet={walletResult('locked')}
+      />,
+    );
+    expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
   });
 
   it('shows a timeout reason and a hint', () => {

@@ -13,6 +13,7 @@ import { PushOpenListener } from '@/components/PushOpenListener';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { WalletSync } from '@/components/WalletSync';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { getRequestFiat } from '@/lib/request-fiat';
 import { getRequestLocale } from '@/lib/request-locale';
@@ -160,6 +161,7 @@ export default async function RootLayout({
               <ThemeProvider>
                 <AccountPreferenceSync />
                 <PushOpenListener />
+                <WalletSync />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />
                 </Suspense>
