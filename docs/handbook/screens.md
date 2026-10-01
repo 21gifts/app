@@ -272,6 +272,12 @@ Pinned fixture (`?visual=send-amount`, Playwright builds only). A receiver that 
 
 ![21.gifts wallet send amount](images/wallet-send-amount.png)
 
+### Variant: send-amount-fiat
+
+Same pinned amount step for a member whose amount unit is fiat: the switch is on **USD**, **2.10** is typed, and **₿2'100** shows under the field. The bounds line stays the same.
+
+![21.gifts wallet send amount fiat](images/wallet-send-amount-fiat.png)
+
 ### Variant: send-confirm
 
 Pinned fixture (`?visual=send-confirm`, Playwright builds only). **To bob@example.com**, **Send ₿2'100** and **Fee ₿0**, each with the default fiat, labeled **Send**, and the step Close.
