@@ -12,6 +12,7 @@ import {
   notificationSchema,
   forumListSchema,
   forumMessageSchema,
+  externalAuthorProfileSchema,
   forumPlacesResponseSchema,
   hiddenListSchema,
   lnAddressResolvedSchema,
@@ -44,6 +45,7 @@ import {
   type Notification,
   type NotificationList,
   type ForumMessage,
+  type ExternalAuthorProfile,
   type ForumPlacePin,
   type ForumPlaceRow,
   type HiddenMessage,
@@ -1758,6 +1760,34 @@ export async function fetchPublicMessage(
     }
     /* Zod / network */
     throw new Error('Could not load messages. Please try again.');
+  }
+}
+
+/**
+ * Fetches the public Nostr profile for an external forum author.
+ *
+ * HTTP 404, other non-OK responses, network failures, JSON failures, and
+ * schema mismatch return `null`.
+ *
+ * @param id - Forum message UUID.
+ * @returns The {@link ExternalAuthorProfile}, or `null`.
+ * @throws Does not throw.
+ */
+export async function fetchExternalAuthorProfile(
+  id: string,
+): Promise<ExternalAuthorProfile | null> {
+  try {
+    const response = await fetch(`/public-messages/${encodeURIComponent(id)}/external-profile`);
+    if (!response.ok) {
+      return null;
+    }
+    const parsed = externalAuthorProfileSchema.safeParse(await response.json());
+    if (!parsed.success) {
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
   }
 }
 

@@ -57,6 +57,7 @@ import {
   type ForumPlacePin,
 } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
+import { ExternalAuthorSheet } from '@/components/ExternalAuthorSheet';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { ShopAddWizard } from '@/components/ShopAddWizard';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
@@ -859,6 +860,10 @@ export function ForumBoard({
   }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
+  const [externalAuthor, setExternalAuthor] = useState<{
+    messageId: string;
+    fallbackName: string;
+  } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
   const [pullArmed, setPullArmed] = useState(false);
@@ -1181,6 +1186,21 @@ export function ForumBoard({
                         onClick={(event) => {
                           stopCardToggle(event);
                           router.push(`/members/${message.accountId}`);
+                        }}
+                      >
+                        {message.name}
+                      </button>
+                    ) : message.via === 'nostr' ? (
+                      <button
+                        type="button"
+                        aria-label={t('forum.authorProfile')}
+                        className="text-sm font-medium text-app-fg underline underline-offset-2"
+                        onClick={(event) => {
+                          stopCardToggle(event);
+                          setExternalAuthor({
+                            messageId: message.id,
+                            fallbackName: message.name,
+                          });
                         }}
                       >
                         {message.name}
@@ -1563,6 +1583,21 @@ export function ForumBoard({
                                     onClick={(event) => {
                                       stopCardToggle(event);
                                       router.push(`/members/${reply.accountId}`);
+                                    }}
+                                  >
+                                    {reply.name}
+                                  </button>
+                                ) : reply.via === 'nostr' ? (
+                                  <button
+                                    type="button"
+                                    aria-label={t('forum.authorProfile')}
+                                    className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                    onClick={(event) => {
+                                      stopCardToggle(event);
+                                      setExternalAuthor({
+                                        messageId: reply.id,
+                                        fallbackName: reply.name,
+                                      });
                                     }}
                                   >
                                     {reply.name}
@@ -2231,6 +2266,16 @@ export function ForumBoard({
 
       {middle}
       {error && messages !== null ? errorBlock : null}
+      {externalAuthor !== null ? (
+        <ExternalAuthorSheet
+          key={externalAuthor.messageId}
+          messageId={externalAuthor.messageId}
+          fallbackName={externalAuthor.fallbackName}
+          onClose={() => {
+            setExternalAuthor(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

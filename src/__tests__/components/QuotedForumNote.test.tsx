@@ -33,6 +33,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchShortLink: vi.fn(),
+  fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('@/lib/note-translate', () => ({
@@ -1024,6 +1025,39 @@ describe('ForumQuotedBody', () => {
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
     expect(screen.queryByText('Founder')).toBeNull();
+  });
+
+  it('shows an external quoted author as a View profile button without a member link', async () => {
+    const viaQuoted: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      name: 'Robin',
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[viaQuoted]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('link', { name: 'View profile' })).toBeNull();
+    expect(
+      screen
+        .queryAllByRole('link')
+        .filter((el) => el.getAttribute('href')?.startsWith('/members/')),
+    ).toEqual([]);
+    expect(
+      screen.getByRole('link', { name: 'Open linked note from Robin (external)' }),
+    ).toBeTruthy();
+    expect(screen.getByText('External')).toBeTruthy();
   });
 
   it('uses the external aria-label for a quoted note with via nostr', async () => {

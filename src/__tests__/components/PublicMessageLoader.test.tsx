@@ -37,6 +37,7 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchReplies: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
   openConversation: vi.fn(),
@@ -1170,8 +1171,12 @@ describe('PublicMessageLoader', () => {
     });
     expect(screen.getByText('External')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'External' })).toBeNull();
+    const author = screen.getByRole('button', { name: 'View profile' });
+    expect(author.textContent).toBe('Robin');
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+    fireEvent.click(author);
+    expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
   });
 
   it('marks an unsigned via gift reply with a badge and no body paragraph', async () => {

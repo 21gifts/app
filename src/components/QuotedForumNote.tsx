@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { ExternalAuthorSheet } from '@/components/ExternalAuthorSheet';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { LinkedText, type TextMention } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -60,6 +61,7 @@ function QuotedForumNote({
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [externalAuthorOpen, setExternalAuthorOpen] = useState(false);
 
   useEffect(() => {
     if (!note.hasPhoto) {
@@ -132,6 +134,18 @@ function QuotedForumNote({
               >
                 {note.name}
               </Link>
+            ) : note.via === 'nostr' ? (
+              <button
+                type="button"
+                aria-label={t('forum.authorProfile')}
+                className="pointer-events-auto text-sm font-medium text-app-fg underline underline-offset-2"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setExternalAuthorOpen(true);
+                }}
+              >
+                {note.name}
+              </button>
             ) : (
               <span className="text-sm font-medium text-app-fg">{note.name}</span>
             )}
@@ -190,6 +204,15 @@ function QuotedForumNote({
           {formatBitcoin(note.sats, numberFormat)}
           {fiatSuffix}
         </p>
+        {externalAuthorOpen ? (
+          <ExternalAuthorSheet
+            messageId={note.id}
+            fallbackName={note.name}
+            onClose={() => {
+              setExternalAuthorOpen(false);
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

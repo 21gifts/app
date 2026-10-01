@@ -401,6 +401,13 @@
 - **Used by:** `fetchReplies`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /public-messages/[id]/external-profile
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer).
+- **Errors:** Upstream 404 `{ error: "Not found" }`, upstream 503, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorProfile`.
+- **Auth:** Public.
+
 ## Endpoint: GET /public-messages/[id]
 
 - **Purpose:** Same-origin public proxy of api GET `/messages/:id` (one note as JSON, no Bearer). The HTML public note is `/messages/[id]`.

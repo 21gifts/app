@@ -52,6 +52,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn().mockResolvedValue(null),
   fetchPublicMessagePhoto: vi.fn().mockRejectedValue(new Error('no photo')),
+  fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
 }));
@@ -3797,8 +3798,8 @@ describe('ForumBoard', () => {
     );
     const tag = screen.getByRole('button', { name: 'External' });
     expect(tag.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
-    expect(screen.getByText('Ada')).toBeTruthy();
+    const author = screen.getByRole('button', { name: 'View profile' });
+    expect(author.textContent).toBe('Ada');
     fireEvent.click(tag);
     expect(tag.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByRole('status').textContent).toBe(
@@ -3807,6 +3808,8 @@ describe('ForumBoard', () => {
     fireEvent.click(tag);
     expect(tag.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('status')).toBeNull();
+    fireEvent.click(author);
+    expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
   });
 
   it('renders a via nostr shop note with the shop pill', () => {
@@ -3917,8 +3920,8 @@ describe('ForumBoard', () => {
       />,
     );
     const tag = screen.getByRole('button', { name: 'External' });
-    expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
-    expect(screen.getByText('Robin')).toBeTruthy();
+    const author = screen.getByRole('button', { name: 'View profile' });
+    expect(author.textContent).toBe('Robin');
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
     fireEvent.click(tag);
@@ -3926,6 +3929,9 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toContain('Wrote from another app');
     fireEvent.click(tag);
     expect(screen.queryByRole('status')).toBeNull();
+    fireEvent.click(author);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
   });
 
   it('keeps a long via reply full when truncate is off', () => {
