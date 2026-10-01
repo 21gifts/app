@@ -10,7 +10,7 @@
  * appends the network and a hash of the wallet's identity key to this name, so
  * each wallet on a browser gets its own database.
  */
-export const WALLET_STORAGE_DIR = '21gifts-wallet';
+const WALLET_STORAGE_DIR = '21gifts-wallet';
 
 /**
  * Balance and identity returned by a connected wallet.
