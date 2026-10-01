@@ -1906,7 +1906,7 @@ export function ForumBoard({
   return (
     <div
       ref={rootRef}
-      className="flex w-full flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
+      className="flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
     >
       {moderatorAppointedAvailable ? (
         <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">

@@ -54,7 +54,8 @@ function slideStride(scroller: HTMLElement): number {
 /**
  * Horizontal snap row for a note with more than one still. Earlier slides are
  * 88% wide so the next photo peeks; the last slide is full width. The row
- * scrolls sideways only (`data-scroll-x`). It is not a second page scroll.
+ * is width-bounded and cannot widen the page. It scrolls sideways only
+ * (`data-scroll-x`). It is not a second page scroll.
  * A `current/total` chip sits on the visible still, and dots jump to a still.
  *
  * @param props - See {@link ForumPhotoGalleryProps}.
@@ -92,12 +93,12 @@ export function ForumPhotoGallery({
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   return (
-    <div className={`flex flex-col${extra}`} onClick={onPhotoClick} onKeyDown={onPhotoClick}>
-      <div className="relative">
+    <div className={`flex w-full min-w-0 flex-col${extra}`} onClick={onPhotoClick} onKeyDown={onPhotoClick}>
+      <div className="relative w-full min-w-0">
         <div
           ref={scrollerRef}
           data-scroll-x=""
-          className="flex snap-x snap-mandatory gap-3 overscroll-x-contain"
+          className="flex w-full min-w-0 snap-x snap-mandatory gap-3 overscroll-x-contain"
           onScroll={(event: UIEvent<HTMLDivElement>) => {
             updateActive(event.currentTarget);
           }}
