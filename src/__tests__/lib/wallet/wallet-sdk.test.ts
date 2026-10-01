@@ -334,6 +334,31 @@ describe('payments', () => {
     await expect(conn.parse('lnurl1')).resolves.toMatchObject({ recipient: 'amy@pay.example' });
   });
 
+  it('parse refuses an LNURL receiver whose bounds leave no whole sat', async () => {
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'lnurlPay',
+      ...LNURL,
+      minSendable: 1_001,
+      maxSendable: 1_500,
+    });
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'lnurlPay',
+      ...LNURL,
+      minSendable: 0,
+      maxSendable: 999,
+    });
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'lnurlPay',
+      ...LNURL,
+      minSendable: 0,
+      maxSendable: 5_000,
+    });
+    const conn = await connection();
+    await expect(conn.parse('lnurl1')).resolves.toEqual({ type: 'unsupported' });
+    await expect(conn.parse('lnurl1')).resolves.toEqual({ type: 'unsupported' });
+    await expect(conn.parse('lnurl1')).resolves.toMatchObject({ minSats: 1, maxSats: 5 });
+  });
+
   it('parse maps a base-chain address to onchain and other inputs to unsupported', async () => {
     sdkPay.parse.mockResolvedValueOnce({ type: 'bitcoinAddress', address: 'bc1q' });
     sdkPay.parse.mockResolvedValueOnce({ type: 'lnurlWithdraw' });

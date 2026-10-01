@@ -378,17 +378,23 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
 
 /**
  * Builds an `lnurl` target from SDK pay-request details (millisat bounds).
+ * Bounds that leave no whole sat (at least 1) make the receiver unsupported.
  *
  * @param details - SDK pay-request details.
  * @param recipient - Address or domain shown on the confirm screen.
  * @returns The `lnurl` target.
  */
 function lnurlTarget(details: LnurlDetails, recipient: string): WalletTarget {
+  const minSats = Math.max(1, Math.ceil(details.minSendable / 1000));
+  const maxSats = Math.floor(details.maxSendable / 1000);
+  if (minSats > maxSats) {
+    return { type: 'unsupported' };
+  }
   return {
     type: 'lnurl',
     request: { details },
-    minSats: Math.ceil(details.minSendable / 1000),
-    maxSats: Math.floor(details.maxSendable / 1000),
+    minSats,
+    maxSats,
     commentMaxLength: details.commentAllowed,
     recipient,
   };
