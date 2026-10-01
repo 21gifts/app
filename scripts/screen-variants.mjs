@@ -381,6 +381,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-amount-fiat',
+    image: 'wallet-send-amount-fiat.png',
+    visual: 'state-wallet-send-amount-fiat',
+    needle: 'wallet send-amount-fiat',
+  },
+  {
+    route: '/wallet',
     id: 'send-confirm',
     image: 'wallet-send-confirm.png',
     visual: 'state-wallet-send-confirm',

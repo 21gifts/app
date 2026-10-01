@@ -264,6 +264,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-amount-fiat",
+    "label": "/wallet send-amount-fiat",
+    "visual": "state-wallet-send-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-confirm",
     "label": "/wallet send-confirm",
     "visual": "state-wallet-send-confirm",

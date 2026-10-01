@@ -201,7 +201,9 @@ export interface WalletLnurlRequest {
  * What a pasted text pays, as read by {@link WalletConnection.parse}.
  *
  * - `request`: a payment request or an address the SDK pays from `input`.
- *   `amountSats` is `null` when the text carries no amount.
+ *   `amountSats` is `null` when the text carries no amount. `amountFromUri`
+ *   marks an amount taken from a BIP21 URI for a method without one; it has
+ *   to be passed to `prepare`.
  * - `lnurl`: an address whose server issues the request for a chosen amount,
  *   between `minSats` and `maxSats`, with a comment of at most
  *   `commentMaxLength` characters (`0` means no comment).
@@ -209,7 +211,13 @@ export interface WalletLnurlRequest {
  * - `unsupported`: anything else the SDK recognised but the app does not pay.
  */
 export type WalletTarget =
-  | { type: 'request'; input: string; amountSats: number | null; recipient: string }
+  | {
+      type: 'request';
+      input: string;
+      amountSats: number | null;
+      recipient: string;
+      amountFromUri?: true;
+    }
   | {
       type: 'lnurl';
       request: WalletLnurlRequest;
@@ -357,7 +365,7 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
           target.amountSats === null &&
           bip21.amountSat !== undefined
         ) {
-          return { ...target, amountSats: bip21.amountSat };
+          return { ...target, amountSats: bip21.amountSat, amountFromUri: true };
         }
         return target;
       }

@@ -245,7 +245,14 @@ export function useWalletSend(): UseWalletSendResult {
         return;
       }
       if (target.type === 'request' && target.amountSats !== null && target.amountSats > 0) {
-        prepare({ type: 'input', input: target.input }, target.recipient);
+        prepare(
+          {
+            type: 'input',
+            input: target.input,
+            ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
+          },
+          target.recipient,
+        );
         return;
       }
       setBusy(false);

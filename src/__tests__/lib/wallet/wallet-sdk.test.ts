@@ -391,6 +391,7 @@ describe('payments', () => {
       input: 'sp1short',
       amountSats: 2_100,
       recipient: 'sp1short',
+      amountFromUri: true,
     });
     await expect(conn.parse('bitcoin:?lightning=lnbc1short')).resolves.toMatchObject({
       amountSats: 21,

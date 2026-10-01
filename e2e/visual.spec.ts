@@ -1797,7 +1797,7 @@ test.describe('screen baselines', () => {
   });
 
   /** Signs in an account that can unlock the wallet, with a stub till and rate. */
-  async function seedWalletSend(page: Page): Promise<void> {
+  async function seedWalletSend(page: Page, amountUnit: 'btc' | 'fiat' = 'btc'): Promise<void> {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -1816,6 +1816,7 @@ test.describe('screen baselines', () => {
           walletRequired: true,
           walletBackupSeenAt: 1,
           passkeyCredentialId: 'cred-seed',
+          amountUnit,
         }),
       });
     });
@@ -1847,6 +1848,21 @@ test.describe('screen baselines', () => {
     });
     await expect(page.getByLabel('Message (optional)')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-amount');
+  });
+
+  test('wallet send-amount-fiat', async ({ page }) => {
+    await seedWalletSend(page, 'fiat');
+    await page.goto('/wallet?visual=send-amount');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(
+      send.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', { name: 'USD' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await send.getByLabel('Amount').fill('2.10');
+    await expect(send.getByText("₿2'100")).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-amount-fiat');
   });
 
   test('wallet send-confirm', async ({ page }) => {
