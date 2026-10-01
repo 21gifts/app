@@ -7,6 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import {
@@ -20,6 +21,9 @@ import {
  *
  * Close stays on this view. It is not the top-left back arrow. The preview paragraph is left-inset (`pl-12`) so its glyphs clear that control, including the icon button's hit slop.
  *
+ * With a `sparkInvoice` and a usable in-app wallet the pay slot pays from
+ * the wallet; otherwise it shows the invoice QR and external wallet button.
+ *
  * @param props - Preview, invoice, waiting flag, and cancel handler.
  * @returns The pay page element.
  */
@@ -27,6 +31,7 @@ export function ForumReplyPayPage({
   preview,
   amountSats,
   pr,
+  sparkInvoice = null,
   payWaiting,
   payBusy,
   showPaymentQr,
@@ -36,6 +41,7 @@ export function ForumReplyPayPage({
   preview: string;
   amountSats: number;
   pr: string;
+  sparkInvoice?: string | null;
   payWaiting: boolean;
   payBusy: boolean;
   showPaymentQr: boolean;
@@ -102,8 +108,16 @@ export function ForumReplyPayPage({
         })}
         {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
       </p>
-      {showPaymentQr ? <QrCode value={pr} label={t('forum.payInvoiceQr')} /> : null}
-      {walletButton}
+      <WalletPay
+        sparkInvoice={sparkInvoice}
+        rateDay={rateDay}
+        fallback={
+          <>
+            {showPaymentQr ? <QrCode value={pr} label={t('forum.payInvoiceQr')} /> : null}
+            {walletButton}
+          </>
+        }
+      />
       {payWaiting ? (
         <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
       ) : null}

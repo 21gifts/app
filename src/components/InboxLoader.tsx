@@ -718,7 +718,11 @@ export function InboxLoader(): ReactElement | null {
         if (openIdRef.current !== conversationId) {
           return;
         }
-        setInvoice({ pr: minted.pr, amountSats: minted.amountSats });
+        setInvoice({
+          pr: minted.pr,
+          amountSats: minted.amountSats,
+          sparkInvoice: minted.sparkInvoice ?? null,
+        });
         setPayWaiting(true);
         const controller = new AbortController();
         /* v8 ignore next -- no in-flight poll on first mint */
