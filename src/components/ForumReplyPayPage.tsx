@@ -108,6 +108,7 @@ export function ForumReplyPayPage({
       </p>
       <WalletPay
         sparkInvoice={sparkInvoice}
+        amountSats={amountSats}
         rateDay={rateDay}
         fallback={
           <>

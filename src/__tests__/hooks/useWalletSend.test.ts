@@ -8,6 +8,7 @@ import {
   type WalletPayResult,
   type WalletSendResult,
 } from '@/lib/wallet/wallet-service';
+import { useWalletStore } from '@/stores/wallet-store';
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
   parseWalletInput: vi.fn(),
@@ -46,6 +47,7 @@ async function typeAndSubmit(
 }
 
 beforeEach(() => {
+  useWalletStore.setState({ status: 'ready', balanceSats: 21_000, identityPubkey: null });
   window.history.replaceState({}, '', '/wallet');
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   vi.mocked(parseWalletInput).mockReset();
@@ -406,5 +408,81 @@ describe('useWalletSend visual pins', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=balance-ready');
     expect(renderHook(() => useWalletSend()).result.current.state.step).toBe('input');
+  });
+});
+
+describe('useWalletSend wallet status', () => {
+  function setStatus(status: 'ready' | 'locked' | 'error'): void {
+    act(() => {
+      useWalletStore.setState({ status });
+    });
+  }
+
+  it('returns an open amount step to the input when the wallet leaves ready', async () => {
+    target(LNURL);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@pay.example');
+    expect(result.current.state.step).toBe('amount');
+    setStatus('locked');
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('drops a read in flight when the wallet leaves ready', async () => {
+    let finish: (value: Awaited<ReturnType<typeof parseWalletInput>>) => void = () => undefined;
+    vi.mocked(parseWalletInput).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.setText('x');
+    });
+    act(() => {
+      result.current.submitInput();
+    });
+    setStatus('error');
+    expect(result.current.busy).toBe(false);
+    await act(async () => {
+      finish({ kind: 'invalid' });
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('keeps a send in flight and the sent and idle input steps', async () => {
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    let finish: (value: WalletSendResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      ),
+    );
+    const { result } = renderHook(() => useWalletSend());
+    setStatus('locked');
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    setStatus('ready');
+    await typeAndSubmit(result, 'lnbc1');
+    act(() => {
+      result.current.confirm();
+    });
+    setStatus('error');
+    expect(result.current.state.step).toBe('confirm');
+    await act(async () => {
+      finish({ kind: 'paid' });
+    });
+    expect(result.current.state.step).toBe('sent');
+    setStatus('locked');
+    expect(result.current.state.step).toBe('sent');
+  });
+
+  it('ignores the wallet status while pinned', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet?visual=send-confirm');
+    useWalletStore.setState({ status: 'disabled' });
+    const { result } = renderHook(() => useWalletSend());
+    expect(result.current.state.step).toBe('confirm');
   });
 });

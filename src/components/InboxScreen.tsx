@@ -1324,6 +1324,7 @@ export function InboxScreen({
             </p>
             <WalletPay
               sparkInvoice={invoice.sparkInvoice}
+              amountSats={invoice.amountSats}
               rateDay={rateDay}
               fallback={
                 <>

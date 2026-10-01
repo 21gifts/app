@@ -26,6 +26,7 @@ function renderPay(sparkInvoice: string | null = 'spark1x'): void {
   renderWithLocale(
     <WalletPay
       sparkInvoice={sparkInvoice}
+      amountSats={21}
       rateDay={RATE_DAY}
       fallback={<button type="button">Pay with Wallet of Satoshi</button>}
     />,
@@ -46,7 +47,7 @@ describe('WalletPay', () => {
   it('passes the request to the hook and renders the fallback unchanged', () => {
     hookWith('fallback');
     renderPay(null);
-    expect(useWalletPay).toHaveBeenCalledWith(null);
+    expect(useWalletPay).toHaveBeenCalledWith(null, 21);
     expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   });
 
