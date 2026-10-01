@@ -35,10 +35,12 @@ export function resetWallet(): void {
  * A prepare result with a zero fee whose send is the given mock.
  *
  * @param send - Send mock; defaults to one that reports paid.
+ * @param amountSats - Prepared amount; must match the sheet's amount.
  * @returns The confirm result.
  */
 export function confirmResult(
   send: () => Promise<WalletSendResult> = vi.fn(async () => ({ kind: 'paid' as const })),
+  amountSats = 21,
 ): WalletPayResult {
-  return { kind: 'confirm', amountSats: 21, feeSats: 0, send };
+  return { kind: 'confirm', amountSats, feeSats: 0, send };
 }
