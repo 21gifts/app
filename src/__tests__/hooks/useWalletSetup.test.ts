@@ -133,6 +133,34 @@ describe('useWalletSetup', () => {
     expect(result.current.view).toBe('intro');
   });
 
+  it('starts when the phrase arrives while the intro is shown', async () => {
+    const { result } = renderHook(() => useWalletSetup());
+    expect(result.current.view).toBe('intro');
+    await act(async () => {
+      rememberSessionPhrase(MNEMONIC);
+      await Promise.resolve();
+    });
+    expect(runWalletSetup).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a cleared phrase on the intro and stops listening once it leaves the intro', async () => {
+    vi.mocked(runWalletSetup).mockResolvedValueOnce('failed');
+    const { result } = renderHook(() => useWalletSetup());
+    act(() => {
+      clearSessionPhrase();
+    });
+    expect(runWalletSetup).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.start();
+      await Promise.resolve();
+    });
+    expect(result.current.view).toBe('error');
+    act(() => {
+      rememberSessionPhrase(MNEMONIC);
+    });
+    expect(runWalletSetup).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ['noPrf', 'noPrf'],
     ['failed', 'error'],

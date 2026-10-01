@@ -274,7 +274,7 @@ describe('useWalletHistory', () => {
 
   it.each([
     ['history-empty', 'ready', 0],
-    ['history-rows', 'ready', 3],
+    ['history-rows', 'ready', 4],
     ['history-error', 'error', 0],
   ] as const)('pins %s in a Playwright build', (visual, status, count) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
@@ -291,11 +291,11 @@ describe('useWalletHistory', () => {
     expect(listWalletPayments).not.toHaveBeenCalled();
   });
 
-  it('the rows pin has a received note, a sent row, and a pending row', () => {
+  it('the rows pin has a received note, a sent row, a pending row, and a failed row', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=history-rows');
     const { result } = renderHook(() => useWalletHistory());
-    const [first, second, third] = result.current.payments;
+    const [first, second, third, fourth] = result.current.payments;
     expect(first).toMatchObject({
       direction: 'received',
       senderComment: 'Thank you for the coffee',
@@ -303,6 +303,7 @@ describe('useWalletHistory', () => {
     expect(first?.timestamp).toBe(Date.parse('2026-01-07T10:00:00.000Z'));
     expect(second).toMatchObject({ direction: 'sent', status: 'completed' });
     expect(third).toMatchObject({ direction: 'received', status: 'pending' });
+    expect(fourth).toMatchObject({ direction: 'sent', status: 'failed' });
   });
 
   it('ignores pins outside a Playwright build and unrelated values', async () => {

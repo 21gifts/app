@@ -81,17 +81,29 @@ async function unlockForSetup(
   return remembered ? null : 'failed';
 }
 
-/** The setup run in progress in this tab, shared by every caller; `null` when idle. */
-let running: Promise<WalletSetupOutcome> | null = null;
+/** The setup run in progress in this tab and the session it belongs to; `null` when idle. */
+let running: { session: string | null; run: Promise<WalletSetupOutcome> } | null = null;
 
 /**
- * True while a setup run is in progress in this tab, so a remounted dialog
- * shows progress and joins it instead of starting a second run.
+ * The run in progress for the current session, if any.
  *
- * @returns Whether {@link runWalletSetup} has a run in flight.
+ * @returns That run's promise, or `null`.
+ */
+function currentRun(): Promise<WalletSetupOutcome> | null {
+  return running !== null && running.session === useAuthStore.getState().session
+    ? running.run
+    : null;
+}
+
+/**
+ * True while a setup run for the current session is in progress in this
+ * tab, so a remounted dialog shows progress and joins it instead of starting
+ * a second run. A run left over from an earlier session does not count.
+ *
+ * @returns Whether {@link runWalletSetup} has a run in flight for this session.
  */
 export function walletSetupInFlight(): boolean {
-  return running !== null;
+  return currentRun() !== null;
 }
 
 /**
@@ -100,8 +112,10 @@ export function walletSetupInFlight(): boolean {
  * register the account's username as the wallet's address, and reload the
  * account. A 409 from the claim means the wallet is already verified and
  * skips straight to the reload. Never asks whether a username is free and
- * never sends the phrase. Never rejects. A call while a run is in progress
- * joins that run (its `onStep` is not called) instead of starting another.
+ * never sends the phrase. Never rejects. A call while a run for the same
+ * session is in progress joins that run (its `onStep` is not called) instead
+ * of starting another. The username registered is the one on the account the
+ * claim returns, so a rename in another tab is picked up.
  *
  * @param onStep - Called as each step starts.
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
@@ -111,14 +125,18 @@ export function runWalletSetup(
   onStep: (step: WalletSetupStep) => void,
   loadSdk: WalletSdkLoader = loadWalletSdk,
 ): Promise<WalletSetupOutcome> {
-  if (running !== null) {
-    return running;
+  const joined = currentRun();
+  if (joined !== null) {
+    return joined;
   }
-  const run = setupOnce(onStep, loadSdk).finally(() => {
-    running = null;
+  const entry = { session: useAuthStore.getState().session, run: setupOnce(onStep, loadSdk) };
+  entry.run = entry.run.finally(() => {
+    if (running === entry) {
+      running = null;
+    }
   });
-  running = run;
-  return run;
+  running = entry;
+  return entry.run;
 }
 
 /**
@@ -136,18 +154,18 @@ async function setupOnce(
   if (session === null || !needsWalletSetup(account)) {
     return 'failed';
   }
-  const username = account.username;
+  let username = account.username;
   const current = (): boolean => useAuthStore.getState().session === session;
   try {
     if (peekSessionPhrase() === null) {
       onStep('passkey');
       const unlocked = await unlockForSetup(account, session);
+      if (!current()) {
+        return 'superseded';
+      }
       if (unlocked !== null) {
         return unlocked;
       }
-    }
-    if (!current()) {
-      return 'superseded';
     }
     onStep('connecting');
     const identity = (await ensureWalletConnected(loadSdk)).toLowerCase();
@@ -157,7 +175,15 @@ async function setupOnce(
     onStep('claiming');
     let alreadyVerified = false;
     try {
-      await putMyWallet(session, identity);
+      const claimed = await putMyWallet(session, identity);
+      if (!current()) {
+        return 'superseded';
+      }
+      useAuthStore.getState().setAccount(claimed);
+      if (typeof claimed.username !== 'string' || claimed.username === '') {
+        return 'failed';
+      }
+      username = claimed.username;
     } catch (err: unknown) {
       if (!(err instanceof Error) || err.message !== 'wallet-verified') {
         throw err;
@@ -185,6 +211,6 @@ async function setupOnce(
     useAuthStore.getState().setAccount(next);
     return next.sparkWalletVerified === true ? 'done' : 'failed';
   } catch {
-    return 'failed';
+    return current() ? 'failed' : 'superseded';
   }
 }
