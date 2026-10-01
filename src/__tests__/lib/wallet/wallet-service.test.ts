@@ -1,0 +1,479 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import {
+  connectWallet,
+  disconnectWallet,
+  listenForWalletPhrase,
+  refreshWallet,
+  type WalletSdkLoader,
+} from '@/lib/wallet/wallet-service';
+import type { WalletConnection, WalletSdk } from '@/lib/wallet/wallet-sdk';
+import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
+
+const MNEMONIC =
+  'abandon ability able about above absent absorb abstract absurd abuse access accident';
+const API_KEY = 'test-breez-api-key';
+const IDENTITY = `02${'a'.repeat(64)}`;
+
+const ssrImport = vi.hoisted(() =>
+  vi.fn(async () => {
+    throw new Error('real SDK must not load');
+  }),
+);
+
+vi.mock('@breeztech/breez-sdk-spark/ssr', () => ({
+  default: () => ssrImport(),
+}));
+
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+
+function createFakeSdk(overrides?: {
+  connect?: WalletSdk['connect'];
+  getInfo?: WalletConnection['getInfo'];
+  addEventListener?: WalletConnection['addEventListener'];
+  disconnect?: WalletConnection['disconnect'];
+}): {
+  loadSdk: WalletSdkLoader;
+  connection: {
+    getInfo: ReturnType<typeof vi.fn>;
+    addEventListener: ReturnType<typeof vi.fn>;
+    disconnect: ReturnType<typeof vi.fn>;
+  };
+  connect: ReturnType<typeof vi.fn>;
+  listeners: Array<(event: { type: string }) => void>;
+} {
+  const listeners: Array<(event: { type: string }) => void> = [];
+  const connection = {
+    getInfo: vi.fn(
+      overrides?.getInfo ??
+        (async () => ({
+          balanceSats: 21_000,
+          identityPubkey: IDENTITY,
+        })),
+    ),
+    addEventListener: vi.fn(
+      overrides?.addEventListener ??
+        (async (onEvent: (event: { type: string }) => void) => {
+          listeners.push(onEvent);
+          return 'listener-1';
+        }),
+    ),
+    disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
+  };
+  const connect = vi.fn(
+    overrides?.connect ?? (async () => connection as unknown as WalletConnection),
+  );
+  const loadSdk: WalletSdkLoader = vi.fn(async () => ({
+    connect: connect as WalletSdk['connect'],
+  }));
+  return { loadSdk, connection, connect, listeners };
+}
+
+beforeEach(() => {
+  process.env.NEXT_PUBLIC_BREEZ_API_KEY = API_KEY;
+  clearSessionPhrase();
+  useWalletStore.getState().reset();
+  useAuthStore.setState({ session: null, account: null, wrongAccount: false });
+  ssrImport.mockClear();
+});
+
+afterEach(async () => {
+  await disconnectWallet();
+  clearSessionPhrase();
+  if (ORIGINAL_BREEZ === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+  }
+  useWalletStore.getState().reset();
+});
+
+describe('connectWallet', () => {
+  it('moves to connecting then ready with balance and identity', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    const statuses: string[] = [];
+    const unsub = useWalletStore.subscribe((state) => {
+      statuses.push(state.status);
+    });
+    await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
+    unsub();
+    expect(statuses).toContain('connecting');
+    expect(useWalletStore.getState()).toMatchObject({
+      status: 'ready',
+      balanceSats: 21_000,
+      identityPubkey: IDENTITY,
+    });
+    expect(connection.getInfo).toHaveBeenCalled();
+  });
+
+  it('refreshes balance on synced and ignores other events', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.getInfo
+      .mockResolvedValueOnce({ balanceSats: 21_000, identityPubkey: IDENTITY })
+      .mockResolvedValueOnce({ balanceSats: 42_000, identityPubkey: IDENTITY });
+    await connectWallet(loadSdk);
+    expect(listeners).toHaveLength(1);
+    listeners[0]?.({ type: 'paymentSucceeded' });
+    await Promise.resolve();
+    expect(connection.getInfo).toHaveBeenCalledTimes(1);
+    listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().balanceSats).toBe(42_000);
+    });
+    expect(connection.getInfo).toHaveBeenCalledTimes(2);
+  });
+
+  it('refreshWallet without a connection does nothing', async () => {
+    await expect(refreshWallet()).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+
+  it('refresh rejection sets error and disconnects', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    connection.getInfo.mockRejectedValueOnce(new Error('refresh failed'));
+    await expect(refreshWallet()).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('error');
+    expect(connection.disconnect).toHaveBeenCalled();
+  });
+
+  it('connect loader rejection sets error', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const loadSdk = vi.fn(async () => {
+      throw new Error('load failed');
+    });
+    await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('error');
+  });
+
+  it('connect rejection sets error', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect } = createFakeSdk({
+      connect: async () => {
+        throw new Error('connect failed');
+      },
+    });
+    connect.mockRejectedValue(new Error('connect failed'));
+    await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('error');
+  });
+
+  it('getInfo rejection during connect sets error', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = createFakeSdk({
+      getInfo: async () => {
+        throw new Error('info failed');
+      },
+    });
+    await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('error');
+  });
+
+  it('addEventListener rejection sets error', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = createFakeSdk({
+      addEventListener: async () => {
+        throw new Error('listener failed');
+      },
+    });
+    await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('error');
+  });
+
+  it('disconnectWallet resets to locked and calls disconnect', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    await expect(disconnectWallet()).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('locked');
+    expect(connection.disconnect).toHaveBeenCalled();
+  });
+
+  it('disconnectWallet still resolves when disconnect rejects', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk({
+      disconnect: async () => {
+        throw new Error('disconnect failed');
+      },
+    });
+    await connectWallet(loadSdk);
+    connection.disconnect.mockRejectedValue(new Error('disconnect failed'));
+    await expect(disconnectWallet()).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+
+  it('a second connect while the first is pending wins', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let releaseFirst!: (connection: WalletConnection) => void;
+    const firstConnection = {
+      getInfo: vi.fn(async () => ({ balanceSats: 1, identityPubkey: IDENTITY })),
+      addEventListener: vi.fn(async () => 'l1'),
+      disconnect: vi.fn(async () => undefined),
+    };
+    const secondConnection = {
+      getInfo: vi.fn(async () => ({ balanceSats: 2, identityPubkey: IDENTITY })),
+      addEventListener: vi.fn(async () => 'l2'),
+      disconnect: vi.fn(async () => undefined),
+    };
+    const connect = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<WalletConnection>((resolve) => {
+            releaseFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce(secondConnection as unknown as WalletConnection);
+    const loadSdk: WalletSdkLoader = async () => ({ connect: connect as WalletSdk['connect'] });
+    const first = connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
+    const second = connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(2));
+    releaseFirst(firstConnection as unknown as WalletConnection);
+    await expect(first).resolves.toBeUndefined();
+    await expect(second).resolves.toBeUndefined();
+    expect(firstConnection.disconnect).toHaveBeenCalled();
+    expect(useWalletStore.getState().balanceSats).toBe(2);
+  });
+
+  it('disconnectWallet while connect is pending leaves the store locked', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let releaseConnect!: (connection: WalletConnection) => void;
+    const lateConnection = {
+      getInfo: vi.fn(async () => ({ balanceSats: 99, identityPubkey: IDENTITY })),
+      addEventListener: vi.fn(async () => 'l'),
+      disconnect: vi.fn(async () => undefined),
+    };
+    const connect = vi.fn(
+      () =>
+        new Promise<WalletConnection>((resolve) => {
+          releaseConnect = resolve;
+        }),
+    );
+    const loadSdk: WalletSdkLoader = async () => ({ connect: connect as WalletSdk['connect'] });
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
+    await disconnectWallet();
+    expect(useWalletStore.getState().status).toBe('locked');
+    releaseConnect(lateConnection as unknown as WalletConnection);
+    await expect(pending).resolves.toBeUndefined();
+    expect(lateConnection.disconnect).toHaveBeenCalled();
+    expect(useWalletStore.getState().status).toBe('locked');
+    expect(useWalletStore.getState().balanceSats).toBeNull();
+  });
+
+  it('a stale run rejection leaves the store untouched', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let rejectFirst!: (err: Error) => void;
+    const connect = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<WalletConnection>((_resolve, reject) => {
+            rejectFirst = reject;
+          }),
+      )
+      .mockResolvedValueOnce({
+        getInfo: vi.fn(async () => ({ balanceSats: 7, identityPubkey: IDENTITY })),
+        addEventListener: vi.fn(async () => 'l'),
+        disconnect: vi.fn(async () => undefined),
+      } as unknown as WalletConnection);
+    const loadSdk: WalletSdkLoader = async () => ({ connect: connect as WalletSdk['connect'] });
+    const first = connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
+    const second = connectWallet(loadSdk);
+    await expect(second).resolves.toBeUndefined();
+    expect(useWalletStore.getState().balanceSats).toBe(7);
+    rejectFirst(new Error('stale'));
+    await expect(first).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('ready');
+    expect(useWalletStore.getState().balanceSats).toBe(7);
+  });
+
+  it('overlapping refresh where the first rejects drops the late success', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    let resolveSecond!: (info: { balanceSats: number; identityPubkey: string }) => void;
+    let rejectFirst!: (err: Error) => void;
+    connection.getInfo
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejectFirst = reject;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveSecond = resolve;
+          }),
+      );
+    const first = refreshWallet();
+    const second = refreshWallet();
+    rejectFirst(new Error('first failed'));
+    await expect(first).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('error');
+    resolveSecond({ balanceSats: 99_000, identityPubkey: IDENTITY });
+    await expect(second).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('error');
+    expect(useWalletStore.getState().balanceSats).toBeNull();
+  });
+
+  it('does nothing when the key is set but there is no phrase', async () => {
+    const { loadSdk } = createFakeSdk();
+    expect(peekSessionPhrase()).toBeNull();
+    await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
+    expect(loadSdk).not.toHaveBeenCalled();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+
+  it('returns early when superseded after loadSdk', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let releaseLoad!: (sdk: WalletSdk) => void;
+    const connect = vi.fn(async () => {
+      throw new Error('should not connect');
+    });
+    const loadSdk: WalletSdkLoader = vi.fn(
+      () =>
+        new Promise<WalletSdk>((resolve) => {
+          releaseLoad = resolve;
+        }),
+    );
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => expect(loadSdk).toHaveBeenCalled());
+    await disconnectWallet();
+    releaseLoad({ connect: connect as WalletSdk['connect'] });
+    await expect(pending).resolves.toBeUndefined();
+    expect(connect).not.toHaveBeenCalled();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+
+  it('disconnects a superseded connection even when disconnect rejects', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let releaseConnect!: (connection: WalletConnection) => void;
+    const lateConnection = {
+      getInfo: vi.fn(async () => ({ balanceSats: 1, identityPubkey: IDENTITY })),
+      addEventListener: vi.fn(async () => 'l'),
+      disconnect: vi.fn(async () => {
+        throw new Error('late disconnect');
+      }),
+    };
+    const connect = vi.fn(
+      () =>
+        new Promise<WalletConnection>((resolve) => {
+          releaseConnect = resolve;
+        }),
+    );
+    const loadSdk: WalletSdkLoader = async () => ({
+      connect: connect as WalletSdk['connect'],
+    });
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connect).toHaveBeenCalled());
+    await disconnectWallet();
+    releaseConnect(lateConnection as unknown as WalletConnection);
+    await expect(pending).resolves.toBeUndefined();
+    expect(lateConnection.disconnect).toHaveBeenCalled();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+
+  it('returns early when superseded after addEventListener', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let releaseListener!: () => void;
+    const connection = {
+      getInfo: vi.fn(async () => ({ balanceSats: 5, identityPubkey: IDENTITY })),
+      addEventListener: vi.fn(
+        () =>
+          new Promise<string>((resolve) => {
+            releaseListener = () => {
+              resolve('l');
+            };
+          }),
+      ),
+      disconnect: vi.fn(async () => undefined),
+    };
+    const loadSdk: WalletSdkLoader = async () => ({
+      connect: vi.fn(async () => connection as unknown as WalletConnection),
+    });
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connection.addEventListener).toHaveBeenCalled());
+    await disconnectWallet();
+    releaseListener();
+    await expect(pending).resolves.toBeUndefined();
+    expect(connection.getInfo).not.toHaveBeenCalled();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+});
+
+describe('listenForWalletPhrase', () => {
+  it('connects when a phrase is remembered and disconnects when cleared', async () => {
+    const { loadSdk } = createFakeSdk();
+    const unsub = listenForWalletPhrase(loadSdk);
+    rememberSessionPhrase(MNEMONIC);
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('ready');
+    });
+    clearSessionPhrase();
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('locked');
+    });
+    unsub();
+  });
+
+  it('disconnects on logout via clearAuth', async () => {
+    const { loadSdk } = createFakeSdk();
+    rememberSessionPhrase(MNEMONIC);
+    const unsub = listenForWalletPhrase(loadSdk);
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('ready');
+    });
+    useAuthStore.getState().clearAuth();
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('locked');
+    });
+    unsub();
+  });
+
+  it('connects immediately when a phrase is already present', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = createFakeSdk();
+    const unsub = listenForWalletPhrase(loadSdk);
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('ready');
+    });
+    unsub();
+  });
+
+  it('unsubscribe stops reacting to phrase changes', async () => {
+    const { loadSdk } = createFakeSdk();
+    const unsub = listenForWalletPhrase(loadSdk);
+    unsub();
+    rememberSessionPhrase(MNEMONIC);
+    await Promise.resolve();
+    expect(loadSdk).not.toHaveBeenCalled();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+});
+
+describe('disabled wallet path', () => {
+  it('never loads the SDK or adds a window listener when the key is unset', async () => {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    useWalletStore.getState().reset();
+    const { loadSdk } = createFakeSdk();
+    const addSpy = vi.spyOn(window, 'addEventListener');
+    await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
+    const unsub = listenForWalletPhrase(loadSdk);
+    rememberSessionPhrase(MNEMONIC);
+    await Promise.resolve();
+    expect(loadSdk).not.toHaveBeenCalled();
+    expect(ssrImport).not.toHaveBeenCalled();
+    expect(addSpy).not.toHaveBeenCalledWith('21gifts:wallet-phrase', expect.any(Function));
+    expect(useWalletStore.getState().status).toBe('disabled');
+    unsub();
+    addSpy.mockRestore();
+  });
+});

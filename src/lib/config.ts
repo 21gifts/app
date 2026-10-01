@@ -5,7 +5,7 @@
  * module. Keep it in sync with `src/types/env.d.ts`. `NEXT_PUBLIC_API_URL` is
  * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
  * start. `NEXT_PUBLIC_APP_VERSION` is baked at `next build`, not substituted by
- * `entrypoint.sh`.
+ * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
  */
 
 /**
@@ -64,6 +64,22 @@ export function getAppVersion(): string {
  */
 export function getE2eNow(): string | null {
   const value = process.env.NEXT_PUBLIC_E2E_NOW;
+  if (value === undefined || value === '') {
+    return null;
+  }
+  return value;
+}
+
+/**
+ * Optional Breez API key (`NEXT_PUBLIC_BREEZ_API_KEY`). Unset or empty disables
+ * the in-app wallet. The key is public by nature in a web bundle. Does not throw.
+ *
+ * Dot access is load-bearing so Next inlines the value when the build sets it.
+ *
+ * @returns The configured key, or `null` when unset or empty.
+ */
+export function getBreezApiKey(): string | null {
+  const value = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
   if (value === undefined || value === '') {
     return null;
   }
