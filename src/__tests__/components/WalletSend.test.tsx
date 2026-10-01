@@ -131,6 +131,7 @@ describe('WalletSend amount', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       "Enter an amount between ₿10 · $0.01 and ₿1'000 · $1.00.",
     );
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(send.cancel).toHaveBeenCalledTimes(1);
   });
@@ -184,6 +185,7 @@ describe('WalletSend confirm and sent', () => {
     expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(send.confirm).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(send.cancel).toHaveBeenCalledTimes(1);
   });

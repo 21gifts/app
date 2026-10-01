@@ -98,6 +98,21 @@ describe('useWalletSend input', () => {
     });
   });
 
+  it('passes an amount taken from a BIP21 URI to prepare', async () => {
+    target({
+      type: 'request',
+      input: 'sp1',
+      amountSats: 2_100,
+      recipient: 'sp1',
+      amountFromUri: true,
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bitcoin:?sp=sp1&amount=0.000021');
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'sp1', amountSats: 2_100 });
+    expect(result.current.state.step).toBe('confirm');
+  });
+
   it.each([
     [{ kind: 'unreachable' } as const, 'unreachable'],
     [{ kind: 'invalid' } as const, 'invalid'],
