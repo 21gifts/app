@@ -506,6 +506,12 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: daily-payout-stopped
+
+Signed in, no grant application. The notice **Daily payout stopped** sits in the frame under the page-frame header, with **Apply for the 21 gifts grant**. The living room underneath is the default welcome.
+
+![21.gifts welcome daily payout stopped](images/welcome-daily-payout-stopped.png)
+
 ### Variant: renew
 
 Signed in, no seed yet. The dialog explains that the device will ask for a passkey and that nothing changes until the member confirms. **Continue** is the only action. There is no close control.

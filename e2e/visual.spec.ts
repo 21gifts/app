@@ -2346,6 +2346,46 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-welcome');
   });
 
+  test('state /welcome daily-payout-stopped', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          funding: {
+            status: 'none',
+            trialUtcDate: null,
+            admittedAt: null,
+            reviewedByName: null,
+            dailyPayoutStoppedNotice: true,
+          },
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await shotScreen(page, 'state-welcome-daily-payout-stopped');
+  });
+
   test('state /welcome renew', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

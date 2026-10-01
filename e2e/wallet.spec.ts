@@ -216,6 +216,7 @@ test('Function: DailyPayoutStoppedNotice — shows when flag true and hides when
   );
   stopped = false;
   await page.reload();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Daily payout stopped' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toHaveCount(0);
