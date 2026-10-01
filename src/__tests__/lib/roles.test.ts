@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ROLE_ORDER, isReplyPaymentExempt, roleAtLeast, roleRank, type Role } from '@/lib/roles';
+import {
+  ROLE_ORDER,
+  canEditDailyPayoutRoster,
+  isReplyPaymentExempt,
+  roleAtLeast,
+  roleRank,
+  type Role,
+} from '@/lib/roles';
 
 describe('roleRank', () => {
   it('ranks basis through founder as 0 through 3', () => {
@@ -48,6 +55,18 @@ describe('roleAtLeast', () => {
     expect(roleAtLeast(undefined, 'basis')).toBe(false);
     expect(roleAtLeast(null, 'founder')).toBe(false);
     expect(roleAtLeast(undefined, 'moderator')).toBe(false);
+  });
+});
+
+describe('canEditDailyPayoutRoster', () => {
+  it('is true only for initiator and founder', () => {
+    expect(canEditDailyPayoutRoster('initiator')).toBe(true);
+    expect(canEditDailyPayoutRoster('founder')).toBe(true);
+    expect(canEditDailyPayoutRoster('moderator')).toBe(false);
+    expect(canEditDailyPayoutRoster('verified')).toBe(false);
+    expect(canEditDailyPayoutRoster('basis')).toBe(false);
+    expect(canEditDailyPayoutRoster(null)).toBe(false);
+    expect(canEditDailyPayoutRoster(undefined)).toBe(false);
   });
 });
 
