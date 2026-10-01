@@ -15,7 +15,7 @@ test('Function: middleware — URL language overrides a conflicting cookie', asy
 
 test('Function: localizedPublicPath — giving links keep the page language', async ({ page }) => {
   await page.goto('/es');
-  await expect(page.getByRole('link', { name: 'Donar Bitcoin' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Envía ayuda' })).toHaveAttribute(
     'href',
     '/es/donate',
   );

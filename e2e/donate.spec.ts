@@ -10,10 +10,7 @@ test('donate page explains how to give via the forum', async ({ page }) => {
   );
 });
 
-test('landing Donate Bitcoin goes to the localized donate URL', async ({ page }) => {
+test('landing Send help goes to the localized donate URL', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('link', { name: 'Donate Bitcoin' })).toHaveAttribute(
-    'href',
-    '/en/donate',
-  );
+  await expect(page.getByRole('link', { name: 'Send help' })).toHaveAttribute('href', '/en/donate');
 });
