@@ -6,7 +6,7 @@ import {
   unlockWalletPhrase,
 } from '@/lib/wallet/wallet-phrase';
 import { mnemonicFromPrfFirst, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
-import { clearSessionPhrase, peekSessionPhrase } from '@/lib/tab-phrase';
+import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/prf-mnemonic', async (importOriginal) => {
@@ -182,6 +182,50 @@ describe('rememberPhraseFromPrf', () => {
       }),
     ).resolves.toBe(false);
     expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('returns false and remembers nothing when cleared during derivation', async () => {
+    let resolveDerive!: (mnemonic: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    const pending = rememberPhraseFromPrf({
+      prfFirst: PRF,
+      credentialId: CREDENTIAL_ID,
+      account: baseAccount,
+      sessionToken: 'tok',
+    });
+    clearSessionPhrase();
+    resolveDerive(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    );
+    await expect(pending).resolves.toBe(false);
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('returns false and keeps the other phrase when remembered during derivation', async () => {
+    let resolveDerive!: (mnemonic: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    const pending = rememberPhraseFromPrf({
+      prfFirst: PRF,
+      credentialId: CREDENTIAL_ID,
+      account: baseAccount,
+      sessionToken: 'tok',
+    });
+    rememberSessionPhrase('other');
+    resolveDerive(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    );
+    await expect(pending).resolves.toBe(false);
+    expect(peekSessionPhrase()).toBe('other');
   });
 
   it('remembers the phrase mnemonicFromPrfFirst produces', async () => {
