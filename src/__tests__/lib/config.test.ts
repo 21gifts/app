@@ -1,10 +1,11 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
-import { getApiUrl, getAppVersion, getE2eNow } from '@/lib/config';
+import { getApiUrl, getAppVersion, getBreezApiKey, getE2eNow } from '@/lib/config';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
 const ORIGINAL_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
 afterEach(() => {
   if (ORIGINAL === undefined) {
@@ -21,6 +22,11 @@ afterEach(() => {
     delete process.env.NEXT_PUBLIC_E2E_NOW;
   } else {
     process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
+  if (ORIGINAL_BREEZ === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
   }
 });
 
@@ -82,5 +88,22 @@ describe('getE2eNow', () => {
   it('returns null when empty', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '';
     expect(getE2eNow()).toBeNull();
+  });
+});
+
+describe('getBreezApiKey', () => {
+  it('returns the configured value', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    expect(getBreezApiKey()).toBe('test-breez-api-key');
+  });
+
+  it('returns null when unset', () => {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(getBreezApiKey()).toBeNull();
+  });
+
+  it('returns null when empty', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = '';
+    expect(getBreezApiKey()).toBeNull();
   });
 });

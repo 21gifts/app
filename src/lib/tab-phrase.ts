@@ -1,14 +1,15 @@
 /** In-tab recovery phrase. Never written to localStorage or sent to the API. */
 let sessionMnemonic: string | null = null;
 
-const PHRASE_EVENT = '21gifts:wallet-phrase';
+/** Window event dispatched whenever the tab phrase is remembered or cleared. */
+export const SESSION_PHRASE_EVENT = '21gifts:wallet-phrase';
 
 function notifyPhraseListeners(): void {
   /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
     return;
   }
-  window.dispatchEvent(new Event(PHRASE_EVENT));
+  window.dispatchEvent(new Event(SESSION_PHRASE_EVENT));
 }
 
 /**

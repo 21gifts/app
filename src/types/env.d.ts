@@ -7,6 +7,7 @@
  * build placeholder substituted by `entrypoint.sh` at container start.
  * `NEXT_PUBLIC_APP_VERSION` is baked at `next build` via Docker ARG
  * `APP_VERSION` / `next.config.ts` env, not an `entrypoint.sh` placeholder.
+ * `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
  */
 declare global {
   namespace NodeJS {
@@ -31,6 +32,12 @@ declare global {
        * Unset in production. Tests assign `NEXT_PUBLIC_E2E_NOW`.
        */
       NEXT_PUBLIC_E2E_NOW?: string;
+      /**
+       * Optional Breez API key for the in-app wallet.
+       * Read exclusively through `getBreezApiKey()` in `src/lib/config.ts`.
+       * Unset or empty disables the wallet. Tests assign it.
+       */
+      NEXT_PUBLIC_BREEZ_API_KEY?: string;
       /**
        * Docker build-arg / CI deploy run number consumed by `next.config.ts`
        * when baking `NEXT_PUBLIC_APP_VERSION`. Not an `entrypoint.sh` placeholder.
