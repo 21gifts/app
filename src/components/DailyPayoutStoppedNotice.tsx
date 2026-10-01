@@ -22,11 +22,7 @@ export function DailyPayoutStoppedNotice(): ReactElement | null {
   const titleId = 'daily-payout-stopped-title';
 
   return (
-    <div
-      role="region"
-      aria-labelledby={titleId}
-      className="flex-none px-8 pb-2"
-    >
+    <div role="region" aria-labelledby={titleId} className="flex-none px-8 pb-2">
       <div className="flex flex-col gap-2 rounded-xl border border-app-border bg-app-bg p-3 text-app-fg">
         <h2 id={titleId} className="text-sm font-semibold">
           {t('funding.stoppedDaily.title')}
