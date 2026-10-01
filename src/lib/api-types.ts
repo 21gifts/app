@@ -68,7 +68,8 @@ export const accountSchema = z.object({
   missing: z.array(z.enum(['wallet', 'name', 'username', 'lightning-address', 'rules'])),
   /**
    * True when a recovery phrase is required for this account (new register or
-   * first-passkey claim). The app does not read this for Wallet view.
+   * first-passkey claim). The wallet balance block reads it together with
+   * `passkeyCredentialId` (`canUnlockWallet`); the recovery-phrase view does not.
    * Optional so older api bodies still parse; omitted or false means an
    * existing member.
    */
