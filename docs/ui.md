@@ -1077,9 +1077,9 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 ### `/grants`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, a secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, a secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null. A secondary `size="lg"` `ButtonLink` labeled **Daily payments** goes to `/grants/payments` only when `canEditDailyPayoutRoster`; it does not fetch the roster. Plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
-Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
+Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications, daily-payments.
 
 ### `/grants/goals`
 
@@ -1092,6 +1092,12 @@ Handbook states: default, loading, error.
 Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **Apply for the 21 gifts grant**. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Missing About me, photo, or location are the next calm steps (not alerts). Then two questions: whether the profile posts match the core principles of 21.gifts, with a link to `https://21.gifts/about` (Languages **Translate** on living-room post text), then whether the posts are true. **Yes** on the truth question applies and returns to `/grants`; **No** shows the unmet line. `/profile/apply` redirects here.
 
 Handbook states: default, photo, location, question, truth, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
+
+### `/grants/payments`
+
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payments**. An initiator or founder sees the editor form. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. Each recipient row has icon-only update (pencil) and delete (trash). **Save**, **On**, **Off**, **Add**, and **Try again** stay labeled buttons.
+
+Handbook states: default, empty, loading, error, forbidden, invalid.
 
 ### `/profile/apply`
 

@@ -1,8 +1,9 @@
 'use client';
 
+import { Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card, Field } from '@/components/ui';
+import { Button, Card, Field, IconButton } from '@/components/ui';
 import {
   addDailyRosterRecipient,
   deleteDailyRosterRecipient,
@@ -294,6 +295,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
                   </span>
                   <Field
                     label={t('funding.daily.usd')}
+                    id={`daily-usd-${row.address}`}
                     value={draft}
                     inputMode="decimal"
                     disabled={pending}
@@ -304,9 +306,10 @@ export function DailyPaymentsScreen(): ReactElement | null {
                     }}
                   />
                   <div className="flex w-full flex-wrap gap-3">
-                    <Button
+                    <IconButton
                       type="button"
                       variant="secondary"
+                      size="md"
                       aria-label={`${t('funding.daily.update')} ${display}`}
                       disabled={pending}
                       onClick={() => {
@@ -320,19 +323,20 @@ export function DailyPaymentsScreen(): ReactElement | null {
                         );
                       }}
                     >
-                      {t('funding.daily.update')}
-                    </Button>
-                    <Button
+                      <Pencil aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                    <IconButton
                       type="button"
                       variant="secondary"
+                      size="md"
                       aria-label={`${t('funding.daily.delete')} ${display}`}
                       disabled={pending}
                       onClick={() => {
                         void runSave(() => deleteDailyRosterRecipient(session, row.address));
                       }}
                     >
-                      {t('funding.daily.delete')}
-                    </Button>
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
                   </div>
                 </li>
               );
@@ -355,6 +359,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
           />
           <Field
             label={t('funding.daily.usd')}
+            id="daily-usd-add"
             value={addUsd}
             inputMode="decimal"
             disabled={pending}
