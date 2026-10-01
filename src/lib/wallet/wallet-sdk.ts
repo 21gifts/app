@@ -2,7 +2,8 @@
  * Narrow adapter over `@breeztech/breez-sdk-spark/ssr`.
  *
  * The SDK keeps wallet state in IndexedDB; the recovery phrase is passed in
- * memory and never stored by this app.
+ * memory and never stored by this app. The adapter exposes no availability
+ * check for addresses: the account's own username is the only one registered.
  */
 
 /**
@@ -55,6 +56,80 @@ export interface WalletSdkEvent {
   type: string;
 }
 
+/** Direction of a wallet payment as the member sees it. */
+export type WalletPaymentDirection = 'received' | 'sent';
+
+/**
+ * One wallet payment in the shape the history list renders.
+ */
+export interface WalletPayment {
+  /** SDK payment id. */
+  id: string;
+  /** `received` for an incoming payment, `sent` for an outgoing one. */
+  direction: WalletPaymentDirection;
+  /** Amount in whole satoshis, without fees. */
+  amountSats: number;
+  /** Epoch ms when the payment was created. */
+  timestamp: number;
+  /** Whether the payment settled, is still open, or failed. */
+  status: 'completed' | 'pending' | 'failed';
+  /** Note the payer attached to a received payment, or `null`. */
+  senderComment: string | null;
+}
+
+/**
+ * One page of the wallet's payment list.
+ */
+export interface WalletPaymentPage {
+  /** Number of payments to skip from the newest. */
+  offset: number;
+  /** Maximum number of payments to return. */
+  limit: number;
+}
+
+/**
+ * Narrow view of an SDK payment that {@link toWalletPayment} reads.
+ */
+export interface SdkPaymentLike {
+  /** SDK payment id. */
+  id: string;
+  /** `receive` or `send`. */
+  paymentType: string;
+  /** `completed`, `pending`, or `failed`. */
+  status: string;
+  /** Amount in satoshis (the SDK uses `bigint`). */
+  amount: bigint | number;
+  /** Creation time in epoch seconds. */
+  timestamp: number;
+  /** Method-specific details; only the received-payment note is read. */
+  details?: { type: string; lnurlReceiveMetadata?: { senderComment?: string } } | undefined;
+}
+
+/**
+ * Maps an SDK payment to the {@link WalletPayment} the history list renders.
+ * A blank note counts as no note.
+ *
+ * @param payment - Payment from the SDK's `listPayments`.
+ * @returns The mapped payment.
+ */
+export function toWalletPayment(payment: SdkPaymentLike): WalletPayment {
+  const details = payment.details;
+  const rawComment =
+    details !== undefined && details.type === 'lightning'
+      ? details.lnurlReceiveMetadata?.senderComment
+      : undefined;
+  const comment = typeof rawComment === 'string' ? rawComment.trim() : '';
+  return {
+    id: payment.id,
+    direction: payment.paymentType === 'send' ? 'sent' : 'received',
+    amountSats: Number(payment.amount),
+    timestamp: payment.timestamp * 1000,
+    status:
+      payment.status === 'pending' || payment.status === 'failed' ? payment.status : 'completed',
+    senderComment: comment === '' ? null : comment,
+  };
+}
+
 /**
  * A live SDK connection.
  */
@@ -75,6 +150,20 @@ export interface WalletConnection {
    */
   addEventListener(onEvent: (event: WalletSdkEvent) => void): Promise<string>;
   /**
+   * Registers `username` as this wallet's address on the configured domain.
+   *
+   * @param username - The account's username.
+   * @returns Resolves once the domain accepted the registration.
+   */
+  registerAddress(username: string): Promise<void>;
+  /**
+   * Lists payments newest first.
+   *
+   * @param page - Offset and limit.
+   * @returns The payments on that page.
+   */
+  listPayments(page: WalletPaymentPage): Promise<WalletPayment[]>;
+  /**
    * Closes the connection.
    *
    * @returns Resolves when the SDK has disconnected.
@@ -91,9 +180,10 @@ export interface WalletSdk {
    *
    * @param mnemonic - BIP-39 recovery phrase.
    * @param apiKey - Breez API key.
+   * @param lnurlDomain - Host that serves the wallet's address (the app's own host).
    * @returns A live connection.
    */
-  connect(mnemonic: string, apiKey: string): Promise<WalletConnection>;
+  connect(mnemonic: string, apiKey: string, lnurlDomain: string): Promise<WalletConnection>;
 }
 
 /**
@@ -117,10 +207,14 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
     sdkInitPending = false;
   }
   return {
-    async connect(mnemonic: string, apiKey: string): Promise<WalletConnection> {
+    async connect(
+      mnemonic: string,
+      apiKey: string,
+      lnurlDomain: string,
+    ): Promise<WalletConnection> {
       const config = sdk.defaultConfig('mainnet');
       config.apiKey = apiKey;
-      delete config.lnurlDomain;
+      config.lnurlDomain = lnurlDomain;
       const handle = await sdk.connect({
         config,
         seed: { type: 'mnemonic', mnemonic },
@@ -137,6 +231,17 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
         },
         async addEventListener(onEvent: (event: WalletSdkEvent) => void): Promise<string> {
           return handle.addEventListener({ onEvent });
+        },
+        async registerAddress(username: string): Promise<void> {
+          await handle.registerLightningAddress({ username });
+        },
+        async listPayments(page: WalletPaymentPage): Promise<WalletPayment[]> {
+          const response = await handle.listPayments({
+            offset: page.offset,
+            limit: page.limit,
+            sortAscending: false,
+          });
+          return response.payments.map(toWalletPayment);
         },
         async disconnect(): Promise<void> {
           await handle.disconnect();

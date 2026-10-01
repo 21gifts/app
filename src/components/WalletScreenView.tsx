@@ -8,6 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { WalletBalance } from '@/components/WalletBalance';
+import { WalletHistory } from '@/components/WalletHistory';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import type { UseWalletResult } from '@/hooks/useWallet';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
@@ -85,8 +86,8 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
 };
 
 /**
- * `/wallet` shows the wallet balance and receive address above the recovery
- * entry. The 12 words and recovery errors render only on `/wallet/phrase`.
+ * `/wallet` shows the wallet balance and receive address, then the payment
+ * list while the wallet is ready, above the recovery entry. The 12 words and recovery errors render only on `/wallet/phrase`.
  *
  * @param props - Phrase state, surface, and optional wallet balance state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -217,6 +218,7 @@ export function WalletScreenView({
   return (
     <div className="flex w-full flex-col items-center gap-6">
       <WalletReceive wallet={wallet} />
+      {wallet?.status === 'ready' ? <WalletHistory /> : null}
       {card}
     </div>
   );
