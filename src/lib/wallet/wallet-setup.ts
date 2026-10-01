@@ -81,21 +81,56 @@ async function unlockForSetup(
   return remembered ? null : 'failed';
 }
 
+/** The setup run in progress in this tab, shared by every caller; `null` when idle. */
+let running: Promise<WalletSetupOutcome> | null = null;
+
+/**
+ * True while a setup run is in progress in this tab, so a remounted dialog
+ * shows progress and joins it instead of starting a second run.
+ *
+ * @returns Whether {@link runWalletSetup} has a run in flight.
+ */
+export function walletSetupInFlight(): boolean {
+  return running !== null;
+}
+
 /**
  * Runs the one-time wallet setup: one passkey prompt when the phrase is not
  * in tab memory, then connect, `PUT /me/wallet` with the identity key,
  * register the account's username as the wallet's address, and reload the
  * account. A 409 from the claim means the wallet is already verified and
  * skips straight to the reload. Never asks whether a username is free and
- * never sends the phrase. Never rejects.
+ * never sends the phrase. Never rejects. A call while a run is in progress
+ * joins that run (its `onStep` is not called) instead of starting another.
  *
  * @param onStep - Called as each step starts.
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
  * @returns How the run ended.
  */
-export async function runWalletSetup(
+export function runWalletSetup(
   onStep: (step: WalletSetupStep) => void,
   loadSdk: WalletSdkLoader = loadWalletSdk,
+): Promise<WalletSetupOutcome> {
+  if (running !== null) {
+    return running;
+  }
+  const run = setupOnce(onStep, loadSdk).finally(() => {
+    running = null;
+  });
+  running = run;
+  return run;
+}
+
+/**
+ * One setup run; see {@link runWalletSetup}.
+ *
+ * @param onStep - Called as each step starts.
+ * @param loadSdk - SDK loader.
+ * @returns How the run ended.
+ */
+async function setupOnce(
+  onStep: (step: WalletSetupStep) => void,
+  loadSdk: WalletSdkLoader,
 ): Promise<WalletSetupOutcome> {
   const { session, account } = useAuthStore.getState();
   if (session === null || !needsWalletSetup(account)) {
