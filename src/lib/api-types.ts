@@ -705,6 +705,21 @@ export const forumRepliesSchema = z.object({
 export type ForumMessage = z.infer<typeof forumMessageSchema>;
 
 /**
+ * Runtime schema for `GET /messages/:id/external-profile`.
+ */
+export const externalAuthorProfileSchema = z.object({
+  name: z.string(),
+  npub: z.string(),
+  nip05: z.string().optional(),
+  lud16: z.string().optional(),
+});
+
+/**
+ * Public Nostr profile for a forum author with no 21.gifts account.
+ */
+export type ExternalAuthorProfile = z.infer<typeof externalAuthorProfileSchema>;
+
+/**
  * Runtime schema for `POST /messages/:id/invoice` success body.
  */
 export const messageInvoiceSchema = z.object({

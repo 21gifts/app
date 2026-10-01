@@ -722,6 +722,163 @@ test('Function: proxyPublicMessageRepliesGet — GET /public-messages/[id]/repli
   expect((await request.get('/public-messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyExternalAuthorProfileGet — GET /public-messages/[id]/external-profile is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/public-messages/[id]/external-profile')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: fetchExternalAuthorProfile — the sheet shows the address from the client fetch', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-ext',
+            name: 'Robin',
+            via: 'nostr',
+            text: 'Hello from Robin',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Robin',
+        npub: 'npub1example',
+        nip05: 'robin@nostr.example',
+        lud16: 'pay@ln.example',
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  const profileRequest = page.waitForRequest((request) =>
+    request.url().includes('/public-messages/m-ext/external-profile'),
+  );
+  await page.getByRole('button', { name: 'View profile' }).click();
+  expect((await profileRequest).method()).toBe('GET');
+  const dialog = page.getByRole('dialog', { name: 'Robin' });
+  await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
+});
+
+test('Function: ExternalAuthorSheet — dialog shows the name, address, npub, and icon Copy', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-ext',
+            name: 'Robin',
+            via: 'nostr',
+            text: 'Hello from Robin',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Robin',
+        npub: 'npub1example',
+        nip05: 'robin@nostr.example',
+        lud16: 'pay@ln.example',
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByRole('button', { name: 'View profile' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Robin' });
+  await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Copy' })).toBeVisible();
+  await expect(dialog.getByText('Copy', { exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible();
+  await expect(dialog.getByRole('link')).toHaveCount(0);
+});
+
 test('Function: proxyContactPost — POST /contact/submit without bearer is 401', async ({
   request,
 }) => {

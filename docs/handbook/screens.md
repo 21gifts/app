@@ -1189,9 +1189,15 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ### Variant: expanded-external
 
-On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button; this shot leaves that sheet closed (`overlay-external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts welcome expanded external](images/welcome-expanded-external.png)
+
+### Variant: overlay-external-author
+
+On **All**, expand Ada's note and click **View profile** on Robin, who has no 21.gifts account. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example` (shown only because it differs), **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
+
+![21.gifts welcome overlay external author](images/welcome-overlay-external-author.png)
 
 ### Variant: reaction-draft
 
@@ -4087,9 +4093,15 @@ Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 
 
 ### Variant: external-reply
 
-Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each author line shows a non-interactive **External** span next to the name (same slot as a role pill; not a button, no hint). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each name is a **View profile** button. **External** stays a non-interactive span next to the name (same slot as a role pill; not a button, no hint). This shot leaves the profile sheet closed (`external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts public message external reply](images/messages-id-external-reply.png)
+
+### Variant: external-author
+
+Unsigned permalink of the same thread. Click **View profile** on Robin. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
+
+![21.gifts public message external author](images/messages-id-external-author.png)
 
 ### Variant: quoted-note
 

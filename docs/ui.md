@@ -21,7 +21,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 3. **Orange is shell-split.** On the **marketing shell**, `#f7931a` is the primary filled CTA (header **Log in**, **Ask for help**) plus kickers. On the **app shell**, it is gift-money fill only (charts, ₿ selected, donate **Open the forum**). _Implication:_ do not call marketing **Log in** a gift. App form primaries (`Button variant="primary"`) stay `bg-app-btn`. `Button variant="accent"` is the orange fill; marketing uses it as shell primary, the app uses it for gift-intent only.
 
-4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1'500`; visitor may pick US `10,000.23` / German `23.000,33`). No `npub`, no “zap”, no “LNURL” on any screen.
+4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1'500`; visitor may pick US `10,000.23` / German `23.000,33`). No `npub`, no “zap”, no “LNURL” on any screen except the external-author sheet, which shows a published Nostr address when it matches the key, a payment address only as published text when it differs, and the npub to copy.
 
 5. **People first.** Receiver names and notes are the hero; chrome is quiet. _Implication:_ forum note body is `text-sm text-app-fg`; chrome labels are `text-app-muted`. On the signed-in profile, a stored wide image and a round photo sit above the title. The About me photo stays with that note. A missing wide image or profile photo is a labeled button that adds that picture (`Add a wide image`, `Add a profile photo`).
 
@@ -1189,7 +1189,7 @@ Short, warm, direct. People helping people. English examples (catalogs translate
 | Open the forum                          | “Go to messenger surface”                             |
 | `₿1'500`                                | “1500 sats” as the visitor-facing string              |
 
-Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook), invoice jargon. Push copy stays English `{ title, body }` as the API already sends.
+Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook, and except the external-author sheet’s published address and copyable npub), invoice jargon. Push copy stays English `{ title, body }` as the API already sends.
 
 ## Accessibility
 

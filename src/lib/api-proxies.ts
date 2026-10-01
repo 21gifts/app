@@ -775,6 +775,22 @@ export async function proxyPublicMessageGet(
 }
 
 /**
+ * Proxies GET /messages/:id/external-profile to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-profile`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorProfileGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-profile`);
+}
+
+/**
  * Proxies GET /links/:code to the 21.gifts api (public; no auth).
  *
  * App path is `/links/:code`. The visitor redirect lives at `/l/:code`.

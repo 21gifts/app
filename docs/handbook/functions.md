@@ -1897,6 +1897,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** `ForumFeedPage` with `nextCursor: null` when the response omits it. Throws visitor copy (`Could not load messages. Please try again.`) on failure.
 - **Used by:** `ForumLoader`.
 
+## Function: fetchExternalAuthorProfile
+
+- **Purpose:** GET `/public-messages/:id/external-profile` with no Authorization and parse `externalAuthorProfileSchema`.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `{ name, npub, nip05?, lud16? }`, or `null` on 404, any other non-OK response, network failure, JSON failure, or schema mismatch. Does not throw.
+- **Used by:** `ExternalAuthorSheet`.
+
 ## Function: fetchPublicMessage
 
 - **Purpose:** GET `/public-messages/:id` without a session, parse `forumMessageSchema`, and return one public forum note for the HTML note page. Optional `sinceSats` appends `?sinceSats=` so the api can wait until the note has more sats (pay poll).
@@ -2141,6 +2148,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** `text`, `className` for the wrapping `<p>`, optional `linkClassName` (default underline, inherit colour), optional `currentOrigin`, optional `suffix`, optional `plain` (default false), optional `mentions` (`{ username, accountId }[]`).
 - **Returns / side effects:** Fragment: `<p>` plus optional overlay. Confirm on `https:` calls `openInSystemBrowser`; other http uses `window.open`.
 - **Used by:** `ForumNoteText`, `ForumQuotedBody` (when `truncate` is false), `AboutMeSection`.
+
+## Function: ExternalAuthorSheet
+
+- **Purpose:** Dialog for a forum author with no 21.gifts account. Shows the card name and `forum.via.nostrHint` until `fetchExternalAuthorProfile` resolves. A null result keeps that fallback. A profile shows its name, the External badge, optional nip05, lud16 only when it differs from nip05 ignoring case, and the npub with an icon-only Copy.
+- **Inputs:** `messageId`, `fallbackName`, `onClose`.
+- **Returns / side effects:** `role="dialog"`, portaled to `document.body` so a quoted note's `relative z-10` card cannot paint it under the page chrome. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. Close calls `onClose`.
+- **Used by:** `ForumBoard`, `QuotedForumNote`, `PublicMessageLoader`.
 
 ## Function: ExternalLinkWarning
 
@@ -3063,6 +3077,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with Bearer session, plus parent message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/forum/messages/[id]/replies`.
+
+## Function: proxyExternalAuthorProfileGet
+
+- **Purpose:** Public proxy GET `/messages/:id/external-profile` to the 21.gifts api (no auth). App path is `/public-messages/[id]/external-profile`.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
+- **Used by:** Route GET `/public-messages/[id]/external-profile`.
 
 ## Function: proxyPublicMessageGet
 

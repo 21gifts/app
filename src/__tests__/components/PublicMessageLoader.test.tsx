@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
@@ -37,6 +37,7 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchReplies: vi.fn(),
   fetchMessagePhoto: vi.fn(),
+  fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
   openConversation: vi.fn(),
@@ -1170,8 +1171,15 @@ describe('PublicMessageLoader', () => {
     });
     expect(screen.getByText('External')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'External' })).toBeNull();
+    const author = screen.getByRole('button', { name: 'View profile' });
+    expect(author.textContent).toBe('Robin');
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
+    fireEvent.click(author);
+    expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
+    const dialog = screen.getByRole('dialog', { name: 'Robin' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Robin' })).toBeNull();
   });
 
   it('marks an unsigned via gift reply with a badge and no body paragraph', async () => {
