@@ -1060,6 +1060,7 @@ describe('ForumQuotedBody', () => {
     expect(screen.getByText('External')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
     const dialog = screen.getByRole('dialog', { name: 'Robin' });
+    expect(dialog.parentElement).toBe(document.body);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog', { name: 'Robin' })).toBeNull();
   });

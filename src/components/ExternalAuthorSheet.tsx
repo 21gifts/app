@@ -2,6 +2,7 @@
 
 import { Check, Copy, X } from 'lucide-react';
 import { useEffect, useState, type ReactElement } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card, IconButton } from '@/components/ui';
 import { fetchExternalAuthorProfile } from '@/lib/api';
@@ -43,6 +44,9 @@ function fallbackCopy(text: string): boolean {
 
 /**
  * Overlay with the public Nostr profile for an external forum author.
+ *
+ * Portaled to `document.body`. A quoted note is `relative z-10`, and that
+ * stacking context would paint this fixed overlay under the page chrome.
  *
  * @param props - See {@link ExternalAuthorSheetProps}.
  * @returns The overlay dialog.
@@ -90,7 +94,7 @@ export function ExternalAuthorSheet({
     }
   };
 
-  return (
+  const dialog = (
     <div
       role="dialog"
       aria-modal="true"
@@ -158,4 +162,6 @@ export function ExternalAuthorSheet({
       </Card>
     </div>
   );
+
+  return createPortal(dialog, document.body);
 }

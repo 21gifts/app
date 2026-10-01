@@ -2153,7 +2153,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Dialog for a forum author with no 21.gifts account. Shows the card name and `forum.via.nostrHint` until `fetchExternalAuthorProfile` resolves. A null result keeps that fallback. A profile shows its name, the External badge, optional nip05, lud16 only when it differs from nip05 ignoring case, and the npub with an icon-only Copy.
 - **Inputs:** `messageId`, `fallbackName`, `onClose`.
-- **Returns / side effects:** `role="dialog"`. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. Close calls `onClose`.
+- **Returns / side effects:** `role="dialog"`, portaled to `document.body` so a quoted note's `relative z-10` card cannot paint it under the page chrome. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. Close calls `onClose`.
 - **Used by:** `ForumBoard`, `QuotedForumNote`, `PublicMessageLoader`.
 
 ## Function: ExternalLinkWarning
