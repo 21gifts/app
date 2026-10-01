@@ -3,8 +3,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
-import { connectWallet, walletNeedsReload } from '@/lib/wallet/wallet-service';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
+import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
+import { connectWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 

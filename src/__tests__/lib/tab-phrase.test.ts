@@ -4,6 +4,7 @@ import {
   peekSessionPhrase,
   rememberSessionPhrase,
   SESSION_PHRASE_EVENT,
+  sessionPhraseGeneration,
 } from '@/lib/tab-phrase';
 
 describe('tab-phrase', () => {
@@ -16,6 +17,14 @@ describe('tab-phrase', () => {
     expect(peekSessionPhrase()).toBe('one two three');
     clearSessionPhrase();
     expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('increases the generation on remember and on clear', () => {
+    const start = sessionPhraseGeneration();
+    rememberSessionPhrase('one two three');
+    expect(sessionPhraseGeneration()).toBe(start + 1);
+    clearSessionPhrase();
+    expect(sessionPhraseGeneration()).toBe(start + 2);
   });
 
   it('notifies listeners when the phrase is remembered or cleared', () => {
