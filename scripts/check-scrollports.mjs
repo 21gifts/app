@@ -17,6 +17,8 @@ const CLASS_BANNED =
   /overflow-(?:x-|y-)?(?:auto|scroll|overlay)\b|overflow-\[(?:auto|scroll|overlay)\]|overflow-(?:x|y)-\[(?:auto|scroll|overlay)\]/;
 const STYLE_BANNED =
   /overflow(?:-x|-y|X|Y)?\s*:\s*['"]?(?:auto|scroll|overlay)\b|overflow(?:X|Y)?\s*=\s*['"](?:auto|scroll|overlay)['"]|setProperty\(\s*['"]overflow(?:-x|-y)?['"]\s*,\s*['"](?:auto|scroll|overlay)['"]/;
+const VIEWPORT_WIDTH =
+  /(?:^|[^\w-])(?:w|min-w|max-w)-screen\b|(?:w|min-w|max-w|left|right)-\[[^\]\n]*vw[^\]\n]*\]/;
 
 /**
  * @param {string} dir
@@ -295,7 +297,23 @@ function selfTest() {
   }
 }
 
+function viewportWidthSelfTest() {
+  VIEWPORT_WIDTH.lastIndex = 0;
+  const wideBracket = VIEWPORT_WIDTH.test('className="w-[min(90vw,24rem)]"');
+  VIEWPORT_WIDTH.lastIndex = 0;
+  const screen = VIEWPORT_WIDTH.test('className="w-screen"');
+  VIEWPORT_WIDTH.lastIndex = 0;
+  const sizes = VIEWPORT_WIDTH.test('sizes="100vw"');
+  VIEWPORT_WIDTH.lastIndex = 0;
+  const full = VIEWPORT_WIDTH.test('className="w-full max-w-sm"');
+  if (!wideBracket || !screen || sizes || full) {
+    console.error('PAGE FRAME: detector self-test failed');
+    process.exit(1);
+  }
+}
+
 selfTest();
+viewportWidthSelfTest();
 
 const failures = [];
 
@@ -332,10 +350,34 @@ for (const file of walk(SRC)) {
   });
 }
 
+const viewportFailures = [];
+
+for (const file of walk(SRC)) {
+  const rel = path.relative(ROOT, file);
+  const text = fs.readFileSync(file, 'utf8');
+  const lines = text.split('\n');
+  lines.forEach((line, index) => {
+    VIEWPORT_WIDTH.lastIndex = 0;
+    if (VIEWPORT_WIDTH.test(line)) {
+      viewportFailures.push(`PAGE FRAME: ${rel}:${index + 1}: viewport width escapes the frame`);
+    }
+  });
+}
+
 if (failures.length > 0) {
   console.error('SCROLLPORT: more than one scroll surface is forbidden');
   for (const line of failures) {
     console.error(line);
   }
+}
+
+if (viewportFailures.length > 0) {
+  console.error('PAGE FRAME: viewport width escapes the frame');
+  for (const line of viewportFailures) {
+    console.error(line);
+  }
+}
+
+if (failures.length > 0 || viewportFailures.length > 0) {
   process.exit(1);
 }
