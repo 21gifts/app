@@ -1803,42 +1803,42 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, recipients }` with `{ address, amountUsd }` rows only.
 - **Inputs:** Bearer `session`.
-- **Returns / side effects:** Parsed roster. Throws visitor copy `Could not load daily payments. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
+- **Returns / side effects:** Parsed roster. Throws `funding.daily.forbidden` on api `Forbidden`. Throws visitor copy `Could not load daily payments. Please try again.` on 401, other 403, 503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `DailyPaymentsScreen`.
 
 ## Function: saveDailyRosterComment
 
 - **Purpose:** POST `/funding/daily-roster/comment` with `{ comment }` and parse the returned roster.
 - **Inputs:** Bearer `session`, comment text.
-- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid comment` to `funding.daily.invalidComment`. Any other failure is `funding.daily.saveError`.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid comment` to `funding.daily.invalidComment`. Maps api `Forbidden` to `funding.daily.forbidden`. Any other failure is `funding.daily.saveError`.
 - **Used by:** `DailyPaymentsScreen`.
 
 ## Function: saveDailyRosterPayments
 
 - **Purpose:** POST `/funding/daily-roster/payments` with `{ enabled }` and parse the returned roster. `enabled` is a boolean.
 - **Inputs:** Bearer `session`, `enabled`.
-- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid payments switch` to `funding.daily.invalidSwitch`. Any other failure is `funding.daily.saveError`.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid payments switch` to `funding.daily.invalidSwitch`. Maps api `Forbidden` to `funding.daily.forbidden`. Any other failure is `funding.daily.saveError`.
 - **Used by:** `DailyPaymentsScreen`.
 
 ## Function: addDailyRosterRecipient
 
 - **Purpose:** POST `/funding/daily-roster/recipients` with `{ address, amountUsd }` and parse the returned roster. `amountUsd` is a real number, not a numeric string.
 - **Inputs:** Bearer `session`, address, USD amount.
-- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Address already listed`. Any other failure is `funding.daily.saveError`.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Address already listed`. Maps api `Forbidden` to `funding.daily.forbidden`. Any other failure is `funding.daily.saveError`.
 - **Used by:** `DailyPaymentsScreen`.
 
 ## Function: updateDailyRosterRecipient
 
 - **Purpose:** POST `/funding/daily-roster/recipients/update` with `{ address, amountUsd }` and parse the returned roster.
 - **Inputs:** Bearer `session`, stored address, new USD amount.
-- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Unknown address`. Any other failure is `funding.daily.saveError`.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Unknown address`. Maps api `Forbidden` to `funding.daily.forbidden`. Any other failure is `funding.daily.saveError`.
 - **Used by:** `DailyPaymentsScreen`.
 
 ## Function: deleteDailyRosterRecipient
 
 - **Purpose:** POST `/funding/daily-roster/recipients/delete` with `{ address }` and parse the returned roster.
 - **Inputs:** Bearer `session`, stored address.
-- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Unknown address`. Any other failure is `funding.daily.saveError`.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Unknown address`. Maps api `Forbidden` to `funding.daily.forbidden`. Any other failure is `funding.daily.saveError`.
 - **Used by:** `DailyPaymentsScreen`.
 
 ## Function: postFundingAdmit

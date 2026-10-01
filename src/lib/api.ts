@@ -1299,6 +1299,7 @@ const DAILY_ROSTER_API_SAVE_ERRORS: Record<string, string> = {
   'Invalid address or amount': 'funding.daily.invalidRow',
   'Address already listed': 'funding.daily.duplicate',
   'Unknown address': 'funding.daily.unknown',
+  Forbidden: 'funding.daily.forbidden',
 };
 
 const DAILY_ROSTER_SAVE_KEYS = new Set([
@@ -1307,6 +1308,7 @@ const DAILY_ROSTER_SAVE_KEYS = new Set([
   'funding.daily.invalidRow',
   'funding.daily.duplicate',
   'funding.daily.unknown',
+  'funding.daily.forbidden',
   FUNDING_DAILY_ROSTER_SAVE_ERROR,
 ]);
 
@@ -1549,7 +1551,8 @@ export async function postFundingReject(
  *
  * @param session - A bearer token from a completed challenge.
  * @returns The parsed {@link DailyRoster}.
- * @throws Error with visitor-facing copy on 401/403/503, other non-2xx, a
+ * @throws Error `'funding.daily.forbidden'` on 403 with api `Forbidden`.
+ * @throws Error with visitor-facing copy on 401, other 403, 503, other non-2xx, a
  * network failure, or a body that fails {@link dailyRosterSchema}.
  */
 export async function fetchDailyRoster(session: string): Promise<DailyRoster> {
@@ -1558,10 +1561,16 @@ export async function fetchDailyRoster(session: string): Promise<DailyRoster> {
       headers: { Authorization: `Bearer ${session}` },
     });
     if (!response.ok) {
+      if (response.status === 403 && (await readApiError(response)) === 'Forbidden') {
+        throw new Error('funding.daily.forbidden');
+      }
       throw new Error(FUNDING_DAILY_ROSTER_LOAD_ERROR);
     }
     return dailyRosterSchema.parse(await response.json());
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && DAILY_ROSTER_SAVE_KEYS.has(err.message)) {
+      throw err;
+    }
     throw new Error(FUNDING_DAILY_ROSTER_LOAD_ERROR);
   }
 }

@@ -129,6 +129,14 @@ describe('DailyPaymentsScreen', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('shows the catalog refusal when fetch is Forbidden', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('funding.daily.forbidden'));
+    renderWithLocale(<DailyPaymentsScreen />);
+    expect(await screen.findByText('You cannot change daily payments.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+  });
+
   it('ignores a stale resolve after unmount', async () => {
     let resolveList: ((value: DailyRoster) => void) | undefined;
     fetchMock.mockImplementation(
@@ -175,6 +183,21 @@ describe('DailyPaymentsScreen', () => {
     expect(screen.queryByText('Delete')).toBeNull();
     expect(screen.getByRole('button', { name: 'Update Ada@w...' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Delete Ada@w...' })).toBeTruthy();
+  });
+
+  it('renders lookalike Wallet of Satoshi domains in full', async () => {
+    fetchMock.mockResolvedValueOnce({
+      comment: 'Daily gift',
+      paymentsEnabled: true,
+      recipients: [
+        { address: 'ada@notwalletofsatoshi.com', amountUsd: 1 },
+        { address: 'ada@walletofsatoshi.com.evil', amountUsd: 2 },
+      ],
+    });
+    await renderLoaded();
+    expect(screen.getByText('ada@notwalletofsatoshi.com')).toBeTruthy();
+    expect(screen.getByText('ada@walletofsatoshi.com.evil')).toBeTruthy();
+    expect(screen.queryByText('ada@w...')).toBeNull();
   });
 
   it('saves the comment and shows a mapped, unknown, or non-error failure', async () => {
