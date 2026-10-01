@@ -749,12 +749,16 @@ export type ForumMessage = z.infer<typeof forumMessageSchema>;
 
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.
+ * `postCount` and `replyCount` are optional nonnegative integers so today's
+ * API still parses.
  */
 export const externalAuthorProfileSchema = z.object({
   name: z.string(),
   npub: z.string(),
   nip05: z.string().optional(),
   lud16: z.string().optional(),
+  postCount: z.number().int().nonnegative().optional(),
+  replyCount: z.number().int().nonnegative().optional(),
 });
 
 /**

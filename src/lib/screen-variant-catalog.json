@@ -3964,5 +3964,17 @@
     "label": "/messages/[id]/author loading",
     "visual": "state-messages-id-author-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-open",
+    "label": "/messages/[id]/author posts-open",
+    "visual": "state-messages-id-author-posts-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-open",
+    "label": "/messages/[id]/author replies-open",
+    "visual": "state-messages-id-author-replies-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

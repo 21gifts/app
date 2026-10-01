@@ -70,6 +70,8 @@ import {
   proxyForumMessageGet,
   proxyPublicMessageGet,
   proxyExternalAuthorProfileGet,
+  proxyExternalAuthorPostsGet,
+  proxyExternalAuthorRepliesGet,
   proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
@@ -461,6 +463,24 @@ describe('api proxy wrappers', () => {
       'm1',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-profile');
+  });
+
+  it('proxyExternalAuthorPostsGet hits /messages/:id/external-posts', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorPostsGet(
+      new Request('http://localhost/public-messages/m1/external-posts'),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-posts');
+  });
+
+  it('proxyExternalAuthorRepliesGet hits /messages/:id/external-replies', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorRepliesGet(
+      new Request('http://localhost/public-messages/m1/external-replies'),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-replies');
   });
 
   it('proxyShortLinkGet hits /links/:code without a bearer', async () => {

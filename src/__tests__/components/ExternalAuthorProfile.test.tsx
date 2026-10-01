@@ -1,15 +1,80 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { ForumMessage } from '@/lib/api-types';
+
+const push = vi.fn();
+const refresh = vi.fn();
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: ReactNode;
+    onClick?: (event: { stopPropagation: () => void }) => void;
+  }) => (
+    <a href={href} onClick={onClick} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push; replace: typeof push; refresh: typeof refresh } => ({
+    push,
+    replace: push,
+    refresh,
+  }),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
+}));
 
 vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn(),
+  fetchExternalAuthorPosts: vi.fn(),
+  fetchExternalAuthorReplies: vi.fn(),
+  fetchPublicMessage: vi.fn(),
+  fetchPublicMessagePhoto: vi.fn(),
+  fetchForumMessage: vi.fn(),
+  fetchShortLink: vi.fn(),
+  setMessagePlace: vi.fn(),
+  setMessageShopAccount: vi.fn(),
+  deleteMessage: vi.fn(),
 }));
 
-import { fetchExternalAuthorProfile } from '@/lib/api';
+import {
+  fetchExternalAuthorPosts,
+  fetchExternalAuthorProfile,
+  fetchExternalAuthorReplies,
+} from '@/lib/api';
 import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 
 const fetchProfile = vi.mocked(fetchExternalAuthorProfile);
+const fetchPosts = vi.mocked(fetchExternalAuthorPosts);
+const fetchReplies = vi.mocked(fetchExternalAuthorReplies);
+
+const FEED_NOTE: ForumMessage = {
+  id: 'note-1',
+  name: 'Robin',
+  text: 'Hello from Robin',
+  createdAt: '2026-08-28T12:00:00.000Z',
+  sats: 0,
+  payable: false,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'basis',
+  replyCount: 0,
+  photoCount: 0,
+};
+
+const COUNT_BUTTON = /^\d+ posts?$/;
+const REACTION_BUTTON = /^\d+ reactions?$/;
 
 const HINT =
   'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
@@ -17,6 +82,9 @@ const HINT =
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  push.mockClear();
+  fetchPosts.mockReset();
+  fetchReplies.mockReset();
 });
 
 describe('ExternalAuthorProfile', () => {
@@ -279,5 +347,349 @@ describe('ExternalAuthorProfile', () => {
     });
     expect(screen.queryByRole('heading', { name: 'Robin' })).toBeNull();
     expect(screen.queryByText('Robin')).toBeNull();
+  });
+
+  it('hides count buttons and the feed when the profile JSON has no counts', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByText('npub1example')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: COUNT_BUTTON })).toBeNull();
+    expect(screen.queryByRole('button', { name: REACTION_BUTTON })).toBeNull();
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('hides count buttons when only postCount is present', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 2,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByText('npub1example')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: COUNT_BUTTON })).toBeNull();
+    expect(screen.queryByRole('button', { name: REACTION_BUTTON })).toBeNull();
+  });
+
+  it('shows 2 posts and 0 reactions without opening the feed', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 2,
+      replyCount: 0,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: '0 reactions' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '2 posts' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('loads posts, marks the button pressed, and shows the truncated status line', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 2,
+      replyCount: 0,
+    });
+    fetchPosts.mockResolvedValue([FEED_NOTE]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    expect(fetchPosts).toHaveBeenCalledWith('m1');
+    expect(screen.getByRole('button', { name: '2 posts' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(screen.getByRole('status').textContent).toBe('Showing the latest 1 of 2.');
+  });
+
+  it('omits the truncated status line when the loaded list is not shorter than the count', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 0,
+    });
+    fetchPosts.mockResolvedValue([FEED_NOTE]);
+    fetchReplies.mockResolvedValue([]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 post' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    expect(screen.queryByRole('status')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '0 reactions' }));
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledWith('m1');
+    });
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('closes the posts feed without refetching when the pressed button is clicked again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 2,
+      replyCount: 0,
+    });
+    fetchPosts.mockResolvedValue([FEED_NOTE]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    expect(fetchPosts).toHaveBeenCalledTimes(1);
+  });
+
+  it('reopens a loaded posts feed without calling the fetcher again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 2,
+      replyCount: 0,
+    });
+    fetchPosts.mockResolvedValue([FEED_NOTE]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    expect(fetchPosts).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps one in-flight posts load when the panel is closed and opened again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 2,
+      replyCount: 0,
+    });
+    let resolvePosts!: (value: ForumMessage[]) => void;
+    fetchPosts.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePosts = resolve;
+      }),
+    );
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.queryByText('Loading…')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(fetchPosts).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolvePosts([FEED_NOTE]);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+  });
+
+  it('opens a reply with a parentId to that parent on expand', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+    });
+    fetchReplies.mockResolvedValue([
+      {
+        ...FEED_NOTE,
+        id: 'reply-1',
+        text: 'A reply from Robin',
+        parentId: 'parent-1',
+      },
+    ]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 reaction' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    await waitFor(() => {
+      expect(screen.getByText('A reply from Robin')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(push).toHaveBeenCalledWith('/messages/parent-1');
+  });
+
+  it('does not navigate when a reply has no parentId', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+    });
+    fetchReplies.mockResolvedValue([
+      {
+        ...FEED_NOTE,
+        id: 'reply-1',
+        text: 'A reply from Robin',
+      },
+    ]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 reaction' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    await waitFor(() => {
+      expect(screen.getByText('A reply from Robin')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('does not navigate when a reply parentId is only whitespace', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+    });
+    fetchReplies.mockResolvedValue([
+      {
+        ...FEED_NOTE,
+        id: 'reply-1',
+        text: 'A reply from Robin',
+        parentId: '   ',
+      },
+    ]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 reaction' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    await waitFor(() => {
+      expect(screen.getByText('A reply from Robin')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('opens a post expand control to that note', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 0,
+    });
+    fetchPosts.mockResolvedValue([FEED_NOTE]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 post' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(push).toHaveBeenCalledWith('/messages/note-1');
+  });
+
+  it('retries a failed feed from Try again and from opening the panel again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 0,
+    });
+    fetchPosts
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce([FEED_NOTE]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 post' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Could not load messages. Please try again.',
+      );
+    });
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(fetchPosts).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    expect(fetchPosts).toHaveBeenCalledTimes(3);
+  });
+
+  it('clears an open feed on messageId change and ignores a stale posts response', async () => {
+    fetchProfile.mockImplementation((id: string) => {
+      if (id === 'm1') {
+        return Promise.resolve({
+          name: 'Robin',
+          npub: 'npub1example',
+          postCount: 2,
+          replyCount: 0,
+        });
+      }
+      return new Promise(() => undefined);
+    });
+    let resolvePosts!: (value: ForumMessage[]) => void;
+    fetchPosts.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePosts = resolve;
+      }),
+    );
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    view.rerender(<ExternalAuthorProfile messageId="m2" fallbackName="Ada" />);
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    expect(screen.queryByText('Loading…')).toBeNull();
+    await act(async () => {
+      resolvePosts([FEED_NOTE]);
+      await Promise.resolve();
+    });
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
   });
 });

@@ -4173,21 +4173,21 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 
 ## Screen: /messages/[id]/author
 
-- **Purpose:** External author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Heading is `profile.title` (**Profile** / **Profil** / **Perfil** / **Profile**), not the person's name. Name section always: heading `name.heading`, truncated name, **External** span (not a button). Optional checked Nostr address (`forum.externalProfileNip05`) when published. Payment address (`forum.externalProfileLud16`) only when it differs ignoring case. Nostr key (`forum.externalProfileNpub`) with the centered secondary IconButton copy control when a profile has loaded; addresses and the key are `break-all`, the name truncates. No photo, pay, outbound link, location, counts, chart, about, message, hint paragraph, or close control. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. Body is `ExternalAuthorProfile` inside `PublicMessageChrome`.
-- **Inputs:** Dynamic route `id` (forum message id, not validated as a UUID) and optional `name` query (`string` or first array entry, trimmed; blank becomes `''`). Profile from `GET /public-messages/:id/external-profile` (`fetchExternalAuthorProfile`).
-- **Actions:** The top-left arrow is the existing `ProfileChromeLeft` control (previous in-app view, or `/welcome` when this tab has none). Unsigned chrome is wordmark href `/` plus `LanguageSwitcher`. Signed-in chrome is `ProfileChromeLeft` plus `SignedInChrome`. Copy the npub (icon-only **Copy** → **Copied**). No pay, no outbound link, no close control.
+- **Purpose:** External author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Heading is `profile.title` (**Profile** / **Profil** / **Perfil** / **Profile**), not the person's name. Name section always: heading `name.heading`, truncated name, **External** span (not a button). Optional checked Nostr address (`forum.externalProfileNip05`) when published. Payment address (`forum.externalProfileLud16`) only when it differs ignoring case. Nostr key (`forum.externalProfileNpub`) with the centered secondary IconButton copy control when a profile has loaded; addresses and the key are `break-all`, the name truncates. No photo, pay, outbound link, location, chart, about, message, hint paragraph, or close control. Count buttons appear when both `postCount` and `replyCount` are numbers; the feed is read-only under the card (no pay, no composer, no react); a post opens `/messages/{id}`; a reply opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`. If either count is absent, no buttons. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. Body is `ExternalAuthorProfile` inside `PublicMessageChrome`.
+- **Inputs:** Dynamic route `id` (forum message id, not validated as a UUID) and optional `name` query (`string` or first array entry, trimmed; blank becomes `''`). Profile from `GET /public-messages/:id/external-profile` (`fetchExternalAuthorProfile`). Posts from `GET /public-messages/:id/external-posts` and replies from `GET /public-messages/:id/external-replies`, no Bearer.
+- **Actions:** The top-left arrow is the existing `ProfileChromeLeft` control (previous in-app view, or `/welcome` when this tab has none). Unsigned chrome is wordmark href `/` plus `LanguageSwitcher`. Signed-in chrome is `ProfileChromeLeft` plus `SignedInChrome`. Copy the npub (icon-only **Copy** → **Copied**). Open and close the count buttons; those clicks GET `/public-messages/:id/external-posts` or `/public-messages/:id/external-replies`. No pay, no outbound link, no close control.
 - **Used by:** Route `/messages/[id]/author` (`ExternalAuthorPage`). `ForumBoard`, `QuotedForumNote`, and `PublicMessageLoader` name controls.
 - **Auth:** None required to view; chrome depends on hydrated session. No `OnboardingGate`. Not a `/members` page.
 
 ### Variant: default
 
-Signed-out loaded card. Heading **Profile**, name **Robin**, **External**, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, icon-only **Copy**. No photo, pay, outbound link, hint paragraph, or close control.
+Signed-out loaded card. Heading **Profile**, name **Robin**, **External**, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, icon-only **Copy**. No photo, pay, outbound link, hint paragraph, or close control. Closed buttons are **1 post** and **1 reaction**; the feed is closed.
 
 ![21.gifts external author profile](images/messages-id-author.png)
 
 ### Variant: signed-in
 
-Same loaded card with the **Menu** control. Heading **Profile**, **Robin**, **External**, `robin@nostr.example`, `pay@ln.example`, `npub1example`, icon-only **Copy**.
+Same loaded card with the **Menu** control. Heading **Profile**, **Robin**, **External**, `robin@nostr.example`, `pay@ln.example`, `npub1example`, icon-only **Copy**. Closed buttons are **1 post** and **1 reaction**; the feed is closed.
 
 ![21.gifts external author profile signed in](images/messages-id-author-signed-in.png)
 
@@ -4196,6 +4196,18 @@ Same loaded card with the **Menu** control. Heading **Profile**, **Robin**, **Ex
 Title **Profile**, name **Robin**, **External**, and no address yet because the profile request has not returned.
 
 ![21.gifts external author profile loading](images/messages-id-author-loading.png)
+
+### Variant: posts-open
+
+Pressed **1 post** button with the note text `Robin wrote a note` under the card. The feed is read-only.
+
+![21.gifts external author posts open](images/messages-id-author-posts-open.png)
+
+### Variant: replies-open
+
+Pressed **1 reaction** button with the note text `Robin wrote a reaction` under the card. The feed is read-only.
+
+![21.gifts external author replies open](images/messages-id-author-replies-open.png)
 
 ## Screen: /view/[viewKey]
 

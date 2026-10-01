@@ -4698,4 +4698,18 @@ export const SCREEN_VARIANTS = [
     visual: 'state-messages-id-author-loading',
     needle: 'state /messages/[id]/author loading',
   },
+  {
+    route: '/messages/[id]/author',
+    id: 'posts-open',
+    image: 'messages-id-author-posts-open.png',
+    visual: 'state-messages-id-author-posts-open',
+    needle: 'state /messages/[id]/author posts-open',
+  },
+  {
+    route: '/messages/[id]/author',
+    id: 'replies-open',
+    image: 'messages-id-author-replies-open.png',
+    visual: 'state-messages-id-author-replies-open',
+    needle: 'state /messages/[id]/author replies-open',
+  },
 ];

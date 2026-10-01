@@ -1,20 +1,84 @@
 'use client';
 
 import { Check, Copy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  ForumBoard,
+  type ForumFormError,
+  type ForumPayError,
+  type ForumPayInvoice,
+  type ForumReplyFormError,
+} from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Card, IconButton } from '@/components/ui';
-import { fetchExternalAuthorProfile } from '@/lib/api';
-import type { ExternalAuthorProfile as ExternalAuthorProfileData } from '@/lib/api-types';
+import { Button, Card, IconButton } from '@/components/ui';
+import {
+  fetchExternalAuthorPosts,
+  fetchExternalAuthorProfile,
+  fetchExternalAuthorReplies,
+} from '@/lib/api';
+import type {
+  ExternalAuthorProfile as ExternalAuthorProfileData,
+  ForumMessage,
+} from '@/lib/api-types';
 
 /** Copied-icon flash duration, matching {@link ForumBoard}. */
 const COPY_RESET_MS = 1200;
+
+/* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
+const IDLE_BOARD = {
+  error: false,
+  loading: false,
+  posting: false,
+  draft: '',
+  onDraftChange: (): void => undefined,
+  askDraft: '',
+  onAskDraftChange: (): void => undefined,
+  onPost: (): void => undefined,
+  onRetry: (): void => undefined,
+  formError: null as ForumFormError,
+  payMessageId: null as string | null,
+  payDraft: '',
+  payBusy: false,
+  payError: null as ForumPayError,
+  payInvoice: null as ForumPayInvoice | null,
+  payWaiting: false,
+  onPayOpen: (): void => undefined,
+  onPayDraftChange: (): void => undefined,
+  onPaySubmit: (): void => undefined,
+  onPayCancel: (): void => undefined,
+  mode: 'all' as const,
+  onModeChange: (): void => undefined,
+  lawsVisible: false,
+  onDismissLaws: (): void => undefined,
+  photoDrafts: [],
+  onPickFiles: (): void => undefined,
+  onRemovePhoto: (): void => undefined,
+  onClearPhoto: (): void => undefined,
+  photoUrls: {},
+  expandedId: null as string | null,
+  onToggleExpand: (): void => undefined,
+  replies: null as ForumMessage[] | null,
+  repliesLoading: false,
+  repliesError: false,
+  onRetryReplies: (): void => undefined,
+  replyDraft: '',
+  onReplyDraftChange: (): void => undefined,
+  onReplyPost: (): void => undefined,
+  replyPosting: false,
+  replyFormError: null as ForumReplyFormError,
+  composerHidden: true,
+};
+/* v8 ignore stop */
 
 /** Props for {@link ExternalAuthorProfile}. */
 export interface ExternalAuthorProfileProps {
   /** Forum message id whose external author to load. */
   messageId: string;
-  /** Card name until the profile loads, and when the fetch returns null. Empty means view.unnamed. */
+  /**
+   * Card name until the profile loads, and when the fetch returns null.
+   * Empty means view.unnamed.
+   */
   fallbackName: string;
 }
 
@@ -43,23 +107,65 @@ function fallbackCopy(text: string): boolean {
 }
 
 /**
+ * True when both feed counts are numbers (0 is a number).
+ *
+ * @param profile - Parsed external author profile, or null.
+ * @returns Whether count buttons and the feed may render.
+ */
+function hasAuthorCounts(
+  profile: ExternalAuthorProfileData | null,
+): profile is ExternalAuthorProfileData & { postCount: number; replyCount: number } {
+  return (
+    profile !== null &&
+    typeof profile.postCount === 'number' &&
+    typeof profile.replyCount === 'number'
+  );
+}
+
+/**
  * Member-profile card for a forum author with no 21.gifts account.
  *
  * Same sections as the member card (name, optional addresses, npub to copy).
- * Not a dialog: no overlay, portal, close control, or hint paragraph.
+ * When both postCount and replyCount are numbers, the same count buttons as a
+ * member open a read-only feed under the card. Not a dialog: no overlay, portal,
+ * close control, or hint paragraph.
  *
  * @param props - See {@link ExternalAuthorProfileProps}.
- * @returns The profile card.
+ * @returns The profile card, and the read-only feed while a count panel is open.
  */
 export function ExternalAuthorProfile({
   messageId,
   fallbackName,
 }: ExternalAuthorProfileProps): ReactElement {
   const { t } = useTranslations();
+  const router = useRouter();
   const [profile, setProfile] = useState<ExternalAuthorProfileData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [activity, setActivity] = useState<'posts' | 'replies' | null>(null);
+  const [posts, setPosts] = useState<ForumMessage[] | null>(null);
+  const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [postsError, setPostsError] = useState(false);
+  const [repliesError, setRepliesError] = useState(false);
+  const [feedMessageId, setFeedMessageId] = useState(messageId);
   const copyMounted = useRef(true);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const postsLoadGen = useRef(0);
+  const repliesLoadGen = useRef(0);
+
+  if (feedMessageId !== messageId) {
+    setFeedMessageId(messageId);
+    setActivity(null);
+    setPosts(null);
+    setReplies(null);
+    setPostsLoading(false);
+    setRepliesLoading(false);
+    setPostsError(false);
+    setRepliesError(false);
+    postsLoadGen.current += 1;
+    repliesLoadGen.current += 1;
+  }
 
   useEffect(() => {
     copyMounted.current = true;
@@ -127,6 +233,51 @@ export function ExternalAuthorProfile({
     }
   };
 
+  const loadFeed = async (kind: 'posts' | 'replies'): Promise<void> => {
+    const setLoading = kind === 'posts' ? setPostsLoading : setRepliesLoading;
+    const setError = kind === 'posts' ? setPostsError : setRepliesError;
+    const setList = kind === 'posts' ? setPosts : setReplies;
+    const fetchFn = kind === 'posts' ? fetchExternalAuthorPosts : fetchExternalAuthorReplies;
+    const loadGen = kind === 'posts' ? postsLoadGen : repliesLoadGen;
+    const gen = ++loadGen.current;
+    setLoading(true);
+    setError(false);
+    try {
+      const next = await fetchFn(messageId);
+      if (loadGen.current === gen) {
+        setList(next);
+      }
+    } catch {
+      if (loadGen.current === gen) {
+        setError(true);
+      }
+    } finally {
+      if (loadGen.current === gen) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const openActivity = (next: 'posts' | 'replies'): void => {
+    if (activity === next) {
+      setActivity(null);
+      return;
+    }
+    setActivity(next);
+    if (next === 'posts') {
+      if ((posts === null || postsError) && !postsLoading) {
+        void loadFeed('posts');
+      }
+      return;
+    }
+    if ((replies === null || repliesError) && !repliesLoading) {
+      void loadFeed('replies');
+    }
+  };
+
+  const counted = hasAuthorCounts(profile) ? profile : null;
+  const activityMessages = activity === 'posts' ? (posts ?? []) : (replies ?? []);
+
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-6">
       <Card surface={false}>
@@ -188,7 +339,79 @@ export function ExternalAuthorProfile({
             </div>
           </div>
         ) : null}
+        {counted !== null ? (
+          <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">
+            <Button
+              type="button"
+              size="sm"
+              variant={activity === 'posts' ? 'primary' : 'secondary'}
+              aria-pressed={activity === 'posts'}
+              onClick={() => openActivity('posts')}
+            >
+              {t('profile.postCount', { count: String(counted.postCount) })}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={activity === 'replies' ? 'primary' : 'secondary'}
+              aria-pressed={activity === 'replies'}
+              onClick={() => openActivity('replies')}
+            >
+              {t('profile.replyCount', { count: String(counted.replyCount) })}
+            </Button>
+          </div>
+        ) : null}
       </Card>
+      {counted !== null && (activity === 'posts' || activity === 'replies') ? (
+        (activity === 'posts' ? postsLoading : repliesLoading) ? (
+          <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
+        ) : (activity === 'posts' ? postsError : repliesError) ? (
+          <div className="flex flex-col items-center gap-4">
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('forum.error')}
+            </p>
+            <Button
+              type="button"
+              onClick={() => {
+                void loadFeed(activity);
+              }}
+            >
+              {t('view.retry')}
+            </Button>
+          </div>
+        ) : (
+          <>
+            <ForumBoard
+              {...IDLE_BOARD}
+              messages={activityMessages}
+              readOnly
+              composerHidden
+              modeSelector={false}
+              onToggleExpand={(noteId) => {
+                if (activity === 'posts') {
+                  router.push(`/messages/${noteId}`);
+                  return;
+                }
+                const parentId = activityMessages.find(
+                  (message) => message.id === noteId,
+                )?.parentId;
+                if (typeof parentId === 'string' && parentId.trim() !== '') {
+                  router.push(`/messages/${parentId}`);
+                }
+              }}
+            />
+            {activityMessages.length <
+            (activity === 'posts' ? counted.postCount : counted.replyCount) ? (
+              <p role="status" className="text-center text-sm text-app-muted">
+                {t('profile.activityLatest', {
+                  shown: String(activityMessages.length),
+                  total: String(activity === 'posts' ? counted.postCount : counted.replyCount),
+                })}
+              </p>
+            ) : null}
+          </>
+        )
+      ) : null}
     </div>
   );
 }

@@ -9893,6 +9893,8 @@ test.describe('onboarding screens', () => {
           npub: 'npub1example',
           nip05: 'robin@nostr.example',
           lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
         }),
       });
     });
@@ -9935,6 +9937,8 @@ test.describe('onboarding screens', () => {
           npub: 'npub1example',
           nip05: 'robin@nostr.example',
           lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
         }),
       });
     });
@@ -9953,6 +9957,93 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('External', { exact: true })).toBeVisible();
     await expect(page.getByText('robin@nostr.example')).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-author-loading');
+  });
+
+  test('state /messages/[id]/author posts-open', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/external-posts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Robin wrote a note',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await page.getByText('Robin wrote a note').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-open');
+  });
+
+  test('state /messages/[id]/author replies-open', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/external-replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Robin wrote a reaction',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              parentId: '22222222-2222-4222-8222-222222222222',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 reaction' }).click();
+    await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await page.getByText('Robin wrote a reaction').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-open');
   });
 
   test('state /messages/[id] quoted-note', async ({ page }) => {

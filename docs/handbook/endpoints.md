@@ -410,9 +410,23 @@
 
 ## Endpoint: GET /public-messages/[id]/external-profile
 
-- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer).
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer). Optional `postCount` and `replyCount` are nonnegative integers; absent still parses.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, upstream 503, or 502 if the api is unreachable.
 - **Used by:** `fetchExternalAuthorProfile`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-posts
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-posts`, body `{ messages }` for that external author, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorPosts`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-replies
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-replies`, body `{ messages }` for that external author, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorReplies`.
 - **Auth:** Public.
 
 ## Endpoint: GET /public-messages/[id]
