@@ -292,6 +292,19 @@ describe('pageFrameProblems', () => {
     expect(pageFrameProblems()).toEqual([]);
   });
 
+  it('reports a fixed child of a sideways row that sticks out the top', () => {
+    preparePageFrame(375, 375);
+    const row = document.createElement('div');
+    row.setAttribute('data-scroll-x', '');
+    stubRect(row, 10, 100, 90, 20);
+    const slide = document.createElement('div');
+    slide.style.position = 'fixed';
+    stubBox(slide, { left: 10, right: 30, top: -2, bottom: 20 });
+    row.appendChild(slide);
+    document.body.appendChild(row);
+    expect(pageFrameProblems()).toEqual(['sticks out: div top=-2 bottom=20']);
+  });
+
   it('reports the sideways row when the row itself sticks out', () => {
     preparePageFrame(375, 375);
     const row = document.createElement('div');

@@ -69,15 +69,25 @@ function samePlacedBox(a: PlacedFrameBox | null, b: PlacedFrameBox | null): bool
   return true;
 }
 
-function placedBoxStyle(box: PlacedFrameBox): CSSProperties {
-  return {
+function placedBoxStyle(box: PlacedFrameBox, fill: boolean): CSSProperties {
+  const style: CSSProperties = {
     left: box.left,
     width: box.width,
-    maxHeight: box.maxHeight,
-    top: box.top ?? undefined,
-    bottom: box.bottom ?? undefined,
-    overflow: 'clip',
   };
+  if (box.top !== null) {
+    style.top = box.top;
+  } else {
+    style.bottom = box.bottom!;
+  }
+  if (fill) {
+    const viewportHeight = window.innerHeight;
+    if (box.top !== null) {
+      style.bottom = viewportHeight - box.top - box.maxHeight;
+    } else {
+      style.top = viewportHeight - box.bottom! - box.maxHeight;
+    }
+  }
+  return style;
 }
 
 /**
@@ -461,15 +471,7 @@ export function PlaceField(props: {
     </>
   ) : (
     <>
-      <div
-        ref={mapElRef}
-        className="h-64 min-h-0 w-full shrink rounded-xl"
-        style={
-          placedBox === null
-            ? undefined
-            : { height: Math.min(256, Math.max(48, placedBox.maxHeight - 210)) }
-        }
-      />
+      <div ref={mapElRef} className="h-64 min-h-0 w-full shrink rounded-xl" />
       <input
         type="text"
         maxLength={80}
@@ -546,8 +548,8 @@ export function PlaceField(props: {
           placedBox !== null ? (
             createPortal(
               <div
-                className="fixed z-20 flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3"
-                style={placedBoxStyle(placedBox)}
+                className="fixed z-20 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
+                style={placedBoxStyle(placedBox, false)}
               >
                 {previewBody}
               </div>,
@@ -563,10 +565,16 @@ export function PlaceField(props: {
           placedBox !== null ? (
             createPortal(
               <div
-                className="fixed z-30 flex min-h-0 flex-col rounded-2xl border border-app-border bg-app-card-muted p-3"
-                style={placedBoxStyle(placedBox)}
+                className={
+                  placedBox.top !== null
+                    ? 'pointer-events-none fixed z-30 flex flex-col justify-start overflow-clip'
+                    : 'pointer-events-none fixed z-30 flex flex-col justify-end overflow-clip'
+                }
+                style={placedBoxStyle(placedBox, true)}
               >
-                {panelBody}
+                <div className="pointer-events-auto flex max-h-full min-h-0 w-full flex-col overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3">
+                  {panelBody}
+                </div>
               </div>,
               document.body,
             )

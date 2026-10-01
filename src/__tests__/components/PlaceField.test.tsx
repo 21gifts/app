@@ -760,10 +760,11 @@ describe('PlaceField', () => {
       const preview = screen.getByText('Happyland').parentElement as HTMLElement;
       expect(preview.style.left).toBe('30px');
       expect(preview.style.width).toBe('256px');
-      expect(preview.style.maxHeight).toBe('396px');
+      expect(preview.style.maxHeight).toBe('');
       expect(preview.style.top).toBe('88px');
       expect(preview.style.bottom).toBe('');
-      expect(preview.style.overflow).toBe('clip');
+      expect(preview.style.overflow).toBe('');
+      expect(preview.className.split(/\s+/)).toContain('overflow-clip');
       expect(preview.className.split(/\s+/)).not.toContain('flex-col');
       expect(preview.parentElement).toBe(document.body);
     } finally {
@@ -793,19 +794,31 @@ describe('PlaceField', () => {
         expect(listeners.has('click')).toBe(true);
       });
       const input = screen.getByLabelText('Place name');
-      const panel = input.parentElement as HTMLElement;
-      expect(panel.style.left).toBe('16px');
-      expect(panel.style.width).toBe('368px');
-      expect(panel.style.maxHeight).toBe('636px');
-      expect(panel.style.top).toBe('');
-      expect(panel.style.bottom).toBe('148px');
-      expect(panel.style.overflow).toBe('clip');
-      const classTokens = panel.className.split(/\s+/);
-      expect(classTokens).toContain('flex');
-      expect(classTokens).toContain('min-h-0');
-      expect(classTokens).toContain('flex-col');
-      const map = panel.querySelector('.h-64') as HTMLElement;
-      expect(map.style.height).toBe('256px');
+      expect(input.parentElement?.style.top).toBe('');
+      expect(input.parentElement?.style.bottom).toBe('');
+      const clamp = input.parentElement?.parentElement as HTMLElement;
+      expect(clamp.style.left).toBe('16px');
+      expect(clamp.style.width).toBe('368px');
+      expect(clamp.style.maxHeight).toBe('');
+      expect(clamp.style.top).toBe('16px');
+      expect(clamp.style.bottom).toBe('148px');
+      expect(clamp.style.overflow).toBe('');
+      const clampTokens = clamp.className.split(/\s+/);
+      expect(clampTokens).toContain('fixed');
+      expect(clampTokens).toContain('overflow-clip');
+      expect(clampTokens).toContain('pointer-events-none');
+      expect(clampTokens).toContain('flex-col');
+      expect(clampTokens).toContain('justify-end');
+      expect(clampTokens).not.toContain('justify-start');
+      const innerTokens = (input.parentElement as HTMLElement).className.split(/\s+/);
+      expect(innerTokens).toContain('pointer-events-auto');
+      expect(innerTokens).toContain('flex');
+      expect(innerTokens).toContain('flex-col');
+      expect(innerTokens).toContain('min-h-0');
+      expect(innerTokens).toContain('max-h-full');
+      expect(innerTokens).toContain('overflow-clip');
+      const map = clamp.querySelector('.h-64') as HTMLElement;
+      expect(map.style.height).toBe('');
       listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
       const confirm = await screen.findByRole('button', { name: 'Use this place' });
       expect(input.className.split(/\s+/)).toContain('shrink-0');
@@ -817,7 +830,7 @@ describe('PlaceField', () => {
     }
   });
 
-  it('shrinks the map to 48px when maxHeight is short', async () => {
+  it('gives the short map no fixed height', async () => {
     const originalRect = HTMLElement.prototype.getBoundingClientRect;
     const originalWidth = window.innerWidth;
     const originalHeight = window.innerHeight;
@@ -839,17 +852,22 @@ describe('PlaceField', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
       const input = await screen.findByLabelText('Place name');
       await waitFor(() => {
-        expect(input.parentElement?.style.maxHeight).toBe('168px');
+        expect(input.parentElement?.parentElement?.style.bottom).toBe('216px');
       });
-      const panel = input.parentElement as HTMLElement;
-      expect(panel.style.left).toBe('16px');
-      expect(panel.style.width).toBe('368px');
-      expect(panel.style.maxHeight).toBe('168px');
-      expect(panel.style.top).toBe('16px');
-      expect(panel.style.bottom).toBe('');
-      expect(panel.style.overflow).toBe('clip');
-      const map = panel.querySelector('.h-64') as HTMLElement;
-      expect(map.style.height).toBe('48px');
+      const clamp = input.parentElement?.parentElement as HTMLElement;
+      expect(clamp.style.left).toBe('16px');
+      expect(clamp.style.width).toBe('368px');
+      expect(clamp.style.maxHeight).toBe('');
+      expect(clamp.style.top).toBe('16px');
+      expect(clamp.style.bottom).toBe('216px');
+      expect(clamp.style.overflow).toBe('');
+      expect(clamp.className.split(/\s+/)).toContain('overflow-clip');
+      expect(clamp.className.split(/\s+/)).toContain('justify-start');
+      expect(clamp.className.split(/\s+/)).not.toContain('justify-end');
+      const map = clamp.querySelector('.h-64') as HTMLElement;
+      const mapTokens = map.className.split(/\s+/);
+      expect(mapTokens).toContain('min-h-0');
+      expect(map.style.height).toBe('');
     } finally {
       HTMLElement.prototype.getBoundingClientRect = originalRect;
       window.innerWidth = originalWidth;
@@ -893,10 +911,12 @@ describe('PlaceField', () => {
       });
       const preview = screen.getByText('Happyland').parentElement as HTMLElement;
       expect(preview.style.width).toBe('256px');
-      expect(preview.style.maxHeight).toBe('396px');
+      expect(preview.style.maxHeight).toBe('');
       expect(preview.style.top).toBe('88px');
       expect(preview.style.bottom).toBe('');
-      expect(preview.style.overflow).toBe('clip');
+      expect(preview.style.overflow).toBe('');
+      expect(preview.className.split(/\s+/)).toContain('overflow-clip');
+      expect(preview.className.split(/\s+/)).not.toContain('flex-col');
       const rendersAfterPreview = renders;
       await act(async () => {
         document.documentElement.dispatchEvent(new Event('scroll', { bubbles: false }));

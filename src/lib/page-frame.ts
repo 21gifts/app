@@ -15,6 +15,9 @@ export type FrameBoxInput = {
   viewportHeight: number;
 };
 
+/**
+ * Pixel box for one popover clamped inside the app frame.
+ */
 export type PlacedFrameBox = {
   left: number;
   width: number;
@@ -105,15 +108,13 @@ export function pageFrameProblems(): string[] {
 
   const stickOut: string[] = [];
   for (const node of document.body.querySelectorAll('*')) {
-    // Slides inside the row may sit outside the window. The row element itself is checked.
-    if (node.closest('[data-scroll-x]') !== null && !node.hasAttribute('data-scroll-x')) {
-      continue;
-    }
+    // Slides may only stick out of the window to the left or right.
+    const slide = node.closest('[data-scroll-x]') !== null && !node.hasAttribute('data-scroll-x');
     const rect = node.getBoundingClientRect();
     if (rect.width < 1 || rect.height < 1) {
       continue;
     }
-    const horizontal = rect.left < -1 || rect.right > window.innerWidth + 1;
+    const horizontal = !slide && (rect.left < -1 || rect.right > window.innerWidth + 1);
     const verticalOverflow = rect.top < -1 || rect.bottom > window.innerHeight + 1;
     if (!horizontal && !verticalOverflow) {
       continue;
