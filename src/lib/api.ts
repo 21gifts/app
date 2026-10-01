@@ -1566,7 +1566,7 @@ export async function fetchDailyRoster(session: string): Promise<DailyRoster> {
     }
     return dailyRosterSchema.parse(await response.json());
   } catch (err) {
-    if (err instanceof Error && DAILY_ROSTER_SAVE_KEYS.has(err.message)) {
+    if (err instanceof Error && err.message === 'funding.daily.forbidden') {
       throw err;
     }
     throw new Error(FUNDING_DAILY_ROSTER_LOAD_ERROR);
