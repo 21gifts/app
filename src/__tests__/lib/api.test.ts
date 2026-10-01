@@ -3852,13 +3852,15 @@ describe('markNotificationRead', () => {
 
   it('sends the push endpoint when this browser has one', async () => {
     const read = { ...notification, readAt: '2026-08-28T13:00:00.000Z' };
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+      },
+    };
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
-          pushManager: {
-            getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
-          },
-        }),
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
       },
     });
     try {
@@ -3913,7 +3915,10 @@ describe('markNotificationsReadForMessage', () => {
       ]),
     };
     const restoreNavigator = installNavigator({
-      serviceWorker: { ready: Promise.resolve(registration) },
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
     });
     try {
       const fetchMock = stubFetch({
@@ -3970,7 +3975,10 @@ describe('markAllNotificationsRead', () => {
       getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
     };
     const restoreNavigator = installNavigator({
-      serviceWorker: { ready: Promise.resolve(registration) },
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
     });
     try {
       stubFetch({ ok: true, status: 200, body: { ok: true } });
@@ -3992,7 +4000,10 @@ describe('markAllNotificationsRead', () => {
       ]),
     };
     const restoreNavigator = installNavigator({
-      serviceWorker: { ready: Promise.resolve(registration) },
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
     });
     try {
       stubFetch({ ok: true, status: 200, body: { ok: true, tags: ['forum_post:m1'] } });
@@ -4011,7 +4022,10 @@ describe('markAllNotificationsRead', () => {
       getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
     };
     const restoreNavigator = installNavigator({
-      serviceWorker: { ready: Promise.resolve(registration) },
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
     });
     try {
       stubFetch({ ok: true, status: 200, body: { ok: true, tags: 'forum_post:m1' } });
@@ -4030,14 +4044,16 @@ describe('markAllNotificationsRead', () => {
   });
 
   it('sends the push endpoint when this browser has one', async () => {
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+      },
+      getNotifications: vi.fn().mockResolvedValue([]),
+    };
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
-          pushManager: {
-            getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
-          },
-          getNotifications: vi.fn().mockResolvedValue([]),
-        }),
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
       },
     });
     try {
@@ -4070,12 +4086,14 @@ describe('markAllNotificationsRead', () => {
 
   it('closes only string tags', async () => {
     const close = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
+    };
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
-          pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
-          getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
-        }),
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
       },
     });
     try {
