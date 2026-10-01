@@ -13,8 +13,10 @@ import {
 import { androidInstalledVersion, androidPasskeyBlock } from '@/lib/android-passkey';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { iosInstalledVersion, iosPasskeyBlock } from '@/lib/ios-passkey';
+import { getBreezApiKey } from '@/lib/config';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
-import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
+import { obtainPrfFirst, prfEvalFirstSalt, readPrfFirst } from '@/lib/prf-mnemonic';
+import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import {
   base64UrlToBytes,
   creationOptionsFromJSON,
@@ -471,7 +473,42 @@ class SupersededError extends Error {
 }
 
 /**
+ * Reads PRF bytes from a login assertion when the Breez API key is set.
+ * Reports presence only (never the bytes). A throw or empty result counts as absent.
+ *
+ * @param credential - WebAuthn assertion.
+ * @param challengeId - Challenge id from authenticate-begin.
+ * @param stage - `login` or `authenticate` entry point.
+ * @returns PRF first bytes when present, otherwise `undefined`.
+ */
+function readLoginPrfFirst(
+  credential: PublicKeyCredential,
+  challengeId: string,
+  stage: 'login' | 'authenticate',
+): Uint8Array | undefined {
+  if (getBreezApiKey() === null) {
+    return undefined;
+  }
+  let prfFirst: Uint8Array | undefined;
+  try {
+    prfFirst = readPrfFirst(credential);
+  } catch {
+    prfFirst = undefined;
+  }
+  const present = prfFirst !== undefined && prfFirst.byteLength > 0;
+  reportDiagnostic({
+    event: 'client.passkey.login.prf',
+    prfPresent: present,
+    stage,
+    challengeId,
+  });
+  return present ? prfFirst : undefined;
+}
+
+/**
  * Drives passkey register / authenticate. A run id ignores superseded clicks.
+ * When the Breez API key is set, a successful ceremony may remember the
+ * recovery phrase in tab memory from PRF output.
  *
  * @returns Status plus login, register, submitName, authenticate, retry, cancel, and error.
  */
@@ -683,6 +720,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       guard(runId);
       setAuth(session.token, session.account);
+      void rememberPhraseFromPrf({
+        prfFirst,
+        credentialId: publicKeyCredential.id,
+        account: session.account,
+        sessionToken: session.token,
+      });
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);
@@ -742,6 +785,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       const publicKeyCredential = credential as PublicKeyCredential;
+      const prfFirst = readLoginPrfFirst(
+        publicKeyCredential,
+        begin.challengeId,
+        entryKindRef.current === 'login' ? 'login' : 'authenticate',
+      );
       let session: Awaited<ReturnType<typeof finishPasskeyAuthentication>>;
       try {
         session = await finishPasskeyAuthentication(
@@ -768,6 +816,12 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       guard(runId);
       setAuth(session.token, session.account);
+      void rememberPhraseFromPrf({
+        prfFirst,
+        credentialId: publicKeyCredential.id,
+        account: session.account,
+        sessionToken: session.token,
+      });
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);
