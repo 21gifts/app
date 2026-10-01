@@ -5,7 +5,11 @@
  * memory and never stored by this app.
  */
 
-/** IndexedDB directory name the SDK uses for this app's wallet state. */
+/**
+ * IndexedDB directory name the SDK uses for this app's wallet state. The SDK
+ * appends the network and a hash of the wallet's identity key to this name, so
+ * each wallet on a browser gets its own database.
+ */
 export const WALLET_STORAGE_DIR = '21gifts-wallet';
 
 /**

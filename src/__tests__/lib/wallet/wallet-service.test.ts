@@ -141,6 +141,54 @@ describe('connectWallet', () => {
     expect(connection.disconnect).toHaveBeenCalled();
   });
 
+  it("a logout during a failed refresh's disconnect keeps the store locked", async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let releaseDisconnect!: () => void;
+    const hangingDisconnect = new Promise<void>((resolve) => {
+      releaseDisconnect = resolve;
+    });
+    const { loadSdk, connection } = createFakeSdk({
+      disconnect: () => hangingDisconnect,
+    });
+    await connectWallet(loadSdk);
+    connection.getInfo.mockRejectedValueOnce(new Error('refresh failed'));
+    const refresh = refreshWallet();
+    await vi.waitFor(() => expect(connection.disconnect).toHaveBeenCalled());
+    await expect(disconnectWallet()).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('locked');
+    releaseDisconnect();
+    await expect(refresh).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('locked');
+  });
+
+  it("a reconnect during a failed refresh's disconnect stays ready", async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let releaseDisconnect!: () => void;
+    const hangingDisconnect = new Promise<void>((resolve) => {
+      releaseDisconnect = resolve;
+    });
+    const { loadSdk, connection } = createFakeSdk({
+      disconnect: () => hangingDisconnect,
+    });
+    await connectWallet(loadSdk);
+    connection.getInfo.mockRejectedValueOnce(new Error('refresh failed'));
+    const refresh = refreshWallet();
+    await vi.waitFor(() => expect(connection.disconnect).toHaveBeenCalled());
+    const second = createFakeSdk({
+      getInfo: async () => ({ balanceSats: 99_000, identityPubkey: IDENTITY }),
+    });
+    await connectWallet(second.loadSdk);
+    expect(useWalletStore.getState()).toMatchObject({
+      status: 'ready',
+      balanceSats: 99_000,
+    });
+    releaseDisconnect();
+    await expect(refresh).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('ready');
+    expect(useWalletStore.getState().balanceSats).toBe(99_000);
+    expect(second.connection.disconnect).not.toHaveBeenCalled();
+  });
+
   it('connect loader rejection sets error', async () => {
     rememberSessionPhrase(MNEMONIC);
     const loadSdk = vi.fn(async () => {
