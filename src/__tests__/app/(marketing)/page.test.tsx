@@ -82,9 +82,9 @@ describe('Home', () => {
     for (const link of links) expect(link.getAttribute('href')).toBe('/login');
   });
 
-  it('links Donate Bitcoin to donate', async () => {
+  it('links Send help to donate', async () => {
     renderWithLocale(await Home());
-    const link = screen.getByRole('link', { name: 'Donate Bitcoin' });
+    const link = screen.getByRole('link', { name: 'Send help' });
     expect(link.getAttribute('href')).toBe('/en/donate');
   });
 

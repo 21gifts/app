@@ -17,7 +17,7 @@ test.describe('Accept-Language de', () => {
 
   test('home giving CTA is German', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Bitcoin spenden' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sende Hilfe' })).toBeVisible();
   });
 
   test('login button is German', async ({ page }) => {
