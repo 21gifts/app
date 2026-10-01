@@ -721,7 +721,7 @@ export function InboxLoader(): ReactElement | null {
         setInvoice({
           pr: minted.pr,
           amountSats: minted.amountSats,
-          sparkInvoice: minted.sparkInvoice ?? null,
+          sparkInvoice: minted.sparkInvoice,
         });
         setPayWaiting(true);
         const controller = new AbortController();

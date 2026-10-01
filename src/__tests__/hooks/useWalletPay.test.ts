@@ -1,0 +1,357 @@
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WALLET_PAY_CONFIRM_WAIT_MS, useWalletPay } from '@/hooks/useWalletPay';
+import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
+import {
+  payFromWallet,
+  type WalletPayResult,
+  type WalletSendResult,
+} from '@/lib/wallet/wallet-service';
+import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
+
+vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
+  return { ...actual, unlockWalletPhrase: vi.fn() };
+});
+
+vi.mock('@/lib/wallet/wallet-service', () => ({ payFromWallet: vi.fn() }));
+
+const account = {
+  id: 'acc_1',
+  linkingKey: null,
+  role: 'basis' as const,
+  name: 'Ada',
+  username: 'ada',
+  location: null,
+  lightningAddress: null,
+  lightningAddressVerified: false,
+  forumLawsDismissed: false,
+  createdAt: 1,
+  rulesAgreedAt: 1,
+  viewKey: 'a'.repeat(64),
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+  setup: null,
+  missing: [],
+  walletRequired: true,
+  passkeyCredentialId: 'credential',
+};
+
+const SPARK = 'spark1invoice';
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+
+function setWallet(status: WalletStatus): void {
+  useWalletStore.setState({ status, balanceSats: null, identityPubkey: null });
+}
+
+function confirmWith(send: () => Promise<WalletSendResult>, feeSats = 0): WalletPayResult {
+  return { kind: 'confirm', amountSats: 21, feeSats, send };
+}
+
+beforeEach(() => {
+  window.history.replaceState({}, '', '/welcome');
+  delete process.env.NEXT_PUBLIC_E2E_NOW;
+  useAuthStore.setState({ session: 'token', account });
+  setWallet('ready');
+  vi.mocked(payFromWallet).mockReset();
+  vi.mocked(unlockWalletPhrase).mockReset().mockResolvedValue('unlocked');
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
+});
+
+describe('useWalletPay path choice', () => {
+  it('falls back without a sparkInvoice', () => {
+    for (const value of [null, undefined, '']) {
+      const { result, unmount } = renderHook(() => useWalletPay(value));
+      expect(result.current.view).toBe('fallback');
+      unmount();
+    }
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('falls back when the wallet is disabled or failed', () => {
+    for (const status of ['disabled', 'error'] as const) {
+      setWallet(status);
+      const { result, unmount } = renderHook(() => useWalletPay(SPARK));
+      expect(result.current.view).toBe('fallback');
+      unmount();
+    }
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('falls back when the account cannot unlock a wallet', () => {
+    useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    expect(result.current.view).toBe('fallback');
+  });
+
+  it('offers unlock for a locked wallet and prepares once it is ready', async () => {
+    setWallet('locked');
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' }), 3));
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    expect(result.current.view).toBe('unlock');
+    expect(payFromWallet).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.unlock();
+    });
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+    expect(result.current.view).toBe('unlock');
+    act(() => {
+      setWallet('connecting');
+    });
+    expect(result.current.view).toBe('preparing');
+    await act(async () => {
+      setWallet('ready');
+    });
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK });
+    expect(result.current.view).toBe('confirm');
+    expect(result.current.feeSats).toBe(3);
+  });
+
+  it('shows preparing while the passkey prompt is open and ignores a second unlock', async () => {
+    setWallet('locked');
+    let finish: (value: 'cancelled') => void = () => undefined;
+    vi.mocked(unlockWalletPhrase).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    act(() => {
+      result.current.unlock();
+    });
+    expect(result.current.view).toBe('preparing');
+    act(() => {
+      result.current.unlock();
+    });
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finish('cancelled');
+    });
+    expect(result.current.view).toBe('unlock');
+  });
+
+  it('falls back after a failed unlock', async () => {
+    setWallet('locked');
+    vi.mocked(unlockWalletPhrase).mockResolvedValue('failed');
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    await act(async () => {
+      result.current.unlock();
+    });
+    expect(result.current.view).toBe('fallback');
+  });
+
+  it('falls back when prepare fails, and shows insufficient balance', async () => {
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed' });
+    const failed = renderHook(() => useWalletPay(SPARK));
+    await act(async () => undefined);
+    expect(failed.result.current.view).toBe('fallback');
+    failed.unmount();
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'unlock' });
+    const unlock = renderHook(() => useWalletPay(SPARK));
+    await act(async () => undefined);
+    expect(unlock.result.current.view).toBe('fallback');
+    unlock.unmount();
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
+    const low = renderHook(() => useWalletPay(SPARK));
+    await act(async () => undefined);
+    expect(low.result.current.view).toBe('insufficient');
+  });
+
+  it('ignores a prepare result that arrives after the invoice changed', async () => {
+    let finish: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
+    const { result, rerender } = renderHook(({ value }) => useWalletPay(value), {
+      initialProps: { value: SPARK },
+    });
+    await act(async () => {
+      rerender({ value: 'spark1other' });
+    });
+    expect(result.current.view).toBe('insufficient');
+    await act(async () => {
+      finish(confirmWith(async () => ({ kind: 'paid' })));
+    });
+    expect(result.current.view).toBe('insufficient');
+  });
+
+  it('ignores an unlock result after unmount', async () => {
+    setWallet('locked');
+    let finish: (value: 'unlocked') => void = () => undefined;
+    vi.mocked(unlockWalletPhrase).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { result, unmount } = renderHook(() => useWalletPay(SPARK));
+    act(() => {
+      result.current.unlock();
+    });
+    unmount();
+    await act(async () => {
+      finish('unlocked');
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+});
+
+describe('useWalletPay sending', () => {
+  it('pays once and keeps the paying view while the sheet waits on its long-poll', async () => {
+    vi.useFakeTimers();
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    await act(async () => undefined);
+    expect(result.current.view).toBe('confirm');
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(result.current.view).toBe('paying');
+    await act(async () => {
+      result.current.pay();
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS * 2);
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(result.current.view).toBe('paying');
+  });
+
+  it('after a failed send waits 60 s on the long-poll, then says not confirmed yet, without retrying', async () => {
+    vi.useFakeTimers();
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'failed' }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(result.current.view).toBe('paying');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS - 1);
+    });
+    expect(result.current.view).toBe('paying');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(result.current.view).toBe('unconfirmed');
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows insufficient balance when the send says so', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'insufficient' })));
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(result.current.view).toBe('insufficient');
+  });
+
+  it('drops the wait when the sheet closes before the timer fires', async () => {
+    vi.useFakeTimers();
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'failed' })));
+    const { result, unmount } = renderHook(() => useWalletPay(SPARK));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    unmount();
+    await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('ignores a send result for an older invoice', async () => {
+    let finish: (value: WalletSendResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockResolvedValueOnce(
+      confirmWith(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      ),
+    );
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed' });
+    const { result, rerender } = renderHook(({ value }) => useWalletPay(value), {
+      initialProps: { value: SPARK },
+    });
+    await act(async () => undefined);
+    act(() => {
+      result.current.pay();
+    });
+    await act(async () => {
+      rerender({ value: 'spark1other' });
+    });
+    await act(async () => {
+      finish({ kind: 'insufficient' });
+    });
+    expect(result.current.view).toBe('fallback');
+  });
+
+  it('ignores the 60 s timer of an older invoice', async () => {
+    vi.useFakeTimers();
+    vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(async () => ({ kind: 'failed' })));
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
+    const { result, rerender } = renderHook(({ value }) => useWalletPay(value), {
+      initialProps: { value: SPARK },
+    });
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    await act(async () => {
+      rerender({ value: 'spark1other' });
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS);
+    });
+    expect(result.current.view).toBe('insufficient');
+  });
+});
+
+describe('useWalletPay visual pins', () => {
+  const pins = [
+    ['pay-unlock', 'unlock'],
+    ['pay-preparing', 'preparing'],
+    ['pay-confirm', 'confirm'],
+    ['pay-paying', 'paying'],
+    ['pay-insufficient', 'insufficient'],
+    ['pay-unconfirmed', 'unconfirmed'],
+  ] as const;
+
+  it.each(pins)('pins %s in a Playwright build with a sparkInvoice', (visual, view) => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    setWallet('disabled');
+    window.history.replaceState({}, '', `/welcome?visual=${visual}`);
+    const { result } = renderHook(() => useWalletPay(SPARK));
+    expect(result.current).toMatchObject({ view, feeSats: 0 });
+    act(() => {
+      result.current.unlock();
+      result.current.pay();
+    });
+    expect(unlockWalletPhrase).not.toHaveBeenCalled();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('ignores pins outside a Playwright build, without a sparkInvoice, or with another value', () => {
+    window.history.replaceState({}, '', '/welcome?visual=pay-confirm');
+    setWallet('disabled');
+    expect(renderHook(() => useWalletPay(SPARK)).result.current.view).toBe('fallback');
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    expect(renderHook(() => useWalletPay(null)).result.current.view).toBe('fallback');
+    window.history.replaceState({}, '', '/welcome?visual=other');
+    expect(renderHook(() => useWalletPay(SPARK)).result.current.view).toBe('fallback');
+    window.history.replaceState({}, '', '/welcome');
+    expect(renderHook(() => useWalletPay(SPARK)).result.current.view).toBe('fallback');
+  });
+});

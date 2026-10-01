@@ -160,7 +160,7 @@ export interface ForumPayInvoice {
   /** Whole sats confirmed by the api. */
   amountSats: number;
   /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
-  sparkInvoice?: string | null;
+  sparkInvoice?: string | null | undefined;
 }
 
 /** Props for {@link ForumBoard}. */
@@ -1136,7 +1136,7 @@ export function ForumBoard({
                   preview: replyPayPreview,
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
-                  sparkInvoice: payInvoice.sparkInvoice ?? null,
+                  sparkInvoice: payInvoice.sparkInvoice,
                 }
               : null;
           const reactionPayPage = reactionPay !== null;
