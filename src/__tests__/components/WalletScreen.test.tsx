@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WalletPhraseScreen, WalletScreen } from '@/components/WalletScreen';
 import { WalletScreenView } from '@/components/WalletScreenView';
+import type { UseWalletResult } from '@/hooks/useWallet';
 import {
   WALLET_VISUAL_FIXTURE_MNEMONIC,
   type UseWalletPhraseResult,
@@ -10,6 +11,15 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const showPhrase = vi.fn();
 const retry = vi.fn();
+const { walletState, useWalletMock } = vi.hoisted(() => {
+  const state: UseWalletResult = {
+    status: 'locked',
+    balanceSats: null,
+    unlock: vi.fn(),
+    retry: vi.fn(),
+  };
+  return { walletState: state, useWalletMock: vi.fn((): UseWalletResult => state) };
+});
 const phraseState: UseWalletPhraseResult = {
   view: 'activate',
   status: 'idle',
@@ -27,6 +37,9 @@ vi.mock('@/hooks/useWalletPhrase', async (importOriginal) => {
     useWalletPhrase: (): UseWalletPhraseResult => phraseState,
   };
 });
+vi.mock('@/hooks/useWallet', () => ({
+  useWallet: useWalletMock,
+}));
 
 afterEach(() => {
   cleanup();
@@ -34,6 +47,9 @@ afterEach(() => {
   phraseState.view = 'activate';
   phraseState.words = [];
   phraseState.status = 'idle';
+  walletState.status = 'locked';
+  walletState.balanceSats = null;
+  useWalletMock.mockClear();
 });
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
@@ -142,6 +158,8 @@ describe('WalletScreen', () => {
     phraseState.error = null;
     renderWithLocale(<WalletScreen />);
     expect(screen.getByRole('link', { name: 'Add recovery phrase' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Balance' })).toBeTruthy();
+    expect(useWalletMock).toHaveBeenCalledTimes(1);
   });
 
   it('calls retry from Try again on the phrase page', () => {
@@ -151,6 +169,7 @@ describe('WalletScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(retry).toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+    expect(useWalletMock).not.toHaveBeenCalled();
   });
 
   it('does not show the recovery words on the receive page', () => {
