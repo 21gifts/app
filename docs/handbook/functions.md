@@ -939,7 +939,7 @@
 
 ## Function: Scrollport
 
-- **Purpose:** The only layout scrollport. Renders `[data-scrollport]`. Overflow is the `globals.css` rule, not a Tailwind utility: clip until `data-scroll-active`, then `overflow: auto`. The innermost bound port scrolls. Among siblings, the most recently bound one scrolls and gets `data-scroll-active`. Every other port gets `data-scroll-locked`. `html` and `body` stay `overflow: clip`.
+- **Purpose:** The only layout scrollport. Renders `[data-scrollport]`. Overflow is the `globals.css` rule, not a Tailwind utility: clip until `data-scroll-active`, then the active port scrolls vertically only (`overflow-x: clip` and `overflow-y: auto`). The innermost bound port scrolls. Among siblings, the most recently bound one scrolls and gets `data-scroll-active`. Every other port gets `data-scroll-locked`. `html` and `body` stay `overflow: clip`.
 - **Inputs:** `children`, optional `className`, optional `scrollRef`, optional `onClick`.
 - **Returns / side effects:** A `div`. Binds on mount and releases on unmount. No network.
 - **Used by:** `AppShell`, marketing layout, `NotFound`, `HandbookLightbox`.

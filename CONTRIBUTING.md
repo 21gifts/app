@@ -445,7 +445,7 @@ A photo row may scroll sideways on `[data-scroll-x]`. That row is
 `overflow-x: auto` and `overflow-y: clip`, so it is not a second page
 scroll. `scripts/check-scrollports.mjs` fails CI on scrolling utilities,
 arbitrary values, and assignments, and on any stylesheet scrolling overflow
-except `overflow: auto` on `[data-scrollport][data-scroll-active]` and that
+except `overflow-x: clip` and `overflow-y: auto` on `[data-scrollport][data-scroll-active]` and that
 one sideways row. It rejects its own detector if that check goes blind. The document lock is
 `!important`. AppShell `<main>` stays free of `overflow-hidden` so the
 menu hosts on the frame are not clipped. `--app-offset-top` is

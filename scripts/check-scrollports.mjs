@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Fail if production source adds a second layout scrollport.
- * globals.css may scroll in two places only: `overflow: auto` on
- * `[data-scrollport][data-scroll-active]`, and `overflow-x: auto` with
+ * globals.css may scroll in two places only: `overflow-x: clip` and
+ * `overflow-y: auto` on `[data-scrollport][data-scroll-active]` (not the
+ * shorthand `overflow: auto`), and `overflow-x: auto` with
  * `overflow-y: clip` on `[data-scroll-x]`. Anything else is a second
  * page scroll.
  * Run from the repo root. No extra packages.
@@ -177,7 +178,10 @@ function globalsScrollProblem(css) {
   const pageOk =
     pages.length === 1 &&
     page !== undefined &&
-    sameDecls(allOverflowDecls(page.body), [{ prop: 'overflow', tokens: ['auto'] }]);
+    sameDecls(allOverflowDecls(page.body), [
+      { prop: 'overflow-x', tokens: ['clip'] },
+      { prop: 'overflow-y', tokens: ['auto'] },
+    ]);
   const rowOk =
     rows.length === 1 &&
     row !== undefined &&
@@ -194,7 +198,7 @@ function globalsScrollProblem(css) {
   if (pageOk && rowOk && !stray) {
     return null;
   }
-  return 'expected one overflow:auto on [data-scrollport][data-scroll-active] and one overflow-x:auto with overflow-y:clip on [data-scroll-x]';
+  return 'expected one overflow-x:clip and overflow-y:auto on [data-scrollport][data-scroll-active] and one overflow-x:auto with overflow-y:clip on [data-scroll-x]';
 }
 
 function selfTest() {
@@ -237,7 +241,7 @@ function selfTest() {
   const passSheet = `
     html, body { overflow: clip !important; }
     [data-scrollport] { overflow: clip !important; }
-    [data-scrollport][data-scroll-active] { overflow: auto !important; }
+    [data-scrollport][data-scroll-active] { overflow-x: clip !important; overflow-y: auto !important; }
     [data-scroll-x] { overflow-x: auto !important; overflow-y: clip !important; }
     * { scroll-behavior: auto !important; }
     :root { --overflow: auto; }
@@ -267,9 +271,10 @@ function selfTest() {
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip; overflow-y: visible }',
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { overflow: AUTO }',
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { OVERFLOW: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
   ];
   const gluedImportant = `
-    [data-scrollport][data-scroll-active] { overflow:auto!important; }
+    [data-scrollport][data-scroll-active] { overflow-x:clip!important; overflow-y:auto!important; }
     [data-scroll-x] { overflow-x:auto!important; overflow-y:clip!important; }
     :root { --overflow: auto; }
   `;
