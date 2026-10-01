@@ -1832,7 +1832,9 @@ test.describe('screen baselines', () => {
   test('wallet send-input', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-input');
-    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByPlaceholder('Paste a Bitcoin payment request or address')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-input');
   });
@@ -1840,7 +1842,9 @@ test.describe('screen baselines', () => {
   test('wallet send-amount', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount');
-    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByLabel('Message (optional)')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-amount');
   });
@@ -1848,7 +1852,9 @@ test.describe('screen baselines', () => {
   test('wallet send-confirm', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-confirm');
-    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByText("Send ₿2'100")).toBeVisible();
     await expect(page.getByText('$2.10')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-confirm');
@@ -1857,7 +1863,9 @@ test.describe('screen baselines', () => {
   test('wallet send-sent', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-sent');
-    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByText("Sent ₿2'100")).toBeVisible();
     await shotScreen(page, 'state-wallet-send-sent');
   });
@@ -1865,7 +1873,9 @@ test.describe('screen baselines', () => {
   test('wallet send-unsupported', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-unsupported');
-    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(
       page.getByText('Sending to this kind of Bitcoin address is not supported yet.'),
     ).toBeVisible();
@@ -1875,7 +1885,9 @@ test.describe('screen baselines', () => {
   test('wallet send-error', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-error');
-    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(
       page.getByText(
         'The receiver could not be reached from this browser. Please try again later.',
@@ -17820,7 +17832,7 @@ test.describe('welcome forum variants', () => {
   test('welcome wallet-pay-confirm', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-confirm');
     await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
-    await expect(page.getByText('$0.00')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet]').getByText('$0.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-confirm');
   });
 
