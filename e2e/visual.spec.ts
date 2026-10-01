@@ -18685,14 +18685,9 @@ test.describe('statistics screens', () => {
         'flex:none !important;align-self:center !important;}',
     });
     const measured = await page.evaluate(() => {
-      const port = document.querySelector(
-        '[data-scrollport][data-scroll-active]',
-      );
+      const port = document.querySelector('[data-scrollport][data-scroll-active]');
       const pageEl = document.querySelector('[data-scroll-page]');
-      if (
-        !(port instanceof HTMLElement) ||
-        !(pageEl instanceof HTMLElement)
-      ) {
+      if (!(port instanceof HTMLElement) || !(pageEl instanceof HTMLElement)) {
         return null;
       }
       const section = pageEl.querySelector(':scope > section');
@@ -18704,22 +18699,22 @@ test.describe('statistics screens', () => {
       const paddingBottom = Number.parseFloat(style.paddingBottom);
       const { top, bottom } = port.getBoundingClientRect();
       return (
-        top +
-        paddingTop +
-        section.offsetHeight +
-        paddingBottom +
-        (window.innerHeight - bottom)
+        top + paddingTop + section.offsetHeight + paddingBottom + (window.innerHeight - bottom)
       );
     });
     if (measured == null || !Number.isFinite(measured)) {
-      await styleTag.evaluate((el) => el.remove());
+      await styleTag.evaluate((el) => {
+        el.parentNode?.removeChild(el);
+      });
       await shotScreen(page, arg);
       return;
     }
     // 1600 is an emergency brake, not a grow-to target.
     const needed = Math.min(1600, Math.ceil(measured));
     if (needed <= current.height) {
-      await styleTag.evaluate((el) => el.remove());
+      await styleTag.evaluate((el) => {
+        el.parentNode?.removeChild(el);
+      });
       await shotScreen(page, arg);
       return;
     }

@@ -19,6 +19,7 @@ import {
   hiddenMessageSchema,
   lnAddressResolvedSchema,
   giftStatsSchema,
+  shopActivitySchema,
   memberProfileSchema,
   moderatorProposalSchema,
   moderatorProposalsResponseSchema,
@@ -1726,6 +1727,56 @@ describe('giftStatsSchema', () => {
         ...stats,
         spendOverTime: [{ ...day, usd: null }],
       }),
+    ).toThrow();
+  });
+});
+
+describe('shopActivitySchema', () => {
+  function thirtyDays(
+    start: string,
+    replace?: { index: number; day?: string; shopCount?: number },
+  ): { day: string; shopCount: number }[] {
+    const startMs = Date.parse(`${start}T00:00:00.000Z`);
+    const days = Array.from({ length: 30 }, (_, i) => ({
+      day: new Date(startMs + i * 86_400_000).toISOString().slice(0, 10),
+      shopCount: 0,
+    }));
+    if (replace !== undefined) {
+      const current = days[replace.index];
+      if (current !== undefined) {
+        days[replace.index] = {
+          day: replace.day ?? current.day,
+          shopCount: replace.shopCount ?? current.shopCount,
+        };
+      }
+    }
+    return days;
+  }
+
+  it('accepts 30 contiguous UTC days oldest first', () => {
+    const body = { days: thirtyDays('2026-08-22') };
+    expect(shopActivitySchema.parse(body)).toEqual(body);
+  });
+
+  it('rejects a duplicate day', () => {
+    expect(() =>
+      shopActivitySchema.parse({
+        days: thirtyDays('2026-08-22', { index: 5, day: '2026-08-22' }),
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a skipped day while still length 30', () => {
+    expect(() =>
+      shopActivitySchema.parse({
+        days: thirtyDays('2026-08-22', { index: 10, day: '2026-09-02' }),
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a length other than 30', () => {
+    expect(() =>
+      shopActivitySchema.parse({ days: thirtyDays('2026-08-22').slice(0, 29) }),
     ).toThrow();
   });
 });

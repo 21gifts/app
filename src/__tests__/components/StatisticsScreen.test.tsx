@@ -244,6 +244,16 @@ describe('StatisticsScreen', () => {
       expect(screen.getByText('Could not load shop activity. Please try again.')).toBeTruthy();
       expect(screen.getByText('People by UTC day')).toBeTruthy();
     });
+    fetchShopMock.mockResolvedValue(shopActivityDays());
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Active shops' })).getByRole('button', {
+        name: 'Try again',
+      }),
+    );
+    await waitFor(() => {
+      expect(fetchShopMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText('People by UTC day')).toBeTruthy();
   });
 
   it('keeps the shop chart when payout stats fail', async () => {

@@ -3887,7 +3887,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Axis tick label for a UTC day as numeric day and month in `locale`.
 - **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
 - **Returns / side effects:** Short numeric day-month label in the UTC zone. Pure; no I/O.
-- **Used by:** `PayoutGoalChart` for the first, middle, and last axis labels.
+- **Used by:** `PayoutGoalChart` and `ShopActivityChart` for the first, middle, and last axis labels.
 
 ## Function: PayoutGoalChart
 

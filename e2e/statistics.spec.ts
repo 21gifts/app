@@ -195,7 +195,9 @@ test('Function: chartDayLabel — the last axis tick is 9/20', async ({ page }) 
   await seedAdaSession(page, 'founder');
   await stubPayoutGoal(page);
   await page.goto('/statistics');
-  await expect(page.getByRole('img', { name: 'People by UTC day' }).getByText('9/20')).toBeVisible();
+  await expect(
+    page.getByRole('img', { name: 'People by UTC day' }).getByText('9/20'),
+  ).toBeVisible();
 });
 
 test('Function: PayoutGoalChart — the People by UTC day SVG is visible', async ({ page }) => {

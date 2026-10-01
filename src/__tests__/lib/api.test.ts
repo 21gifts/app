@@ -17,6 +17,7 @@ import {
   fetchAccountActivity,
   fetchGiftDay,
   fetchGiftStats,
+  fetchShopActivity,
   fetchPostStats,
   fetchAboutMePhoto,
   fetchProfilePhoto,
@@ -1191,6 +1192,46 @@ describe('fetchGiftStats', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+});
+
+describe('fetchShopActivity', () => {
+  function thirtyDays(): { day: string; shopCount: number }[] {
+    const start = Date.parse('2026-08-22T00:00:00.000Z');
+    return Array.from({ length: 30 }, (_, i) => ({
+      day: new Date(start + i * 86_400_000).toISOString().slice(0, 10),
+      shopCount: i,
+    }));
+  }
+
+  it('returns the days array and sends the bearer header', async () => {
+    const days = thirtyDays();
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { days } });
+    await expect(fetchShopActivity('sess')).resolves.toEqual(days);
+    expect(fetchMock).toHaveBeenCalledWith('/shops/activity', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Shop activity is unavailable' } });
+    await expect(fetchShopActivity('sess')).rejects.toThrow(
+      'Could not load shop activity. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchShopActivity('sess')).rejects.toThrow(
+      'Could not load shop activity. Please try again.',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { days: [] } });
+    await expect(fetchShopActivity('sess')).rejects.toThrow(
+      'Could not load shop activity. Please try again.',
+    );
   });
 });
 
