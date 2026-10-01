@@ -792,8 +792,8 @@ test('Function: fetchExternalAuthorProfile — the sheet shows the address from 
     });
   });
   await page.goto('/welcome');
-  const profileRequest = page.waitForRequest(
-    (request) => request.url().includes('/public-messages/m-ext/external-profile'),
+  const profileRequest = page.waitForRequest((request) =>
+    request.url().includes('/public-messages/m-ext/external-profile'),
   );
   await page.getByRole('button', { name: 'View profile' }).click();
   expect((await profileRequest).method()).toBe('GET');
