@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import type { Locale } from '@/lib/locale';
 import {
   SHOP_STICKER_COLORS,
   SHOP_STICKER_ELEMENTS,
@@ -20,7 +21,7 @@ export const SHOP_STICKER_FORMATS = ['pdf', 'png', 'jpg', 'svg'] as const;
 /** One of {@link SHOP_STICKER_FORMATS}. */
 export type ShopStickerFormat = (typeof SHOP_STICKER_FORMATS)[number];
 
-/** Text artwork language used on the printable shop sticker. Filipino is the default second language. */
+/** Text artwork language on the printable shop sticker. */
 export type ShopStickerLang = 'english' | 'spanish' | 'german' | 'french' | 'filipino' | 'kikamba';
 
 /** Second-language outlines that replace Filipino indices 6–12. Filipino keeps the shared artwork. */
@@ -43,8 +44,10 @@ const FILE_SUFFIX: Record<ShopStickerLang, string> = {
 };
 
 /**
- * Query aliases for {@link shopStickerLangFromQuery}. Unknown values stay Filipino.
- * Matching is on the trimmed, lowercased query.
+ * Query aliases. Matching is on the trimmed, lowercased query.
+ * {@link shopStickerLangFromQuery} maps an unnamed value to Filipino.
+ * {@link shopStickerLangInitial} treats an unnamed value as absent so the UI language applies.
+ * An explicit Filipino alias is named, not absent.
  */
 const LANG_QUERY: Record<string, ShopStickerLang> = {
   kikamba: 'kikamba',
@@ -70,6 +73,21 @@ const LANG_QUERY: Record<string, ShopStickerLang> = {
   none: 'english',
   keine: 'english',
 };
+
+/** Sticker language for each app UI locale. French and Kikamba are not app locales. */
+const LOCALE_STICKER_LANG: Record<Locale, ShopStickerLang> = {
+  en: 'english',
+  de: 'german',
+  es: 'spanish',
+  fil: 'filipino',
+};
+
+function namedStickerLang(value: string | null): ShopStickerLang | null {
+  if (value === null) return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '') return null;
+  return LANG_QUERY[normalized] ?? null;
+}
 
 /** Printed sticker width in millimetres; the height follows the 1500 × 918 artwork (82.25 mm). */
 export const SHOP_STICKER_WIDTH_MM = 134.4;
@@ -166,12 +184,10 @@ function stickerElements(lang: ShopStickerLang): readonly ShopStickerElement[] {
  * @param value - Raw `lang` query value, or null when the parameter is absent.
  * @returns The sticker language for a known alias (`kikamba`/`kam`, `filipino`/`fil`, Spanish, German,
  *   French, or English-only `en`/`none`/`keine`). Empty, missing, and unknown values stay Filipino.
+ *   The overlay does not use that fallback; see {@link shopStickerLangInitial}.
  */
 export function shopStickerLangFromQuery(value: string | null): ShopStickerLang {
-  if (value === null) return 'filipino';
-  const normalized = value.trim().toLowerCase();
-  if (normalized === '') return 'filipino';
-  return LANG_QUERY[normalized] ?? 'filipino';
+  return namedStickerLang(value) ?? 'filipino';
 }
 
 /**
@@ -182,6 +198,23 @@ export function shopStickerLangFromQuery(value: string | null): ShopStickerLang 
 export function shopStickerLangFromLocation(): ShopStickerLang {
   if (typeof window === 'undefined') return 'filipino';
   return shopStickerLangFromQuery(new URLSearchParams(window.location.search).get('lang'));
+}
+
+/**
+ * First sticker language for the overlay. A known `lang` query wins. Otherwise the visitor's UI
+ * language: English selects English only, Deutsch selects German, Español selects Spanish, and
+ * Filipino selects Filipino. French and Kikamba are not UI languages.
+ *
+ * @param locale - The app UI locale from settings or Accept-Language.
+ * @returns The named query language, or the sticker language for `locale` when the query is missing,
+ *   blank, unknown, or `window` is missing. An explicit Filipino query is not treated as missing.
+ */
+export function shopStickerLangInitial(locale: Locale): ShopStickerLang {
+  if (typeof window !== 'undefined') {
+    const named = namedStickerLang(new URLSearchParams(window.location.search).get('lang'));
+    if (named !== null) return named;
+  }
+  return LOCALE_STICKER_LANG[locale];
 }
 
 /**

@@ -16,7 +16,7 @@ import {
   buildShopStickerSvg,
   shopStickerBlob,
   shopStickerFileName,
-  shopStickerLangFromLocation,
+  shopStickerLangInitial,
   type ShopStickerFormat,
   type ShopStickerLang,
 } from '@/lib/shop-sticker';
@@ -26,7 +26,7 @@ const FORMAT_OPTIONS = SHOP_STICKER_FORMATS.map((format) => ({
   label: format.toUpperCase(),
 }));
 
-/** Menu order. English-only first; Filipino stays the default until a query or a choice says otherwise. */
+/** Menu order. English-only first. The first selection follows the UI language unless a lang query names one. */
 const STICKER_LANGS = ['english', 'spanish', 'german', 'french', 'filipino', 'kikamba'] as const;
 
 const LANG_MESSAGE = {
@@ -247,8 +247,9 @@ function saveBlob(blob: Blob, fileName: string): void {
 /**
  * Shop-sticker overlay on a member profile: preview of the printable sticker with this member's pay QR, a
  * PDF | PNG | JPG | SVG choice, a second-language menu, and a labeled Download. Mounted wherever the
- * profile shows its QR, including on a smartphone. The page `lang` query sets the first selection.
- * Changing the menu does not write the URL.
+ * profile shows its QR, including on a smartphone. A known page `lang` query sets the first selection.
+ * Otherwise the visitor's UI language does: English settings select English only. Changing the menu
+ * does not write the URL.
  *
  * @param props - See {@link ShopStickerOverlayProps}.
  * @returns The overlay dialog.
@@ -258,11 +259,11 @@ export function ShopStickerOverlay({
   handle,
   onClose,
 }: ShopStickerOverlayProps): ReactElement {
-  const { t } = useTranslations();
+  const { locale, t } = useTranslations();
   const [format, setFormat] = useState<ShopStickerFormat>('pdf');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [lang, setLang] = useState<ShopStickerLang>(shopStickerLangFromLocation);
+  const [lang, setLang] = useState<ShopStickerLang>(() => shopStickerLangInitial(locale));
   const [langOpen, setLangOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const preview = useMemo(

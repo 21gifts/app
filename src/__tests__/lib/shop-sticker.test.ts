@@ -11,6 +11,7 @@ import {
   shopStickerFileName,
   shopStickerLangFromLocation,
   shopStickerLangFromQuery,
+  shopStickerLangInitial,
 } from '@/lib/shop-sticker';
 import {
   SHOP_STICKER_ELEMENTS,
@@ -283,9 +284,36 @@ describe('shop sticker language', () => {
     }
     try {
       expect(shopStickerLangFromLocation()).toBe('filipino');
+      expect(shopStickerLangInitial('en')).toBe('english');
+      expect(shopStickerLangInitial('de')).toBe('german');
+      expect(shopStickerLangInitial('es')).toBe('spanish');
+      expect(shopStickerLangInitial('fil')).toBe('filipino');
     } finally {
       vi.stubGlobal('window', saved);
     }
+  });
+
+  it('uses the UI language when the query does not name a sticker language', () => {
+    expect(shopStickerLangInitial('en')).toBe('english');
+    expect(shopStickerLangInitial('de')).toBe('german');
+    expect(shopStickerLangInitial('es')).toBe('spanish');
+    expect(shopStickerLangInitial('fil')).toBe('filipino');
+    window.history.pushState(null, '', '/?lang=Swahili');
+    expect(shopStickerLangInitial('de')).toBe('german');
+    window.history.pushState(null, '', '/?lang=');
+    expect(shopStickerLangInitial('es')).toBe('spanish');
+    window.history.pushState(null, '', '/?lang=%20%20');
+    expect(shopStickerLangInitial('fil')).toBe('filipino');
+  });
+
+  it('lets a known lang query override the UI language', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    expect(shopStickerLangInitial('en')).toBe('kikamba');
+    expect(shopStickerLangInitial('de')).toBe('kikamba');
+    window.history.pushState(null, '', '/?lang=fil');
+    expect(shopStickerLangInitial('en')).toBe('filipino');
+    window.history.pushState(null, '', '/?lang=keine');
+    expect(shopStickerLangInitial('de')).toBe('english');
   });
 
   it('replaces Filipino text indices 6–12 and leaves the rest of the artwork', () => {

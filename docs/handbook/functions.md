@@ -2152,7 +2152,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: ShopStickerOverlay
 
 - **Purpose:** Shop-sticker overlay on a member profile. Same overlay chrome as `ExternalLinkWarning` (`role="dialog"`, `bg-app-overlay`, icon-only **Close**) with `Card maxWidth="xl"`: title **Shop sticker**, lead **Print it for a shop window. The QR code pays {handle}.**, a preview `<img>` of `buildShopStickerSvg` (alt **Shop sticker preview for {handle}**), a neutral `SegmentedControl` **File format** PDF | PNG | JPG | SVG (PDF first), a **Second language** combobox, and a labeled **Download**.
-- **Inputs:** `qrValue` (the profile's `openCryptoPayQrValue`), `handle` (`giftsLightningAddress`), `onClose`. The text language is not a prop. `shopStickerLangFromLocation` sets the first selection (Filipino when the query is missing or unknown). The combobox then drives the preview and the download. Choosing a language does not write the URL. Options, in order: None (English only), Spanish, German, French, Filipino, Kikamba. The closed control stays in the card flow; the list opens upward.
+- **Inputs:** `qrValue` (the profile's `openCryptoPayQrValue`), `handle` (`giftsLightningAddress`), `onClose`. The text language is not a prop. `shopStickerLangInitial` sets the first selection from the visitor's UI language (`en` → English only, `de` → German, `es` → Spanish, `fil` → Filipino), unless the page `lang` query names a sticker language. The combobox then drives the preview and the download. Choosing a language does not write the URL. Options, in order: None (English only), Spanish, German, French, Filipino, Kikamba. The closed control stays in the card flow; the list opens upward.
 - **Returns / side effects:** Dialog. **Download** disables itself while `shopStickerBlob` runs, then saves the blob through a temporary `<a download>` named by `shopStickerFileName` and revokes the object URL a second later; a failure shows `role="alert"` **Could not create the file. Please try again.** until the next try. Focus moves into the dialog on open and returns to the element that opened it on close. Close calls `onClose`. Escape closes the open language list first and leaves the dialog up; the next Escape calls `onClose`. The dialog's own keydown handles Escape from inside it, and a `document` listener (removed on unmount) closes only on Escape from outside the dialog, so one key press never closes twice even with the app root on `document`. Dialog click and keydown `stopPropagation`. A press outside the list closes the list only.
 - **Used by:** `MemberProfileScreen` — only where the profile shows its QR (username set), including on a smartphone.
 
@@ -2585,15 +2585,22 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Selects the printable shop-sticker text language from a `lang` query value.
 - **Inputs:** `value` — raw `lang` query value, or null when the parameter is absent.
-- **Returns / side effects:** Trimmed, case-insensitive. `kikamba`/`kam`; `filipino`/`fil`; Spanish `spanish`/`spanisch`/`es`/`espanol`/`español`; German `german`/`deutsch`/`de`; French `french`/`fr`/`francais`/`français`/`französisch`/`franzosisch`; English-only `english`/`en`/`none`/`keine`. Null, blank, and unknown stay `filipino`. No I/O.
+- **Returns / side effects:** Trimmed, case-insensitive. `kikamba`/`kam`; `filipino`/`fil`; Spanish `spanish`/`spanisch`/`es`/`espanol`/`español`; German `german`/`deutsch`/`de`; French `french`/`fr`/`francais`/`français`/`französisch`/`franzosisch`; English-only `english`/`en`/`none`/`keine`. Null, blank, and unknown stay `filipino`. That fallback is not the overlay default. No I/O.
 - **Used by:** `shopStickerLangFromLocation`.
 
 ## Function: shopStickerLangFromLocation
 
 - **Purpose:** Selects the printable shop-sticker text language from the current page URL.
 - **Inputs:** None. Reads the current `lang` query via `shopStickerLangFromQuery`.
-- **Returns / side effects:** The language from that query (`english`, `spanish`, `german`, `french`, `filipino`, or `kikamba`), or `filipino` when the query is missing, unknown, or `window` is missing. No I/O.
-- **Used by:** `ShopStickerOverlay` (first selection only) and `MemberProfileScreen` (Kikamba still auto-opens the overlay).
+- **Returns / side effects:** The language from that query (`english`, `spanish`, `german`, `french`, `filipino`, or `kikamba`), or `filipino` when the query is missing, unknown, or `window` is missing. No I/O. A missing query returning `filipino` does not select the overlay; auto-open stays Kikamba-only.
+- **Used by:** `MemberProfileScreen` (Kikamba still auto-opens the overlay).
+
+## Function: shopStickerLangInitial
+
+- **Purpose:** First sticker language for the overlay. A known `lang` query wins. Otherwise the visitor's UI language: English selects English only, Deutsch selects German, Español selects Spanish, Filipino selects Filipino. French and Kikamba are not UI languages.
+- **Inputs:** `locale` — one of `en`, `de`, `es`, `fil`. When `window` exists, also reads the current `lang` query.
+- **Returns / side effects:** A known alias (`kikamba`/`kam`, `fil`/`filipino`, Spanish, German, French, or English-only `en`/`none`/`keine`) wins over the UI language. A missing, blank, or unknown query, and a missing `window`, use the UI language (`en` → `english`, `de` → `german`, `es` → `spanish`, `fil` → `filipino`). An explicit Filipino query is not treated as missing. No I/O.
+- **Used by:** `ShopStickerOverlay` (first selection only).
 
 ## Function: decodeLnurl
 

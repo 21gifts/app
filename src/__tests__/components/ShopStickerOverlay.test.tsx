@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { Locale } from '@/lib/locale';
 import { buildShopStickerSvg, shopStickerBlob } from '@/lib/shop-sticker';
 
 vi.mock('@/lib/shop-sticker', async (importOriginal) => {
@@ -38,8 +39,11 @@ afterEach(() => {
   window.history.pushState(null, '', '/');
 });
 
-function renderOverlay(onClose = vi.fn()): ReturnType<typeof vi.fn> {
-  renderWithLocale(<ShopStickerOverlay qrValue={QR} handle="carol@21.gifts" onClose={onClose} />);
+function renderOverlay(onClose = vi.fn(), locale: Locale = 'en'): ReturnType<typeof vi.fn> {
+  renderWithLocale(
+    <ShopStickerOverlay qrValue={QR} handle="carol@21.gifts" onClose={onClose} />,
+    locale,
+  );
   return onClose;
 }
 
@@ -66,7 +70,11 @@ describe('ShopStickerOverlay', () => {
     }
     expect(screen.getByRole('button', { name: 'Download' })).toBeTruthy();
     const language = screen.getByRole('combobox', { name: 'Second language' });
-    expect(language.textContent).toContain('Filipino');
+    expect(language.textContent).toContain('None (English only)');
+    const src = preview.getAttribute('src') ?? '';
+    expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toBe(
+      buildShopStickerSvg(QR, 'english'),
+    );
     expect(language.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
@@ -77,8 +85,10 @@ describe('ShopStickerOverlay', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Download' }));
     });
-    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'pdf', 'filipino');
-    expect(clicked).toEqual([{ href: 'blob:sticker', download: '21gifts-shop-sticker-carol.pdf' }]);
+    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'pdf', 'english');
+    expect(clicked).toEqual([
+      { href: 'blob:sticker', download: '21gifts-shop-sticker-carol-english.pdf' },
+    ]);
     expect(document.querySelector('a[download]')).toBeNull();
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
     act(() => {
@@ -113,8 +123,8 @@ describe('ShopStickerOverlay', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Download' }));
     });
-    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'jpg', 'filipino');
-    expect(clicked[0]?.download).toBe('21gifts-shop-sticker-carol.jpg');
+    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'jpg', 'english');
+    expect(clicked[0]?.download).toBe('21gifts-shop-sticker-carol-english.jpg');
   });
 
   it('shows an alert when the file cannot be made, and clears it on the next try', async () => {
@@ -258,26 +268,22 @@ describe('ShopStickerOverlay', () => {
     ]) {
       expect(list.textContent).toContain(name);
     }
-    expect(screen.getByRole('option', { name: 'Filipino' }).getAttribute('aria-selected')).toBe(
-      'true',
-    );
-    fireEvent.click(screen.getByRole('option', { name: 'Filipino' }));
+    expect(
+      screen.getByRole('option', { name: 'None (English only)' }).getAttribute('aria-selected'),
+    ).toBe('true');
+    fireEvent.click(screen.getByRole('option', { name: 'None (English only)' }));
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(window.location.search).toBe('');
 
     const chosen: {
       name: string;
-      lang: 'english' | 'spanish' | 'german' | 'french' | 'kikamba';
+      lang: 'spanish' | 'german' | 'french' | 'filipino' | 'kikamba';
       file: string;
     }[] = [
-      {
-        name: 'None (English only)',
-        lang: 'english',
-        file: '21gifts-shop-sticker-carol-english.pdf',
-      },
       { name: 'Spanish', lang: 'spanish', file: '21gifts-shop-sticker-carol-spanish.pdf' },
       { name: 'German', lang: 'german', file: '21gifts-shop-sticker-carol-german.pdf' },
       { name: 'French', lang: 'french', file: '21gifts-shop-sticker-carol-french.pdf' },
+      { name: 'Filipino', lang: 'filipino', file: '21gifts-shop-sticker-carol.pdf' },
       { name: 'Kikamba', lang: 'kikamba', file: '21gifts-shop-sticker-carol-kikamba.pdf' },
     ];
     for (const item of chosen) {
@@ -304,14 +310,14 @@ describe('ShopStickerOverlay', () => {
     renderOverlay();
     const menu = languageMenu();
     fireEvent.click(menu);
-    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-filipino');
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-english');
     fireEvent.keyDown(menu, { key: 'a' });
     expect(screen.getByRole('listbox')).toBeTruthy();
-    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-filipino');
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-english');
     fireEvent.keyDown(menu, { key: 'ArrowDown' });
-    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-kikamba');
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-spanish');
     fireEvent.keyDown(menu, { key: 'ArrowUp' });
-    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-filipino');
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-english');
     fireEvent.keyDown(menu, { key: 'End' });
     expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-kikamba');
     fireEvent.keyDown(menu, { key: 'Home' });
@@ -364,5 +370,69 @@ describe('ShopStickerOverlay', () => {
       buildShopStickerSvg(QR, 'french'),
     );
     expect(window.location.search).toBe('?lang=Kikamba');
+  });
+
+  it('selects the settings language when the page has no lang query', async () => {
+    renderOverlay(vi.fn(), 'de');
+    expect(screen.getByRole('combobox', { name: 'Zweitsprache' }).textContent).toContain('Deutsch');
+    const preview = screen.getByRole('img', {
+      name: 'Vorschau des Shop-Stickers für carol@21.gifts',
+    });
+    const src = preview.getAttribute('src') ?? '';
+    expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toBe(
+      buildShopStickerSvg(QR, 'german'),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Herunterladen' }));
+    });
+    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'pdf', 'german');
+    expect(clicked[0]?.download).toBe('21gifts-shop-sticker-carol-german.pdf');
+
+    cleanup();
+    clicked.length = 0;
+    renderOverlay(vi.fn(), 'es');
+    expect(screen.getByRole('combobox', { name: 'Segundo idioma' }).textContent).toContain(
+      'Español',
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Descargar' }));
+    });
+    expect(clicked.at(-1)?.download).toBe('21gifts-shop-sticker-carol-spanish.pdf');
+
+    cleanup();
+    clicked.length = 0;
+    renderOverlay(vi.fn(), 'fil');
+    expect(screen.getByRole('combobox', { name: 'Ikalawang wika' }).textContent).toContain(
+      'Filipino',
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'I-download' }));
+    });
+    expect(clicked.at(-1)?.download).toBe('21gifts-shop-sticker-carol.pdf');
+  });
+
+  it('lets a known lang query override the settings language', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    renderOverlay(vi.fn(), 'de');
+    expect(screen.getByRole('combobox', { name: 'Zweitsprache' }).textContent).toContain('Kikamba');
+    const preview = screen.getByRole('img', {
+      name: 'Vorschau des Shop-Stickers für carol@21.gifts',
+    });
+    const src = preview.getAttribute('src') ?? '';
+    expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toBe(
+      buildShopStickerSvg(QR, 'kikamba'),
+    );
+    window.history.pushState(null, '', '/?lang=Swahili');
+    cleanup();
+    renderOverlay();
+    expect(screen.getByRole('combobox', { name: 'Second language' }).textContent).toContain(
+      'None (English only)',
+    );
+    window.history.pushState(null, '', '/?lang=fil');
+    cleanup();
+    renderOverlay(vi.fn(), 'de');
+    expect(screen.getByRole('combobox', { name: 'Zweitsprache' }).textContent).toContain(
+      'Philippinisch',
+    );
   });
 });
