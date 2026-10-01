@@ -928,6 +928,9 @@ const en = {
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
   'funding.grace':
     'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
+  'funding.stoppedDaily.title': 'Daily payout stopped',
+  'funding.stoppedDaily.body':
+    'Your daily payout has stopped because you have not applied for the 21 gifts grant. Apply so a moderator can review your posts.',
   'funding.apply': 'Apply for the 21 gifts grant',
   'funding.apply.heading': 'Apply for the 21 gifts grant',
   'funding.apply.about': 'First, write a short About me so people can get to know you.',
@@ -1929,6 +1932,9 @@ const de = {
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
   'funding.grace':
     'Tägliche Geschenke erhalten zugelassene Mitglieder. Bewerben Sie sich, damit das Team Ihre Beiträge prüfen kann.',
+  'funding.stoppedDaily.title': 'Tägliche Auszahlung gestoppt',
+  'funding.stoppedDaily.body':
+    'Ihre tägliche Auszahlung ist gestoppt, weil Sie sich noch nicht für das 21-Förderprogramm beworben haben. Bewerben Sie sich, damit das Team Ihre Beiträge prüfen kann.',
   'funding.apply': 'Für 21 Förderprogramm bewerben',
   'funding.apply.heading': 'Für 21 Förderprogramm bewerben',
   'funding.apply.about':
@@ -2919,6 +2925,9 @@ const es = {
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
   'funding.grace':
     'Las personas admitidas reciben el regalo diario. Solicita ahora para que una persona moderadora revise tus mensajes.',
+  'funding.stoppedDaily.title': 'Pago diario detenido',
+  'funding.stoppedDaily.body':
+    'Tu pago diario se ha detenido porque aún no has solicitado la beca 21 gifts. Solicita ahora para que una persona moderadora revise tus mensajes.',
   'funding.apply': 'Solicitar la beca 21 gifts',
   'funding.apply.heading': 'Solicitar la beca 21 gifts',
   'funding.apply.about': 'Primero, escribe un breve Sobre mí para que la gente te conozca.',
@@ -3916,6 +3925,9 @@ const fil = {
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
   'funding.grace':
     'Admitted members ang tumatanggap ng araw-araw na gift. Mag-apply na para masuri ng moderator ang iyong mga post.',
+  'funding.stoppedDaily.title': 'Huminto ang araw-araw na payout',
+  'funding.stoppedDaily.body':
+    'Huminto ang araw-araw na payout mo dahil hindi ka pa nag-a-apply para sa 21 gifts grant. Mag-apply na para masuri ng moderator ang iyong mga post.',
   'funding.apply': 'Mag-apply para sa 21 gifts grant',
   'funding.apply.heading': 'Mag-apply para sa 21 gifts grant',
   'funding.apply.about': 'Una, magsulat ng maikling About me para makilala ka ng iba.',

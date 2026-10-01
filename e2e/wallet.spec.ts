@@ -142,6 +142,86 @@ test('Function: renewPasskey — report without a session is 401', async ({ requ
   expect((await request.post('/me/passkey-renew/report')).status()).toBe(401);
 });
 
+test('Function: DailyPayoutStoppedNotice — shows when flag true and hides when false', async ({
+  page,
+}) => {
+  let stopped = true;
+  const account = {
+    id: 'acc_e2e',
+    linkingKey: `02${'a'.repeat(62)}`,
+    role: 'verified',
+    name: 'Ada',
+    username: 'ada',
+    location: null,
+    lightningAddress: 'ada@walletofsatoshi.com',
+    lightningAddressVerified: false,
+    forumLawsDismissed: false,
+    createdAt: 1_700_000_000,
+    rulesAgreedAt: 1,
+    viewKey: 'a'.repeat(64),
+    aboutMe: null,
+    aboutMeHasPhoto: false,
+    setup: null,
+    missing: [],
+    walletRequired: true,
+    funding: {
+      status: 'none',
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+      dailyPayoutStoppedNotice: true,
+    },
+  };
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...account,
+        funding: {
+          ...account.funding,
+          dailyPayoutStoppedNotice: stopped,
+        },
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Ada',
+            text: 'Hello',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toHaveAttribute(
+    'href',
+    '/grants/apply',
+  );
+  stopped = false;
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Daily payout stopped' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toHaveCount(0);
+});
+
 test('Function: PasskeyRenewNotice — failure OK closes the dialog', async ({ page }) => {
   let closed = false;
   const renewAccount = {

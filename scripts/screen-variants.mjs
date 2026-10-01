@@ -423,6 +423,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'daily-payout-stopped',
+    image: 'welcome-daily-payout-stopped.png',
+    visual: 'state-welcome-daily-payout-stopped',
+    needle: 'Daily payout stopped',
+  },
+  {
+    route: '/welcome',
     id: 'renew',
     image: 'welcome-renew.png',
     visual: 'state-welcome-renew',
