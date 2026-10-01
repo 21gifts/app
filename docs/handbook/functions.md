@@ -1395,7 +1395,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: pageFrameProblems
 
-- **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, and boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom. In-flow content inside `[data-scrollport]` may sit past the top or bottom. A position:fixed box is still reported. Slides inside `[data-scroll-x]` are ignored for the horizontal check. The sideways row itself is not ignored.
+- **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, and boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom. Content inside `[data-scrollport]` may sit past the top or bottom of the window unless it is position:fixed. A position:fixed box is still reported. Slides inside `[data-scroll-x]` are ignored for the horizontal check. The sideways row itself is not ignored.
 - **Inputs:** None. Uses the open document, `window.innerWidth`, and `window.innerHeight`.
 - **Returns / side effects:** A string array. Empty means the page stays in the window. No DOM writes and no network.
 - **Used by:** `shotScreen` in `e2e/visual.spec.ts`, before every screenshot, and the behavior test `Function: pageFrameProblems`.

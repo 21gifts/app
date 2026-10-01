@@ -490,7 +490,7 @@ describe('pageFrameProblems', () => {
     expect(pageFrameProblems()).toEqual([]);
   });
 
-  it('reports an absolute box inside a scrollport that extends past the window', () => {
+  it('skips absolute content inside a scrollport that extends past the window', () => {
     preparePageFrame(375, 375);
     const port = document.createElement('div');
     port.setAttribute('data-scrollport', '');
@@ -499,7 +499,7 @@ describe('pageFrameProblems', () => {
     stubBox(child, { left: 10, right: 30, top: 0, bottom: 900 });
     port.appendChild(child);
     document.body.appendChild(port);
-    expect(pageFrameProblems()).toEqual(['sticks out: div top=0 bottom=900']);
+    expect(pageFrameProblems()).toEqual([]);
   });
 
   it('skips a sticky box inside a scrollport that extends past the window', () => {

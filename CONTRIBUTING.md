@@ -455,7 +455,7 @@ The offset is never added into the height. The document lock stops the page from
 scrolling under the frame.
 
 A box stays inside the window. Only a slide inside `[data-scroll-x]` may extend past the left or
-right edge, and that row's own box stays inside. A box whose top or bottom leaves the window by more than one pixel fails the same check, except in-flow content inside `[data-scrollport]`; a position:fixed box is still reported. Do not size a panel with `vw` or `w-screen`: that
+right edge, and that row's own box stays inside. A box whose top or bottom leaves the window by more than one pixel fails the same check, except content inside `[data-scrollport]`, which may sit past the top or bottom unless it is position:fixed; a position:fixed box is still reported. Do not size a panel with `vw` or `w-screen`: that
 width is the phone, which is wider than the padded column, and that is what shifts a page.
 `scripts/check-scrollports.mjs` fails lint on those widths. Every visual screenshot runs
 `pageFrameProblems` first, and the Visual job fails when a box sticks out or the page can scroll

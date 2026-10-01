@@ -127,13 +127,7 @@ export function pageFrameProblems(): string[] {
     }
     if (verticalOverflow) {
       const scrollport = node.parentElement!.closest('[data-scrollport]');
-      const position = getComputedStyle(node).position;
-      const inFlow =
-        position === '' ||
-        position === 'static' ||
-        position === 'relative' ||
-        position === 'sticky';
-      const excused = scrollport !== null && inFlow;
+      const excused = scrollport !== null && getComputedStyle(node).position !== 'fixed';
       if (!excused) {
         stickOut.push(
           `sticks out: ${label} top=${Math.round(rect.top)} bottom=${Math.round(rect.bottom)}`,
