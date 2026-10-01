@@ -2990,14 +2990,14 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 ## Screen: /grants/payments
 
-- **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
+- **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
 - **Actions:** **Save** the comment. Turn payments **On** or **Off**. **Add** a recipient. Update and delete are icon-only (pencil and trash), not labeled buttons. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/payments` (`DailyPaymentsPage`). The **Daily payments** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
 
-Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. Comment **Daily gift**. That address renders as `ada@w...`. Payments **On** is pressed. Needle `Daily payments`.
+Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. Comment **Daily gift**. That address renders as `ada@w...`. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. Needle `Daily payments`.
 
 ![21.gifts daily payments](images/grants-payments.png)
 
@@ -3030,6 +3030,42 @@ Moderator on the direct URL. Heading **Daily payments** and **You cannot change 
 Founder, add amount 0, alert **The address or the amount is not valid.** Update and delete are icon-only (pencil and trash) with accessible names **Update** or **Delete** plus the shown address. Needle `The address or the amount is not valid.`
 
 ![21.gifts daily payments invalid](images/grants-payments-invalid.png)
+
+### Variant: off
+
+Founder with payments switched off. **Off** is pressed and **On** is not. Needle `state-grants-payments-off`.
+
+![21.gifts daily payments off](images/grants-payments-off.png)
+
+### Variant: invalid-comment
+
+Founder saves a comment spend rejects. Alert **The comment is not valid.** Needle `The comment is not valid.`
+
+![21.gifts daily payments invalid comment](images/grants-payments-invalid-comment.png)
+
+### Variant: invalid-switch
+
+Founder turns payments off and spend rejects the switch. Alert **The payments switch is not valid.** **On** stays pressed. Needle `The payments switch is not valid.`
+
+![21.gifts daily payments invalid switch](images/grants-payments-invalid-switch.png)
+
+### Variant: duplicate
+
+Founder adds an address spend already lists. Alert **That address is already listed.** Needle `That address is already listed.`
+
+![21.gifts daily payments duplicate](images/grants-payments-duplicate.png)
+
+### Variant: unknown
+
+Founder updates a row spend does not list. Alert **That recipient is not on the list.** Needle `That recipient is not on the list.`
+
+![21.gifts daily payments unknown](images/grants-payments-unknown.png)
+
+### Variant: save-error
+
+Founder saves and the roster call fails for any other reason. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
+
+![21.gifts daily payments save error](images/grants-payments-save-error.png)
 
 ## Screen: /profile/apply
 

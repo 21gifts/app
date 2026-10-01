@@ -177,7 +177,7 @@ describe('DailyPaymentsScreen', () => {
     expect(screen.getByText('Ada@w...')).toBeTruthy();
     expect(screen.getByText('bob@example.com')).toBeTruthy();
     expect(screen.getByText('nolocal')).toBeTruthy();
-    expect(screen.getByText('1.3')).toBeTruthy();
+    expect(screen.getByText('$1.30')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.queryByText('Update')).toBeNull();
     expect(screen.queryByText('Delete')).toBeNull();

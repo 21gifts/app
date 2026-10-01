@@ -3,6 +3,7 @@
 import { Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card, Field, IconButton } from '@/components/ui';
 import {
   addDailyRosterRecipient,
@@ -14,7 +15,9 @@ import {
 } from '@/lib/api';
 import type { DailyRoster } from '@/lib/api-types';
 import type { MessageKey } from '@/lib/messages';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import { canEditDailyPayoutRoster } from '@/lib/roles';
+import { formatUsdDisplay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 const SAVE_ERROR_KEYS = [
@@ -71,11 +74,13 @@ function parseUsd(raw: string): number | null {
  * Sum recipient USD amounts, rounded to cents for the Total row.
  *
  * @param roster - Loaded roster.
- * @returns Display text for the total.
+ * @param style - Visitor grouping style.
+ * @returns Display text for the total, USD with two decimals.
  */
-function formatUsdTotal(roster: DailyRoster): string {
+function formatUsdTotal(roster: DailyRoster, style: NumberFormatStyle): string {
   const sum = roster.recipients.reduce((acc, row) => acc + row.amountUsd, 0);
-  return String(Math.round(sum * 100) / 100);
+  const cents = Math.round(sum * 100) / 100;
+  return formatUsdDisplay(String(cents), style);
 }
 
 /**
@@ -109,6 +114,7 @@ function saveErrorKey(err: unknown): SaveErrorKey {
  */
 export function DailyPaymentsScreen(): ReactElement | null {
   const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const editor = canEditDailyPayoutRoster(account?.role);
@@ -351,7 +357,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
             })}
             <li className="flex w-full items-baseline justify-between gap-3 px-4 text-sm text-app-fg">
               <span>{t('funding.daily.total')}</span>
-              <span>{formatUsdTotal(roster)}</span>
+              <span>{formatUsdTotal(roster, numberFormat)}</span>
             </li>
           </ul>
         )}
