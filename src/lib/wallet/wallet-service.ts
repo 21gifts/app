@@ -1,6 +1,12 @@
 import { getBreezApiKey } from '@/lib/config';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
-import { loadWalletSdk, type WalletConnection, type WalletSdk } from '@/lib/wallet/wallet-sdk';
+import {
+  loadWalletSdk,
+  type WalletConnection,
+  type WalletPayment,
+  type WalletPaymentPage,
+  type WalletSdk,
+} from '@/lib/wallet/wallet-sdk';
 import { useWalletStore } from '@/stores/wallet-store';
 
 /**
@@ -19,6 +25,16 @@ let balanceReadCounter = 0;
 
 /** Maximum wait for a connect attempt. */
 const CONNECT_TIMEOUT_MS = 30_000;
+
+/**
+ * Host the app is served from. The wallet's address lives on this host, and
+ * the app forwards the wallet's address calls to the api.
+ *
+ * @returns `window.location.host`.
+ */
+function appHost(): string {
+  return window.location.host;
+}
 
 /**
  * Advances the run counter so in-flight work from an older run is ignored.
@@ -132,7 +148,7 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
       if (run !== runCounter) {
         return;
       }
-      const next = await sdk.connect(mnemonic, apiKey);
+      const next = await sdk.connect(mnemonic, apiKey, appHost());
       if (run !== runCounter) {
         try {
           await next.disconnect();
@@ -227,4 +243,83 @@ export function listenForWalletPhrase(loadSdk: WalletSdkLoader = loadWalletSdk):
   return () => {
     window.removeEventListener(SESSION_PHRASE_EVENT, onPhrase);
   };
+}
+
+/**
+ * Waits until the wallet store leaves `connecting`.
+ *
+ * @returns The identity public key when the wallet is ready, otherwise `null`.
+ */
+function settledIdentity(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const settle = (state: ReturnType<typeof useWalletStore.getState>): boolean => {
+      if (state.status === 'connecting') {
+        return false;
+      }
+      resolve(state.status === 'ready' ? state.identityPubkey : null);
+      return true;
+    };
+    if (settle(useWalletStore.getState())) {
+      return;
+    }
+    const unsubscribe = useWalletStore.subscribe((state) => {
+      if (settle(state)) {
+        unsubscribe();
+      }
+    });
+  });
+}
+
+/**
+ * Makes sure the wallet is connected from the tab phrase, reusing a ready or
+ * in-flight connection, and returns its identity public key.
+ *
+ * @param loadSdk - SDK loader forwarded to {@link connectWallet}.
+ * @returns The wallet identity public key.
+ * @throws Error `wallet-connect` when the wallet could not be opened (no key,
+ * no tab phrase, or a failed connection).
+ */
+export async function ensureWalletConnected(
+  loadSdk: WalletSdkLoader = loadWalletSdk,
+): Promise<string> {
+  const status = useWalletStore.getState().status;
+  if (status !== 'ready' && status !== 'connecting') {
+    await connectWallet(loadSdk);
+  }
+  const identity = await settledIdentity();
+  if (identity === null || connection === null) {
+    throw new Error('wallet-connect');
+  }
+  return identity;
+}
+
+/**
+ * Registers the account's username as the address of the connected wallet.
+ * Never asks whether a name is free: only the account's own username is sent.
+ *
+ * @param username - The account's username.
+ * @returns Resolves once the registration was accepted.
+ * @throws Error `wallet-connect` without a connection; otherwise the SDK's error.
+ */
+export async function registerWalletAddress(username: string): Promise<void> {
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  await conn.registerAddress(username);
+}
+
+/**
+ * Lists the connected wallet's payments, newest first.
+ *
+ * @param page - Offset and limit.
+ * @returns The payments on that page.
+ * @throws Error `wallet-connect` without a connection; otherwise the SDK's error.
+ */
+export async function listWalletPayments(page: WalletPaymentPage): Promise<WalletPayment[]> {
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.listPayments(page);
 }

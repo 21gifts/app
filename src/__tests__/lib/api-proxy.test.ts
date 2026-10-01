@@ -51,6 +51,23 @@ describe('proxyApiRequest', () => {
     expect(headers.get('x-ignored')).toBeNull();
   });
 
+  it('forwards the wallet signature headers', async () => {
+    const fetchMock = stubFetch(new Response('{}', { status: 200 }));
+    const request = new Request('http://localhost/lnurlpay/abc', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-breez-signature': 'sig',
+        'x-breez-timestamp': '1700000000',
+      },
+      body: '{"username":"ada"}',
+    });
+    await proxyApiRequest(request, '/lnurlpay/abc');
+    const headers = (fetchMock.mock.calls[0] as [URL, RequestInit])[1].headers as Headers;
+    expect(headers.get('x-breez-signature')).toBe('sig');
+    expect(headers.get('x-breez-timestamp')).toBe('1700000000');
+  });
+
   it('forwards a JSON POST body as a buffer without duplex', async () => {
     const fetchMock = stubFetch(new Response('{}', { status: 200 }));
     const body = JSON.stringify({ address: 'a@b.com' });
