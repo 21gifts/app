@@ -3715,7 +3715,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: refreshWallet
 
-- **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. When reads overlap only the latest one writes. A failed read closes the connection and sets `error`.
+- **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. When reads overlap only the latest one counts: it alone writes the store, and only its failure closes the connection and sets `error`. The failure of a stale read is ignored.
 - **Inputs:** None.
 - **Returns / side effects:** void. Updates `useWalletStore`.
 - **Used by:** The `synced` listener that `connectWallet` registers.
