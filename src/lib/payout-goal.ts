@@ -95,6 +95,7 @@ export function formatUtcDate(day: string, locale: string): string {
  * Axis tick label for a UTC day (`D.MM.`).
  *
  * @param day - UTC `YYYY-MM-DD`.
+ * @param locale - Active UI locale.
  * @returns Short day-month label.
  */
 export function chartDayLabel(day: string, locale: string): string {

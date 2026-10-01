@@ -18673,7 +18673,7 @@ test.describe('statistics screens', () => {
     });
   }
 
-  async function shotStatistics(page: Page, arg: string): Promise<void> {
+  async function shotStatistics(page: Page): Promise<void> {
     const current = page.viewportSize() ?? { width: 1280, height: 720 };
     await page.evaluate(() => document.fonts.ready);
     const styleTag = await page.addStyleTag({
@@ -18706,7 +18706,6 @@ test.describe('statistics screens', () => {
       await styleTag.evaluate((el) => {
         el.parentNode?.removeChild(el);
       });
-      await shotScreen(page, arg);
       return;
     }
     // 1600 is an emergency brake, not a grow-to target.
@@ -18715,12 +18714,10 @@ test.describe('statistics screens', () => {
       await styleTag.evaluate((el) => {
         el.parentNode?.removeChild(el);
       });
-      await shotScreen(page, arg);
       return;
     }
     await page.setViewportSize({ width: current.width, height: needed });
     // clip stays so a light scrollbar cannot change width.
-    await shotScreen(page, arg);
   }
 
   async function seedAda(
@@ -18761,7 +18758,8 @@ test.describe('statistics screens', () => {
       'href',
       '/moderate/payouts',
     );
-    await shotStatistics(page, 'screen-statistics');
+    await shotStatistics(page);
+    await shotScreen(page, 'screen-statistics');
   });
 
   test('statistics loading', async ({ page }) => {
@@ -18775,7 +18773,8 @@ test.describe('statistics screens', () => {
     await expect(
       page.getByRole('group', { name: 'Active shops' }).getByText('Loading…'),
     ).toBeVisible();
-    await shotStatistics(page, 'state-statistics-loading');
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-loading');
   });
 
   test('statistics error', async ({ page }) => {
@@ -18792,7 +18791,8 @@ test.describe('statistics screens', () => {
     await page.goto('/statistics');
     await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
     await expect(page.getByText('Shops by UTC day')).toBeVisible();
-    await shotStatistics(page, 'state-statistics-error');
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-error');
   });
 
   test('statistics shop-error', async ({ page }) => {
@@ -18808,7 +18808,8 @@ test.describe('statistics screens', () => {
     await page.goto('/statistics');
     await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
     await expect(page.getByText('People by UTC day')).toBeVisible();
-    await shotStatistics(page, 'state-statistics-shop-error');
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-shop-error');
   });
 
   test('statistics both-error', async ({ page }) => {
@@ -18831,14 +18832,16 @@ test.describe('statistics screens', () => {
     await page.goto('/statistics');
     await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
     await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
-    await shotStatistics(page, 'state-statistics-both-error');
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-both-error');
   });
 
   test('statistics forbidden', async ({ page }) => {
     await seedAda(page, 'basis');
     await page.goto('/statistics');
     await expect(page.getByText('This page is for moderators.')).toBeVisible();
-    await shotStatistics(page, 'state-statistics-forbidden');
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-forbidden');
   });
 });
 
