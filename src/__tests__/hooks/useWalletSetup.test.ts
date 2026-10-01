@@ -3,10 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWalletSetup, walletSetupPin } from '@/hooks/useWalletSetup';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
-import { runWalletSetup, type WalletSetupOutcome } from '@/lib/wallet/wallet-setup';
+import {
+  runWalletSetup,
+  walletSetupInFlight,
+  type WalletSetupOutcome,
+} from '@/lib/wallet/wallet-setup';
 
 vi.mock('@/lib/wallet/wallet-setup', () => ({
   runWalletSetup: vi.fn(),
+  walletSetupInFlight: vi.fn(() => false),
 }));
 
 vi.mock('@/lib/wallet/wallet-sdk', () => ({
@@ -34,6 +39,7 @@ beforeEach(() => {
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   clearSessionPhrase();
   vi.mocked(runWalletSetup).mockReset().mockResolvedValue('done');
+  vi.mocked(walletSetupInFlight).mockReset().mockReturnValue(false);
   vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
@@ -86,6 +92,20 @@ describe('useWalletSetup', () => {
       await run.promise;
     });
     expect(result.current.view).toBe('progress');
+  });
+
+  it('joins a run that is still in flight after a remount, without a phrase in tab memory', async () => {
+    vi.mocked(walletSetupInFlight).mockReturnValue(true);
+    const run = deferred();
+    vi.mocked(runWalletSetup).mockReturnValueOnce(run.promise);
+    const { result } = renderHook(() => useWalletSetup());
+    expect(result.current.view).toBe('progress');
+    expect(runWalletSetup).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      run.resolve('failed');
+      await run.promise;
+    });
+    expect(result.current.view).toBe('error');
   });
 
   it.each([

@@ -3,7 +3,12 @@ import type { Account } from '@/lib/api-types';
 import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import type { WalletConnection, WalletSdk } from '@/lib/wallet/wallet-sdk';
 import { disconnectWallet, type WalletSdkLoader } from '@/lib/wallet/wallet-service';
-import { needsWalletSetup, runWalletSetup, type WalletSetupStep } from '@/lib/wallet/wallet-setup';
+import {
+  needsWalletSetup,
+  runWalletSetup,
+  walletSetupInFlight,
+  type WalletSetupStep,
+} from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -180,6 +185,30 @@ describe('runWalletSetup', () => {
     expect(mocks.rememberPhraseFromPrf).toHaveBeenCalledWith(
       expect.objectContaining({ credentialId: 'AQID', sessionToken: SESSION }),
     );
+  });
+
+  it('a second call while a run is in progress joins it instead of starting another', async () => {
+    const { loadSdk } = fakeSdk();
+    const first: WalletSetupStep[] = [];
+    const second: WalletSetupStep[] = [];
+    expect(walletSetupInFlight()).toBe(false);
+    const a = runWalletSetup((step) => first.push(step), loadSdk);
+    expect(walletSetupInFlight()).toBe(true);
+    const b = runWalletSetup((step) => second.push(step), loadSdk);
+    expect(b).toBe(a);
+    await expect(Promise.all([a, b])).resolves.toEqual(['done', 'done']);
+    expect(mocks.calls).toEqual(['passkey', 'connect', 'claim', 'register', 'refresh']);
+    expect(second).toEqual([]);
+    expect(first).toEqual(['passkey', 'connecting', 'claiming', 'registering', 'refreshing']);
+    expect(walletSetupInFlight()).toBe(false);
+  });
+
+  it('starts a fresh run after the previous one ended', async () => {
+    const { loadSdk } = fakeSdk();
+    mocks.putMyWallet.mockRejectedValueOnce(new Error('wallet-request'));
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
+    expect(walletSetupInFlight()).toBe(false);
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
   });
 
   it('skips the passkey prompt when the phrase is already in tab memory', async () => {

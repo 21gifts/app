@@ -3857,12 +3857,19 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Runs the one-time wallet setup in a fixed order: one passkey prompt (`obtainPrfFirstFromGet`) only when the phrase is not in tab memory, then connect (`ensureWalletConnected`), claim (`putMyWallet` with the lower-cased identity key), register (`registerWalletAddress` with the account's username), and refresh (`fetchMe`, then `setAccount`). A 409 on the claim means the wallet is already verified and skips straight to the refresh. The phrase never leaves tab memory.
 - **Inputs:** `onStep` callback (`passkey`, `connecting`, `claiming`, `registering`, `refreshing`), optional `WalletSdkLoader`.
-- **Returns / side effects:** `done` when the refreshed account is verified; `noPrf` when the passkey returns no PRF output; `cancelled` when the prompt is dismissed; `superseded` when the session changed meanwhile; otherwise `failed`. Never rejects.
+- **Returns / side effects:** `done` when the refreshed account is verified; `noPrf` when the passkey returns no PRF output; `cancelled` when the prompt is dismissed; `superseded` when the session changed meanwhile; otherwise `failed`. Never rejects. A call while a run is in progress returns that run's promise (its `onStep` is not called), so a remounted dialog cannot start a second run.
+- **Used by:** `useWalletSetup`.
+
+## Function: walletSetupInFlight
+
+- **Purpose:** Whether a setup run is in progress in this tab. `runWalletSetup` keeps one shared run; a second call joins it. `AppShell` mounts again on every page, so a dialog that remounts during a run uses this to show progress and join the run instead of starting a second one.
+- **Inputs:** None.
+- **Returns / side effects:** Boolean. No side effects.
 - **Used by:** `useWalletSetup`.
 
 ## Function: useWalletSetup
 
-- **Purpose:** View state for the setup dialog: `intro`, `progress`, `error`, or `noPrf`. Starts by itself when the phrase is already in tab memory; otherwise waits for **Set up wallet** so the passkey prompt follows a tap. A cancelled prompt or a changed session returns to the intro. `retry` reloads the page when the wallet's initialisation failed (`walletNeedsReload`), otherwise runs the setup again.
+- **Purpose:** View state for the setup dialog: `intro`, `progress`, `error`, or `noPrf`. Starts by itself when the phrase is already in tab memory, and joins a run still in flight after a remount (`walletSetupInFlight`); otherwise waits for **Set up wallet** so the passkey prompt follows a tap. A cancelled prompt or a changed session returns to the intro. `retry` reloads the page when the wallet's initialisation failed (`walletNeedsReload`), otherwise runs the setup again.
 - **Inputs:** None.
 - **Returns / side effects:** `{ view, start, retry }`. A pinned view (`walletSetupPin`) leaves both actions inert.
 - **Used by:** `WalletSetupNotice`.

@@ -364,6 +364,7 @@ app/
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
 │   ├── wallet.spec.ts           # /wallet recovery-phrase and balance Function titles
+│   ├── wallet-setup.spec.ts     # Wallet setup dialog, payments list, username freeze, address proxies
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
-import { runWalletSetup } from '@/lib/wallet/wallet-setup';
+import { runWalletSetup, walletSetupInFlight } from '@/lib/wallet/wallet-setup';
 
 /**
  * What the setup dialog shows. `intro` explains the step and offers the
@@ -52,8 +52,9 @@ export function walletSetupPin(): WalletSetupView | null {
 }
 
 /**
- * Drives the one-time wallet setup. Starts by itself when the phrase is
- * already in tab memory; otherwise waits for {@link UseWalletSetupResult.start}
+ * Drives the one-time wallet setup. Starts by itself (or joins the run in
+ * progress after a remount) when the phrase is already in tab memory or a run
+ * is in flight; otherwise waits for {@link UseWalletSetupResult.start}
  * so the passkey prompt follows a tap. A pinned view leaves the actions inert.
  *
  * @returns The current view and the start and retry actions.
@@ -61,7 +62,9 @@ export function walletSetupPin(): WalletSetupView | null {
 export function useWalletSetup(): UseWalletSetupResult {
   const [pinned] = useState(walletSetupPin);
   const [view, setView] = useState<WalletSetupView>(() =>
-    pinned === null && peekSessionPhrase() !== null ? 'progress' : 'intro',
+    pinned === null && (peekSessionPhrase() !== null || walletSetupInFlight())
+      ? 'progress'
+      : 'intro',
   );
   const inFlight = useRef(false);
 
@@ -95,7 +98,7 @@ export function useWalletSetup(): UseWalletSetupResult {
   }, [pinned, start]);
 
   useEffect(() => {
-    if (pinned === null && peekSessionPhrase() !== null) {
+    if (pinned === null && (peekSessionPhrase() !== null || walletSetupInFlight())) {
       start();
     }
   }, [pinned, start]);
