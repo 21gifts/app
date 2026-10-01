@@ -83,14 +83,20 @@ function visualView(): WalletPayView | null {
  * offered only when `sparkInvoice` is a string and the member's wallet is
  * ready, opening, or can be unlocked with one passkey prompt; otherwise the
  * view is `fallback`. A ready wallet prepares at once so the fee is shown
- * before **Pay from wallet**. Nothing is retried on its own. Visual pins
+ * before **Pay from wallet**; a prepared amount that differs from
+ * `amountSats` falls back. A wallet that leaves `ready` before the send
+ * starts over (unlock, opening, or the fallback). Nothing is retried on its own. Visual pins
  * (`?visual=wallet-pay-…`) apply only in a Playwright build, only with a
  * `sparkInvoice`, and leave the actions inert.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
+ * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
  * @returns View, fee, and the unlock and pay actions.
  */
-export function useWalletPay(sparkInvoice: string | null | undefined): UseWalletPayResult {
+export function useWalletPay(
+  sparkInvoice: string | null | undefined,
+  amountSats: number,
+): UseWalletPayResult {
   const status = useWalletStore((state) => state.status);
   const account = useAuthStore((state) => state.account);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -130,7 +136,9 @@ export function useWalletPay(sparkInvoice: string | null | undefined): UseWallet
       if (run !== generation.current) {
         return;
       }
-      if (result.kind === 'confirm') {
+      if (result.kind === 'confirm' && result.amountSats !== amountSats) {
+        setPhase('failed');
+      } else if (result.kind === 'confirm') {
         sendRef.current = result.send;
         setFeeSats(result.feeSats);
         setPhase('confirm');
@@ -140,7 +148,17 @@ export function useWalletPay(sparkInvoice: string | null | undefined): UseWallet
         setPhase('failed');
       }
     });
-  }, [usable, status, phase, input]);
+  }, [usable, status, phase, input, amountSats]);
+
+  useEffect(() => {
+    if (status === 'ready' || (phase !== 'preparing' && phase !== 'confirm')) {
+      return;
+    }
+    generation.current += 1;
+    sendRef.current = null;
+    setFeeSats(null);
+    setPhase('idle');
+  }, [status, phase]);
 
   const unlock = useCallback((): void => {
     if (pinned !== null || phase !== 'idle') {

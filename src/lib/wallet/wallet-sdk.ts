@@ -282,7 +282,7 @@ type ParsedInput =
   | { type: 'lightningAddress'; address: string; payRequest: LnurlDetails }
   | ({ type: 'lnurlPay' } & LnurlDetails)
   | { type: 'bitcoinAddress' }
-  | { type: 'bip21'; paymentMethods: ParsedInput[] }
+  | { type: 'bip21'; amountSat?: number; paymentMethods: ParsedInput[] }
   | { type: string };
 
 /** Narrow view of the SDK's pay-request details. */
@@ -340,7 +340,8 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
     case 'bitcoinAddress':
       return { type: 'onchain' };
     case 'bip21': {
-      const methods = (parsed as Extract<ParsedInput, { type: 'bip21' }>).paymentMethods;
+      const bip21 = parsed as Extract<ParsedInput, { type: 'bip21' }>;
+      const methods = bip21.paymentMethods;
       let onchain = false;
       for (const method of methods) {
         const target = targetFromParsed(method);
@@ -350,6 +351,13 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
         if (target.type === 'onchain') {
           onchain = true;
           continue;
+        }
+        if (
+          target.type === 'request' &&
+          target.amountSats === null &&
+          bip21.amountSat !== undefined
+        ) {
+          return { ...target, amountSats: bip21.amountSat };
         }
         return target;
       }

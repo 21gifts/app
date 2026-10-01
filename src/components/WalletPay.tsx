@@ -18,6 +18,8 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface WalletPayProps {
   /** Request the api issued for the in-app wallet, or `null`/`undefined` when it issued none. */
   sparkInvoice: string | null | undefined;
+  /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
+  amountSats: number;
   /** The existing invoice QR and external wallet button, shown when the in-app path is not used. */
   fallback: ReactNode;
   /** Latest gift-day totals for the fee's fiat line, or `null`. */
@@ -65,14 +67,19 @@ function OwnAddress(): ReactElement | null {
  * sheet's own long-poll closes it on confirmation. Otherwise it renders
  * `fallback` unchanged.
  *
- * @param props - Request, fallback, and rate day.
+ * @param props - Request, shown amount, fallback, and rate day.
  * @returns The pay slot.
  */
-export function WalletPay({ sparkInvoice, fallback, rateDay }: WalletPayProps): ReactElement {
+export function WalletPay({
+  sparkInvoice,
+  amountSats,
+  fallback,
+  rateDay,
+}: WalletPayProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const { view, feeSats, unlock, pay } = useWalletPay(sparkInvoice);
+  const { view, feeSats, unlock, pay } = useWalletPay(sparkInvoice, amountSats);
 
   switch (view) {
     case 'fallback':

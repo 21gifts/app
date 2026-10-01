@@ -7716,6 +7716,7 @@ describe('ForumBoard in-app wallet pay', () => {
 
   it('pays the posting fee in the composer sheet from the wallet', async () => {
     setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
     renderWithLocale(
       <ForumBoard
         messages={null}

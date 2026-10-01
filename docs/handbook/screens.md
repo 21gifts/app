@@ -208,7 +208,7 @@ Pinned fixture (`?visual=balance-connecting`, Playwright builds only), not a liv
 
 ### Variant: balance-ready
 
-Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wallet. Region **Balance** shows the ready fixture `₿21'000` with the default fiat beside it.
+Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wallet. Region **Balance** shows the ready fixture `₿21'000` with the default fiat beside it. The **Send Bitcoin** region with the empty paste field follows it, as on every ready wallet.
 
 ![21.gifts wallet balance ready](images/wallet-balance-ready.png)
 
@@ -268,7 +268,7 @@ Pinned fixture (`?visual=send-input`, Playwright builds only), not a live wallet
 
 ### Variant: send-amount
 
-Pinned fixture (`?visual=send-amount`, Playwright builds only). A receiver that asks for an amount: **To bob@example.com**, the amount field with the ₿ / fiat switch, **Between ₿1 and ₿1'000'000**, **Message (optional)**, **Continue**, and the step Close (`X`, **Cancel**).
+Pinned fixture (`?visual=send-amount`, Playwright builds only). A receiver that asks for an amount: **To bob@example.com**, the amount field with the ₿ / fiat switch, **Between ₿1 · $0.00 and ₿1'000'000 · $1'000.00** (each bound with the default fiat), **Message (optional)**, **Continue**, and the step Close (`X`, **Cancel**).
 
 ![21.gifts wallet send amount](images/wallet-send-amount.png)
 

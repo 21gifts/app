@@ -109,7 +109,7 @@ describe('WalletSend amount', () => {
     const send = sendWith(LNURL_STATE);
     renderSend(send);
     expect(screen.getByText('To bob@pay.example')).toBeTruthy();
-    expect(screen.getByText("Between ₿10 and ₿1'000")).toBeTruthy();
+    expect(screen.getByText("Between ₿10 · $0.01 and ₿1'000 · $1.00")).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Message (optional)'), { target: { value: 'Hi' } });
     expect(send.setComment).toHaveBeenCalledWith('Hi');
     expect(screen.getByLabelText('Message (optional)').getAttribute('maxlength')).toBe('140');
@@ -128,9 +128,17 @@ describe('WalletSend amount', () => {
   it('shows the amount alert, and Cancel closes the step', () => {
     const send = sendWith({ ...LNURL_STATE, amountError: true } as WalletSendState);
     renderSend(send);
-    expect(screen.getByRole('alert').textContent).toBe("Enter an amount between ₿10 and ₿1'000.");
+    expect(screen.getByRole('alert').textContent).toBe(
+      "Enter an amount between ₿10 · $0.01 and ₿1'000 · $1.00.",
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(send.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the bounds in bitcoin only without a usable rate', () => {
+    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    renderSend(sendWith(LNURL_STATE));
+    expect(screen.getByText("Between ₿10 and ₿1'000")).toBeTruthy();
   });
 
   it('has no bounds line or comment for a request without amount', () => {

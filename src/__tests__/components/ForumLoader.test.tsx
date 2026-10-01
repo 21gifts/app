@@ -10330,6 +10330,7 @@ describe('ForumLoader in-app wallet pay', () => {
       account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
     });
     setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
     fetchMock.mockResolvedValue(forumPage([]));
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
     renderWithLocale(<ForumLoader />);

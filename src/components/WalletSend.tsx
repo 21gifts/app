@@ -15,7 +15,12 @@ import {
 } from '@/hooks/useWalletSend';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import type { MessageKey } from '@/lib/messages';
-import { formatBitcoin, parseAmountDraft } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  parseAmountDraft,
+  satsToFiatAmount,
+} from '@/lib/stats-money';
 import type { AmountUnit } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -93,6 +98,11 @@ export function WalletSend({ send }: WalletSendProps): ReactElement {
 
   const fiatOf = (sats: number): ReactElement | null =>
     preferredFiatSuffix(sats, rateDay, fiat, numberFormat);
+  const boundText = (sats: number): string => {
+    const live = satsToFiatAmount(sats, rateDay, fiat);
+    const bitcoin = formatBitcoin(sats, numberFormat);
+    return live === null ? bitcoin : `${bitcoin} · ${formatFiatDisplay(live, fiat, numberFormat)}`;
+  };
 
   let body: ReactElement;
   if (state.step === 'input') {
@@ -154,8 +164,8 @@ export function WalletSend({ send }: WalletSendProps): ReactElement {
           {target.type === 'lnurl' ? (
             <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
               {t('wallet.sendAmountRange', {
-                min: formatBitcoin(min, numberFormat),
-                max: formatBitcoin(max, numberFormat),
+                min: boundText(min),
+                max: boundText(max),
               })}
             </p>
           ) : null}
@@ -173,8 +183,8 @@ export function WalletSend({ send }: WalletSendProps): ReactElement {
           {state.amountError ? (
             <p role="alert" className="text-center text-sm text-app-danger">
               {t('wallet.sendAmountInvalid', {
-                min: formatBitcoin(min, numberFormat),
-                max: formatBitcoin(max, numberFormat),
+                min: boundText(min),
+                max: boundText(max),
               })}
             </p>
           ) : null}
