@@ -279,7 +279,7 @@ app/
 │   │   ├── useWallet.ts         # /wallet balance status, unlock, and retry
 │   │   └── useWalletPhrase.ts   # In-tab PRF recovery phrase
 │   ├── lib/
-│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
