@@ -1195,7 +1195,7 @@ On **All**, expand Ada's note. The thread shows two replies from **Robin**, who 
 
 ### Variant: overlay-external-author
 
-On **All**, expand Ada's note and click **View profile** on Robin, who has no 21.gifts account. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example` (shown only because it differs), **Nostr key** `npub1example`, **Copy**, and an icon-only Close. No photo, no pay control, and no outbound link.
+On **All**, expand Ada's note and click **View profile** on Robin, who has no 21.gifts account. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example` (shown only because it differs), **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
 
 ![21.gifts welcome overlay external author](images/welcome-overlay-external-author.png)
 
@@ -4075,7 +4075,7 @@ Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” pl
 
 ### Variant: external-author
 
-Unsigned permalink of the same thread. Click **View profile** on Robin. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, **Copy**, and an icon-only Close. No photo, no pay control, and no outbound link.
+Unsigned permalink of the same thread. Click **View profile** on Robin. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
 
 ![21.gifts public message external author](images/messages-id-external-author.png)
 

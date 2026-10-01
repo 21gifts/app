@@ -1,9 +1,9 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { Check, Copy, X } from 'lucide-react';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Card, IconButton } from '@/components/ui';
 import { fetchExternalAuthorProfile } from '@/lib/api';
 import type { ExternalAuthorProfile } from '@/lib/api-types';
 
@@ -136,14 +136,23 @@ export function ExternalAuthorSheet({
           <div className="flex w-full flex-col items-center gap-2">
             <p className="text-sm text-app-muted">{t('forum.externalProfileNpub')}</p>
             <p className="text-sm text-app-fg break-all">{profile.npub}</p>
-            <Button
+            <IconButton
               type="button"
+              variant="ghost"
+              size="sm"
+              aria-label={
+                copied ? t('forum.externalProfileCopied') : t('forum.externalProfileCopy')
+              }
               onClick={() => {
                 void copyNpub();
               }}
             >
-              {copied ? t('forum.externalProfileCopied') : t('forum.externalProfileCopy')}
-            </Button>
+              {copied ? (
+                <Check aria-hidden="true" className="h-3.5 w-3.5" />
+              ) : (
+                <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+              )}
+            </IconButton>
           </div>
         ) : null}
       </Card>
