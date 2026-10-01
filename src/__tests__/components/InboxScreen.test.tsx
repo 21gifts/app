@@ -47,6 +47,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 vi.mock('@/lib/mention-search', () => ({
