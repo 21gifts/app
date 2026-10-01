@@ -70,6 +70,17 @@ describe('ShopStickerOverlay', () => {
     }
     expect(screen.getByRole('button', { name: 'Download' })).toBeTruthy();
     const language = screen.getByRole('combobox', { name: 'Second language' });
+    const format = screen.getByRole('group', { name: 'File format' });
+    const download = screen.getByRole('button', { name: 'Download' });
+    expect(language.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(preview.compareDocumentPosition(format) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(format.compareDocumentPosition(download) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(language.textContent).toContain('None (English only)');
     const src = preview.getAttribute('src') ?? '';
     expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toBe(

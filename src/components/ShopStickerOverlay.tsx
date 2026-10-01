@@ -64,8 +64,8 @@ function stickerLangAt(index: number): ShopStickerLang {
 }
 
 /**
- * Second-language combobox. The closed control stays in the card flow. The list opens upward
- * (`bottom-full`) so a six-row menu is not clipped below the viewport.
+ * Second-language combobox. The closed control stays in the card flow, above the preview. The list
+ * opens downward (`top-full`) over the preview.
  *
  * @param props - Selected language, whether the list is open, and the two callbacks.
  * @returns The labeled combobox.
@@ -180,7 +180,7 @@ function ShopStickerLangMenu({
             id="shop-sticker-lang-list"
             aria-label={label}
             aria-activedescendant={stickerLangOptionId(highlight)}
-            className="absolute bottom-full left-0 right-0 z-50 mb-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
+            className="absolute top-full left-0 right-0 z-50 mt-2 rounded-xl border border-app-border bg-app-card p-2 shadow-lg"
           >
             {STICKER_LANGS.map((lang) => {
               const selected = value === lang;
@@ -343,6 +343,12 @@ export function ShopStickerOverlay({
           </IconButton>
         </div>
         <p className="w-full text-sm text-app-muted">{t('profile.shopStickerLead', { handle })}</p>
+        <ShopStickerLangMenu
+          value={lang}
+          open={langOpen}
+          onOpenChange={setLangOpen}
+          onChange={setLang}
+        />
         {/* eslint-disable-next-line @next/next/no-img-element -- data URL of the generated sticker SVG */}
         <img
           src={preview}
@@ -355,12 +361,6 @@ export function ShopStickerOverlay({
           onChange={setFormat}
           ariaLabel={t('profile.shopStickerFormat')}
           tone="neutral"
-        />
-        <ShopStickerLangMenu
-          value={lang}
-          open={langOpen}
-          onOpenChange={setLangOpen}
-          onChange={setLang}
         />
         {failed ? (
           <p role="alert" className="text-sm text-app-danger">
