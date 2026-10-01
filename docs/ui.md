@@ -21,7 +21,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 3. **Orange is shell-split.** On the **marketing shell**, `#f7931a` is the primary filled CTA (header **Log in**, **Ask for help**) plus kickers. On the **app shell**, it is gift-money fill only (charts, ₿ selected, donate **Open the forum**). _Implication:_ do not call marketing **Log in** a gift. App form primaries (`Button variant="primary"`) stay `bg-app-btn`. `Button variant="accent"` is the orange fill; marketing uses it as shell primary, the app uses it for gift-intent only.
 
-4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1'500`; visitor may pick US `10,000.23` / German `23.000,33`). No `npub`, no “zap”, no “LNURL” on any screen.
+4. **Tech is invisible.** Visitors are never asked about keys, relays, NOSTR, invoices, or sats-as-jargon. _Implication:_ UI says “Bitcoin”, “Wallet of Satoshi”, `formatBitcoin` (`₿1'500`; visitor may pick US `10,000.23` / German `23.000,33`). No `npub`, no “zap”, no “LNURL” on any screen except the external-author sheet, which shows a published Nostr address when it matches the key, a payment address only as published text when it differs, and the npub to copy.
 
 5. **People first.** Receiver names and notes are the hero; chrome is quiet. _Implication:_ forum note body is `text-sm text-app-fg`; chrome labels are `text-app-muted`. On the signed-in profile, a stored wide image and a round photo sit above the title. The About me photo stays with that note. A missing wide image or profile photo is a labeled button that adds that picture (`Add a wide image`, `Add a profile photo`).
 
@@ -697,7 +697,7 @@ Glyph: `aria-hidden` on the lucide node.
 
 **States.** Open / dismissed (parent).
 
-**Shop sticker.** `ShopStickerOverlay` uses the same anatomy with `Card maxWidth="xl"` so the sticker preview is readable: title, muted lead, preview `<img>` (`rounded-xl border-app-border`), neutral `SegmentedControl` for PDF | PNG | JPG | SVG (file-format tokens, like the fiat codes), labeled `Button size="lg"` **Download**, `role="alert"` + `text-app-danger` on failure. Escape closes it too. The **sticker artwork** inside the preview and the downloaded files is a printed shop-window product, not app chrome: it keeps its own three-colour palette (orange `#F99602`, black, white), the classic Bitcoin wordmark type (Ubuntu) and the Open CryptoPay scan text (Barlow) as outlines, and the orange Open CryptoPay mark inside its QR. App tokens and the Outfit-only rule do not apply to that artwork; the 21.gifts sign on its shop is the Outfit 700 wordmark with an orange **21**.
+**Shop sticker.** `ShopStickerOverlay` uses the same anatomy with `Card maxWidth="xl"` so the sticker preview is readable: title, muted lead, a full-width **Second language** combobox (closed in the card flow; the list opens downward over the preview), preview `<img>` (`rounded-xl border-app-border`), neutral `SegmentedControl` for PDF | PNG | JPG | SVG (file-format tokens, like the fiat codes), labeled `Button size="lg"` **Download**, `role="alert"` + `text-app-danger` on failure. Escape closes an open language list first, then the dialog. The menu does not write the URL. Options, in order: **None (English only)**, **Spanish**, **German**, **French**, **Filipino**, **Kikamba**. The closed menu starts on the visitor's UI language: English settings show **None (English only)**, and Deutsch, Español, and Filipino settings select that language. The **sticker artwork** inside the preview and the downloaded files is a printed shop-window product, not app chrome: it keeps its own three-colour palette (orange `#F99602`, black, white), the classic Bitcoin wordmark type (Ubuntu) and the Open CryptoPay scan text (Barlow) as outlines, and the orange Open CryptoPay mark inside its QR. App tokens and the Outfit-only rule do not apply to that artwork; the 21.gifts sign on its shop is the Outfit 700 wordmark with an orange **21**. A known `lang` query on the profile or member URL overrides that first selection: `Kikamba` or `kam` also opens the overlay; `fil` or `filipino` selects Filipino; `en`, `none`, or `keine` is English only; Spanish, German, and French have the same aliases as the menu. A missing, blank, or unknown value does not open the overlay and follows the UI language. French and Kikamba are not app languages, so only a query or a later menu choice selects them.
 
 ### `Field`
 
@@ -1189,7 +1189,7 @@ Short, warm, direct. People helping people. English examples (catalogs translate
 | Open the forum                          | “Go to messenger surface”                             |
 | `₿1'500`                                | “1500 sats” as the visitor-facing string              |
 
-Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook), invoice jargon. Push copy stays English `{ title, body }` as the API already sends.
+Never on any screen: keys, relays, NOSTR, npub, nsec, zap (except engineers’ handbook, and except the external-author sheet’s published address and copyable npub), invoice jargon. Push copy stays English `{ title, body }` as the API already sends.
 
 ## Accessibility
 

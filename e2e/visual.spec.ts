@@ -3226,6 +3226,80 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-external');
   });
 
+  test('state /welcome overlay-external-author', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-nostr-gift',
+              name: 'Robin',
+              via: 'nostr',
+              text: '',
+              createdAt: '2026-08-28T12:03:00.000Z',
+              sats: 69,
+              payable: false,
+              hasPhoto: false,
+            },
+            {
+              id: 'r-nostr-text',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Greetings! https://example.com/hello',
+              createdAt: '2026-08-28T12:04:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await page.getByRole('button', { name: 'View profile' }).first().click();
+    const dialog = page.getByRole('dialog', { name: 'Robin' });
+    await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('pay@ln.example', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
+    await expect(dialog.getByRole('link')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-overlay-external-author');
+  });
+
   const REACTION_ANSWER = 'This is my answer';
   const REACTION_NOTE_TEXT = 'Thank you so much to all donors.';
   const REACTION_NOTE = {
@@ -4376,6 +4450,35 @@ test.describe('onboarding screens', () => {
       .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
       .toBe(true);
     await shotScreen(page, 'state-profile-sticker-open', false);
+  });
+
+  test('state /profile sticker-kikamba', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.goto('/profile?lang=Kikamba');
+    await expect(page.getByText('alice@21.gifts', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for alice@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await shotScreen(page, 'state-profile-sticker-kikamba', false);
+  });
+
+  test('state /profile sticker-lang', async ({ page }) => {
+    await seedProfilePage(page);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Shop sticker' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for alice@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await dialog.getByRole('combobox', { name: 'Second language' }).click();
+    await expect(dialog.getByRole('option', { name: 'Kikamba' })).toBeVisible();
+    await shotScreen(page, 'state-profile-sticker-lang', false);
   });
 
   test('state /profile funding-program-press', async ({ page }) => {
@@ -7682,6 +7785,32 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-sticker-open', false);
   });
 
+  test('state /members sticker-kikamba', async ({ page }) => {
+    await seedShopStickerMember(page);
+    await page.goto('/members/22222222-2222-4222-8222-222222222222?lang=Kikamba');
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('carol@21.gifts', { exact: true })).toBeVisible();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-members-sticker-kikamba', false);
+  });
+
+  test('state /members sticker-lang', async ({ page }) => {
+    await seedShopStickerMember(page);
+    const dialog = await openShopStickerOverlay(page);
+    await dialog.getByRole('combobox', { name: 'Second language' }).click();
+    await expect(dialog.getByRole('option', { name: 'Kikamba' })).toBeVisible();
+    await shotScreen(page, 'state-members-sticker-lang', false);
+  });
+
   test('state /members sticker-busy', async ({ page }) => {
     await page.addInitScript(() => {
       // the PNG encode never finishes, so Download stays disabled
@@ -9615,6 +9744,73 @@ test.describe('onboarding screens', () => {
       page.getByText('Greetings! https://example.com/hello', { exact: true }),
     ).toBeVisible();
     await shotScreen(page, 'state-messages-id-external-reply');
+  });
+
+  test('state /messages/[id] external-author', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 2,
+    };
+    await fulfillPublicThreadReplies(page, parentId, [
+      {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+        parentId,
+        name: 'Robin',
+        via: 'nostr',
+        text: '',
+        createdAt: '2026-08-28T12:03:00.000Z',
+        sats: 69,
+        payable: false,
+        hasPhoto: false,
+      },
+      {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+        parentId,
+        name: 'Robin',
+        via: 'nostr',
+        text: 'Greetings! https://example.com/hello',
+        createdAt: '2026-08-28T12:04:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+      },
+    ]);
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+        }),
+      });
+    });
+    await page.goto(`/messages/${parentId}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await page.getByRole('button', { name: 'View profile' }).first().click();
+    const dialog = page.getByRole('dialog', { name: 'Robin' });
+    await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('pay@ln.example', { exact: true })).toBeVisible();
+    await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
+    await expect(dialog.getByRole('link')).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-external-author');
   });
 
   test('state /messages/[id] quoted-note', async ({ page }) => {

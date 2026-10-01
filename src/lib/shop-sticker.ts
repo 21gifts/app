@@ -1,10 +1,16 @@
 import QRCode from 'qrcode';
+import type { Locale } from '@/lib/locale';
 import {
   SHOP_STICKER_COLORS,
   SHOP_STICKER_ELEMENTS,
+  SHOP_STICKER_ENGLISH_TEXT,
+  SHOP_STICKER_FRENCH_TEXT,
+  SHOP_STICKER_GERMAN_TEXT,
   SHOP_STICKER_HEIGHT,
+  SHOP_STICKER_KIKAMBA_TEXT,
   SHOP_STICKER_MARK,
   SHOP_STICKER_QR_BOX,
+  SHOP_STICKER_SPANISH_TEXT,
   SHOP_STICKER_WIDTH,
   type ShopStickerElement,
 } from '@/lib/shop-sticker-artwork';
@@ -14,6 +20,74 @@ export const SHOP_STICKER_FORMATS = ['pdf', 'png', 'jpg', 'svg'] as const;
 
 /** One of {@link SHOP_STICKER_FORMATS}. */
 export type ShopStickerFormat = (typeof SHOP_STICKER_FORMATS)[number];
+
+/** Text artwork language on the printable shop sticker. */
+export type ShopStickerLang = 'english' | 'spanish' | 'german' | 'french' | 'filipino' | 'kikamba';
+
+/** Second-language outlines that replace Filipino indices 6–12. Filipino keeps the shared artwork. */
+const TEXT_BY_LANG: Partial<Record<ShopStickerLang, readonly ShopStickerElement[]>> = {
+  english: SHOP_STICKER_ENGLISH_TEXT,
+  spanish: SHOP_STICKER_SPANISH_TEXT,
+  german: SHOP_STICKER_GERMAN_TEXT,
+  french: SHOP_STICKER_FRENCH_TEXT,
+  kikamba: SHOP_STICKER_KIKAMBA_TEXT,
+};
+
+/** Download-name suffix. Filipino keeps the historical unsuffixed name. */
+const FILE_SUFFIX: Record<ShopStickerLang, string> = {
+  english: '-english',
+  spanish: '-spanish',
+  german: '-german',
+  french: '-french',
+  filipino: '',
+  kikamba: '-kikamba',
+};
+
+/**
+ * Query aliases. Matching is on the trimmed, lowercased query.
+ * {@link shopStickerLangFromQuery} maps an unnamed value to Filipino.
+ * {@link shopStickerLangInitial} treats an unnamed value as absent so the UI language applies.
+ * An explicit Filipino alias is named, not absent.
+ */
+const LANG_QUERY: Record<string, ShopStickerLang> = {
+  kikamba: 'kikamba',
+  kam: 'kikamba',
+  filipino: 'filipino',
+  fil: 'filipino',
+  spanish: 'spanish',
+  spanisch: 'spanish',
+  es: 'spanish',
+  espanol: 'spanish',
+  español: 'spanish',
+  german: 'german',
+  deutsch: 'german',
+  de: 'german',
+  french: 'french',
+  fr: 'french',
+  francais: 'french',
+  français: 'french',
+  französisch: 'french',
+  franzosisch: 'french',
+  english: 'english',
+  en: 'english',
+  none: 'english',
+  keine: 'english',
+};
+
+/** Sticker language for each app UI locale. French and Kikamba are not app locales. */
+const LOCALE_STICKER_LANG: Record<Locale, ShopStickerLang> = {
+  en: 'english',
+  de: 'german',
+  es: 'spanish',
+  fil: 'filipino',
+};
+
+function namedStickerLang(value: string | null): ShopStickerLang | null {
+  if (value === null) return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '') return null;
+  return LANG_QUERY[normalized] ?? null;
+}
 
 /** Printed sticker width in millimetres; the height follows the 1500 × 918 artwork (82.25 mm). */
 export const SHOP_STICKER_WIDTH_MM = 134.4;
@@ -96,14 +170,62 @@ function elementSvg(el: ShopStickerElement): string {
   return `<path ${attrs.join(' ')}/>`;
 }
 
+function stickerElements(lang: ShopStickerLang): readonly ShopStickerElement[] {
+  const text = TEXT_BY_LANG[lang];
+  if (text === undefined) return SHOP_STICKER_ELEMENTS;
+  const next = SHOP_STICKER_ELEMENTS.slice();
+  next.splice(6, 7, ...text);
+  return next;
+}
+
+/**
+ * Selects the printable shop-sticker text language from a `lang` query value.
+ *
+ * @param value - Raw `lang` query value, or null when the parameter is absent.
+ * @returns The sticker language for a known alias (`kikamba`/`kam`, `filipino`/`fil`, Spanish, German,
+ *   French, or English-only `en`/`none`/`keine`). Empty, missing, and unknown values stay Filipino.
+ *   The overlay does not use that fallback; see {@link shopStickerLangInitial}.
+ */
+export function shopStickerLangFromQuery(value: string | null): ShopStickerLang {
+  return namedStickerLang(value) ?? 'filipino';
+}
+
+/**
+ * Selects the printable shop-sticker text language from the current page URL.
+ *
+ * @returns The language selected by the current `lang` query, or Filipino outside the browser.
+ */
+export function shopStickerLangFromLocation(): ShopStickerLang {
+  if (typeof window === 'undefined') return 'filipino';
+  return shopStickerLangFromQuery(new URLSearchParams(window.location.search).get('lang'));
+}
+
+/**
+ * First sticker language for the overlay. A known `lang` query wins. Otherwise the visitor's UI
+ * language: English selects English only, Deutsch selects German, Español selects Spanish, and
+ * Filipino selects Filipino. French and Kikamba are not UI languages.
+ *
+ * @param locale - The app UI locale from settings or Accept-Language.
+ * @returns The named query language, or the sticker language for `locale` when the query is missing,
+ *   blank, unknown, or `window` is missing. An explicit Filipino query is not treated as missing.
+ */
+export function shopStickerLangInitial(locale: Locale): ShopStickerLang {
+  if (typeof window !== 'undefined') {
+    const named = namedStickerLang(new URLSearchParams(window.location.search).get('lang'));
+    if (named !== null) return named;
+  }
+  return LOCALE_STICKER_LANG[locale];
+}
+
 /**
  * Printable shop-window sticker for one member as a standalone SVG document.
  *
  * @param qrValue - Payload of the member's pay QR (`openCryptoPayQrValue`).
+ * @param lang - Text artwork language; defaults to English and Filipino.
  * @returns SVG markup, 134.4 mm wide, fixed artwork plus the QR (error correction H, at least version 10) with the
  *   orange Open CryptoPay mark in the cleared centre.
  */
-export function buildShopStickerSvg(qrValue: string): string {
+export function buildShopStickerSvg(qrValue: string, lang: ShopStickerLang = 'filipino'): string {
   const qr = stickerQr(qrValue);
   const { x, y, size } = SHOP_STICKER_QR_BOX;
   const m = size / qr.size;
@@ -116,7 +238,7 @@ export function buildShopStickerSvg(qrValue: string): string {
   const mark = markPlacement(qr);
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${SHOP_STICKER_WIDTH_MM}mm" height="${fmt(HEIGHT_MM, 2)}mm" viewBox="0 0 ${SHOP_STICKER_WIDTH} ${SHOP_STICKER_HEIGHT}">`,
-    ...SHOP_STICKER_ELEMENTS.map(elementSvg),
+    ...stickerElements(lang).map(elementSvg),
     `<path d="${modules}" fill="${SHOP_STICKER_COLORS.black}" shape-rendering="crispEdges"/>`,
     `<path d="${SHOP_STICKER_MARK}" fill="${SHOP_STICKER_COLORS.orange}" transform="translate(${fmt(mark.cx, 2)} ${fmt(mark.cy, 2)}) scale(${fmt(mark.width, 3)})"/>`,
     '</svg>',
@@ -167,9 +289,13 @@ function elementPdf(el: ShopStickerElement): string {
  * Printable shop-window sticker for one member as a one-page vector PDF (134.4 mm wide, no fonts, no images).
  *
  * @param qrValue - Payload of the member's pay QR (`openCryptoPayQrValue`).
+ * @param lang - Text artwork language; defaults to English and Filipino.
  * @returns PDF 1.4 bytes.
  */
-export function buildShopStickerPdf(qrValue: string): Uint8Array<ArrayBuffer> {
+export function buildShopStickerPdf(
+  qrValue: string,
+  lang: ShopStickerLang = 'filipino',
+): Uint8Array<ArrayBuffer> {
   const qr = stickerQr(qrValue);
   const { x, y, size } = SHOP_STICKER_QR_BOX;
   const m = size / qr.size;
@@ -180,7 +306,7 @@ export function buildShopStickerPdf(qrValue: string): Uint8Array<ArrayBuffer> {
   const content = [
     // sticker units, y pointing down
     `q ${fmt(k, 6)} 0 0 ${fmt(-k, 6)} 0 ${fmt(heightPt, 3)} cm`,
-    ...SHOP_STICKER_ELEMENTS.map(elementPdf),
+    ...stickerElements(lang).map(elementPdf),
     `${rgb(SHOP_STICKER_COLORS.black)} rg`,
     ...qr.runs.map(
       ([r, c, len]) =>
@@ -251,14 +377,19 @@ async function rasterize(svg: string, format: 'png' | 'jpg'): Promise<Blob> {
  *
  * @param qrValue - Payload of the member's pay QR (`openCryptoPayQrValue`).
  * @param format - `pdf` (vector, 134.4 mm), `svg` (vector), or `png` / `jpg` (3000 px wide, on white).
+ * @param lang - Text artwork language; defaults to English and Filipino.
  * @returns The file as a typed `Blob`.
  * @throws When the browser cannot decode the SVG or encode the canvas (PNG / JPG only).
  */
-export async function shopStickerBlob(qrValue: string, format: ShopStickerFormat): Promise<Blob> {
+export async function shopStickerBlob(
+  qrValue: string,
+  format: ShopStickerFormat,
+  lang: ShopStickerLang = 'filipino',
+): Promise<Blob> {
   if (format === 'pdf') {
-    return new Blob([buildShopStickerPdf(qrValue)], { type: 'application/pdf' });
+    return new Blob([buildShopStickerPdf(qrValue, lang)], { type: 'application/pdf' });
   }
-  const svg = buildShopStickerSvg(qrValue);
+  const svg = buildShopStickerSvg(qrValue, lang);
   if (format === 'svg') return new Blob([svg], { type: 'image/svg+xml' });
   return rasterize(svg, format);
 }
@@ -268,12 +399,19 @@ export async function shopStickerBlob(qrValue: string, format: ShopStickerFormat
  *
  * @param handle - Public `username@domain` handle (`giftsLightningAddress`).
  * @param format - One of {@link SHOP_STICKER_FORMATS}.
- * @returns `21gifts-shop-sticker-<username>.<format>` with the username reduced to `a-z 0-9 . _ -`.
+ * @param lang - Text artwork language; defaults to English and Filipino.
+ * @returns `21gifts-shop-sticker-<username>[-language].<format>` with the username reduced to `a-z 0-9 . _ -`.
+ *   Filipino has no language suffix. English-only, Spanish, German, French, and Kikamba insert
+ *   `-english`, `-spanish`, `-german`, `-french`, or `-kikamba` before the extension.
  */
-export function shopStickerFileName(handle: string, format: ShopStickerFormat): string {
+export function shopStickerFileName(
+  handle: string,
+  format: ShopStickerFormat,
+  lang: ShopStickerLang = 'filipino',
+): string {
   const at = handle.indexOf('@');
   const local = (at === -1 ? handle : handle.slice(0, at))
     .toLowerCase()
     .replace(/[^a-z0-9._-]/g, '');
-  return `21gifts-shop-sticker-${local === '' ? 'member' : local}.${format}`;
+  return `21gifts-shop-sticker-${local === '' ? 'member' : local}${FILE_SUFFIX[lang]}.${format}`;
 }

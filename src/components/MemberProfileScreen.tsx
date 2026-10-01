@@ -43,6 +43,7 @@ import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
+import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
@@ -284,10 +285,19 @@ export function MemberProfileScreen({
   const qr = openCryptoPayQrValue(listedProfile.username, host);
   const [showQr, setShowQr] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
+  const kikambaStickerOpened = useRef(false);
 
   useEffect(() => {
     setShowQr(true);
   }, []);
+
+  useEffect(() => {
+    if (kikambaStickerOpened.current) return;
+    if (shopStickerLangFromLocation() !== 'kikamba') return;
+    if (qr === null || address === null) return;
+    kikambaStickerOpened.current = true;
+    setStickerOpen(true);
+  }, [qr, address]);
 
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const rateDayRef = useRef(rateDay);

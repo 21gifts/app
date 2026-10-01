@@ -6,8 +6,10 @@ import {
   fetchComposeTarget,
   NoteDeletedError,
   fetchGiftStats,
+  fetchMember,
   fetchMemberPosts,
   fetchShopNoteEdits,
+  postTrustVerify,
   setMessageShopText,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -33,11 +35,13 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 
 const push = vi.fn();
+const refresh = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push; replace: typeof push } => ({
+  useRouter: (): { push: typeof push; replace: typeof push; refresh: typeof refresh } => ({
     push,
     replace: push,
+    refresh,
   }),
   usePathname: (): string => '/',
   useSearchParams: (): URLSearchParams => new URLSearchParams(),
@@ -350,6 +354,7 @@ afterEach(async () => {
     await Promise.resolve();
   });
   cleanup();
+  window.history.pushState(null, '', '/');
   Object.defineProperty(navigator, 'userAgent', {
     configurable: true,
     value: originalUserAgent,
@@ -491,6 +496,70 @@ describe('MemberProfileScreen', () => {
       screen.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' }),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+  });
+
+  it('opens the Kikamba shop sticker from the page language without a click and leaves it closed', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+    view.rerender(<MemberProfileScreen profile={{ ...profile }} received={[]} donated={[]} />);
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+  });
+
+  it('keeps the Kikamba shop sticker open when the pay QR changes', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    const view = renderWithLocale(
+      <MemberProfileScreen profile={profile} received={[]} donated={[]} />,
+    );
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
+    view.rerender(
+      <MemberProfileScreen profile={{ ...profile, username: 'ada' }} received={[]} donated={[]} />,
+    );
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
+  });
+
+  it('does not reopen the Kikamba sticker after the pay QR changes', async () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator' },
+    });
+    vi.mocked(postTrustVerify).mockResolvedValueOnce({
+      id: profile.id,
+      name: 'Carol',
+      role: 'verified',
+    });
+    vi.mocked(fetchMember).mockResolvedValueOnce({
+      ...profile,
+      role: 'verified',
+      username: 'ada',
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} donated={[]} />,
+    );
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+    fireEvent.click(screen.getByText('Moderator functions'));
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await waitFor(() => {
+      expect(screen.getByText('ada@21.gifts')).toBeTruthy();
+    });
+    expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
+  });
+
+  it('offers no Kikamba shop sticker without a username', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, username: null }} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
     expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
   });
 

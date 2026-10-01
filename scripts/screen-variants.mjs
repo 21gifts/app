@@ -1725,6 +1725,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'sticker-kikamba',
+    image: 'profile-sticker-kikamba.png',
+    visual: 'state-profile-sticker-kikamba',
+    needle: 'state-profile-sticker-kikamba',
+  },
+  {
+    route: '/profile',
+    id: 'sticker-lang',
+    image: 'profile-sticker-lang.png',
+    visual: 'state-profile-sticker-lang',
+    needle: 'state-profile-sticker-lang',
+  },
+  {
+    route: '/profile',
     id: 'posts-open',
     image: 'profile-posts-open.png',
     visual: 'state-profile-posts-open',
@@ -2037,6 +2051,20 @@ export const SCREEN_VARIANTS = [
     image: 'members-sticker-open.png',
     visual: 'state-members-sticker-open',
     needle: 'state-members-sticker-open',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'sticker-kikamba',
+    image: 'members-sticker-kikamba.png',
+    visual: 'state-members-sticker-kikamba',
+    needle: 'state-members-sticker-kikamba',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'sticker-lang',
+    image: 'members-sticker-lang.png',
+    visual: 'state-members-sticker-lang',
+    needle: 'state-members-sticker-lang',
   },
   {
     route: '/members/[accountId]',
@@ -3762,6 +3790,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'overlay-external-author',
+    image: 'welcome-overlay-external-author.png',
+    visual: 'state-welcome-overlay-external-author',
+    needle: 'robin@nostr.example',
+  },
+  {
+    route: '/welcome',
     id: 'reaction-draft',
     image: 'welcome-reaction-draft.png',
     visual: 'state-welcome-reaction-draft',
@@ -4564,6 +4599,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-external-reply.png',
     visual: 'state-messages-id-external-reply',
     needle: 'Greetings! https://example.com/hello',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'external-author',
+    image: 'messages-id-external-author.png',
+    visual: 'state-messages-id-external-author',
+    needle: 'robin@nostr.example',
   },
   {
     route: '/messages/[id]',

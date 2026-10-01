@@ -1416,6 +1416,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:sticker-kikamba",
+    "label": "/profile sticker-kikamba",
+    "visual": "state-profile-sticker-kikamba",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:sticker-lang",
+    "label": "/profile sticker-lang",
+    "visual": "state-profile-sticker-lang",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:posts-open",
     "label": "/profile posts-open",
     "visual": "state-profile-posts-open",
@@ -1683,6 +1695,18 @@
     "id": "/members/[accountId]:sticker-open",
     "label": "/members/[accountId] sticker-open",
     "visual": "state-members-sticker-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:sticker-kikamba",
+    "label": "/members/[accountId] sticker-kikamba",
+    "visual": "state-members-sticker-kikamba",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:sticker-lang",
+    "label": "/members/[accountId] sticker-lang",
+    "visual": "state-members-sticker-lang",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3162,6 +3186,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:overlay-external-author",
+    "label": "/welcome overlay-external-author",
+    "visual": "state-welcome-overlay-external-author",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:reaction-draft",
     "label": "/welcome reaction-draft",
     "visual": "state-welcome-reaction-draft",
@@ -3849,6 +3879,12 @@
     "id": "/messages/[id]:external-reply",
     "label": "/messages/[id] external-reply",
     "visual": "state-messages-id-external-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:external-author",
+    "label": "/messages/[id] external-author",
+    "visual": "state-messages-id-external-author",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

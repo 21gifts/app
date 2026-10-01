@@ -1189,9 +1189,15 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ### Variant: expanded-external
 
-On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button; this shot leaves that sheet closed (`overlay-external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts welcome expanded external](images/welcome-expanded-external.png)
+
+### Variant: overlay-external-author
+
+On **All**, expand Ada's note and click **View profile** on Robin, who has no 21.gifts account. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example` (shown only because it differs), **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
+
+![21.gifts welcome overlay external author](images/welcome-overlay-external-author.png)
 
 ### Variant: reaction-draft
 
@@ -2445,9 +2451,21 @@ Same card after pressing the funding-program icon. One status line **Takes part 
 
 ### Variant: sticker-open
 
-Desktop member card after pressing **Shop sticker** under the Open CryptoPay QR: `ShopStickerOverlay` (scrim `bg-app-overlay`, `Card maxWidth="xl"`, icon-only **Close**) with the title **Shop sticker**, the lead **Print it for a shop window. The QR code pays {handle}.**, a preview of the printable sticker for this member (orange band with the Bitcoin mark and the English/Filipino scan text, sari-sari shop with the 21.gifts sign, the member's QR with the orange Open CryptoPay mark), the **File format** choice PDF | PNG | JPG | SVG (PDF selected), and a labeled **Download**. Escape also closes. Mobile combos (iPhone UA) open the same dialog as desktop. The closed card does not cover this result.
+Desktop member card after pressing **Shop sticker** under the Open CryptoPay QR: `ShopStickerOverlay` (scrim `bg-app-overlay`, `Card maxWidth="xl"`, icon-only **Close**) with the title **Shop sticker**, the lead **Print it for a shop window. The QR code pays {handle}.**, a closed **Second language** menu showing **None (English only)**, a preview of the printable sticker for this member (orange band with the Bitcoin mark and the English scan text only, no second-language headline, sari-sari shop with the 21.gifts sign, the member's QR with the orange Open CryptoPay mark), the **File format** choice PDF | PNG | JPG | SVG (PDF selected), and a labeled **Download**. Escape also closes. Mobile combos (iPhone UA) open the same dialog as desktop. The closed card does not cover this result. These shots use the English UI. Without a known `lang`, the sticker is English only.
 
 ![21.gifts member shop sticker open](images/members-sticker-open.png)
+
+### Variant: sticker-kikamba
+
+`/members/[accountId]?lang=Kikamba` opens `ShopStickerOverlay` immediately. The preview is the English/Kikamba sticker (Kikamba instead of TINATANGGAP DITO / Filipino scan text). Same chrome: **Second language** showing **Kikamba** above the preview, PDF selected, **Download** below it. Mobile combos match desktop. Needle `state-members-sticker-kikamba`.
+
+![21.gifts shop sticker Kikamba](images/members-sticker-kikamba.png)
+
+### Variant: sticker-lang
+
+Same overlay after opening **Second language**. The list opens downward over the preview. Options, top to bottom: **None (English only)** (selected), **Spanish**, **German**, **French**, **Filipino**, **Kikamba**. The dialog stays open. Mobile combos match desktop. Needle `state-members-sticker-lang`. These shots use the English UI.
+
+![21.gifts shop sticker language menu](images/members-sticker-lang.png)
 
 ### Variant: sticker-busy
 
@@ -2623,9 +2641,21 @@ Device-local Sunday. The name, the empty About me sentence, the address, and the
 
 ### Variant: sticker-open
 
-**Shop sticker** is open (`ShopStickerOverlay`, preview for `alice@21.gifts`) on desktop and mobile (smartphone UA). Needle `state-profile-sticker-open`.
+**Shop sticker** is open (`ShopStickerOverlay`, preview for `alice@21.gifts`) on desktop and mobile (smartphone UA). The closed **Second language** menu shows **None (English only)** above the preview, and the preview is the English-only sticker. File format and **Download** sit below the preview. Needle `state-profile-sticker-open`. These shots use the English UI. Without a known `lang`, the sticker is English only.
 
 ![21.gifts profile shop sticker](images/profile-sticker-open.png)
+
+### Variant: sticker-kikamba
+
+`/profile?lang=Kikamba` opens `ShopStickerOverlay` immediately. The preview is the English/Kikamba sticker (Kikamba instead of TINATANGGAP DITO / Filipino scan text). Same chrome: **Second language** showing **Kikamba** above the preview, PDF selected, **Download** below it. Mobile combos match desktop. Needle `state-profile-sticker-kikamba`.
+
+![21.gifts shop sticker Kikamba](images/profile-sticker-kikamba.png)
+
+### Variant: sticker-lang
+
+Same overlay after opening **Second language**. The list opens downward over the preview. Options, top to bottom: **None (English only)** (selected), **Spanish**, **German**, **French**, **Filipino**, **Kikamba**. The dialog stays open. Mobile combos match desktop. Needle `state-profile-sticker-lang`. These shots use the English UI.
+
+![21.gifts profile shop sticker language menu](images/profile-sticker-lang.png)
 
 ### Variant: funding-program-press
 
@@ -4063,9 +4093,15 @@ Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 
 
 ### Variant: external-reply
 
-Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each author line shows a non-interactive **External** span next to the name (same slot as a role pill; not a button, no hint). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each name is a **View profile** button. **External** stays a non-interactive span next to the name (same slot as a role pill; not a button, no hint). This shot leaves the profile sheet closed (`external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts public message external reply](images/messages-id-external-reply.png)
+
+### Variant: external-author
+
+Unsigned permalink of the same thread. Click **View profile** on Robin. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
+
+![21.gifts public message external author](images/messages-id-external-author.png)
 
 ### Variant: quoted-note
 

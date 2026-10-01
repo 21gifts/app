@@ -201,7 +201,7 @@ app/
 │   │   ├── TranslatableNoteBody.tsx # Exclusive original XOR translated note body
 │   │   ├── LinkedText.tsx       # Autolink http(s) in note bodies; internal Link, external warning
 │   │   ├── ExternalLinkWarning.tsx # Confirm overlay before leaving 21.gifts
-│   │   ├── ShopStickerOverlay.tsx # Member-profile shop sticker preview + PDF/PNG/JPG/SVG download
+│   │   ├── ShopStickerOverlay.tsx # Member-profile shop sticker preview, second language, PDF/PNG/JPG/SVG download
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
@@ -287,7 +287,7 @@ app/
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
 │   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM (never localStorage)
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
-│   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR (no PDF library)
+│   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids

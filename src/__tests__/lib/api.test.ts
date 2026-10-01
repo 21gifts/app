@@ -42,6 +42,7 @@ import {
   PublicForumUnauthorizedError,
   fetchForumMessage,
   fetchPublicMessage,
+  fetchExternalAuthorProfile,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
@@ -2946,6 +2947,47 @@ describe('fetchPublicMessage', () => {
     await expect(fetchPublicMessage('uuid')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+});
+
+describe('fetchExternalAuthorProfile', () => {
+  it('GETs /public-messages/:id/external-profile without Authorization and returns the profile', async () => {
+    const profile = {
+      name: 'Robin',
+      npub: 'npub1example',
+      nip05: 'ada@nostr.example',
+      lud16: 'pay@ln.example',
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: profile });
+    await expect(fetchExternalAuthorProfile('uuid')).resolves.toEqual(profile);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid/external-profile');
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(fetchExternalAuthorProfile('uuid')).resolves.toBeNull();
+  });
+
+  it('returns null when the body fails the schema', async () => {
+    stubFetch({ ok: true, status: 200, body: { name: 'Robin' } });
+    await expect(fetchExternalAuthorProfile('uuid')).resolves.toBeNull();
+  });
+
+  it('returns null when the response body cannot be read', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new Error('bad json')),
+      }),
+    );
+    await expect(fetchExternalAuthorProfile('uuid')).resolves.toBeNull();
+  });
+
+  it('returns null when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchExternalAuthorProfile('a/b')).resolves.toBeNull();
   });
 });
 

@@ -9,11 +9,19 @@ import {
   buildShopStickerSvg,
   shopStickerBlob,
   shopStickerFileName,
+  shopStickerLangFromLocation,
+  shopStickerLangFromQuery,
+  shopStickerLangInitial,
 } from '@/lib/shop-sticker';
 import {
   SHOP_STICKER_ELEMENTS,
+  SHOP_STICKER_ENGLISH_TEXT,
+  SHOP_STICKER_FRENCH_TEXT,
+  SHOP_STICKER_GERMAN_TEXT,
+  SHOP_STICKER_KIKAMBA_TEXT,
   SHOP_STICKER_MARK,
   SHOP_STICKER_QR_BOX,
+  SHOP_STICKER_SPANISH_TEXT,
 } from '@/lib/shop-sticker-artwork';
 
 const CAROL =
@@ -63,6 +71,23 @@ describe('buildShopStickerSvg', () => {
     expect(svg).toContain(
       `scale(${Math.round(((0.6222 * 13 * SHOP_STICKER_QR_BOX.size) / 57) * 1000) / 1000})`,
     );
+  });
+
+  it('swaps the Filipino scan text for the Kikamba outlines', () => {
+    expect(buildShopStickerSvg(CAROL, 'kikamba')).not.toBe(buildShopStickerSvg(CAROL));
+  });
+
+  it('builds Spanish, German, French, and English-only artwork', () => {
+    const filipino = buildShopStickerSvg(CAROL);
+    expect(SHOP_STICKER_SPANISH_TEXT.length).toBeGreaterThan(0);
+    expect(SHOP_STICKER_GERMAN_TEXT.length).toBeGreaterThan(0);
+    expect(SHOP_STICKER_FRENCH_TEXT.length).toBeGreaterThan(0);
+    expect(SHOP_STICKER_ENGLISH_TEXT).toHaveLength(3);
+    expect(buildShopStickerSvg(CAROL, 'spanish')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'german')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'french')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'english')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'filipino')).toBe(filipino);
   });
 
   it('keeps larger versions and widens the cleared centre to an odd module count', () => {
@@ -150,6 +175,12 @@ describe('buildShopStickerPdf', () => {
     expect(text).toMatch(/^q [\d.]+ 0 0 [\d.]+ [\d.]+ [\d.]+ cm$/m);
     expect(text).not.toMatch(/\/Font|\/XObject|\/Image/);
   });
+
+  it('writes a Kikamba PDF that is not the Filipino sticker', () => {
+    const bytes = buildShopStickerPdf(CAROL, 'kikamba');
+    expect(new TextDecoder().decode(bytes).startsWith('%PDF-1.4')).toBe(true);
+    expect(new TextDecoder().decode(bytes)).not.toBe(pdfText(CAROL));
+  });
 });
 
 describe('shopStickerFileName', () => {
@@ -165,8 +196,134 @@ describe('shopStickerFileName', () => {
     expect(shopStickerFileName('@21.gifts', 'png')).toBe('21gifts-shop-sticker-member.png');
   });
 
+  it('inserts -kikamba before the extension', () => {
+    expect(shopStickerFileName('carol@21.gifts', 'pdf', 'kikamba')).toBe(
+      '21gifts-shop-sticker-carol-kikamba.pdf',
+    );
+    expect(shopStickerFileName('@21.gifts', 'png', 'kikamba')).toBe(
+      '21gifts-shop-sticker-member-kikamba.png',
+    );
+  });
+
+  it('suffixes every second language except Filipino', () => {
+    expect(shopStickerFileName('carol@21.gifts', 'pdf', 'filipino')).toBe(
+      '21gifts-shop-sticker-carol.pdf',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'svg', 'english')).toBe(
+      '21gifts-shop-sticker-carol-english.svg',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'png', 'spanish')).toBe(
+      '21gifts-shop-sticker-carol-spanish.png',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'jpg', 'german')).toBe(
+      '21gifts-shop-sticker-carol-german.jpg',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'pdf', 'french')).toBe(
+      '21gifts-shop-sticker-carol-french.pdf',
+    );
+  });
+
   it('lists the formats in menu order', () => {
     expect(SHOP_STICKER_FORMATS).toEqual(['pdf', 'png', 'jpg', 'svg']);
+  });
+});
+
+describe('shop sticker language', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.history.pushState(null, '', '/');
+  });
+
+  it('maps known lang aliases and leaves empty or unknown values on Filipino', () => {
+    expect(shopStickerLangFromQuery('  Kikamba  ')).toBe('kikamba');
+    expect(shopStickerLangFromQuery('KIKAMBA')).toBe('kikamba');
+    expect(shopStickerLangFromQuery('kam')).toBe('kikamba');
+    expect(shopStickerLangFromQuery('filipino')).toBe('filipino');
+    expect(shopStickerLangFromQuery('fil')).toBe('filipino');
+    expect(shopStickerLangFromQuery('spanish')).toBe('spanish');
+    expect(shopStickerLangFromQuery('spanisch')).toBe('spanish');
+    expect(shopStickerLangFromQuery('es')).toBe('spanish');
+    expect(shopStickerLangFromQuery('espanol')).toBe('spanish');
+    expect(shopStickerLangFromQuery('español')).toBe('spanish');
+    expect(shopStickerLangFromQuery('german')).toBe('german');
+    expect(shopStickerLangFromQuery('deutsch')).toBe('german');
+    expect(shopStickerLangFromQuery('de')).toBe('german');
+    expect(shopStickerLangFromQuery('french')).toBe('french');
+    expect(shopStickerLangFromQuery('fr')).toBe('french');
+    expect(shopStickerLangFromQuery('francais')).toBe('french');
+    expect(shopStickerLangFromQuery('français')).toBe('french');
+    expect(shopStickerLangFromQuery('französisch')).toBe('french');
+    expect(shopStickerLangFromQuery('franzosisch')).toBe('french');
+    expect(shopStickerLangFromQuery('  EN  ')).toBe('english');
+    expect(shopStickerLangFromQuery('english')).toBe('english');
+    expect(shopStickerLangFromQuery('none')).toBe('english');
+    expect(shopStickerLangFromQuery('keine')).toBe('english');
+    expect(shopStickerLangFromQuery('Swahili')).toBe('filipino');
+    expect(shopStickerLangFromQuery(null)).toBe('filipino');
+    expect(shopStickerLangFromQuery('')).toBe('filipino');
+    expect(shopStickerLangFromQuery('   ')).toBe('filipino');
+  });
+
+  it('reads lang from the page URL', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    expect(shopStickerLangFromLocation()).toBe('kikamba');
+    window.history.pushState(null, '', '/');
+    expect(shopStickerLangFromLocation()).toBe('filipino');
+  });
+
+  it('returns filipino when window is missing', () => {
+    const saved = globalThis.window;
+    try {
+      vi.stubGlobal('window', undefined);
+    } catch {
+      Object.defineProperty(globalThis, 'window', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      });
+    }
+    try {
+      expect(shopStickerLangFromLocation()).toBe('filipino');
+      expect(shopStickerLangInitial('en')).toBe('english');
+      expect(shopStickerLangInitial('de')).toBe('german');
+      expect(shopStickerLangInitial('es')).toBe('spanish');
+      expect(shopStickerLangInitial('fil')).toBe('filipino');
+    } finally {
+      vi.stubGlobal('window', saved);
+    }
+  });
+
+  it('uses the UI language when the query does not name a sticker language', () => {
+    expect(shopStickerLangInitial('en')).toBe('english');
+    expect(shopStickerLangInitial('de')).toBe('german');
+    expect(shopStickerLangInitial('es')).toBe('spanish');
+    expect(shopStickerLangInitial('fil')).toBe('filipino');
+    window.history.pushState(null, '', '/?lang=Swahili');
+    expect(shopStickerLangInitial('de')).toBe('german');
+    window.history.pushState(null, '', '/?lang=');
+    expect(shopStickerLangInitial('es')).toBe('spanish');
+    window.history.pushState(null, '', '/?lang=%20%20');
+    expect(shopStickerLangInitial('fil')).toBe('filipino');
+  });
+
+  it('lets a known lang query override the UI language', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    expect(shopStickerLangInitial('en')).toBe('kikamba');
+    expect(shopStickerLangInitial('de')).toBe('kikamba');
+    window.history.pushState(null, '', '/?lang=fil');
+    expect(shopStickerLangInitial('en')).toBe('filipino');
+    window.history.pushState(null, '', '/?lang=keine');
+    expect(shopStickerLangInitial('de')).toBe('english');
+  });
+
+  it('replaces Filipino text indices 6–12 and leaves the rest of the artwork', () => {
+    expect(SHOP_STICKER_KIKAMBA_TEXT.length).toBe(7);
+    const next = SHOP_STICKER_ELEMENTS.slice();
+    next.splice(6, 7, ...SHOP_STICKER_KIKAMBA_TEXT);
+    expect(next[0]).toEqual(SHOP_STICKER_ELEMENTS[0]);
+    expect(next[5]).toEqual(SHOP_STICKER_ELEMENTS[5]);
+    expect(next.at(-1)).toEqual(SHOP_STICKER_ELEMENTS.at(-1));
+    expect(next[6]).not.toEqual(SHOP_STICKER_ELEMENTS[6]);
   });
 });
 
@@ -221,6 +378,14 @@ describe('shopStickerBlob', () => {
     expect(svg.type).toBe('image/svg+xml');
     expect(await readText(svg)).toBe(buildShopStickerSvg(CAROL));
     expect(toBlob).not.toHaveBeenCalled();
+  });
+
+  it('returns the Kikamba SVG, not the Filipino one', async () => {
+    const kikamba = await shopStickerBlob(CAROL, 'svg', 'kikamba');
+    const text = await readText(kikamba);
+    expect(text).toBe(buildShopStickerSvg(CAROL, 'kikamba'));
+    const filipino = await shopStickerBlob(CAROL, 'svg');
+    expect(text).not.toBe(await readText(filipino));
   });
 
   it('renders PNG and JPG at 3000 px on white and frees the object URL', async () => {

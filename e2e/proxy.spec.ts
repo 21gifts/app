@@ -17,6 +17,9 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/forum/messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/public-messages/[id]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/public-messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
+  expect(
+    (await request.get('/public-messages/[id]/external-profile')).status(),
+  ).toBeGreaterThanOrEqual(400);
   expect((await request.get('/links/[code]')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.get('/l/[code]')).status()).toBe(404);
   expect((await request.post('/messages/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);

@@ -68,6 +68,7 @@ import {
   proxyMessagesVideoGet,
   proxyForumMessageGet,
   proxyPublicMessageGet,
+  proxyExternalAuthorProfileGet,
   proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
@@ -450,6 +451,15 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyPublicMessageGet(new Request('http://localhost/public-messages/m1'), 'm1');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1');
+  });
+
+  it('proxyExternalAuthorProfileGet hits /messages/:id/external-profile', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorProfileGet(
+      new Request('http://localhost/public-messages/m1/external-profile'),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-profile');
   });
 
   it('proxyShortLinkGet hits /links/:code without a bearer', async () => {
