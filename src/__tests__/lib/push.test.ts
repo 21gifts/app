@@ -631,9 +631,9 @@ describe('currentPushEndpoint', () => {
   });
 
   it('returns undefined when the lookup throws', async () => {
-    const ready = Promise.reject(new Error('no worker'));
-    ready.catch(() => undefined);
-    const restoreNavigator = installNavigator({ serviceWorker: { ready } });
+    const restoreNavigator = installNavigator({
+      serviceWorker: { getRegistration: vi.fn().mockRejectedValue(new Error('no worker')) },
+    });
     try {
       await expect(currentPushEndpoint()).resolves.toBeUndefined();
     } finally {
@@ -644,7 +644,7 @@ describe('currentPushEndpoint', () => {
   it('returns undefined for an empty endpoint', async () => {
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
+        getRegistration: vi.fn().mockResolvedValue({
           pushManager: { getSubscription: vi.fn().mockResolvedValue({ endpoint: '' }) },
         }),
       },
@@ -659,9 +659,40 @@ describe('currentPushEndpoint', () => {
   it('returns undefined when the subscription has no endpoint', async () => {
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
+        getRegistration: vi.fn().mockResolvedValue({
           pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
         }),
+      },
+    });
+    try {
+      await expect(currentPushEndpoint()).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns the subscription endpoint', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+          },
+        }),
+      },
+    });
+    try {
+      await expect(currentPushEndpoint()).resolves.toBe('https://push.example/sub');
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns undefined when getRegistration is undefined and ready never settles', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: new Promise(() => undefined),
+        getRegistration: vi.fn().mockResolvedValue(undefined),
       },
     });
     try {
@@ -697,7 +728,7 @@ describe('closeLocalPushNotifications', () => {
 
   it('does nothing when notifications cannot be listed', async () => {
     const restoreNavigator = installNavigator({
-      serviceWorker: { ready: Promise.resolve({}) },
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue({}) },
     });
     try {
       await expect(closeLocalPushNotifications(['forum_post:m1'])).resolves.toBeUndefined();
@@ -709,7 +740,7 @@ describe('closeLocalPushNotifications', () => {
   it('does nothing when listing notifications throws', async () => {
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
+        getRegistration: vi.fn().mockResolvedValue({
           getNotifications: vi.fn().mockRejectedValue(new Error('no')),
         }),
       },
@@ -726,7 +757,7 @@ describe('closeLocalPushNotifications', () => {
     const closeMiss = vi.fn();
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
+        getRegistration: vi.fn().mockResolvedValue({
           getNotifications: vi.fn().mockResolvedValue([
             { tag: 'forum_post:m1', close: closeHit },
             { tag: 'forum_post:other', close: closeMiss },
@@ -747,7 +778,7 @@ describe('closeLocalPushNotifications', () => {
     const close = vi.fn();
     const restoreNavigator = installNavigator({
       serviceWorker: {
-        ready: Promise.resolve({
+        getRegistration: vi.fn().mockResolvedValue({
           getNotifications: vi.fn().mockResolvedValue([{ tag: 1, close }]),
         }),
       },
@@ -755,6 +786,22 @@ describe('closeLocalPushNotifications', () => {
     try {
       await closeLocalPushNotifications(['forum_post:m1']);
       expect(close).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('does nothing when getRegistration is undefined and ready never settles', async () => {
+    const getNotifications = vi.fn();
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: new Promise(() => undefined),
+        getRegistration: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+    try {
+      await expect(closeLocalPushNotifications(['forum_post:m1'])).resolves.toBeUndefined();
+      expect(getNotifications).not.toHaveBeenCalled();
     } finally {
       restoreNavigator();
     }

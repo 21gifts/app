@@ -31,6 +31,9 @@ export function pushTagForNotification(row: {
 /**
  * Current Web Push subscription endpoint for this browser, when one exists.
  *
+ * Looks up `navigator.serviceWorker.getRegistration()` and does not wait on
+ * `ready`.
+ *
  * @returns The endpoint string, or `undefined` when Push APIs are missing,
  * the lookup rejects, or the endpoint is empty. Never throws.
  */
@@ -39,7 +42,10 @@ export async function currentPushEndpoint(): Promise<string | undefined> {
     if (typeof navigator === 'undefined' || typeof navigator.serviceWorker === 'undefined') {
       return undefined;
     }
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration === undefined) {
+      return undefined;
+    }
     const subscription = await registration.pushManager.getSubscription();
     const endpoint = subscription?.endpoint;
     if (typeof endpoint !== 'string' || endpoint === '') {
@@ -54,6 +60,9 @@ export async function currentPushEndpoint(): Promise<string | undefined> {
 /**
  * Close shown Web Push notifications whose `tag` is in `tags`.
  *
+ * Looks up `navigator.serviceWorker.getRegistration()` and does not wait on
+ * `ready`.
+ *
  * @param tags - Notification tags to close.
  * @returns Nothing. No-op for an empty list or when `serviceWorker` /
  * `getNotifications` is missing. Never throws.
@@ -66,7 +75,10 @@ export async function closeLocalPushNotifications(tags: readonly string[]): Prom
     if (typeof navigator === 'undefined' || typeof navigator.serviceWorker === 'undefined') {
       return;
     }
-    const registration = await navigator.serviceWorker.ready;
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration === undefined) {
+      return;
+    }
     if (typeof registration.getNotifications !== 'function') {
       return;
     }

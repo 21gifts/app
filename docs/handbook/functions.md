@@ -657,14 +657,14 @@
 
 ## Function: currentPushEndpoint
 
-- **Purpose:** Read this browser's Web Push subscription endpoint so a mark-read request can ask the api to skip this device.
+- **Purpose:** Read this browser's Web Push subscription endpoint so a mark-read request can ask the api to skip this device. Calls `getRegistration()` and does not wait on `ready`.
 - **Inputs:** None. Uses `navigator.serviceWorker` when it exists.
 - **Returns / side effects:** The endpoint string, or `undefined` when Push APIs are missing, the lookup rejects, or the endpoint is empty. Never throws.
 - **Used by:** `markNotificationRead`, `markAllNotificationsRead`, and `markNotificationsReadForMessage`.
 
 ## Function: closeLocalPushNotifications
 
-- **Purpose:** Close shown Web Push notifications whose tag is in the list, so a note already read on this device does not stay on screen.
+- **Purpose:** Close shown Web Push notifications whose tag is in the list, so a note already read on this device does not stay on screen. Calls `getRegistration()` and does not wait on `ready`.
 - **Inputs:** Tag strings. An empty list is a no-op.
 - **Returns / side effects:** Nothing. Missing `serviceWorker` or `getNotifications` is a no-op. Never throws.
 - **Used by:** `markAllNotificationsRead`, `markNotificationsReadForMessage`, and `NotificationsLoader` when a row is opened.

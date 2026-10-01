@@ -9985,10 +9985,9 @@ test('Function: push service worker — GET /sw.js is the push worker', async ({
   expect(body).toContain('showNotification');
   expect(body).toContain('isDeviceSunday');
   expect(body).toContain('21gifts-push-open');
-  expect(body.indexOf("payload.type !== 'conversation'")).toBeGreaterThan(-1);
-  expect(body.indexOf("payload.type !== 'conversation'")).toBeLessThan(
-    body.indexOf('showNotification'),
-  );
+  const guardAt = body.indexOf("payload.type !== 'conversation'");
+  expect(guardAt).toBeGreaterThan(-1);
+  expect(body.indexOf('showNotification', guardAt)).toBeGreaterThan(guardAt);
 });
 
 test('Function: PushOpenListener — welcome heading is visible', async ({ page }) => {
