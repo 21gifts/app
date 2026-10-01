@@ -1041,22 +1041,322 @@ test('Function: markNotificationsReadForMessage — POST /forum/notifications/re
   expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
 });
 
-test('Function: pushTagForNotification — POST /forum/notifications/read-by-message without bearer is 401', async ({
-  request,
+test('Function: pushTagForNotification — clicking a forum reply closes only that push tag', async ({
+  page,
 }) => {
-  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  const note = {
+    id: 'n1',
+    type: 'forum_reply',
+    parentId: 'p1',
+    replyId: 'r1',
+    name: 'Bob',
+    text: 'hello',
+    createdAt: '2026-09-12T12:00:00.000Z',
+    readAt: null,
+  };
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/read-all$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/n1\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...note, readAt: '2026-09-12T12:01:00.000Z' }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [note], unreadCount: 1 }),
+    });
+  });
+  await page.addInitScript(() => {
+    if (
+      !Array.isArray(
+        (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
+      )
+    ) {
+      (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags = [];
+    }
+    const registration = {
+      pushManager: {
+        getSubscription: async () => ({ endpoint: 'https://push.example/e2e' }),
+      },
+      getNotifications: async () => [
+        {
+          tag: 'forum_reply:r1',
+          close: () => {
+            (window as unknown as { __e2eClosedPushTags?: string[] })
+              .__e2eClosedPushTags?.push('forum_reply:r1');
+          },
+        },
+        {
+          tag: 'other',
+          close: () => {
+            (window as unknown as { __e2eClosedPushTags?: string[] })
+              .__e2eClosedPushTags?.push('other');
+          },
+        },
+      ],
+    };
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        getRegistration: async () => registration,
+      },
+    });
+  });
+  await page.goto('/notifications');
+  await page.getByRole('button', { name: /Bob replied/ }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
+      ),
+    )
+    .toEqual(['forum_reply:r1']);
 });
 
-test('Function: currentPushEndpoint — POST /forum/notifications/read-by-message without bearer is 401', async ({
-  request,
+test('Function: currentPushEndpoint — clicking a row POSTs read with the push endpoint', async ({
+  page,
 }) => {
-  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  const note = {
+    id: 'n1',
+    type: 'forum_reply',
+    parentId: 'p1',
+    replyId: 'r1',
+    name: 'Bob',
+    text: 'hello',
+    createdAt: '2026-09-12T12:00:00.000Z',
+    readAt: null,
+  };
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/read-all$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/n1\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...note, readAt: '2026-09-12T12:01:00.000Z' }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [note], unreadCount: 1 }),
+    });
+  });
+  await page.addInitScript(() => {
+    if (
+      !Array.isArray(
+        (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
+      )
+    ) {
+      (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags = [];
+    }
+    const registration = {
+      pushManager: {
+        getSubscription: async () => ({ endpoint: 'https://push.example/e2e' }),
+      },
+      getNotifications: async () => [
+        {
+          tag: 'forum_reply:r1',
+          close: () => {
+            (window as unknown as { __e2eClosedPushTags?: string[] })
+              .__e2eClosedPushTags?.push('forum_reply:r1');
+          },
+        },
+        {
+          tag: 'other',
+          close: () => {
+            (window as unknown as { __e2eClosedPushTags?: string[] })
+              .__e2eClosedPushTags?.push('other');
+          },
+        },
+      ],
+    };
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        getRegistration: async () => registration,
+      },
+    });
+  });
+  await page.goto('/notifications');
+  const read = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/forum/notifications/n1/read'),
+  );
+  await page.getByRole('button', { name: /Bob replied/ }).click();
+  expect((await read).postDataJSON()).toEqual({ endpoint: 'https://push.example/e2e' });
 });
 
-test('Function: closeLocalPushNotifications — POST /forum/notifications/read-by-message without bearer is 401', async ({
-  request,
+test('Function: closeLocalPushNotifications — clicking a row closes only the matching push tag', async ({
+  page,
 }) => {
-  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  const note = {
+    id: 'n1',
+    type: 'forum_reply',
+    parentId: 'p1',
+    replyId: 'r1',
+    name: 'Bob',
+    text: 'hello',
+    createdAt: '2026-09-12T12:00:00.000Z',
+    readAt: null,
+  };
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/read-all$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/n1\/read$/, async (route) => {
+    expect(route.request().method()).toBe('POST');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...note, readAt: '2026-09-12T12:01:00.000Z' }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ notifications: [note], unreadCount: 1 }),
+    });
+  });
+  await page.addInitScript(() => {
+    if (
+      !Array.isArray(
+        (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
+      )
+    ) {
+      (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags = [];
+    }
+    const registration = {
+      pushManager: {
+        getSubscription: async () => ({ endpoint: 'https://push.example/e2e' }),
+      },
+      getNotifications: async () => [
+        {
+          tag: 'forum_reply:r1',
+          close: () => {
+            (window as unknown as { __e2eClosedPushTags?: string[] })
+              .__e2eClosedPushTags?.push('forum_reply:r1');
+          },
+        },
+        {
+          tag: 'other',
+          close: () => {
+            (window as unknown as { __e2eClosedPushTags?: string[] })
+              .__e2eClosedPushTags?.push('other');
+          },
+        },
+      ],
+    };
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        getRegistration: async () => registration,
+      },
+    });
+  });
+  await page.goto('/notifications');
+  await page.getByRole('button', { name: /Bob replied/ }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
+      ),
+    )
+    .toEqual(['forum_reply:r1']);
 });
 
 test('Function: proxyNotificationReadPost — POST /forum/notifications/[id]/read without bearer', async ({

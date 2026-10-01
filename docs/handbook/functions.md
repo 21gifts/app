@@ -653,7 +653,7 @@
 - **Purpose:** Collapse tag for one in-app notification, matching the api: `forum_post:<parentId>`, `forum_reply:<replyId>`, `forum_mention:<replyId>`, `zap:<replyId>`, `moderator_appointed:<parentId>`. Any other type, including `moderator_proposal`, is null.
 - **Inputs:** `type`, `parentId`, and `replyId`.
 - **Returns / side effects:** Tag string or `null`. No network.
-- **Used by:** `NotificationsLoader` before it closes the local banner for a row that is not a proposal.
+- **Used by:** `NotificationsLoader` before it closes the local banner for a row that is not a proposal, and `ForumLoader` after the welcome appointment pill's `markNotificationRead` succeeds.
 
 ## Function: currentPushEndpoint
 
@@ -667,7 +667,7 @@
 - **Purpose:** Close shown Web Push notifications whose tag is in the list, so a note already read on this device does not stay on screen. Calls `getRegistration()` and does not wait on `ready`.
 - **Inputs:** Tag strings. An empty list is a no-op.
 - **Returns / side effects:** Nothing. Missing `serviceWorker` or `getNotifications` is a no-op. Never throws.
-- **Used by:** `markAllNotificationsRead`, `markNotificationsReadForMessage`, and `NotificationsLoader` when a row is opened.
+- **Used by:** `markAllNotificationsRead`, `markNotificationsReadForMessage`, `NotificationsLoader` when a row is opened, and `ForumLoader` after the welcome appointment pill's `markNotificationRead` succeeds.
 
 ## Function: vapidPublicKeyToBytes
 
@@ -3782,7 +3782,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** POST `/forum/notifications/read-by-message` with Bearer and JSON `{ messageId, endpoint? }`. `endpoint` is sent only when the current push endpoint is a non-empty string. Non-ok throws visitor copy `Could not mark notification as read`. On success, closes local notifications for string `tags`; a missing `tags` field is `[]`.
 - **Inputs:** Session token and forum message id.
 - **Returns / side effects:** `{ ok: true, tags: string[] }`.
-- **Used by:** `ForumLoader` when a note becomes expanded, `NoteTranslate` when Translate is requested with a session, `PublicMessageLoader` when a signed-in message page is ready, `MemberProfileScreen` when a profile note becomes expanded, and `PublicMessageThread` when a thread note becomes expanded.
+- **Used by:** `ForumLoader` when a note becomes expanded, `NoteTranslate` when Translate is requested for a forum note while a session is present (not for a conversation message), `PublicMessageLoader` when a signed-in message page is ready, `MemberProfileScreen` when a profile note becomes expanded, and `PublicMessageThread` when a thread note becomes expanded.
 
 ## Function: activeMention
 

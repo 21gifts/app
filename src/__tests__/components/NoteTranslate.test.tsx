@@ -199,6 +199,7 @@ describe('NoteTranslate', () => {
       'tok',
     );
     expect(translateNote).not.toHaveBeenCalled();
+    expect(markNotificationsReadForMessage).not.toHaveBeenCalled();
     await waitFor(() => {
       expect(onTranslated).toHaveBeenCalledWith(translated);
     });
