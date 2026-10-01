@@ -300,7 +300,7 @@
 - **Purpose:** Reads preferred `FiatCode` and `setFiat` from {@link FiatPreferenceProvider}.
 - **Inputs:** None (context).
 - **Returns / side effects:** `{ fiat, setFiat }`. Throws outside the provider.
-- **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `ForumBoard`, `PublicMessageLoader`, `StatsDashboard`, `DayLoader`.
+- **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `ForumBoard`, `PublicMessageLoader`, `StatsDashboard`, `DayLoader`, `WalletBalance`.
 
 ## Function: FiatPreferenceSwitcher
 
@@ -828,7 +828,7 @@
 - **Purpose:** Labeled app button with primary (filled), secondary (bordered), or accent fill. Optional `tone` `app` (default) or `dark` for marketing-ink shells (same class split as `ButtonLink`). Size `sm` / `md` / `lg` (`lg` is full width). All sizes `min-h-11`.
 - **Inputs:** Native button props plus optional `variant` (default `primary`), optional `size` (default `md`), optional `tone` (default `app`), optional leading `icon`, and `children` label. Default `type="button"`.
 - **Returns / side effects:** A `<button>` element. No network. Used across login, forum retry, public note retry, PWA install on dark shells, and forms.
-- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, `PwaInstall`, setup and contact screens.
+- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, `PwaInstall`, `WalletBalance`, setup and contact screens.
 
 ## Function: ButtonLink
 
@@ -2168,7 +2168,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Formats a whole-sat amount as BIP-177 ₿-only display (leading ₿, grouping from `style`, no fraction, no “sats” unit).
 - **Inputs:** `sats` non-negative number (API `sats` / `totalSats`; chart mid-ticks may be fractional and are rounded); optional `style` `NumberFormatStyle` (default `ch`). No locale argument.
 - **Returns / side effects:** Display string such as `₿1'500` or `₿0`.
-- **Used by:** `ForumBoard`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`.
+- **Used by:** `ForumBoard`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`, `WalletBalance`.
 
 ## Function: isLocalSunday
 
@@ -2401,7 +2401,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Latest gift-day totals for preferred-fiat conversion. Returns the `rateDay` from `useLatestRateDayState`, which skips a newer day that cannot convert the preferred currency. A failed fetch or no usable day yet resolves `null`. Changing the preferred fiat reuses the fetched series. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled. Loading and a settled missing rate are both `null`.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `WalletBalance`.
 
 ## Function: useLatestRateDayState
 
@@ -2437,7 +2437,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
   A present string is formatted as-is (`rateDay` ignored). A present `null` or a missing field
   falls through to the gift-day rate.
 - **Returns / side effects:** `ReactElement | null`. No side effects.
-- **Used by:** `ForumBoard`, `InboxScreen`, `QuotedForumNote`, `PublicMessageLoader`.
+- **Used by:** `ForumBoard`, `InboxScreen`, `QuotedForumNote`, `PublicMessageLoader`, `WalletBalance`.
 
 ## Function: ThemeProvider
 
@@ -2507,7 +2507,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads the optional Playwright clock `NEXT_PUBLIC_E2E_NOW`. Production leaves it unset.
 - **Inputs:** None.
 - **Returns / side effects:** The pinned instant, or `null` when unset or empty. Does not throw and does not invent a time. The head script then uses the device clock.
-- **Used by:** `RootLayout` for the `e2e-now` meta tag.
+- **Used by:** `RootLayout` for the `e2e-now` meta tag; `useWallet`, which honours its fixture pins only when it is set.
 
 ## Function: getBreezApiKey
 
@@ -2822,21 +2822,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Zustand store for `session` + `account` plus `wrongAccount`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`, `setWrongAccount`, `clearWrongAccount`.
 - **Returns / side effects:** Auth state object. `clearAuth` clears storage, then `bumpUnreadAppBadgeEpoch()` then `setUnreadAppBadge(0)`, then drops `session` and `account`. It clears the tab phrase, which disconnects the wallet. It does not reset `wrongAccount`.
-- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
+- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`, `useWallet`, `rememberPhraseFromPrf`, `unlockWalletPhrase`.
 
 ## Function: useTranslations
 
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `WalletBalance`.
 
 ## Function: useNumberFormat
 
 - **Purpose:** Client hook returning `{ numberFormat, setNumberFormat }` from the nearest `NumberFormatProvider`. Call sites that format counts or money take this hook's style, not UI locale.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active `NumberFormatStyle` and a setter that writes the `numberFormat` cookie. Throws `useNumberFormat must be used within NumberFormatProvider` when used outside the provider.
-- **Used by:** `NumberFormatSwitcher`, `ForumBoard`, `StatsDashboard`, `DayLoader`, `AccountActivityChart`, `PublicMessageLoader`.
+- **Used by:** `NumberFormatSwitcher`, `ForumBoard`, `StatsDashboard`, `DayLoader`, `AccountActivityChart`, `PublicMessageLoader`, `WalletBalance`.
 
 ## Function: walletOfSatoshiHref
 
@@ -3347,7 +3347,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Decode a base64url string to bytes for WebAuthn options.
 - **Inputs:** Base64url string (padding optional).
 - **Returns / side effects:** `Uint8Array`. No network.
-- **Used by:** `creationOptionsFromJSON`, `requestOptionsFromJSON`.
+- **Used by:** `creationOptionsFromJSON`, `requestOptionsFromJSON`, `unlockWalletPhrase`.
 
 ## Function: bytesToBase64Url
 
@@ -3606,14 +3606,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Read `prf.results.first` from a credential.
 - **Inputs:** `PublicKeyCredential`.
 - **Returns / side effects:** Bytes or `undefined`.
-- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin` (login, when the wallet is configured).
 
 ## Function: mnemonicFromPrfFirst
 
 - **Purpose:** HKDF-SHA-256 then BIP-39 English 12 words.
 - **Inputs:** PRF eval.first bytes.
 - **Returns / side effects:** Space-separated mnemonic. Never sent to the api.
-- **Used by:** `useWalletPhrase`.
+- **Used by:** `useWalletPhrase`, `rememberPhraseFromPrf`.
 
 ## Function: obtainPrfFirst
 
@@ -3627,14 +3627,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** get() with PRF eval.first bound to this account's current credential (`allowCredentials`) to re-derive the phrase.
 - **Inputs:** Current credential id bytes (WebAuthn `rawId`).
 - **Returns / side effects:** Bytes or `null`. Does not contact the api. Does not pick a leftover credential after replace.
-- **Used by:** `useWalletPhrase.showPhrase`.
+- **Used by:** `useWalletPhrase.showPhrase`, `unlockWalletPhrase`.
 
 ## Function: classifyWebAuthnError
 
 - **Purpose:** Map WebAuthn failures to timeout / cancel / generic.
 - **Inputs:** Unknown rejection.
 - **Returns / side effects:** Discriminant string.
-- **Used by:** `useWalletPhrase`, `renewPasskey`.
+- **Used by:** `useWalletPhrase`, `renewPasskey`, `unlockWalletPhrase`.
 
 ## Function: rememberSessionPhrase
 
