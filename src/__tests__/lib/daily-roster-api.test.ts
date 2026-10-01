@@ -45,6 +45,16 @@ describe('fetchDailyRoster', () => {
     await expect(fetchDailyRoster('sess')).rejects.toThrow(loadError);
   });
 
+  it('throws the catalog key on 403 Forbidden', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
+    await expect(fetchDailyRoster('sess')).rejects.toThrow('funding.daily.forbidden');
+  });
+
+  it('throws visitor copy on 403 with another body', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'nope' } });
+    await expect(fetchDailyRoster('sess')).rejects.toThrow(loadError);
+  });
+
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     await expect(fetchDailyRoster('sess')).rejects.toThrow(loadError);
@@ -101,6 +111,7 @@ describe('daily roster saves', () => {
     ['Invalid address or amount', 'funding.daily.invalidRow'],
     ['Address already listed', 'funding.daily.duplicate'],
     ['Unknown address', 'funding.daily.unknown'],
+    ['Forbidden', 'funding.daily.forbidden'],
     ['nope', 'funding.daily.saveError'],
   ] as const)('maps %s to %s', async (apiError, key) => {
     stubFetch({ ok: false, status: 400, body: { error: apiError } });

@@ -23,6 +23,7 @@ const SAVE_ERROR_KEYS = [
   'funding.daily.invalidRow',
   'funding.daily.duplicate',
   'funding.daily.unknown',
+  'funding.daily.forbidden',
   'funding.daily.saveError',
 ] as const satisfies readonly MessageKey[];
 
@@ -100,8 +101,9 @@ function saveErrorKey(err: unknown): SaveErrorKey {
  * An initiator or founder loads `GET /funding/daily-roster` and may save the
  * comment, the payments switch, and add, update, or delete a recipient.
  * Everyone else who is signed in sees the heading and a short refusal, and
- * this screen does not fetch. Renders nothing without a session. The page
- * chrome owns the back; this screen renders none.
+ * this screen does not fetch. A load that rejects with
+ * `funding.daily.forbidden` shows that same refusal. Renders nothing without
+ * a session. The page chrome owns the back; this screen renders none.
  *
  * @returns The payments card, refusal copy, or `null` without a session.
  */
@@ -112,6 +114,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
   const editor = canEditDailyPayoutRoster(account?.role);
   const [roster, setRoster] = useState<DailyRoster | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [comment, setComment] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -126,6 +129,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
     }
     let cancelled = false;
     setLoadError(false);
+    setForbidden(false);
     void (async () => {
       try {
         const next = await fetchDailyRoster(session);
@@ -135,11 +139,15 @@ export function DailyPaymentsScreen(): ReactElement | null {
         setRoster(next);
         setComment(next.comment);
         setDrafts({});
-      } catch {
+      } catch (err) {
         if (cancelled) {
           return;
         }
         setRoster(null);
+        if (err instanceof Error && err.message === 'funding.daily.forbidden') {
+          setForbidden(true);
+          return;
+        }
         setLoadError(true);
       }
     })();
@@ -158,7 +166,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
     </h1>
   );
 
-  if (!editor) {
+  if (!editor || forbidden) {
     return (
       <Card maxWidth="xl" surface={false}>
         {heading}
