@@ -3810,6 +3810,9 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(author);
     expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
+    const dialog = screen.getByRole('dialog', { name: 'Ada' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Ada' })).toBeNull();
   });
 
   it('renders a via nostr shop note with the shop pill', () => {

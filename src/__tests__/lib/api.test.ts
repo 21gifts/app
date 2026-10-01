@@ -2967,6 +2967,28 @@ describe('fetchExternalAuthorProfile', () => {
     stubFetch({ ok: false, status: 404, body: {} });
     await expect(fetchExternalAuthorProfile('uuid')).resolves.toBeNull();
   });
+
+  it('returns null when the body fails the schema', async () => {
+    stubFetch({ ok: true, status: 200, body: { name: 'Robin' } });
+    await expect(fetchExternalAuthorProfile('uuid')).resolves.toBeNull();
+  });
+
+  it('returns null when the response body cannot be read', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new Error('bad json')),
+      }),
+    );
+    await expect(fetchExternalAuthorProfile('uuid')).resolves.toBeNull();
+  });
+
+  it('returns null when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchExternalAuthorProfile('a/b')).resolves.toBeNull();
+  });
 });
 
 describe('fetchForumMessage', () => {

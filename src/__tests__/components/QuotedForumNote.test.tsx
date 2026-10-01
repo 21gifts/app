@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -1058,6 +1058,10 @@ describe('ForumQuotedBody', () => {
       screen.getByRole('link', { name: 'Open linked note from Robin (external)' }),
     ).toBeTruthy();
     expect(screen.getByText('External')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
+    const dialog = screen.getByRole('dialog', { name: 'Robin' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Robin' })).toBeNull();
   });
 
   it('uses the external aria-label for a quoted note with via nostr', async () => {

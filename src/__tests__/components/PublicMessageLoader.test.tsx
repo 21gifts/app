@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
@@ -1177,6 +1177,9 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
     fireEvent.click(author);
     expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
+    const dialog = screen.getByRole('dialog', { name: 'Robin' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog', { name: 'Robin' })).toBeNull();
   });
 
   it('marks an unsigned via gift reply with a badge and no body paragraph', async () => {

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -111,5 +111,94 @@ describe('ExternalAuthorSheet', () => {
       expect(writeText).toHaveBeenCalledWith('npub1example');
       expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
     });
+  });
+
+  it('stops a click and a key on the dialog from closing it', () => {
+    fetchProfile.mockResolvedValue(null);
+    const onClose = vi.fn();
+    renderWithLocale(<ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={onClose} />);
+    const dialog = screen.getByRole('dialog', { name: 'Ada' });
+    fireEvent.click(dialog);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Ada' })).toBeTruthy();
+  });
+
+  it('copies through the textarea fallback when the clipboard rejects', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const exec = vi.fn<(commandId: string) => boolean>().mockReturnValue(true);
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      writable: true,
+      value: exec,
+    });
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+    });
+    renderWithLocale(
+      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await waitFor(() => {
+      expect(exec).toHaveBeenCalledWith('copy');
+      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    });
+  });
+
+  it('keeps Copy when the textarea fallback throws', async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const exec = vi.fn<(commandId: string) => boolean>().mockImplementation(() => {
+      throw new Error('copy failed');
+    });
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      writable: true,
+      value: exec,
+    });
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+    });
+    renderWithLocale(
+      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await waitFor(() => {
+      expect(exec).toHaveBeenCalledWith('copy');
+    });
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull();
+  });
+
+  it('ignores a profile that arrives after the sheet unmounts', async () => {
+    let resolveProfile!: (value: Awaited<ReturnType<typeof fetchProfile>>) => void;
+    const pending = new Promise<Awaited<ReturnType<typeof fetchProfile>>>((resolve) => {
+      resolveProfile = resolve;
+    });
+    fetchProfile.mockReturnValue(pending);
+    const view = renderWithLocale(
+      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
+    );
+    view.unmount();
+    await act(async () => {
+      resolveProfile({ name: 'Robin', npub: 'npub1example' });
+      await pending;
+    });
+    expect(screen.queryByRole('heading', { name: 'Robin' })).toBeNull();
   });
 });

@@ -76,6 +76,7 @@ export function ExternalAuthorSheet({
   const showLud16 = lud16 !== '' && lud16.toLowerCase() !== nip05.toLowerCase();
 
   const copyNpub = async (): Promise<void> => {
+    /* v8 ignore next 3 -- Copy renders only after a profile has loaded */
     if (profile === null) {
       return;
     }
