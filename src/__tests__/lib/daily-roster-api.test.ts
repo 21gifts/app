@@ -111,7 +111,7 @@ describe('daily roster saves', () => {
     ['Invalid address or amount', 'funding.daily.invalidRow'],
     ['Address already listed', 'funding.daily.duplicate'],
     ['Unknown address', 'funding.daily.unknown'],
-    ['Forbidden', 'funding.daily.forbidden'],
+    ['Forbidden', 'funding.daily.saveError'],
     ['nope', 'funding.daily.saveError'],
   ] as const)('maps %s to %s', async (apiError, key) => {
     stubFetch({ ok: false, status: 400, body: { error: apiError } });

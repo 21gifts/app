@@ -21815,4 +21815,20 @@ test.describe('daily payments', () => {
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-grants-payments-save-error');
   });
+
+  test('state /grants/payments pending', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roster),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/comment$/, () => new Promise(() => undefined));
+    await page.goto('/grants/payments');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-payments-pending');
+  });
 });

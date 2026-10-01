@@ -1299,7 +1299,6 @@ const DAILY_ROSTER_API_SAVE_ERRORS: Record<string, string> = {
   'Invalid address or amount': 'funding.daily.invalidRow',
   'Address already listed': 'funding.daily.duplicate',
   'Unknown address': 'funding.daily.unknown',
-  Forbidden: 'funding.daily.forbidden',
 };
 
 const DAILY_ROSTER_SAVE_KEYS = new Set([
@@ -1308,7 +1307,6 @@ const DAILY_ROSTER_SAVE_KEYS = new Set([
   'funding.daily.invalidRow',
   'funding.daily.duplicate',
   'funding.daily.unknown',
-  'funding.daily.forbidden',
   FUNDING_DAILY_ROSTER_SAVE_ERROR,
 ]);
 

@@ -3063,9 +3063,15 @@ Founder updates a row spend does not list. Alert **That recipient is not on the 
 
 ### Variant: save-error
 
-Founder saves and the roster call fails for any other reason. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
+Founder saves and the roster call fails for any other reason, including `Forbidden`. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
 
 ![21.gifts daily payments save error](images/grants-payments-save-error.png)
+
+### Variant: pending
+
+Founder pressed **Save** and the roster call has not returned. The editor stays up. **Save**, **On**, **Off**, **Add**, and the row buttons are disabled. There is no alert. Needle `state-grants-payments-pending`.
+
+![21.gifts daily payments pending](images/grants-payments-pending.png)
 
 ## Screen: /profile/apply
 
