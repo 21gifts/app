@@ -8,6 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import type { AmountUnit } from '@/lib/api-types';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
@@ -29,6 +30,8 @@ export interface ForumPayInvoice {
   pr: string;
   /** Whole sats the payer confirmed. */
   amountSats: number;
+  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  sparkInvoice?: string | null;
 }
 
 /**
@@ -211,8 +214,18 @@ export function ForumPaySheet({
         })}
         {preferredFiatSuffix(invoiceForCard.amountSats, rateDay, fiat, numberFormat)}
       </p>
-      {showPaymentQr ? <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} /> : null}
-      {walletButton}
+      <WalletPay
+        sparkInvoice={invoiceForCard.sparkInvoice}
+        rateDay={rateDay}
+        fallback={
+          <>
+            {showPaymentQr ? (
+              <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
+            ) : null}
+            {walletButton}
+          </>
+        }
+      />
       {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
       {payWaiting ? (
         <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>

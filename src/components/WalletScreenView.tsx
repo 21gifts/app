@@ -9,9 +9,11 @@ import { QrCode } from '@/components/QrCode';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { WalletBalance } from '@/components/WalletBalance';
 import { WalletHistory } from '@/components/WalletHistory';
+import { WalletSend } from '@/components/WalletSend';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import type { UseWalletResult } from '@/hooks/useWallet';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
+import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { goToPreviousView } from '@/lib/view-history';
@@ -22,10 +24,16 @@ import { useAuthStore } from '@/stores/auth-store';
  * to `/pos`. No keypad and no charge. The button is content width, like the
  * other centered actions, not a full-width bar.
  *
- * @param props - Optional balance state for the wallet entry surface.
+ * @param props - Optional balance and send state for the wallet entry surface.
  * @returns The receive block.
  */
-function WalletReceive({ wallet }: { wallet: UseWalletResult | undefined }): ReactElement {
+function WalletReceive({
+  wallet,
+  send,
+}: {
+  wallet: UseWalletResult | undefined;
+  send: UseWalletSendResult | undefined;
+}): ReactElement {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const [showQr, setShowQr] = useState(false);
@@ -50,6 +58,7 @@ function WalletReceive({ wallet }: { wallet: UseWalletResult | undefined }): Rea
           onRetry={wallet.retry}
         />
       )}
+      {wallet?.status === 'ready' && send !== undefined ? <WalletSend send={send} /> : null}
       {address !== null ? (
         <div className="flex flex-col items-stretch gap-3">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
@@ -83,11 +92,15 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
   surface?: WalletSurface;
   /** Balance block state. Entry surface only. */
   wallet?: UseWalletResult;
+  /** Send block state, shown while the wallet is ready. Entry surface only. */
+  send?: UseWalletSendResult;
 };
 
 /**
- * `/wallet` shows the wallet balance and receive address, then the payment
- * list while the wallet is ready, above the recovery entry. The 12 words and recovery errors render only on `/wallet/phrase`.
+ * `/wallet` shows the wallet balance, the send block while the wallet is
+ * ready, and the receive address, then the payment list while the wallet is
+ * ready, above the recovery entry. Back closes an open send step first. The
+ * 12 words and recovery errors render only on `/wallet/phrase`.
  *
  * @param props - Phrase state, surface, and optional wallet balance state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -103,6 +116,7 @@ export function WalletScreenView({
   hidePhrase,
   retry,
   wallet,
+  send,
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
   const detailsRef = useRef<HTMLDetailsElement>(null);
@@ -111,6 +125,9 @@ export function WalletScreenView({
   const stepBack = (): void => {
     if (surface === 'phrase' && showGrid) {
       hidePhrase();
+      return;
+    }
+    if (surface !== 'phrase' && send?.cancel() === true) {
       return;
     }
     if (surface !== 'phrase' && detailsRef.current?.open === true) {
@@ -217,7 +234,7 @@ export function WalletScreenView({
   }
   return (
     <div className="flex w-full flex-col items-center gap-6">
-      <WalletReceive wallet={wallet} />
+      <WalletReceive wallet={wallet} send={send} />
       {wallet?.status === 'ready' ? <WalletHistory /> : null}
       {card}
     </div>
