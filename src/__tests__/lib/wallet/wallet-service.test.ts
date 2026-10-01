@@ -342,10 +342,11 @@ describe('connectWallet', () => {
     expect(useWalletStore.getState().balanceSats).toBe(7);
   });
 
-  it('overlapping refresh where the first rejects drops the late success', async () => {
+  it('an older failed read does not override a newer successful one', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = createFakeSdk();
     await connectWallet(loadSdk);
+    connection.disconnect.mockClear();
     let resolveSecond!: (info: { balanceSats: number; identityPubkey: string }) => void;
     let rejectFirst!: (err: Error) => void;
     connection.getInfo
@@ -363,13 +364,38 @@ describe('connectWallet', () => {
       );
     const first = refreshWallet();
     const second = refreshWallet();
-    rejectFirst(new Error('first failed'));
-    await expect(first).resolves.toBeUndefined();
-    expect(useWalletStore.getState().status).toBe('error');
     resolveSecond({ balanceSats: 99_000, identityPubkey: IDENTITY });
     await expect(second).resolves.toBeUndefined();
-    expect(useWalletStore.getState().status).toBe('error');
-    expect(useWalletStore.getState().balanceSats).toBeNull();
+    expect(useWalletStore.getState()).toMatchObject({
+      status: 'ready',
+      balanceSats: 99_000,
+    });
+    rejectFirst(new Error('first failed'));
+    await expect(first).resolves.toBeUndefined();
+    expect(useWalletStore.getState()).toMatchObject({
+      status: 'ready',
+      balanceSats: 99_000,
+    });
+    expect(connection.disconnect).not.toHaveBeenCalled();
+  });
+
+  it('a getInfo rejection after disconnect during refresh leaves the store locked', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    let rejectInfo!: (err: Error) => void;
+    connection.getInfo.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectInfo = reject;
+        }),
+    );
+    const refresh = refreshWallet();
+    await expect(disconnectWallet()).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('locked');
+    rejectInfo(new Error('stale refresh'));
+    await expect(refresh).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('locked');
   });
 
   it('overlapping refresh keeps the later balance when both succeed out of order', async () => {
