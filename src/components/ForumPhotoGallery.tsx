@@ -93,7 +93,11 @@ export function ForumPhotoGallery({
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   return (
-    <div className={`flex w-full min-w-0 flex-col${extra}`} onClick={onPhotoClick} onKeyDown={onPhotoClick}>
+    <div
+      className={`flex w-full min-w-0 flex-col${extra}`}
+      onClick={onPhotoClick}
+      onKeyDown={onPhotoClick}
+    >
       <div className="relative w-full min-w-0">
         <div
           ref={scrollerRef}
