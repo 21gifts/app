@@ -251,6 +251,98 @@ export async function proxyMeWalletBackupSeenPost(request: Request): Promise<Res
 }
 
 /**
+ * Proxies PUT /me/wallet to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ sparkPubkey }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet');
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey (wallet address registration) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed JSON body from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayRegisterPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}`);
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey/recover (wallet address lookup) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed JSON body from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayRecoverPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/recover`);
+}
+
+/**
+ * Proxies GET /lnurlpay/:pubkey/metadata (received-payment notes) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed query from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayMetadataGet(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/metadata`);
+}
+
+/**
+ * Copies an upstream response and allows any origin to read it.
+ *
+ * @param upstream - Proxied api response.
+ * @returns The same status and body with `Access-Control-Allow-Origin: *`.
+ */
+function withAnyOrigin(upstream: Response): Response {
+  const headers = new Headers(upstream.headers);
+  headers.set('Access-Control-Allow-Origin', '*');
+  return new Response(upstream.body, { status: upstream.status, headers });
+}
+
+/**
+ * Proxies GET /lnurlp/:username/invoice (a payer asks for a payment request
+ * to a member's in-app wallet) to the 21.gifts api. Any origin may read it.
+ *
+ * @param request - Incoming App Router request (query carries the amount).
+ * @param username - Member username from the path.
+ * @returns The upstream response with `Access-Control-Allow-Origin: *`.
+ */
+export async function proxyLnurlpInvoiceGet(request: Request, username: string): Promise<Response> {
+  return withAnyOrigin(
+    await proxyApiRequest(request, `/lnurlp/${encodeURIComponent(username)}/invoice`),
+  );
+}
+
+/**
+ * Proxies GET /verify/:paymentHash (a payer checks whether a payment
+ * settled) to the 21.gifts api. Any origin may read it.
+ *
+ * @param request - Incoming App Router request.
+ * @param paymentHash - Payment hash from the path.
+ * @returns The upstream response with `Access-Control-Allow-Origin: *`.
+ */
+export async function proxyVerifyGet(request: Request, paymentHash: string): Promise<Response> {
+  return withAnyOrigin(
+    await proxyApiRequest(request, `/verify/${encodeURIComponent(paymentHash)}`),
+  );
+}
+
+/**
  * Proxies POST /me/passkey-renew/report to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

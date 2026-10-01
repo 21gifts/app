@@ -13,6 +13,10 @@ vi.mock('@/hooks/useLatestRateDay', () => ({
   useLatestRateDay: vi.fn(),
 }));
 
+vi.mock('@/components/WalletHistory', () => ({
+  WalletHistory: () => <section aria-label="Payments history stub" />,
+}));
+
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
   usd: '100000.00',
@@ -136,6 +140,31 @@ describe('WalletScreenView', () => {
       <WalletScreenView {...props} wallet={walletResult('disabled')} />,
     );
     expect(disabled.container.innerHTML).toBe(originalMarkup);
+  });
+
+  it('shows the payment list only while the wallet is ready, between address and recovery', () => {
+    const props = {
+      view: 'reveal' as const,
+      status: 'idle' as const,
+      error: null,
+      words: [],
+      activate: vi.fn(),
+      showPhrase: vi.fn(),
+      hidePhrase: vi.fn(),
+      retry: vi.fn(),
+    };
+    setWalletAccount();
+    for (const status of ['disabled', 'locked', 'connecting', 'error'] as const) {
+      const view = renderWithLocale(<WalletScreenView {...props} wallet={walletResult(status)} />);
+      expect(screen.queryByRole('region', { name: 'Payments history stub' })).toBeNull();
+      view.unmount();
+    }
+    const ready = renderWithLocale(<WalletScreenView {...props} wallet={walletResult('ready')} />);
+    const history = screen.getByRole('region', { name: 'Payments history stub' });
+    const html = ready.container.innerHTML;
+    expect(html.indexOf('Payments history stub')).toBeGreaterThan(html.indexOf('ada@'));
+    expect(html.indexOf('Payments history stub')).toBeLessThan(html.indexOf('Advanced functions'));
+    expect(history).toBeTruthy();
   });
 
   it('ignores balance state on the phrase surface', () => {

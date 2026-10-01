@@ -787,6 +787,41 @@ export async function setUsername(
 }
 
 /**
+ * Claims the in-app wallet's identity public key for the account.
+ *
+ * @param sessionToken - Bearer session.
+ * @param sparkPubkey - Wallet identity public key (66 lower-case hex).
+ * @returns The updated {@link Account}.
+ * @throws Error `wallet-verified` on 409 (the account's wallet is already
+ * verified), `wallet-unavailable` on 404 (the feature is off), and
+ * `wallet-request` on any other failure or an invalid body.
+ */
+export async function putMyWallet(sessionToken: string, sparkPubkey: string): Promise<Account> {
+  const response = await fetch('/me/wallet', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sparkPubkey }),
+  });
+  if (response.status === 409) {
+    throw new Error('wallet-verified');
+  }
+  if (response.status === 404) {
+    throw new Error('wallet-unavailable');
+  }
+  if (!response.ok) {
+    throw new Error('wallet-request');
+  }
+  const parsed = accountSchema.safeParse(await response.json().catch(() => null));
+  if (!parsed.success) {
+    throw new Error('wallet-request');
+  }
+  return parsed.data;
+}
+
+/**
  * Links or replaces the account's receiving Lightning Address.
  *
  * @param sessionToken - A bearer token from a completed challenge.

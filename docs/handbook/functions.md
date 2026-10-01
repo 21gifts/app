@@ -433,7 +433,7 @@
 
 ## Function: UsernameForm
 
-- **Purpose:** Username field and **Continue**. Posts `POST /me/username`. Cannot skip.
+- **Purpose:** Username field and **Continue**. Posts `POST /me/username`. Cannot skip. Once the account's wallet is verified (`sparkWalletVerified`), the field shows the current username, field and **Continue** are disabled, and one line says the username can no longer be changed because the wallet address uses it.
 - **Inputs:** Auth store session; optional `onSaved`.
 - **Returns / side effects:** Taken/invalid/request stay on the form. Success updates the store and calls `onSaved`.
 - **Used by:** `UsernameSetup`, `RequirementsOverlay`.
@@ -930,7 +930,7 @@
 
 - **Purpose:** App page shell driven by `--app-height`. Always draws one `rounded-3xl` page frame. `fill` and `flow` share that geometry: locked height, frame `grow shrink basis-0 self-stretch` (not `flex-1`), frame-header chrome row, one `[data-scrollport]` (`Scrollport`), footer host. The document does not scroll. Prefer this over Tailwind viewport-height utilities on app routes. Chrome (wordmark + Menu / language) is the frame’s first row (`[data-app-chrome]`). `<main>` has no `overflow-hidden`. The frame (`[data-app-frame]`) publishes its content-box width as `frameWidth`. `[data-menu-scrim-host]` sits on the frame. `[data-menu-sheet-host]` (`px-8`, the same horizontal inset as the page) and `[data-scroll-page]` sit inside the one scrollport. Card never hosts page chrome. Never `justify-center` on `<main>` or the scrollport. The center wrapper sets `justify-content: center` and then `safe center`, so content that fits stays centered, and where `safe` is supported a thread taller than the frame starts at the top and remains scrollable inside that one scrollport.
 - **Inputs:** `children`, required `mode` (`fill` | `flow`; both values render the same frame), optional `topLeft` / `topRight`, optional `className`, optional `align` (`start` | `center`).
-- **Returns / side effects:** A `<main>` layout with a rounded page frame, chrome row, header/footer portals, and inner scroller. `useAppShellScroller` reads that scroller from context. No network.
+- **Returns / side effects:** A `<main>` layout with a rounded page frame, chrome row, header/footer portals, and inner scroller. `useAppShellScroller` reads that scroller from context. No network. Mounts `PasskeyRenewNotice` while `walletRequired === false`, and `WalletSetupNotice` while `needsWalletSetup(account)` holds or a `walletSetupPin` is set for a signed-in visitor.
 - **Used by:**
   - **Fill and flow app routes** (`LoginPage`, `DonatePage`, setup, contact, inbox, notifications, public note, `ProfilePage`, `WalletPage`, `ShopsPage`, `ViewProfilePage`, `MemberProfilePage`)
   - **`PageChrome`** (still `mode="flow"`; AppShell draws the unified frame — welcome and public rules)
@@ -2924,7 +2924,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: proxyApiRequest
 
-- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / content-length / user-agent / origin / range headers. Multipart POST/PUT/PATCH/DELETE bodies stream with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0`; JSON and other bodies are buffered (`arrayBuffer`) so Node fetch does not throw. Empty POSTs omit body and duplex. Copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
+- **Purpose:** Forwards an App Router request to `getApiUrl()` + path. Copies query, authorization / content-type / time-zone / content-length / user-agent / origin / range headers, and the in-app wallet's `x-breez-signature` / `x-breez-timestamp`. Multipart POST/PUT/PATCH/DELETE bodies stream with `duplex: 'half'` when `request.body` is non-null and `Content-Length` is not `0`; JSON and other bodies are buffered (`arrayBuffer`) so Node fetch does not throw. Empty POSTs omit body and duplex. Copies content-type / content-length / content-range / accept-ranges / cache-control / content-disposition from the upstream response.
 - **Inputs:** `request`, `apiPath` beginning with `/`.
 - **Returns / side effects:** Upstream `Response` (status + selected headers + streamed body), or 502 JSON if fetch throws.
 - **Used by:** All same-origin api proxy route handlers.
@@ -3682,7 +3682,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Wallet cards, and the header Back. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`. `surface="entry"` is `/wallet`. `surface="phrase"` is `/wallet/phrase`.
 - **Inputs:** `UseWalletPhraseResult` plus optional `surface` (`entry` default, or `phrase`) and optional `wallet` prop for the balance block.
-- **Returns / side effects:** On `entry`, heading **Wallet** is first, then the optional balance block from `WalletBalance` when the wallet prop is present, then the centered address, Open CryptoPay QR, and content-width **Set an amount** to `/pos`, then **Add recovery phrase** or **Show recovery phrase** under **Advanced functions**. Both recovery actions link to `/wallet/phrase`. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR and no balance block. Header Back on `entry` closes **Advanced functions**, then returns to the previous in-app view in this tab, or opens `/welcome` when this tab has none. On `phrase` it hides the words, then does the same. It does not leave the site, and it does not open `/wallet` as a parent.
+- **Returns / side effects:** On `entry`, heading **Wallet** is first, then the optional balance block from `WalletBalance` when the wallet prop is present, then the centered address, Open CryptoPay QR, and content-width **Set an amount** to `/pos`, then the `WalletHistory` payments card while the wallet is `ready`, then **Add recovery phrase** or **Show recovery phrase** under **Advanced functions**. Both recovery actions link to `/wallet/phrase`. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR and no balance block. Header Back on `entry` closes **Advanced functions**, then returns to the previous in-app view in this tab, or opens `/welcome` when this tab has none. On `phrase` it hides the words, then does the same. It does not leave the site, and it does not open `/wallet` as a parent.
 - **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreen
@@ -3694,21 +3694,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletStore
 
-- **Purpose:** Zustand store for the in-app wallet: `status` (`disabled`, `locked`, `connecting`, `ready`, `error`), `balanceSats`, and `identityPubkey`.
+- **Purpose:** Zustand store for the in-app wallet: `status` (`disabled`, `locked`, `connecting`, `ready`, `error`), `balanceSats`, `identityPubkey`, and `syncCount` (advanced by every `setReady`, that is after connect and after each SDK sync; the payment list reloads when it changes).
 - **Inputs:** Hook. Actions `setConnecting`, `setReady`, `setError`, `reset`.
 - **Returns / side effects:** Wallet state object. Resting status is `disabled` without a key, else `locked`.
-- **Used by:** The wallet service and `useWallet`.
+- **Used by:** The wallet service, `useWallet`, and `useWalletHistory`.
 
 ## Function: loadWalletSdk
 
-- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. A rejected or still pending initialisation is reported by `walletNeedsReload`.
+- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `registerAddress`, `listPayments`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. `registerAddress` registers only the given username (no availability check is exposed); `listPayments` asks newest first for one page and maps each row with `toWalletPayment`. A rejected or still pending initialisation is reported by `walletNeedsReload`.
 - **Inputs:** None.
-- **Returns / side effects:** A `WalletSdk`. Uses `defaultConfig('mainnet')` with the api key, no `lnurlDomain`, and a fixed storage name. The SDK keeps wallet state in IndexedDB; the phrase is passed in memory only.
+- **Returns / side effects:** A `WalletSdk`. Uses `defaultConfig('mainnet')` with the api key, `lnurlDomain` set to the host passed by the service (the app's own host), and a fixed storage name. The SDK keeps wallet state in IndexedDB; the phrase is passed in memory only.
 - **Used by:** The wallet service as the default loader.
 
 ## Function: connectWallet
 
-- **Purpose:** Connects from the tab phrase. Does nothing without a key or a phrase. The first balance read after connect uses `ensureSynced`, so a cached balance is not shown as final and the store stays `connecting` until that read finishes. The whole connect attempt (loading the wallet code, connecting, and the first synchronized read) is limited to 30 seconds; if it does not finish in time while the wallet is still connecting, the wallet shows the `error` state with **Try again**. A wallet that a `synced` refresh already showed as ready is left as it is. Store otherwise goes to `ready` or `error`. Subscribes to SDK events and refreshes on `synced`. The latest call wins and a superseded connection is closed.
+- **Purpose:** Connects from the tab phrase with the app's own host (`window.location.host`) as the address domain. Does nothing without a key or a phrase, so the SDK never receives a domain while the wallet is not configured. The first balance read after connect uses `ensureSynced`, so a cached balance is not shown as final and the store stays `connecting` until that read finishes. The whole connect attempt (loading the wallet code, connecting, and the first synchronized read) is limited to 30 seconds; if it does not finish in time while the wallet is still connecting, the wallet shows the `error` state with **Try again**. A wallet that a `synced` refresh already showed as ready is left as it is. Store otherwise goes to `ready` or `error`. Subscribes to SDK events and refreshes on `synced`. The latest call wins and a superseded connection is closed.
 - **Inputs:** Optional `WalletSdkLoader` (defaults to `loadWalletSdk`).
 - **Returns / side effects:** void. Updates `useWalletStore`.
 - **Used by:** `listenForWalletPhrase`, `useWallet.retry`.
@@ -3764,10 +3764,136 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWallet
 
-- **Purpose:** State the `/wallet` balance block shows plus `unlock` and `retry`. `disabled` for an unconfigured wallet or an account that cannot produce a phrase. Shows `connecting` during the passkey prompt; a failed unlock shows `error`; a dismissed prompt returns to `locked`. `?visual=balance-locked|balance-connecting|balance-ready|balance-error` pins a fixture state for screenshots (ready fixture `₿21'000`) only in a Playwright build (`getE2eNow()` set); while pinned, unlock and retry are inert. `retry` unlocks again without a tab phrase, reloads the page when `walletNeedsReload()` is true, and otherwise reconnects.
+- **Purpose:** State the `/wallet` balance block shows plus `unlock` and `retry`. `disabled` for an unconfigured wallet or an account that cannot produce a phrase. Shows `connecting` during the passkey prompt; a failed unlock shows `error`; a dismissed prompt returns to `locked`. `?visual=balance-locked|balance-connecting|balance-ready|balance-error` pins a fixture state for screenshots (ready fixture `₿21'000`); `?visual=history-empty|history-rows|history-error` pins `ready` for the payment-list shots only in a Playwright build (`getE2eNow()` set); while pinned, unlock and retry are inert. `retry` unlocks again without a tab phrase, reloads the page when `walletNeedsReload()` is true, and otherwise reconnects.
 - **Inputs:** None (reads the auth store and `useWalletStore`).
 - **Returns / side effects:** `{ status, balanceSats, unlock, retry }`.
 - **Used by:** `WalletScreen`.
+
+## Function: putMyWallet
+
+- **Purpose:** Claims the in-app wallet's identity public key for the signed-in account (`PUT /me/wallet`, body `{ sparkPubkey }`). The api overwrites an unverified claim and refuses once the wallet is verified.
+- **Inputs:** Session token, identity public key (66 lower-case hex).
+- **Returns / side effects:** The updated `Account`. Throws `wallet-verified` on 409, `wallet-unavailable` on 404 (feature off), and `wallet-request` on any other failure or an invalid body.
+- **Used by:** `runWalletSetup`.
+
+## Function: proxyMeWalletPut
+
+- **Purpose:** Proxies PUT `/me/wallet` to the api.
+- **Inputs:** Incoming `Request` with Bearer and JSON `{ sparkPubkey }`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route PUT `/me/wallet`.
+
+## Function: proxyLnurlpayRegisterPost
+
+- **Purpose:** Proxies the in-app wallet's address registration (POST `/lnurlpay/:pubkey`) to the api, which accepts it only for the account's own username and claimed key and then marks the wallet verified.
+- **Inputs:** Incoming `Request` (signed JSON body; the `X-Breez-Signature` and `X-Breez-Timestamp` headers are forwarded), path `pubkey`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/lnurlpay/[pubkey]`.
+
+## Function: proxyLnurlpayRecoverPost
+
+- **Purpose:** Proxies the in-app wallet's address lookup (POST `/lnurlpay/:pubkey/recover`) to the api.
+- **Inputs:** Incoming `Request` (signed JSON body), path `pubkey`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route POST `/lnurlpay/[pubkey]/recover`.
+
+## Function: proxyLnurlpayMetadataGet
+
+- **Purpose:** Proxies the in-app wallet's read of payer notes on received payments (GET `/lnurlpay/:pubkey/metadata`, query unchanged) to the api.
+- **Inputs:** Incoming `Request`, path `pubkey`.
+- **Returns / side effects:** Upstream `Response`.
+- **Used by:** Route GET `/lnurlpay/[pubkey]/metadata`.
+
+## Function: proxyLnurlpInvoiceGet
+
+- **Purpose:** Proxies a payer's request for a payment request to a member's in-app wallet (GET `/lnurlp/:username/invoice`, query unchanged) to the api. The pay request for a verified wallet points its callback here.
+- **Inputs:** Incoming `Request`, path `username`.
+- **Returns / side effects:** Upstream status and body with `Access-Control-Allow-Origin: *`.
+- **Used by:** Route GET `/lnurlp/[username]/invoice`.
+
+## Function: proxyVerifyGet
+
+- **Purpose:** Proxies a payer's check whether a payment to a member's in-app wallet settled (GET `/verify/:paymentHash`) to the api.
+- **Inputs:** Incoming `Request`, path `paymentHash`.
+- **Returns / side effects:** Upstream status and body with `Access-Control-Allow-Origin: *`.
+- **Used by:** Route GET `/verify/[paymentHash]`.
+
+## Function: toWalletPayment
+
+- **Purpose:** Maps one SDK payment to the row the `/wallet` payment list shows: `received` or `sent`, whole sats (the SDK amount is a `bigint`), epoch ms (the SDK time is seconds), status, and the payer's note from the received-payment metadata. A blank note counts as none; an unknown status counts as completed.
+- **Inputs:** An SDK payment (`id`, `paymentType`, `status`, `amount`, `timestamp`, optional `details`).
+- **Returns / side effects:** `WalletPayment`. Pure.
+- **Used by:** `loadWalletSdk` (`listPayments`).
+
+## Function: ensureWalletConnected
+
+- **Purpose:** Makes sure the wallet is open from the tab phrase and returns its identity public key. Reuses a ready connection and waits for one in flight; otherwise calls `connectWallet`.
+- **Inputs:** Optional `WalletSdkLoader`.
+- **Returns / side effects:** The identity public key. Throws `wallet-connect` without a key or a tab phrase, or when the connection fails.
+- **Used by:** `runWalletSetup`.
+
+## Function: registerWalletAddress
+
+- **Purpose:** Registers the account's username as the address of the connected wallet. Only the account's own username is sent; the app never asks whether a name is free.
+- **Inputs:** Username.
+- **Returns / side effects:** Resolves once the registration was accepted. Throws `wallet-connect` without a connection, otherwise the SDK's error.
+- **Used by:** `runWalletSetup`.
+
+## Function: listWalletPayments
+
+- **Purpose:** Lists the connected wallet's payments, newest first, one page at a time.
+- **Inputs:** `{ offset, limit }`.
+- **Returns / side effects:** `WalletPayment[]`. Throws `wallet-connect` without a connection, otherwise the SDK's error.
+- **Used by:** `useWalletHistory`.
+
+## Function: needsWalletSetup
+
+- **Purpose:** Whether the signed-in member must go through the one-time wallet setup: the wallet is configured (`getBreezApiKey`), the account requires a wallet and has its seed passkey (`canUnlockWallet`), has a username, and `sparkWalletVerified` is strictly `false`. Older api bodies without the field never qualify.
+- **Inputs:** `Account` or `null`.
+- **Returns / side effects:** Boolean (type guard). Pure.
+- **Used by:** `AppShell`, `runWalletSetup`.
+
+## Function: runWalletSetup
+
+- **Purpose:** Runs the one-time wallet setup in a fixed order: one passkey prompt (`obtainPrfFirstFromGet`) only when the phrase is not in tab memory, then connect (`ensureWalletConnected`), claim (`putMyWallet` with the lower-cased identity key), register (`registerWalletAddress` with the account's username), and refresh (`fetchMe`, then `setAccount`). A 409 on the claim means the wallet is already verified and skips straight to the refresh. The phrase never leaves tab memory.
+- **Inputs:** `onStep` callback (`passkey`, `connecting`, `claiming`, `registering`, `refreshing`), optional `WalletSdkLoader`.
+- **Returns / side effects:** `done` when the refreshed account is verified; `noPrf` when the passkey returns no PRF output; `cancelled` when the prompt is dismissed; `superseded` when the session changed meanwhile; otherwise `failed`. Never rejects.
+- **Used by:** `useWalletSetup`.
+
+## Function: useWalletSetup
+
+- **Purpose:** View state for the setup dialog: `intro`, `progress`, `error`, or `noPrf`. Starts by itself when the phrase is already in tab memory; otherwise waits for **Set up wallet** so the passkey prompt follows a tap. A cancelled prompt or a changed session returns to the intro. `retry` reloads the page when the wallet's initialisation failed (`walletNeedsReload`), otherwise runs the setup again.
+- **Inputs:** None.
+- **Returns / side effects:** `{ view, start, retry }`. A pinned view (`walletSetupPin`) leaves both actions inert.
+- **Used by:** `WalletSetupNotice`.
+
+## Function: walletSetupPin
+
+- **Purpose:** Screenshot pin for the setup dialog: `?visual=setup-intro|setup-progress|setup-error|setup-no-prf`, honoured only in a Playwright build (`getE2eNow()` set).
+- **Inputs:** None (reads `window.location.search`).
+- **Returns / side effects:** The pinned view, or `null`.
+- **Used by:** `AppShell`, `useWalletSetup`.
+
+## Function: WalletSetupNotice
+
+- **Purpose:** Blocking one-time wallet setup dialog in the style of `PasskeyRenewNotice`. Intro: **Set up your wallet**, one sentence, **Set up wallet**. Progress: **Setting up your wallet…** with a spinner. Error: one plain sentence and **Try again**. No PRF: **This passkey cannot hold a wallet** and that this password manager or device cannot hold one.
+- **Inputs:** None (reads `useWalletSetup`).
+- **Returns / side effects:** The dialog. No dismiss control; **Log out** (turn off push for at most five seconds, clear the session, open `/login`) is the only way around it.
+- **Used by:** `AppShell` while `needsWalletSetup` holds or a setup pin is set.
+
+## Function: useWalletHistory
+
+- **Purpose:** The `/wallet` payment list: loads `WALLET_HISTORY_PAGE` (20) payments newest first once the wallet is ready, appends the next page on `loadMore` (skipping ids it already has), and reloads every loaded page whenever `useWalletStore.syncCount` changes, which happens after connect and after each SDK `synced` event, so the list does not depend on payment events. Only the latest load writes state. A failed later page stops paging quietly. `?visual=history-empty|history-rows|history-error` pins a fixture list only in a Playwright build.
+- **Inputs:** None.
+- **Returns / side effects:** `{ status, payments, hasMore, loadMore, retry }`.
+- **Used by:** `WalletHistory`.
+
+## Function: WalletHistory
+
+- **Purpose:** Payments card on `/wallet` under the address while the wallet is ready. Each row: received or sent icon and word (plus **Pending** or **Failed** when not settled), Bitcoin amount with the default fiat, date and time, and the payer's note when there is one. Empty: **No payments yet.** Error: one sentence and **Try again**. Nothing renders during the first load.
+- **Inputs:** None (reads `useWalletHistory`, the latest rate day, fiat and number format).
+- **Returns / side effects:** The card, or `null`. The next page loads when the end of the list scrolls into view (`IntersectionObserver`).
+- **Used by:** `WalletScreenView`.
 
 ## Function: WalletBalance
 

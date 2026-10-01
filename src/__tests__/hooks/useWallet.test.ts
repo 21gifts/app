@@ -84,6 +84,9 @@ describe('useWallet', () => {
     ['balance-connecting', 'connecting', null],
     ['balance-ready', 'ready', WALLET_VISUAL_FIXTURE_SATS],
     ['balance-error', 'error', null],
+    ['history-empty', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+    ['history-rows', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+    ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ] as const)('pins %s to %s', (visual, status, balanceSats) => {
     setPlaywrightBuild();
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);

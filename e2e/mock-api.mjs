@@ -2337,6 +2337,36 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'PUT' && pathName === '/me/wallet') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.sparkWalletVerified === true) {
+      json(res, 409, { error: 'Wallet already verified' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    if (
+      typeof parsed?.sparkPubkey !== 'string' ||
+      !/^0[23][0-9a-f]{64}$/.test(parsed.sparkPubkey)
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with a "sparkPubkey" string' });
+      return;
+    }
+    account.sparkPubkey = parsed.sparkPubkey;
+    account.sparkWalletVerified = false;
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/wallet-backup-seen') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

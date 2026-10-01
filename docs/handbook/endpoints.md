@@ -247,6 +247,48 @@
 - **Used by:** `postWalletBackupSeen`.
 - **Auth:** Bearer.
 
+## Endpoint: PUT /me/wallet
+
+- **Purpose:** Same-origin proxy of api `PUT /me/wallet`. Claims the in-app wallet's identity public key for the account. Write-once after the wallet is verified.
+- **Errors:** Upstream 400, 401, 404 (feature off), 409 (wallet already verified), or 502 if the api is unreachable.
+- **Used by:** `putMyWallet`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurlpay/[pubkey]
+
+- **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey`. The in-app wallet registers the account's username as its address on the app's own host; success marks the wallet verified.
+- **Errors:** Upstream 404 (feature off or not the account's own username and key), 409, other 4xx from the address server, 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet (`registerWalletAddress`).
+- **Auth:** Signed by the wallet (`X-Breez-Signature`, `X-Breez-Timestamp` forwarded).
+
+## Endpoint: POST /lnurlpay/[pubkey]/recover
+
+- **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey/recover`. The in-app wallet looks up the address it registered.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet.
+- **Auth:** Signed by the wallet.
+
+## Endpoint: GET /lnurlpay/[pubkey]/metadata
+
+- **Purpose:** Same-origin proxy of api `GET /lnurlpay/:pubkey/metadata`. The in-app wallet reads the notes payers left on received payments.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet.
+- **Auth:** Signed by the wallet.
+
+## Endpoint: GET /lnurlp/[username]/invoice
+
+- **Purpose:** Same-origin proxy of api `GET /lnurlp/:username/invoice`. A payer's wallet asks for a payment request to a member's verified in-app wallet. CORS `*`.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** Payers' wallets, after `GET /.well-known/lnurlp/[username]`.
+- **Auth:** none.
+
+## Endpoint: GET /verify/[paymentHash]
+
+- **Purpose:** Same-origin proxy of api `GET /verify/:paymentHash`. A payer's wallet checks whether a payment to a member's in-app wallet settled. CORS `*`.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** Payers' wallets.
+- **Auth:** none.
+
 ## Endpoint: POST /me/passkey-renew/report
 
 - **Purpose:** Same-origin proxy of api `POST /me/passkey-renew/report`. Stores a browser ceremony failure or cancel. The body is the six safe fields plus optional public authenticator facts and browser capability names.

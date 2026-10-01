@@ -172,9 +172,9 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /wallet
 
 - **URL:** `/wallet` — signed-in receive address. The recovery phrase is a separate page. When the in-app wallet is enabled by configuration and the account can produce a phrase (`walletRequired` with a `passkeyCredentialId`), a balance block sits under the heading and above the address.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet** is first. With the wallet configured for an eligible account, the balance region is next: locked shows one line and **Unlock wallet**; connecting shows the pending line; ready shows the Bitcoin balance, with the default fiat beside it once a usable rate is loaded; error shows a sentence and **Try again**. A reload locks the wallet again because the phrase is kept in tab memory only. Without configuration the screen is as before and there is no balance region. Then the centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. Below that card, the phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet** is first. With the wallet configured for an eligible account, the balance region is next: locked shows one line and **Unlock wallet**; connecting shows the pending line; ready shows the Bitcoin balance, with the default fiat beside it once a usable rate is loaded; error shows a sentence and **Try again**. A reload locks the wallet again because the phrase is kept in tab memory only. Without configuration the screen is as before and there is no balance region. While the wallet is ready, a **Payments** card under the address lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list scrolls into view, and the list reloads after every wallet sync. With the wallet configured, a signed-in member whose account requires a wallet but whose wallet is not verified sees the blocking **Set up your wallet** dialog on every app screen until the setup succeeds or they log out. Then the centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. Below that card, the phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
 - **Actions:** **Unlock wallet** asks the device for the passkey and opens the wallet. **Try again** retries opening, and reloads the page when the wallet's initialisation failed. **Set an amount** opens `/pos`. **Add recovery phrase** opens `/wallet/phrase`. **Show recovery phrase** opens `/wallet/phrase` and is only inside **Advanced functions**. Open **Menu** (Home, Shops, Point of sale, Profile, Grants, Wallet, …). Back closes **Advanced functions** when that row is open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `useWalletPhrase`.
+- **Calls:** `AppShell`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `WalletHistory`, `useWalletHistory`, `WalletSetupNotice`, `useWalletSetup`, `useWalletPhrase`.
 
 ### Variant: default
 
@@ -217,6 +217,48 @@ Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wal
 Pinned fixture (`?visual=balance-error`, Playwright builds only), not a live wallet. Region **Balance** shows the open-failed sentence and labeled **Try again**.
 
 ![21.gifts wallet balance error](images/wallet-balance-error.png)
+
+### Variant: setup-intro
+
+Pinned fixture (`?visual=setup-intro`, Playwright builds only). Blocking dialog **Set up your wallet** over the screen: one sentence that the 21.gifts address sends Bitcoin to the member's own wallet and that the passkey confirms once, labeled **Set up wallet**, and **Log out**. No dismiss control.
+
+![21.gifts wallet setup intro](images/wallet-setup-intro.png)
+
+### Variant: setup-progress
+
+Pinned fixture (`?visual=setup-progress`). The same dialog with the status line **Setting up your wallet…** and a spinner, plus **Log out**.
+
+![21.gifts wallet setup progress](images/wallet-setup-progress.png)
+
+### Variant: setup-error
+
+Pinned fixture (`?visual=setup-error`). The dialog says **Your wallet could not be set up. Please try again.** with **Try again** and **Log out**.
+
+![21.gifts wallet setup error](images/wallet-setup-error.png)
+
+### Variant: setup-no-prf
+
+Pinned fixture (`?visual=setup-no-prf`). Title **This passkey cannot hold a wallet** and the sentence that this password manager or device cannot hold a wallet, with the advice to log in with a passkey from another one. Only **Log out**.
+
+![21.gifts wallet setup no PRF](images/wallet-setup-no-prf.png)
+
+### Variant: history-empty
+
+Pinned fixture (`?visual=history-empty`). Ready balance, then the address card, then the **Payments** card with **No payments yet.**
+
+![21.gifts wallet history empty](images/wallet-history-empty.png)
+
+### Variant: history-rows
+
+Pinned fixture (`?visual=history-rows`). **Payments** lists three rows, newest first: received `₿21'000` with fiat and the note **Thank you for the coffee**, sent `₿5'000` with fiat, and received `₿1'500` marked **Pending**. Each row shows its date and time.
+
+![21.gifts wallet history rows](images/wallet-history-rows.png)
+
+### Variant: history-error
+
+Pinned fixture (`?visual=history-error`). **Payments** shows **Your payments could not be loaded. Please try again.** and **Try again**.
+
+![21.gifts wallet history error](images/wallet-history-error.png)
 
 ## Screen: /wallet/phrase
 
@@ -436,13 +478,19 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 
 - **URL:** `/setup/username` — after the display name (`account.setup === 'username'`). Cannot skip.
 - **What the user sees:** Chrome is the page-frame header (one top-left arrow that returns to the previous in-app view, or `/welcome` when this tab has none, a non-link wordmark, and Menu inside the rounded sheet). Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your 21.gifts name**, hint that Bitcoin is sent to `you@21.gifts` while Wallet of Satoshi still receives it, username field, **Continue**. No Skip.
-- **Actions:** Enter a LUD-16 handle and **Continue** (`POST /me/username`). Taken or invalid handles stay on this screen. After save, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
+- **Actions:** Enter a LUD-16 handle and **Continue** (`POST /me/username`). Once the account's in-app wallet is verified the username is fixed: field and **Continue** are disabled with a line that says why. Taken or invalid handles stay on this screen. After save, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `Wordmark`, `UsernameSetup`, `UsernameForm`, `SignedInChrome`, `OnboardingGate`, `setUsername`.
 
 ### Variant: default
 
 Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
 ![21.gifts username setup](images/setup-username.png)
+
+### Variant: username-frozen
+
+Account whose in-app wallet is verified (`sparkWalletVerified`). The field shows the current username and is disabled, **Continue** is disabled, and one line reads **Your username can no longer be changed because your wallet address uses it.**
+
+![21.gifts username frozen](images/setup-username-frozen.png)
 
 ## Screen: /setup/address
 

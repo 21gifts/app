@@ -1,0 +1,104 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { getE2eNow } from '@/lib/config';
+import { peekSessionPhrase } from '@/lib/tab-phrase';
+import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
+import { runWalletSetup } from '@/lib/wallet/wallet-setup';
+
+/**
+ * What the setup dialog shows. `intro` explains the step and offers the
+ * button that opens the passkey prompt, `progress` runs the steps, `error`
+ * offers a retry, and `noPrf` says that this passkey cannot hold a wallet.
+ */
+export type WalletSetupView = 'intro' | 'progress' | 'error' | 'noPrf';
+
+/** State and actions of the one-time wallet setup dialog. */
+export interface UseWalletSetupResult {
+  /** What the dialog shows. */
+  view: WalletSetupView;
+  /** Starts the setup (from the intro). */
+  start: () => void;
+  /** Starts the setup again after an error; reloads when the wallet must reload. */
+  retry: () => void;
+}
+
+/**
+ * Screenshot pin for the setup dialog (`?visual=setup-…`), honoured only in a
+ * Playwright build (`getE2eNow()` set).
+ *
+ * @returns The pinned view, or `null` for the live flow.
+ */
+export function walletSetupPin(): WalletSetupView | null {
+  /* v8 ignore next 3 -- SSR has no window */
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  if (getE2eNow() === null) {
+    return null;
+  }
+  switch (new URLSearchParams(window.location.search).get('visual')) {
+    case 'setup-intro':
+      return 'intro';
+    case 'setup-progress':
+      return 'progress';
+    case 'setup-error':
+      return 'error';
+    case 'setup-no-prf':
+      return 'noPrf';
+    default:
+      return null;
+  }
+}
+
+/**
+ * Drives the one-time wallet setup. Starts by itself when the phrase is
+ * already in tab memory; otherwise waits for {@link UseWalletSetupResult.start}
+ * so the passkey prompt follows a tap. A pinned view leaves the actions inert.
+ *
+ * @returns The current view and the start and retry actions.
+ */
+export function useWalletSetup(): UseWalletSetupResult {
+  const [pinned] = useState(walletSetupPin);
+  const [view, setView] = useState<WalletSetupView>(() =>
+    pinned === null && peekSessionPhrase() !== null ? 'progress' : 'intro',
+  );
+  const inFlight = useRef(false);
+
+  const start = useCallback((): void => {
+    if (pinned !== null || inFlight.current) {
+      return;
+    }
+    inFlight.current = true;
+    setView('progress');
+    void runWalletSetup(() => undefined).then((outcome) => {
+      inFlight.current = false;
+      if (outcome === 'noPrf') {
+        setView('noPrf');
+      } else if (outcome === 'failed') {
+        setView('error');
+      } else if (outcome === 'cancelled' || outcome === 'superseded') {
+        setView('intro');
+      }
+    });
+  }, [pinned]);
+
+  const retry = useCallback((): void => {
+    if (pinned !== null) {
+      return;
+    }
+    if (walletNeedsReload()) {
+      window.location.reload();
+      return;
+    }
+    start();
+  }, [pinned, start]);
+
+  useEffect(() => {
+    if (pinned === null && peekSessionPhrase() !== null) {
+      start();
+    }
+  }, [pinned, start]);
+
+  return { view: pinned ?? view, start, retry };
+}

@@ -586,6 +586,24 @@ const en = {
   'wallet.unlock': 'Unlock wallet',
   'wallet.connecting': 'Opening your wallet…',
   'wallet.balanceError': 'Your wallet could not be opened. Please try again.',
+  'wallet.historyHeading': 'Payments',
+  'wallet.historyEmpty': 'No payments yet.',
+  'wallet.historyError': 'Your payments could not be loaded. Please try again.',
+  'wallet.received': 'Received',
+  'wallet.sent': 'Sent',
+  'wallet.pending': 'Pending',
+  'wallet.failed': 'Failed',
+  'walletSetup.title': 'Set up your wallet',
+  'walletSetup.intro':
+    'Your 21.gifts address will send Bitcoin straight to your own wallet in this app. Confirm with your passkey once to set it up.',
+  'walletSetup.start': 'Set up wallet',
+  'walletSetup.progress': 'Setting up your wallet…',
+  'walletSetup.error': 'Your wallet could not be set up. Please try again.',
+  'walletSetup.noPrfTitle': 'This passkey cannot hold a wallet',
+  'walletSetup.noPrf':
+    'This password manager or device cannot hold a wallet. Log out and log in again with a passkey from another password manager or device.',
+  'setup.usernameFrozen':
+    'Your username can no longer be changed because your wallet address uses it.',
 
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
@@ -1694,6 +1712,26 @@ const de = {
   'wallet.unlock': 'Wallet entsperren',
   'wallet.connecting': 'Wallet wird geöffnet…',
   'wallet.balanceError': 'Ihre Wallet konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.',
+  'wallet.historyHeading': 'Zahlungen',
+  'wallet.historyEmpty': 'Noch keine Zahlungen.',
+  'wallet.historyError':
+    'Ihre Zahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
+  'wallet.received': 'Erhalten',
+  'wallet.sent': 'Gesendet',
+  'wallet.pending': 'Ausstehend',
+  'wallet.failed': 'Fehlgeschlagen',
+  'walletSetup.title': 'Wallet einrichten',
+  'walletSetup.intro':
+    'Ihre 21.gifts-Adresse schickt Bitcoin direkt in Ihre eigene Wallet in dieser App. Bestätigen Sie einmal mit Ihrem Passkey, um sie einzurichten.',
+  'walletSetup.start': 'Wallet einrichten',
+  'walletSetup.progress': 'Ihre Wallet wird eingerichtet…',
+  'walletSetup.error':
+    'Ihre Wallet konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut.',
+  'walletSetup.noPrfTitle': 'Dieser Passkey kann keine Wallet halten',
+  'walletSetup.noPrf':
+    'Dieser Passwort-Manager oder dieses Gerät kann keine Wallet halten. Melden Sie sich ab und mit einem Passkey aus einem anderen Passwort-Manager oder von einem anderen Gerät wieder an.',
+  'setup.usernameFrozen':
+    'Ihr Benutzername kann nicht mehr geändert werden, weil Ihre Wallet-Adresse ihn verwendet.',
 
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
@@ -2815,6 +2853,24 @@ const es = {
   'wallet.unlock': 'Desbloquear wallet',
   'wallet.connecting': 'Abriendo tu wallet…',
   'wallet.balanceError': 'No se pudo abrir tu wallet. Inténtalo de nuevo.',
+  'wallet.historyHeading': 'Pagos',
+  'wallet.historyEmpty': 'Todavía no hay pagos.',
+  'wallet.historyError': 'No se pudieron cargar tus pagos. Inténtalo de nuevo.',
+  'wallet.received': 'Recibido',
+  'wallet.sent': 'Enviado',
+  'wallet.pending': 'Pendiente',
+  'wallet.failed': 'Fallido',
+  'walletSetup.title': 'Configura tu wallet',
+  'walletSetup.intro':
+    'Tu dirección de 21.gifts enviará Bitcoin directamente a tu propia wallet en esta app. Confirma una vez con tu passkey para configurarla.',
+  'walletSetup.start': 'Configurar wallet',
+  'walletSetup.progress': 'Configurando tu wallet…',
+  'walletSetup.error': 'No se pudo configurar tu wallet. Inténtalo de nuevo.',
+  'walletSetup.noPrfTitle': 'Esta passkey no puede guardar una wallet',
+  'walletSetup.noPrf':
+    'Este gestor de contraseñas o dispositivo no puede guardar una wallet. Cierra sesión y vuelve a entrar con una passkey de otro gestor de contraseñas o de otro dispositivo.',
+  'setup.usernameFrozen':
+    'Tu nombre de usuario ya no se puede cambiar porque la dirección de tu wallet lo usa.',
 
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
@@ -3924,6 +3980,24 @@ const fil = {
   'wallet.unlock': 'I-unlock ang wallet',
   'wallet.connecting': 'Binubuksan ang wallet mo…',
   'wallet.balanceError': 'Hindi mabuksan ang wallet mo. Pakisubukan ulit.',
+  'wallet.historyHeading': 'Mga bayad',
+  'wallet.historyEmpty': 'Wala pang bayad.',
+  'wallet.historyError': 'Hindi ma-load ang mga bayad mo. Pakisubukan ulit.',
+  'wallet.received': 'Natanggap',
+  'wallet.sent': 'Naipadala',
+  'wallet.pending': 'Hinihintay',
+  'wallet.failed': 'Hindi natuloy',
+  'walletSetup.title': 'I-set up ang wallet mo',
+  'walletSetup.intro':
+    'Ang 21.gifts address mo ay magpapadala ng Bitcoin diretso sa sarili mong wallet sa app na ito. Kumpirmahin nang isang beses gamit ang passkey mo para i-set up ito.',
+  'walletSetup.start': 'I-set up ang wallet',
+  'walletSetup.progress': 'Sine-set up ang wallet mo…',
+  'walletSetup.error': 'Hindi ma-set up ang wallet mo. Pakisubukan ulit.',
+  'walletSetup.noPrfTitle': 'Hindi kayang maglaman ng wallet ang passkey na ito',
+  'walletSetup.noPrf':
+    'Hindi kayang maglaman ng wallet ang password manager o device na ito. Mag-log out at mag-log in ulit gamit ang passkey mula sa ibang password manager o device.',
+  'setup.usernameFrozen':
+    'Hindi na mababago ang username mo dahil ginagamit ito ng address ng wallet mo.',
 
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',

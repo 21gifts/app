@@ -50,6 +50,17 @@ describe('useWalletStore', () => {
     expect(state.identityPubkey).toBe(IDENTITY);
   });
 
+  it('setReady advances syncCount on every call and reset keeps it', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    useWalletStore.getState().reset();
+    const before = useWalletStore.getState().syncCount;
+    useWalletStore.getState().setReady(21_000, IDENTITY);
+    useWalletStore.getState().setReady(21_000, IDENTITY);
+    expect(useWalletStore.getState().syncCount).toBe(before + 2);
+    useWalletStore.getState().reset();
+    expect(useWalletStore.getState().syncCount).toBe(before + 2);
+  });
+
   it('setError clears balance fields', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
     useWalletStore.getState().reset();

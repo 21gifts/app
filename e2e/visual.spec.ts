@@ -147,6 +147,44 @@ const E2E_ACCOUNT = {
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
 
+/** Signed-in wallet account for the setup, history, and username-freeze shots. */
+async function stubWalletSetupAccount(
+  page: Page,
+  overrides: Record<string, unknown> = {},
+): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        username: 'ada',
+        lightningAddress: 'ada@walletofsatoshi.com',
+        rulesAgreedAt: 1,
+        setup: null,
+        missing: [],
+        walletRequired: true,
+        walletBackupSeenAt: 1,
+        passkeyCredentialId: 'cred-seed',
+        sparkPubkey: null,
+        sparkWalletVerified: false,
+        ...overrides,
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+}
+
 const FX_USD = {
   quote: 'BTC-USD',
   dayBasis: 'utc',
@@ -1675,6 +1713,86 @@ test.describe('screen baselines', () => {
       page.getByText('Your wallet could not be opened. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-wallet-balance-error');
+  });
+
+  test('wallet setup-intro', async ({ page }) => {
+    await stubWalletSetupAccount(page);
+    await page.goto('/wallet?visual=setup-intro');
+    await expect(page.getByRole('button', { name: 'Set up wallet' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-setup-intro');
+  });
+
+  test('wallet setup-progress', async ({ page }) => {
+    await stubWalletSetupAccount(page);
+    await page.goto('/wallet?visual=setup-progress');
+    await expect(page.getByText('Setting up your wallet…')).toBeVisible();
+    await shotScreen(page, 'state-wallet-setup-progress');
+  });
+
+  test('wallet setup-error', async ({ page }) => {
+    await stubWalletSetupAccount(page);
+    await page.goto('/wallet?visual=setup-error');
+    await expect(
+      page.getByText('Your wallet could not be set up. Please try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-setup-error');
+  });
+
+  test('wallet setup-no-prf', async ({ page }) => {
+    await stubWalletSetupAccount(page);
+    await page.goto('/wallet?visual=setup-no-prf');
+    await expect(
+      page.getByText('This password manager or device cannot hold a wallet.', { exact: false }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-setup-no-prf');
+  });
+
+  test('wallet history-empty', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet?visual=history-empty');
+    await expect(page.getByText('No payments yet.')).toBeVisible();
+    await expect(page.getByText('$21.00')).toBeVisible();
+    await page.getByText('No payments yet.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-wallet-history-empty');
+  });
+
+  test('wallet history-rows', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet?visual=history-rows');
+    await expect(page.getByText('Thank you for the coffee')).toBeVisible();
+    await expect(page.getByText('$5.00')).toBeVisible();
+    await page
+      .getByRole('region', { name: 'Payments' })
+      .getByRole('listitem')
+      .last()
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-wallet-history-rows');
+  });
+
+  test('wallet history-error', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet?visual=history-error');
+    await expect(
+      page.getByText('Your payments could not be loaded. Please try again.'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Try again' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-wallet-history-error');
+  });
+
+  test('setup username-frozen', async ({ page }) => {
+    await stubWalletSetupAccount(page, {
+      sparkWalletVerified: true,
+      setup: 'username',
+      missing: ['username'],
+    });
+    await page.goto('/setup/username');
+    await expect(
+      page.getByText('Your username can no longer be changed because your wallet address uses it.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-setup-username-frozen');
   });
 
   test('wallet error', async ({ page }) => {

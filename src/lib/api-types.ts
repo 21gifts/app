@@ -87,6 +87,18 @@ export const accountSchema = z.object({
    */
   passkeyCredentialId: z.string().min(1).nullable().optional(),
   /**
+   * Identity public key of the in-app wallet claimed by `PUT /me/wallet`
+   * (66 lower-case hex), or `null` before a claim. Optional so older api
+   * bodies still parse.
+   */
+  sparkPubkey: z.string().nullable().optional(),
+  /**
+   * True once the in-app wallet registered the account's address. The wallet
+   * and the username are then fixed. Optional so older api bodies still
+   * parse; the setup step only opens when this is strictly `false`.
+   */
+  sparkWalletVerified: z.boolean().optional(),
+  /**
    * True after a passkey-renew ceremony failed and the member has not
    * acknowledged the notice. Optional; missing means false.
    */
@@ -166,6 +178,9 @@ export const accountSchema = z.object({
  * step. `walletBackupSeenAt` is epoch ms the api may
  * record; the app does not read it. `passkeyCredentialId` is set once a seed
  * passkey exists; missing or null means no seed.
+ * `sparkPubkey` is the claimed in-app wallet key and `sparkWalletVerified`
+ * is true once that wallet registered the account's address; then the
+ * username can no longer change. Both are omitted on older api builds.
  * `hasPosted` is true after the owner has posted in the forum, false until then,
  * and omitted on older api builds (the introduce overlay fails open when the
  * field is missing).

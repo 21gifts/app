@@ -210,6 +210,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:setup-intro",
+    "label": "/wallet setup-intro",
+    "visual": "state-wallet-setup-intro",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:setup-progress",
+    "label": "/wallet setup-progress",
+    "visual": "state-wallet-setup-progress",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:setup-error",
+    "label": "/wallet setup-error",
+    "visual": "state-wallet-setup-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:setup-no-prf",
+    "label": "/wallet setup-no-prf",
+    "visual": "state-wallet-setup-no-prf",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-empty",
+    "label": "/wallet history-empty",
+    "visual": "state-wallet-history-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-rows",
+    "label": "/wallet history-rows",
+    "visual": "state-wallet-history-rows",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-error",
+    "label": "/wallet history-error",
+    "visual": "state-wallet-history-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",
@@ -255,6 +297,12 @@
     "id": "/setup/username:default",
     "label": "/setup/username default",
     "visual": "screen-setup-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/setup/username:username-frozen",
+    "label": "/setup/username username-frozen",
+    "visual": "state-setup-username-frozen",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
