@@ -203,6 +203,36 @@ describe('runWalletSetup', () => {
     expect(walletSetupInFlight()).toBe(false);
   });
 
+  it('does not join a run left over from an earlier session', async () => {
+    const releases: Array<(value: Account) => void> = [];
+    mocks.putMyWallet.mockImplementation(
+      () =>
+        new Promise<Account>((resolve) => {
+          releases.push(resolve);
+        }),
+    );
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = fakeSdk();
+    const first = runWalletSetup(() => undefined, loadSdk);
+    await vi.waitFor(() => {
+      expect(releases).toHaveLength(1);
+    });
+    useAuthStore.setState({ session: 'sess-2' });
+    expect(walletSetupInFlight()).toBe(false);
+    const second = runWalletSetup(() => undefined, loadSdk);
+    expect(second).not.toBe(first);
+    expect(walletSetupInFlight()).toBe(true);
+    await vi.waitFor(() => {
+      expect(releases).toHaveLength(2);
+    });
+    releases[0]?.(account());
+    await expect(first).resolves.toBe('superseded');
+    expect(walletSetupInFlight()).toBe(true);
+    releases[1]?.(account());
+    await expect(second).resolves.toBe('done');
+    expect(walletSetupInFlight()).toBe(false);
+  });
+
   it('starts a fresh run after the previous one ended', async () => {
     const { loadSdk } = fakeSdk();
     mocks.putMyWallet.mockRejectedValueOnce(new Error('wallet-request'));
@@ -276,6 +306,28 @@ describe('runWalletSetup', () => {
     expect(mocks.putMyWallet).not.toHaveBeenCalled();
   });
 
+  it('registers the username on the account the claim returns', async () => {
+    mocks.putMyWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
+    const { loadSdk, connection } = fakeSdk();
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
+    expect(connection.registerAddress).toHaveBeenCalledWith('ada2');
+  });
+
+  it('stores the claimed account so a retry starts from it', async () => {
+    mocks.putMyWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
+    const { loadSdk, connection } = fakeSdk();
+    connection.registerAddress.mockRejectedValueOnce(new Error('rejected'));
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
+    expect(useAuthStore.getState().account?.username).toBe('ada2');
+  });
+
+  it('fails when the claimed account has no username', async () => {
+    mocks.putMyWallet.mockResolvedValueOnce(account({ username: null }));
+    const { loadSdk, connection } = fakeSdk();
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
+    expect(connection.registerAddress).not.toHaveBeenCalled();
+  });
+
   it('fails when the claim fails and does not register', async () => {
     mocks.putMyWallet.mockRejectedValueOnce(new Error('wallet-request'));
     const { loadSdk, connection } = fakeSdk();
@@ -345,6 +397,24 @@ describe('runWalletSetup', () => {
     expect(steps).toEqual(['passkey']);
   });
 
+  it('is superseded when the session changes during a prompt that returned no PRF output', async () => {
+    mocks.obtainPrfFirstFromGet.mockImplementationOnce(async () => {
+      swapSession();
+      return null;
+    });
+    const { loadSdk } = fakeSdk();
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
+  });
+
+  it('is superseded, not failed, when a step throws after the session changed', async () => {
+    const { loadSdk, connection } = fakeSdk();
+    connection.registerAddress.mockImplementationOnce(async () => {
+      swapSession();
+      throw new Error('rejected');
+    });
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
+  });
+
   it('is superseded when the session changes while connecting', async () => {
     const base = fakeSdk();
     const swapping = fakeSdk({
@@ -370,6 +440,16 @@ describe('runWalletSetup', () => {
     const { loadSdk, connection } = fakeSdk();
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
     expect(connection.registerAddress).not.toHaveBeenCalled();
+  });
+
+  it('is superseded when the session changes during a claim that answered 409', async () => {
+    mocks.putMyWallet.mockImplementationOnce(async () => {
+      swapSession();
+      throw new Error('wallet-verified');
+    });
+    const { loadSdk } = fakeSdk();
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
+    expect(mocks.fetchMe).not.toHaveBeenCalled();
   });
 
   it('is superseded when the session changes while registering', async () => {
