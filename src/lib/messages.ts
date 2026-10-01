@@ -129,7 +129,7 @@ const en = {
   'home.lead':
     "In the forum, people share what they're going through. Sign in and read their posts. If you want to support someone, simply react to a post and enter the amount you want to donate. The satoshis are then sent directly from you to the person and arrive within seconds.",
   'home.ctaAsk': 'Ask for help',
-  'home.ctaSend': 'Donate Bitcoin',
+  'home.ctaSend': 'Send help',
   'home.howKicker': 'Donate Bitcoin',
   'home.howTitle': 'How to donate Bitcoin to someone',
   'home.howLead':
@@ -1278,7 +1278,7 @@ const de = {
   'home.lead':
     'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, kannst du einfach auf einen Beitrag reagieren und die Summe angeben, die du spenden möchtest. Die Satoshis werden dann direkt von dir an die Person gesendet und sind innerhalb von Sekunden vor Ort.',
   'home.ctaAsk': 'Selbst um Hilfe bitten',
-  'home.ctaSend': 'Bitcoin spenden',
+  'home.ctaSend': 'Sende Hilfe',
   'home.howKicker': 'Bitcoin spenden',
   'home.howTitle': 'So spendest du jemandem Bitcoin',
   'home.howLead':
@@ -2455,7 +2455,7 @@ const es = {
   'home.lead':
     'En el foro, la gente cuenta lo que está viviendo. Inicia sesión y lee sus publicaciones. Si quieres apoyar a alguien, simplemente reacciona a una publicación e indica la cantidad que quieres donar. Los satoshis se envían directamente de ti a esa persona y llegan en segundos.',
   'home.ctaAsk': 'Pedir ayuda',
-  'home.ctaSend': 'Donar Bitcoin',
+  'home.ctaSend': 'Envía ayuda',
   'home.howKicker': 'Dona Bitcoin',
   'home.howTitle': 'Así donas Bitcoin a alguien',
   'home.howLead':
@@ -3609,7 +3609,7 @@ const fil = {
   'home.lead':
     'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in at basahin ang mga post nila. Kung gusto mong tumulong sa isang tao, mag-react lang sa isang post at ilagay ang halagang gusto mong i-donate. Direktang ipapadala mula sa iyo ang satoshis sa taong iyon at darating ito sa loob ng ilang segundo.',
   'home.ctaAsk': 'Humiling ng tulong',
-  'home.ctaSend': 'Mag-donate ng Bitcoin',
+  'home.ctaSend': 'Magpadala ng tulong',
   'home.howKicker': 'Mag-donate ng Bitcoin',
   'home.howTitle': 'Ganito ka magdo-donate ng Bitcoin sa isang tao',
   'home.howLead':
