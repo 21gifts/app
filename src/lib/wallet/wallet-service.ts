@@ -5,7 +5,9 @@ import {
   type WalletConnection,
   type WalletPayment,
   type WalletPaymentPage,
+  type WalletPayRequest,
   type WalletSdk,
+  type WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -322,4 +324,166 @@ export async function listWalletPayments(page: WalletPaymentPage): Promise<Walle
     throw new Error('wallet-connect');
   }
   return conn.listPayments(page);
+}
+
+/** How long a send may take before the app stops waiting for the SDK. */
+export const WALLET_SEND_TIMEOUT_MS = 30_000;
+
+/**
+ * Outcome of sending a prepared payment.
+ *
+ * - `paid`: the SDK reported the payment sent.
+ * - `insufficient`: the wallet balance does not cover amount and fee.
+ * - `failed`: the send failed, timed out, or the wallet changed since prepare.
+ *   The payment may still arrive; callers do not retry on their own.
+ */
+export type WalletSendResult = { kind: 'paid' } | { kind: 'insufficient' } | { kind: 'failed' };
+
+/**
+ * Outcome of preparing a payment from the in-app wallet.
+ *
+ * - `confirm`: amount and fee to show; `send` pays it once.
+ * - `insufficient`: the balance does not cover amount and fee.
+ * - `failed`: the SDK could not prepare the payment.
+ * - `unlock`: no wallet connection; the member has to unlock first.
+ */
+export type WalletPayResult =
+  | {
+      kind: 'confirm';
+      amountSats: number;
+      feeSats: number;
+      send: () => Promise<WalletSendResult>;
+    }
+  | { kind: 'insufficient' }
+  | { kind: 'failed' }
+  | { kind: 'unlock' };
+
+/**
+ * Outcome of reading a pasted text with {@link parseWalletInput}.
+ *
+ * - `target`: what the text pays (which may be `onchain` or `unsupported`).
+ * - `unreachable`: the text names a receiver whose server did not answer
+ *   this browser.
+ * - `invalid`: not a payment request or address.
+ * - `unlock`: no wallet connection.
+ */
+export type WalletParseResult =
+  | { kind: 'target'; target: WalletTarget }
+  | { kind: 'unreachable' }
+  | { kind: 'invalid' }
+  | { kind: 'unlock' };
+
+/**
+ * True when an SDK error says the balance is too low.
+ *
+ * @param err - Rejection from the SDK.
+ * @returns Whether the error names insufficient funds.
+ */
+function isInsufficientFunds(err: unknown): boolean {
+  const text = err instanceof Error ? err.message : String(err);
+  return /insufficient/i.test(text);
+}
+
+/**
+ * Resolves with `null` after `ms`, or with the promise's value when it settles first.
+ *
+ * @param promise - Work to wait for.
+ * @param ms - Time limit in milliseconds.
+ * @returns The value, or `null` on timeout. Rejects when `promise` rejects first.
+ */
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => {
+      resolve(null);
+    }, ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Prepares a payment from the in-app wallet and returns its amount and fee for
+ * confirmation; the returned `send` pays it once and refreshes the balance.
+ * Never rejects.
+ *
+ * @param request - Request text to pay, or a receiver that takes an amount.
+ * @returns Confirmation with `send`, or why the payment cannot be made.
+ */
+export async function payFromWallet(request: WalletPayRequest): Promise<WalletPayResult> {
+  const conn = connection;
+  if (conn === null) {
+    return { kind: 'unlock' };
+  }
+  let prepared;
+  try {
+    prepared = await conn.prepare(request);
+  } catch (err: unknown) {
+    return isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
+  }
+  const { amountSats, feeSats } = prepared;
+  try {
+    const info = await conn.getInfo();
+    if (info.balanceSats < amountSats + feeSats) {
+      return { kind: 'insufficient' };
+    }
+  } catch {
+    return { kind: 'failed' };
+  }
+  let sent = false;
+  const send = async (): Promise<WalletSendResult> => {
+    if (sent || connection !== conn) {
+      return { kind: 'failed' };
+    }
+    sent = true;
+    try {
+      const done = await withTimeout(
+        prepared.send().then(() => true),
+        WALLET_SEND_TIMEOUT_MS,
+      );
+      return done === null ? { kind: 'failed' } : { kind: 'paid' };
+    } catch (err: unknown) {
+      return isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
+    } finally {
+      void refreshWallet();
+    }
+  };
+  return { kind: 'confirm', amountSats, feeSats, send };
+}
+
+/**
+ * True when a text names a receiver by address or LNURL, so a parse failure
+ * means its server was not reachable from this browser.
+ *
+ * @param text - Trimmed input.
+ * @returns Whether the text looks like `name@domain` or an LNURL.
+ */
+function namesReceiverServer(text: string): boolean {
+  const bare = text.replace(/^lightning:/i, '');
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bare) || /^lnurl/i.test(bare);
+}
+
+/**
+ * Reads a pasted payment request or address with the SDK's `parse`. Never rejects.
+ *
+ * @param text - Text as pasted.
+ * @returns What the text pays, or why it cannot be read.
+ */
+export async function parseWalletInput(text: string): Promise<WalletParseResult> {
+  const trimmed = text.trim();
+  if (trimmed === '') {
+    return { kind: 'invalid' };
+  }
+  const conn = connection;
+  if (conn === null) {
+    return { kind: 'unlock' };
+  }
+  try {
+    return { kind: 'target', target: await conn.parse(trimmed) };
+  } catch {
+    return namesReceiverServer(trimmed) ? { kind: 'unreachable' } : { kind: 'invalid' };
+  }
 }

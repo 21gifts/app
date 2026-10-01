@@ -934,6 +934,7 @@ export function ForumBoard({
                   preview: replyPayPreview,
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
+                  sparkInvoice: payInvoice.sparkInvoice ?? null,
                 }
               : null;
           const reactionPayPage = reactionPay !== null;
@@ -1591,6 +1592,7 @@ export function ForumBoard({
                           preview={reactionPay.preview}
                           amountSats={reactionPay.amountSats}
                           pr={reactionPay.pr}
+                          sparkInvoice={reactionPay.sparkInvoice}
                           payWaiting={payWaiting}
                           payBusy={payBusy}
                           showPaymentQr={showPaymentQr}

@@ -4,17 +4,19 @@ import type { ReactElement } from 'react';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPhrase } from '@/hooks/useWalletPhrase';
+import { useWalletSend } from '@/hooks/useWalletSend';
 
 /**
- * Signed-in `/wallet`: wallet balance and receive address, then the payments
- * list while the wallet is ready, above the recovery entry. The 12 words are
- * not rendered here.
+ * Signed-in `/wallet`: wallet balance, send, and receive address, then the
+ * payments list while the wallet is ready, above the recovery entry. The 12
+ * words are not rendered here.
  *
  * @returns The wallet cards.
  */
 export function WalletScreen(): ReactElement {
   const wallet = useWallet();
-  return <WalletScreenView {...useWalletPhrase()} wallet={wallet} />;
+  const send = useWalletSend();
+  return <WalletScreenView {...useWalletPhrase()} wallet={wallet} send={send} />;
 }
 
 /**

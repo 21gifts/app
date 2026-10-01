@@ -165,11 +165,241 @@ export interface WalletConnection {
    */
   listPayments(page: WalletPaymentPage): Promise<WalletPayment[]>;
   /**
+   * Reads a pasted payment request or address with the SDK's `parse`.
+   *
+   * @param input - Text as pasted, trimmed.
+   * @returns What the text pays and whether the app can pay it.
+   * @throws When the SDK cannot read the text or cannot reach the receiver's server.
+   */
+  parse(input: string): Promise<WalletTarget>;
+  /**
+   * Prepares a payment and reads its amount and fee. Nothing is sent yet.
+   *
+   * @param request - Payment request text, or a receiver that asks for an amount.
+   * @returns The prepared payment and the function that sends it.
+   * @throws When the SDK cannot prepare the payment.
+   */
+  prepare(request: WalletPayRequest): Promise<WalletPreparedPayment>;
+  /**
    * Closes the connection.
    *
    * @returns Resolves when the SDK has disconnected.
    */
   disconnect(): Promise<void>;
+}
+
+/**
+ * Receiver details the SDK needs to ask a receiver's server for a payment
+ * request. Opaque to the app; only the adapter reads it.
+ */
+export interface WalletLnurlRequest {
+  /** SDK pay-request details, passed back unchanged to `prepare`. */
+  readonly details: unknown;
+}
+
+/**
+ * What a pasted text pays, as read by {@link WalletConnection.parse}.
+ *
+ * - `request`: a payment request or an address the SDK pays from `input`.
+ *   `amountSats` is `null` when the text carries no amount.
+ * - `lnurl`: an address whose server issues the request for a chosen amount,
+ *   between `minSats` and `maxSats`, with a comment of at most
+ *   `commentMaxLength` characters (`0` means no comment).
+ * - `onchain`: a Bitcoin address on the base chain, not supported yet.
+ * - `unsupported`: anything else the SDK recognised but the app does not pay.
+ */
+export type WalletTarget =
+  | { type: 'request'; input: string; amountSats: number | null; recipient: string }
+  | {
+      type: 'lnurl';
+      request: WalletLnurlRequest;
+      minSats: number;
+      maxSats: number;
+      commentMaxLength: number;
+      recipient: string;
+    }
+  | { type: 'onchain' }
+  | { type: 'unsupported' };
+
+/**
+ * Payment to prepare. `input` pays a request or address text (with
+ * `amountSats` when the text carries none). `lnurl` asks the receiver's
+ * server for a request of `amountSats`, with an optional comment.
+ */
+export type WalletPayRequest =
+  | { type: 'input'; input: string; amountSats?: number }
+  | { type: 'lnurl'; request: WalletLnurlRequest; amountSats: number; comment?: string };
+
+/**
+ * A prepared payment: what will leave the wallet, and how to send it.
+ */
+export interface WalletPreparedPayment {
+  /** Whole sats the receiver gets. */
+  amountSats: number;
+  /** Whole sats of fee on top of `amountSats`. */
+  feeSats: number;
+  /**
+   * Sends the prepared payment.
+   *
+   * @returns Resolves when the SDK reports the payment sent.
+   */
+  send(): Promise<void>;
+}
+
+/** Characters kept at each end of a shortened request or address. */
+const SHORT_HEAD = 10;
+const SHORT_TAIL = 6;
+
+/**
+ * Shortens a long request or address for the confirm screen.
+ *
+ * @param value - Full text.
+ * @returns The text, or its start and end around an ellipsis.
+ */
+function shorten(value: string): string {
+  if (value.length <= SHORT_HEAD + SHORT_TAIL + 1) {
+    return value;
+  }
+  return `${value.slice(0, SHORT_HEAD)}…${value.slice(-SHORT_TAIL)}`;
+}
+
+/** Narrow view of the SDK's parsed input that the adapter reads. */
+type ParsedInput =
+  | {
+      type: 'bolt11Invoice';
+      amountMsat?: number;
+      description?: string;
+      invoice: { bolt11: string };
+    }
+  | {
+      type: 'sparkInvoice';
+      invoice: string;
+      amount?: string;
+      tokenIdentifier?: string;
+      description?: string;
+    }
+  | { type: 'sparkAddress'; address: string }
+  | { type: 'lightningAddress'; address: string; payRequest: LnurlDetails }
+  | ({ type: 'lnurlPay' } & LnurlDetails)
+  | { type: 'bitcoinAddress' }
+  | { type: 'bip21'; paymentMethods: ParsedInput[] }
+  | { type: string };
+
+/** Narrow view of the SDK's pay-request details. */
+interface LnurlDetails {
+  minSendable: number;
+  maxSendable: number;
+  commentAllowed: number;
+  domain: string;
+  address?: string;
+}
+
+/**
+ * Maps one parsed SDK input to a {@link WalletTarget}.
+ *
+ * @param parsed - SDK `parse` result.
+ * @returns The target, or `null` when this input is not one the app pays.
+ */
+function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
+  switch (parsed.type) {
+    case 'bolt11Invoice': {
+      const bolt11 = parsed as Extract<ParsedInput, { type: 'bolt11Invoice' }>;
+      const description = bolt11.description?.trim() ?? '';
+      return {
+        type: 'request',
+        input: bolt11.invoice.bolt11,
+        amountSats: bolt11.amountMsat === undefined ? null : Math.floor(bolt11.amountMsat / 1000),
+        recipient: description === '' ? shorten(bolt11.invoice.bolt11) : description,
+      };
+    }
+    case 'sparkInvoice': {
+      const invoice = parsed as Extract<ParsedInput, { type: 'sparkInvoice' }>;
+      if (invoice.tokenIdentifier !== undefined) {
+        return { type: 'unsupported' };
+      }
+      const description = invoice.description?.trim() ?? '';
+      return {
+        type: 'request',
+        input: invoice.invoice,
+        amountSats: invoice.amount === undefined ? null : Number(invoice.amount),
+        recipient: description === '' ? shorten(invoice.invoice) : description,
+      };
+    }
+    case 'sparkAddress': {
+      const address = (parsed as Extract<ParsedInput, { type: 'sparkAddress' }>).address;
+      return { type: 'request', input: address, amountSats: null, recipient: shorten(address) };
+    }
+    case 'lightningAddress': {
+      const address = parsed as Extract<ParsedInput, { type: 'lightningAddress' }>;
+      return lnurlTarget(address.payRequest, address.address);
+    }
+    case 'lnurlPay': {
+      const details = parsed as Extract<ParsedInput, { type: 'lnurlPay' }>;
+      return lnurlTarget(details, details.address ?? details.domain);
+    }
+    case 'bitcoinAddress':
+      return { type: 'onchain' };
+    case 'bip21': {
+      const methods = (parsed as Extract<ParsedInput, { type: 'bip21' }>).paymentMethods;
+      let onchain = false;
+      for (const method of methods) {
+        const target = targetFromParsed(method);
+        if (target === null || target.type === 'unsupported') {
+          continue;
+        }
+        if (target.type === 'onchain') {
+          onchain = true;
+          continue;
+        }
+        return target;
+      }
+      return onchain ? { type: 'onchain' } : null;
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * Builds an `lnurl` target from SDK pay-request details (millisat bounds).
+ *
+ * @param details - SDK pay-request details.
+ * @param recipient - Address or domain shown on the confirm screen.
+ * @returns The `lnurl` target.
+ */
+function lnurlTarget(details: LnurlDetails, recipient: string): WalletTarget {
+  return {
+    type: 'lnurl',
+    request: { details },
+    minSats: Math.ceil(details.minSendable / 1000),
+    maxSats: Math.floor(details.maxSendable / 1000),
+    commentMaxLength: details.commentAllowed,
+    recipient,
+  };
+}
+
+/** Narrow view of the SDK's prepared send method that the adapter reads. */
+type PreparedMethod =
+  | { type: 'bolt11Invoice'; lightningFeeSats: number }
+  | { type: 'sparkAddress'; fee: string }
+  | { type: 'sparkInvoice'; fee: string }
+  | { type: string };
+
+/**
+ * Reads the fee of a prepared send.
+ *
+ * @param method - SDK prepared payment method.
+ * @returns Whole sats of fee.
+ * @throws When the method is not one the app pays.
+ */
+function feeOf(method: PreparedMethod): number {
+  if (method.type === 'bolt11Invoice') {
+    return (method as Extract<PreparedMethod, { type: 'bolt11Invoice' }>).lightningFeeSats;
+  }
+  if (method.type === 'sparkAddress' || method.type === 'sparkInvoice') {
+    return Number((method as { fee: string }).fee);
+  }
+  throw new Error('Unsupported payment method');
 }
 
 /**
@@ -244,6 +474,40 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             assetFilter: { type: 'bitcoin' },
           });
           return response.payments.map(toWalletPayment);
+        },
+        async parse(input: string): Promise<WalletTarget> {
+          const parsed = (await handle.parse(input)) as ParsedInput;
+          return targetFromParsed(parsed) ?? { type: 'unsupported' };
+        },
+        async prepare(request: WalletPayRequest): Promise<WalletPreparedPayment> {
+          if (request.type === 'lnurl') {
+            const prepared = await handle.prepareLnurlPay({
+              amount: BigInt(request.amountSats),
+              payRequest: request.request.details as Parameters<
+                typeof handle.prepareLnurlPay
+              >[0]['payRequest'],
+              ...(request.comment === undefined ? {} : { comment: request.comment }),
+            });
+            return {
+              amountSats: prepared.amountSats,
+              feeSats: prepared.feeSats,
+              async send(): Promise<void> {
+                await handle.lnurlPay({ prepareResponse: prepared });
+              },
+            };
+          }
+          const prepared = await handle.prepareSendPayment({
+            paymentRequest: { type: 'input', input: request.input },
+            ...(request.amountSats === undefined ? {} : { amount: BigInt(request.amountSats) }),
+          });
+          const feeSats = feeOf(prepared.paymentMethod as PreparedMethod);
+          return {
+            amountSats: Number(prepared.amount),
+            feeSats,
+            async send(): Promise<void> {
+              await handle.sendPayment({ prepareResponse: prepared });
+            },
+          };
         },
         async disconnect(): Promise<void> {
           await handle.disconnect();
