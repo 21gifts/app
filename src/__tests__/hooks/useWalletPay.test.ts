@@ -209,7 +209,7 @@ describe('useWalletPay path choice', () => {
 });
 
 describe('useWalletPay sending', () => {
-  it('pays once and keeps the paying view while the sheet waits on its long-poll', async () => {
+  it('pays once, keeps the paying view while the long-poll waits, then turns neutral after 60 s', async () => {
     vi.useFakeTimers();
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
@@ -222,10 +222,14 @@ describe('useWalletPay sending', () => {
     expect(result.current.view).toBe('paying');
     await act(async () => {
       result.current.pay();
-      await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS * 2);
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS - 1);
     });
-    expect(send).toHaveBeenCalledTimes(1);
     expect(result.current.view).toBe('paying');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(result.current.view).toBe('unconfirmed');
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
   it('after a failed send waits 60 s on the long-poll, then says not confirmed yet, without retrying', async () => {

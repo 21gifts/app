@@ -8,8 +8,10 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
 /**
- * How long a pay sheet keeps waiting on its long-poll after a send that failed
- * or timed out, before it shows the neutral "not confirmed yet" sentence.
+ * How long a pay sheet keeps waiting on its long-poll after a send, before it
+ * shows the neutral "not confirmed yet" sentence. A confirmation closes the
+ * sheet earlier. Applies to a send that failed or timed out, and to a sent
+ * payment whose screen has no long-poll that closes the sheet (repayment).
  */
 export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
 
@@ -22,8 +24,8 @@ export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
  * - `confirm`: fee shown, **Pay from wallet** pays.
  * - `paying`: the payment is sent or was sent; the sheet's long-poll waits.
  * - `insufficient`: the balance does not cover the payment.
- * - `unconfirmed`: a send failed or timed out and the long-poll saw nothing
- *   for {@link WALLET_PAY_CONFIRM_WAIT_MS}.
+ * - `unconfirmed`: the sheet is still open {@link WALLET_PAY_CONFIRM_WAIT_MS}
+ *   after a send (failed, timed out, or sent without a confirmation yet).
  */
 export type WalletPayView =
   'fallback' | 'unlock' | 'preparing' | 'confirm' | 'paying' | 'insufficient' | 'unconfirmed';
@@ -170,14 +172,12 @@ export function useWalletPay(sparkInvoice: string | null | undefined): UseWallet
         setPhase('insufficient');
         return;
       }
-      if (result.kind === 'failed') {
-        timer.current = setTimeout(() => {
-          timer.current = null;
-          if (run === generation.current) {
-            setPhase('unconfirmed');
-          }
-        }, WALLET_PAY_CONFIRM_WAIT_MS);
-      }
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        if (run === generation.current) {
+          setPhase('unconfirmed');
+        }
+      }, WALLET_PAY_CONFIRM_WAIT_MS);
     });
   }, [pinned, phase]);
 
