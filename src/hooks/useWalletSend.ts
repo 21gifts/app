@@ -59,9 +59,11 @@ export interface UseWalletSendResult {
   /** Sends the confirmed payment once. */
   confirm: () => void;
   /**
-   * Closes the amount or confirm step (back to input) or the sent step.
+   * Closes the amount or confirm step (back to input) or the sent step. While
+   * a confirm send is in flight it closes nothing and still consumes Back.
    *
-   * @returns Whether a step was closed.
+   * @returns `true` when Back is consumed (a step was closed or a send is in
+   *   flight), `false` when no step is open or the flow is pinned.
    */
   cancel: () => boolean;
 }
