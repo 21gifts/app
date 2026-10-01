@@ -57,7 +57,6 @@ import {
   type ForumPlacePin,
 } from '@/lib/api-types';
 import { DeletePostControl } from '@/components/DeletePostControl';
-import { ExternalAuthorSheet } from '@/components/ExternalAuthorSheet';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { ShopAddWizard } from '@/components/ShopAddWizard';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
@@ -860,10 +859,6 @@ export function ForumBoard({
   }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
-  const [externalAuthor, setExternalAuthor] = useState<{
-    messageId: string;
-    fallbackName: string;
-  } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
   const [pullArmed, setPullArmed] = useState(false);
@@ -1197,10 +1192,9 @@ export function ForumBoard({
                         className="text-sm font-medium text-app-fg underline underline-offset-2"
                         onClick={(event) => {
                           stopCardToggle(event);
-                          setExternalAuthor({
-                            messageId: message.id,
-                            fallbackName: message.name,
-                          });
+                          router.push(
+                            `/messages/${message.id}/author?name=${encodeURIComponent(message.name)}`,
+                          );
                         }}
                       >
                         {message.name}
@@ -1592,10 +1586,9 @@ export function ForumBoard({
                                     className="text-sm font-medium text-app-fg underline underline-offset-2"
                                     onClick={(event) => {
                                       stopCardToggle(event);
-                                      setExternalAuthor({
-                                        messageId: reply.id,
-                                        fallbackName: reply.name,
-                                      });
+                                      router.push(
+                                        `/messages/${reply.id}/author?name=${encodeURIComponent(reply.name)}`,
+                                      );
                                     }}
                                   >
                                     {reply.name}
@@ -2264,16 +2257,6 @@ export function ForumBoard({
 
       {middle}
       {error && messages !== null ? errorBlock : null}
-      {externalAuthor !== null ? (
-        <ExternalAuthorSheet
-          key={externalAuthor.messageId}
-          messageId={externalAuthor.messageId}
-          fallbackName={externalAuthor.fallbackName}
-          onClose={() => {
-            setExternalAuthor(null);
-          }}
-        />
-      ) : null}
     </div>
   );
 }

@@ -7,7 +7,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { fetchExternalAuthorProfile } from '@/lib/api';
-import { ExternalAuthorSheet } from '@/components/ExternalAuthorSheet';
+import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 
 const fetchProfile = vi.mocked(fetchExternalAuthorProfile);
 
@@ -19,7 +19,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('ExternalAuthorSheet', () => {
+describe('ExternalAuthorProfile', () => {
   it('shows the fallback name until the profile loads, then the profile fields', async () => {
     let resolveProfile!: (value: Awaited<ReturnType<typeof fetchProfile>>) => void;
     fetchProfile.mockReturnValue(
@@ -27,11 +27,11 @@ describe('ExternalAuthorSheet', () => {
         resolveProfile = resolve;
       }),
     );
-    renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
-    expect(screen.getByRole('heading', { name: 'Ada' })).toBeTruthy();
-    expect(screen.getByText(HINT)).toBeTruthy();
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
+    expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.getByText('External')).toBeTruthy();
+    expect(screen.queryByText(HINT)).toBeNull();
     expect(screen.queryByText('Verified Nostr address')).toBeNull();
     expect(screen.queryByText('Payment address on their profile')).toBeNull();
     expect(screen.queryByText('Nostr key')).toBeNull();
@@ -42,8 +42,9 @@ describe('ExternalAuthorSheet', () => {
       lud16: 'pay@ln.example',
     });
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Robin' })).toBeTruthy();
+      expect(screen.getByText('Robin')).toBeTruthy();
     });
+    expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Ada' })).toBeNull();
     expect(screen.getByText('External')).toBeTruthy();
     expect(screen.getByText('Verified Nostr address')).toBeTruthy();
@@ -54,6 +55,8 @@ describe('ExternalAuthorSheet', () => {
     expect(screen.getByText('npub1example')).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
     expect(document.querySelector('img')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('hides the payment address when lud16 matches nip05 case-insensitively', async () => {
@@ -63,9 +66,7 @@ describe('ExternalAuthorSheet', () => {
       nip05: 'ada@nostr.example',
       lud16: 'Ada@Nostr.example',
     });
-    renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(screen.getByText('Verified Nostr address')).toBeTruthy();
     });
@@ -75,20 +76,30 @@ describe('ExternalAuthorSheet', () => {
     expect(screen.queryByText('Payment address on their profile')).toBeNull();
   });
 
-  it('keeps the fallback name and hint when the fetch returns null', async () => {
+  it('keeps the fallback name when the fetch returns null', async () => {
     fetchProfile.mockResolvedValue(null);
-    renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(fetchProfile).toHaveBeenCalledWith('m1');
     });
-    expect(screen.getByRole('heading', { name: 'Ada' })).toBeTruthy();
-    expect(screen.getByText(HINT)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
+    expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.getByText('External')).toBeTruthy();
     expect(screen.queryByText('Verified Nostr address')).toBeNull();
     expect(screen.queryByText('Payment address on their profile')).toBeNull();
     expect(screen.queryByText('Nostr key')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows Unnamed when the fallback is empty and the fetch returns null', async () => {
+    fetchProfile.mockResolvedValue(null);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="" />);
+    await waitFor(() => {
+      expect(fetchProfile).toHaveBeenCalledWith('m1');
+    });
+    expect(screen.getByText('Unnamed')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
+    expect(screen.getByText('External')).toBeTruthy();
   });
 
   it('copies the npub and changes the Copy label to Copied', async () => {
@@ -101,9 +112,7 @@ describe('ExternalAuthorSheet', () => {
       name: 'Robin',
       npub: 'npub1example',
     });
-    renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     });
@@ -124,7 +133,7 @@ describe('ExternalAuthorSheet', () => {
     expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
   });
 
-  it('clears the copy timer when the sheet unmounts', async () => {
+  it('clears the copy timer when the card unmounts', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -134,9 +143,7 @@ describe('ExternalAuthorSheet', () => {
       name: 'Robin',
       npub: 'npub1example',
     });
-    const view = renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     });
@@ -152,7 +159,7 @@ describe('ExternalAuthorSheet', () => {
     });
   });
 
-  it('does not flash Copied when the sheet unmounts before the clipboard answers', async () => {
+  it('does not flash Copied when the card unmounts before the clipboard answers', async () => {
     let resolveWrite!: () => void;
     let rejectWrite!: (error: Error) => void;
     const writeText = vi.fn(
@@ -176,9 +183,7 @@ describe('ExternalAuthorSheet', () => {
       name: 'Robin',
       npub: 'npub1example',
     });
-    const view = renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     });
@@ -190,9 +195,7 @@ describe('ExternalAuthorSheet', () => {
     });
     expect(exec).not.toHaveBeenCalled();
 
-    const again = renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    const again = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     });
@@ -203,17 +206,6 @@ describe('ExternalAuthorSheet', () => {
       await Promise.resolve();
     });
     expect(exec).not.toHaveBeenCalled();
-  });
-
-  it('stops a click and a key on the dialog from closing it', () => {
-    fetchProfile.mockResolvedValue(null);
-    const onClose = vi.fn();
-    renderWithLocale(<ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={onClose} />);
-    const dialog = screen.getByRole('dialog', { name: 'Ada' });
-    fireEvent.click(dialog);
-    fireEvent.keyDown(dialog, { key: 'Escape' });
-    expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog', { name: 'Ada' })).toBeTruthy();
   });
 
   it('copies through the textarea fallback when the clipboard rejects', async () => {
@@ -232,9 +224,7 @@ describe('ExternalAuthorSheet', () => {
       name: 'Robin',
       npub: 'npub1example',
     });
-    renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     });
@@ -263,9 +253,7 @@ describe('ExternalAuthorSheet', () => {
       name: 'Robin',
       npub: 'npub1example',
     });
-    renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     });
@@ -277,20 +265,19 @@ describe('ExternalAuthorSheet', () => {
     expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull();
   });
 
-  it('ignores a profile that arrives after the sheet unmounts', async () => {
+  it('ignores a profile that arrives after the card unmounts', async () => {
     let resolveProfile!: (value: Awaited<ReturnType<typeof fetchProfile>>) => void;
     const pending = new Promise<Awaited<ReturnType<typeof fetchProfile>>>((resolve) => {
       resolveProfile = resolve;
     });
     fetchProfile.mockReturnValue(pending);
-    const view = renderWithLocale(
-      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
-    );
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     view.unmount();
     await act(async () => {
       resolveProfile({ name: 'Robin', npub: 'npub1example' });
       await pending;
     });
     expect(screen.queryByRole('heading', { name: 'Robin' })).toBeNull();
+    expect(screen.queryByText('Robin')).toBeNull();
   });
 });

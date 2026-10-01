@@ -3234,12 +3234,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:overlay-external-author",
-    "label": "/welcome overlay-external-author",
-    "visual": "state-welcome-overlay-external-author",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:reaction-draft",
     "label": "/welcome reaction-draft",
     "visual": "state-welcome-reaction-draft",
@@ -3942,12 +3936,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/messages/[id]:external-author",
-    "label": "/messages/[id] external-author",
-    "visual": "state-messages-id-external-author",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/messages/[id]:quoted-note",
     "label": "/messages/[id] quoted-note",
     "visual": "state-messages-id-quoted-note",
@@ -3957,6 +3945,24 @@
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:default",
+    "label": "/messages/[id]/author default",
+    "visual": "screen-messages-id-author",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:signed-in",
+    "label": "/messages/[id]/author signed-in",
+    "visual": "state-messages-id-author-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:loading",
+    "label": "/messages/[id]/author loading",
+    "visual": "state-messages-id-author-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

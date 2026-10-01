@@ -3782,6 +3782,7 @@ describe('ForumBoard', () => {
   });
 
   it('shows an External badge and hint on a top-level note', () => {
+    const onToggleExpand = vi.fn();
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, via: 'nostr', payable: false }]}
@@ -3794,6 +3795,7 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
+        onToggleExpand={onToggleExpand}
         {...modeProps('all')}
       />,
     );
@@ -3810,10 +3812,10 @@ describe('ForumBoard', () => {
     expect(tag.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(author);
+    expect(push).toHaveBeenCalledWith('/messages/m1/author?name=Ada');
     expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
-    const dialog = screen.getByRole('dialog', { name: 'Ada' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog', { name: 'Ada' })).toBeNull();
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('renders a via nostr shop note with the shop pill', () => {
@@ -3935,7 +3937,9 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(author);
     expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith('/messages/r-nostr-text/author?name=Robin');
     expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('keeps a long via reply full when truncate is off', () => {

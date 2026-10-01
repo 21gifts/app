@@ -3846,13 +3846,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'overlay-external-author',
-    image: 'welcome-overlay-external-author.png',
-    visual: 'state-welcome-overlay-external-author',
-    needle: 'robin@nostr.example',
-  },
-  {
-    route: '/welcome',
     id: 'reaction-draft',
     image: 'welcome-reaction-draft.png',
     visual: 'state-welcome-reaction-draft',
@@ -4672,13 +4665,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
-    id: 'external-author',
-    image: 'messages-id-external-author.png',
-    visual: 'state-messages-id-external-author',
-    needle: 'robin@nostr.example',
-  },
-  {
-    route: '/messages/[id]',
     id: 'quoted-note',
     image: 'messages-id-quoted-note.png',
     visual: 'state-messages-id-quoted-note',
@@ -4690,5 +4676,26 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-reply.png',
     visual: 'state-messages-id-reply',
     needle: 'state-messages-id-reply',
+  },
+  {
+    route: '/messages/[id]/author',
+    id: 'default',
+    image: 'messages-id-author.png',
+    visual: 'screen-messages-id-author',
+    needle: 'robin@nostr.example',
+  },
+  {
+    route: '/messages/[id]/author',
+    id: 'signed-in',
+    image: 'messages-id-author-signed-in.png',
+    visual: 'state-messages-id-author-signed-in',
+    needle: 'state /messages/[id]/author signed-in',
+  },
+  {
+    route: '/messages/[id]/author',
+    id: 'loading',
+    image: 'messages-id-author-loading.png',
+    visual: 'state-messages-id-author-loading',
+    needle: 'state /messages/[id]/author loading',
   },
 ];

@@ -3226,80 +3226,6 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-external');
   });
 
-  test('state /welcome overlay-external-author', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          location: null,
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await fulfillMixedSatsMessages(page);
-    await page.route('**/forum/messages/**/replies', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'r-nostr-gift',
-              name: 'Robin',
-              via: 'nostr',
-              text: '',
-              createdAt: '2026-08-28T12:03:00.000Z',
-              sats: 69,
-              payable: false,
-              hasPhoto: false,
-            },
-            {
-              id: 'r-nostr-text',
-              name: 'Robin',
-              via: 'nostr',
-              text: 'Greetings! https://example.com/hello',
-              createdAt: '2026-08-28T12:04:00.000Z',
-              sats: 0,
-              payable: false,
-              hasPhoto: false,
-            },
-          ],
-        }),
-      });
-    });
-    await page.route('**/external-profile', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          name: 'Robin',
-          npub: 'npub1example',
-          nip05: 'robin@nostr.example',
-          lud16: 'pay@ln.example',
-        }),
-      });
-    });
-    await page.goto('/welcome');
-    await page.getByText('Thank you both — that helps.').click();
-    await page.getByRole('button', { name: 'View profile' }).first().click();
-    const dialog = page.getByRole('dialog', { name: 'Robin' });
-    await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('pay@ln.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
-    await expect(dialog.getByRole('link')).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-overlay-external-author');
-  });
-
   const REACTION_ANSWER = 'This is my answer';
   const REACTION_NOTE_TEXT = 'Thank you so much to all donors.';
   const REACTION_NOTE = {
@@ -9956,48 +9882,48 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-external-reply');
   });
 
-  test('state /messages/[id] external-author', async ({ page }) => {
-    const parentId = '11111111-1111-4111-8111-111111111111';
-    const parent = {
-      id: parentId,
-      name: 'Ada',
-      text: 'Hello from Ada',
-      createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 0,
-      payable: false,
-      hasPhoto: false,
-      role: 'basis',
-      replyCount: 2,
-    };
-    await fulfillPublicThreadReplies(page, parentId, [
-      {
-        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
-        parentId,
-        name: 'Robin',
-        via: 'nostr',
-        text: '',
-        createdAt: '2026-08-28T12:03:00.000Z',
-        sats: 69,
-        payable: false,
-        hasPhoto: false,
-      },
-      {
-        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
-        parentId,
-        name: 'Robin',
-        via: 'nostr',
-        text: 'Greetings! https://example.com/hello',
-        createdAt: '2026-08-28T12:04:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-      },
-    ]);
-    await page.route(`**/public-messages/${parentId}`, async (route) => {
+  test('screen /messages/[id]/author default', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(parent),
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await expect(page.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+    await expect(page.getByText('pay@ln.example', { exact: true })).toBeVisible();
+    await expect(page.getByText('npub1example', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'screen-messages-id-author');
+  });
+
+  test('state /messages/[id]/author signed-in', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
       });
     });
     await page.route('**/external-profile', async (route) => {
@@ -10012,15 +9938,21 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.goto(`/messages/${parentId}`);
-    await expect(page.getByText('Hello from Ada')).toBeVisible();
-    await page.getByRole('button', { name: 'View profile' }).first().click();
-    const dialog = page.getByRole('dialog', { name: 'Robin' });
-    await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('pay@ln.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
-    await expect(dialog.getByRole('link')).toHaveCount(0);
-    await shotScreen(page, 'state-messages-id-external-author');
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await expect(page.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-author-signed-in');
+  });
+
+  test('state /messages/[id]/author loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', () => new Promise(() => undefined));
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Robin', { exact: true })).toBeVisible();
+    await expect(page.getByText('External', { exact: true })).toBeVisible();
+    await expect(page.getByText('robin@nostr.example')).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-author-loading');
   });
 
   test('state /messages/[id] quoted-note', async ({ page }) => {

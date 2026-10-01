@@ -660,7 +660,6 @@ const en = {
   'forum.via.nostr': 'External',
   'forum.via.nostrHint':
     'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
-  'forum.externalProfileClose': 'Close',
   'forum.externalProfileNip05': 'Verified Nostr address',
   'forum.externalProfileLud16': 'Payment address on their profile',
   'forum.externalProfileNpub': 'Nostr key',
@@ -1674,7 +1673,6 @@ const de = {
   'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
     'Hat aus einer anderen App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
-  'forum.externalProfileClose': 'Schließen',
   'forum.externalProfileNip05': 'Geprüfte Nostr-Adresse',
   'forum.externalProfileLud16': 'Zahlungsadresse laut Profil',
   'forum.externalProfileNpub': 'Nostr-Schlüssel',
@@ -2699,7 +2697,6 @@ const es = {
   'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
     'Escribió desde otra app, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
-  'forum.externalProfileClose': 'Cerrar',
   'forum.externalProfileNip05': 'Dirección Nostr comprobada',
   'forum.externalProfileLud16': 'Dirección de pago de su perfil',
   'forum.externalProfileNpub': 'Clave de Nostr',
@@ -3712,7 +3709,6 @@ const fil = {
   'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':
     'Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
-  'forum.externalProfileClose': 'Isara',
   'forum.externalProfileNip05': 'Beripikadong address sa Nostr',
   'forum.externalProfileLud16': 'Address ng bayad sa profile nila',
   'forum.externalProfileNpub': 'Susi ng Nostr',

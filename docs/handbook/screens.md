@@ -1189,15 +1189,9 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ### Variant: expanded-external
 
-On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button; this shot leaves that sheet closed (`overlay-external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button that opens `/messages/<id>/author`. This shot stays on the thread. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts welcome expanded external](images/welcome-expanded-external.png)
-
-### Variant: overlay-external-author
-
-On **All**, expand Ada's note and click **View profile** on Robin, who has no 21.gifts account. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example` (shown only because it differs), **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
-
-![21.gifts welcome overlay external author](images/welcome-overlay-external-author.png)
 
 ### Variant: reaction-draft
 
@@ -4161,15 +4155,9 @@ Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 
 
 ### Variant: external-reply
 
-Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each name is a **View profile** button. **External** stays a non-interactive span next to the name (same slot as a role pill; not a button, no hint). This shot leaves the profile sheet closed (`external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each name is a **View profile** control to `/messages/<id>/author`. This shot stays on the thread. **External** stays a non-interactive span next to the name (same slot as a role pill; not a button, no hint). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts public message external reply](images/messages-id-external-reply.png)
-
-### Variant: external-author
-
-Unsigned permalink of the same thread. Click **View profile** on Robin. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
-
-![21.gifts public message external author](images/messages-id-external-author.png)
 
 ### Variant: quoted-note
 
@@ -4182,6 +4170,32 @@ Public permalink of Riana Rosello's note. Cyrill's reply shows `just for informa
 Same thread opened on the reply UUID. Parent + gift; permalink target ring (`data-permalink-target="true"`, `ring-1 ring-app-fg`) on the gift reply.
 
 ![21.gifts public message reply](images/messages-id-reply.png)
+
+## Screen: /messages/[id]/author
+
+- **Purpose:** External author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Heading is `profile.title` (**Profile** / **Profil** / **Perfil** / **Profile**), not the person's name. Name section always: heading `name.heading`, truncated name, **External** span (not a button). Optional checked Nostr address (`forum.externalProfileNip05`) when published. Payment address (`forum.externalProfileLud16`) only when it differs ignoring case. Nostr key (`forum.externalProfileNpub`) with the centered secondary IconButton copy control when a profile has loaded; addresses and the key are `break-all`, the name truncates. No photo, pay, outbound link, location, counts, chart, about, message, hint paragraph, or close control. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. Body is `ExternalAuthorProfile` inside `PublicMessageChrome`.
+- **Inputs:** Dynamic route `id` (forum message id, not validated as a UUID) and optional `name` query (`string` or first array entry, trimmed; blank becomes `''`). Profile from `GET /public-messages/:id/external-profile` (`fetchExternalAuthorProfile`).
+- **Actions:** The top-left arrow is the existing `ProfileChromeLeft` control (previous in-app view, or `/welcome` when this tab has none). Unsigned chrome is wordmark href `/` plus `LanguageSwitcher`. Signed-in chrome is `ProfileChromeLeft` plus `SignedInChrome`. Copy the npub (icon-only **Copy** → **Copied**). No pay, no outbound link, no close control.
+- **Used by:** Route `/messages/[id]/author` (`ExternalAuthorPage`). `ForumBoard`, `QuotedForumNote`, and `PublicMessageLoader` name controls.
+- **Auth:** None required to view; chrome depends on hydrated session. No `OnboardingGate`. Not a `/members` page.
+
+### Variant: default
+
+Signed-out loaded card. Heading **Profile**, name **Robin**, **External**, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, icon-only **Copy**. No photo, pay, outbound link, hint paragraph, or close control.
+
+![21.gifts external author profile](images/messages-id-author.png)
+
+### Variant: signed-in
+
+Same loaded card with the **Menu** control. Heading **Profile**, **Robin**, **External**, `robin@nostr.example`, `pay@ln.example`, `npub1example`, icon-only **Copy**.
+
+![21.gifts external author profile signed in](images/messages-id-author-signed-in.png)
+
+### Variant: loading
+
+Title **Profile**, name **Robin**, **External**, and no address yet because the profile request has not returned.
+
+![21.gifts external author profile loading](images/messages-id-author-loading.png)
 
 ## Screen: /view/[viewKey]
 
