@@ -252,6 +252,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-input",
+    "label": "/wallet send-input",
+    "visual": "state-wallet-send-input",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount",
+    "label": "/wallet send-amount",
+    "visual": "state-wallet-send-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm",
+    "label": "/wallet send-confirm",
+    "visual": "state-wallet-send-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-sent",
+    "label": "/wallet send-sent",
+    "visual": "state-wallet-send-sent",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-unsupported",
+    "label": "/wallet send-unsupported",
+    "visual": "state-wallet-send-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-error",
+    "label": "/wallet send-error",
+    "visual": "state-wallet-send-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",
@@ -1323,6 +1359,42 @@
     "id": "/welcome:pay-smartphone",
     "label": "/welcome pay-smartphone",
     "visual": "state-welcome-pay-smartphone",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-unlock",
+    "label": "/welcome wallet-pay-unlock",
+    "visual": "state-welcome-wallet-pay-unlock",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-preparing",
+    "label": "/welcome wallet-pay-preparing",
+    "visual": "state-welcome-wallet-pay-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-confirm",
+    "label": "/welcome wallet-pay-confirm",
+    "visual": "state-welcome-wallet-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-paying",
+    "label": "/welcome wallet-pay-paying",
+    "visual": "state-welcome-wallet-pay-paying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-insufficient",
+    "label": "/welcome wallet-pay-insufficient",
+    "visual": "state-welcome-wallet-pay-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-unconfirmed",
+    "label": "/welcome wallet-pay-unconfirmed",
+    "visual": "state-welcome-wallet-pay-unconfirmed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

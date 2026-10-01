@@ -51,16 +51,16 @@ type Phase =
   | 'failed';
 
 const VISUAL_VIEWS: Record<string, WalletPayView> = {
-  'pay-unlock': 'unlock',
-  'pay-preparing': 'preparing',
-  'pay-confirm': 'confirm',
-  'pay-paying': 'paying',
-  'pay-insufficient': 'insufficient',
-  'pay-unconfirmed': 'unconfirmed',
+  'wallet-pay-unlock': 'unlock',
+  'wallet-pay-preparing': 'preparing',
+  'wallet-pay-confirm': 'confirm',
+  'wallet-pay-paying': 'paying',
+  'wallet-pay-insufficient': 'insufficient',
+  'wallet-pay-unconfirmed': 'unconfirmed',
 };
 
 /**
- * Pinned view from `?visual=pay-…`, honoured only in a Playwright build.
+ * Pinned view from `?visual=wallet-pay-…`, honoured only in a Playwright build.
  *
  * @returns The pinned view, or `null`.
  */
@@ -82,7 +82,7 @@ function visualView(): WalletPayView | null {
  * ready, opening, or can be unlocked with one passkey prompt; otherwise the
  * view is `fallback`. A ready wallet prepares at once so the fee is shown
  * before **Pay from wallet**. Nothing is retried on its own. Visual pins
- * (`?visual=pay-…`) apply only in a Playwright build, only with a
+ * (`?visual=wallet-pay-…`) apply only in a Playwright build, only with a
  * `sparkInvoice`, and leave the actions inert.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.

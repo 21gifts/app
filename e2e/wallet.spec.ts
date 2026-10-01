@@ -736,3 +736,138 @@ test('Function: canUnlockWallet — locked pin for eligible account', async ({ p
   await expect(page.getByRole('region', { name: 'Balance' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
 });
+
+async function stubWalletRate(page: Page): Promise<void> {
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(WALLET_RATE_DAY_STATS),
+    });
+  });
+}
+
+test('wallet key unset shows no send region', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
+});
+
+test('wallet balance pins other than ready show no send region', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
+});
+
+test('wallet send-input pin shows the paste field under the balance', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-input');
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region).toBeVisible();
+  const field = region.getByLabel('Payment request or address');
+  await expect(field).toHaveAttribute('placeholder', 'Paste a Bitcoin payment request or address');
+  await expect(region.getByRole('button', { name: 'Continue' })).toBeDisabled();
+  await field.fill('lnbc1');
+  await expect(region.getByRole('button', { name: 'Continue' })).toBeEnabled();
+  await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible();
+});
+
+test('wallet send-amount pin asks for an amount, bounds, and a comment', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-amount');
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText('To bob@example.com')).toBeVisible();
+  await expect(region.getByLabel('Amount')).toBeVisible();
+  await expect(region.getByText("Between ₿1 and ₿1'000'000")).toBeVisible();
+  await expect(region.getByLabel('Message (optional)')).toHaveAttribute('maxlength', '140');
+  await expect(region.getByRole('button', { name: 'Cancel' })).toBeVisible();
+});
+
+test('wallet send-confirm pin shows recipient, amount, and fee with fiat', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm');
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText('To bob@example.com')).toBeVisible();
+  await expect(region.getByText("Send ₿2'100")).toBeVisible();
+  await expect(region.getByText('$2.10')).toBeVisible();
+  await expect(region.getByText(/Fee ₿0/)).toBeVisible();
+  await expect(region.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+});
+
+test('wallet send-sent pin shows the sent amount and Done', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-sent');
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByRole('status')).toContainText("Sent ₿2'100");
+  await expect(region.getByRole('button', { name: 'Done' })).toBeVisible();
+});
+
+test('wallet send-unsupported pin says a base-chain address is not supported yet', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-unsupported');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+    'Sending to this kind of Bitcoin address is not supported yet.',
+  );
+});
+
+test('wallet send-error pin shows the plain unreachable error', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-error');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+    'The receiver could not be reached from this browser. Please try again later.',
+  );
+});
+
+test('wallet send pin: Cancel is inert while a step is pinned', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm');
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/wallet\?visual=send-confirm/);
+});
+
+test('Function: WalletSend — send-input pin shows the Send Bitcoin region', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-input');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toBeVisible();
+});
+
+test('Function: useWalletSend — send-confirm pin shows the confirm step', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm');
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+});
+
+test('Function: walletSendBounds — send-amount pin shows the receiver bounds', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-amount');
+  await expect(page.getByText("Between ₿1 and ₿1'000'000")).toBeVisible();
+});
+
+test('Function: parseWalletInput — unset key loads no wasm and shows no send region', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});

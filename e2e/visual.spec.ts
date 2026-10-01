@@ -1796,6 +1796,94 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-setup-username-frozen');
   });
 
+  /** Signs in an account that can unlock the wallet, with a stub till and rate. */
+  async function seedWalletSend(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await fulfillRateDay(page);
+  }
+
+  test('wallet send-input', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-input');
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByPlaceholder('Paste a Bitcoin payment request or address')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-input');
+  });
+
+  test('wallet send-amount', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount');
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByLabel('Message (optional)')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-amount');
+  });
+
+  test('wallet send-confirm', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm');
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByText("Send ₿2'100")).toBeVisible();
+    await expect(page.getByText('$2.10')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm');
+  });
+
+  test('wallet send-sent', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-sent');
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(page.getByText("Sent ₿2'100")).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-sent');
+  });
+
+  test('wallet send-unsupported', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-unsupported');
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(
+      page.getByText('Sending to this kind of Bitcoin address is not supported yet.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-unsupported');
+  });
+
+  test('wallet send-error', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-error');
+    await expect(page.getByText("₿21'000")).toBeVisible();
+    await expect(
+      page.getByText(
+        'The receiver could not be reached from this browser. Please try again later.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-error');
+  });
+
   test('wallet error', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -14535,7 +14623,7 @@ test.describe('welcome forum variants', () => {
     });
   }
 
-  async function stubPayInvoice(page: Page): Promise<void> {
+  async function stubPayInvoice(page: Page, sparkInvoice?: string): Promise<void> {
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       const url = route.request().url();
       if (
@@ -14591,7 +14679,11 @@ test.describe('welcome forum variants', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc21n1exampleinvoice', amountSats: 21 }),
+        body: JSON.stringify(
+          sparkInvoice === undefined
+            ? { pr: 'lnbc21n1exampleinvoice', amountSats: 21 }
+            : { pr: 'lnbc21n1exampleinvoice', amountSats: 21, sparkInvoice },
+        ),
       });
     });
   }
@@ -14611,6 +14703,23 @@ test.describe('welcome forum variants', () => {
 
   async function submitPayAmount(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Continue' }).click();
+  }
+
+  /** Opens the Gift pay sheet with an in-app wallet pin (`?visual=wallet-pay-…`). */
+  async function openWalletPaySheet(page: Page, visual: string): Promise<void> {
+    await seedAda(page);
+    await stubPayInvoice(page, 'spark1visualgiftinvoice');
+    await fulfillRateDay(page);
+    await page.goto(`/welcome?visual=${visual}`);
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    const replyCard = page.locator('[data-reply-id="r-pay"]');
+    await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await replyCard.getByLabel('Amount').fill('21');
+    await submitPayAmount(page);
+    await expect(page.getByText('$0.02').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
   }
 
   async function openPaySheet(page: Page): Promise<void> {
@@ -17694,6 +17803,48 @@ test.describe('welcome forum variants', () => {
       await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
     }
     await shotScreen(page, 'state-welcome-pay-smartphone');
+  });
+
+  test('welcome wallet-pay-unlock', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-unlock');
+    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-unlock');
+  });
+
+  test('welcome wallet-pay-preparing', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-preparing');
+    await expect(page.getByText('Checking your wallet…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-preparing');
+  });
+
+  test('welcome wallet-pay-confirm', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-confirm');
+    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-confirm');
+  });
+
+  test('welcome wallet-pay-paying', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-paying');
+    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-paying');
+  });
+
+  test('welcome wallet-pay-insufficient', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-insufficient');
+    await expect(
+      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
+    ).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-insufficient');
+  });
+
+  test('welcome wallet-pay-unconfirmed', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-unconfirmed');
+    await expect(
+      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-unconfirmed');
   });
 
   test('welcome pay-author-wallet', async ({ page }) => {
