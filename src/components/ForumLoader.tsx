@@ -733,7 +733,7 @@ export function ForumLoader({
           messageId,
           pr: invoice.pr,
           amountSats: invoice.amountSats,
-          sparkInvoice: invoice.sparkInvoice ?? null,
+          sparkInvoice: invoice.sparkInvoice,
         });
       })
       .catch((err: unknown) => {
@@ -1810,7 +1810,7 @@ export function ForumLoader({
           messageId: target.messageId,
           pr: invoice.pr,
           amountSats: invoice.amountSats,
-          sparkInvoice: invoice.sparkInvoice ?? null,
+          sparkInvoice: invoice.sparkInvoice,
         });
         setPayHost('composer');
         pendingComposeTextRef.current = trimmed;
@@ -1999,7 +1999,7 @@ export function ForumLoader({
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
-            sparkInvoice: invoice.sparkInvoice ?? null,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);
@@ -2255,7 +2255,7 @@ export function ForumLoader({
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice ?? null,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
       setReplyPayPreview(trimmed);
@@ -2331,7 +2331,7 @@ export function ForumLoader({
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
-        sparkInvoice: invoice.sparkInvoice ?? null,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('composer');
       setReplyDraft('');

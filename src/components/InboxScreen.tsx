@@ -206,7 +206,7 @@ export interface InboxInvoice {
   /** Whole satoshis on the invoice. */
   amountSats: number;
   /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
-  sparkInvoice?: string | null;
+  sparkInvoice?: string | null | undefined;
 }
 
 /** Props for {@link InboxScreen}. */
