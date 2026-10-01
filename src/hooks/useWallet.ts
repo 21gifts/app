@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { getE2eNow } from '@/lib/config';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
-import { connectWallet } from '@/lib/wallet/wallet-service';
+import { connectWallet, walletNeedsReload } from '@/lib/wallet/wallet-service';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
-/** Balance used by the deterministic `/wallet` visual fixture. */
+/** Balance used by the deterministic `/wallet` visual fixture (Playwright builds only). */
 export const WALLET_VISUAL_FIXTURE_SATS = 21_000;
 
 /** State and actions exposed to the wallet balance entry surface. */
@@ -27,6 +28,9 @@ function visualStatus(): WalletStatus | null {
   if (typeof window === 'undefined') {
     return null;
   }
+  if (getE2eNow() === null) {
+    return null;
+  }
   const visual = new URLSearchParams(window.location.search).get('visual');
   switch (visual) {
     case 'balance-locked':
@@ -44,6 +48,8 @@ function visualStatus(): WalletStatus | null {
 
 /**
  * Selects the wallet balance state and exposes guarded unlock and retry actions.
+ * Visual pins (`?visual=balance-…`) are honoured only in a Playwright build
+ * (`getE2eNow()` set) and leave unlock and retry inert while pinned.
  *
  * @returns Wallet balance state and stable actions for `/wallet`.
  */
@@ -81,6 +87,10 @@ export function useWallet(): UseWalletResult {
     }
     if (peekSessionPhrase() === null) {
       unlock();
+      return;
+    }
+    if (walletNeedsReload()) {
+      window.location.reload();
       return;
     }
     void connectWallet();

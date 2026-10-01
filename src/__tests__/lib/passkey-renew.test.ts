@@ -380,7 +380,9 @@ describe('renewPasskey', () => {
     if (result.outcome === 'ok') {
       expect(result.prfFirst).toEqual(prfFirst);
     }
-    expect(peekSessionPhrase()).not.toBeNull();
+    await vi.waitFor(() => {
+      expect(peekSessionPhrase()).not.toBeNull();
+    });
     expect(finishPasskeySeed).toHaveBeenCalledWith('tok', 'ch', { id: 'cred' });
     expect(credentialToJSON).toHaveBeenCalled();
   });

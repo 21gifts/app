@@ -2,7 +2,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WALLET_VISUAL_FIXTURE_SATS, useWallet } from '@/hooks/useWallet';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
-import { connectWallet } from '@/lib/wallet/wallet-service';
+import { connectWallet, walletNeedsReload } from '@/lib/wallet/wallet-service';
 import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
@@ -17,6 +17,7 @@ vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
   connectWallet: vi.fn(),
+  walletNeedsReload: vi.fn(() => false),
 }));
 
 const account = {
@@ -41,24 +42,36 @@ const account = {
 };
 
 const originalHref = window.location.href;
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 
 function setWallet(status: WalletStatus, balanceSats: number | null = null): void {
   useWalletStore.setState({ status, balanceSats, identityPubkey: null });
 }
 
+function setPlaywrightBuild(): void {
+  process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+}
+
 beforeEach(() => {
   window.history.replaceState({}, '', '/wallet');
   clearSessionPhrase();
+  delete process.env.NEXT_PUBLIC_E2E_NOW;
   useAuthStore.setState({ session: 'token', account });
   setWallet('locked');
   vi.mocked(unlockWalletPhrase).mockReset().mockResolvedValue('unlocked');
   vi.mocked(connectWallet).mockReset().mockResolvedValue(undefined);
+  vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
 afterEach(() => {
   cleanup();
   clearSessionPhrase();
   window.history.replaceState({}, '', originalHref);
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
 });
 
 describe('useWallet', () => {
@@ -68,13 +81,28 @@ describe('useWallet', () => {
     ['balance-ready', 'ready', WALLET_VISUAL_FIXTURE_SATS],
     ['balance-error', 'error', null],
   ] as const)('pins %s to %s', (visual, status, balanceSats) => {
+    setPlaywrightBuild();
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
     const { result } = renderHook(() => useWallet());
     expect(result.current.status).toBe(status);
     expect(result.current.balanceSats).toBe(balanceSats);
   });
 
+  it('ignores visual pins outside a Playwright build', async () => {
+    window.history.replaceState({}, '', '/wallet?visual=balance-ready');
+    setWallet('disabled');
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('disabled');
+    expect(result.current.balanceSats).toBeNull();
+    await act(async () => {
+      result.current.unlock();
+      await Promise.resolve();
+    });
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+  });
+
   it('ignores an unrelated visual value', () => {
+    setPlaywrightBuild();
     window.history.replaceState({}, '', '/wallet?visual=unrelated');
     setWallet('ready', 42);
     const { result } = renderHook(() => useWallet());
@@ -173,7 +201,42 @@ describe('useWallet', () => {
     expect(unlockWalletPhrase).not.toHaveBeenCalled();
   });
 
+  it('retries by reloading when the SDK failed to load', () => {
+    rememberSessionPhrase(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    );
+    vi.mocked(walletNeedsReload).mockReturnValue(true);
+    const previous = window.location;
+    const reload = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        href: previous.href,
+        search: previous.search,
+        reload,
+      },
+    });
+    const { result } = renderHook(() => useWallet());
+    act(() => result.current.retry());
+    Object.defineProperty(window, 'location', { configurable: true, value: previous });
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(connectWallet).not.toHaveBeenCalled();
+    expect(unlockWalletPhrase).not.toHaveBeenCalled();
+  });
+
+  it('retries by connecting when the SDK does not need a reload', () => {
+    rememberSessionPhrase(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    );
+    vi.mocked(walletNeedsReload).mockReturnValue(false);
+    const { result } = renderHook(() => useWallet());
+    act(() => result.current.retry());
+    expect(connectWallet).toHaveBeenCalledTimes(1);
+    expect(unlockWalletPhrase).not.toHaveBeenCalled();
+  });
+
   it('does not unlock or connect under a visual pin', () => {
+    setPlaywrightBuild();
     window.history.replaceState({}, '', '/wallet?visual=balance-error');
     rememberSessionPhrase(
       'abandon ability able about above absent absorb abstract absurd abuse access accident',
