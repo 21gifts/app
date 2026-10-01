@@ -4,7 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
-import { runWalletSetup, walletSetupInFlight } from '@/lib/wallet/wallet-setup';
+import {
+  runWalletSetup,
+  walletSetupInFlight,
+  type WalletSetupOutcome,
+} from '@/lib/wallet/wallet-setup';
 
 /**
  * What the setup dialog shows. `intro` explains the step and offers the
@@ -61,20 +65,20 @@ export function walletSetupPin(): WalletSetupView | null {
  */
 export function useWalletSetup(): UseWalletSetupResult {
   const [pinned] = useState(walletSetupPin);
+  // Taken during the first render so a run that ends before the effect still
+  // reports its outcome to this dialog.
+  const [joined] = useState<Promise<WalletSetupOutcome> | null>(() =>
+    pinned === null && walletSetupInFlight() ? runWalletSetup(() => undefined) : null,
+  );
   const [view, setView] = useState<WalletSetupView>(() =>
-    pinned === null && (peekSessionPhrase() !== null || walletSetupInFlight())
-      ? 'progress'
-      : 'intro',
+    pinned === null && (joined !== null || peekSessionPhrase() !== null) ? 'progress' : 'intro',
   );
   const inFlight = useRef(false);
 
-  const start = useCallback((): void => {
-    if (pinned !== null || inFlight.current) {
-      return;
-    }
+  const follow = useCallback((run: Promise<WalletSetupOutcome>): void => {
     inFlight.current = true;
     setView('progress');
-    void runWalletSetup(() => undefined).then((outcome) => {
+    void run.then((outcome) => {
       inFlight.current = false;
       if (outcome === 'noPrf') {
         setView('noPrf');
@@ -84,7 +88,14 @@ export function useWalletSetup(): UseWalletSetupResult {
         setView('intro');
       }
     });
-  }, [pinned]);
+  }, []);
+
+  const start = useCallback((): void => {
+    if (pinned !== null || inFlight.current) {
+      return;
+    }
+    follow(runWalletSetup(() => undefined));
+  }, [follow, pinned]);
 
   const retry = useCallback((): void => {
     if (pinned !== null) {
@@ -98,10 +109,16 @@ export function useWalletSetup(): UseWalletSetupResult {
   }, [pinned, start]);
 
   useEffect(() => {
-    if (pinned === null && (peekSessionPhrase() !== null || walletSetupInFlight())) {
+    if (joined !== null) {
+      if (!inFlight.current) {
+        follow(joined);
+      }
+      return;
+    }
+    if (pinned === null && peekSessionPhrase() !== null) {
       start();
     }
-  }, [pinned, start]);
+  }, [follow, joined, pinned, start]);
 
   return { view: pinned ?? view, start, retry };
 }
