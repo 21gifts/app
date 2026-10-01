@@ -189,6 +189,275 @@ describe('loadWalletSdk', () => {
   });
 });
 
+describe('payments', () => {
+  const sdkPay = {
+    parse: vi.fn(),
+    prepareSendPayment: vi.fn(),
+    sendPayment: vi.fn(),
+    prepareLnurlPay: vi.fn(),
+    lnurlPay: vi.fn(),
+  };
+  const LNURL = {
+    callback: 'https://pay.example/cb',
+    minSendable: 1_500,
+    maxSendable: 2_000_999,
+    metadataStr: '[]',
+    commentAllowed: 120,
+    domain: 'pay.example',
+    url: 'https://pay.example/.well-known/lnurlp/bob',
+  };
+  const BOLT11 = `lnbc21n1${'q'.repeat(40)}`;
+
+  beforeEach(() => {
+    for (const fn of Object.values(sdkPay)) {
+      fn.mockReset();
+    }
+    mocks.connect.mockResolvedValue({
+      getInfo: mocks.getInfo,
+      addEventListener: mocks.addEventListener,
+      disconnect: mocks.disconnect,
+      ...sdkPay,
+    });
+  });
+
+  async function connection(): Promise<
+    Awaited<ReturnType<Awaited<ReturnType<typeof loadWalletSdk>>['connect']>>
+  > {
+    const sdk = await loadWalletSdk();
+    return sdk.connect(MNEMONIC, API_KEY);
+  }
+
+  it('parse maps a BOLT11 request with amount and description', async () => {
+    sdkPay.parse.mockResolvedValue({
+      type: 'bolt11Invoice',
+      amountMsat: 2_100_999,
+      description: ' Coffee ',
+      invoice: { bolt11: BOLT11 },
+    });
+    const conn = await connection();
+    await expect(conn.parse(BOLT11)).resolves.toEqual({
+      type: 'request',
+      input: BOLT11,
+      amountSats: 2_100,
+      recipient: 'Coffee',
+    });
+    expect(sdkPay.parse).toHaveBeenCalledWith(BOLT11);
+  });
+
+  it('parse maps an amountless BOLT11 request to a shortened recipient', async () => {
+    sdkPay.parse.mockResolvedValue({ type: 'bolt11Invoice', invoice: { bolt11: BOLT11 } });
+    const conn = await connection();
+    await expect(conn.parse(BOLT11)).resolves.toEqual({
+      type: 'request',
+      input: BOLT11,
+      amountSats: null,
+      recipient: `${BOLT11.slice(0, 10)}…${BOLT11.slice(-6)}`,
+    });
+  });
+
+  it('parse maps a request with an empty description to the shortened request', async () => {
+    sdkPay.parse.mockResolvedValue({
+      type: 'bolt11Invoice',
+      description: '  ',
+      invoice: { bolt11: 'lnbc1short' },
+    });
+    const conn = await connection();
+    await expect(conn.parse('lnbc1short')).resolves.toMatchObject({ recipient: 'lnbc1short' });
+  });
+
+  it('parse maps a Spark-style invoice with and without amount', async () => {
+    const invoice = `spark1${'x'.repeat(40)}`;
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'sparkInvoice',
+      invoice,
+      amount: '2100',
+      description: 'Gift',
+    });
+    sdkPay.parse.mockResolvedValueOnce({ type: 'sparkInvoice', invoice });
+    const conn = await connection();
+    await expect(conn.parse(invoice)).resolves.toEqual({
+      type: 'request',
+      input: invoice,
+      amountSats: 2_100,
+      recipient: 'Gift',
+    });
+    await expect(conn.parse(invoice)).resolves.toEqual({
+      type: 'request',
+      input: invoice,
+      amountSats: null,
+      recipient: `${invoice.slice(0, 10)}…${invoice.slice(-6)}`,
+    });
+  });
+
+  it('parse refuses a token invoice', async () => {
+    sdkPay.parse.mockResolvedValue({
+      type: 'sparkInvoice',
+      invoice: 'spark1token',
+      tokenIdentifier: 'btkn1',
+    });
+    const conn = await connection();
+    await expect(conn.parse('spark1token')).resolves.toEqual({ type: 'unsupported' });
+  });
+
+  it('parse maps an address without amount', async () => {
+    sdkPay.parse.mockResolvedValue({ type: 'sparkAddress', address: 'sp1short' });
+    const conn = await connection();
+    await expect(conn.parse('sp1short')).resolves.toEqual({
+      type: 'request',
+      input: 'sp1short',
+      amountSats: null,
+      recipient: 'sp1short',
+    });
+  });
+
+  it('parse maps a payment address and an LNURL to sat bounds', async () => {
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'lightningAddress',
+      address: 'bob@pay.example',
+      payRequest: LNURL,
+    });
+    sdkPay.parse.mockResolvedValueOnce({ type: 'lnurlPay', ...LNURL });
+    sdkPay.parse.mockResolvedValueOnce({ type: 'lnurlPay', ...LNURL, address: 'amy@pay.example' });
+    const conn = await connection();
+    await expect(conn.parse('bob@pay.example')).resolves.toEqual({
+      type: 'lnurl',
+      request: { details: LNURL },
+      minSats: 2,
+      maxSats: 2_000,
+      commentMaxLength: 120,
+      recipient: 'bob@pay.example',
+    });
+    await expect(conn.parse('lnurl1')).resolves.toMatchObject({
+      type: 'lnurl',
+      recipient: 'pay.example',
+    });
+    await expect(conn.parse('lnurl1')).resolves.toMatchObject({ recipient: 'amy@pay.example' });
+  });
+
+  it('parse maps a base-chain address to onchain and other inputs to unsupported', async () => {
+    sdkPay.parse.mockResolvedValueOnce({ type: 'bitcoinAddress', address: 'bc1q' });
+    sdkPay.parse.mockResolvedValueOnce({ type: 'lnurlWithdraw' });
+    const conn = await connection();
+    await expect(conn.parse('bc1q')).resolves.toEqual({ type: 'onchain' });
+    await expect(conn.parse('lnurlw')).resolves.toEqual({ type: 'unsupported' });
+  });
+
+  it('parse takes the first payable method of a BIP21 URI', async () => {
+    sdkPay.parse.mockResolvedValue({
+      type: 'bip21',
+      paymentMethods: [
+        { type: 'bitcoinAddress', address: 'bc1q' },
+        { type: 'sparkInvoice', invoice: 'spark1token', tokenIdentifier: 'btkn1' },
+        { type: 'url' },
+        { type: 'bolt11Invoice', amountMsat: 21_000, invoice: { bolt11: 'lnbc1short' } },
+      ],
+    });
+    const conn = await connection();
+    await expect(conn.parse('bitcoin:bc1q?lightning=lnbc1short')).resolves.toEqual({
+      type: 'request',
+      input: 'lnbc1short',
+      amountSats: 21,
+      recipient: 'lnbc1short',
+    });
+  });
+
+  it('parse maps a BIP21 URI with only a base-chain address to onchain, and none to unsupported', async () => {
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bip21',
+      paymentMethods: [{ type: 'bitcoinAddress', address: 'bc1q' }],
+    });
+    sdkPay.parse.mockResolvedValueOnce({ type: 'bip21', paymentMethods: [] });
+    const conn = await connection();
+    await expect(conn.parse('bitcoin:bc1q')).resolves.toEqual({ type: 'onchain' });
+    await expect(conn.parse('bitcoin:')).resolves.toEqual({ type: 'unsupported' });
+  });
+
+  it('parse rejects when the SDK rejects', async () => {
+    sdkPay.parse.mockRejectedValue(new Error('unreachable'));
+    const conn = await connection();
+    await expect(conn.parse('bob@pay.example')).rejects.toThrow('unreachable');
+  });
+
+  it('prepare pays a request text and reads amount and the Spark-style fee', async () => {
+    const response = {
+      amount: 2_100n,
+      paymentMethod: { type: 'sparkInvoice', fee: '0' },
+      feePolicy: 'feesExcluded',
+    };
+    sdkPay.prepareSendPayment.mockResolvedValue(response);
+    sdkPay.sendPayment.mockResolvedValue({ payment: {} });
+    const conn = await connection();
+    const prepared = await conn.prepare({ type: 'input', input: 'spark1x' });
+    expect(sdkPay.prepareSendPayment).toHaveBeenCalledWith({
+      paymentRequest: { type: 'input', input: 'spark1x' },
+    });
+    expect(prepared.amountSats).toBe(2_100);
+    expect(prepared.feeSats).toBe(0);
+    await prepared.send();
+    expect(sdkPay.sendPayment).toHaveBeenCalledWith({ prepareResponse: response });
+  });
+
+  it('prepare passes an amount and reads address and BOLT11 fees', async () => {
+    sdkPay.prepareSendPayment.mockResolvedValueOnce({
+      amount: 500n,
+      paymentMethod: { type: 'sparkAddress', fee: '3' },
+    });
+    sdkPay.prepareSendPayment.mockResolvedValueOnce({
+      amount: 21n,
+      paymentMethod: { type: 'bolt11Invoice', lightningFeeSats: 2 },
+    });
+    const conn = await connection();
+    await expect(
+      conn.prepare({ type: 'input', input: 'sp1', amountSats: 500 }),
+    ).resolves.toMatchObject({
+      amountSats: 500,
+      feeSats: 3,
+    });
+    expect(sdkPay.prepareSendPayment).toHaveBeenCalledWith({
+      paymentRequest: { type: 'input', input: 'sp1' },
+      amount: 500n,
+    });
+    await expect(conn.prepare({ type: 'input', input: 'lnbc1' })).resolves.toMatchObject({
+      amountSats: 21,
+      feeSats: 2,
+    });
+  });
+
+  it('prepare rejects a method the app does not pay', async () => {
+    sdkPay.prepareSendPayment.mockResolvedValue({
+      amount: 1_000n,
+      paymentMethod: { type: 'bitcoinAddress' },
+    });
+    const conn = await connection();
+    await expect(conn.prepare({ type: 'input', input: 'bc1q' })).rejects.toThrow(
+      'Unsupported payment method',
+    );
+  });
+
+  it('prepare asks an LNURL receiver for an amount with and without comment, and sends', async () => {
+    const response = { amountSats: 2_100, feeSats: 1 };
+    sdkPay.prepareLnurlPay.mockResolvedValue(response);
+    sdkPay.lnurlPay.mockResolvedValue({ payment: {} });
+    const conn = await connection();
+    const prepared = await conn.prepare({
+      type: 'lnurl',
+      request: { details: LNURL },
+      amountSats: 2_100,
+      comment: 'Thanks',
+    });
+    expect(sdkPay.prepareLnurlPay).toHaveBeenCalledWith({
+      amount: 2_100n,
+      payRequest: LNURL,
+      comment: 'Thanks',
+    });
+    expect(prepared).toMatchObject({ amountSats: 2_100, feeSats: 1 });
+    await prepared.send();
+    expect(sdkPay.lnurlPay).toHaveBeenCalledWith({ prepareResponse: response });
+    await conn.prepare({ type: 'lnurl', request: { details: LNURL }, amountSats: 5 });
+    expect(sdkPay.prepareLnurlPay).toHaveBeenLastCalledWith({ amount: 5n, payRequest: LNURL });
+  });
+});
+
 describe('walletNeedsReload', () => {
   it('is false initially', async () => {
     vi.resetModules();

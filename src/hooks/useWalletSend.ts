@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
 import type { WalletPayRequest, WalletTarget } from '@/lib/wallet/wallet-sdk';
 import {
@@ -155,6 +155,13 @@ export function useWalletSend(): UseWalletSendResult {
   const sendRef = useRef<(() => Promise<WalletSendResult>) | null>(null);
   const generation = useRef(0);
   const pinned = visualState();
+
+  useEffect(
+    () => () => {
+      generation.current += 1;
+    },
+    [],
+  );
 
   const setText = useCallback((value: string): void => {
     setTextState(value);

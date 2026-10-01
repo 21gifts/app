@@ -31,7 +31,7 @@ export function ForumReplyPayPage({
   preview,
   amountSats,
   pr,
-  sparkInvoice = null,
+  sparkInvoice,
   payWaiting,
   payBusy,
   showPaymentQr,
@@ -41,7 +41,7 @@ export function ForumReplyPayPage({
   preview: string;
   amountSats: number;
   pr: string;
-  sparkInvoice?: string | null;
+  sparkInvoice?: string | null | undefined;
   payWaiting: boolean;
   payBusy: boolean;
   showPaymentQr: boolean;

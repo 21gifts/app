@@ -160,6 +160,15 @@ describe('WalletScreen', () => {
     expect(screen.getByRole('link', { name: 'Add recovery phrase' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Balance' })).toBeTruthy();
     expect(useWalletMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
+  it('shows the send block while the wallet is ready', () => {
+    walletState.status = 'ready';
+    walletState.balanceSats = 21_000;
+    renderWithLocale(<WalletScreen />);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
   });
 
   it('calls retry from Try again on the phrase page', () => {

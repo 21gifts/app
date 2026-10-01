@@ -7,6 +7,7 @@ import {
   CONTACT_MESSAGE_MAX_LENGTH,
   contactSchema,
   conversationInvoiceSchema,
+  messageInvoiceSchema,
   conversationListSchema,
   conversationMessageSchema,
   conversationResponseSchema,
@@ -917,6 +918,35 @@ describe('conversationInvoiceSchema', () => {
   it('accepts pr, amountSats, and messageId', () => {
     const invoice = { pr: 'lnbc21n1test', amountSats: 21, messageId: 'm-gift' };
     expect(conversationInvoiceSchema.parse(invoice)).toEqual(invoice);
+  });
+
+  it('accepts sparkInvoice as a string or null and rejects an empty one', () => {
+    const invoice = { pr: 'lnbc21n1test', amountSats: 21, messageId: 'm-gift' };
+    expect(conversationInvoiceSchema.parse({ ...invoice, sparkInvoice: 'spark1x' })).toEqual({
+      ...invoice,
+      sparkInvoice: 'spark1x',
+    });
+    expect(conversationInvoiceSchema.parse({ ...invoice, sparkInvoice: null })).toEqual({
+      ...invoice,
+      sparkInvoice: null,
+    });
+    expect(() => conversationInvoiceSchema.parse({ ...invoice, sparkInvoice: '' })).toThrow();
+  });
+});
+
+describe('messageInvoiceSchema', () => {
+  it('parses bodies with and without sparkInvoice and keeps the other fields', () => {
+    const invoice = { pr: 'lnbc21n1test', amountSats: 21 };
+    expect(messageInvoiceSchema.parse(invoice)).toEqual(invoice);
+    expect(messageInvoiceSchema.parse({ ...invoice, sparkInvoice: 'spark1x' })).toEqual({
+      ...invoice,
+      sparkInvoice: 'spark1x',
+    });
+    expect(messageInvoiceSchema.parse({ ...invoice, sparkInvoice: null })).toEqual({
+      ...invoice,
+      sparkInvoice: null,
+    });
+    expect(() => messageInvoiceSchema.parse({ ...invoice, sparkInvoice: 7 })).toThrow();
   });
 });
 

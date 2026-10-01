@@ -439,17 +439,18 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
       return { kind: 'failed' };
     }
     sent = true;
+    let result: WalletSendResult;
     try {
       const done = await withTimeout(
         prepared.send().then(() => true),
         WALLET_SEND_TIMEOUT_MS,
       );
-      return done === null ? { kind: 'failed' } : { kind: 'paid' };
+      result = done === null ? { kind: 'failed' } : { kind: 'paid' };
     } catch (err: unknown) {
-      return isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
-    } finally {
-      void refreshWallet();
+      result = isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
     }
+    void refreshWallet();
+    return result;
   };
   return { kind: 'confirm', amountSats, feeSats, send };
 }

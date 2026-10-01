@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -24,6 +24,18 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 
 const push = vi.fn();
@@ -7639,5 +7651,131 @@ describe('revealPaySheet', () => {
     sheet.getBoundingClientRect = () => box(480, 900);
     revealPaySheet(scroller, sheet);
     expect(scroller.scrollTop).toBe(0);
+  });
+});
+
+describe('ForumBoard in-app wallet pay', () => {
+  function cardBoard(sparkInvoice: string | null): ReactElement {
+    return (
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21, sparkInvoice }}
+        payWaiting
+        {...modeProps('all')}
+      />
+    );
+  }
+
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays a gift from a ready wallet instead of opening an external wallet', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(cardBoard(SPARK_INVOICE));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay from wallet' }));
+    expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+  });
+
+  it('offers unlock for a locked wallet', () => {
+    setWalletUsable('locked');
+    renderWithLocale(cardBoard(SPARK_INVOICE));
+    expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
+  it('keeps the external wallet without a sparkInvoice or without a usable wallet', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(cardBoard(null));
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    cleanup();
+    setWalletUsable('disabled');
+    renderWithLocale(cardBoard(SPARK_INVOICE));
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('pays the posting fee in the composer sheet from the wallet', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumBoard
+        messages={null}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        payMessageId="fee-note"
+        payInvoice={{
+          messageId: 'fee-note',
+          pr: 'lnbc1',
+          amountSats: 1,
+          sparkInvoice: SPARK_INVOICE,
+        }}
+        payWaiting
+        replies={[{ ...SAMPLE, id: 'r1' }]}
+      />,
+    );
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
+  it('passes the sparkInvoice to the reaction pay page', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyDraft="Hi Bob"
+        replyAmountDraft="21"
+        replyPayPreview="Hi Bob"
+        payMessageId="m1"
+        payHost="card"
+        payInvoice={{
+          messageId: 'm1',
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: SPARK_INVOICE,
+        }}
+        payWaiting
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('[data-reply-pay-page]')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
   });
 });

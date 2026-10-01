@@ -13,6 +13,18 @@ import {
 import { getCatalog } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 const push = vi.fn();
 const searchParams = new URLSearchParams();
@@ -2212,5 +2224,63 @@ describe('conversation thread pages', () => {
     });
     expect(screen.getByText('Hello')).toBeTruthy();
     expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+  });
+});
+
+describe('InboxLoader in-app wallet pay', () => {
+  afterEach(() => {
+    resetWallet();
+    searchParams.delete('c');
+  });
+
+  it('pays the gift from the wallet and closes the sheet on the existing long-poll', async () => {
+    setWalletUsable('ready');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(send));
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    let resolvePoll: ((value: ConversationPage) => void) | undefined;
+    threadMock.mockResolvedValueOnce(conversationPage([MESSAGE])).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolvePoll = resolve;
+        }),
+    );
+    invoiceMock.mockResolvedValue({
+      pr: 'lnbc21n1test',
+      amountSats: 21,
+      messageId: 'gift-1',
+      sparkInvoice: SPARK_INVOICE,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Pay from wallet' }));
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    await act(async () => {
+      resolvePoll?.(
+        conversationPage([
+          MESSAGE,
+          {
+            id: 'gift-1',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T14:00:00.000Z',
+            fromMe: true,
+            sats: 21,
+            hasPhoto: false,
+            photoCount: 0,
+          },
+        ]),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Paying from your wallet…')).toBeNull();
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+    });
   });
 });

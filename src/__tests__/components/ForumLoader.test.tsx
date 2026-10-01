@@ -17,6 +17,18 @@ import {
 import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -10304,3 +10316,79 @@ function fundedCredit(): ReturnType<typeof forumPage> {
     },
   ]);
 }
+
+describe('ForumLoader in-app wallet pay', () => {
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays the posting fee from the wallet when the api issues a sparkInvoice', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    setWalletUsable('ready');
+    fetchMock.mockResolvedValue(forumPage([]));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
+  it("pays today's repayment from the wallet when the api issues a sparkInvoice", async () => {
+    setWalletUsable('ready');
+    repayMock.mockResolvedValueOnce({
+      pr: 'lnbc21n1repay',
+      amountSats: 21,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          accountId: 'acc_1',
+          sats: 21000,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+        },
+      ]),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
+  it("keeps the external wallet for today's repayment without a sparkInvoice", async () => {
+    setWalletUsable('ready');
+    repayMock.mockResolvedValueOnce({ pr: 'lnbc21n1repay', amountSats: 21 });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          accountId: 'acc_1',
+          sats: 21000,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+        },
+      ]),
+    );
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+});

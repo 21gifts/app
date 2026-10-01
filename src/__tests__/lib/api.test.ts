@@ -2006,6 +2006,19 @@ describe('postRepaymentInvoice', () => {
 });
 
 describe('postMessageInvoice', () => {
+  it('returns sparkInvoice when the api issues one', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21n1test', amountSats: 21, sparkInvoice: 'spark1x' },
+    });
+    await expect(postMessageInvoice('sess', 'm1', 21)).resolves.toEqual({
+      pr: 'lnbc21n1test',
+      amountSats: 21,
+      sparkInvoice: 'spark1x',
+    });
+  });
+
   it('returns pr and amountSats', async () => {
     const fetchMock = stubFetch({
       ok: true,

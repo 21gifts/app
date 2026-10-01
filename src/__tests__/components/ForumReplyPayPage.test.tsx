@@ -1,8 +1,20 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
 import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 const locationAssign = vi.fn();
 const locationStub = { assign: locationAssign, href: 'http://localhost/' };
@@ -111,5 +123,55 @@ describe('ForumReplyPayPage', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
     expect(locationStub.href).toBe(walletOfSatoshiHref('lnbc21n1example'));
+  });
+});
+
+describe('ForumReplyPayPage in-app wallet', () => {
+  function renderPage(sparkInvoice?: string | null): void {
+    renderWithLocale(
+      <ForumReplyPayPage
+        preview="Hi Bob"
+        amountSats={21}
+        pr="lnbc21n1example"
+        {...(sparkInvoice === undefined ? {} : { sparkInvoice })}
+        payWaiting
+        payBusy={false}
+        showPaymentQr
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+      />,
+    );
+  }
+
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays the sparkInvoice from a usable wallet instead of the QR and wallet button', async () => {
+    setWalletUsable('ready');
+    renderPage(SPARK_INVOICE);
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+  });
+
+  it('keeps the existing path without a sparkInvoice', async () => {
+    setWalletUsable('ready');
+    renderPage(null);
+    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('keeps the existing path when the wallet is not usable', async () => {
+    setWalletUsable('disabled');
+    renderPage(SPARK_INVOICE);
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 });

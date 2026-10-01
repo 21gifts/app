@@ -17,6 +17,18 @@ import { getCatalog } from '@/lib/messages';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 const push = vi.fn();
 const originalUserAgent = navigator.userAgent;
@@ -3723,5 +3735,59 @@ describe('InboxScreen', () => {
       />,
     );
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+});
+
+describe('InboxScreen in-app wallet pay', () => {
+  function inbox(sparkInvoice: string | null): ReactElement {
+    return (
+      <InboxScreen
+        conversations={[DIRECT]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        openId="conv-2"
+        onOpen={() => undefined}
+        messages={[MESSAGE]}
+        messagesLoading={false}
+        messagesError={false}
+        onRetryMessages={() => undefined}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        posting={false}
+        formError={null}
+        showFilter={false}
+        invoice={{ pr: 'lnbc21n1test', amountSats: 21, sparkInvoice }}
+        onPayCancel={() => undefined}
+        payWaiting
+      />
+    );
+  }
+
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays the gift from a ready wallet instead of opening an external wallet', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(inbox(SPARK_INVOICE));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+  });
+
+  it('keeps the external wallet without a sparkInvoice or without a usable wallet', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(inbox(null));
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    cleanup();
+    setWalletUsable('error');
+    renderWithLocale(inbox(SPARK_INVOICE));
+    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 });

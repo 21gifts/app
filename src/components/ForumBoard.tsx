@@ -934,7 +934,7 @@ export function ForumBoard({
                   preview: replyPayPreview,
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
-                  sparkInvoice: payInvoice.sparkInvoice ?? null,
+                  sparkInvoice: payInvoice.sparkInvoice,
                 }
               : null;
           const reactionPayPage = reactionPay !== null;

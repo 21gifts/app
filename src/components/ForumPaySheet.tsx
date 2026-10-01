@@ -31,7 +31,7 @@ export interface ForumPayInvoice {
   /** Whole sats the payer confirmed. */
   amountSats: number;
   /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
-  sparkInvoice?: string | null;
+  sparkInvoice?: string | null | undefined;
 }
 
 /**
