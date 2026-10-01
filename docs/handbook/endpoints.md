@@ -135,6 +135,13 @@
 - **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, and the staff payout-goal widget on `/moderate`.
 - **Auth:** Public.
 
+## Endpoint: GET /shops/activity
+
+- **Purpose:** Same-origin proxy of api `GET /shops/activity` (staff shop-use counts, 30 UTC days).
+- **Errors:** Upstream 401/403/503, or 502 if the api is unreachable.
+- **Used by:** `fetchShopActivity` on `/statistics`.
+- **Auth:** Bearer session forwarded; the api allows moderator and above.
+
 ## Endpoint: GET /lightning-address
 
 - **Purpose:** Same-origin proxy of public LUD-16 resolve.

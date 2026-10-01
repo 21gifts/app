@@ -344,6 +344,49 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * One UTC day of shop activity from `GET /shops/activity`.
+ */
+export const shopActivityDaySchema = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  shopCount: z.number().int().nonnegative(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /shops/activity`.
+ *
+ * Exactly 30 unique contiguous UTC days, oldest first.
+ */
+export const shopActivitySchema = z.object({
+  days: z
+    .array(shopActivityDaySchema)
+    .length(30)
+    .refine((days) => {
+      const seen = new Set<string>();
+      for (let i = 0; i < days.length; i += 1) {
+        const day = days[i]!.day;
+        if (seen.has(day)) {
+          return false;
+        }
+        seen.add(day);
+        if (i === 0) {
+          continue;
+        }
+        const prevMs = Date.parse(`${days[i - 1]!.day}T00:00:00.000Z`);
+        const dayMs = Date.parse(`${day}T00:00:00.000Z`);
+        if (dayMs - prevMs !== 86_400_000) {
+          return false;
+        }
+      }
+      return true;
+    }),
+});
+
+/**
+ * Shop count for one UTC day.
+ */
+export type ShopActivityDay = z.infer<typeof shopActivityDaySchema>;
+
+/**
  * Runtime schema for `GET /messages/stats`.
  * `postCount` counts living notes and replies together.
  */

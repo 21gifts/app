@@ -3812,6 +3812,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Forwards to the api (id encoded).
 - **Used by:** `src/app/forum/notifications/[id]/read/route.ts`.
 
+## Function: StatisticsPage
+
+- **Purpose:** Next.js page for `/statistics` (signed-in staff chart of people paid the daily funding or the welcome gift). HTML `/statistics` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `StatisticsScreen`. No `route.ts` beside this page. Gift totals stay on public `/stats`.
+- **Inputs:** None.
+- **Returns / side effects:** The statistics screen inside fill AppShell.
+- **Used by:** Route `/statistics`.
+
 ## Function: ModeratePage
 
 - **Purpose:** Next.js page for `/moderate` (signed-in moderation hub for moderators). HTML `/moderate` is the hub, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ModerateScreen`. Hidden HTTP lives under `/forum/messages/hidden`; proposal HTTP under `/trust/proposals`; grant-application HTTP under `/funding/applications` (no `route.ts` beside this page); the hub itself does not fetch.
@@ -3839,6 +3846,83 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `account` — `{ id, role }` or `null` when the account snapshot is missing; `parentAccountId` — the parent note's `accountId` if the api sent one (a missing id is not treated as exempt).
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleAtLeast`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
+
+## Function: utcDayFromMs
+
+- **Purpose:** UTC calendar day `YYYY-MM-DD` of an instant, taken from `toISOString` (the first ten characters of the ISO timestamp).
+- **Inputs:** `ms` — epoch milliseconds of that instant.
+- **Returns / side effects:** UTC day string. Pure; no I/O.
+- **Used by:** `previousUtcDay`, `chartRows`, `StatisticsScreen`, `ModerateScreen`.
+
+## Function: previousUtcDay
+
+- **Purpose:** UTC calendar day immediately before `day`, so staff screens can name yesterday against the clock.
+- **Inputs:** `day` — UTC `YYYY-MM-DD`.
+- **Returns / side effects:** Previous UTC day string. Pure; no I/O. Delegates to `utcDayFromMs`.
+- **Used by:** `StatisticsScreen` and `ModerateScreen` to pick yesterday.
+
+## Function: countOnDay
+
+- **Purpose:** Person count on `yesterday` from `officialCount`. First matching day wins.
+- **Inputs:** `series` — `spendOverTime` oldest-first; `yesterday` — UTC day to look up.
+- **Returns / side effects:** That day's `officialCount`, `0` when the day is missing, or `null` when any point omits `officialCount`. Pure; no I/O.
+- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+
+## Function: chartRows
+
+- **Purpose:** Last 30 UTC days ending on `today`, oldest first, with person counts from `officialCount`.
+- **Inputs:** `series` — `spendOverTime` oldest-first; `today` — UTC day of the clock.
+- **Returns / side effects:** Oldest-first `{ day, count }` rows. Last write wins when a day appears twice; a missing day is 0. Pure; no I/O.
+- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+
+## Function: formatUtcDate
+
+- **Purpose:** Formats a UTC calendar day as numeric day plus long month in `locale` for the yesterday sentence.
+- **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
+- **Returns / side effects:** Locale date string in the UTC zone. Pure; no I/O.
+- **Used by:** `StatisticsScreen` and `ModerateScreen` in the yesterday sentence.
+
+## Function: chartDayLabel
+
+- **Purpose:** Axis tick label for a UTC day as numeric day and month in `locale`.
+- **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
+- **Returns / side effects:** Short numeric day-month label in the UTC zone. Pure; no I/O.
+- **Used by:** `PayoutGoalChart` for the first, middle, and last axis labels.
+
+## Function: PayoutGoalChart
+
+- **Purpose:** Draws the 30-day SVG count chart (`role="img"`) with ticks 0/25/50/75/100, a goal line at 100, today's bar `fill-app-subtle`, other bars `fill-app-accent`, and `data-testid="payout-goal-chart-bar"`.
+- **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
+- **Returns / side effects:** SVG figure. No network.
+- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+
+## Function: fetchShopActivity
+
+- **Purpose:** Loads staff shop-use counts from same-origin `GET /shops/activity` with a Bearer session. The body must be 30 unique contiguous UTC days, oldest first; otherwise this throws and the shop panel shows its error state.
+- **Inputs:** `sessionToken` — Bearer session from the signed-in account.
+- **Returns / side effects:** `ShopActivityDay[]` (`day`, `shopCount`). Network via `fetch`. Does not require the last day to be the browser's today.
+- **Used by:** `StatisticsScreen` shop panel.
+
+## Function: proxyShopActivityGet
+
+- **Purpose:** Same-origin proxy for api `GET /shops/activity`. App route is `export const GET = proxyShopActivityGet` on `/shops/activity`. Forwards the Bearer session.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops/activity')`.
+- **Used by:** `src/app/shops/activity/route.ts`.
+
+## Function: ShopActivityChart
+
+- **Purpose:** Draws the shop-count SVG (`role="img"`) for 30 UTC days. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="shop-activity-chart-bar"`. No goal line.
+- **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
+- **Returns / side effects:** SVG figure. No network.
+- **Used by:** `StatisticsScreen`.
+
+## Function: StatisticsScreen
+
+- **Purpose:** Client staff chart of people counted once per UTC day, with a shop-activity panel under the payout chart. Staff (`roleAtLeast(..., 'moderator')`) see yesterday versus 100, the three explanation paragraphs, the 30-UTC-day chart, and a secondary ButtonLink **Show payout per person** → `/moderate/payouts`, then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The summary is not a toggle and there is no **Tap to close**. Non-staff signed-in visitors see the heading **Statistics** plus forbidden copy and do not fetch. Renders `null` without a session.
+- **Inputs:** Session and account from `useAuthStore`; catalog and locale via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` and also call `fetchShopActivity`. Others do not fetch.
+- **Used by:** `StatisticsPage`.
 
 ## Function: ModerateScreen
 

@@ -567,6 +567,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
+    expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
   });
 
@@ -579,6 +580,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
+    expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
   });
 
@@ -660,13 +662,17 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       expectMenuOpen();
       const trustChain = screen.getByRole('link', { name: 'Trust Chain' });
+      const statistics = screen.getByRole('link', { name: 'Statistics' });
       const moderation = screen.getByRole('link', { name: 'Moderation' });
       const notifications = screen.getByRole('link', { name: 'Notifications' });
+      expect(statistics.getAttribute('href')).toBe('/statistics');
       expect(moderation.getAttribute('href')).toBe('/moderate');
-      expect(trustChain.nextElementSibling).toBe(moderation);
+      expect(trustChain.nextElementSibling).toBe(statistics);
+      expect(statistics.nextElementSibling).toBe(moderation);
       expect(moderation.nextElementSibling).toBe(notifications);
+      expect(statistics.querySelector('svg')).toBeTruthy();
       expect(moderation.querySelector('svg')).toBeTruthy();
-      fireEvent.click(moderation);
+      fireEvent.click(statistics);
       expectMenuClosed();
     },
   );
