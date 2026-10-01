@@ -670,6 +670,19 @@ test('Function: rememberPhraseFromPrf — unset key leaves no balance region or 
   expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
 });
 
+test('Function: sessionPhraseGeneration — unset key leaves no balance region or wasm', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
 test('Function: WalletSync — unset key leaves no balance region or wasm', async ({ page }) => {
   await signInWalletEligible(page);
   const urls: string[] = [];

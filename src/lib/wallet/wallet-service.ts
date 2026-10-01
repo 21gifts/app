@@ -14,21 +14,8 @@ let connection: WalletConnection | null = null;
 /** Monotonic run counter; latest connect/disconnect wins. */
 let runCounter = 0;
 
-/**
- * Set when `loadSdk` rejects inside {@link connectWallet}. Never cleared; only a
- * page reload recovers because the SDK caches a failed initialisation.
- */
-let sdkLoadFailed = false;
-
-/**
- * True after the wallet SDK failed to load in this page; only a reload can
- * recover, because the SDK caches a failed initialisation.
- *
- * @returns Whether the page must be reloaded before another connect attempt.
- */
-export function walletNeedsReload(): boolean {
-  return sdkLoadFailed;
-}
+/** Monotonic balance-read counter; only the latest read may write the store. */
+let balanceReadCounter = 0;
 
 /**
  * Advances the run counter so in-flight work from an older run is ignored.
@@ -59,15 +46,18 @@ async function dropConnection(): Promise<void> {
 }
 
 /**
- * Reads balance from a connection when the captured run is still current.
+ * Reads balance from a connection when the captured run is still current and
+ * this read is still the latest. A stale read returns without writing.
  *
  * @param run - Run number captured by the caller.
  * @param conn - Connection to query.
- * @returns Resolves after `setReady` or when the run is stale.
+ * @returns Resolves after `setReady` or when the run or read is stale.
  */
 async function readBalance(run: number, conn: WalletConnection): Promise<void> {
+  balanceReadCounter += 1;
+  const read = balanceReadCounter;
   const info = await conn.getInfo();
-  if (run !== runCounter) {
+  if (run !== runCounter || read !== balanceReadCounter) {
     return;
   }
   useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
@@ -107,10 +97,7 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
   useWalletStore.getState().setConnecting();
   await dropConnection();
   try {
-    const sdk = await loadSdk().catch((err: unknown) => {
-      sdkLoadFailed = true;
-      throw err;
-    });
+    const sdk = await loadSdk();
     if (run !== runCounter) {
       return;
     }
@@ -140,7 +127,8 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
 
 /**
  * Refreshes the balance on the current connection. No-ops without a connection.
- * Never rejects; a failure while current ends in the store.
+ * When reads overlap only the latest one writes. Never rejects; a failure while
+ * current ends in the store.
  *
  * @returns Resolves when the refresh finishes or is skipped.
  */

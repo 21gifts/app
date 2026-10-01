@@ -117,3 +117,43 @@ describe('loadWalletSdk', () => {
     expect(mocks.disconnect).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('walletNeedsReload', () => {
+  it('is false initially', async () => {
+    vi.resetModules();
+    const { walletNeedsReload } = await import('@/lib/wallet/wallet-sdk');
+    expect(walletNeedsReload()).toBe(false);
+  });
+
+  it('stays false after a successful load', async () => {
+    vi.resetModules();
+    mocks.init.mockResolvedValue(undefined);
+    const { loadWalletSdk: load, walletNeedsReload } = await import('@/lib/wallet/wallet-sdk');
+    await load();
+    expect(walletNeedsReload()).toBe(false);
+  });
+
+  it('is true after init rejects', async () => {
+    vi.resetModules();
+    mocks.init.mockRejectedValueOnce(new Error('init failed'));
+    const { loadWalletSdk: load, walletNeedsReload } = await import('@/lib/wallet/wallet-sdk');
+    expect(walletNeedsReload()).toBe(false);
+    await expect(load()).rejects.toThrow('init failed');
+    expect(walletNeedsReload()).toBe(true);
+  });
+
+  it('stays false when the package import rejects', async () => {
+    vi.resetModules();
+    vi.doMock('@breeztech/breez-sdk-spark/ssr', () => {
+      throw new Error('import failed');
+    });
+    try {
+      const { loadWalletSdk: load, walletNeedsReload } = await import('@/lib/wallet/wallet-sdk');
+      await expect(load()).rejects.toThrow();
+      expect(walletNeedsReload()).toBe(false);
+    } finally {
+      vi.doUnmock('@breeztech/breez-sdk-spark/ssr');
+      vi.resetModules();
+    }
+  });
+});
