@@ -7329,6 +7329,8 @@ describe('ForumBoard in-app wallet pay', () => {
 
   it('pays a gift from a ready wallet instead of opening an external wallet', async () => {
     setWalletUsable('ready');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderWithLocale(cardBoard(SPARK_INVOICE));
     expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
     expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
@@ -7338,6 +7340,7 @@ describe('ForumBoard in-app wallet pay', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pay from wallet' }));
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
   it('offers unlock for a locked wallet', () => {
@@ -7423,5 +7426,6 @@ describe('ForumBoard in-app wallet pay', () => {
     );
     expect(document.querySelector('[data-reply-pay-page]')).toBeTruthy();
     expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 });
