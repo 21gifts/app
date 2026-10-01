@@ -14380,15 +14380,21 @@ test.describe('welcome forum variants', () => {
 
   test('welcome keyboard-viewport', async ({ page }) => {
     await page.addInitScript(() => {
-      const inner = window.innerHeight;
+      const viewport = {
+        get height() {
+          return Math.round(window.innerHeight * 0.6);
+        },
+        get offsetTop() {
+          return Math.round(window.innerHeight * 0.15);
+        },
+        scale: 1,
+        addEventListener() {},
+        removeEventListener() {},
+      };
       Object.defineProperty(window, 'visualViewport', {
         configurable: true,
-        value: {
-          height: Math.round(inner * 0.6),
-          offsetTop: Math.round(inner * 0.15),
-          scale: 1,
-          addEventListener() {},
-          removeEventListener() {},
+        get() {
+          return viewport;
         },
       });
     });

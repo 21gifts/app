@@ -1625,10 +1625,10 @@ describe('ForumLoader', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-    fireEvent.change(within(card).getByLabelText('Place name'), {
+    fireEvent.change(screen.getByLabelText('Place name'), {
       target: { value: 'Happyland' },
     });
-    fireEvent.click(within(card).getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
       expect(within(card).getByRole('link', { name: 'Happyland' })).toBeTruthy();
     });
@@ -1683,8 +1683,8 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit place' }));
-    expect(await within(card).findByRole('button', { name: 'Remove place' })).toBeTruthy();
-    fireEvent.click(within(card).getByRole('button', { name: 'Remove place' }));
+    expect(await screen.findByRole('button', { name: 'Remove place' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
     await waitFor(() => {
       expect(screen.queryByRole('link', { name: 'Happyland' })).toBeNull();
     });

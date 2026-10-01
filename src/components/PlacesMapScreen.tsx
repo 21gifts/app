@@ -41,14 +41,16 @@ function ShopPinEdit({
   }
   if (message !== null) {
     return (
-      <ShopNoteEditControl
-        message={message}
-        startOpen
-        onUpdated={(updated) => {
-          setMessage(updated);
-          onUpdated(updated);
-        }}
-      />
+      <div className="w-full min-w-0 basis-full">
+        <ShopNoteEditControl
+          message={message}
+          startOpen
+          onUpdated={(updated) => {
+            setMessage(updated);
+            onUpdated(updated);
+          }}
+        />
+      </div>
     );
   }
   return (
@@ -277,11 +279,14 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
             const label = place.label ?? `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
             const selected = place.id === pinId;
             return (
-              <li key={place.id} className="flex items-start justify-between gap-2">
+              <li
+                key={place.id}
+                className="flex w-full min-w-0 flex-wrap items-start justify-between gap-2"
+              >
                 {typeof place.accountId === 'string' && place.accountId !== '' ? (
                   <span
                     data-selected={selected ? 'true' : 'false'}
-                    className={`text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                    className={`max-w-full text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
                     <a
                       href={`/members/${place.accountId}`}
@@ -299,7 +304,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                   <a
                     href={`/messages/${place.id}`}
                     data-selected={selected ? 'true' : 'false'}
-                    className={`text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                    className={`max-w-full text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
                     {place.name} · {label}
                   </a>
