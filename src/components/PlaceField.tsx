@@ -378,12 +378,15 @@ export function PlaceField(props: {
         frameEl !== null
           ? frameEl.getBoundingClientRect()
           : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
+      const band = window.visualViewport;
+      const viewTop = band?.offsetTop ?? 0;
+      const viewBottom = viewTop + (band?.height ?? window.innerHeight);
       commitPlacedBox(
         fitBoxInFrame({
           frameLeft: Math.max(raw.left, 0),
           frameRight: Math.min(raw.right, window.innerWidth),
-          frameTop: Math.max(raw.top, 0),
-          frameBottom: Math.min(raw.bottom, window.innerHeight),
+          frameTop: Math.max(raw.top, viewTop),
+          frameBottom: Math.min(raw.bottom, viewBottom),
           anchorLeft: anchorRect.left,
           anchorTop: anchorRect.top,
           anchorBottom: anchorRect.bottom,
@@ -395,11 +398,16 @@ export function PlaceField(props: {
       );
     };
     measure();
+    const viewport = window.visualViewport;
     window.addEventListener('resize', measure);
     document.addEventListener('scroll', measure, true);
+    viewport?.addEventListener('resize', measure);
+    viewport?.addEventListener('scroll', measure);
     return () => {
       window.removeEventListener('resize', measure);
       document.removeEventListener('scroll', measure, true);
+      viewport?.removeEventListener('resize', measure);
+      viewport?.removeEventListener('scroll', measure);
     };
   }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey]);
 

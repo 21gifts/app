@@ -774,6 +774,58 @@ describe('PlaceField', () => {
     }
   });
 
+  it('clamps a downward preview to the visual viewport', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    window.innerWidth = 400;
+    window.innerHeight = 500;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      if (this.hasAttribute('data-app-frame')) {
+        return clientRect(-20, -10, 900, 900);
+      }
+      return clientRect(30, 40, 70, 80);
+    };
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        offsetTop: 120,
+        height: 250,
+        addEventListener(): void {},
+        removeEventListener(): void {},
+      },
+    });
+    try {
+      renderWithLocale(
+        <div data-app-frame>
+          <PlaceField
+            place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+            disabled={false}
+            onChange={() => undefined}
+          />
+        </div>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText('Happyland').parentElement?.parentElement).toBe(document.body);
+      });
+      const preview = screen.getByText('Happyland').parentElement as HTMLElement;
+      expect(preview.style.top).toBe('136px');
+      expect(preview.style.bottom).toBe('');
+      expect(preview.style.left).toBe('30px');
+      expect(preview.style.width).toBe('256px');
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerWidth = originalWidth;
+      window.innerHeight = originalHeight;
+      if (previous === undefined) {
+        delete (window as { visualViewport?: unknown }).visualViewport;
+      } else {
+        Object.defineProperty(window, 'visualViewport', previous);
+      }
+    }
+  });
+
   it('opens the map panel upward with flex-col and shrink-0 controls', async () => {
     const originalRect = HTMLElement.prototype.getBoundingClientRect;
     const originalWidth = window.innerWidth;
@@ -958,6 +1010,54 @@ describe('PlaceField', () => {
       expect(map.style.height).toBe('');
     } finally {
       HTMLElement.prototype.getBoundingClientRect = originalRect;
+    }
+  });
+
+  it('registers visualViewport resize and scroll for a shown preview', () => {
+    const resizeListeners = new Set<EventListener>();
+    const scrollListeners = new Set<EventListener>();
+    const viewport = {
+      addEventListener(type: string, listener: EventListener): void {
+        if (type === 'resize') {
+          resizeListeners.add(listener);
+        }
+        if (type === 'scroll') {
+          scrollListeners.add(listener);
+        }
+      },
+      removeEventListener(type: string, listener: EventListener): void {
+        if (type === 'resize') {
+          resizeListeners.delete(listener);
+        }
+        if (type === 'scroll') {
+          scrollListeners.delete(listener);
+        }
+      },
+    };
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: viewport,
+    });
+    try {
+      const view = renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+        />,
+      );
+      expect(resizeListeners.size).toBe(1);
+      expect(scrollListeners.size).toBe(1);
+      view.unmount();
+      expect(resizeListeners.size).toBe(0);
+      expect(scrollListeners.size).toBe(0);
+    } finally {
+      if (previous === undefined) {
+        delete (window as { visualViewport?: unknown }).visualViewport;
+      } else {
+        Object.defineProperty(window, 'visualViewport', previous);
+      }
     }
   });
 });

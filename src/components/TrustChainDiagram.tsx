@@ -227,7 +227,7 @@ export function TrustChainDiagram({
         role="group"
         aria-label={t('aria.trustChain')}
         className="h-auto max-w-full"
-        style={{ width: `${width}px` }}
+        width={width}
       >
         {edges.map((edge) => {
           const from = byId.get(edge.from);
