@@ -34,8 +34,8 @@ export interface UseWalletHistoryResult {
  * Playwright clock.
  *
  * @param now - Pinned instant in epoch ms.
- * @returns Three payments: a received one with a note, a sent one, and a
- * pending received one.
+ * @returns Four payments: a received one with a note, a sent one, a pending
+ * received one, and a failed sent one.
  */
 function fixturePayments(now: number): WalletPayment[] {
   const hour = 60 * 60 * 1000;
@@ -62,6 +62,14 @@ function fixturePayments(now: number): WalletPayment[] {
       amountSats: 1_500,
       timestamp: now - 50 * hour,
       status: 'pending',
+      senderComment: null,
+    },
+    {
+      id: 'fixture-4',
+      direction: 'sent',
+      amountSats: 2_100,
+      timestamp: now - 74 * hour,
+      status: 'failed',
       senderComment: null,
     },
   ];

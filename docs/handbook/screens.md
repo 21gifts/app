@@ -250,7 +250,7 @@ Pinned fixture (`?visual=history-empty`). Ready balance, then the address card, 
 
 ### Variant: history-rows
 
-Pinned fixture (`?visual=history-rows`). **Payments** lists three rows, newest first: received `₿21'000` with fiat and the note **Thank you for the coffee**, sent `₿5'000` with fiat, and received `₿1'500` marked **Pending**. Each row shows its date and time.
+Pinned fixture (`?visual=history-rows`). **Payments** lists four rows, newest first: received `₿21'000` with fiat and the note **Thank you for the coffee**, sent `₿5'000` with fiat, received `₿1'500` marked **Pending**, and sent `₿2'100` marked **Failed**. Each row shows its date and time.
 
 ![21.gifts wallet history rows](images/wallet-history-rows.png)
 

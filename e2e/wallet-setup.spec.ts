@@ -232,11 +232,13 @@ test.describe('wallet setup dialog', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
-  test('Function: walletSetupInFlight — the intro pin shows no progress line', async ({ page }) => {
+  test('Function: walletSetupInFlight — unset key runs no setup and shows no progress', async ({
+    page,
+  }) => {
     await signIn(page);
-    await openWallet(page, '?visual=setup-intro');
-    await expect(page.getByRole('button', { name: 'Set up wallet' })).toBeVisible();
+    await openWallet(page);
     await expect(page.getByText('Setting up your wallet…')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
   test('Function: needsWalletSetup — unset key shows no setup dialog', async ({ page }) => {
@@ -269,13 +271,14 @@ test.describe('wallet history', () => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');
     const rows = page.getByRole('region', { name: 'Payments' }).getByRole('listitem');
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(4);
     await expect(rows.nth(0)).toContainText('Received');
     await expect(rows.nth(0)).toContainText("₿21'000");
     await expect(rows.nth(0)).toContainText('$21.00');
     await expect(page.getByText('Thank you for the coffee')).toBeVisible();
     await expect(rows.nth(1)).toContainText('Sent');
     await expect(rows.nth(2)).toContainText('Pending');
+    await expect(rows.nth(3)).toContainText('Sent · Failed');
   });
 
   test('wallet history-error pin shows the error and Try again', async ({ page }) => {
@@ -296,12 +299,12 @@ test.describe('wallet history', () => {
     expect(payments?.y ?? 0).toBeGreaterThan(address?.y ?? 0);
   });
 
-  test('Function: useWalletHistory — pinned rows stay three after scrolling', async ({ page }) => {
+  test('Function: useWalletHistory — pinned rows stay four after scrolling', async ({ page }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');
     const rows = page.getByRole('region', { name: 'Payments' }).getByRole('listitem');
     await rows.last().scrollIntoViewIfNeeded();
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(4);
   });
 
   test('Function: toWalletPayment — unset key shows no payment list or wasm', async ({ page }) => {

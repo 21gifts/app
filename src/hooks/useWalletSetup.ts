@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
-import { peekSessionPhrase } from '@/lib/tab-phrase';
+import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import {
   runWalletSetup,
@@ -59,7 +59,8 @@ export function walletSetupPin(): WalletSetupView | null {
  * Drives the one-time wallet setup. Starts by itself (or joins the run in
  * progress after a remount) when the phrase is already in tab memory or a run
  * is in flight; otherwise waits for {@link UseWalletSetupResult.start}
- * so the passkey prompt follows a tap. A pinned view leaves the actions inert.
+ * so the passkey prompt follows a tap, and starts by itself when the phrase
+ * arrives in tab memory while the intro is shown. A pinned view leaves the actions inert.
  *
  * @returns The current view and the start and retry actions.
  */
@@ -119,6 +120,23 @@ export function useWalletSetup(): UseWalletSetupResult {
       start();
     }
   }, [follow, joined, pinned, start]);
+
+  useEffect(() => {
+    if (pinned !== null || view !== 'intro') {
+      return;
+    }
+    // The login may store the phrase just after this dialog mounted; start
+    // then instead of asking for the passkey a second time.
+    const onPhrase = (): void => {
+      if (peekSessionPhrase() !== null) {
+        start();
+      }
+    };
+    window.addEventListener(SESSION_PHRASE_EVENT, onPhrase);
+    return () => {
+      window.removeEventListener(SESSION_PHRASE_EVENT, onPhrase);
+    };
+  }, [pinned, start, view]);
 
   return { view: pinned ?? view, start, retry };
 }

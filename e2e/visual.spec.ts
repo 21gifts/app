@@ -1763,6 +1763,7 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet?visual=history-rows');
     await expect(page.getByText('Thank you for the coffee')).toBeVisible();
     await expect(page.getByText('$5.00')).toBeVisible();
+    await expect(page.getByText('Failed')).toBeVisible();
     await page
       .getByRole('region', { name: 'Payments' })
       .getByRole('listitem')
