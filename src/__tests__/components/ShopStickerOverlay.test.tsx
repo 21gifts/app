@@ -43,6 +43,10 @@ function renderOverlay(onClose = vi.fn()): ReturnType<typeof vi.fn> {
   return onClose;
 }
 
+function languageMenu(): HTMLElement {
+  return screen.getByRole('combobox', { name: 'Second language' });
+}
+
 describe('ShopStickerOverlay', () => {
   it('shows the title, lead, SVG preview, format choice, and labeled Download', () => {
     renderOverlay();
@@ -61,6 +65,10 @@ describe('ShopStickerOverlay', () => {
       expect(group.textContent).toContain(label);
     }
     expect(screen.getByRole('button', { name: 'Download' })).toBeTruthy();
+    const language = screen.getByRole('combobox', { name: 'Second language' });
+    expect(language.textContent).toContain('Filipino');
+    expect(language.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('listbox')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
@@ -93,6 +101,10 @@ describe('ShopStickerOverlay', () => {
     expect(clicked).toEqual([
       { href: 'blob:sticker', download: '21gifts-shop-sticker-carol-kikamba.pdf' },
     ]);
+    expect(screen.getByRole('combobox', { name: 'Second language' }).textContent).toContain(
+      'Kikamba',
+    );
+    expect(window.location.search).toBe('?lang=Kikamba');
   });
 
   it('downloads the chosen format', async () => {
@@ -213,5 +225,144 @@ describe('ShopStickerOverlay', () => {
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'a' });
     expect(parentClick).not.toHaveBeenCalled();
     expect(parentKey).not.toHaveBeenCalled();
+  });
+
+  it('opens from the keyboard while closed and ignores any other key', () => {
+    renderOverlay();
+    const menu = languageMenu();
+    fireEvent.keyDown(menu, { key: 'a' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.keyDown(menu, { key: 'Enter' });
+    expect(screen.getByRole('listbox', { name: 'Second language' })).toBeTruthy();
+    fireEvent.click(menu);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.keyDown(menu, { key: ' ' });
+    expect(screen.getByRole('listbox', { name: 'Second language' })).toBeTruthy();
+    fireEvent.click(menu);
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(screen.getByRole('listbox', { name: 'Second language' })).toBeTruthy();
+  });
+
+  it('lists the six languages, keeps the URL, and downloads the chosen sticker', async () => {
+    renderOverlay();
+    const menu = languageMenu();
+    fireEvent.click(menu);
+    const list = screen.getByRole('listbox', { name: 'Second language' });
+    for (const name of [
+      'None (English only)',
+      'Spanish',
+      'German',
+      'French',
+      'Filipino',
+      'Kikamba',
+    ]) {
+      expect(list.textContent).toContain(name);
+    }
+    expect(screen.getByRole('option', { name: 'Filipino' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('option', { name: 'Filipino' }));
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(window.location.search).toBe('');
+
+    const chosen: {
+      name: string;
+      lang: 'english' | 'spanish' | 'german' | 'french' | 'kikamba';
+      file: string;
+    }[] = [
+      {
+        name: 'None (English only)',
+        lang: 'english',
+        file: '21gifts-shop-sticker-carol-english.pdf',
+      },
+      { name: 'Spanish', lang: 'spanish', file: '21gifts-shop-sticker-carol-spanish.pdf' },
+      { name: 'German', lang: 'german', file: '21gifts-shop-sticker-carol-german.pdf' },
+      { name: 'French', lang: 'french', file: '21gifts-shop-sticker-carol-french.pdf' },
+      { name: 'Kikamba', lang: 'kikamba', file: '21gifts-shop-sticker-carol-kikamba.pdf' },
+    ];
+    for (const item of chosen) {
+      fireEvent.click(languageMenu());
+      const option = screen.getByRole('option', { name: item.name });
+      // Pressing the row must not dismiss the list before the click selects it.
+      fireEvent.mouseDown(option);
+      expect(screen.getByRole('listbox', { name: 'Second language' })).toBeTruthy();
+      fireEvent.click(option);
+      const preview = screen.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' });
+      const src = preview.getAttribute('src') ?? '';
+      expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toBe(
+        buildShopStickerSvg(QR, item.lang),
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+      });
+      expect(clicked.at(-1)?.download).toBe(item.file);
+      expect(window.location.search).toBe('');
+    }
+  });
+
+  it('moves the highlight with the keyboard and commits it with Enter or Space', () => {
+    renderOverlay();
+    const menu = languageMenu();
+    fireEvent.click(menu);
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-filipino');
+    fireEvent.keyDown(menu, { key: 'a' });
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-filipino');
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-kikamba');
+    fireEvent.keyDown(menu, { key: 'ArrowUp' });
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-filipino');
+    fireEvent.keyDown(menu, { key: 'End' });
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-kikamba');
+    fireEvent.keyDown(menu, { key: 'Home' });
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-english');
+    fireEvent.keyDown(menu, { key: 'ArrowUp' });
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-kikamba');
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-english');
+    fireEvent.mouseEnter(screen.getByRole('option', { name: 'Spanish' }));
+    expect(menu.getAttribute('aria-activedescendant')).toBe('shop-sticker-lang-spanish');
+    fireEvent.keyDown(menu, { key: 'Enter' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(languageMenu().textContent).toContain('Spanish');
+    fireEvent.click(languageMenu());
+    fireEvent.mouseEnter(screen.getByRole('option', { name: 'German' }));
+    fireEvent.keyDown(languageMenu(), { key: ' ' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(languageMenu().textContent).toContain('German');
+  });
+
+  it('closes the language list on Tab, an outside press, or Escape without closing the dialog', () => {
+    const onClose = renderOverlay();
+    const menu = languageMenu();
+    fireEvent.click(menu);
+    fireEvent.mouseDown(menu);
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    fireEvent.keyDown(menu, { key: 'Tab' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(menu);
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Download' }));
+    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.click(menu);
+    fireEvent.keyDown(menu, { key: 'Escape' });
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Shop sticker' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a later menu choice replace the language the URL selected', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    renderOverlay();
+    fireEvent.click(languageMenu());
+    fireEvent.click(screen.getByRole('option', { name: 'French' }));
+    const preview = screen.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' });
+    const src = preview.getAttribute('src') ?? '';
+    expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toBe(
+      buildShopStickerSvg(QR, 'french'),
+    );
+    expect(window.location.search).toBe('?lang=Kikamba');
   });
 });

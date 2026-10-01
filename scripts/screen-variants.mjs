@@ -1732,6 +1732,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'sticker-lang',
+    image: 'profile-sticker-lang.png',
+    visual: 'state-profile-sticker-lang',
+    needle: 'state-profile-sticker-lang',
+  },
+  {
+    route: '/profile',
     id: 'posts-open',
     image: 'profile-posts-open.png',
     visual: 'state-profile-posts-open',
@@ -2051,6 +2058,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-sticker-kikamba.png',
     visual: 'state-members-sticker-kikamba',
     needle: 'state-members-sticker-kikamba',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'sticker-lang',
+    image: 'members-sticker-lang.png',
+    visual: 'state-members-sticker-lang',
+    needle: 'state-members-sticker-lang',
   },
   {
     route: '/members/[accountId]',

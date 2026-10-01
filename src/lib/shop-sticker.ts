@@ -2,10 +2,14 @@ import QRCode from 'qrcode';
 import {
   SHOP_STICKER_COLORS,
   SHOP_STICKER_ELEMENTS,
+  SHOP_STICKER_ENGLISH_TEXT,
+  SHOP_STICKER_FRENCH_TEXT,
+  SHOP_STICKER_GERMAN_TEXT,
   SHOP_STICKER_HEIGHT,
   SHOP_STICKER_KIKAMBA_TEXT,
   SHOP_STICKER_MARK,
   SHOP_STICKER_QR_BOX,
+  SHOP_STICKER_SPANISH_TEXT,
   SHOP_STICKER_WIDTH,
   type ShopStickerElement,
 } from '@/lib/shop-sticker-artwork';
@@ -16,8 +20,56 @@ export const SHOP_STICKER_FORMATS = ['pdf', 'png', 'jpg', 'svg'] as const;
 /** One of {@link SHOP_STICKER_FORMATS}. */
 export type ShopStickerFormat = (typeof SHOP_STICKER_FORMATS)[number];
 
-/** Text artwork language used on the printable shop sticker. */
-export type ShopStickerLang = 'filipino' | 'kikamba';
+/** Text artwork language used on the printable shop sticker. Filipino is the default second language. */
+export type ShopStickerLang = 'english' | 'spanish' | 'german' | 'french' | 'filipino' | 'kikamba';
+
+/** Second-language outlines that replace Filipino indices 6–12. Filipino keeps the shared artwork. */
+const TEXT_BY_LANG: Partial<Record<ShopStickerLang, readonly ShopStickerElement[]>> = {
+  english: SHOP_STICKER_ENGLISH_TEXT,
+  spanish: SHOP_STICKER_SPANISH_TEXT,
+  german: SHOP_STICKER_GERMAN_TEXT,
+  french: SHOP_STICKER_FRENCH_TEXT,
+  kikamba: SHOP_STICKER_KIKAMBA_TEXT,
+};
+
+/** Download-name suffix. Filipino keeps the historical unsuffixed name. */
+const FILE_SUFFIX: Record<ShopStickerLang, string> = {
+  english: '-english',
+  spanish: '-spanish',
+  german: '-german',
+  french: '-french',
+  filipino: '',
+  kikamba: '-kikamba',
+};
+
+/**
+ * Query aliases for {@link shopStickerLangFromQuery}. Unknown values stay Filipino.
+ * Matching is on the trimmed, lowercased query.
+ */
+const LANG_QUERY: Record<string, ShopStickerLang> = {
+  kikamba: 'kikamba',
+  kam: 'kikamba',
+  filipino: 'filipino',
+  fil: 'filipino',
+  spanish: 'spanish',
+  spanisch: 'spanish',
+  es: 'spanish',
+  espanol: 'spanish',
+  español: 'spanish',
+  german: 'german',
+  deutsch: 'german',
+  de: 'german',
+  french: 'french',
+  fr: 'french',
+  francais: 'french',
+  français: 'french',
+  französisch: 'french',
+  franzosisch: 'french',
+  english: 'english',
+  en: 'english',
+  none: 'english',
+  keine: 'english',
+};
 
 /** Printed sticker width in millimetres; the height follows the 1500 × 918 artwork (82.25 mm). */
 export const SHOP_STICKER_WIDTH_MM = 134.4;
@@ -101,9 +153,10 @@ function elementSvg(el: ShopStickerElement): string {
 }
 
 function stickerElements(lang: ShopStickerLang): readonly ShopStickerElement[] {
-  if (lang !== 'kikamba') return SHOP_STICKER_ELEMENTS;
+  const text = TEXT_BY_LANG[lang];
+  if (text === undefined) return SHOP_STICKER_ELEMENTS;
   const next = SHOP_STICKER_ELEMENTS.slice();
-  next.splice(6, 7, ...SHOP_STICKER_KIKAMBA_TEXT);
+  next.splice(6, 7, ...text);
   return next;
 }
 
@@ -111,11 +164,14 @@ function stickerElements(lang: ShopStickerLang): readonly ShopStickerElement[] {
  * Selects the printable shop-sticker text language from a `lang` query value.
  *
  * @param value - Raw `lang` query value, or null when the parameter is absent.
- * @returns Kikamba for trimmed, case-insensitive `kikamba` or `kam`; Filipino otherwise.
+ * @returns The sticker language for a known alias (`kikamba`/`kam`, `filipino`/`fil`, Spanish, German,
+ *   French, or English-only `en`/`none`/`keine`). Empty, missing, and unknown values stay Filipino.
  */
 export function shopStickerLangFromQuery(value: string | null): ShopStickerLang {
-  const normalized = value?.trim().toLowerCase();
-  return normalized === 'kikamba' || normalized === 'kam' ? 'kikamba' : 'filipino';
+  if (value === null) return 'filipino';
+  const normalized = value.trim().toLowerCase();
+  if (normalized === '') return 'filipino';
+  return LANG_QUERY[normalized] ?? 'filipino';
 }
 
 /**
@@ -311,7 +367,9 @@ export async function shopStickerBlob(
  * @param handle - Public `username@domain` handle (`giftsLightningAddress`).
  * @param format - One of {@link SHOP_STICKER_FORMATS}.
  * @param lang - Text artwork language; defaults to English and Filipino.
- * @returns `21gifts-shop-sticker-<username>[-kikamba].<format>` with the username reduced to `a-z 0-9 . _ -`.
+ * @returns `21gifts-shop-sticker-<username>[-language].<format>` with the username reduced to `a-z 0-9 . _ -`.
+ *   Filipino has no language suffix. English-only, Spanish, German, French, and Kikamba insert
+ *   `-english`, `-spanish`, `-german`, `-french`, or `-kikamba` before the extension.
  */
 export function shopStickerFileName(
   handle: string,
@@ -322,6 +380,5 @@ export function shopStickerFileName(
   const local = (at === -1 ? handle : handle.slice(0, at))
     .toLowerCase()
     .replace(/[^a-z0-9._-]/g, '');
-  const suffix = lang === 'kikamba' ? '-kikamba' : '';
-  return `21gifts-shop-sticker-${local === '' ? 'member' : local}${suffix}.${format}`;
+  return `21gifts-shop-sticker-${local === '' ? 'member' : local}${FILE_SUFFIX[lang]}.${format}`;
 }

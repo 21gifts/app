@@ -14,9 +14,13 @@ import {
 } from '@/lib/shop-sticker';
 import {
   SHOP_STICKER_ELEMENTS,
+  SHOP_STICKER_ENGLISH_TEXT,
+  SHOP_STICKER_FRENCH_TEXT,
+  SHOP_STICKER_GERMAN_TEXT,
   SHOP_STICKER_KIKAMBA_TEXT,
   SHOP_STICKER_MARK,
   SHOP_STICKER_QR_BOX,
+  SHOP_STICKER_SPANISH_TEXT,
 } from '@/lib/shop-sticker-artwork';
 
 const CAROL =
@@ -70,6 +74,19 @@ describe('buildShopStickerSvg', () => {
 
   it('swaps the Filipino scan text for the Kikamba outlines', () => {
     expect(buildShopStickerSvg(CAROL, 'kikamba')).not.toBe(buildShopStickerSvg(CAROL));
+  });
+
+  it('builds Spanish, German, French, and English-only artwork', () => {
+    const filipino = buildShopStickerSvg(CAROL);
+    expect(SHOP_STICKER_SPANISH_TEXT.length).toBeGreaterThan(0);
+    expect(SHOP_STICKER_GERMAN_TEXT.length).toBeGreaterThan(0);
+    expect(SHOP_STICKER_FRENCH_TEXT.length).toBeGreaterThan(0);
+    expect(SHOP_STICKER_ENGLISH_TEXT).toHaveLength(3);
+    expect(buildShopStickerSvg(CAROL, 'spanish')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'german')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'french')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'english')).not.toBe(filipino);
+    expect(buildShopStickerSvg(CAROL, 'filipino')).toBe(filipino);
   });
 
   it('keeps larger versions and widens the cleared centre to an odd module count', () => {
@@ -187,6 +204,24 @@ describe('shopStickerFileName', () => {
     );
   });
 
+  it('suffixes every second language except Filipino', () => {
+    expect(shopStickerFileName('carol@21.gifts', 'pdf', 'filipino')).toBe(
+      '21gifts-shop-sticker-carol.pdf',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'svg', 'english')).toBe(
+      '21gifts-shop-sticker-carol-english.svg',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'png', 'spanish')).toBe(
+      '21gifts-shop-sticker-carol-spanish.png',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'jpg', 'german')).toBe(
+      '21gifts-shop-sticker-carol-german.jpg',
+    );
+    expect(shopStickerFileName('carol@21.gifts', 'pdf', 'french')).toBe(
+      '21gifts-shop-sticker-carol-french.pdf',
+    );
+  });
+
   it('lists the formats in menu order', () => {
     expect(SHOP_STICKER_FORMATS).toEqual(['pdf', 'png', 'jpg', 'svg']);
   });
@@ -198,16 +233,34 @@ describe('shop sticker language', () => {
     window.history.pushState(null, '', '/');
   });
 
-  it('maps kikamba and kam, and every other query value to filipino', () => {
+  it('maps known lang aliases and leaves empty or unknown values on Filipino', () => {
     expect(shopStickerLangFromQuery('  Kikamba  ')).toBe('kikamba');
     expect(shopStickerLangFromQuery('KIKAMBA')).toBe('kikamba');
     expect(shopStickerLangFromQuery('kam')).toBe('kikamba');
     expect(shopStickerLangFromQuery('filipino')).toBe('filipino');
     expect(shopStickerLangFromQuery('fil')).toBe('filipino');
-    expect(shopStickerLangFromQuery('en')).toBe('filipino');
+    expect(shopStickerLangFromQuery('spanish')).toBe('spanish');
+    expect(shopStickerLangFromQuery('spanisch')).toBe('spanish');
+    expect(shopStickerLangFromQuery('es')).toBe('spanish');
+    expect(shopStickerLangFromQuery('espanol')).toBe('spanish');
+    expect(shopStickerLangFromQuery('español')).toBe('spanish');
+    expect(shopStickerLangFromQuery('german')).toBe('german');
+    expect(shopStickerLangFromQuery('deutsch')).toBe('german');
+    expect(shopStickerLangFromQuery('de')).toBe('german');
+    expect(shopStickerLangFromQuery('french')).toBe('french');
+    expect(shopStickerLangFromQuery('fr')).toBe('french');
+    expect(shopStickerLangFromQuery('francais')).toBe('french');
+    expect(shopStickerLangFromQuery('français')).toBe('french');
+    expect(shopStickerLangFromQuery('französisch')).toBe('french');
+    expect(shopStickerLangFromQuery('franzosisch')).toBe('french');
+    expect(shopStickerLangFromQuery('  EN  ')).toBe('english');
+    expect(shopStickerLangFromQuery('english')).toBe('english');
+    expect(shopStickerLangFromQuery('none')).toBe('english');
+    expect(shopStickerLangFromQuery('keine')).toBe('english');
     expect(shopStickerLangFromQuery('Swahili')).toBe('filipino');
     expect(shopStickerLangFromQuery(null)).toBe('filipino');
     expect(shopStickerLangFromQuery('')).toBe('filipino');
+    expect(shopStickerLangFromQuery('   ')).toBe('filipino');
   });
 
   it('reads lang from the page URL', () => {

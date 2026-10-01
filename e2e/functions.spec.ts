@@ -5837,6 +5837,13 @@ test('Function: ShopStickerOverlay — Shop sticker opens the preview and Escape
     dialog.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' }),
   ).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute('aria-pressed', 'true');
+  const language = dialog.getByRole('combobox', { name: 'Second language' });
+  await expect(language).toContainText('Filipino');
+  await language.click();
+  await expect(dialog.getByRole('option', { name: 'Spanish' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('listbox')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'Shop sticker' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
@@ -5903,7 +5910,13 @@ test('Function: shopStickerFileName — downloads are named after the username',
 test('Function: shopStickerLangFromQuery — Kikamba and unknown values', () => {
   expect(shopStickerLangFromQuery('Kikamba')).toBe('kikamba');
   expect(shopStickerLangFromQuery('kam')).toBe('kikamba');
+  expect(shopStickerLangFromQuery('es')).toBe('spanish');
+  expect(shopStickerLangFromQuery('de')).toBe('german');
+  expect(shopStickerLangFromQuery('fr')).toBe('french');
+  expect(shopStickerLangFromQuery('en')).toBe('english');
+  expect(shopStickerLangFromQuery('keine')).toBe('english');
   expect(shopStickerLangFromQuery(null)).toBe('filipino');
+  expect(shopStickerLangFromQuery('')).toBe('filipino');
   expect(shopStickerLangFromQuery('Swahili')).toBe('filipino');
 });
 
@@ -5916,6 +5929,7 @@ test('Function: shopStickerLangFromLocation — ?lang=Kikamba opens the English/
   await expect(page.getByText('carol@21.gifts', { exact: true })).toBeVisible();
   const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: 'Second language' })).toContainText('Kikamba');
   const expected = buildShopStickerSvg(openCryptoPayQrValue('carol') as string, 'kikamba');
   const src = await dialog
     .getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' })
@@ -5938,6 +5952,7 @@ test('Function: shopStickerLangFromLocation — unknown lang keeps the Filipino 
   await page.getByRole('button', { name: 'Shop sticker' }).click();
   const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: 'Second language' })).toContainText('Filipino');
   const expected = buildShopStickerSvg(openCryptoPayQrValue('carol') as string);
   const src = await dialog
     .getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' })

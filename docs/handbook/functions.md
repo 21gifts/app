@@ -2151,9 +2151,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopStickerOverlay
 
-- **Purpose:** Shop-sticker overlay on a member profile. Same overlay chrome as `ExternalLinkWarning` (`role="dialog"`, `bg-app-overlay`, icon-only **Close**) with `Card maxWidth="xl"`: title **Shop sticker**, lead **Print it for a shop window. The QR code pays {handle}.**, a preview `<img>` of `buildShopStickerSvg` (alt **Shop sticker preview for {handle}**), a neutral `SegmentedControl` **File format** PDF | PNG | JPG | SVG (PDF first), and a labeled **Download**.
-- **Inputs:** `qrValue` (the profile's `openCryptoPayQrValue`), `handle` (`giftsLightningAddress`), `onClose`. The text language is not a prop: `shopStickerLangFromLocation` defaults to Filipino (English + Filipino artwork); `kikamba` swaps indices 6–12 for the Kikamba outlines, and the download filename gains `-kikamba`.
-- **Returns / side effects:** Dialog. **Download** disables itself while `shopStickerBlob` runs, then saves the blob through a temporary `<a download>` named by `shopStickerFileName` and revokes the object URL a second later; a failure shows `role="alert"` **Could not create the file. Please try again.** until the next try. Focus moves into the dialog on open and returns to the element that opened it on close. Close and Escape call `onClose`: the dialog's own keydown handles Escape from inside it, and a `document` listener (removed on unmount) closes only on Escape from outside the dialog, so one key press never closes twice even with the app root on `document`. Dialog click and keydown `stopPropagation`.
+- **Purpose:** Shop-sticker overlay on a member profile. Same overlay chrome as `ExternalLinkWarning` (`role="dialog"`, `bg-app-overlay`, icon-only **Close**) with `Card maxWidth="xl"`: title **Shop sticker**, lead **Print it for a shop window. The QR code pays {handle}.**, a preview `<img>` of `buildShopStickerSvg` (alt **Shop sticker preview for {handle}**), a neutral `SegmentedControl` **File format** PDF | PNG | JPG | SVG (PDF first), a **Second language** combobox, and a labeled **Download**.
+- **Inputs:** `qrValue` (the profile's `openCryptoPayQrValue`), `handle` (`giftsLightningAddress`), `onClose`. The text language is not a prop. `shopStickerLangFromLocation` sets the first selection (Filipino when the query is missing or unknown). The combobox then drives the preview and the download. Choosing a language does not write the URL. Options, in order: None (English only), Spanish, German, French, Filipino, Kikamba. The closed control stays in the card flow; the list opens upward.
+- **Returns / side effects:** Dialog. **Download** disables itself while `shopStickerBlob` runs, then saves the blob through a temporary `<a download>` named by `shopStickerFileName` and revokes the object URL a second later; a failure shows `role="alert"` **Could not create the file. Please try again.** until the next try. Focus moves into the dialog on open and returns to the element that opened it on close. Close calls `onClose`. Escape closes the open language list first and leaves the dialog up; the next Escape calls `onClose`. The dialog's own keydown handles Escape from inside it, and a `document` listener (removed on unmount) closes only on Escape from outside the dialog, so one key press never closes twice even with the app root on `document`. Dialog click and keydown `stopPropagation`. A press outside the list closes the list only.
 - **Used by:** `MemberProfileScreen` — only where the profile shows its QR (username set), including on a smartphone.
 
 ## Function: visibleForumMessages
@@ -2556,44 +2556,44 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: buildShopStickerSvg
 
 - **Purpose:** Printable shop-window sticker for one member as a standalone SVG document. The fixed artwork (orange band with the Bitcoin mark, **ACCEPTED HERE** / **TINATANGGAP DITO**, the English and Filipino scan text, the sari-sari shop with the 21.gifts sign) comes from `src/lib/shop-sticker-artwork.ts`, which `scripts/build-shop-sticker-artwork.mjs` generates with every glyph converted to an outline. Only three colours: orange `#F99602`, black, white.
-- **Inputs:** `qrValue` — the member's `openCryptoPayQrValue`. Optional `lang` — default Filipino (English + Filipino artwork); `kikamba` swaps indices 6–12 for the Kikamba outlines.
+- **Inputs:** `qrValue` — the member's `openCryptoPayQrValue`. Optional `lang` — default Filipino (English + Filipino artwork). `spanish`, `german`, `french`, and `kikamba` replace artwork indices 6–12. `english` replaces those indices with the English scan block only (no second headline).
 - **Returns / side effects:** SVG markup, `width="134.4mm"`, `viewBox="0 0 1500 918"`. The QR is error correction H in byte mode, at least version 10 (57 modules; shorter payloads are padded up so the 4-module quiet zone to the band holds), with an odd-sized centre (13 of 57 modules, 15 of 61, …) cleared for the orange Open CryptoPay mark. No I/O.
 - **Used by:** `ShopStickerOverlay` (preview `<img>` data URL), `shopStickerBlob` (SVG, PNG, JPG).
 
 ## Function: buildShopStickerPdf
 
 - **Purpose:** The same sticker as a one-page vector PDF for print, without a PDF library: the artwork paths (absolute M, L, C, Z) become PDF path operators, the QR modules become rectangles.
-- **Inputs:** `qrValue` — the member's `openCryptoPayQrValue`. Optional `lang` — default Filipino (English + Filipino artwork); `kikamba` swaps indices 6–12 for the Kikamba outlines.
+- **Inputs:** `qrValue` — the member's `openCryptoPayQrValue`. Optional `lang` — same languages as `buildShopStickerSvg` (default Filipino).
 - **Returns / side effects:** PDF 1.4 bytes (`Uint8Array`), MediaBox 134.4 × 82.25 mm, no fonts, no images, exact xref offsets. No I/O.
 - **Used by:** `shopStickerBlob` (format `pdf`).
 
 ## Function: shopStickerBlob
 
 - **Purpose:** The shop-sticker file in the format the visitor picked.
-- **Inputs:** `qrValue`, `format` — one of `SHOP_STICKER_FORMATS` (`pdf`, `png`, `jpg`, `svg`). Optional `lang` — default Filipino (English + Filipino artwork); `kikamba` swaps indices 6–12 for the Kikamba outlines.
+- **Inputs:** `qrValue`, `format` — one of `SHOP_STICKER_FORMATS` (`pdf`, `png`, `jpg`, `svg`). Optional `lang` — same languages as `buildShopStickerSvg` (default Filipino).
 - **Returns / side effects:** `Promise<Blob>`: `application/pdf` from `buildShopStickerPdf`; `image/svg+xml` from `buildShopStickerSvg`; PNG / JPEG drawn from that SVG on a 3000 × 1836 canvas over white (JPEG quality 0.95). Rejects when the browser cannot load the SVG image, has no 2D canvas, or cannot encode it. The object URL used for the SVG image is always revoked. Nothing is sent to the api.
 - **Used by:** `ShopStickerOverlay` (**Download**).
 
 ## Function: shopStickerFileName
 
 - **Purpose:** Download name for a member's sticker.
-- **Inputs:** `handle` (`username@domain` or a bare username), `format`. Optional `lang` — default Filipino; `kikamba` adds `-kikamba` before the extension.
-- **Returns / side effects:** `21gifts-shop-sticker-<username>.<format>`, or `21gifts-shop-sticker-<username>-kikamba.<format>` when `lang` is `kikamba`; the username is lowercased and reduced to `a-z 0-9 . _ -` (`member` when nothing is left). No I/O.
+- **Inputs:** `handle` (`username@domain` or a bare username), `format`. Optional `lang` — default Filipino, which keeps the historical unsuffixed name. `english`, `spanish`, `german`, `french`, and `kikamba` insert `-english`, `-spanish`, `-german`, `-french`, or `-kikamba` before the extension.
+- **Returns / side effects:** `21gifts-shop-sticker-<username>[-language].<format>`. The username is lowercased and reduced to `a-z 0-9 . _ -` (`member` when nothing is left). No I/O.
 - **Used by:** `ShopStickerOverlay`.
 
 ## Function: shopStickerLangFromQuery
 
 - **Purpose:** Selects the printable shop-sticker text language from a `lang` query value.
 - **Inputs:** `value` — raw `lang` query value, or null when the parameter is absent.
-- **Returns / side effects:** `kikamba` for trimmed, case-insensitive `kikamba` or `kam`; `filipino` otherwise. No I/O.
+- **Returns / side effects:** Trimmed, case-insensitive. `kikamba`/`kam`; `filipino`/`fil`; Spanish `spanish`/`spanisch`/`es`/`espanol`/`español`; German `german`/`deutsch`/`de`; French `french`/`fr`/`francais`/`français`/`französisch`/`franzosisch`; English-only `english`/`en`/`none`/`keine`. Null, blank, and unknown stay `filipino`. No I/O.
 - **Used by:** `shopStickerLangFromLocation`.
 
 ## Function: shopStickerLangFromLocation
 
 - **Purpose:** Selects the printable shop-sticker text language from the current page URL.
 - **Inputs:** None. Reads the current `lang` query via `shopStickerLangFromQuery`.
-- **Returns / side effects:** `kikamba` or `filipino` from that query, or `filipino` when `window` is missing. No I/O.
-- **Used by:** `ShopStickerOverlay` and `MemberProfileScreen`.
+- **Returns / side effects:** The language from that query (`english`, `spanish`, `german`, `french`, `filipino`, or `kikamba`), or `filipino` when the query is missing, unknown, or `window` is missing. No I/O.
+- **Used by:** `ShopStickerOverlay` (first selection only) and `MemberProfileScreen` (Kikamba still auto-opens the overlay).
 
 ## Function: decodeLnurl
 

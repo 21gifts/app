@@ -4392,6 +4392,21 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-sticker-kikamba', false);
   });
 
+  test('state /profile sticker-lang', async ({ page }) => {
+    await seedProfilePage(page);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Shop sticker' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for alice@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await dialog.getByRole('combobox', { name: 'Second language' }).click();
+    await expect(dialog.getByRole('option', { name: 'Kikamba' })).toBeVisible();
+    await shotScreen(page, 'state-profile-sticker-lang', false);
+  });
+
   test('state /profile funding-program-press', async ({ page }) => {
     await page.unroute(/\/forum\/members\/acc_e2e$/);
     await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
@@ -7712,6 +7727,14 @@ test.describe('onboarding screens', () => {
       'true',
     );
     await shotScreen(page, 'state-members-sticker-kikamba', false);
+  });
+
+  test('state /members sticker-lang', async ({ page }) => {
+    await seedShopStickerMember(page);
+    const dialog = await openShopStickerOverlay(page);
+    await dialog.getByRole('combobox', { name: 'Second language' }).click();
+    await expect(dialog.getByRole('option', { name: 'Kikamba' })).toBeVisible();
+    await shotScreen(page, 'state-members-sticker-lang', false);
   });
 
   test('state /members sticker-busy', async ({ page }) => {
