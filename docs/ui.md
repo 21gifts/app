@@ -1077,9 +1077,9 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 ### `/grants`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). Apply is not a ButtonLink except for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status none or rejected, who still see Apply and can open the walk. A basis account sees You are not verified yet and no Apply. Pending, trial, and admitted keep their status copy for every verified username. Every other verified account with status none or rejected shows the paused sentence and `https://21.gifts/statistics`. A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). Apply is not a ButtonLink except for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status none or rejected, who still see Apply and can open the walk. A basis account sees You are not verified yet and no Apply. Pending, trial, and admitted keep their status copy for every verified username. Every other verified account with status none or rejected shows the paused sentence and `https://21.gifts/statistics`. A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null. A secondary `size="lg"` `ButtonLink` labeled **Daily payments** goes to `/grants/payments` only when `canEditDailyPayoutRoster`; it does not fetch the roster. Plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
-Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
+Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications, daily-payments.
 
 ### `/grants/goals`
 
@@ -1092,6 +1092,12 @@ Handbook states: default, loading, error.
 Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}`. The paused card **h1** is **21 gifts grant** (`funding.heading`). The apply walk **h1** is **Apply for the 21 gifts grant** (`funding.apply.heading`). A basis account named `joey-rosima`, `vincent`, or `jewel-bacolbas` sees that walk heading and then You are not verified yet, and does not post. Any other basis account whose status is not pending, trial, or admitted sees the paused card. A basis account with status pending, trial, or admitted sees You are not verified yet and does not post. Verified usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` with status none or rejected still see and complete the apply walk (About me, photo, location, questions, POST). Pending, trial, and admitted keep their copy for every verified username. A missing account, and a verified account with status none or rejected whose username is not one of those three, sees the paused sentence and `https://21.gifts/statistics` and does not start the walk. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
 
 Handbook states: default, about, sunday, photo, location, question, truth, translate, translate-loading, translate-done, translate-hidden, translate-error, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
+
+### `/grants/payments`
+
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payments**. An initiator or founder sees the editor form. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. Each recipient row has icon-only update (pencil) and delete (trash). **Save**, **On**, **Off**, **Add**, and **Try again** stay labeled buttons.
+
+Handbook states: default, empty, loading, error, forbidden, invalid.
 
 ### `/profile/apply`
 

@@ -171,6 +171,10 @@ describe('DailyPaymentsScreen', () => {
     expect(screen.getByText('nolocal')).toBeTruthy();
     expect(screen.getByText('1.3')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByText('Update')).toBeNull();
+    expect(screen.queryByText('Delete')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Update Ada@w...' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete Ada@w...' })).toBeTruthy();
   });
 
   it('saves the comment and shows a mapped, unknown, or non-error failure', async () => {

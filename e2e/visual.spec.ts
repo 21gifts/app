@@ -11871,7 +11871,7 @@ test.describe('profile funding states', () => {
   async function seedFundingProfile(
     page: Page,
     extras: {
-      role?: 'basis' | 'verified' | 'moderator';
+      role?: 'basis' | 'verified' | 'moderator' | 'founder' | 'initiator';
       funding?: unknown;
       username?: string;
     } = {},
@@ -12056,6 +12056,42 @@ test.describe('profile funding states', () => {
       page.getByRole('link', { name: 'Open applications (2)', exact: true }),
     ).toBeVisible();
     await shotScreen(page, 'state-grants-open-applications');
+  });
+
+  test('state /grants daily-payments', async ({ page }) => {
+    await seedFundingProfile(page, { role: 'founder' });
+    await page.route('**/funding/applications', async (route) => {
+      if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          applications: [
+            {
+              accountId: 'acc_rose',
+              name: 'Rose',
+              role: 'verified',
+              appliedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+            },
+            {
+              accountId: 'acc_neil',
+              name: 'Neil',
+              role: 'verified',
+              appliedAt: Date.parse('2026-08-29T12:00:00.000Z'),
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/grants');
+    await expect(page.getByRole('link', { name: 'Daily payments', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Open applications (2)', exact: true }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-grants-daily-payments');
   });
 
   test('state /grants no-applications', async ({ page }) => {
@@ -21752,5 +21788,21 @@ test.describe('daily payments', () => {
     await page.goto('/grants/payments');
     await expect(page.getByText('You cannot change daily payments.')).toBeVisible();
     await shotScreen(page, 'state-grants-payments-forbidden');
+  });
+
+  test('state /grants/payments invalid', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roster),
+      });
+    });
+    await page.goto('/grants/payments');
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('0');
+    await page.getByRole('button', { name: 'Add' }).click();
+    await expect(page.getByText('The address or the amount is not valid.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-invalid');
   });
 });

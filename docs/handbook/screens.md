@@ -2969,6 +2969,12 @@ Moderator on `/grants` when the open-application load fails. Copy **Could not lo
 
 ![21.gifts grants applications error](images/grants-applications-error.png)
 
+### Variant: daily-payments
+
+Founder on `/grants` sees a secondary **Daily payments** link plus **Open applications (2)**. Needle `Daily payments`.
+
+![21.gifts grants daily payments](images/grants-daily-payments.png)
+
 ## Screen: /grants/goals
 
 - **Purpose:** Signed-in grant goal. States that the program continues at 10 active shops, that a shop is active with at least one transaction on 5 of the last 7 days, and what a transaction is. Shows how many shops meet that rule and a 7-day shop chart. The chart is not the public statistics series.
@@ -2998,7 +3004,7 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 - **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
-- **Actions:** Save the comment. Turn payments On or Off. Add, update, or delete a recipient. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Actions:** **Save** the comment. Turn payments **On** or **Off**. **Add** a recipient. Update and delete are icon-only (pencil and trash), not labeled buttons. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/payments` (`DailyPaymentsPage`). The **Daily payments** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
@@ -3030,6 +3036,12 @@ Founder when the roster load fails. Copy **Could not load daily payments. Please
 Moderator on the direct URL. Heading **Daily payments** and **You cannot change daily payments.** No roster request. Needle `You cannot change daily payments.`
 
 ![21.gifts daily payments forbidden](images/grants-payments-forbidden.png)
+
+### Variant: invalid
+
+Founder, add amount 0, alert **The address or the amount is not valid.** Update and delete are icon-only (pencil and trash) with accessible names **Update** or **Delete** plus the shown address. Needle `The address or the amount is not valid.`
+
+![21.gifts daily payments invalid](images/grants-payments-invalid.png)
 
 ## Screen: /profile/apply
 

@@ -417,7 +417,7 @@ update stuff
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
   `process.env` directly in components. Accessors throw on missing values; no
   silent fallbacks.
-- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
 
 ### Styling
 

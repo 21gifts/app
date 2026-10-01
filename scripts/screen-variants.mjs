@@ -2432,6 +2432,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state-grants-applications-error',
   },
   {
+    route: '/grants',
+    id: 'daily-payments',
+    image: 'grants-daily-payments.png',
+    visual: 'state-grants-daily-payments',
+    needle: 'Daily payments',
+  },
+  {
     route: '/grants/goals',
     id: 'default',
     image: 'grants-goals.png',
@@ -2486,6 +2493,13 @@ export const SCREEN_VARIANTS = [
     image: 'grants-payments-forbidden.png',
     visual: 'state-grants-payments-forbidden',
     needle: 'You cannot change daily payments.',
+  },
+  {
+    route: '/grants/payments',
+    id: 'invalid',
+    image: 'grants-payments-invalid.png',
+    visual: 'state-grants-payments-invalid',
+    needle: 'The address or the amount is not valid.',
   },
   {
     route: '/profile/apply',
