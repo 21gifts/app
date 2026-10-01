@@ -782,7 +782,9 @@ test('wallet send-amount pin asks for an amount, bounds, and a comment', async (
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByText('To bob@example.com')).toBeVisible();
   await expect(region.getByLabel('Amount')).toBeVisible();
-  await expect(region.getByText("Between ₿1 and ₿1'000'000")).toBeVisible();
+  await expect(
+    region.getByText(/^Between ₿1 · \$0\.00 and ₿1'000'000 · \$1.000\.00$/),
+  ).toBeVisible();
   await expect(region.getByLabel('Message (optional)')).toHaveAttribute('maxlength', '140');
   await expect(region.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });
@@ -856,7 +858,7 @@ test('Function: walletSendBounds — send-amount pin shows the receiver bounds',
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-amount');
-  await expect(page.getByText("Between ₿1 and ₿1'000'000")).toBeVisible();
+  await expect(page.getByText(/^Between ₿1 · \$0\.00 and ₿1'000'000 · \$1.000\.00$/)).toBeVisible();
 });
 
 test('Function: parseWalletInput — unset key loads no wasm and shows no send region', async ({

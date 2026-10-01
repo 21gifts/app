@@ -372,6 +372,31 @@ describe('payments', () => {
     await expect(conn.parse('bitcoin:')).resolves.toEqual({ type: 'unsupported' });
   });
 
+  it('parse takes the BIP21 amount for a method without one', async () => {
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bip21',
+      amountSat: 2_100,
+      paymentMethods: [{ type: 'sparkAddress', address: 'sp1short' }],
+    });
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bip21',
+      amountSat: 2_100,
+      paymentMethods: [
+        { type: 'bolt11Invoice', amountMsat: 21_000, invoice: { bolt11: 'lnbc1short' } },
+      ],
+    });
+    const conn = await connection();
+    await expect(conn.parse('bitcoin:?sp=sp1short&amount=0.000021')).resolves.toEqual({
+      type: 'request',
+      input: 'sp1short',
+      amountSats: 2_100,
+      recipient: 'sp1short',
+    });
+    await expect(conn.parse('bitcoin:?lightning=lnbc1short')).resolves.toMatchObject({
+      amountSats: 21,
+    });
+  });
+
   it('parse rejects when the SDK rejects', async () => {
     sdkPay.parse.mockRejectedValue(new Error('unreachable'));
     const conn = await connection();

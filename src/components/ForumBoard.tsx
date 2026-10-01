@@ -566,6 +566,7 @@ function ForumPaySheet({
       </p>
       <WalletPay
         sparkInvoice={invoiceForCard.sparkInvoice}
+        amountSats={invoiceForCard.amountSats}
         rateDay={rateDay}
         fallback={
           <>

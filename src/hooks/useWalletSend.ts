@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
+import { useWalletStore } from '@/stores/wallet-store';
 import type { WalletPayRequest, WalletTarget } from '@/lib/wallet/wallet-sdk';
 import {
   parseWalletInput,
@@ -143,7 +144,9 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
  * shows that it is not supported yet. A receiver whose server this browser
  * cannot reach shows a plain error. Nothing is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
- * actions inert.
+ * actions inert. When the wallet leaves `ready`, an open amount or confirm
+ * step and any read or prepare in flight are dropped (a send in flight is
+ * kept), so a later reconnect starts at the input.
  *
  * @returns The current step, drafts, and actions.
  */
@@ -155,6 +158,7 @@ export function useWalletSend(): UseWalletSendResult {
   const sendRef = useRef<(() => Promise<WalletSendResult>) | null>(null);
   const generation = useRef(0);
   const pinned = visualState();
+  const status = useWalletStore((store) => store.status);
 
   useEffect(
     () => () => {
@@ -162,6 +166,22 @@ export function useWalletSend(): UseWalletSendResult {
     },
     [],
   );
+
+  useEffect(() => {
+    if (pinned !== null || status === 'ready') {
+      return;
+    }
+    if ((state.step === 'input' && !busy) || state.step === 'sent') {
+      return;
+    }
+    if (state.step === 'confirm' && busy) {
+      return;
+    }
+    generation.current += 1;
+    sendRef.current = null;
+    setBusy(false);
+    setState({ step: 'input', error: null });
+  }, [pinned, status, state.step, busy]);
 
   const setText = useCallback((value: string): void => {
     setTextState(value);
