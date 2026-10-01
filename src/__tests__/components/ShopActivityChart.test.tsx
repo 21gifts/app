@@ -13,7 +13,7 @@ describe('ShopActivityChart', () => {
       <ShopActivityChart
         rows={[
           { day: '2026-09-17', count: 0 },
-          { day: '2026-09-18', count: 4 },
+          { day: '2026-09-18', count: 5 },
           { day: '2026-09-19', count: 1 },
           { day: '2026-09-20', count: 2 },
         ]}
@@ -30,9 +30,13 @@ describe('ShopActivityChart', () => {
     expect(bars[0]?.getAttribute('class')).toContain('fill-app-accent');
     expect(bars[1]?.getAttribute('class')).toContain('fill-app-accent');
     expect(bars[2]?.getAttribute('class')).toContain('fill-app-subtle');
-    expect(within(svg).getAllByText('4').length).toBeGreaterThan(0);
-    expect(within(svg).getAllByText('2').length).toBeGreaterThan(0);
+    expect(within(svg).getAllByText('5')).toHaveLength(2);
+    expect(within(svg).getAllByText('2')).toHaveLength(1);
+    expect(within(svg).getByText('0')).toBeTruthy();
+    expect(within(svg).getByText('3')).toBeTruthy();
     expect(within(svg).queryByText('1')).toBeNull();
+    expect(within(svg).queryByText('100')).toBeNull();
+    expect(svg.querySelector('line[class*="stroke-app-accent"]')).toBeNull();
   });
 
   it('draws ticks 0 and 1 when the window maximum is 1', () => {

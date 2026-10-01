@@ -160,14 +160,38 @@ describe('StatisticsScreen', () => {
     expect(screen.queryByText('Tap to close')).toBeNull();
   });
 
-  it('shows loading copy while payout stats are in flight', () => {
+  it('shows loading copy while payout stats are in flight', async () => {
     fetchMock.mockImplementation(() => new Promise(() => undefined));
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(<StatisticsScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('Shops by UTC day')).toBeTruthy();
+    });
     expect(
       within(screen.getByRole('group', { name: 'Daily funding goal' })).getByText('Loading…'),
     ).toBeTruthy();
+    expect(
+      within(screen.getByRole('group', { name: 'Active shops' })).queryByText('Loading…'),
+    ).toBeNull();
     expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
+  });
+
+  it('shows the payout chart while shop activity is in flight', async () => {
+    fetchShopMock.mockImplementation(() => new Promise(() => undefined));
+    fetchMock.mockResolvedValue(
+      statsWithDays([{ day: '2026-09-19', giftCount: 40, officialCount: 12 }]),
+    );
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    renderWithLocale(<StatisticsScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('People by UTC day')).toBeTruthy();
+    });
+    expect(
+      within(screen.getByRole('group', { name: 'Active shops' })).getByText('Loading…'),
+    ).toBeTruthy();
+    expect(
+      within(screen.getByRole('group', { name: 'Daily funding goal' })).queryByText('Loading…'),
+    ).toBeNull();
   });
 
   it('shows retry when payout stats fail to load', async () => {
