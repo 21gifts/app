@@ -1,12 +1,15 @@
 'use client';
 
 import { Check, Copy, X } from 'lucide-react';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Card, IconButton } from '@/components/ui';
 import { fetchExternalAuthorProfile } from '@/lib/api';
 import type { ExternalAuthorProfile } from '@/lib/api-types';
+
+/** Copied-icon flash duration, matching {@link ForumBoard}. */
+const COPY_RESET_MS = 1200;
 
 /** Props for {@link ExternalAuthorSheet}. */
 export interface ExternalAuthorSheetProps {
@@ -59,6 +62,29 @@ export function ExternalAuthorSheet({
   const { t } = useTranslations();
   const [profile, setProfile] = useState<ExternalAuthorProfile | null>(null);
   const [copied, setCopied] = useState(false);
+  const copyMounted = useRef(true);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    copyMounted.current = true;
+    return () => {
+      copyMounted.current = false;
+      if (copyTimer.current !== null) {
+        clearTimeout(copyTimer.current);
+      }
+    };
+  }, []);
+
+  const flashCopied = useCallback((): void => {
+    setCopied(true);
+    if (copyTimer.current !== null) {
+      clearTimeout(copyTimer.current);
+    }
+    copyTimer.current = setTimeout(() => {
+      setCopied(false);
+      copyTimer.current = null;
+    }, COPY_RESET_MS);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,10 +112,16 @@ export function ExternalAuthorSheet({
     }
     try {
       await navigator.clipboard.writeText(profile.npub);
-      setCopied(true);
+      if (!copyMounted.current) {
+        return;
+      }
+      flashCopied();
     } catch {
+      if (!copyMounted.current) {
+        return;
+      }
       if (fallbackCopy(profile.npub)) {
-        setCopied(true);
+        flashCopied();
       }
     }
   };

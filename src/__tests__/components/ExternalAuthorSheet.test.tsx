@@ -16,6 +16,7 @@ const HINT =
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
 });
 
 describe('ExternalAuthorSheet', () => {
@@ -106,11 +107,102 @@ describe('ExternalAuthorSheet', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     });
+    vi.useFakeTimers();
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-    await waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith('npub1example');
-      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(writeText).toHaveBeenCalledWith('npub1example');
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Copied' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(1200);
+    });
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+  });
+
+  it('clears the copy timer when the sheet unmounts', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+    });
+    const view = renderWithLocale(
+      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    });
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    view.unmount();
+    await act(async () => {
+      vi.advanceTimersByTime(1200);
+    });
+  });
+
+  it('does not flash Copied when the sheet unmounts before the clipboard answers', async () => {
+    let resolveWrite!: () => void;
+    let rejectWrite!: (error: Error) => void;
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          resolveWrite = resolve;
+          rejectWrite = reject;
+        }),
+    );
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const exec = vi.fn<(commandId: string) => boolean>().mockReturnValue(true);
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      writable: true,
+      value: exec,
+    });
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+    });
+    const view = renderWithLocale(
+      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    view.unmount();
+    await act(async () => {
+      resolveWrite();
+      await Promise.resolve();
+    });
+    expect(exec).not.toHaveBeenCalled();
+
+    const again = renderWithLocale(
+      <ExternalAuthorSheet messageId="m1" fallbackName="Ada" onClose={() => undefined} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    again.unmount();
+    await act(async () => {
+      rejectWrite(new Error('denied'));
+      await Promise.resolve();
+    });
+    expect(exec).not.toHaveBeenCalled();
   });
 
   it('stops a click and a key on the dialog from closing it', () => {
