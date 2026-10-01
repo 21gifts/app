@@ -21802,7 +21802,133 @@ test.describe('daily payments', () => {
     await page.goto('/grants/payments');
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('0');
     await page.getByRole('button', { name: 'Add' }).click();
-    await expect(page.getByText('The address or the amount is not valid.')).toBeVisible();
+    const invalidAlert = page.getByText('The address or the amount is not valid.');
+    await expect(invalidAlert).toBeVisible();
+    await invalidAlert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-grants-payments-invalid');
+  });
+
+  test('state /grants/payments off', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...roster, paymentsEnabled: false }),
+      });
+    });
+    await page.goto('/grants/payments');
+    await expect(page.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true');
+    await shotScreen(page, 'state-grants-payments-off');
+  });
+
+  test('state /grants/payments invalid-comment', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roster),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/comment$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid comment' }),
+      });
+    });
+    await page.goto('/grants/payments');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('The comment is not valid.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-invalid-comment');
+  });
+
+  test('state /grants/payments invalid-switch', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roster),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/payments$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid payments switch' }),
+      });
+    });
+    await page.goto('/grants/payments');
+    await page.getByRole('button', { name: 'Off' }).click();
+    await expect(page.getByText('The payments switch is not valid.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-invalid-switch');
+  });
+
+  test('state /grants/payments duplicate', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roster),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Address already listed' }),
+      });
+    });
+    await page.goto('/grants/payments');
+    await page.getByRole('textbox', { name: 'Address' }).fill('cara@example.com');
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const duplicateAlert = page.getByText('That address is already listed.');
+    await expect(duplicateAlert).toBeVisible();
+    await duplicateAlert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-duplicate');
+  });
+
+  test('state /grants/payments unknown', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roster),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients\/update$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unknown address' }),
+      });
+    });
+    await page.goto('/grants/payments');
+    await page.getByRole('button', { name: 'Update ada@w...' }).click();
+    await expect(page.getByText('That recipient is not on the list.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-unknown');
+  });
+
+  test('state /grants/payments save-error', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(roster),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/comment$/, async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/grants/payments');
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-save-error');
   });
 });
