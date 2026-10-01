@@ -3,6 +3,7 @@ import {
   SHOP_STICKER_COLORS,
   SHOP_STICKER_ELEMENTS,
   SHOP_STICKER_HEIGHT,
+  SHOP_STICKER_KIKAMBA_TEXT,
   SHOP_STICKER_MARK,
   SHOP_STICKER_QR_BOX,
   SHOP_STICKER_WIDTH,
@@ -14,6 +15,9 @@ export const SHOP_STICKER_FORMATS = ['pdf', 'png', 'jpg', 'svg'] as const;
 
 /** One of {@link SHOP_STICKER_FORMATS}. */
 export type ShopStickerFormat = (typeof SHOP_STICKER_FORMATS)[number];
+
+/** Text artwork language used on the printable shop sticker. */
+export type ShopStickerLang = 'filipino' | 'kikamba';
 
 /** Printed sticker width in millimetres; the height follows the 1500 × 918 artwork (82.25 mm). */
 export const SHOP_STICKER_WIDTH_MM = 134.4;
@@ -96,14 +100,43 @@ function elementSvg(el: ShopStickerElement): string {
   return `<path ${attrs.join(' ')}/>`;
 }
 
+function stickerElements(lang: ShopStickerLang): readonly ShopStickerElement[] {
+  if (lang !== 'kikamba') return SHOP_STICKER_ELEMENTS;
+  const next = SHOP_STICKER_ELEMENTS.slice();
+  next.splice(6, 7, ...SHOP_STICKER_KIKAMBA_TEXT);
+  return next;
+}
+
+/**
+ * Selects the printable shop-sticker text language from a `lang` query value.
+ *
+ * @param value - Raw `lang` query value, or null when the parameter is absent.
+ * @returns Kikamba for trimmed, case-insensitive `kikamba` or `kam`; Filipino otherwise.
+ */
+export function shopStickerLangFromQuery(value: string | null): ShopStickerLang {
+  const normalized = value?.trim().toLowerCase();
+  return normalized === 'kikamba' || normalized === 'kam' ? 'kikamba' : 'filipino';
+}
+
+/**
+ * Selects the printable shop-sticker text language from the current page URL.
+ *
+ * @returns The language selected by the current `lang` query, or Filipino outside the browser.
+ */
+export function shopStickerLangFromLocation(): ShopStickerLang {
+  if (typeof window === 'undefined') return 'filipino';
+  return shopStickerLangFromQuery(new URLSearchParams(window.location.search).get('lang'));
+}
+
 /**
  * Printable shop-window sticker for one member as a standalone SVG document.
  *
  * @param qrValue - Payload of the member's pay QR (`openCryptoPayQrValue`).
+ * @param lang - Text artwork language; defaults to English and Filipino.
  * @returns SVG markup, 134.4 mm wide, fixed artwork plus the QR (error correction H, at least version 10) with the
  *   orange Open CryptoPay mark in the cleared centre.
  */
-export function buildShopStickerSvg(qrValue: string): string {
+export function buildShopStickerSvg(qrValue: string, lang: ShopStickerLang = 'filipino'): string {
   const qr = stickerQr(qrValue);
   const { x, y, size } = SHOP_STICKER_QR_BOX;
   const m = size / qr.size;
@@ -116,7 +149,7 @@ export function buildShopStickerSvg(qrValue: string): string {
   const mark = markPlacement(qr);
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${SHOP_STICKER_WIDTH_MM}mm" height="${fmt(HEIGHT_MM, 2)}mm" viewBox="0 0 ${SHOP_STICKER_WIDTH} ${SHOP_STICKER_HEIGHT}">`,
-    ...SHOP_STICKER_ELEMENTS.map(elementSvg),
+    ...stickerElements(lang).map(elementSvg),
     `<path d="${modules}" fill="${SHOP_STICKER_COLORS.black}" shape-rendering="crispEdges"/>`,
     `<path d="${SHOP_STICKER_MARK}" fill="${SHOP_STICKER_COLORS.orange}" transform="translate(${fmt(mark.cx, 2)} ${fmt(mark.cy, 2)}) scale(${fmt(mark.width, 3)})"/>`,
     '</svg>',
@@ -167,9 +200,13 @@ function elementPdf(el: ShopStickerElement): string {
  * Printable shop-window sticker for one member as a one-page vector PDF (134.4 mm wide, no fonts, no images).
  *
  * @param qrValue - Payload of the member's pay QR (`openCryptoPayQrValue`).
+ * @param lang - Text artwork language; defaults to English and Filipino.
  * @returns PDF 1.4 bytes.
  */
-export function buildShopStickerPdf(qrValue: string): Uint8Array<ArrayBuffer> {
+export function buildShopStickerPdf(
+  qrValue: string,
+  lang: ShopStickerLang = 'filipino',
+): Uint8Array<ArrayBuffer> {
   const qr = stickerQr(qrValue);
   const { x, y, size } = SHOP_STICKER_QR_BOX;
   const m = size / qr.size;
@@ -180,7 +217,7 @@ export function buildShopStickerPdf(qrValue: string): Uint8Array<ArrayBuffer> {
   const content = [
     // sticker units, y pointing down
     `q ${fmt(k, 6)} 0 0 ${fmt(-k, 6)} 0 ${fmt(heightPt, 3)} cm`,
-    ...SHOP_STICKER_ELEMENTS.map(elementPdf),
+    ...stickerElements(lang).map(elementPdf),
     `${rgb(SHOP_STICKER_COLORS.black)} rg`,
     ...qr.runs.map(
       ([r, c, len]) =>
@@ -251,14 +288,19 @@ async function rasterize(svg: string, format: 'png' | 'jpg'): Promise<Blob> {
  *
  * @param qrValue - Payload of the member's pay QR (`openCryptoPayQrValue`).
  * @param format - `pdf` (vector, 134.4 mm), `svg` (vector), or `png` / `jpg` (3000 px wide, on white).
+ * @param lang - Text artwork language; defaults to English and Filipino.
  * @returns The file as a typed `Blob`.
  * @throws When the browser cannot decode the SVG or encode the canvas (PNG / JPG only).
  */
-export async function shopStickerBlob(qrValue: string, format: ShopStickerFormat): Promise<Blob> {
+export async function shopStickerBlob(
+  qrValue: string,
+  format: ShopStickerFormat,
+  lang: ShopStickerLang = 'filipino',
+): Promise<Blob> {
   if (format === 'pdf') {
-    return new Blob([buildShopStickerPdf(qrValue)], { type: 'application/pdf' });
+    return new Blob([buildShopStickerPdf(qrValue, lang)], { type: 'application/pdf' });
   }
-  const svg = buildShopStickerSvg(qrValue);
+  const svg = buildShopStickerSvg(qrValue, lang);
   if (format === 'svg') return new Blob([svg], { type: 'image/svg+xml' });
   return rasterize(svg, format);
 }
@@ -268,12 +310,18 @@ export async function shopStickerBlob(qrValue: string, format: ShopStickerFormat
  *
  * @param handle - Public `username@domain` handle (`giftsLightningAddress`).
  * @param format - One of {@link SHOP_STICKER_FORMATS}.
- * @returns `21gifts-shop-sticker-<username>.<format>` with the username reduced to `a-z 0-9 . _ -`.
+ * @param lang - Text artwork language; defaults to English and Filipino.
+ * @returns `21gifts-shop-sticker-<username>[-kikamba].<format>` with the username reduced to `a-z 0-9 . _ -`.
  */
-export function shopStickerFileName(handle: string, format: ShopStickerFormat): string {
+export function shopStickerFileName(
+  handle: string,
+  format: ShopStickerFormat,
+  lang: ShopStickerLang = 'filipino',
+): string {
   const at = handle.indexOf('@');
   const local = (at === -1 ? handle : handle.slice(0, at))
     .toLowerCase()
     .replace(/[^a-z0-9._-]/g, '');
-  return `21gifts-shop-sticker-${local === '' ? 'member' : local}.${format}`;
+  const suffix = lang === 'kikamba' ? '-kikamba' : '';
+  return `21gifts-shop-sticker-${local === '' ? 'member' : local}${suffix}.${format}`;
 }

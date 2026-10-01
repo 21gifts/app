@@ -4378,6 +4378,20 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-sticker-open', false);
   });
 
+  test('state /profile sticker-kikamba', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.goto('/profile?lang=Kikamba');
+    await expect(page.getByText('alice@21.gifts', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for alice@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await shotScreen(page, 'state-profile-sticker-kikamba', false);
+  });
+
   test('state /profile funding-program-press', async ({ page }) => {
     await page.unroute(/\/forum\/members\/acc_e2e$/);
     await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
@@ -7680,6 +7694,24 @@ test.describe('onboarding screens', () => {
       'true',
     );
     await shotScreen(page, 'state-members-sticker-open', false);
+  });
+
+  test('state /members sticker-kikamba', async ({ page }) => {
+    await seedShopStickerMember(page);
+    await page.goto('/members/22222222-2222-4222-8222-222222222222?lang=Kikamba');
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('carol@21.gifts', { exact: true })).toBeVisible();
+    const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+    const preview = dialog.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' });
+    await expect(preview).toBeVisible();
+    await expect
+      .poll(() => preview.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await expect(dialog.getByRole('button', { name: 'PDF' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-members-sticker-kikamba', false);
   });
 
   test('state /members sticker-busy', async ({ page }) => {

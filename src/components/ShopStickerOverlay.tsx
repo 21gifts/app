@@ -9,6 +9,7 @@ import {
   buildShopStickerSvg,
   shopStickerBlob,
   shopStickerFileName,
+  shopStickerLangFromLocation,
   type ShopStickerFormat,
 } from '@/lib/shop-sticker';
 
@@ -57,9 +58,11 @@ export function ShopStickerOverlay({
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const lang = shopStickerLangFromLocation();
   const preview = useMemo(
-    () => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildShopStickerSvg(qrValue))}`,
-    [qrValue],
+    () =>
+      `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildShopStickerSvg(qrValue, lang))}`,
+    [qrValue, lang],
   );
 
   useEffect(() => {
@@ -84,7 +87,10 @@ export function ShopStickerOverlay({
     setBusy(true);
     setFailed(false);
     try {
-      saveBlob(await shopStickerBlob(qrValue, format), shopStickerFileName(handle, format));
+      saveBlob(
+        await shopStickerBlob(qrValue, format, lang),
+        shopStickerFileName(handle, format, lang),
+      );
     } catch {
       setFailed(true);
     } finally {

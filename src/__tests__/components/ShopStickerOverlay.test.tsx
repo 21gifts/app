@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-import { shopStickerBlob } from '@/lib/shop-sticker';
+import { buildShopStickerSvg, shopStickerBlob } from '@/lib/shop-sticker';
 
 vi.mock('@/lib/shop-sticker', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/shop-sticker')>();
@@ -35,6 +35,7 @@ afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
+  window.history.pushState(null, '', '/');
 });
 
 function renderOverlay(onClose = vi.fn()): ReturnType<typeof vi.fn> {
@@ -68,7 +69,7 @@ describe('ShopStickerOverlay', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Download' }));
     });
-    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'pdf');
+    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'pdf', 'filipino');
     expect(clicked).toEqual([{ href: 'blob:sticker', download: '21gifts-shop-sticker-carol.pdf' }]);
     expect(document.querySelector('a[download]')).toBeNull();
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
@@ -78,13 +79,29 @@ describe('ShopStickerOverlay', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:sticker');
   });
 
+  it('previews and downloads the Kikamba sticker when the page lang is Kikamba', async () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    renderOverlay();
+    const preview = screen.getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' });
+    const src = preview.getAttribute('src') ?? '';
+    expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toBe(
+      buildShopStickerSvg(QR, 'kikamba'),
+    );
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+    });
+    expect(clicked).toEqual([
+      { href: 'blob:sticker', download: '21gifts-shop-sticker-carol-kikamba.pdf' },
+    ]);
+  });
+
   it('downloads the chosen format', async () => {
     renderOverlay();
     fireEvent.click(screen.getByRole('button', { name: 'JPG' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Download' }));
     });
-    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'jpg');
+    expect(shopStickerBlob).toHaveBeenCalledWith(QR, 'jpg', 'filipino');
     expect(clicked[0]?.download).toBe('21gifts-shop-sticker-carol.jpg');
   });
 

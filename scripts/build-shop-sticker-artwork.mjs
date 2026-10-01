@@ -309,6 +309,106 @@ const items = elements.map((el) => {
   return item;
 });
 
+function assertHasGlyphs(font, str) {
+  for (const ch of str) {
+    if (ch === ' ') continue;
+    if (font.charToGlyph(ch).index === 0) {
+      throw new Error(`shop-sticker artwork: missing glyph ${JSON.stringify(ch)}`);
+    }
+  }
+}
+
+function normaliseElement(el) {
+  const item = { d: svgD(segments(el.d), num) };
+  if (el.fill) item.fill = el.fill;
+  if (el.stroke) {
+    item.stroke = { color: el.stroke, width: Number(num(el.width)) };
+    if (el.join === 'round') item.stroke.roundJoin = true;
+  }
+  if (el.evenodd) item.evenOdd = true;
+  return item;
+}
+
+// Machakos Kikamba shop line, ĩtĩkĩlya + vaa, scan lines mirror the Filipino block,
+// kamera/scan/QR code are the same loanwords the Filipino sticker keeps.
+const KIKAMBA_HEADLINE = 'NĨTŨĨTĨKĨLYA VAA';
+const KIKAMBA_TEXT = [
+  [
+    ['Curious?', 'Open your camera, scan'],
+    ['', 'the QR code – and learn more.'],
+  ],
+  [
+    ['Wĩenda kũmanya?', 'Vingũa'],
+    ['', 'kamera, scan QR code – na ũmanye ĩngĩ.'],
+  ],
+];
+assertHasGlyphs(fonts.ubuntuItalic, KIKAMBA_HEADLINE);
+for (const block of KIKAMBA_TEXT) {
+  for (const [lead, body] of block) {
+    if (lead) assertHasGlyphs(fonts.barlowSemiBold, lead);
+    assertHasGlyphs(fonts.barlowRegular, body);
+  }
+}
+const kikambaElements = [];
+const pushKikamba = (p, fill = COLORS.black) => kikambaElements.push({ d: p.toPathData(3), fill });
+{
+  let size = 39;
+  const baseline = 269;
+  while (size >= 20) {
+    const box = inkBox(textPath(fonts.ubuntuItalic, KIKAMBA_HEADLINE, 0, baseline, size, 0));
+    if (box.x2 - box.x1 <= 399) break;
+    size -= 0.5;
+  }
+  let lo = 0;
+  let hi = 30;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const b = inkBox(textPath(fonts.ubuntuItalic, KIKAMBA_HEADLINE, 0, baseline, size, mid));
+    if (b.x2 - b.x1 > 399) hi = mid;
+    else lo = mid;
+  }
+  pushKikamba(placeLeft(fonts.ubuntuItalic, KIKAMBA_HEADLINE, 297, baseline, size, lo));
+}
+{
+  const kikambaLines = [];
+  let yk = 0;
+  KIKAMBA_TEXT.forEach((block, i) => {
+    if (i > 0) yk += GAP;
+    for (const [lead, body] of block) {
+      kikambaLines.push({ lead, body, y: yk });
+      yk += PITCH;
+    }
+  });
+  const kikambaProbe = new opentype.Path();
+  for (const l of kikambaLines) {
+    kikambaProbe.extend(
+      fonts.barlowRegular.getPath(`${l.lead}${l.lead ? '  ' : ''}${l.body}`, 0, l.y, SIZE),
+    );
+  }
+  const kpb = inkBox(kikambaProbe);
+  const kikambaShift = (BAND_H - (kpb.y2 - kpb.y1)) / 2 - kpb.y1;
+  const kikambaSpace2 = fonts.barlowRegular.getAdvanceWidth('  ', SIZE);
+  for (const l of kikambaLines) {
+    const leadW = l.lead
+      ? fonts.barlowSemiBold.getAdvanceWidth(l.lead, SIZE, { kerning: true }) + kikambaSpace2
+      : 0;
+    const bodyW = fonts.barlowRegular.getAdvanceWidth(l.body, SIZE, { kerning: true });
+    const x = COL_CX - (leadW + bodyW) / 2;
+    if (l.lead) {
+      pushKikamba(
+        fonts.barlowSemiBold.getPath(l.lead, x, l.y + kikambaShift, SIZE, { kerning: true }),
+      );
+    }
+    pushKikamba(
+      fonts.barlowRegular.getPath(l.body, x + leadW, l.y + kikambaShift, SIZE, { kerning: true }),
+    );
+  }
+}
+const kikambaItems = kikambaElements.map(normaliseElement);
+if (kikambaItems.length !== 7) {
+  throw new Error(`SHOP_STICKER_KIKAMBA_TEXT must have 7 elements, got ${kikambaItems.length}`);
+}
+
 // Open CryptoPay mark normalised to width 1, centred on (0, 0)
 const mark = svgD(
   segments(
@@ -358,6 +458,9 @@ export const SHOP_STICKER_QR_BOX = { x: ${num5(QR_X)}, y: ${num5(QR_Y)}, size: $
 
 /** Fixed artwork, painted in order: paper, band, text outlines, bitcoin disc, shop pictogram. */
 export const SHOP_STICKER_ELEMENTS: readonly ShopStickerElement[] = ${JSON.stringify(items)};
+
+/** Kikamba local headline plus English and Kikamba scan-line outlines (replaces Filipino indices 6–12). */
+export const SHOP_STICKER_KIKAMBA_TEXT: readonly ShopStickerElement[] = ${JSON.stringify(kikambaItems)};
 
 /** Open CryptoPay mark (absolute M, L, C, Z), width 1, centred on (0, 0). */
 export const SHOP_STICKER_MARK = ${JSON.stringify(mark)};

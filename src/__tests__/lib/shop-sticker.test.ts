@@ -9,9 +9,12 @@ import {
   buildShopStickerSvg,
   shopStickerBlob,
   shopStickerFileName,
+  shopStickerLangFromLocation,
+  shopStickerLangFromQuery,
 } from '@/lib/shop-sticker';
 import {
   SHOP_STICKER_ELEMENTS,
+  SHOP_STICKER_KIKAMBA_TEXT,
   SHOP_STICKER_MARK,
   SHOP_STICKER_QR_BOX,
 } from '@/lib/shop-sticker-artwork';
@@ -63,6 +66,10 @@ describe('buildShopStickerSvg', () => {
     expect(svg).toContain(
       `scale(${Math.round(((0.6222 * 13 * SHOP_STICKER_QR_BOX.size) / 57) * 1000) / 1000})`,
     );
+  });
+
+  it('swaps the Filipino scan text for the Kikamba outlines', () => {
+    expect(buildShopStickerSvg(CAROL, 'kikamba')).not.toBe(buildShopStickerSvg(CAROL));
   });
 
   it('keeps larger versions and widens the cleared centre to an odd module count', () => {
@@ -150,6 +157,12 @@ describe('buildShopStickerPdf', () => {
     expect(text).toMatch(/^q [\d.]+ 0 0 [\d.]+ [\d.]+ [\d.]+ cm$/m);
     expect(text).not.toMatch(/\/Font|\/XObject|\/Image/);
   });
+
+  it('writes a Kikamba PDF that is not the Filipino sticker', () => {
+    const bytes = buildShopStickerPdf(CAROL, 'kikamba');
+    expect(new TextDecoder().decode(bytes).startsWith('%PDF-1.4')).toBe(true);
+    expect(new TextDecoder().decode(bytes)).not.toBe(pdfText(CAROL));
+  });
 });
 
 describe('shopStickerFileName', () => {
@@ -165,8 +178,71 @@ describe('shopStickerFileName', () => {
     expect(shopStickerFileName('@21.gifts', 'png')).toBe('21gifts-shop-sticker-member.png');
   });
 
+  it('inserts -kikamba before the extension', () => {
+    expect(shopStickerFileName('carol@21.gifts', 'pdf', 'kikamba')).toBe(
+      '21gifts-shop-sticker-carol-kikamba.pdf',
+    );
+    expect(shopStickerFileName('@21.gifts', 'png', 'kikamba')).toBe(
+      '21gifts-shop-sticker-member-kikamba.png',
+    );
+  });
+
   it('lists the formats in menu order', () => {
     expect(SHOP_STICKER_FORMATS).toEqual(['pdf', 'png', 'jpg', 'svg']);
+  });
+});
+
+describe('shop sticker language', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.history.pushState(null, '', '/');
+  });
+
+  it('maps kikamba and kam, and every other query value to filipino', () => {
+    expect(shopStickerLangFromQuery('  Kikamba  ')).toBe('kikamba');
+    expect(shopStickerLangFromQuery('KIKAMBA')).toBe('kikamba');
+    expect(shopStickerLangFromQuery('kam')).toBe('kikamba');
+    expect(shopStickerLangFromQuery('filipino')).toBe('filipino');
+    expect(shopStickerLangFromQuery('fil')).toBe('filipino');
+    expect(shopStickerLangFromQuery('en')).toBe('filipino');
+    expect(shopStickerLangFromQuery('Swahili')).toBe('filipino');
+    expect(shopStickerLangFromQuery(null)).toBe('filipino');
+    expect(shopStickerLangFromQuery('')).toBe('filipino');
+  });
+
+  it('reads lang from the page URL', () => {
+    window.history.pushState(null, '', '/?lang=Kikamba');
+    expect(shopStickerLangFromLocation()).toBe('kikamba');
+    window.history.pushState(null, '', '/');
+    expect(shopStickerLangFromLocation()).toBe('filipino');
+  });
+
+  it('returns filipino when window is missing', () => {
+    const saved = globalThis.window;
+    try {
+      vi.stubGlobal('window', undefined);
+    } catch {
+      Object.defineProperty(globalThis, 'window', {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      });
+    }
+    try {
+      expect(shopStickerLangFromLocation()).toBe('filipino');
+    } finally {
+      vi.stubGlobal('window', saved);
+    }
+  });
+
+  it('replaces Filipino text indices 6–12 and leaves the rest of the artwork', () => {
+    expect(SHOP_STICKER_KIKAMBA_TEXT.length).toBe(7);
+    const next = SHOP_STICKER_ELEMENTS.slice();
+    next.splice(6, 7, ...SHOP_STICKER_KIKAMBA_TEXT);
+    expect(next[0]).toEqual(SHOP_STICKER_ELEMENTS[0]);
+    expect(next[5]).toEqual(SHOP_STICKER_ELEMENTS[5]);
+    expect(next.at(-1)).toEqual(SHOP_STICKER_ELEMENTS.at(-1));
+    expect(next[6]).not.toEqual(SHOP_STICKER_ELEMENTS[6]);
   });
 });
 
@@ -221,6 +297,14 @@ describe('shopStickerBlob', () => {
     expect(svg.type).toBe('image/svg+xml');
     expect(await readText(svg)).toBe(buildShopStickerSvg(CAROL));
     expect(toBlob).not.toHaveBeenCalled();
+  });
+
+  it('returns the Kikamba SVG, not the Filipino one', async () => {
+    const kikamba = await shopStickerBlob(CAROL, 'svg', 'kikamba');
+    const text = await readText(kikamba);
+    expect(text).toBe(buildShopStickerSvg(CAROL, 'kikamba'));
+    const filipino = await shopStickerBlob(CAROL, 'svg');
+    expect(text).not.toBe(await readText(filipino));
   });
 
   it('renders PNG and JPG at 3000 px on white and frees the object URL', async () => {

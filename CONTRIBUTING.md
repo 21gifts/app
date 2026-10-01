@@ -287,7 +287,7 @@ app/
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
 │   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM (never localStorage)
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
-│   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR (no PDF library)
+│   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
 │   │   ├── rules-chapters.ts    # Ordered living-room rules chapter ids

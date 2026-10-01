@@ -7,6 +7,7 @@ import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
+  shopStickerLangFromQuery,
   type ShopStickerFormat,
 } from '../src/lib/shop-sticker';
 import { encodeLnurl } from '../src/lib/lnurl';
@@ -5897,6 +5898,53 @@ test('Function: shopStickerFileName — downloads are named after the username',
     const file = await downloadShopSticker(page, dialog, format);
     expect(file.name).toBe(`21gifts-shop-sticker-carol.${format}`);
   }
+});
+
+test('Function: shopStickerLangFromQuery — Kikamba and unknown values', () => {
+  expect(shopStickerLangFromQuery('Kikamba')).toBe('kikamba');
+  expect(shopStickerLangFromQuery('kam')).toBe('kikamba');
+  expect(shopStickerLangFromQuery(null)).toBe('filipino');
+  expect(shopStickerLangFromQuery('Swahili')).toBe('filipino');
+});
+
+test('Function: shopStickerLangFromLocation — ?lang=Kikamba opens the English/Kikamba sticker', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto(`${CAROL_MEMBER}?lang=Kikamba`);
+  await expect(page.getByText('carol@21.gifts', { exact: true })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+  await expect(dialog).toBeVisible();
+  const expected = buildShopStickerSvg(openCryptoPayQrValue('carol') as string, 'kikamba');
+  const src = await dialog
+    .getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' })
+    .getAttribute('src');
+  expect(decodeURIComponent((src as string).slice((src as string).indexOf(',') + 1))).toBe(
+    expected,
+  );
+  const svg = await downloadShopSticker(page, dialog, 'svg');
+  expect(svg.name).toBe('21gifts-shop-sticker-carol-kikamba.svg');
+});
+
+test('Function: shopStickerLangFromLocation — unknown lang keeps the Filipino sticker', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto(`${CAROL_MEMBER}?lang=Swahili`);
+  await expect(page.getByText('carol@21.gifts')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Shop sticker' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Shop sticker' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Shop sticker' });
+  await expect(dialog).toBeVisible();
+  const expected = buildShopStickerSvg(openCryptoPayQrValue('carol') as string);
+  const src = await dialog
+    .getByRole('img', { name: 'Shop sticker preview for carol@21.gifts' })
+    .getAttribute('src');
+  expect(decodeURIComponent((src as string).slice((src as string).indexOf(',') + 1))).toBe(
+    expected,
+  );
 });
 
 test('Function: NameSetup — name screen heading is visible', async ({ page }) => {

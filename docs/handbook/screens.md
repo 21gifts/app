@@ -2445,9 +2445,15 @@ Same card after pressing the funding-program icon. One status line **Takes part 
 
 ### Variant: sticker-open
 
-Desktop member card after pressing **Shop sticker** under the Open CryptoPay QR: `ShopStickerOverlay` (scrim `bg-app-overlay`, `Card maxWidth="xl"`, icon-only **Close**) with the title **Shop sticker**, the lead **Print it for a shop window. The QR code pays {handle}.**, a preview of the printable sticker for this member (orange band with the Bitcoin mark and the English/Filipino scan text, sari-sari shop with the 21.gifts sign, the member's QR with the orange Open CryptoPay mark), the **File format** choice PDF | PNG | JPG | SVG (PDF selected), and a labeled **Download**. Escape also closes. Mobile combos (iPhone UA) open the same dialog as desktop. The closed card does not cover this result.
+Desktop member card after pressing **Shop sticker** under the Open CryptoPay QR: `ShopStickerOverlay` (scrim `bg-app-overlay`, `Card maxWidth="xl"`, icon-only **Close**) with the title **Shop sticker**, the lead **Print it for a shop window. The QR code pays {handle}.**, a preview of the printable sticker for this member (orange band with the Bitcoin mark and the English/Filipino scan text, sari-sari shop with the 21.gifts sign, the member's QR with the orange Open CryptoPay mark), the **File format** choice PDF | PNG | JPG | SVG (PDF selected), and a labeled **Download**. Escape also closes. Mobile combos (iPhone UA) open the same dialog as desktop. The closed card does not cover this result. Without `lang`, the sticker stays English/Filipino.
 
 ![21.gifts member shop sticker open](images/members-sticker-open.png)
+
+### Variant: sticker-kikamba
+
+`/members/[accountId]?lang=Kikamba` opens `ShopStickerOverlay` immediately. The preview is the English/Kikamba sticker (Kikamba instead of TINATANGGAP DITO / Filipino scan text). Same chrome, PDF selected, **Download**. Mobile combos match desktop. Needle `state-members-sticker-kikamba`.
+
+![21.gifts shop sticker Kikamba](images/members-sticker-kikamba.png)
 
 ### Variant: sticker-busy
 
@@ -2623,9 +2629,15 @@ Device-local Sunday. The name, the empty About me sentence, the address, and the
 
 ### Variant: sticker-open
 
-**Shop sticker** is open (`ShopStickerOverlay`, preview for `alice@21.gifts`) on desktop and mobile (smartphone UA). Needle `state-profile-sticker-open`.
+**Shop sticker** is open (`ShopStickerOverlay`, preview for `alice@21.gifts`) on desktop and mobile (smartphone UA). Needle `state-profile-sticker-open`. Without `lang`, the sticker stays English/Filipino.
 
 ![21.gifts profile shop sticker](images/profile-sticker-open.png)
+
+### Variant: sticker-kikamba
+
+`/profile?lang=Kikamba` opens `ShopStickerOverlay` immediately. The preview is the English/Kikamba sticker (Kikamba instead of TINATANGGAP DITO / Filipino scan text). Same chrome, PDF selected, **Download**. Mobile combos match desktop. Needle `state-profile-sticker-kikamba`.
+
+![21.gifts shop sticker Kikamba](images/profile-sticker-kikamba.png)
 
 ### Variant: funding-program-press
 
