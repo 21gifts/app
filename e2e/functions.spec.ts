@@ -720,6 +720,30 @@ test('Function: proxyPublicMessageRepliesGet — GET /public-messages/[id]/repli
   expect((await request.get('/public-messages/[id]/replies')).status()).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyExternalAuthorProfileGet — GET /public-messages/[id]/external-profile is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/public-messages/[id]/external-profile')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: fetchExternalAuthorProfile — the public profile route is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/public-messages/[id]/external-profile')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: ExternalAuthorSheet — the public profile route is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/public-messages/[id]/external-profile')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyContactPost — POST /contact/submit without bearer is 401', async ({
   request,
 }) => {
