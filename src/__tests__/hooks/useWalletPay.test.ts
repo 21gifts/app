@@ -321,12 +321,12 @@ describe('useWalletPay sending', () => {
 
 describe('useWalletPay visual pins', () => {
   const pins = [
-    ['pay-unlock', 'unlock'],
-    ['pay-preparing', 'preparing'],
-    ['pay-confirm', 'confirm'],
-    ['pay-paying', 'paying'],
-    ['pay-insufficient', 'insufficient'],
-    ['pay-unconfirmed', 'unconfirmed'],
+    ['wallet-pay-unlock', 'unlock'],
+    ['wallet-pay-preparing', 'preparing'],
+    ['wallet-pay-confirm', 'confirm'],
+    ['wallet-pay-paying', 'paying'],
+    ['wallet-pay-insufficient', 'insufficient'],
+    ['wallet-pay-unconfirmed', 'unconfirmed'],
   ] as const;
 
   it.each(pins)('pins %s in a Playwright build with a sparkInvoice', (visual, view) => {
@@ -344,7 +344,7 @@ describe('useWalletPay visual pins', () => {
   });
 
   it('ignores pins outside a Playwright build, without a sparkInvoice, or with another value', () => {
-    window.history.replaceState({}, '', '/welcome?visual=pay-confirm');
+    window.history.replaceState({}, '', '/welcome?visual=wallet-pay-confirm');
     setWallet('disabled');
     expect(renderHook(() => useWalletPay(SPARK)).result.current.view).toBe('fallback');
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
