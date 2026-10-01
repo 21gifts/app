@@ -1724,7 +1724,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync` and `PushOpenListener` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync`, `PushOpenListener`, and `WalletSync` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.
@@ -2509,6 +2509,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The pinned instant, or `null` when unset or empty. Does not throw and does not invent a time. The head script then uses the device clock.
 - **Used by:** `RootLayout` for the `e2e-now` meta tag.
 
+## Function: getBreezApiKey
+
+- **Purpose:** Reads the optional `NEXT_PUBLIC_BREEZ_API_KEY`. Unset or empty disables the in-app wallet (no SDK import, no network call, no balance block).
+- **Inputs:** None. Literal `process.env.NEXT_PUBLIC_BREEZ_API_KEY` access.
+- **Returns / side effects:** The key string, or `null` when unset or `''`. Never throws.
+- **Used by:** `useWalletStore`, `connectWallet`, `listenForWalletPhrase`, `rememberPhraseFromPrf`, `usePasskeyLogin`.
+
 ## Function: getCatalog
 
 - **Purpose:** Return the message catalog for a supported UI locale without indexed-access gaps.
@@ -2814,7 +2821,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Zustand store for `session` + `account` plus `wrongAccount`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`, `setWrongAccount`, `clearWrongAccount`.
-- **Returns / side effects:** Auth state object. `clearAuth` clears storage, then `bumpUnreadAppBadgeEpoch()` then `setUnreadAppBadge(0)`, then drops `session` and `account`. It does not reset `wrongAccount`.
+- **Returns / side effects:** Auth state object. `clearAuth` clears storage, then `bumpUnreadAppBadgeEpoch()` then `setUnreadAppBadge(0)`, then drops `session` and `account`. It clears the tab phrase, which disconnects the wallet. It does not reset `wrongAccount`.
 - **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`.
 
 ## Function: useTranslations
@@ -3514,7 +3521,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Runs the seed-passkey ceremony for a member who has no seed yet.
 - **Inputs:** Session token.
-- **Returns / side effects:** `ok` with the account and in-memory PRF bytes, `cancelled`, `stored` when reload already shows a seed, or `failed` with a wallet error kind. `failed` includes the owner account when that account has an open renew failure. HTTP seed failures are not reported again. A stored failure or cancel also sends the public authenticator facts and the browser capability names. Posts allowlisted seed diagnostics and never sends PRF bytes, the phrase, or the session token. Does not persist the phrase.
+- **Returns / side effects:** `ok` with the account and in-memory PRF bytes, `cancelled`, `stored` when reload already shows a seed, or `failed` with a wallet error kind. `failed` includes the owner account when that account has an open renew failure. HTTP seed failures are not reported again. A stored failure or cancel also sends the public authenticator facts and the browser capability names. Posts allowlisted seed diagnostics and never sends PRF bytes, the phrase, or the session token. After a successful finish it calls `rememberPhraseFromPrf`. Does not persist the phrase (tab memory only).
 - **Used by:** `useWalletPhrase.activate` and `PasskeyRenewNotice`.
 
 ## Function: PasskeyRenewNotice
@@ -3633,21 +3640,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Store 12 words in tab RAM.
 - **Inputs:** Mnemonic string.
-- **Returns / side effects:** Module-level variable. Never localStorage.
-- **Used by:** Tests; re-exported from `useWalletPhrase`. Not called from register or wallet add. Implemented in `tab-phrase`.
+- **Returns / side effects:** Module-level variable. Never localStorage. Dispatches `SESSION_PHRASE_EVENT`, which connects the wallet when a key is configured.
+- **Used by:** `rememberPhraseFromPrf`, which is its only production caller; tests; re-exported from `useWalletPhrase`. Implemented in `tab-phrase`.
 
 ## Function: peekSessionPhrase
 
 - **Purpose:** Read tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** String or `null`.
-- **Used by:** `useWalletPhrase`. Implemented in `tab-phrase`.
+- **Used by:** The wallet service; `useWalletPhrase`. Implemented in `tab-phrase`.
 
 ## Function: clearSessionPhrase
 
 - **Purpose:** Drop tab-RAM mnemonic.
 - **Inputs:** None.
-- **Returns / side effects:** Clears the module variable.
+- **Returns / side effects:** Clears the module variable. Dispatches `SESSION_PHRASE_EVENT`, which disconnects the wallet.
 - **Used by:** `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
 ## Function: resetWalletCeremonyLock
@@ -3661,22 +3668,106 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Add or show the recovery phrase. `/wallet` does not render the words. `/wallet/phrase` does. There is no confirm view, no auto-reveal, and no Continue on the words.
 - **Inputs:** Auth store session and account.
-- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `renewPasskey`, then `mnemonicFromPrfFirst` on the in-memory PRF bytes, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. No Confirm, no Continue.
+- **Returns / side effects:** View `'activate' | 'reveal' | 'phrase'`, status, error, words, `activate`, `showPhrase`, `hidePhrase`, `retry`. `'activate'` only without a non-empty `passkeyCredentialId` (**Add recovery phrase**: `renewPasskey`, then `mnemonicFromPrfFirst` on the in-memory PRF bytes, store the account, 12 words only in component state). `'reveal'` when the id is set: `showPhrase` runs `obtainPrfFirstFromGet` of that id, no create, no seed/begin. `walletBackupSeenAt` is not read. `rememberSessionPhrase` is not called. `hidePhrase` clears the tab phrase and therefore locks the wallet. No Confirm, no Continue.
 - **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreenView
 
 - **Purpose:** Wallet cards, and the header Back. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`. `surface="entry"` is `/wallet`. `surface="phrase"` is `/wallet/phrase`.
-- **Inputs:** `UseWalletPhraseResult` plus optional `surface` (`entry` default, or `phrase`).
-- **Returns / side effects:** On `entry`, heading **Wallet** is first, then the centered address, Open CryptoPay QR, and content-width **Set an amount** to `/pos`, then **Add recovery phrase** or **Show recovery phrase** under **Advanced functions**. Both recovery actions link to `/wallet/phrase`. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR. Header Back on `entry` closes **Advanced functions**, then returns to the previous in-app view in this tab, or opens `/welcome` when this tab has none. On `phrase` it hides the words, then does the same. It does not leave the site, and it does not open `/wallet` as a parent.
+- **Inputs:** `UseWalletPhraseResult` plus optional `surface` (`entry` default, or `phrase`) and optional `wallet` prop for the balance block.
+- **Returns / side effects:** On `entry`, heading **Wallet** is first, then the optional balance block from `WalletBalance` when the wallet prop is present, then the centered address, Open CryptoPay QR, and content-width **Set an amount** to `/pos`, then **Add recovery phrase** or **Show recovery phrase** under **Advanced functions**. Both recovery actions link to `/wallet/phrase`. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR and no balance block. Header Back on `entry` closes **Advanced functions**, then returns to the previous in-app view in this tab, or opens `/welcome` when this tab has none. On `phrase` it hides the words, then does the same. It does not leave the site, and it does not open `/wallet` as a parent.
 - **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreen
 
-- **Purpose:** Signed-in `/wallet` body. Receive address above the recovery entry.
+- **Purpose:** Signed-in `/wallet` body. Receive address above the recovery entry, with the optional balance block under the heading.
 - **Inputs:** None.
-- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`. Does not render the 12 words.
+- **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()` and the `wallet` prop from `useWallet()`. Does not render the 12 words.
 - **Used by:** `WalletPage`.
+
+## Function: useWalletStore
+
+- **Purpose:** Zustand store for the in-app wallet: `status` (`disabled`, `locked`, `connecting`, `ready`, `error`), `balanceSats`, and `identityPubkey`.
+- **Inputs:** Hook. Actions `setConnecting`, `setReady`, `setError`, `reset`.
+- **Returns / side effects:** Wallet state object. Resting status is `disabled` without a key, else `locked`.
+- **Used by:** The wallet service and `useWallet`.
+
+## Function: loadWalletSdk
+
+- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `disconnect`).
+- **Inputs:** None.
+- **Returns / side effects:** A `WalletSdk`. Uses `defaultConfig('mainnet')` with the api key, no `lnurlDomain`, and a fixed storage name. The SDK keeps wallet state in IndexedDB; the phrase is passed in memory only.
+- **Used by:** The wallet service as the default loader.
+
+## Function: connectWallet
+
+- **Purpose:** Connects from the tab phrase. Does nothing without a key or a phrase. Store goes `connecting` → `ready` or `error`. Subscribes to SDK events and refreshes on `synced`. The latest call wins and a superseded connection is closed.
+- **Inputs:** Optional `WalletSdkLoader` (defaults to `loadWalletSdk`).
+- **Returns / side effects:** void. Updates `useWalletStore`.
+- **Used by:** `listenForWalletPhrase`, `useWallet.retry`.
+
+## Function: refreshWallet
+
+- **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. A failed read closes the connection and sets `error`.
+- **Inputs:** None.
+- **Returns / side effects:** void. Updates `useWalletStore`.
+- **Used by:** `connectWallet` (on connect and on `synced`).
+
+## Function: disconnectWallet
+
+- **Purpose:** Closes the connection and resets the store (`locked`, or `disabled` without a key). Runs when the tab phrase is cleared, which includes logout.
+- **Inputs:** None.
+- **Returns / side effects:** void. Updates `useWalletStore`.
+- **Used by:** `listenForWalletPhrase` when the phrase is cleared.
+
+## Function: listenForWalletPhrase
+
+- **Purpose:** Subscribes to the tab-phrase event; phrase present → connect, cleared → disconnect. Returns the unsubscribe. No listener at all without a key.
+- **Inputs:** Optional `WalletSdkLoader` (defaults to `loadWalletSdk`).
+- **Returns / side effects:** Unsubscribe function.
+- **Used by:** `WalletSync`.
+
+## Function: rememberPhraseFromPrf
+
+- **Purpose:** Derives the phrase from PRF bytes a passkey response already carried and keeps it in tab memory. Only when the key is configured, the bytes are present, the account is `walletRequired`, the response's credential is the account's `passkeyCredentialId`, and the session is still the one that started it. Never throws, never sends or stores the bytes or the phrase.
+- **Inputs:** `PhraseSource` (`prfFirst`, `credentialId`, `account`, `sessionToken`).
+- **Returns / side effects:** `true` when the phrase was remembered, else `false`.
+- **Used by:** `usePasskeyLogin` (login and registration), `renewPasskey`, `unlockWalletPhrase`.
+
+## Function: unlockWalletPhrase
+
+- **Purpose:** On-demand unlock: `obtainPrfFirstFromGet` of the account's `passkeyCredentialId`, then `rememberPhraseFromPrf`. No api call.
+- **Inputs:** None (reads the auth store).
+- **Returns / side effects:** `'unlocked'`, `'cancelled'`, or `'failed'`.
+- **Used by:** `useWallet.unlock`.
+
+## Function: canUnlockWallet
+
+- **Purpose:** True when the account has `walletRequired === true` and a non-empty `passkeyCredentialId`.
+- **Inputs:** `account` or `null`.
+- **Returns / side effects:** Type predicate `account is Account & { passkeyCredentialId: string }`.
+- **Used by:** `useWallet`, `rememberPhraseFromPrf`, `unlockWalletPhrase`.
+
+## Function: useWallet
+
+- **Purpose:** State the `/wallet` balance block shows plus `unlock` and `retry`. `disabled` for an unconfigured wallet or an account that cannot produce a phrase. Shows `connecting` during the passkey prompt; a failed unlock shows `error`; a dismissed prompt returns to `locked`. `?visual=balance-locked|balance-connecting|balance-ready|balance-error` pins a fixture state for screenshots (ready fixture `₿21'000`).
+- **Inputs:** None (reads the auth store and `useWalletStore`).
+- **Returns / side effects:** `{ status, balanceSats, unlock, retry }`.
+- **Used by:** `WalletScreen`.
+
+## Function: WalletBalance
+
+- **Purpose:** The balance block on `/wallet` (locked, connecting, ready, error). Renders nothing when disabled. Requests the gift-day rate only in `ready`.
+- **Inputs:** `status`, `balanceSats`, `onUnlock`, `onRetry`.
+- **Returns / side effects:** A region named **Balance**, or `null` when disabled.
+- **Used by:** `WalletScreenView`.
+
+## Function: WalletSync
+
+- **Purpose:** Root-mounted effect that runs `listenForWalletPhrase`. Renders nothing.
+- **Inputs:** None.
+- **Returns / side effects:** `null`. Subscribes while mounted.
+- **Used by:** `RootLayout`.
 
 ## Function: WalletPhraseScreen
 
@@ -3708,7 +3799,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: usePasskeyLogin
 
-- **Purpose:** Client hook for passkey login. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) sets status `name` and starts neither `startPasskeyRegistration` nor `credentials.create`. `submitName` normalizes and, when valid, calls `startPasskeyRegistration(undefined, normalized)` then the existing create ceremony. `register(viewKey)` starts the claim immediately and does not show `name`. User cancel (`NotAllowedError` or `AbortError`) after a named create returns to `name`, not `choice`. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. Status `unknown` is authenticate finish `Unknown credential`: the hook calls `signalUnknownCredential` best-effort with the ceremony `rpId` and `credential.id` before showing it, and a later user-cancel returns to `unknown` while that flag is set. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session, sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration. `register` requires WebAuthn PRF on create; missing PRF aborts with `wallet.prfUnsupported` and does not finish. The words are discarded. `login` / `authenticate` call `clearSessionPhrase`. On iPhone, iPad, or iPod below iOS 18, a named create still does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `iOS <installed> below 18 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `iOS <installed> below 18 at prf.absent`. Both throw `login.iosVersion` instead of a silent cancel or `wallet.prfUnsupported`. On Android below 9, a named create does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `Android <installed> below 9 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `Android <installed> below 9 at prf.absent`. Both throw `login.androidVersion` instead of a silent cancel or `wallet.prfUnsupported`. Every failed login posts `client.passkey.login.fail` before the card changes, even when no account id exists: the browser `name`, the allowlisted `message` when that text fits, and the begin `challengeId` when it is 64 hex. That row is written when `credentials.get` throws, when the assertion is missing, and when an in-app browser stops the ceremony first (stage `login` or `authenticate`, message `in-app browser`). A dismissed register that is not an old-iOS or old-Android stop posts `client.passkey.register.fail` with those fields, and `accountId` only when `user.id` decodes as a UUID. A failed login row and a dismissed register that is not an old-iOS or old-Android stop prefix the allowlisted message with `iOS <installed>` or `Android <installed>` when the user agent parses (iOS preferred), including versions new enough to pass the gate. Desktop and a user agent with no version token stay unprefixed. A cancelled named create stays on `name`; claim and paths before the name stay `choice`, `idle`, or `unsupported`. Begin and finish failures keep their own rows and do not need an account id.
+- **Purpose:** Client hook for passkey login. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) sets status `name` and starts neither `startPasskeyRegistration` nor `credentials.create`. `submitName` normalizes and, when valid, calls `startPasskeyRegistration(undefined, normalized)` then the existing create ceremony. `register(viewKey)` starts the claim immediately and does not show `name`. User cancel (`NotAllowedError` or `AbortError`) after a named create returns to `name`, not `choice`. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. Status `unknown` is authenticate finish `Unknown credential`: the hook calls `signalUnknownCredential` best-effort with the ceremony `rpId` and `credential.id` before showing it, and a later user-cancel returns to `unknown` while that flag is set. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session, sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration. `register` requires WebAuthn PRF on create; missing PRF aborts with `wallet.prfUnsupported` and does not finish. Registration and login now hand the PRF output they already hold to `rememberPhraseFromPrf` after the session is stored (no extra prompt; what is sent to the api is unchanged); with the wallet configured, a login reports `client.passkey.login.prf` with `prfPresent` as a boolean only; without PRF output nothing happens. `login` / `authenticate` call `clearSessionPhrase`. On iPhone, iPad, or iPod below iOS 18, a named create still does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `iOS <installed> below 18 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `iOS <installed> below 18 at prf.absent`. Both throw `login.iosVersion` instead of a silent cancel or `wallet.prfUnsupported`. On Android below 9, a named create does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `Android <installed> below 9 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `Android <installed> below 9 at prf.absent`. Both throw `login.androidVersion` instead of a silent cancel or `wallet.prfUnsupported`. Every failed login posts `client.passkey.login.fail` before the card changes, even when no account id exists: the browser `name`, the allowlisted `message` when that text fits, and the begin `challengeId` when it is 64 hex. That row is written when `credentials.get` throws, when the assertion is missing, and when an in-app browser stops the ceremony first (stage `login` or `authenticate`, message `in-app browser`). A dismissed register that is not an old-iOS or old-Android stop posts `client.passkey.register.fail` with those fields, and `accountId` only when `user.id` decodes as a UUID. A failed login row and a dismissed register that is not an old-iOS or old-Android stop prefix the allowlisted message with `iOS <installed>` or `Android <installed>` when the user agent parses (iOS preferred), including versions new enough to pass the gate. Desktop and a user agent with no version token stay unprefixed. A cancelled named create stays on `name`; claim and paths before the name stay `choice`, `idle`, or `unsupported`. Begin and finish failures keep their own rows and do not need an account id.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`, `iosPasskeyBlock` and `androidPasskeyBlock` on register, and `iosInstalledVersion` and `androidInstalledVersion` when a failed attempt is reported).
 - **Returns / side effects:** `{ status, login, register, submitName, authenticate, retry, cancel, error, nameError }` with `status` in `idle | starting | error | unsupported | choice | unknown | name`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `nameError` is `invalid`, `taken`, or `null` while `status === 'name'`, else `null`. After a named create, `retry` returns to the name form and does not start create again. `retry` after `register(viewKey)` sends the same key again. `retry` after `authenticate` repeats authenticate. The single login button repeats login. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.

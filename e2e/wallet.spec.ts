@@ -1,4 +1,77 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+const WALLET_RATE_DAY_STATS = {
+  totalSats: 100_000_000,
+  totalBtc: '1.00000000',
+  totalUsd: '100000.00',
+  totalChf: '80000.00',
+  totalEur: '90000.00',
+  totalPhp: '5600000.00',
+  giftCount: 1,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-01T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      giftCount: 1,
+      sats: 100_000_000,
+      cumulativeSats: 100_000_000,
+      btc: '1.00000000',
+      cumulativeBtc: '1.00000000',
+      usd: '100000.00',
+      cumulativeUsd: '100000.00',
+      chf: '80000.00',
+      eur: '90000.00',
+      php: '5600000.00',
+      cumulativeChf: '80000.00',
+      cumulativeEur: '90000.00',
+      cumulativePhp: '5600000.00',
+    },
+  ],
+  byRecipient: [],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};
+
+/** Sign in an account that can unlock the in-app wallet (new balance tests only). */
+async function signInWalletEligible(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        walletRequired: true,
+        walletBackupSeenAt: 1,
+        passkeyCredentialId: 'cred-seed',
+      }),
+    });
+  });
+}
 
 test('wallet page shows Add recovery phrase for an existing member', async ({ page }) => {
   await page.addInitScript(() => {
@@ -441,4 +514,201 @@ test('Function: RememberWalletReturn — wallet heading is Wallet', async ({ pag
 test('Function: WalletChromeLeft — wallet heading is Wallet', async ({ page }) => {
   await page.goto('/wallet');
   await expect(page).toHaveURL(/\/(wallet|login)/);
+});
+
+test('wallet key unset shows no balance region', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByText('Advanced functions')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
+});
+
+test('wallet balance-locked pin shows unlock control', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  const region = page.getByRole('region', { name: 'Balance' });
+  await expect(region).toBeVisible();
+  await expect(region.getByText('Unlock your wallet to see your Bitcoin balance.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await page.getByRole('button', { name: 'Unlock wallet' }).click();
+  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+});
+
+test('wallet balance-connecting pin shows pending status', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-connecting');
+  const region = page.getByRole('region', { name: 'Balance' });
+  await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
+  await expect(region.getByRole('button')).toHaveCount(0);
+});
+
+test('wallet balance-ready pin shows bitcoin and fiat', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(WALLET_RATE_DAY_STATS),
+    });
+  });
+  await page.goto('/wallet?visual=balance-ready');
+  const region = page.getByRole('region', { name: 'Balance' });
+  await expect(region.getByText("₿21'000")).toBeVisible();
+  await expect(region.getByText('$21.00')).toBeVisible();
+});
+
+test('wallet balance-error pin shows alert and retry', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-error');
+  const region = page.getByRole('region', { name: 'Balance' });
+  await expect(region.getByRole('alert')).toHaveText(
+    'Your wallet could not be opened. Please try again.',
+  );
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});
+
+test('wallet balance pin does not appear on phrase page', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet/phrase?visual=balance-ready');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+});
+
+test('Function: getBreezApiKey — unset key leaves no balance region or wasm', async ({ page }) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: useWalletStore — unset key leaves no balance region or wasm', async ({ page }) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: loadWalletSdk — unset key leaves no balance region or wasm', async ({ page }) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: connectWallet — unset key leaves no balance region or wasm', async ({ page }) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: refreshWallet — unset key leaves no balance region or wasm', async ({ page }) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: disconnectWallet — unset key leaves no balance region or wasm', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: listenForWalletPhrase — unset key leaves no balance region or wasm', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: rememberPhraseFromPrf — unset key leaves no balance region or wasm', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: WalletSync — unset key leaves no balance region or wasm', async ({ page }) => {
+  await signInWalletEligible(page);
+  const urls: string[] = [];
+  page.on('request', (req) => {
+    urls.push(req.url());
+  });
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: useWallet — ready pin shows fixture balance', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(WALLET_RATE_DAY_STATS),
+    });
+  });
+  await page.goto('/wallet?visual=balance-ready');
+  await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible();
+});
+
+test('Function: WalletBalance — error pin shows Try again', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-error');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+});
+
+test('Function: unlockWalletPhrase — locked pin shows Unlock wallet', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+});
+
+test('Function: canUnlockWallet — locked pin for eligible account', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await expect(page.getByRole('region', { name: 'Balance' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
 });

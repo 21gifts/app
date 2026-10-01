@@ -186,6 +186,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:balance-locked",
+    "label": "/wallet balance-locked",
+    "visual": "state-wallet-balance-locked",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-connecting",
+    "label": "/wallet balance-connecting",
+    "visual": "state-wallet-balance-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-ready",
+    "label": "/wallet balance-ready",
+    "visual": "state-wallet-balance-ready",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-error",
+    "label": "/wallet balance-error",
+    "visual": "state-wallet-balance-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",
