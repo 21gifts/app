@@ -23,6 +23,8 @@ export const ownerFundingSchema = z.object({
   trialUtcDate: z.string().nullable(),
   admittedAt: z.number().nullable(),
   reviewedByName: z.string().nullable(),
+  /** True when the owner should see the stopped-daily-payout notice. Optional so older payloads still parse. */
+  dailyPayoutStoppedNotice: z.boolean().optional(),
 });
 
 /**
