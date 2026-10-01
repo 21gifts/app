@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { DailyPayoutStoppedNotice } from '@/components/DailyPayoutStoppedNotice';
 import { PasskeyRenewNotice } from '@/components/PasskeyRenewNotice';
 import { Scrollport } from '@/components/ui/Scrollport';
 import { useAuthStore } from '@/stores/auth-store';
@@ -155,6 +156,7 @@ export function AppShell({
             </div>
           </div>
           {showPasskeyRenew ? <PasskeyRenewNotice /> : null}
+          <DailyPayoutStoppedNotice />
           <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
           <Scrollport
             scrollRef={(node) => {

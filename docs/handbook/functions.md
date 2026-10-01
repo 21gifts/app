@@ -3288,6 +3288,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** No dismiss control on the explanation. **Continue** starts the ceremony. Cancelling the device prompt returns to the explanation and is not a logged failure. Success stores the account only after **OK**. A failed ceremony stores the returned account and stays on the failure step only when that account has an open failure and the session is unchanged, so a remount stays there. When that account has `passkeyRenewPrfUnsupported`, the failure step says this passkey cannot create a recovery phrase. An HTTP seed error that did not record a failure returns to the explanation. Failure **OK** stores the acknowledged account only while that same session is still current, then the dialog closes and does not start again. Null once success is confirmed, a failure was acknowledged, or `passkeyRenewClosed` is true.
 - **Used by:** `AppShell` when `walletRequired === false` and `passkeyRenewClosed` is not true.
 
+## Function: DailyPayoutStoppedNotice
+
+- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. Explains that the daily payout has stopped because they have not applied for the grant, and links to `/grants/apply`.
+- **Inputs:** None. Reads the auth store and translations.
+- **Returns / side effects:** A `role="region"` banner with title, body, and apply `ButtonLink`, or `null` when the flag is missing, false, or funding is null. No close control, no localStorage, no extra API call. Applying already replaces `account.funding` from `POST /funding/apply`.
+- **Used by:** `AppShell`.
+
 ## Function: proxyMePasskeyRenewReportPost
 
 - **Purpose:** Proxies POST `/me/passkey-renew/report`.
