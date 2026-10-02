@@ -835,4 +835,8 @@ Same-origin proxy for API `GET /habit-tracker`, forwarding the optional Monday `
 - **Upstream:** POST /habit-tracker.
 - **Output:** Upstream acknowledgement or error; no local mutation.
 
-Same-origin proxy for API `POST /habit-tracker`. Forwards Bearer authorization and the add/retire/rate/comment JSON operation. The API enforces roles and ownership; browser controls do not confer permission.
+Same-origin proxy for API `POST /habit-tracker`. Forwards Bearer authorization and the add/edit/retire/rate/comment/deleteComment/invoice JSON operation. The API enforces roles and ownership; browser controls do not confer permission.
+
+Habit-Tracker updates: comments include canReceiveDonation derived from the current author wallet. Authenticated invoice requests resolve the comment author server-side, validate amount and BOLT11, and use the existing invoice rate limiter. Founder/initiator may soft-delete any tracker comment; other roles may not. Owners may edit their resolution text in the latest published review week; weekly revisions preserve older texts and carry forward. No tracker comment or donation publishes a forum post.
+
+Tracker comments for each review week are admitted from the following Monday at 16:00 Asia/Manila. GET exposes commentsAllowed and commentsAllowedAt; POST comment returns 403 before that timestamp for every role. Comments are accepted only for the latest review week, until Saturday 20:00 Asia/Manila (exclusive). Historical weeks are read-only for comments. GET includes commentsCloseAt.

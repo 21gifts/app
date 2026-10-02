@@ -1,3 +1,4 @@
+import { SITE_JSON_LD } from '@/lib/site-json-ld';
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -7,7 +8,7 @@ vi.mock('next/font/google', () => ({
   Outfit: (): { variable: string } => ({ variable: '__outfit_variable' }),
 }));
 
-import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
+import RootLayout, { metadata, viewport } from '@/app/layout';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';

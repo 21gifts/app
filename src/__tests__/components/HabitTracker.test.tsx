@@ -64,8 +64,8 @@ describe('HabitTracker', () => {
     renderWithLocale(<HabitTracker />);
     await loaded();
     const headings = screen.getAllByRole('heading').map((element) => element.textContent);
-    expect(headings.indexOf('Founder’s resolutions')).toBeLessThan(
-      headings.indexOf('Initiator’s resolutions'),
+    expect(headings.indexOf('Founder Cyrill’s resolutions')).toBeLessThan(
+      headings.indexOf('Initiator Pater Severin’s resolutions'),
     );
     expect(screen.getByRole('link', { name: 'Sign in to comment' })).toBeTruthy();
     expect(screen.queryByLabelText('New resolution')).toBeNull();
@@ -150,7 +150,7 @@ describe('HabitTracker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
     await screen.findByText('Week 2026-W39');
     payload = structuredClone(base);
-    fireEvent.click(screen.getByRole('button', { name: 'Current week' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Latest review week' }));
     await screen.findByText('Week 2026-W40');
   });
   it('renders empty/error states and retries failed reads', async () => {
@@ -262,4 +262,182 @@ it('suppresses duplicate form submissions while the first request is pending', a
   expect(fetcher.mock.calls.filter((call) => call[1]?.method === 'POST')).toHaveLength(1);
   resolve(new Response('{}'));
   await waitFor(() => expect(field).toHaveProperty('value', ''));
+});
+
+it('shows deletion only to founder and initiator and submits after confirmation', async () => {
+  signIn();
+  payload.comments = [
+    {
+      id: 'comment-1',
+      accountId: 'visitor',
+      name: 'Visitor',
+      text: 'Comment body',
+      week: payload.week.start,
+      createdAt: Date.now(),
+      canReceiveDonation: true,
+    },
+  ];
+  vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  const button = screen.getByRole('button', { name: 'Delete comment' });
+  fireEvent.click(button);
+  expect(fetcher.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/habits/data',
+      expect.objectContaining({
+        body: JSON.stringify({ action: 'deleteComment', id: 'comment-1' }),
+      }),
+    ),
+  );
+});
+it('lets visitors donate but not delete comments', async () => {
+  signIn('basis', 'visitor');
+  payload.comments = [
+    {
+      id: 'comment-1',
+      accountId: 'f',
+      name: 'Founder',
+      text: 'Comment body',
+      week: payload.week.start,
+      createdAt: Date.now(),
+      canReceiveDonation: true,
+    },
+  ];
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Donate Bitcoin' })).toBeTruthy();
+});
+
+it('lets the owner edit the published resolution text', async () => {
+  signIn();
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit resolution' }));
+  fireEvent.change(screen.getByLabelText('Edit resolution'), {
+    target: { value: 'Read 30 minutes' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() =>
+    expect(fetcher).toHaveBeenCalledWith(
+      '/habits/data',
+      expect.objectContaining({
+        body: JSON.stringify({ action: 'edit', id: 'f1', text: 'Read 30 minutes' }),
+      }),
+    ),
+  );
+});
+
+it('hides submission while comments are not yet admitted and shows the opening time', async () => {
+  signIn();
+  payload.commentsAllowed = false;
+  payload.commentsAllowedAt = Date.now() + 3600000;
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  expect(screen.queryByRole('button', { name: 'Post' })).toBeNull();
+  expect(screen.queryByLabelText('Write a comment')).toBeNull();
+  expect(screen.getByRole('status').textContent).toContain('Monday at 16:00');
+});
+
+it('shows the description and composer only on the current review week, preserving historical comments', async () => {
+  signIn();
+  payload.comments = [
+    {
+      id: 'c',
+      accountId: 'b',
+      name: 'Visitor',
+      text: 'Historical comment',
+      week: '2026-09-21',
+      createdAt: Date.now(),
+    },
+  ];
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  expect(screen.getByText(/Every Monday at 08:00/)).toBeTruthy();
+  payload.week = { ...payload.week, start: '2026-09-21', label: '2026-W39' };
+  // Even a stale server availability flag cannot enable comments for history.
+  payload.commentsAllowed = true;
+  fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
+  await screen.findByText('Week 2026-W39');
+  expect(screen.queryByText(/Every Monday at 08:00/)).toBeNull();
+  expect(screen.queryByLabelText('Write a comment')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Post' })).toBeNull();
+  expect(screen.getByText('Historical comment')).toBeTruthy();
+});
+
+it('renders distinct partial and missed indicators and toggles donation entry without losing comments', async () => {
+  signIn('basis', 'visitor');
+  payload.results = [
+    { habitId: 'f1', week: payload.week.start, status: 'partial' },
+    { habitId: 'i1', week: payload.week.start, status: 'missed' },
+  ];
+  payload.comments = [
+    {
+      id: 'c',
+      accountId: 'f',
+      name: '',
+      text: 'Donate here',
+      week: payload.week.start,
+      createdAt: Date.now(),
+      canReceiveDonation: true,
+    },
+  ];
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  expect(screen.getAllByRole('radio', { name: 'Partially achieved' })[0]).toHaveProperty(
+    'checked',
+    true,
+  );
+  expect(screen.getAllByRole('radio', { name: 'Not achieved' })[1]).toHaveProperty('checked', true);
+  const toggle = screen.getByRole('button', { name: 'Donate Bitcoin' });
+  fireEvent.click(toggle);
+  expect(screen.getByText('Donate Bitcoin · Member')).toBeTruthy();
+  fireEvent.click(toggle);
+  expect(screen.queryByText('Donate Bitcoin · Member')).toBeNull();
+  fireEvent.click(toggle);
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.queryByText('Donate Bitcoin · Member')).toBeNull();
+  expect(screen.getByText('Donate here')).toBeTruthy();
+});
+it('recovers from a stale boundary timestamp without a tight refresh loop', async () => {
+  vi.useFakeTimers();
+  try {
+    payload.week.nextAt = Date.now() - 1;
+    renderWithLocale(<HabitTracker />);
+    const { act } = await import('@testing-library/react');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    const before = fetcher.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(fetcher.mock.calls.length).toBe(before);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(59000);
+    });
+    expect(fetcher.mock.calls.length).toBeGreaterThan(before);
+  } finally {
+    cleanup();
+    vi.useRealTimers();
+  }
+});
+
+it('displays an achieved outcome and cancels text editing without a mutation', async () => {
+  signIn();
+  payload.results = [{ habitId: 'f1', week: payload.week.start, status: 'achieved' }];
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  expect(screen.getAllByRole('radio', { name: 'Achieved', exact: true })[0]).toHaveProperty(
+    'checked',
+    true,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Edit resolution' }));
+  fireEvent.change(screen.getByLabelText('Edit resolution'), { target: { value: 'Unsaved' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.queryByLabelText('Edit resolution')).toBeNull();
+  expect(fetcher.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
 });

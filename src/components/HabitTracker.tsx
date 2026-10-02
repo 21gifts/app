@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { HabitCommentDonation } from '@/components/HabitCommentDonation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
@@ -25,6 +26,9 @@ export function HabitTracker(): ReactElement {
   const [revision, setRevision] = useState(0);
   const [text, setText] = useState('');
   const [comment, setComment] = useState('');
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
+  const [donationId, setDonationId] = useState<string | null>(null);
   const mutation = useRef(false);
   useEffect(() => {
     const controller = new AbortController();
@@ -48,12 +52,21 @@ export function HabitTracker(): ReactElement {
     return () => controller.abort();
   }, [selectedWeek, revision]);
   useEffect(() => {
-    if (data === null || selectedWeek !== null) return;
+    if (data === null || data.week.start !== data.currentWeek) return;
     // Polling recovers missed timers after a background tab sleeps. The exact
-    // boundary timer switches a visible current-week page at Manila midnight.
+    // boundary timer switches a visible current-week page at Monday 08:00 in Manila.
     const refresh = (): void => setRevision((value) => value + 1);
     const interval = setInterval(refresh, 60000);
-    const boundary = setTimeout(refresh, Math.max(1000, data.week.nextAt - Date.now()));
+    const now = Date.now();
+    const nextBoundary = Math.min(
+      ...[data.week.nextAt, data.commentsAllowedAt, data.commentsCloseAt].filter(
+        (time): time is number => time !== undefined && time > now,
+      ),
+    );
+    const boundary = setTimeout(
+      refresh,
+      Number.isFinite(nextBoundary) ? Math.max(1000, nextBoundary - now) : 60000,
+    );
     return () => {
       clearInterval(interval);
       clearTimeout(boundary);
@@ -73,6 +86,7 @@ export function HabitTracker(): ReactElement {
       });
       if (!response.ok) throw new Error('Save failed');
       if (body['action'] === 'add') setText('');
+      if (body['action'] === 'edit') setEditing(null);
       if (body['action'] === 'comment') setComment('');
       setRevision((value) => value + 1);
     } catch {
@@ -83,7 +97,7 @@ export function HabitTracker(): ReactElement {
     }
   }
   const current = data !== null && data.week.start === data.currentWeek;
-  const canRate = data !== null && data.week.start >= shiftWeek(data.currentWeek, -1);
+  const canRate = current;
   const disabled = busy || loading;
   return (
     <section
@@ -92,7 +106,7 @@ export function HabitTracker(): ReactElement {
     >
       <header className="space-y-3 text-center">
         <h1 className="text-3xl font-semibold">Habit-Tracker</h1>
-        <p className="text-sm text-app-muted">{t('habit.schedule')}</p>
+        {current && <p className="text-sm text-app-muted">{t('habit.schedule')}</p>}
       </header>
       {error && (
         <div role="alert" className="space-y-2 text-app-danger">
@@ -176,6 +190,7 @@ export function HabitTracker(): ReactElement {
                           <label key={value} className="flex min-h-11 items-center gap-2 text-sm">
                             <input
                               type="radio"
+                              className="peer sr-only"
                               name={`habit-${habit.id}`}
                               checked={status === value}
                               onChange={() =>
@@ -187,12 +202,73 @@ export function HabitTracker(): ReactElement {
                                 })
                               }
                             />
+                            <span
+                              aria-hidden="true"
+                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-app-muted peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 ${
+                                status === value
+                                  ? value === 'achieved'
+                                    ? 'border-green-600'
+                                    : value === 'partial'
+                                      ? 'border-orange-500'
+                                      : 'border-red-600'
+                                  : ''
+                              }`}
+                            >
+                              {status === value && (
+                                <span
+                                  className={`h-2.5 w-2.5 rounded-full ${value === 'achieved' ? 'bg-green-600' : value === 'partial' ? 'bg-orange-500' : 'bg-red-600'}`}
+                                />
+                              )}
+                            </span>
                             {t(`habit.${value}`)}
+                            <span aria-hidden="true">
+                              {value === 'achieved' ? '🙂' : value === 'partial' ? '😐' : '🙁'}
+                            </span>
                           </label>
                         ))}
                       </div>
                       {status === undefined && (
                         <p className="text-xs text-app-muted">{t('habit.unrated')}</p>
+                      )}
+                      {owner && current && editing === habit.id && (
+                        <form
+                          className="space-y-2"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void submit({ action: 'edit', id: habit.id, text: editText });
+                          }}
+                        >
+                          <label htmlFor={`edit-${habit.id}`} className="block text-sm">
+                            {t('habit.edit')}
+                          </label>
+                          <input
+                            id={`edit-${habit.id}`}
+                            value={editText}
+                            onChange={(event) => setEditText(event.target.value)}
+                            maxLength={200}
+                            required
+                            className="w-full rounded-lg border border-app-border bg-app-bg p-3"
+                          />
+                          <div className="flex gap-2">
+                            <Button type="submit" disabled={disabled || editText.trim() === ''}>
+                              {t('habit.save')}
+                            </Button>
+                            <Button variant="secondary" onClick={() => setEditing(null)}>
+                              {t('forum.payClose')}
+                            </Button>
+                          </div>
+                        </form>
+                      )}
+                      {owner && current && editing !== habit.id && (
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setEditing(habit.id);
+                            setEditText(habit.text);
+                          }}
+                        >
+                          {t('habit.edit')}
+                        </Button>
                       )}
                       {owner && current && habit.lastWeek === null && (
                         <Button
@@ -255,9 +331,50 @@ export function HabitTracker(): ReactElement {
                   </time>
                 </div>
                 <p className="whitespace-pre-wrap break-words text-sm">{post.text}</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  {session !== null &&
+                    post.accountId !== account?.id &&
+                    post.canReceiveDonation && (
+                      <Button
+                        variant="secondary"
+                        onClick={() => setDonationId(donationId === post.id ? null : post.id)}
+                      >
+                        {t('habit.donate')}
+                      </Button>
+                    )}
+                  {!post.canReceiveDonation && (
+                    <p className="text-xs text-app-muted">{t('habit.noWallet')}</p>
+                  )}
+                  {session !== null &&
+                    (account?.role === 'founder' || account?.role === 'initiator') && (
+                      <Button
+                        variant="secondary"
+                        disabled={disabled}
+                        onClick={() => {
+                          if (window.confirm(t('habit.deleteCommentConfirm')))
+                            void submit({ action: 'deleteComment', id: post.id });
+                        }}
+                      >
+                        {t('habit.deleteComment')}
+                      </Button>
+                    )}
+                </div>
+                {donationId === post.id && session !== null && (
+                  <HabitCommentDonation
+                    key={`${post.id}/${session}`}
+                    id={post.id}
+                    name={post.name || t('habit.member')}
+                    session={session}
+                    onClose={() => setDonationId(null)}
+                  />
+                )}
               </article>
             ))}
-            {session === null ? (
+            {!current || data.commentsAllowed === false ? (
+              <p role="status" className="text-sm text-app-muted">
+                {t(current ? 'habit.commentsClosed' : 'habit.commentsArchived')}
+              </p>
+            ) : session === null ? (
               <Link href="/login" className="underline">
                 {t('habit.login')}
               </Link>

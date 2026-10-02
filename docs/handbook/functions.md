@@ -4630,7 +4630,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Output:** Weekly resolution board and comments.
 - **Failures:** Retry control and retained unsent drafts.
 
-Public weekly resolution board with founder above initiator. Validates API responses, renders one radio group per resolution, and exposes creation/retirement/rating only to the owner. All signed-in roles can post isolated week comments. Failed saves preserve drafts. Week navigation retains history; the live current week refreshes at Monday 00:00 Manila time and periodically after suspended tabs resume.
+Public weekly resolution board with founder above initiator. Validates API responses, renders one radio group per resolution, and exposes creation/retirement/rating only to the owner. All signed-in roles can post isolated week comments. Failed saves preserve drafts. Week navigation retains history; the live current week refreshes at Monday 08:00 Manila time and periodically after suspended tabs resume.
 
 ## Function: HabitTrackerPage
 
@@ -4639,3 +4639,11 @@ Public weekly resolution board with founder above initiator. Validates API respo
 - **Session:** Existing hydration enables owner and comment controls.
 
 Renders `/habit-tracker` within the existing session-aware public page chrome. Anonymous visitors can read; a hydrated session enables authorized controls.
+
+## Function: HabitCommentDonation
+
+- **Input:** Comment ID, recipient name, authenticated session and close callback.
+- **Output:** Amount form and exact-amount Lightning invoice with QR and wallet link.
+- **Validation:** Invalid amounts and duplicate submissions are rejected; failures preserve the draft.
+
+Authenticated direct Lightning donations to a tracker comment author. Reuses AmountEntry and ForumReplyPayPage for amount, QR, and wallet opening. POST /habits/data requests an exact-amount invoice; payment requires the user to confirm in their wallet. Errors preserve the amount draft.

@@ -4,6 +4,9 @@ import { z } from 'zod';
 export const habitTrackerSchema = z.object({
   week: z.object({ start: z.string(), label: z.string(), nextAt: z.number() }),
   currentWeek: z.string(),
+  commentsAllowed: z.boolean().optional(),
+  commentsAllowedAt: z.number().optional(),
+  commentsCloseAt: z.number().optional(),
   firstWeek: z.string(),
   habits: z.array(
     z.object({
@@ -31,6 +34,7 @@ export const habitTrackerSchema = z.object({
       text: z.string(),
       week: z.string(),
       createdAt: z.number(),
+      canReceiveDonation: z.boolean().optional(),
     }),
   ),
 });

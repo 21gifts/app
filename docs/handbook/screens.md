@@ -4484,9 +4484,9 @@ The only state.
 - **Order:** Founder above initiator.
 - **History:** Week navigation and archival preserve prior records.
 
-Habit-Tracker appears between living-room rules and Trust Chain in the signed-in menu. Anyone can read the current ISO calendar week and navigate earlier weeks. Founder resolutions appear above initiator resolutions. Each row offers reached, partly reached, or not reached; an unselected row means not yet rated.
+Habit-Tracker appears between living-room rules and Trust Chain in the signed-in menu. Anyone can read the latest published, completed ISO calendar week and navigate earlier weeks. Founder resolutions appear above initiator resolutions. Each row offers reached, partly reached, or not reached; an unselected row means not yet rated.
 
-Owners can add resolutions and delete them from future weeks while their history stays visible. Active resolutions carry into new Manila weeks without a rating. Current and previous week outcomes remain editable, allowing Monday reporting after Sunday rest. Only signed-in visitors can write comments, and those comments appear solely in the selected Habit-Tracker week. Loading, empty, and retry states are explicit. Text is available in English, German, Spanish, and Filipino.
+Owners can add resolutions and delete them from future weeks while their history stays visible. Active resolutions carry into new Manila weeks without a rating. Every Monday at 08:00 Manila time the completed previous ISO week opens for review. Only this latest published review week is editable; older weeks retain their texts and outcomes. Only signed-in visitors can write comments, and those comments appear solely in the selected Habit-Tracker week. Loading, empty, and retry states are explicit. Text is available in English, German, Spanish, and Filipino.
 
 ### Variant: default
 

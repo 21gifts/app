@@ -65,3 +65,70 @@ test('Function: HabitTracker — empty, loading and error states', async ({ page
   ).toContainText('Could not load or save the tracker.');
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
+
+test('Function: HabitCommentDonation — signed-in visitors can request a comment donation and close the invoice', async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('21gifts.session', 'habit-e2e'));
+  await page.route(/\/me$/, (route) =>
+    route.fulfill({
+      json: {
+        id: 'donor',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Donor',
+        username: 'donor',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        walletRequired: true,
+      },
+    }),
+  );
+  const comment = {
+    id: 'comment-1',
+    accountId: 'recipient',
+    name: 'Recipient',
+    text: 'Thanks for sharing',
+    week: payload.week.start,
+    createdAt: 1790899200000,
+    canReceiveDonation: true,
+  };
+  let invoiceRequest: unknown;
+  await page.route('**/habits/data*', async (route) => {
+    if (route.request().method() === 'POST') {
+      invoiceRequest = route.request().postDataJSON();
+      await route.fulfill({ json: { pr: 'lnbc-local-test-only', amountSats: 100 } });
+    } else
+      await route.fulfill({ json: { ...payload, commentsAllowed: true, comments: [comment] } });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Donate Bitcoin', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Amount' }).fill('100');
+  await page.getByRole('button', { name: 'Donate Bitcoin', exact: true }).last().click();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  expect(invoiceRequest).toEqual({ action: 'invoice', id: 'comment-1', amountSats: 100 });
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByText('Thanks for sharing')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete comment' })).toHaveCount(0);
+});
+
+test('Habit-Tracker — archived weeks hide the description and comment composer', async ({
+  page,
+}) => {
+  await page.route('**/habits/data*', (route) =>
+    route.fulfill({ json: { ...payload, currentWeek: '2026-10-05', commentsAllowed: false } }),
+  );
+  await page.goto('/habit-tracker');
+  await expect(page.getByText('Read every day')).toBeVisible();
+  await expect(page.getByText(/Every Monday at 08:00/)).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Write a comment' })).toHaveCount(0);
+  await expect(page.getByText('Comments for this week are closed.')).toBeVisible();
+});
