@@ -1077,7 +1077,7 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 ### `/grants`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). Apply is not a ButtonLink. `none`/`rejected` show the paused sentence and `https://21.gifts/statistics`. A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). Apply is not a ButtonLink except for `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still get it. Every other `none`/`rejected` account shows the paused sentence and `https://21.gifts/statistics`. A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
 Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
 
@@ -1089,7 +1089,7 @@ Handbook states: default, loading, error.
 
 ### `/grants/apply`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **21 gifts grant**, the paused sentence, and `https://21.gifts/statistics`. No questions and no POST while applications are paused. The apply walk stays in the code and is not shown. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **21 gifts grant**. `joey-rosima`, `vincent`, and `jewel-bacolbas` still see the apply walk and can POST. Everyone else sees the paused sentence and `https://21.gifts/statistics`, with no questions and no POST. The apply walk stays in the code. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
 
 Handbook states: default.
 

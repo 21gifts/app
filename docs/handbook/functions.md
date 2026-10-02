@@ -1776,7 +1776,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403. 400 `About me is required` / `About me photo is required` / `Location is required` are rethrown; other failures use visitor copy `Could not submit your application. Please try again.`
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** Exported API client. The paused apply screen does not call it. The apply walk calls it when `grantApplicationsPaused` is false.
+- **Used by:** `FundingApplyScreen`. The apply walk calls it when `grantApplicationsPaused` is false, and while paused for `joey-rosima`, `vincent`, and `jewel-bacolbas`.
 
 ## Function: fetchFundingPayoutDays
 
