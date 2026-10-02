@@ -117,6 +117,48 @@ test('Function: grantApplicationsPaused — the apply walk is not offered', asyn
   ).toHaveCount(0);
 });
 
+test('Function: grantApplicationStillOpen — joey-rosima still sees the apply walk', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'verified',
+        name: 'Joey',
+        username: 'joey-rosima',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    });
+  });
+  await page.goto('/grants/apply');
+  await expect(page.getByText(PAUSED)).toHaveCount(0);
+  await expect(
+    page.getByText('First, write a short About me so people can get to know you.'),
+  ).toBeVisible();
+});
+
 test('Function: aboutMeFilled — the bio step is not offered while applications are paused', async ({
   page,
 }) => {
