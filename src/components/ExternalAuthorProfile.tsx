@@ -153,6 +153,7 @@ export function ExternalAuthorProfile({
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
+  const profileLoadGen = useRef(0);
 
   if (feedMessageId !== messageId) {
     setFeedMessageId(messageId);
@@ -167,6 +168,7 @@ export function ExternalAuthorProfile({
     setRepliesError(false);
     postsLoadGen.current += 1;
     repliesLoadGen.current += 1;
+    profileLoadGen.current += 1;
   }
 
   useEffect(() => {
@@ -191,12 +193,14 @@ export function ExternalAuthorProfile({
   }, []);
 
   useEffect(() => {
+    const gen = profileLoadGen.current;
     let cancelled = false;
     void (async () => {
       const next = await fetchExternalAuthorProfile(messageId);
-      if (!cancelled) {
-        setProfile(next);
+      if (profileLoadGen.current !== gen || cancelled) {
+        return;
       }
+      setProfile(next);
     })();
     return () => {
       cancelled = true;

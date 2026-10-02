@@ -792,4 +792,31 @@ describe('ExternalAuthorProfile', () => {
     });
     expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
   });
+
+  it('ignores a profile response from the previous note', async () => {
+    let resolveM1!: (value: Awaited<ReturnType<typeof fetchProfile>>) => void;
+    fetchProfile.mockImplementation((id: string) => {
+      if (id === 'm1') {
+        return new Promise((resolve) => {
+          resolveM1 = resolve;
+        });
+      }
+      return new Promise(() => undefined);
+    });
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(fetchProfile).toHaveBeenCalledWith('m1');
+    });
+    view.rerender(<ExternalAuthorProfile messageId="m2" fallbackName="Bea" />);
+    expect(screen.getByText('Bea')).toBeTruthy();
+    expect(screen.queryByText('Robin')).toBeNull();
+    await act(async () => {
+      resolveM1({ name: 'Robin', npub: 'npub1example' });
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Robin')).toBeNull();
+    expect(screen.queryByText('npub1example')).toBeNull();
+    expect(screen.getByText('Bea')).toBeTruthy();
+    expect(fetchProfile).toHaveBeenCalledWith('m2');
+  });
 });
