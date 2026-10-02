@@ -245,7 +245,7 @@ describe('NameForm', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
   });
 
-  it('keeps a concurrently saved address when the name response is stale', async () => {
+  it('keeps fields it does not own when the name response is stale', async () => {
     let resolve!: (value: Account) => void;
     const pending = new Promise<Account>((r) => {
       resolve = r;
