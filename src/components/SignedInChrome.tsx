@@ -139,13 +139,31 @@ export function SignedInChrome(): ReactElement {
       }
       return;
     }
-    if (tight) {
-      return;
+    const measure = (): void => {
+      const limit = window.innerHeight + 1;
+      const bottom = menuRef.current!.getBoundingClientRect().bottom;
+      setTight((current) => {
+        if (bottom > limit) {
+          return true;
+        }
+        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
+        if (current && bottom <= limit - 48) {
+          return false;
+        }
+        return current;
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    let observer: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(measure);
+      observer.observe(menuRef.current!);
     }
-    // The menu node is committed before this effect.
-    if (menuRef.current!.getBoundingClientRect().bottom > window.innerHeight + 1) {
-      setTight(true);
-    }
+    return () => {
+      window.removeEventListener('resize', measure);
+      observer?.disconnect();
+    };
   }, [open, narrow, tight, account?.role]);
 
   useEffect(() => {

@@ -18,7 +18,7 @@ const CLASS_BANNED =
 const STYLE_BANNED =
   /overflow(?:-x|-y|X|Y)?\s*:\s*['"]?(?:auto|scroll|overlay)\b|overflow(?:X|Y)?\s*=\s*['"](?:auto|scroll|overlay)['"]|setProperty\(\s*['"]overflow(?:-x|-y)?['"]\s*,\s*['"](?:auto|scroll|overlay)['"]/;
 const VIEWPORT_WIDTH =
-  /(?:^|[^\w-])(?:w|min-w|max-w)-screen\b|(?:w|min-w|max-w|left|right)-\[[^\]\n]*vw[^\]\n]*\]/;
+  /(?:^|[^\w-])(?:w|min-w|max-w)-screen\b|(?:^|[^\w-])(?:w|min-w|max-w|size|left|right)-\[[^\]\n]*vw[^\]\n]*\]|(?:^|[^\w-])(?:min-|max-)?width\s*:\s*['"]?\d*\.?\d+vw\b|(?:^|[^\w-])(?:min|max)?Width\s*:\s*['"]\d*\.?\d+vw\b/;
 
 /**
  * @param {string} dir
@@ -298,17 +298,44 @@ function selfTest() {
 }
 
 function viewportWidthSelfTest() {
-  VIEWPORT_WIDTH.lastIndex = 0;
-  const wideBracket = VIEWPORT_WIDTH.test('className="w-[min(90vw,24rem)]"');
-  VIEWPORT_WIDTH.lastIndex = 0;
-  const screen = VIEWPORT_WIDTH.test('className="w-screen"');
-  VIEWPORT_WIDTH.lastIndex = 0;
-  const sizes = VIEWPORT_WIDTH.test('sizes="100vw"');
-  VIEWPORT_WIDTH.lastIndex = 0;
-  const full = VIEWPORT_WIDTH.test('className="w-full max-w-sm"');
-  if (!wideBracket || !screen || sizes || full) {
-    console.error('PAGE FRAME: detector self-test failed');
-    process.exit(1);
+  const caught = [
+    'className="w-[min(90vw,24rem)]"',
+    'className="w-screen"',
+    'className="min-w-screen"',
+    'className="max-w-screen"',
+    'className="size-[100vw]"',
+    'width: 100vw',
+    'min-width: 50vw',
+    'max-width: 10vw',
+    "width: '100vw'",
+    'width:"100vw"',
+    "minWidth: '100vw'",
+    "maxWidth: '12vw'",
+    'className="left-[10vw]"',
+    'className="right-[8vw]"',
+    'className="w-[100vw]"',
+    'className="max-w-[90vw]"',
+    'className="min-w-[10vw]"',
+  ];
+  const allowed = [
+    'sizes="100vw"',
+    'className="w-full max-w-sm"',
+    'className="shadow-[0_0_1vw_#000]"',
+    'sizes="(min-width: 1100px) 700px, (min-width: 768px) 50vw, 100vw"',
+  ];
+  for (const line of caught) {
+    VIEWPORT_WIDTH.lastIndex = 0;
+    if (!VIEWPORT_WIDTH.test(line)) {
+      console.error('PAGE FRAME: detector self-test failed');
+      process.exit(1);
+    }
+  }
+  for (const line of allowed) {
+    VIEWPORT_WIDTH.lastIndex = 0;
+    if (VIEWPORT_WIDTH.test(line)) {
+      console.error('PAGE FRAME: detector self-test failed');
+      process.exit(1);
+    }
   }
 }
 
