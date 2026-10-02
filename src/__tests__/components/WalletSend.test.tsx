@@ -142,6 +142,17 @@ describe('WalletSend amount', () => {
     expect(screen.getByText("Between ₿10 and ₿1'000")).toBeTruthy();
   });
 
+  it('shows only the minimum in the amount alert for a request without receiver bounds', () => {
+    renderSend(
+      sendWith({
+        step: 'amount',
+        target: { type: 'request', input: 'sp1', amountSats: null, recipient: 'sp1' },
+        amountError: true,
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount of at least ₿1 · $0.00.');
+  });
+
   it('has no bounds line or comment for a request without amount', () => {
     renderSend(
       sendWith({

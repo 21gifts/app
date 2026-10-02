@@ -182,10 +182,9 @@ export function WalletSend({ send }: WalletSendProps): ReactElement {
           ) : null}
           {state.amountError ? (
             <p role="alert" className="text-center text-sm text-app-danger">
-              {t('wallet.sendAmountInvalid', {
-                min: boundText(min),
-                max: boundText(max),
-              })}
+              {target.type === 'lnurl'
+                ? t('wallet.sendAmountInvalid', { min: boundText(min), max: boundText(max) })
+                : t('wallet.sendAmountMin', { min: boundText(min) })}
             </p>
           ) : null}
           <div className="flex justify-center">
