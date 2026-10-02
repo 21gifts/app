@@ -378,6 +378,7 @@ describe('SignedInChrome', () => {
     useAuthStore.setState({ session: null, account: null });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();
     fireEvent.click(screen.getByRole('link', { name: 'Notifications' }));
     expect(vi.mocked(enablePush)).not.toHaveBeenCalled();
     expect(vi.mocked(resyncPushSubscription)).not.toHaveBeenCalled();
@@ -567,6 +568,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
+    expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
   });
 
@@ -579,6 +581,7 @@ describe('SignedInChrome', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
+    expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderation' })).toBeNull();
   });
 
@@ -612,6 +615,9 @@ describe('SignedInChrome', () => {
     expect(count?.className.includes('ml-auto')).toBe(true);
     expect(count?.className.includes('font-semibold')).toBe(true);
     expect(count?.className.includes('lining-nums')).toBe(true);
+    const statistics = screen.getByRole('link', { name: 'Statistics' });
+    expect(statistics.getAttribute('href')).toBe('/statistics');
+    expect(statistics.querySelector('.tabular-nums')).toBeNull();
   });
 
   it('adds open-proposal count to the Moderation menu unread', async () => {
@@ -660,12 +666,20 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       expectMenuOpen();
       const trustChain = screen.getByRole('link', { name: 'Trust Chain' });
+      const statistics = screen.getByRole('link', { name: 'Statistics' });
       const moderation = screen.getByRole('link', { name: 'Moderation' });
       const notifications = screen.getByRole('link', { name: 'Notifications' });
+      expect(statistics.getAttribute('href')).toBe('/statistics');
       expect(moderation.getAttribute('href')).toBe('/moderate');
-      expect(trustChain.nextElementSibling).toBe(moderation);
+      expect(trustChain.nextElementSibling).toBe(statistics);
+      expect(statistics.nextElementSibling).toBe(moderation);
       expect(moderation.nextElementSibling).toBe(notifications);
+      expect(statistics.querySelector('svg')).toBeTruthy();
       expect(moderation.querySelector('svg')).toBeTruthy();
+      fireEvent.click(statistics);
+      expectMenuClosed();
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expectMenuOpen();
       fireEvent.click(moderation);
       expectMenuClosed();
     },
