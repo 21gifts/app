@@ -24,7 +24,7 @@ type VersionBlock = {
  * preparing, error, or in-app browser escape.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
- * `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`,
+ * `/setup/name`, `/setup/username`, `/setup/rules`,
  * or `/welcome`.
  *
  * @returns The card element.

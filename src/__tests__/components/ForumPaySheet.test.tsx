@@ -38,7 +38,6 @@ function sheet(
       onPayCancel={onPayCancel}
       rateDay={DAY}
       {...(extra?.ratePending === undefined ? {} : { ratePending: extra.ratePending })}
-      showPaymentQr={false}
       onInteract={vi.fn()}
     />,
   );

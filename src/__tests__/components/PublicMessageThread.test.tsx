@@ -78,7 +78,7 @@ const account: Account = {
   role: 'basis',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: true,
   createdAt: 1,
@@ -1127,7 +1127,7 @@ describe('PublicMessageThread', () => {
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
       role: 'founder',
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       missing: [],
       setup: null,
     });
@@ -1271,7 +1271,7 @@ describe('PublicMessageThread', () => {
     signIn({ lightningAddress: null, missing: ['lightning-address'] });
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       missing: [],
       setup: null,
     });

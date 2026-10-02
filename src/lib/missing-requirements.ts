@@ -47,16 +47,17 @@ export function parseMissingRequirements(body: unknown): MissingRequirementsErro
 }
 
 /**
- * Next overlay field to collect before a forum post: rules, then name, then
- * username, then lightning-address.
+ * Next overlay step before a forum post: rules, then name, then username,
+ * then the wallet. The api's `lightning-address` key means the member cannot
+ * receive yet; it maps to the `wallet` step (the member's own in-app wallet).
  *
- * @param missing - Account or 409 missing list (`wallet` is ignored; it is
- *   not a posting overlay field).
- * @returns `'rules'`, `'name'`, `'username'`, `'lightning-address'`, or `null` when posting may proceed.
+ * @param missing - Account or 409 missing list (the api's `wallet` key is
+ *   ignored; it is not a posting overlay field).
+ * @returns `'rules'`, `'name'`, `'username'`, `'wallet'`, or `null` when posting may proceed.
  */
 export function nextPostRequirement(
   missing: readonly string[],
-): 'rules' | 'name' | 'username' | 'lightning-address' | null {
+): 'rules' | 'name' | 'username' | 'wallet' | null {
   if (missing.includes('rules')) {
     return 'rules';
   }
@@ -67,14 +68,14 @@ export function nextPostRequirement(
     return 'username';
   }
   if (missing.includes('lightning-address')) {
-    return 'lightning-address';
+    return 'wallet';
   }
   return null;
 }
 
 /**
  * Next overlay field to collect before a contact send: rules, then name,
- * then username. Lightning-address gaps do not open an overlay for contact.
+ * then username. A missing wallet does not open an overlay for contact.
  *
  * @param missing - Account or 409 missing list.
  * @returns `'rules'`, `'name'`, `'username'`, or `null` when the send may proceed.

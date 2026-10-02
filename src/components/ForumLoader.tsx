@@ -25,7 +25,9 @@ import {
   shownFiatForSats,
 } from '@/lib/stats-money';
 import {
+  CannotReceiveError,
   dismissForumLaws,
+  fetchComposeTarget,
   fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
@@ -34,15 +36,14 @@ import {
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
-  PublicForumUnauthorizedError,
   markNotificationRead,
   markNotificationsReadForMessage,
   NoteDeletedError,
   postMessage,
-  fetchComposeTarget,
   postMessageInvoice,
-  postRepaymentInvoice,
   postMessageVideo,
+  postRepaymentInvoice,
+  PublicForumUnauthorizedError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -128,12 +129,16 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
 }
 
 /**
- * True when a thrown value is the api author's-wallet rejection for payments.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment ({@link CannotReceiveError}, or the older message).
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
+  if (err instanceof CannotReceiveError) {
+    return true;
+  }
   /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
   if (!(err instanceof Error)) {
     return false;
@@ -489,7 +494,7 @@ export function ForumLoader({
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);

@@ -463,26 +463,6 @@ export function proxyMeFiatPost(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies POST /me/lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session + JSON body).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressPost(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address');
-}
-
-/**
- * Proxies DELETE /me/lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressDelete(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address');
-}
-
-/**
  * Proxies POST /me/rules-agreement to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session, no body).
@@ -490,16 +470,6 @@ export async function proxyMeLightningAddressDelete(request: Request): Promise<R
  */
 export async function proxyMeRulesAgreementPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/rules-agreement');
-}
-
-/**
- * Proxies GET /lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (`address` query param).
- * @returns The upstream response.
- */
-export async function proxyLightningAddressGet(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/lightning-address');
 }
 
 /**

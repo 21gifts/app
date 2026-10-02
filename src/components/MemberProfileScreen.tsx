@@ -19,6 +19,7 @@ import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { Button, Card, IconButton } from '@/components/ui';
 import {
+  CannotReceiveError,
   fetchComposeTarget,
   fetchGiftStats,
   fetchMemberPosts,
@@ -28,8 +29,8 @@ import {
   fetchPublicMessagePhoto,
   fetchReplies,
   markNotificationsReadForMessage,
-  openConversation,
   NoteDeletedError,
+  openConversation,
   postMessage,
   postMessageInvoice,
   postRepaymentInvoice,
@@ -94,12 +95,16 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when the author's wallet rejected the zap invoice.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment ({@link CannotReceiveError}, or the older message).
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
+  if (err instanceof CannotReceiveError) {
+    return true;
+  }
   /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
   if (!(err instanceof Error)) {
     return false;
@@ -271,7 +276,7 @@ export function MemberProfileScreen({
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);

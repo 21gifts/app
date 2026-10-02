@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -18,14 +18,10 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface WalletPayProps {
   /** Request the api issued for the in-app wallet, or `null`/`undefined` when it issued none. */
   sparkInvoice: string | null | undefined;
+  /** Payment request of the same invoice; the wallet pays it when there is no `sparkInvoice`. */
+  pr: string;
   /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
   amountSats: number;
-  /**
-   * The existing desktop invoice QR plus Wallet of Satoshi button (smartphone:
-   * button only), shown when the in-app path is not used, and under the
-   * low-balance alert of a member without a 21.gifts address.
-   */
-  fallback: ReactNode;
   /** Latest gift-day totals for the fee's fiat line, or `null`. */
   rateDay: FiatRateDay | null;
 }
@@ -68,32 +64,44 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
 }
 
 /**
- * Pay slot of an invoice pay sheet. With a `sparkInvoice` and a usable in-app
- * wallet it pays from the wallet: unlock when needed, the fee from the prepare
+ * Pay slot of an invoice pay sheet. The member pays from the in-app wallet
+ * only: unlock when needed (one passkey prompt), the fee from the prepare
  * response, then **Pay from wallet**. While and after sending it says so; the
  * sheet's own long-poll closes it on confirmation. Too little balance shows an
- * alert with the member's own address and QR, or with `fallback` when the
- * member's username gives no address. Otherwise it renders `fallback` unchanged.
+ * alert with the member's own address and QR when their username gives one.
+ * Without a wallet the member can open here it says so, and a failed prepare
+ * offers **Try again**. It never shows an invoice QR or hands the payment to
+ * another wallet.
  *
- * @param props - Request, shown amount, fallback, and rate day.
+ * @param props - Requests, shown amount, and rate day.
  * @returns The pay slot.
  */
-export function WalletPay({
-  sparkInvoice,
-  amountSats,
-  fallback,
-  rateDay,
-}: WalletPayProps): ReactElement {
+export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const { view, feeSats, unlock, pay } = useWalletPay(sparkInvoice, amountSats);
+  const { view, feeSats, unlock, pay, retry } = useWalletPay(sparkInvoice, pr, amountSats);
   const username = useAuthStore((state) => state.account?.username ?? null);
   const hasAddress = giftsLightningAddress(username) !== null;
 
   switch (view) {
-    case 'fallback':
-      return <>{fallback}</>;
+    case 'unavailable':
+      return (
+        <p role="status" className="px-6 text-center text-sm text-app-muted">
+          {t('wallet.payUnavailable')}
+        </p>
+      );
+    case 'failed':
+      return (
+        <>
+          <p role="alert" className="px-6 text-center text-sm text-app-danger">
+            {t('wallet.payFailed')}
+          </p>
+          <Button type="button" variant="secondary" onClick={retry}>
+            {t('wallet.payRetry')}
+          </Button>
+        </>
+      );
     case 'unlock':
       return (
         <>
@@ -134,7 +142,7 @@ export function WalletPay({
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('wallet.payInsufficient')}
           </p>
-          {hasAddress && username !== null ? <OwnAddress username={username} /> : fallback}
+          {hasAddress && username !== null ? <OwnAddress username={username} /> : null}
         </>
       );
     default:

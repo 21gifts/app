@@ -131,7 +131,7 @@ const profile: MemberProfile = {
   username: 'carol',
   location: null,
   role: 'verified',
-  lightningAddress: 'carol@walletofsatoshi.com',
+  lightningAddress: null,
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -213,7 +213,7 @@ const account: Account = {
   role: 'basis',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: true,
   createdAt: 1,
@@ -1079,7 +1079,7 @@ describe('MemberProfileScreen', () => {
         id: profile.id,
         role: 'verified',
         name: 'Carol',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
       },
     });
     renderWithLocale(
@@ -3108,7 +3108,7 @@ describe('MemberProfileScreen', () => {
     });
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       missing: [],
       setup: null,
     });

@@ -81,7 +81,6 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
 export type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
 
@@ -668,7 +667,6 @@ export function ForumBoard({
       observer.disconnect();
     };
   }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -774,10 +772,6 @@ export function ForumBoard({
       window.removeEventListener('touchcancel', onTouchCancel);
     };
   }, [onRefresh, scroller]);
-
-  useEffect(() => {
-    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
 
   useEffect(() => {
     copyMounted.current = true;
@@ -1334,7 +1328,6 @@ export function ForumBoard({
                     onPaySubmit={onPaySubmit}
                     onPayCancel={onPayCancel}
                     rateDay={rateDay}
-                    showPaymentQr={showPaymentQr}
                     onInteract={stopCardToggle}
                   />
                 </SundayWritingGate>
@@ -1565,7 +1558,6 @@ export function ForumBoard({
                                   onPaySubmit={onPaySubmit}
                                   onPayCancel={onPayCancel}
                                   rateDay={rateDay}
-                                  showPaymentQr={showPaymentQr}
                                   onInteract={stopCardToggle}
                                 />
                               </SundayWritingGate>
@@ -1584,8 +1576,6 @@ export function ForumBoard({
                           pr={reactionPay.pr}
                           sparkInvoice={reactionPay.sparkInvoice}
                           payWaiting={payWaiting}
-                          payBusy={payBusy}
-                          showPaymentQr={showPaymentQr}
                           rateDay={rateDay}
                           onCancel={onPayCancel}
                         />
@@ -2009,7 +1999,6 @@ export function ForumBoard({
             onPaySubmit={onPaySubmit}
             onPayCancel={onPayCancel}
             rateDay={rateDay}
-            showPaymentQr={showPaymentQr}
             onInteract={(event) => {
               event.stopPropagation();
             }}

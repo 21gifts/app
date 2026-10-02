@@ -62,7 +62,7 @@ describe('onboarding', () => {
       ...base,
       name: 'Ada',
       username: 'ada',
-      lightningAddress: 'ada@walletofsatoshi.com',
+      lightningAddress: null,
       setup: 'wallet' as const,
       missing: ['rules'] as Account['missing'],
     };
@@ -74,7 +74,7 @@ describe('onboarding', () => {
       ...base,
       name: 'Ada',
       username: 'ada',
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       rulesAgreedAt: 1,
       setup: 'wallet' as const,
       missing: ['wallet'] as Account['missing'],
@@ -113,7 +113,7 @@ describe('onboarding', () => {
     const account = {
       ...base,
       name: 'Ada',
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       setup: 'rules' as const,
       missing: ['rules'] as Account['missing'],
     };
@@ -125,7 +125,7 @@ describe('onboarding', () => {
     const account = {
       ...base,
       name: 'Ada',
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       rulesAgreedAt: 1,
       setup: null,
       missing: [] as Account['missing'],
