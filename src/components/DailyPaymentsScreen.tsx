@@ -434,17 +434,13 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
     <Check aria-hidden="true" className="h-4 w-4" />
   );
 
-  const onSaveAmount = (event: FormEvent<HTMLFormElement>): void => {
+  const onSaveAmount = (event: FormEvent<HTMLFormElement>, address: string): void => {
     event.preventDefault();
-    if (editingAddress === null) {
-      return;
-    }
     const amountUsd = parseUsd(amountDraft);
     if (amountUsd === null) {
       load.setSaveError('funding.daily.invalidRow');
       return;
     }
-    const address = editingAddress;
     void load
       .runSave(() => updateDailyRosterRecipient(session, address, amountUsd), true)
       .then((saved) => {
@@ -531,7 +527,12 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                     {display}
                   </span>
                   {rowEditing ? (
-                    <form className="flex w-full items-end gap-2" onSubmit={onSaveAmount}>
+                    <form
+                      className="flex w-full items-end gap-2"
+                      onSubmit={(event) => {
+                        onSaveAmount(event, row.address);
+                      }}
+                    >
                       <Field
                         className="min-w-0 flex-1"
                         label={t('funding.daily.usd')}

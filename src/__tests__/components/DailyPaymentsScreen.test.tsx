@@ -382,6 +382,19 @@ describe('daily payment subpages', () => {
     expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(false);
   });
 
+  it('cancels an amount edit without saving', async () => {
+    await renderAmounts();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD Ada@w...' }), {
+      target: { value: '9' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: 'USD Ada@w...' })).toBeNull();
+    expect(screen.getByText('$1.00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
+  });
+
   it('cancels a comment edit without saving', async () => {
     await renderComment();
     fireEvent.click(screen.getByRole('button', { name: 'Edit comment' }));
