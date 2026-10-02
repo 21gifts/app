@@ -6,13 +6,15 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/grants/apply` — paused 21 gifts grant applications for a signed-in member.
+ * `/grants/apply` — grant application for a signed-in member.
  *
- * The chrome back returns to the previous in-app view (the card has no back
- * control). Requires name + address + living-room rules agreement via {@link OnboardingGate}
- * `screen="profile"`.
+ * While applications are paused this is the paused card, except for
+ * `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see the apply
+ * walk. The chrome back returns to the previous in-app view (the card has no
+ * back control). Requires name + address + living-room rules agreement via
+ * {@link OnboardingGate} `screen="profile"`.
  *
- * @returns The paused applications screen.
+ * @returns The paused card, or the apply walk for those three usernames.
  */
 export default function FundingApplyPage(): ReactElement {
   return (

@@ -18,10 +18,10 @@ export function FundingPausedCopy(): ReactElement {
     <>
       <p className="text-sm text-app-muted">{t('funding.paused')}</p>
       <a
-        href="https://21.gifts/statistics"
+        href={t('funding.statisticsUrl')}
         className="text-sm text-app-fg underline underline-offset-2"
       >
-        https://21.gifts/statistics
+        {t('funding.statisticsUrl')}
       </a>
     </>
   );
