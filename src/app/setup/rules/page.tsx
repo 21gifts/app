@@ -9,7 +9,7 @@ import { getRequestLocale } from '@/lib/request-locale';
 import { RULES_CHAPTER_IDS } from '@/lib/rules-chapters';
 
 /**
- * `/setup/rules` — agree to the living-room rules after name and address.
+ * `/setup/rules` — agree to the living-room rules after name and username.
  *
  * @returns The rules agreement screen.
  */

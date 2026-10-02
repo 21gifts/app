@@ -833,6 +833,25 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('maps a paid-reply invoice the author wallet cannot receive onto the author-wallet error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const form = screen.getByLabelText('Your reaction').closest('form')!;
+    await waitFor(() => {
+      expect(within(form).getByRole('alert').textContent).toBe(
+        "The author's wallet cannot receive this Bitcoin payment",
+      );
+    });
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText('Could not post your message')).toBeNull();
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 5, 'thanks', NO_RATE_SHOWN);
+  });
+
   it('opens the wallet overlay when a paid reply invoice requires a wallet', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new WalletRequiredError());
     signIn();

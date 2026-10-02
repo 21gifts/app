@@ -2311,7 +2311,9 @@ export function ForumLoader({
             ? 'tooLong'
             : isRateLimitError(err)
               ? 'rateLimit'
-              : 'request',
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
         );
       }
     } finally {
