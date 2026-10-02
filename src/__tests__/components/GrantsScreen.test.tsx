@@ -90,6 +90,7 @@ describe('GrantsScreen', () => {
     });
     renderWithLocale(<GrantsScreen />);
     expect(screen.getByText('You are not verified yet.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Goals' }).getAttribute('href')).toBe('/grants/goals');
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -99,6 +100,7 @@ describe('GrantsScreen', () => {
   it('shows the grant card without the staff queue for a verified member', () => {
     renderWithLocale(<GrantsScreen />);
     expect(screen.getByText('21 gifts grant')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Goals' }).getAttribute('href')).toBe('/grants/goals');
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -109,6 +111,7 @@ describe('GrantsScreen', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     const { container } = renderWithLocale(<GrantsScreen />);
     expect(container.querySelector('a')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Goals' })).toBeNull();
     expect(screen.queryByText('21 gifts grant')).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByText('No open applications.')).toBeNull();

@@ -2417,6 +2417,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state-grants-applications-error',
   },
   {
+    route: '/grants/goals',
+    id: 'default',
+    image: 'grants-goals.png',
+    visual: 'screen-grants-goals',
+    needle: 'The grant program continues when we reach 10 active shops.',
+  },
+  {
     route: '/profile/apply',
     id: 'redirect',
     image: 'profile-apply.png',
@@ -3094,34 +3101,6 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-forbidden.png',
     visual: 'state-moderate-forbidden',
     needle: 'This page is for moderators.',
-  },
-  {
-    route: '/moderate',
-    id: 'goal-open',
-    image: 'moderate-goal-open.png',
-    visual: 'state-moderate-goal-open',
-    needle: 'People by UTC day',
-  },
-  {
-    route: '/moderate',
-    id: 'goal-payout',
-    image: 'moderate-goal-payout.png',
-    visual: 'state-moderate-goal-payout',
-    needle: 'Show payout per person',
-  },
-  {
-    route: '/moderate',
-    id: 'loading',
-    image: 'moderate-loading.png',
-    visual: 'state-moderate-loading',
-    needle: 'Daily funding goal',
-  },
-  {
-    route: '/moderate',
-    id: 'error',
-    image: 'moderate-error.png',
-    visual: 'state-moderate-error',
-    needle: 'Could not load payouts. Please try again.',
   },
   {
     route: '/moderate/payouts',

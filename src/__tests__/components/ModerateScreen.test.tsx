@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModerateScreen } from '@/components/ModerateScreen';
 import type { Account, Conversation, ModeratorProposal } from '@/lib/api-types';
@@ -67,32 +67,6 @@ const EMPTY_STATS: GiftStats = {
   },
 };
 
-function statsWithDays(
-  days: { day: string; giftCount: number; officialCount?: number }[],
-): GiftStats {
-  return {
-    ...EMPTY_STATS,
-    giftCount: days.reduce((sum, row) => sum + row.giftCount, 0),
-    spendOverTime: days.map((row) => ({
-      day: row.day,
-      giftCount: row.giftCount,
-      officialCount: row.officialCount ?? row.giftCount,
-      sats: 0,
-      cumulativeSats: 0,
-      btc: '0.00000000',
-      cumulativeBtc: '0.00000000',
-      usd: '0.00',
-      cumulativeUsd: '0.00',
-      chf: '0.00',
-      eur: '0.00',
-      php: '0.00',
-      cumulativeChf: '0.00',
-      cumulativeEur: '0.00',
-      cumulativePhp: '0.00',
-    })),
-  };
-}
-
 const GROUP: Conversation = {
   id: 'conv-mod',
   kind: 'moderator_group',
@@ -131,8 +105,6 @@ const account: Account = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-09-20T12:00:00.000Z'));
   notificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
   conversationsMock.mockResolvedValue([]);
   groupMock.mockResolvedValue(GROUP);
@@ -141,10 +113,7 @@ beforeEach(() => {
   fetchMock.mockResolvedValue(EMPTY_STATS);
 });
 
-afterEach(() => {
-  cleanup();
-  vi.useRealTimers();
-});
+afterEach(cleanup);
 
 describe('ModerateScreen', () => {
   it('renders nothing when there is no session', () => {
@@ -164,6 +133,7 @@ describe('ModerateScreen', () => {
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
     expect(screen.queryByRole('list', { name: 'Moderation tools' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -177,6 +147,7 @@ describe('ModerateScreen', () => {
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -186,12 +157,13 @@ describe('ModerateScreen', () => {
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each(['founder', 'moderator'] as const)(
-    'shows the hub, Hidden notes, and Moderators links for a %s and fetches payout stats',
-    async (role) => {
+    'shows the hub, Hidden notes, and Moderators links for a %s without fetching payout stats',
+    (role) => {
       useAuthStore.setState({ session: 'sess', account: { ...account, role } });
       renderWithLocale(<ModerateScreen />);
       expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
@@ -221,185 +193,12 @@ describe('ModerateScreen', () => {
       expect(screen.getByRole('link', { name: 'Handbook' }).getAttribute('href')).toBe(
         '/moderate/handbook',
       );
-      await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-      });
+      expect(
+        screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href'),
+      ).toBe('/moderate/payouts');
+      expect(fetchMock).not.toHaveBeenCalled();
     },
   );
-
-  it('shows yesterday as a percent of 100 and expands the chart', async () => {
-    fetchMock.mockResolvedValue(
-      statsWithDays([
-        { day: '2026-08-24', giftCount: 36 },
-        { day: '2026-09-19', giftCount: 40, officialCount: 12 },
-        { day: '2026-09-20', giftCount: 9 },
-      ]),
-    );
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModerateScreen />);
-    await waitFor(() => {
-      expect(screen.getByText('12%')).toBeTruthy();
-    });
-    expect(screen.getByText('yesterday 12 of 100')).toBeTruthy();
-    expect(screen.getByText('100 people a day').parentElement).toBe(
-      screen.getByText('yesterday 12 of 100').parentElement,
-    );
-    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    expect(screen.getByText(/Someone who receives both that day counts once/)).toBeTruthy();
-    expect(screen.getByText('9')).toBeTruthy();
-    expect(screen.getByText('36')).toBeTruthy();
-    expect(screen.queryByText('12', { exact: true })).toBeNull();
-    const chart = screen.getByRole('img', { name: 'People by UTC day' });
-    expect(chart.textContent).toContain('9/20');
-    expect(chart.textContent).toContain('8/22');
-    expect(chart.textContent).not.toContain('9/19');
-    expect(screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href')).toBe(
-      '/moderate/payouts',
-    );
-    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    expect(screen.queryByText(/Someone who receives both that day counts once/)).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
-  });
-
-  it('shows zero on today even when the bar is empty', async () => {
-    fetchMock.mockResolvedValue(
-      statsWithDays([{ day: '2026-09-20', giftCount: 4, officialCount: 0 }]),
-    );
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModerateScreen />);
-    await waitFor(() => {
-      expect(screen.getByText('0%')).toBeTruthy();
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    const chart = screen.getByRole('img', { name: 'People by UTC day' });
-    const labels = within(chart).getAllByText('0');
-    expect(labels.some((node) => node.getAttribute('font-size') === '11')).toBe(true);
-  });
-
-  it('caps the bar at 100 percent when yesterday exceeds the goal', async () => {
-    fetchMock.mockResolvedValue(statsWithDays([{ day: '2026-09-19', giftCount: 150 }]));
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModerateScreen />);
-    await waitFor(() => {
-      expect(screen.getByText('100%')).toBeTruthy();
-    });
-    expect(screen.getByText('yesterday 150 of 100')).toBeTruthy();
-    expect(screen.getByTestId('payout-goal-fill').getAttribute('width')).toBe('100');
-    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    const chartBars = screen.getAllByTestId('payout-goal-chart-bar');
-    expect(chartBars.length).toBeGreaterThan(0);
-    for (const bar of chartBars) {
-      expect(Number(bar.getAttribute('height'))).toBeLessThanOrEqual(220);
-      expect(Number(bar.getAttribute('y'))).toBeGreaterThanOrEqual(24);
-    }
-  });
-
-  it('shows loading copy while payout stats are in flight', () => {
-    fetchMock.mockImplementation(() => new Promise(() => undefined));
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModerateScreen />);
-    expect(screen.getByText('Loading…')).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
-  });
-
-  it('shows retry when a spend day omits officialCount', async () => {
-    fetchMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-09-19',
-          giftCount: 40,
-          sats: 1,
-          cumulativeSats: 1,
-          btc: '0.00000001',
-          cumulativeBtc: '0.00000001',
-          usd: '0.01',
-          cumulativeUsd: '0.01',
-          chf: '0.01',
-          eur: '0.01',
-          php: '0.50',
-          cumulativeChf: '0.01',
-          cumulativeEur: '0.01',
-          cumulativePhp: '0.50',
-        },
-      ],
-    });
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModerateScreen />);
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe(
-        'Could not load payouts. Please try again.',
-      );
-    });
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
-    expect(screen.queryByText('40%')).toBeNull();
-    expect(screen.queryByText('0%')).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
-  });
-
-  it('opens an empty chart when there are no gifts', async () => {
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModerateScreen />);
-    await waitFor(() => {
-      expect(screen.getByText('0%')).toBeTruthy();
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Goal/ }));
-    expect(screen.getByText('People by UTC day')).toBeTruthy();
-  });
-
-  it('ignores a stale stats resolve after unmount', async () => {
-    let resolveStats: ((value: GiftStats) => void) | undefined;
-    fetchMock.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveStats = resolve;
-        }),
-    );
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    const view = renderWithLocale(<ModerateScreen />);
-    view.unmount();
-    await act(async () => {
-      resolveStats?.(EMPTY_STATS);
-      await Promise.resolve();
-    });
-    expect(screen.queryByText('0%')).toBeNull();
-  });
-
-  it('ignores a stale stats reject after unmount', async () => {
-    let rejectStats: ((reason: Error) => void) | undefined;
-    fetchMock.mockImplementation(
-      () =>
-        new Promise((_, reject) => {
-          rejectStats = reject;
-        }),
-    );
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    const view = renderWithLocale(<ModerateScreen />);
-    view.unmount();
-    await act(async () => {
-      rejectStats?.(new Error('boom'));
-      await Promise.resolve();
-    });
-    expect(screen.queryByText('Could not load payouts. Please try again.')).toBeNull();
-  });
-
-  it('shows retry when payout stats fail to load', async () => {
-    fetchMock.mockRejectedValue(new Error('offline'));
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
-    renderWithLocale(<ModerateScreen />);
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe(
-        'Could not load payouts. Please try again.',
-      );
-    });
-    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
-    fetchMock.mockResolvedValue(EMPTY_STATS);
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-    });
-  });
 
   it('shows the unread count on Moderators when the group is unread', async () => {
     groupMock.mockResolvedValue({ ...GROUP, unread: true });

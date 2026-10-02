@@ -9,13 +9,16 @@ import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Signed-in grants page: the owner grant card, plus the staff queue for moderators.
+ * Signed-in grants page: the owner grant card, the continuation-goals link, plus
+ * the staff queue for moderators.
  *
- * Renders nothing without a session. Moderators and founders see how many open
- * grant applications exist. When the count is greater than zero, a secondary
- * link to `/grants/applications` shows that count. When the count is zero, that
- * control is the empty sentence as plain text. Members below moderator never
- * see it and never trigger the fetch.
+ * Renders nothing without a session. A signed-in account sees a secondary link
+ * to `/grants/goals` under the grant card. A missing account shows no link.
+ * Moderators and founders see how many open grant applications exist. When the
+ * count is greater than zero, a secondary link to `/grants/applications` shows
+ * that count. When the count is zero, that control is the empty sentence as
+ * plain text. Members below moderator never see the queue and never trigger
+ * the fetch.
  *
  * @returns The grants card, or `null` without a session.
  */
@@ -95,6 +98,11 @@ export function GrantsScreen(): ReactElement | null {
   return (
     <Card surface={false}>
       <FundingStatusCard />
+      {account !== null ? (
+        <ButtonLink href="/grants/goals" variant="secondary" size="lg">
+          {t('funding.goals.link')}
+        </ButtonLink>
+      ) : null}
       {queue}
     </Card>
   );

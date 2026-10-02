@@ -1,9 +1,6 @@
 import type { GiftStats } from '@/lib/api-types';
 
-/** Daily official-payout target shown on the staff hub. */
-export const PAYOUT_GOAL = 100;
-
-/** How many UTC days the expanded chart covers, ending today. */
+/** How many UTC days the count charts cover, ending today. */
 export const CHART_DAYS = 30;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

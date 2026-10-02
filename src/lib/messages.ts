@@ -891,23 +891,9 @@ const en = {
   'moderate.proposals.proposedBy': 'Proposed by {name}',
   'moderate.proposals.error': 'Could not load open proposals. Please try again.',
   'moderate.proposals.unread': 'Open proposals, {count} unread',
-  'moderate.goal.title': 'Goal',
-  'moderate.goal.subtitle': '100 people a day',
-  'moderate.goal.percent': '{percent}%',
-  'moderate.goal.yesterdayOf': 'yesterday {count} of {goal}',
-  'moderate.goal.closeHint': 'Tap to close',
-  'moderate.goal.explYesterday':
-    'Yesterday (UTC {date}) 21.gifts paid {count, plural, one {# person} other {# people}} the daily funding or the welcome gift. Each person counts once. That is {percent} percent of the {goal} a day we are aiming for.',
-  'moderate.goal.explOfficial':
-    'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count.',
-  'moderate.goal.explBar':
-    'The bar uses the last completed UTC day. The current day is drawn lighter on the chart.',
-  'moderate.goal.chartTitle': 'People by UTC day',
-  'moderate.goal.chartFoot': 'Line at the top = goal {goal} · lighter bar = today, still open',
   'moderate.goal.loading': 'Loading…',
   'moderate.goal.error': 'Could not load payouts. Please try again.',
   'moderate.goal.retry': 'Try again',
-  'moderate.goal.widgetLabel': 'Daily funding goal',
   'moderate.payouts.link': 'Show payout per person',
   'moderate.payouts.heading': 'Payout per person',
   'moderate.payouts.lead':
@@ -948,6 +934,11 @@ const en = {
   'moderate.handbook.funding.ruleCap': 'New members are capped at 1 USD per day.',
   'moderate.handbook.funding.principlesLead': 'The 3 principles of 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.goals.link': 'Goals',
+  'funding.goals.heading': 'Goals',
+  'funding.goals.lead': 'The grant program continues when we reach 10 active shops.',
+  'funding.goals.active':
+    'A shop is active when it has registered at least one transaction on 5 of 7 days.',
   'funding.notVerified': 'You are not verified yet.',
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
@@ -1919,24 +1910,10 @@ const de = {
   'moderate.proposals.error':
     'Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.proposals.unread': 'Offene Vorschläge, {count} ungelesen',
-  'moderate.goal.title': 'Ziel',
-  'moderate.goal.subtitle': '100 Personen am Tag',
-  'moderate.goal.percent': '{percent} %',
-  'moderate.goal.yesterdayOf': 'gestern {count} von {goal}',
-  'moderate.goal.closeHint': 'Tippen zum Schliessen',
-  'moderate.goal.explYesterday':
-    'Gestern (UTC {date}) hat 21.gifts {count, plural, one {# Person} other {# Personen}} die Tagesförderung oder das Willkommensgeschenk gezahlt. Jede Person zählt einmal. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
-  'moderate.goal.explOfficial':
-    'Gezählt wird jede Person einmal an dem UTC-Tag, an dem 21.gifts ihr die Tagesförderung oder das Willkommensgeschenk gezahlt hat. Wer an einem Tag beides bekommt, zählt einmal. Moderatoren-Stipendien und Geschenke zwischen Mitgliedern zählen nicht.',
-  'moderate.goal.explBar':
-    'Der Balken nimmt den letzten abgeschlossenen UTC-Tag. Der laufende Tag ist im Diagramm heller gezeichnet.',
-  'moderate.goal.chartTitle': 'Personen je UTC-Tag',
-  'moderate.goal.chartFoot': 'Linie oben = Ziel {goal} · heller Balken = heute, noch offen',
   'moderate.goal.loading': 'Wird geladen…',
   'moderate.goal.error':
     'Auszahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.goal.retry': 'Erneut versuchen',
-  'moderate.goal.widgetLabel': 'Tägliches Förderziel',
   'moderate.payouts.link': 'Auszahlung pro Person anzeigen',
   'moderate.payouts.heading': 'Auszahlung pro Person',
   'moderate.payouts.lead':
@@ -1978,6 +1955,11 @@ const de = {
   'moderate.handbook.funding.ruleCap': 'Neue Mitglieder sind auf 1 USD pro Tag begrenzt.',
   'moderate.handbook.funding.principlesLead': 'Die 3 Prinzipien von 21.gifts:',
   'funding.heading': '21-Förderprogramm',
+  'funding.goals.link': 'Ziele',
+  'funding.goals.heading': 'Ziele',
+  'funding.goals.lead': 'Das Förderprogramm läuft weiter, wenn wir 10 aktive Shops erreichen.',
+  'funding.goals.active':
+    'Ein Shop ist aktiv, wenn er an 5 von 7 Tagen mindestens eine Transaktion registriert hat.',
   'funding.notVerified': 'Sie sind noch nicht verifiziert.',
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
@@ -2939,23 +2921,9 @@ const es = {
   'moderate.proposals.proposedBy': 'Propuesto por {name}',
   'moderate.proposals.error': 'No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo.',
   'moderate.proposals.unread': 'Propuestas abiertas, {count} sin leer',
-  'moderate.goal.title': 'Meta',
-  'moderate.goal.subtitle': '100 personas al día',
-  'moderate.goal.percent': '{percent} %',
-  'moderate.goal.yesterdayOf': 'ayer {count} de {goal}',
-  'moderate.goal.closeHint': 'Toca para cerrar',
-  'moderate.goal.explYesterday':
-    'Ayer (UTC {date}) 21.gifts pagó a {count, plural, one {# persona} other {# personas}} la ayuda diaria o el regalo de bienvenida. Cada persona cuenta una vez. Eso es el {percent} por ciento de las {goal} al día que buscamos.',
-  'moderate.goal.explOfficial':
-    'Cada persona cuenta una vez en el día UTC en que 21.gifts le pagó la ayuda diaria o el regalo de bienvenida. Quien recibe ambos ese día cuenta una vez. Los estipendios de moderación y los regalos entre miembros no cuentan.',
-  'moderate.goal.explBar':
-    'La barra usa el último día UTC cerrado. El día en curso se dibuja más claro en el gráfico.',
-  'moderate.goal.chartTitle': 'Personas por día UTC',
-  'moderate.goal.chartFoot': 'Línea de arriba = meta {goal} · barra más clara = hoy, aún abierto',
   'moderate.goal.loading': 'Cargando…',
   'moderate.goal.error': 'No se pudieron cargar los pagos. Inténtalo de nuevo.',
   'moderate.goal.retry': 'Intentar de nuevo',
-  'moderate.goal.widgetLabel': 'Meta diaria de la ayuda',
   'moderate.payouts.link': 'Mostrar el pago por persona',
   'moderate.payouts.heading': 'Pago por persona',
   'moderate.payouts.lead':
@@ -2996,6 +2964,11 @@ const es = {
   'moderate.handbook.funding.ruleCap': 'Los miembros nuevos tienen un tope de 1 USD al día.',
   'moderate.handbook.funding.principlesLead': 'Los 3 principios de 21.gifts:',
   'funding.heading': 'Beca 21 gifts',
+  'funding.goals.link': 'Objetivos',
+  'funding.goals.heading': 'Objetivos',
+  'funding.goals.lead': 'El programa de becas sigue cuando llegamos a 10 tiendas activas.',
+  'funding.goals.active':
+    'Una tienda está activa cuando ha registrado al menos una transacción en 5 de 7 días.',
   'funding.notVerified': 'Aún no estás verificada o verificado.',
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
@@ -3962,24 +3935,9 @@ const fil = {
   'moderate.proposals.proposedBy': 'Iminungkahi ni {name}',
   'moderate.proposals.error': 'Hindi ma-load ang mga bukas na mungkahi. Subukan ulit.',
   'moderate.proposals.unread': 'Mga bukas na mungkahi, {count} hindi pa nababasa',
-  'moderate.goal.title': 'Layunin',
-  'moderate.goal.subtitle': '100 tao kada araw',
-  'moderate.goal.percent': '{percent}%',
-  'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
-  'moderate.goal.closeHint': 'I-tap para isara',
-  'moderate.goal.explYesterday':
-    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count, plural, one {# tao} other {# tao}} ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
-  'moderate.goal.explOfficial':
-    'Isang beses lang binibilang ang bawat tao sa UTC-araw na binayaran siya ng 21.gifts ng araw-araw na tulong o ng welcome gift. Ang nakatanggap ng pareho sa araw na iyon ay isang beses lang. Hindi binibilang ang stipend ng moderator at ang mga regalo sa pagitan ng mga miyembro.',
-  'moderate.goal.explBar':
-    'Ginagamit ng bar ang huling kumpletong UTC-araw. Mas maliwanag ang kasalukuyang araw sa tsart.',
-  'moderate.goal.chartTitle': 'Mga tao bawat UTC-araw',
-  'moderate.goal.chartFoot':
-    'Linya sa itaas = layunin {goal} · mas maliwanag na bar = ngayon, bukas pa',
   'moderate.goal.loading': 'Naglo-load…',
   'moderate.goal.error': 'Hindi ma-load ang mga bayad. Subukan ulit.',
   'moderate.goal.retry': 'Subukan ulit',
-  'moderate.goal.widgetLabel': 'Araw-araw na layunin ng tulong',
   'moderate.payouts.link': 'Ipakita ang bayad bawat tao',
   'moderate.payouts.heading': 'Bayad bawat tao',
   'moderate.payouts.lead':
@@ -4020,6 +3978,11 @@ const fil = {
   'moderate.handbook.funding.ruleCap': 'Ang mga bagong miyembro ay naka-cap sa 1 USD bawat araw.',
   'moderate.handbook.funding.principlesLead': 'Ang 3 prinsipyo ng 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.goals.link': 'Mga layunin',
+  'funding.goals.heading': 'Mga layunin',
+  'funding.goals.lead': 'Tuloy ang grant program kapag umabot tayo sa 10 aktibong tindahan.',
+  'funding.goals.active':
+    'Aktibo ang isang tindahan kapag nakapagtala ito ng kahit isang transaksyon sa 5 sa 7 araw.',
   'funding.notVerified': 'Hindi ka pa nabe-verify.',
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
