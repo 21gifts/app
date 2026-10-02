@@ -308,6 +308,28 @@ describe('connectWallet', () => {
     expect(connection.getInfo.mock.calls).toEqual([[{ ensureSynced: true }], []]);
   });
 
+  it('ignores synced events from a replaced connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const first = createFakeSdk();
+    const second = createFakeSdk();
+    second.connection.getInfo
+      .mockResolvedValueOnce({ balanceSats: 42_000, identityPubkey: IDENTITY })
+      .mockResolvedValueOnce({ balanceSats: 84_000, identityPubkey: IDENTITY });
+    await connectWallet(first.loadSdk);
+    await connectWallet(second.loadSdk);
+    expect(useWalletStore.getState().balanceSats).toBe(42_000);
+    const stateBeforeStaleEvent = useWalletStore.getState();
+    first.listeners[0]?.({ type: 'synced' });
+    await Promise.resolve();
+    expect(second.connection.getInfo).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState()).toBe(stateBeforeStaleEvent);
+    second.listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().balanceSats).toBe(84_000);
+    });
+    expect(second.connection.getInfo).toHaveBeenCalledTimes(2);
+  });
+
   it('refreshWallet without a connection does nothing', async () => {
     await expect(refreshWallet()).resolves.toBeUndefined();
     expect(useWalletStore.getState().status).toBe('locked');

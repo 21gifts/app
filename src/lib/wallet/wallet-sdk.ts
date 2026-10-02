@@ -95,6 +95,7 @@ export interface WalletSdk {
  *
  * @returns A {@link WalletSdk} whose `connect` opens a mainnet wallet and whose
  * `getInfo` can wait for synchronized state.
+ * @throws When the SDK module cannot be imported or its initialisation fails.
  */
 export async function loadWalletSdk(): Promise<WalletSdk> {
   const sdk = await import('@breeztech/breez-sdk-spark/ssr');

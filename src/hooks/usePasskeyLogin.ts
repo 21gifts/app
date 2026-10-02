@@ -804,6 +804,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         begin.challengeId,
         entryKindRef.current === 'login' ? 'login' : 'authenticate',
       );
+      guard(runId);
       let session: Awaited<ReturnType<typeof finishPasskeyAuthentication>>;
       try {
         session = await finishPasskeyAuthentication(
