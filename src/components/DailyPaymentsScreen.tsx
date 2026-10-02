@@ -254,9 +254,17 @@ export function DailyPaymentsScreen(): ReactElement | null {
               setComment(event.target.value);
             }}
           />
-          <Button type="submit" disabled={pending}>
-            {t('funding.daily.save')}
-          </Button>
+          <div className="flex w-full flex-wrap gap-3">
+            <IconButton
+              type="submit"
+              variant="secondary"
+              size="md"
+              aria-label={t('funding.daily.save')}
+              disabled={pending}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
         </form>
         <h2 className="text-center text-sm font-semibold tracking-wide text-app-muted uppercase">
           {t('funding.daily.recipients')}
