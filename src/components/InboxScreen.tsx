@@ -890,7 +890,6 @@ export function InboxScreen({
       ? null
       : (conversations.find((row) => row.id === openId) ?? null);
 
-
   let body: ReactElement;
   if (openId !== null) {
     body = (
