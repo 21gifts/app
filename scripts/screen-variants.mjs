@@ -2516,6 +2516,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state-grants-payments-comment-pending',
   },
   {
+    route: '/grants/payments/comment',
+    id: 'editing',
+    image: 'grants-payments-comment-editing.png',
+    visual: 'state-grants-payments-comment-editing',
+    needle: "getByRole('textbox', { name: 'Comment' })",
+  },
+  {
     route: '/grants/payments/amounts',
     id: 'default',
     image: 'grants-payments-amounts.png',
@@ -2598,6 +2605,13 @@ export const SCREEN_VARIANTS = [
     image: 'grants-payments-amounts-pending.png',
     visual: 'state-grants-payments-amounts-pending',
     needle: 'state-grants-payments-amounts-pending',
+  },
+  {
+    route: '/grants/payments/amounts',
+    id: 'editing',
+    image: 'grants-payments-amounts-editing.png',
+    visual: 'state-grants-payments-amounts-editing',
+    needle: 'state-grants-payments-amounts-editing',
   },
   {
     route: '/profile/apply',

@@ -21836,6 +21836,19 @@ test.describe('daily payments', () => {
     await shotScreen(page, 'state-grants-payments-comment-pending');
   });
 
+  test('state /grants/payments/comment editing', async ({ page }) => {
+    await stubRoster(page);
+    await page.goto('/grants/payments/comment');
+    await page.getByRole('button', { name: 'Edit comment' }).click();
+    await expect(page.getByRole('textbox', { name: 'Comment' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Comment' })).toHaveValue('Daily gift');
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeEnabled();
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit comment' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-payments-comment-editing');
+  });
+
   test('screen /grants/payments/amounts', async ({ page }) => {
     await stubRoster(page);
     await page.goto('/grants/payments/amounts');
@@ -21979,5 +21992,16 @@ test.describe('daily payments', () => {
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Add' })).toBeDisabled();
     await shotScreen(page, 'state-grants-payments-amounts-pending');
+  });
+
+  test('state /grants/payments/amounts editing', async ({ page }) => {
+    await stubRoster(page);
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await expect(page.getByRole('textbox', { name: 'USD ada@w...' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeEnabled();
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-payments-amounts-editing');
   });
 });

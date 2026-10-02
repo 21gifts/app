@@ -176,17 +176,19 @@ function useDailyRoster(): RosterLoad | null {
       setSavingEditor(true);
     }
     setSaveError(null);
+    let saved = false;
     try {
       const next = await task();
       setRoster(next);
-      return true;
+      saved = true;
     } catch (err) {
       setSaveError(saveErrorKey(err));
-      return false;
     } finally {
       setPending(false);
       setSavingEditor(false);
     }
+    // A return inside try and catch leaves this finally branch uncovered.
+    return saved;
   };
 
   return {
