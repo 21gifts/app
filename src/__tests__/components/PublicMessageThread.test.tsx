@@ -22,6 +22,18 @@ import { FORUM_MESSAGE_MAX_LENGTH, type Account, type ForumMessage } from '@/lib
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
 
 const MESSAGE_ID = '11111111-1111-4111-8111-111111111111';
 const REPLY_ID = '22222222-2222-4222-8222-222222222222';
@@ -2017,5 +2029,54 @@ describe('PublicMessageThread', () => {
     expect(
       vi.mocked(URL.revokeObjectURL).mock.calls.filter((call) => call[0] === shopSrc),
     ).toHaveLength(1);
+  });
+});
+
+describe('PublicMessageThread in-app wallet pay', () => {
+  function walletReady(amountSats = 21): void {
+    setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, amountSats));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats,
+      sparkInvoice: SPARK_INVOICE,
+    });
+  }
+
+  afterEach(resetWallet);
+
+  it('pays Gift on a nested reply from the wallet when the api issues a sparkInvoice', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    walletReady();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+  });
+
+  it('pays a paid reaction from the wallet when the api issues a sparkInvoice', async () => {
+    signIn();
+    walletReady();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    submitComposer('21');
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays the posting fee for an unpaid reply from the wallet', async () => {
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    signIn({ id: 'acc_carol' });
+    walletReady(1);
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 });

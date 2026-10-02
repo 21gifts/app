@@ -99,12 +99,14 @@ export function useWalletPay(
   amountSats: number,
 ): UseWalletPayResult {
   const status = useWalletStore((state) => state.status);
+  const balanceSats = useWalletStore((state) => state.balanceSats);
   const account = useAuthStore((state) => state.account);
   const [phase, setPhase] = useState<Phase>('idle');
   const [feeSats, setFeeSats] = useState<number | null>(null);
   const sendRef = useRef<(() => Promise<WalletSendResult>) | null>(null);
   const generation = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const insufficientBalance = useRef<number | null>(null);
   const input = typeof sparkInvoice === 'string' && sparkInvoice !== '' ? sparkInvoice : null;
   const pinned = input === null ? null : visualView();
   const usable =
@@ -144,12 +146,26 @@ export function useWalletPay(
         setFeeSats(result.feeSats);
         setPhase('confirm');
       } else if (result.kind === 'insufficient') {
+        insufficientBalance.current = useWalletStore.getState().balanceSats;
         setPhase('insufficient');
       } else {
         setPhase('failed');
       }
     });
   }, [usable, status, phase, input, amountSats]);
+
+  useEffect(() => {
+    if (phase !== 'insufficient' || balanceSats === null) {
+      return;
+    }
+    const seen = insufficientBalance.current;
+    if (seen !== null && balanceSats <= seen) {
+      return;
+    }
+    generation.current += 1;
+    insufficientBalance.current = null;
+    setPhase('idle');
+  }, [phase, balanceSats]);
 
   useEffect(() => {
     if (status === 'ready' || (phase !== 'preparing' && phase !== 'confirm')) {
@@ -188,6 +204,7 @@ export function useWalletPay(
         return;
       }
       if (result.kind === 'insufficient') {
+        insufficientBalance.current = useWalletStore.getState().balanceSats;
         setPhase('insufficient');
         return;
       }

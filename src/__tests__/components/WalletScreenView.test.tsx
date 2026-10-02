@@ -676,6 +676,21 @@ describe('WalletScreenView send block', () => {
     expect(historyBack).not.toHaveBeenCalled();
   });
 
+  it('keeps the send block for a send alert while the wallet is not ready', () => {
+    const failed: UseWalletSendResult = {
+      ...sendResult(() => false),
+      state: { step: 'input', error: 'failed' },
+    };
+    renderEntry('locked', failed);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The payment could not be sent. Check your balance before you try again.',
+    );
+    cleanup();
+    renderEntry('locked', { ...sendResult(() => false), state: { step: 'input', error: null } });
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
   it('Back continues to Advanced functions when no send step is open', () => {
     const send = sendResult(() => false);
     renderEntry('ready', send);
