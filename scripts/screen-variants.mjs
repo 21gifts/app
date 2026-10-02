@@ -2546,6 +2546,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants/apply',
+    id: 'forbidden',
+    image: 'profile-apply-forbidden.png',
+    visual: 'state-profile-apply-forbidden',
+    needle: 'You are not verified yet.',
+  },
+  {
+    route: '/grants/apply',
     id: 'pending',
     image: 'profile-apply-pending.png',
     visual: 'state-profile-apply-pending',

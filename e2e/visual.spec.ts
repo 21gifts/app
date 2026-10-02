@@ -12362,6 +12362,13 @@ test.describe('profile apply screens', () => {
     await shotScreen(page, 'state-grants-apply-truth');
   });
 
+  test('profile apply forbidden', async ({ page }) => {
+    await seedApply(page, { username: 'joey-rosima', role: 'basis', funding: null });
+    await page.goto('/grants/apply');
+    await expect(page.getByText('You are not verified yet.')).toBeVisible();
+    await shotScreen(page, 'state-profile-apply-forbidden');
+  });
+
   test('profile apply pending', async ({ page }) => {
     await seedApply(page, {
       username: 'joey-rosima',
