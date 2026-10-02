@@ -10,7 +10,7 @@ import {
   type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { SundayWritingGate } from '@/components/SundayWritingGate';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
@@ -46,6 +46,7 @@ type GoogleMapsNamespace = {
     map: GoogleMap;
     draggable: boolean;
   }) => GoogleMarker;
+  event?: { trigger: (map: GoogleMap, name: string) => void };
 };
 
 type GoogleWindow = Window & {
@@ -108,6 +109,7 @@ export function PlaceField(props: {
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
 }): ReactElement {
   const { t } = useTranslations();
+  const sunday = useLocalSunday();
   const buttonSize = props.buttonSize ?? 'lg';
   const buttonVariant = props.buttonVariant ?? 'secondary';
   const showPreview = props.showPreview ?? true;
@@ -333,7 +335,15 @@ export function PlaceField(props: {
         },
       );
     }
+    let observer: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => {
+        maps.event?.trigger(map, 'resize');
+      });
+      observer.observe(el);
+    }
     return () => {
+      observer?.disconnect();
       el.replaceChildren();
     };
   }, [
@@ -549,7 +559,7 @@ export function PlaceField(props: {
             className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
           />
         </IconButton>
-        {showPreview && props.place !== null && !open ? (
+        {!sunday && showPreview && props.place !== null && !open ? (
           placedBox !== null ? (
             createPortal(
               <div
@@ -566,7 +576,7 @@ export function PlaceField(props: {
             </div>
           )
         ) : null}
-        {open && !props.disabled && (unavailable || mapsKey !== null) ? (
+        {!sunday && open && !props.disabled && (unavailable || mapsKey !== null) ? (
           placedBox !== null ? (
             createPortal(
               <div

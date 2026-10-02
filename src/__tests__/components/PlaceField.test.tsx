@@ -579,6 +579,7 @@ describe('PlaceField', () => {
           getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
           addListener: () => undefined,
         })),
+        event: { trigger: vi.fn() },
       },
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
@@ -688,6 +689,24 @@ describe('PlaceField', () => {
     );
     expect(screen.queryByText('Happyland')).toBeNull();
     expect(screen.getByRole('button', { name: 'Add a place' })).toBeTruthy();
+  });
+
+  it('hides the preview and panel on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    try {
+      renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+        />,
+      );
+      expect(screen.queryByText('Happyland')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      expect(screen.queryByLabelText('Place name')).toBeNull();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
   });
 
   it('measures a shown preview inside the app frame', () => {
@@ -1066,6 +1085,47 @@ describe('PlaceField', () => {
       } else {
         Object.defineProperty(window, 'visualViewport', previous);
       }
+    }
+  });
+
+  it('triggers a map resize when the map box shrinks', async () => {
+    const previous = globalThis.ResizeObserver;
+    let resizeCallback: ResizeObserverCallback | undefined;
+    class FakeResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+
+      observe(): void {}
+
+      unobserve(): void {}
+
+      disconnect(): void {}
+    }
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    try {
+      stubMaps();
+      renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      const Map = (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } })
+        .google.maps.Map;
+      await waitFor(() => {
+        expect(Map).toHaveBeenCalled();
+      });
+      resizeCallback?.([], {} as ResizeObserver);
+      const trigger = (
+        window as unknown as {
+          google: { maps: { event: { trigger: ReturnType<typeof vi.fn> } } };
+        }
+      ).google.maps.event.trigger;
+      const created = Map.mock.results[0];
+      expect(created).toBeDefined();
+      if (created === undefined) {
+        return;
+      }
+      expect(trigger).toHaveBeenCalledWith(created.value, 'resize');
+    } finally {
+      globalThis.ResizeObserver = previous;
     }
   });
 });
