@@ -406,4 +406,22 @@ describe('daily payment subpages', () => {
     expect(screen.getByText('Daily gift')).toBeTruthy();
     expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull();
   });
+
+  it('shows an empty comment in muted type', async () => {
+    fetchMock.mockResolvedValueOnce({ ...ROSTER, comment: '   ' });
+    renderWithLocale(<DailyPaymentCommentScreen />);
+    const empty = await screen.findByText('Not set');
+    expect(empty.className).toContain('text-app-muted');
+    expect(screen.queryByText('Daily gift')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit comment' })).toBeTruthy();
+  });
+
+  it('shows the load error when fetch rejects with a non-error', async () => {
+    fetchMock.mockRejectedValueOnce('boom');
+    renderWithLocale(<DailyPaymentCommentScreen />);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not load daily payments. Please try again.',
+    );
+    expect(screen.queryByText('You cannot change daily payments.')).toBeNull();
+  });
 });
