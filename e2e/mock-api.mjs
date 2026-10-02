@@ -2526,6 +2526,16 @@ const server = http.createServer(async (req, res) => {
       json(res, 403, { error: 'Forbidden' });
       return;
     }
+    // Same allowlist as GRANT_APPLICATION_STILL_OPEN_USERNAMES. The api
+    // refuses every other username while applications are paused.
+    if (
+      account.username !== 'joey-rosima' &&
+      account.username !== 'vincent' &&
+      account.username !== 'jewel-bacolbas'
+    ) {
+      json(res, 403, { error: 'Applications are paused' });
+      return;
+    }
     json(res, 200, {
       funding: { status: 'pending', trialUtcDate: null, admittedAt: null, reviewedByName: null },
     });

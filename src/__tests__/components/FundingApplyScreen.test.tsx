@@ -11,6 +11,14 @@ import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('@/lib/grant-applications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/grant-applications')>();
+  return {
+    ...actual,
+    grantApplicationsPaused: vi.fn(() => false),
+  };
+});
+
 const push = vi.fn();
 
 vi.mock('next/navigation', () => ({
@@ -42,6 +50,7 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { fetchMemberPosts, postFundingApply, putAboutMe } from '@/lib/api';
+import { grantApplicationsPaused } from '@/lib/grant-applications';
 
 const postsMock = vi.mocked(fetchMemberPosts);
 const applyMock = vi.mocked(postFundingApply);
@@ -95,6 +104,7 @@ const post: ForumMessage = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(grantApplicationsPaused).mockReturnValue(false);
   push.mockReset();
   postsMock.mockResolvedValue([post]);
   applyMock.mockResolvedValue({
@@ -434,5 +444,36 @@ describe('FundingApplyScreen', () => {
     ).toBeNull();
     expect(screen.queryByText('You are on a one-day trial. Review repeats tomorrow.')).toBeNull();
     expect(screen.queryByText('You are admitted to daily 21.gifts grant payouts.')).toBeNull();
+  });
+
+  it('shows the paused sentence instead of the apply walk', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+    useAuthStore.setState({ session: 'sess', account: null });
+    renderWithLocale(<FundingApplyScreen />);
+    expect(
+      screen.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.queryByText('First, write a short About me so people can get to know you.'),
+    ).toBeNull();
+  });
+
+  it('shows the apply walk for joey-rosima', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, username: 'joey-rosima' },
+    });
+    renderWithLocale(<FundingApplyScreen />);
+    expect(
+      screen.queryByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeNull();
+    expect(
+      screen.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeTruthy();
   });
 });

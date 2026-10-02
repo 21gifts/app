@@ -306,6 +306,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:daily-payout-stopped-apply",
+    "label": "/welcome daily-payout-stopped-apply",
+    "visual": "state-welcome-daily-payout-stopped-apply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:renew",
     "label": "/welcome renew",
     "visual": "state-welcome-renew",
@@ -1956,6 +1962,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants:funding-apply",
+    "label": "/grants funding-apply",
+    "visual": "state-grants-funding-apply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/grants:funding-not-verified",
     "label": "/grants funding-not-verified",
     "visual": "state-profile-funding-not-verified",
@@ -2037,6 +2049,12 @@
     "id": "/grants/apply:default",
     "label": "/grants/apply default",
     "visual": "screen-grants-apply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/apply:about",
+    "label": "/grants/apply about",
+    "visual": "state-grants-apply-about",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

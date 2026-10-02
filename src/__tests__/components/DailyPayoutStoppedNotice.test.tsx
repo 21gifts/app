@@ -1,9 +1,18 @@
 import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DailyPayoutStoppedNotice } from '@/components/DailyPayoutStoppedNotice';
 import type { Account } from '@/lib/api-types';
+import { grantApplicationsPaused } from '@/lib/grant-applications';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('@/lib/grant-applications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/grant-applications')>();
+  return {
+    ...actual,
+    grantApplicationsPaused: vi.fn(actual.grantApplicationsPaused),
+  };
+});
 
 const baseAccount = {
   id: 'acc_1',
@@ -24,13 +33,17 @@ const baseAccount = {
   walletRequired: true,
 } as Account;
 
+beforeEach(() => {
+  vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+});
+
 afterEach(() => {
   cleanup();
   useAuthStore.setState({ session: null, account: null });
 });
 
 describe('DailyPayoutStoppedNotice', () => {
-  it('shows the English title and apply link when the flag is true', () => {
+  it('shows the English title, paused sentence, and statistics link when the flag is true', () => {
     useAuthStore.setState({
       session: 'tok',
       account: {
@@ -47,8 +60,41 @@ describe('DailyPayoutStoppedNotice', () => {
     renderWithLocale(<DailyPayoutStoppedNotice />);
     expect(screen.getByRole('heading', { name: 'Daily payout stopped' })).toBeTruthy();
     expect(
+      screen.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'https://21.gifts/statistics' }).getAttribute('href'),
+    ).toBe('https://21.gifts/statistics');
+    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
+  });
+
+  it('shows the Apply link for username jewel-bacolbas when the flag is true', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...baseAccount,
+        username: 'jewel-bacolbas',
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+          dailyPayoutStoppedNotice: true,
+        },
+      },
+    });
+    renderWithLocale(<DailyPayoutStoppedNotice />);
+    expect(
       screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
     ).toBe('/grants/apply');
+    expect(
+      screen.queryByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeNull();
   });
 
   it('renders nothing when the flag is false', () => {
@@ -99,5 +145,31 @@ describe('DailyPayoutStoppedNotice', () => {
     const { container } = renderWithLocale(<DailyPayoutStoppedNotice />);
     expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Daily payout stopped' })).toBeNull();
+  });
+
+  it('links to the apply walk', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(false);
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...baseAccount,
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+          dailyPayoutStoppedNotice: true,
+        },
+      },
+    });
+    renderWithLocale(<DailyPayoutStoppedNotice />);
+    expect(
+      screen.getByText(
+        'Your daily payout has stopped because you have not applied for the 21 gifts grant. Apply so a moderator can review your posts.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
+    ).toBe('/grants/apply');
   });
 });
