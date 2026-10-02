@@ -80,7 +80,7 @@ function notificationOpenPath(row: Notification): string {
  * to 0 when inbox or staff-room unread remains). Fetches the staff room only when
  * `roleAtLeast(account?.role, 'moderator')`; below moderator the remaining
  * badge is inbox unread only. Renders nothing when there is no
- * session. The list keeps only rows with `readAt === null`. There is no
+ * session. The list keeps every fetched row, including those with `readAt` set. There is no
  * composer; opening a `moderator_proposal` row goes to `/moderate/proposals`
  * and does not call `markNotificationRead`; opening a `moderator_appointed`
  * row waits for `markNotificationRead` (then still goes to `/welcome` if that
@@ -113,7 +113,7 @@ export function NotificationsLoader(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setNotifications(next.notifications.filter((row) => row.readAt === null));
+        setNotifications(next.notifications);
         bumpUnreadAppBadgeEpoch();
         void setHomeScreenBadgeToRemainingUnread(session);
         void markAllNotificationsRead(session)

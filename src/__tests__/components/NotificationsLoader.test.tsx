@@ -299,7 +299,7 @@ describe('NotificationsLoader', () => {
     });
   });
 
-  it('drops a row with readAt set and still shows unread rows', async () => {
+  it('keeps a read row beside unread rows', async () => {
     const readRow: Notification = {
       ...ROW,
       id: 'n-read',
@@ -310,8 +310,8 @@ describe('NotificationsLoader', () => {
     listMock.mockResolvedValue({ notifications: [readRow, ROW], unreadCount: 1 });
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByText('Bob replied')).toBeTruthy();
-    expect(screen.queryByText('Carol replied')).toBeNull();
-    expect(screen.queryByText('Already seen')).toBeNull();
+    expect(screen.getByText('Carol replied')).toBeTruthy();
+    expect(screen.getByText('Already seen')).toBeTruthy();
   });
 
   it('opens a row even when markNotificationRead fails', async () => {
