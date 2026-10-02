@@ -684,9 +684,7 @@ export function PublicMessageThread(props: {
             ? 'tooLong'
             : isRateLimitError(err)
               ? 'rateLimit'
-              : isAuthorWalletError(err)
-                ? 'authorWallet'
-                : 'request',
+              : 'request',
         );
       }
     } finally {

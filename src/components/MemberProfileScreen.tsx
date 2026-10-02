@@ -899,13 +899,7 @@ export function MemberProfileScreen({
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(
-          isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
-        );
+        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
       }
     } finally {
       if (!awaitingPay) {

@@ -2497,7 +2497,7 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('maps a compose-pay receiving-wallet answer onto the author-wallet reply error', async () => {
+  it('keeps the generic reply error when the platform fee wallet cannot receive', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
     renderWithLocale(
       <MemberProfileScreen
@@ -2510,7 +2510,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/author's wallet cannot receive/i);
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
   });
 
