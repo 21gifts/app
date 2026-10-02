@@ -3925,6 +3925,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'thread-wallet-required',
+    image: 'messages-thread-wallet-required.png',
+    visual: 'state-messages-thread-wallet-required',
+    needle: 'messages thread-wallet-required',
+  },
+  {
+    route: '/messages',
     id: 'thread-quoted-note',
     image: 'messages-thread-quoted-note.png',
     visual: 'state-messages-thread-quoted-note',

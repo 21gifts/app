@@ -24,6 +24,7 @@ import {
   postMessageInvoice,
     postRepaymentInvoice,
   setName,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -86,6 +87,12 @@ vi.mock('@/lib/api', () => ({
     constructor() {
       super('cannot_receive');
       this.name = 'CannotReceiveError';
+    }
+  },
+  WalletRequiredError: class WalletRequiredError extends Error {
+    constructor() {
+      super('wallet_required');
+      this.name = 'WalletRequiredError';
     }
   },
   fetchComposeTarget: vi.fn(),
@@ -1630,6 +1637,31 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       "The author's wallet cannot receive this Bitcoin payment",
     );
+  });
+
+  it('opens the wallet overlay instead of a pay error when Gift Continue needs a wallet', async () => {
+    vi.mocked(postMessageInvoice)
+      .mockRejectedValueOnce(new Error('Too many payments'))
+      .mockRejectedValueOnce(new WalletRequiredError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
   it('shows pay rate-limit copy when Gift Continue is limited', async () => {

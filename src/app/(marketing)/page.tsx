@@ -20,14 +20,18 @@ export const metadata: Metadata = {
 };
 
 /**
- * Host this request was made on, without a port (`x-forwarded-host` first).
+ * 21.gifts host this request was made on, without a port (`x-forwarded-host`
+ * first). Only `21.gifts` and its subdomains are taken from the request; any
+ * other or missing host yields `21.gifts`, so a forged header cannot redirect
+ * the donation address.
  *
- * @returns The hostname, or an empty string when the request names none.
+ * @returns `21.gifts` or one of its subdomains.
  */
 async function requestHostname(): Promise<string> {
   const headerStore = await headers();
   const raw = headerStore.get('x-forwarded-host') ?? headerStore.get('host') ?? '';
-  return raw.replace(/,.*$/, '').trim().replace(/:\d+$/, '');
+  const host = raw.replace(/,.*$/, '').trim().replace(/:\d+$/, '').toLowerCase();
+  return /^([a-z0-9-]+\.)*21\.gifts$/.test(host) ? host : '21.gifts';
 }
 
 /**

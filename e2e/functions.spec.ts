@@ -3388,12 +3388,14 @@ test('Function: topicPath — welcome chapter heading is visible', async ({ page
   await expect(page.getByRole('heading', { level: 2, name: '/welcome' })).toBeVisible();
 });
 
-test('Function: topicVariant — pay-qr contents link is visible', async ({ page }) => {
+test('Function: topicVariant — wallet-pay-unavailable contents link is visible', async ({
+  page,
+}) => {
   await page.goto('/handbook/screens');
   await expect(
     page
       .getByRole('navigation', { name: 'Contents' })
-      .getByRole('link', { name: 'pay-qr', exact: true }),
+      .getByRole('link', { name: 'wallet-pay-unavailable', exact: true }),
   ).toBeVisible();
 });
 
@@ -3433,11 +3435,15 @@ test('Function: topicAnchor — hash targets the root-default card', async ({ pa
   await expect(page.locator('#root-default')).toBeVisible();
 });
 
-test('Function: parseScreenVariantDescriptions — pay-qr description is visible', async ({
+test('Function: parseScreenVariantDescriptions — wallet-pay-unavailable description is visible', async ({
   page,
 }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByText(/invoice card shows the Bitcoin payment QR/)).toBeVisible();
+  await expect(
+    page.getByText(
+      /No invoice QR and no button to another wallet app, on desktop and on a smartphone alike/,
+    ),
+  ).toBeVisible();
 });
 
 test('Function: screenVariantDescription — German screen cards follow the locale cookie', async ({

@@ -68,6 +68,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicReplies: vi.fn(),
   PublicForumUnauthorizedError: class PublicForumUnauthorizedError extends Error {},
   CannotReceiveError: class CannotReceiveError extends Error {},
+  WalletRequiredError: class WalletRequiredError extends Error {},
   NoteDeletedError: class NoteDeletedError extends Error {
     constructor() {
       super('This note was deleted');
@@ -137,6 +138,7 @@ import {
   setMessageShopText,
   fetchShopNoteEdits,
   setName,
+  WalletRequiredError,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
@@ -5290,6 +5292,31 @@ describe('ForumLoader', () => {
     );
   });
 
+  it('opens the wallet overlay instead of a pay error when the api requires a wallet', async () => {
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
+    repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
+    invoiceMock.mockRejectedValueOnce(new Error('Too many payments'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    const replyCard = await clickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+    invoiceMock.mockRejectedValueOnce(new WalletRequiredError());
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(invoiceMock).toHaveBeenCalledTimes(2);
+  });
+
   it('shows pay rate-limit copy when invoice is rate limited', async () => {
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
@@ -10291,6 +10318,25 @@ describe('forum feed pages', () => {
         "The author's wallet cannot receive this Bitcoin payment",
       );
     });
+  });
+
+  it('opens the wallet overlay and clears the repayment notice when the api requires a wallet', async () => {
+    fetchMock.mockResolvedValue(fundedCredit());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    repayMock.mockRejectedValueOnce(new Error('Too many payments'));
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+    repayMock.mockRejectedValueOnce(new WalletRequiredError());
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(repayMock).toHaveBeenCalledTimes(2);
   });
 });
 

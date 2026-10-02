@@ -530,6 +530,7 @@ const en = {
   'requirements.walletTitle': 'Your wallet is not set up',
   'requirements.walletBody':
     'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+  'requirements.walletOpen': 'Open your wallet',
   'requirements.close': 'Close',
 
   'introduce.title': 'Introduce yourself',
@@ -919,6 +920,7 @@ const en = {
   'inbox.errorAmount': 'Enter a whole number greater than zero',
   'inbox.errorRateLimit': 'Too many payments. Please wait a moment and try again.',
   'inbox.errorAuthorWallet': "The author's wallet cannot receive this Bitcoin payment",
+  'inbox.errorWalletRequired': 'Set up your wallet first.',
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direct',
   'inbox.origin.damus': 'Damus',
@@ -1680,6 +1682,7 @@ const de = {
   'requirements.walletTitle': 'Ihre Wallet ist nicht eingerichtet',
   'requirements.walletBody':
     'Geschenke für Ihre Beiträge gehen in Ihre eigene 21.gifts-Wallet, und sie ist noch nicht eingerichtet. Sobald sie eingerichtet ist, können Sie schreiben.',
+  'requirements.walletOpen': 'Wallet öffnen',
   'requirements.close': 'Schließen',
 
   'introduce.title': 'Stell dich vor',
@@ -2085,6 +2088,7 @@ const de = {
   'inbox.errorRateLimit':
     'Zu viele Zahlungen. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
   'inbox.errorAuthorWallet': 'Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen',
+  'inbox.errorWalletRequired': 'Richten Sie zuerst Ihre Wallet ein.',
   'inbox.origin.contact': 'Kontakt',
   'inbox.origin.direct': 'Direkt',
   'inbox.origin.damus': 'Damus',
@@ -2850,6 +2854,7 @@ const es = {
   'requirements.walletTitle': 'Tu wallet no está configurada',
   'requirements.walletBody':
     'Los regalos para tus publicaciones van a tu propia wallet de 21.gifts, y todavía no está configurada. En cuanto esté configurada, podrás publicar.',
+  'requirements.walletOpen': 'Abrir tu wallet',
   'requirements.close': 'Cerrar',
 
   'introduce.title': 'Preséntate',
@@ -3244,6 +3249,7 @@ const es = {
   'inbox.errorAmount': 'Introduce un número entero mayor que cero',
   'inbox.errorRateLimit': 'Demasiados pagos. Espera un momento e inténtalo de nuevo.',
   'inbox.errorAuthorWallet': 'La wallet del autor no puede recibir este pago en Bitcoin',
+  'inbox.errorWalletRequired': 'Primero configura tu wallet.',
   'inbox.origin.contact': 'Contacto',
   'inbox.origin.direct': 'Directo',
   'inbox.origin.damus': 'Damus',
@@ -4001,6 +4007,7 @@ const fil = {
   'requirements.walletTitle': 'Hindi pa naka-set up ang wallet mo',
   'requirements.walletBody':
     'Sa sarili mong 21.gifts wallet napupunta ang mga regalo para sa mga post mo, at hindi pa ito naka-set up. Kapag naka-set up na ito, puwede ka nang mag-post.',
+  'requirements.walletOpen': 'Buksan ang wallet mo',
   'requirements.close': 'Isara',
 
   'introduce.title': 'Ipakilala ang sarili mo',
@@ -4402,6 +4409,7 @@ const fil = {
   'inbox.errorAmount': 'Maglagay ng buong numerong higit sa zero',
   'inbox.errorRateLimit': 'Sobrang daming bayad. Maghintay sandali at subukan ulit.',
   'inbox.errorAuthorWallet': 'Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito',
+  'inbox.errorWalletRequired': 'I-set up muna ang wallet mo.',
   'inbox.origin.contact': 'Contact',
   'inbox.origin.direct': 'Direkta',
   'inbox.origin.damus': 'Damus',

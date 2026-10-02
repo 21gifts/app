@@ -3300,6 +3300,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-wallet-required",
+    "label": "/messages thread-wallet-required",
+    "visual": "state-messages-thread-wallet-required",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:thread-quoted-note",
     "label": "/messages thread-quoted-note",
     "visual": "state-messages-thread-quoted-note",

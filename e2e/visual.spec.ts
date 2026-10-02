@@ -21649,6 +21649,77 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-wallet-pay-unconfirmed');
   });
 
+  test('messages thread-wallet-required', async ({ page }) => {
+    await fulfillRateDay(page);
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+            {
+              id: 'm2',
+              name: 'Ada',
+              text: 'Thanks',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              fromMe: true,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21\/invoice$/, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 412,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'wallet_required' }),
+      });
+    });
+    await page.goto('/messages?c=conv-21');
+    await expect(page.getByText('Hello team')).toBeVisible();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveAttribute(
+      'href',
+      '/wallet',
+    );
+    await expect(page.getByText(PAY_UNAVAILABLE)).toHaveCount(0);
+    await shotScreen(page, 'state-messages-thread-wallet-required');
+  });
+
   test('messages thread-quoted-note', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {

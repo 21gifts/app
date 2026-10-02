@@ -20,6 +20,7 @@ import {
   NoteDeletedError,
   postMessage,
   postMessageInvoice,
+  WalletRequiredError,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
@@ -870,6 +871,11 @@ export function PublicMessageThread(props: {
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(

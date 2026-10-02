@@ -2016,7 +2016,7 @@ Carol's **Verified** tag clicked; the explanation under that card header is visi
 
 ### Variant: overlay-wallet
 
-Named member with living-room rules agreed whose wallet is not set up (the api lists `lightning-address` as missing). Composer filled, **Post** clicked. `RequirementsOverlay` dialog **Your wallet is not set up** with the sentence **Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.** No form and no **Skip**. Close (X) is present.
+Named member with living-room rules agreed whose wallet is not set up (the api lists `lightning-address` as missing). Composer filled, **Post** clicked. `RequirementsOverlay` dialog **Your wallet is not set up** with the sentence **Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.** and the labeled link **Open your wallet** to `/wallet`. No form and no **Skip**. Close (X) is present.
 
 ![21.gifts welcome overlay wallet](images/welcome-overlay-wallet.png)
 
@@ -2989,7 +2989,7 @@ Signed-in visitor viewing their own `/members/:id` card.
 
 ### Variant: overlay-wallet
 
-Named visitor with living-room rules agreed whose wallet is not set up (the api lists `lightning-address` as missing). Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Your wallet is not set up** with the sentence that posts need the member's own 21.gifts wallet. No form and no **Skip**. Close (X) is present.
+Named visitor with living-room rules agreed whose wallet is not set up (the api lists `lightning-address` as missing). Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Your wallet is not set up** with the sentence that posts need the member's own 21.gifts wallet and the labeled link **Open your wallet** to `/wallet`. No form and no **Skip**. Close (X) is present.
 
 ![21.gifts member overlay wallet](images/members-overlay-wallet.png)
 
@@ -4191,6 +4191,12 @@ Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoi
 Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the neutral not-confirmed-yet sentence.
 
 ![21.gifts inbox thread wallet pay unconfirmed](images/messages-thread-wallet-pay-unconfirmed.png)
+
+### Variant: thread-wallet-required
+
+Open thread, Amount **21** submitted, and the api answers the invoice with 412 because the member's own wallet is not set up. No pay sheet opens; under the composer the alert link **Set up your wallet first.** leads to `/wallet`.
+
+![21.gifts inbox thread wallet required](images/messages-thread-wallet-required.png)
 
 ### Variant: thread-quoted-note
 

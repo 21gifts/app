@@ -45,6 +45,7 @@ import {
   postMessageVideo,
   postRepaymentInvoice,
   PublicForumUnauthorizedError,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -765,6 +766,11 @@ export function ForumLoader({
             return;
           }
           setRepayNotice({ messageId, error: 'request' });
+          return;
+        }
+        if (err instanceof WalletRequiredError) {
+          setRepayNotice(null);
+          setOverlayRequirement('wallet');
           return;
         }
         setRepayNotice({
@@ -2118,6 +2124,11 @@ export function ForumLoader({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(

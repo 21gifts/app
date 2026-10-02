@@ -34,6 +34,7 @@ import {
   postMessage,
   postMessageInvoice,
   postRepaymentInvoice,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -1119,6 +1120,11 @@ export function MemberProfileScreen({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
