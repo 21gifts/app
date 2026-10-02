@@ -53,13 +53,21 @@ async function dropConnection(): Promise<void> {
  *
  * @param run - Run number captured by the caller.
  * @param conn - Connection to query.
+ * @param options - Set `ensureSynced` for the first read after connecting.
  * @returns Resolves after `setReady` or when the run or read is stale.
  */
-async function readBalance(run: number, conn: WalletConnection): Promise<void> {
+async function readBalance(
+  run: number,
+  conn: WalletConnection,
+  options?: { ensureSynced?: boolean },
+): Promise<void> {
   balanceReadCounter += 1;
   const read = balanceReadCounter;
   try {
-    const info = await conn.getInfo();
+    const info =
+      options?.ensureSynced === true
+        ? await conn.getInfo({ ensureSynced: true })
+        : await conn.getInfo();
     if (run !== runCounter || read !== balanceReadCounter) {
       return;
     }
@@ -90,8 +98,10 @@ async function failRun(run: number): Promise<void> {
 }
 
 /**
- * Connects the in-app wallet from the tab phrase and Breez API key. No-ops when
- * either is missing. Never rejects; failures end in the store.
+ * Connects the in-app wallet from the tab phrase and Breez API key. The first
+ * balance read waits for synchronization, so the store stays `connecting`
+ * until synchronized state is available. No-ops when either input is missing.
+ * Never rejects; failures end in the store.
  *
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
  * @returns Resolves when the attempt finishes (ready, error, or superseded).
@@ -128,16 +138,16 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
     if (run !== runCounter) {
       return;
     }
-    await readBalance(run, next);
+    await readBalance(run, next, { ensureSynced: true });
   } catch {
     await failRun(run);
   }
 }
 
 /**
- * Refreshes the balance on the current connection. No-ops without a connection.
- * When reads overlap only the latest one writes. Never rejects; a failure while
- * current ends in the store.
+ * Refreshes the balance on the current connection with a plain read. No-ops
+ * without a connection. When reads overlap only the latest one writes. Never
+ * rejects; a failure while current ends in the store.
  *
  * @returns Resolves when the refresh finishes or is skipped.
  */

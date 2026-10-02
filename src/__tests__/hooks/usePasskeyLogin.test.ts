@@ -1,8 +1,8 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { obtainPrfFirst, readPrfFirst } from '@/lib/prf-mnemonic';
+import { obtainPrfFirst, prfEvalFirstSalt, readPrfFirst } from '@/lib/prf-mnemonic';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
-import { bytesToBase64Url } from '@/lib/webauthn-browser';
+import { bytesToBase64Url, requestOptionsFromJSON } from '@/lib/webauthn-browser';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   finishPasskeyAuthentication,
@@ -137,7 +137,16 @@ beforeEach(() => {
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyAuthentication).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(obtainPrfFirst).mockReset().mockResolvedValue(new Uint8Array(32).fill(7));
+  vi.mocked(prfEvalFirstSalt).mockReset().mockResolvedValue(new Uint8Array(32).fill(1));
   vi.mocked(readPrfFirst).mockReset().mockReturnValue(undefined);
+  vi.mocked(requestOptionsFromJSON)
+    .mockReset()
+    .mockReturnValue({
+      challenge: new ArrayBuffer(1),
+      extensions: {
+        prf: { eval: { first: new Uint8Array(32).fill(1).buffer } },
+      },
+    });
   vi.mocked(rememberSessionPhrase).mockClear();
   const ctor = globalThis.PublicKeyCredential as unknown;
   if (typeof ctor === 'function' || (typeof ctor === 'object' && ctor !== null)) {
@@ -2913,6 +2922,96 @@ describe('usePasskeyLogin', () => {
       vi.unstubAllGlobals();
     });
 
+    it('treats PRF output for a different login salt as absent', async () => {
+      process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+      const fetchMock = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response(null, { status: 204 }));
+      vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+        challengeId: WALLET_CHALLENGE,
+        options: { challenge: 'aa' },
+      });
+      vi.mocked(requestOptionsFromJSON).mockReturnValueOnce({
+        challenge: new ArrayBuffer(1),
+        extensions: { prf: { eval: { first: new Uint8Array(32).fill(2) } } },
+      });
+      vi.mocked(finishPasskeyAuthentication).mockResolvedValue({
+        token: 'tok',
+        account: walletAccount,
+      });
+      vi.mocked(readPrfFirst).mockReturnValue(new Uint8Array(32).fill(7));
+      const get = vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' });
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        credentials: { create: vi.fn(), get },
+      });
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.login();
+      });
+      expect(result.current.status).toBe('idle');
+      expect(readPrfFirst).not.toHaveBeenCalled();
+      expect(rememberSessionPhrase).not.toHaveBeenCalled();
+      expect(get).toHaveBeenCalledTimes(1);
+      expect(finishPasskeyAuthentication).toHaveBeenCalledWith(WALLET_CHALLENGE, { id: 'cred' });
+      const bodies = fetchMock.mock.calls.map(
+        (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+      );
+      expect(bodies.filter((body) => body.event === 'client.passkey.login.prf')).toEqual([
+        {
+          event: 'client.passkey.login.prf',
+          prfPresent: false,
+          stage: 'login',
+          challengeId: WALLET_CHALLENGE,
+        },
+      ]);
+      fetchMock.mockRestore();
+      vi.unstubAllGlobals();
+    });
+
+    it('treats a login request without a PRF extension as absent', async () => {
+      process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+      const fetchMock = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response(null, { status: 204 }));
+      vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+        challengeId: WALLET_CHALLENGE,
+        options: { challenge: 'aa' },
+      });
+      vi.mocked(requestOptionsFromJSON).mockReturnValueOnce({ challenge: new ArrayBuffer(1) });
+      vi.mocked(finishPasskeyAuthentication).mockResolvedValue({
+        token: 'tok',
+        account: walletAccount,
+      });
+      vi.mocked(readPrfFirst).mockReturnValue(new Uint8Array(32).fill(7));
+      const get = vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' });
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        credentials: { create: vi.fn(), get },
+      });
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.login();
+      });
+      expect(result.current.status).toBe('idle');
+      expect(readPrfFirst).not.toHaveBeenCalled();
+      expect(rememberSessionPhrase).not.toHaveBeenCalled();
+      expect(get).toHaveBeenCalledTimes(1);
+      const bodies = fetchMock.mock.calls.map(
+        (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },
+      );
+      expect(bodies.filter((body) => body.event === 'client.passkey.login.prf')).toEqual([
+        {
+          event: 'client.passkey.login.prf',
+          prfPresent: false,
+          stage: 'login',
+          challengeId: WALLET_CHALLENGE,
+        },
+      ]);
+      fetchMock.mockRestore();
+      vi.unstubAllGlobals();
+    });
+
     it('treats empty PRF bytes as absent', async () => {
       process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
       const fetchMock = vi
@@ -3118,6 +3217,7 @@ describe('usePasskeyLogin', () => {
         result.current.login();
       });
       expect(readPrfFirst).not.toHaveBeenCalled();
+      expect(prfEvalFirstSalt).not.toHaveBeenCalled();
       expect(rememberSessionPhrase).not.toHaveBeenCalled();
       const bodies = fetchMock.mock.calls.map(
         (call) => JSON.parse(String((call[1] as RequestInit).body)) as { event?: string },

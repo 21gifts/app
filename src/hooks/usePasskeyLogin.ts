@@ -19,6 +19,7 @@ import { obtainPrfFirst, prfEvalFirstSalt, readPrfFirst } from '@/lib/prf-mnemon
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import {
   base64UrlToBytes,
+  bytesToBase64Url,
   creationOptionsFromJSON,
   credentialToJSON,
   requestOptionsFromJSON,
@@ -473,25 +474,37 @@ class SupersededError extends Error {
 }
 
 /**
- * Reads PRF bytes from a login assertion when the Breez API key is set.
- * Reports presence only (never the bytes). A throw or empty result counts as absent.
+ * Reads PRF bytes from a login assertion when the Breez API key is set and the
+ * request used the app's own PRF salt. Reports presence only (never the bytes).
+ * A missing, unreadable, or different salt and a throw or empty result count as absent.
  *
  * @param credential - WebAuthn assertion.
+ * @param request - Browser request that produced the assertion.
  * @param challengeId - Challenge id from authenticate-begin.
  * @param stage - `login` or `authenticate` entry point.
  * @returns PRF first bytes when present, otherwise `undefined`.
  */
-function readLoginPrfFirst(
+async function readLoginPrfFirst(
   credential: PublicKeyCredential,
+  request: CredentialRequestOptions,
   challengeId: string,
   stage: 'login' | 'authenticate',
-): Uint8Array | undefined {
+): Promise<Uint8Array | undefined> {
   if (getBreezApiKey() === null) {
     return undefined;
   }
   let prfFirst: Uint8Array | undefined;
   try {
-    prfFirst = readPrfFirst(credential);
+    const requestSalt = request.publicKey?.extensions?.prf?.eval?.first;
+    if (requestSalt !== undefined) {
+      const expectedSalt = await prfEvalFirstSalt();
+      const requestBytes = ArrayBuffer.isView(requestSalt)
+        ? new Uint8Array(requestSalt.buffer, requestSalt.byteOffset, requestSalt.byteLength)
+        : new Uint8Array(requestSalt);
+      if (bytesToBase64Url(requestBytes) === bytesToBase64Url(expectedSalt)) {
+        prfFirst = readPrfFirst(credential);
+      }
+    }
   } catch {
     prfFirst = undefined;
   }
@@ -785,8 +798,9 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       const publicKeyCredential = credential as PublicKeyCredential;
-      const prfFirst = readLoginPrfFirst(
+      const prfFirst = await readLoginPrfFirst(
         publicKeyCredential,
+        request,
         begin.challengeId,
         entryKindRef.current === 'login' ? 'login' : 'authenticate',
       );
