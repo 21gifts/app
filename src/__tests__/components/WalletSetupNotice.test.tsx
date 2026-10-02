@@ -83,6 +83,8 @@ describe('WalletSetupNotice', () => {
     expect(useAuthStore.getState().session).toBeNull();
     expect(replace).toHaveBeenCalledWith('/login');
     expect(replace).toHaveBeenCalledTimes(1);
+    expect((button as HTMLButtonElement).disabled).toBe(false);
+    expect(button.querySelector('svg')).toBeNull();
   });
 
   it('Log out still leaves when turning off push hangs or fails', async () => {

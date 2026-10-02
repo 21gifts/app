@@ -3885,7 +3885,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Blocking one-time wallet setup dialog in the style of `PasskeyRenewNotice`. Intro: **Set up your wallet**, one sentence, **Set up wallet**. Progress: **Setting up your wallet…** with a spinner. Error: one plain sentence and **Try again**. No PRF: **This passkey cannot hold a wallet** and that this password manager or device cannot hold one.
 - **Inputs:** None (reads `useWalletSetup`).
-- **Returns / side effects:** The dialog. No dismiss control; **Log out** (turn off push for at most five seconds, clear the session, open `/login`) is the only way around it.
+- **Returns / side effects:** The dialog. No dismiss control; **Log out** (turn off push for at most five seconds, clear the session, open `/login`) is the only way around it. Pressing **Log out** does not change the dialog; a second press while leaving is ignored.
 - **Used by:** `AppShell` while `needsWalletSetup` holds or a setup pin is set.
 
 ## Function: useWalletHistory
@@ -3897,7 +3897,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletHistory
 
-- **Purpose:** Payments card on `/wallet` under the address while the wallet is ready. Each row: received or sent icon and word (plus **Pending** or **Failed** when not settled), Bitcoin amount with the default fiat, date and time, and the payer's note when there is one. Empty: **No payments yet.** Error: one sentence and **Try again**. Nothing renders during the first load.
+- **Purpose:** Payments card on `/wallet` under the address while the wallet is ready. Each row: received or sent icon and word (plus **Pending** or **Failed** when not settled), Bitcoin amount with the default fiat, date and time, and the payer's note when there is one. Empty: **No payments yet.** Error: one sentence and **Try again**; the error stays shown until the reload's result arrives. Nothing renders during the first load.
 - **Inputs:** None (reads `useWalletHistory`, the latest rate day, fiat and number format).
 - **Returns / side effects:** The card, or `null`. The next page loads when the end of the list scrolls into view (`IntersectionObserver`).
 - **Used by:** `WalletScreenView`.
