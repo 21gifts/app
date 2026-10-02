@@ -1,11 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * In-app wallet pay slot of the gift pay sheet. Playwright builds leave the
- * wallet key unset, so the live path is the existing Wallet of Satoshi flow;
- * the in-app states are reached through `?visual=wallet-pay-…` pins, which
- * apply only when the invoice carries a `sparkInvoice`.
+ * In-app wallet pay slot of the gift pay sheet. The in-app wallet is the only
+ * way to pay: there is no invoice QR and no link to another wallet app.
+ * Playwright builds leave the wallet key unset, so the live slot says the
+ * wallet is not available; the other states are reached through
+ * `?visual=wallet-pay-…` pins, with or without a `sparkInvoice`.
  */
+
+const UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
 
 const SPARK_INVOICE = 'spark1e2egiftinvoice';
 
@@ -169,7 +172,7 @@ async function openPaySheet(page: Page, visual: string | null): Promise<void> {
   await expect(page.getByText('Pay ₿21')).toBeVisible();
 }
 
-test('wallet pay: key unset keeps Wallet of Satoshi even with a sparkInvoice', async ({ page }) => {
+test('wallet pay: key unset shows only the unavailable wallet sentence', async ({ page }) => {
   await signInAda(page);
   const bodies = await stubPayableReply(page, SPARK_INVOICE);
   const urls: string[] = [];
@@ -178,24 +181,40 @@ test('wallet pay: key unset keeps Wallet of Satoshi even with a sparkInvoice', a
   });
   await openPaySheet(page, null);
   expect(bodies.some((body) => body.includes(SPARK_INVOICE))).toBe(true);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  const sheet = page.locator('[data-pay-sheet]');
+  await expect(sheet.getByRole('status')).toHaveText(UNAVAILABLE);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
   expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
 });
 
-test('wallet pay: a pin without a sparkInvoice keeps Wallet of Satoshi', async ({ page }) => {
+test('wallet pay: key unset without a sparkInvoice is still wallet-only', async ({ page }) => {
+  await signInAda(page);
+  await stubPayableReply(page, null);
+  await openPaySheet(page, null);
+  await expect(page.locator('[data-pay-sheet]').getByRole('status')).toHaveText(UNAVAILABLE);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+});
+
+test('wallet pay: a confirm pin works without a sparkInvoice', async ({ page }) => {
   await signInAda(page);
   await stubPayableReply(page, null);
   await openPaySheet(page, 'wallet-pay-confirm');
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
 });
 
-test('wallet pay: unlock pin offers Unlock wallet instead of Wallet of Satoshi', async ({
-  page,
-}) => {
+test('wallet pay: unavailable pin shows the unavailable wallet sentence', async ({ page }) => {
+  await signInAda(page);
+  await stubPayableReply(page, null);
+  await openPaySheet(page, 'wallet-pay-unavailable');
+  await expect(page.locator('[data-pay-sheet]').getByRole('status')).toHaveText(UNAVAILABLE);
+});
+
+test('wallet pay: locked wallet offers Unlock wallet and nothing else', async ({ page }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);
   await openPaySheet(page, 'wallet-pay-unlock');
@@ -204,8 +223,19 @@ test('wallet pay: unlock pin offers Unlock wallet instead of Wallet of Satoshi',
     sheet.getByText('Unlock your wallet to pay from your Bitcoin balance.'),
   ).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+});
+
+test('wallet pay: failed pin shows the prepare error and Try again', async ({ page }) => {
+  await signInAda(page);
+  await stubPayableReply(page, null);
+  await openPaySheet(page, 'wallet-pay-failed');
+  const sheet = page.locator('[data-pay-sheet]');
+  await expect(sheet.getByRole('alert')).toHaveText(
+    'Your wallet could not prepare this payment. Please try again.',
+  );
+  await expect(sheet.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
 test('wallet pay: preparing pin shows Checking your wallet…', async ({ page }) => {
@@ -261,23 +291,23 @@ test('wallet pay: unconfirmed pin shows the neutral sentence', async ({ page }) 
   await expect(page.locator('[data-pay-sheet]').getByRole('alert')).toHaveCount(0);
 });
 
-test('Function: WalletPay — confirm pin replaces the Wallet of Satoshi button', async ({
+test('Function: WalletPay — confirm pin shows Pay from wallet and no wallet app link', async ({
   page,
 }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);
   await openPaySheet(page, 'wallet-pay-confirm');
   await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
 });
 
-test('Function: useWalletPay — chooses the existing path while the wallet is not configured', async ({
+test('Function: useWalletPay — an unset wallet key gives the unavailable view', async ({
   page,
 }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);
   await openPaySheet(page, null);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.locator('[data-pay-sheet]').getByRole('status')).toHaveText(UNAVAILABLE);
 });
 
 test('Function: payFromWallet — not called while the wallet is not configured', async ({
@@ -290,6 +320,6 @@ test('Function: payFromWallet — not called while the wallet is not configured'
     urls.push(request.url());
   });
   await openPaySheet(page, null);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.locator('[data-pay-sheet]').getByRole('status')).toHaveText(UNAVAILABLE);
   expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
 });

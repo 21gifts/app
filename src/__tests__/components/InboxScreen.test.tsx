@@ -17,6 +17,7 @@ import { getCatalog } from '@/lib/messages';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
 import {
   SPARK_INVOICE,
@@ -25,13 +26,25 @@ import {
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
 
+vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
+  return { ...actual, unlockWalletPhrase: vi.fn() };
+});
+
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
   return { ...actual, payFromWallet: vi.fn() };
 });
 
 const push = vi.fn();
-const originalUserAgent = navigator.userAgent;
+/** Pay slot sentence while the in-app wallet is not configured (no Breez key in unit tests). */
+const WALLET_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** Asserts that the pay sheet shows no invoice QR and no wallet-app button. */
+function expectWalletOnly(): void {
+  expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
+}
 const locationStub = { href: 'http://localhost/' };
 const htmlElementScrollTo = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTo');
 const htmlElementScrollHeight = Object.getOwnPropertyDescriptor(
@@ -86,10 +99,6 @@ afterEach(() => {
   useAuthStore.setState({ session: null, account: null });
   vi.mocked(searchMentionAccounts).mockReset();
   vi.mocked(searchMentionAccounts).mockResolvedValue([]);
-  Object.defineProperty(navigator, 'userAgent', {
-    configurable: true,
-    value: originalUserAgent,
-  });
   restoreHtmlElementScroll();
 });
 
@@ -1497,11 +1506,7 @@ describe('InboxScreen', () => {
     expect(row.querySelector('.tabular-nums')).toBeNull();
   });
 
-  it('opens Wallet of Satoshi from the smartphone pay sheet', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
+  it('shows the wallet slot in the pay sheet, with no invoice QR and no wallet-app button', () => {
     const onPayCancel = vi.fn();
     renderWithLocale(
       <InboxScreen
@@ -1526,77 +1531,18 @@ describe('InboxScreen', () => {
         payWaiting={true}
       />,
     );
-    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expectWalletOnly();
+    expect(document.querySelector('[data-pay-sheet] img')).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationStub.href.toLowerCase()).toContain('lnbc21n1test');
+    expect(locationStub.href).toBe('http://localhost/');
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('opens the Android wallet intent from the pay sheet without the QR', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value:
-        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-    renderWithLocale(
-      <InboxScreen
-        conversations={[DIRECT]}
-        error={false}
-        loading={false}
-        onRetry={() => undefined}
-        openId="conv-2"
-        onOpen={() => undefined}
-        messages={[MESSAGE]}
-        messagesLoading={false}
-        messagesError={false}
-        onRetryMessages={() => undefined}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        posting={false}
-        formError={null}
-        showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-      />,
-    );
-    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationStub.href).toMatch(/^intent:lightning:/);
-  });
-
-  it('shows the desktop invoice QR', async () => {
-    renderWithLocale(
-      <InboxScreen
-        conversations={[DIRECT]}
-        error={false}
-        loading={false}
-        onRetry={() => undefined}
-        openId="conv-2"
-        onOpen={() => undefined}
-        messages={[MESSAGE]}
-        messagesLoading={false}
-        messagesError={false}
-        onRetryMessages={() => undefined}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        posting={false}
-        formError={null}
-        showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-      />,
-    );
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-  });
-
-  it('shows the fiat value next to the amount in the pay sheet', async () => {
+  it('shows the fiat value next to the amount in the pay sheet', () => {
     renderWithLocale(
       <InboxScreen
         conversations={[DIRECT]}
@@ -1619,7 +1565,7 @@ describe('InboxScreen', () => {
         rateDay={RATE_DAY}
       />,
     );
-    await screen.findByRole('img', { name: 'Bitcoin payment QR code' });
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
     const confirm = screen.getByText(
       (_, node) =>
         node?.tagName === 'P' &&
@@ -1629,6 +1575,7 @@ describe('InboxScreen', () => {
         ),
     );
     expect(confirm).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
   });
 
   it('nests a gift under the parent listitem and not as its own listitem', () => {
@@ -3771,23 +3718,47 @@ describe('InboxScreen in-app wallet pay', () => {
 
   afterEach(resetWallet);
 
-  it('pays the gift from a ready wallet instead of opening an external wallet', async () => {
+  it('pays the gift from a ready wallet, with no invoice QR and no wallet-app button', async () => {
     setWalletUsable('ready');
     renderWithLocale(inbox(SPARK_INVOICE));
     expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expectWalletOnly();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
   });
 
-  it('keeps the external wallet without a sparkInvoice or without a usable wallet', async () => {
+  it('pays the payment request from the wallet without a sparkInvoice', async () => {
     setWalletUsable('ready');
     renderWithLocale(inbox(null));
-    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    cleanup();
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1test' });
+    expectWalletOnly();
+  });
+
+  it('opens a locked wallet with one passkey prompt, then offers Pay from wallet', async () => {
+    setWalletUsable('locked');
+    vi.mocked(unlockWalletPhrase)
+      .mockReset()
+      .mockImplementation(async () => {
+        setWalletUsable('ready');
+        return 'unlocked';
+      });
+    renderWithLocale(inbox(SPARK_INVOICE));
+    expect(payFromWallet).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock wallet' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers Try again when the wallet failed, and no other way to pay', () => {
     setWalletUsable('error');
     renderWithLocale(inbox(SPARK_INVOICE));
-    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your wallet could not prepare this payment. Please try again.',
+    );
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expectWalletOnly();
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 });
