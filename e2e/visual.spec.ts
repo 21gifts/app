@@ -12307,7 +12307,9 @@ test.describe('profile apply screens', () => {
 
   test('profile apply photo', async ({ page }) => {
     await seedApply(page, {
-      username: 'joey-rosima', aboutMe: 'I build on Bitcoin' });
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+    });
     await page.goto('/grants/apply');
     await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-photo');
@@ -12315,7 +12317,10 @@ test.describe('profile apply screens', () => {
 
   test('profile apply location', async ({ page }) => {
     await seedApply(page, {
-      username: 'joey-rosima', aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+    });
     await page.goto('/grants/apply');
     await expect(page.getByText('Next, add the place you live.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-location');

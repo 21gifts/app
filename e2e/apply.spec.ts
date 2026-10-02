@@ -200,9 +200,7 @@ test('Function: aboutMeFilled — a name-matching About me still asks for the bi
   ).toBeVisible();
 });
 
-test('Function: nextFillStep — the photo step is offered after About me', async ({
-  page,
-}) => {
+test('Function: nextFillStep — the photo step is offered after About me', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
