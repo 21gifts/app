@@ -1097,13 +1097,13 @@ Handbook states: default, about, sunday, photo, location, question, truth, trans
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payment text**. An initiator or founder sees the stored comment. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. The comment is text, with an icon-only pencil (`aria-label` **Edit comment**) on the same line, to the right of the text. The pencil opens the field. Save is an icon-only check (`aria-label` **Save**, primary) and cancel is an icon-only X (`aria-label` **Cancel**). Those words are not shown. A save in flight replaces the check with a spinner. An empty comment shows **Not set**. This page has no default-amount sentence, no payments switch, no recipients, and no **Add**.
 
-Handbook states: default, empty, loading, error, forbidden, invalid, save-error, pending.
+Handbook states: default, empty, loading, error, forbidden, invalid, save-error, pending, editing.
 
 ### `/grants/payments/amounts`
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payment amounts**. An initiator or founder sees the amount editor. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. Under the heading, one sentence says everyone in the grant program receives the roster `defaultAmountUsd` by default (`formatUsdDisplay`, not a fixed figure in the copy) and that this page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. Each recipient row shows the formatted USD amount, an icon-only pencil (**Edit** plus the shown address), and an icon-only trash (**Delete** plus the shown address) on one line. The pencil opens a `Field` for that amount; the check saves and the X cancels. **On**, **Off**, **Add**, and **Try again** stay labeled buttons. The comment is not on this page.
 
-Handbook states: default, empty, loading, error, forbidden, invalid, off, invalid-switch, duplicate, unknown, save-error, pending.
+Handbook states: default, empty, loading, error, forbidden, invalid, off, invalid-switch, duplicate, unknown, save-error, pending, editing.
 
 ### `/profile/apply`
 

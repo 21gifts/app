@@ -320,6 +320,29 @@ describe('daily payment subpages', () => {
     expect(await screen.findByRole('textbox', { name: 'Address' })).toHaveProperty('value', '');
   });
 
+  it('keeps an open amount editor open when a recipient is added', async () => {
+    await renderAmounts();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    const amount = screen.getByRole('textbox', { name: 'USD Ada@w...' });
+    fireEvent.change(amount, { target: { value: '4.25' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Address' }), {
+      target: { value: 'new@example.com' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD', exact: true }), {
+      target: { value: '1' },
+    });
+    addMock.mockResolvedValueOnce({
+      ...ROSTER,
+      recipients: [...ROSTER.recipients, { address: 'new@example.com', amountUsd: 1 }],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).toHaveBeenCalledWith('sess', 'new@example.com', 1);
+    expect(await screen.findByRole('textbox', { name: 'USD Ada@w...' })).toHaveProperty(
+      'value',
+      '4.25',
+    );
+  });
+
   it('updates and deletes a recipient', async () => {
     await renderAmounts();
     fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
