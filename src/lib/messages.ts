@@ -205,7 +205,7 @@ const en = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direct, with no middleman',
   'about.conv2Body':
-    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. Nobody delays it or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The receiving address is yours, not ours; if 21.gifts disappeared tomorrow, it would keep working.',
+    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. Nobody delays it or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The wallet and its Bitcoin are yours, not ours; if 21.gifts disappeared tomorrow, your @21.gifts address would stop working, but your 12 recovery words would still open your Bitcoin in any compatible wallet.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin is the most effective money',
   'about.conv3Body':
@@ -1357,7 +1357,7 @@ const de = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkt, niemand dazwischen',
   'about.conv2Body':
-    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Niemand hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Empfangsadresse gehört der empfangenden Person, nicht uns; verschwände 21.gifts morgen, liefe sie weiter.',
+    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Niemand hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Wallet und ihr Bitcoin gehören der empfangenden Person, nicht uns; verschwände 21.gifts morgen, funktionierte die @21.gifts-Adresse nicht mehr, aber die 12 Wiederherstellungswörter öffneten den Bitcoin weiterhin in jeder kompatiblen Wallet.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin ist das wirksamste Geld',
   'about.conv3Body':
@@ -2536,7 +2536,7 @@ const es = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Directo, sin intermediario',
   'about.conv2Body':
-    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Nadie lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La dirección de recepción es de quien recibe, no nuestra; si 21.gifts desapareciera mañana, seguiría funcionando.',
+    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Nadie lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La wallet y su Bitcoin son de quien recibe, no nuestros; si 21.gifts desapareciera mañana, la dirección @21.gifts dejaría de funcionar, pero las 12 palabras de recuperación seguirían abriendo el Bitcoin en cualquier wallet compatible.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Bitcoin es el dinero más eficaz',
   'about.conv3Body':
@@ -3687,7 +3687,7 @@ const fil = {
   'about.conv2Num': '2',
   'about.conv2Title': 'Direkta, walang tagapamagitan',
   'about.conv2Body':
-    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang address, hindi sa amin; kung mawala man ang 21.gifts bukas, gagana pa rin ito.',
+    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang wallet at ang Bitcoin nito, hindi sa amin; kung mawala man ang 21.gifts bukas, hihinto ang @21.gifts address, pero mabubuksan pa rin ng 12 recovery word ang Bitcoin sa anumang compatible na wallet.',
   'about.conv3Num': '3',
   'about.conv3Title': 'Ang Bitcoin ang pinakamabisang pera',
   'about.conv3Body':

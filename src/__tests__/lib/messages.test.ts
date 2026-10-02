@@ -73,6 +73,17 @@ describe('getCatalog', () => {
     }
   });
 
+  it('says the @21.gifts address ends with the service while the 12 words keep the Bitcoin', () => {
+    for (const locale of LOCALES) {
+      const catalog = getCatalog(locale);
+      for (const key of ['about.conv2Body', 'home.why3Body'] as const) {
+        expect(catalog[key], `${locale}.${key}`).toContain('@21.gifts');
+        expect(catalog[key], `${locale}.${key}`).toContain('12');
+      }
+    }
+    expect(getCatalog('en')['about.conv2Body']).toContain('address would stop working');
+  });
+
   it('prefixes home.step2BodyAfter with a period in every locale', () => {
     for (const locale of LOCALES) {
       expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
