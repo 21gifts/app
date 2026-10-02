@@ -114,7 +114,8 @@ export function pageFrameProblems(): string[] {
     if (rect.width < 1 || rect.height < 1) {
       continue;
     }
-    const horizontal = !slide && (rect.left < -1 || rect.right > window.innerWidth + 1);
+    const overflowX = rect.left < -1 || rect.right > window.innerWidth + 1;
+    const horizontal = overflowX && (!slide || getComputedStyle(node).position === 'fixed');
     const verticalOverflow = rect.top < -1 || rect.bottom > window.innerHeight + 1;
     if (!horizontal && !verticalOverflow) {
       continue;
