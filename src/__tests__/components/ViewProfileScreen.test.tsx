@@ -7,6 +7,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
   fetchViewAboutMePhoto: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 let hydrateReady = true;

@@ -24,6 +24,7 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/lib/api', () => ({
   listHiddenMessages: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 import { listHiddenMessages } from '@/lib/api';

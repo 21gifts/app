@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { deletePushSubscription, fetchVapidPublicKey, postPushSubscription } from '@/lib/api';
 import {
+  closeLocalPushNotifications,
+  currentPushEndpoint,
   disablePush,
   enablePush,
   isIosSafari,
   isStandaloneDisplay,
+  pushTagForNotification,
   registerPushWorker,
   resyncPushSubscription,
   vapidPublicKeyToBytes,
@@ -585,5 +588,222 @@ describe('disablePush', () => {
     await resyncP;
     await disableP;
     expect(postPushSubscription).not.toHaveBeenCalled();
+  });
+});
+
+function installNavigator(value: unknown): () => void {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value });
+  return () => {
+    if (descriptor === undefined) {
+      delete (globalThis as { navigator?: unknown }).navigator;
+      return;
+    }
+    Object.defineProperty(globalThis, 'navigator', descriptor);
+  };
+}
+
+describe('pushTagForNotification', () => {
+  it('returns null for a proposal', () => {
+    expect(
+      pushTagForNotification({ type: 'moderator_proposal', parentId: 'p', replyId: 'r' }),
+    ).toBeNull();
+  });
+});
+
+describe('currentPushEndpoint', () => {
+  it('returns undefined when navigator is missing', async () => {
+    const restoreNavigator = installNavigator(undefined);
+    try {
+      await expect(currentPushEndpoint()).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns undefined when this browser has no service worker', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      await expect(currentPushEndpoint()).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns undefined when the lookup throws', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: { getRegistration: vi.fn().mockRejectedValue(new Error('no worker')) },
+    });
+    try {
+      await expect(currentPushEndpoint()).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns undefined for an empty endpoint', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          pushManager: { getSubscription: vi.fn().mockResolvedValue({ endpoint: '' }) },
+        }),
+      },
+    });
+    try {
+      await expect(currentPushEndpoint()).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns undefined when the subscription has no endpoint', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+        }),
+      },
+    });
+    try {
+      await expect(currentPushEndpoint()).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns the subscription endpoint', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+          },
+        }),
+      },
+    });
+    try {
+      await expect(currentPushEndpoint()).resolves.toBe('https://push.example/sub');
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('returns undefined when getRegistration is undefined and ready never settles', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: new Promise(() => undefined),
+        getRegistration: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+    try {
+      await expect(currentPushEndpoint()).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+});
+
+describe('closeLocalPushNotifications', () => {
+  it('does nothing for an empty tag list', async () => {
+    await expect(closeLocalPushNotifications([])).resolves.toBeUndefined();
+  });
+
+  it('does nothing when navigator is missing', async () => {
+    const restoreNavigator = installNavigator(undefined);
+    try {
+      await expect(closeLocalPushNotifications(['forum_post:m1'])).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('does nothing when this browser has no service worker', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      await expect(closeLocalPushNotifications(['forum_post:m1'])).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('does nothing when notifications cannot be listed', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: { getRegistration: vi.fn().mockResolvedValue({}) },
+    });
+    try {
+      await expect(closeLocalPushNotifications(['forum_post:m1'])).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('does nothing when listing notifications throws', async () => {
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          getNotifications: vi.fn().mockRejectedValue(new Error('no')),
+        }),
+      },
+    });
+    try {
+      await expect(closeLocalPushNotifications(['forum_post:m1'])).resolves.toBeUndefined();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('closes only the named tag', async () => {
+    const closeHit = vi.fn();
+    const closeMiss = vi.fn();
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          getNotifications: vi.fn().mockResolvedValue([
+            { tag: 'forum_post:m1', close: closeHit },
+            { tag: 'forum_post:other', close: closeMiss },
+          ]),
+        }),
+      },
+    });
+    try {
+      await closeLocalPushNotifications(['forum_post:m1']);
+      expect(closeHit).toHaveBeenCalledTimes(1);
+      expect(closeMiss).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('ignores a shown note whose tag is not a string', async () => {
+    const close = vi.fn();
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          getNotifications: vi.fn().mockResolvedValue([{ tag: 1, close }]),
+        }),
+      },
+    });
+    try {
+      await closeLocalPushNotifications(['forum_post:m1']);
+      expect(close).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('does nothing when getRegistration is undefined and ready never settles', async () => {
+    const getNotifications = vi.fn();
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: new Promise(() => undefined),
+        getRegistration: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+    try {
+      await expect(closeLocalPushNotifications(['forum_post:m1'])).resolves.toBeUndefined();
+      expect(getNotifications).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
   });
 });

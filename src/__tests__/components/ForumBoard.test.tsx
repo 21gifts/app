@@ -55,6 +55,7 @@ vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 import { fetchPublicMessage } from '@/lib/api';

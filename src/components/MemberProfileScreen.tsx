@@ -27,6 +27,7 @@ import {
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchReplies,
+  markNotificationsReadForMessage,
   openConversation,
   NoteDeletedError,
   postMessage,
@@ -1090,6 +1091,7 @@ export function MemberProfileScreen({
       setRepliesError(true);
       return;
     }
+    void markNotificationsReadForMessage(session, messageId).catch(() => undefined);
     void (async () => {
       try {
         const next = await fetchReplies(session, messageId);

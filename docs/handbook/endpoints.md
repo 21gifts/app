@@ -606,14 +606,21 @@
 
 ## Endpoint: POST /forum/notifications/read-all
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/read-all` (mark every notification read).
+- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/read-all` (mark every notification read). Optional JSON `{ endpoint }` when this browser has a push subscription; endpoint only when the current push endpoint is a non-empty string.
 - **Errors:** Upstream 401/503, or 502 if the api is unreachable.
 - **Used by:** `markAllNotificationsRead` from `NotificationsLoader`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /forum/notifications/read-by-message
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/read-by-message` (mark notifications for one forum message read). JSON `{ messageId, endpoint? }`; endpoint only when the current push endpoint is a non-empty string.
+- **Errors:** Upstream 401/503, or 502 if the api is unreachable.
+- **Used by:** `markNotificationsReadForMessage` from `ForumLoader` (note becomes expanded), `NoteTranslate` (Translate requested with a session), `PublicMessageLoader` (signed-in message page ready), `MemberProfileScreen` (profile note becomes expanded), and `PublicMessageThread` (thread note becomes expanded).
+- **Auth:** Bearer.
+
 ## Endpoint: POST /forum/notifications/[id]/read
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/:id/read` (mark one notification read).
+- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/:id/read` (mark one notification read). Optional JSON `{ endpoint }` when this browser has a push subscription; endpoint only when the current push endpoint is a non-empty string.
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `markNotificationRead` from `NotificationsLoader` on row click and from `ForumLoader` on the welcome appointment pill.
 - **Auth:** Bearer.
