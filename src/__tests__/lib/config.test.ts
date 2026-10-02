@@ -1,11 +1,18 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
-import { getApiUrl, getAppVersion, getBreezApiKey, getE2eNow } from '@/lib/config';
+import {
+  getApiUrl,
+  getAppVersion,
+  getBreezApiKey,
+  getE2eNow,
+  getPlatformUsername,
+} from '@/lib/config';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
 const ORIGINAL_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+const ORIGINAL_PLATFORM_USERNAME = process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
 
 afterEach(() => {
   if (ORIGINAL === undefined) {
@@ -27,6 +34,11 @@ afterEach(() => {
     delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
   } else {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+  }
+  if (ORIGINAL_PLATFORM_USERNAME === undefined) {
+    delete process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
+  } else {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = ORIGINAL_PLATFORM_USERNAME;
   }
 });
 
@@ -105,5 +117,32 @@ describe('getBreezApiKey', () => {
   it('returns null when empty', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = '';
     expect(getBreezApiKey()).toBeNull();
+  });
+});
+
+describe('getPlatformUsername', () => {
+  it('returns the configured value', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '21gifts';
+    expect(getPlatformUsername()).toBe('21gifts');
+  });
+
+  it('trims surrounding whitespace', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '  21gifts  ';
+    expect(getPlatformUsername()).toBe('21gifts');
+  });
+
+  it('returns null when unset', () => {
+    delete process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
+    expect(getPlatformUsername()).toBeNull();
+  });
+
+  it('returns null when empty', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '';
+    expect(getPlatformUsername()).toBeNull();
+  });
+
+  it('returns null when blank', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '   ';
+    expect(getPlatformUsername()).toBeNull();
   });
 });
