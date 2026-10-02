@@ -21681,6 +21681,25 @@ test.describe('habit-tracker screens', () => {
     await shotScreen(page, 'state-habit-tracker-donation');
   });
 
+  test('state /habit-tracker donation-error', async ({ page }) => {
+    await signInInitiator(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits/data*', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({ status: 502, json: { error: 'Invoice unavailable' } });
+        return;
+      }
+      await route.fulfill({ json: { ...tracker, comments: [comment] } });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('21');
+    await expect(page.getByRole('button', { name: 'Donate Bitcoin' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await expect(page.getByText('Could not start the Bitcoin payment')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donation-error');
+  });
+
   test('state /habit-tracker donation-fiat', async ({ page }) => {
     await signInInitiator(page, {
       ...E2E_ACCOUNT,
@@ -21753,5 +21772,17 @@ test.describe('habit-tracker screens', () => {
     await expect(page.getByText('Comments for this week are closed.')).toBeVisible();
     await expect(page.getByLabel('Write a comment')).toHaveCount(0);
     await shotScreen(page, 'state-habit-tracker-archived');
+  });
+
+  test('state /habit-tracker comments-closed', async ({ page }) => {
+    await stubTracker(page, { ...tracker, commentsAllowed: false });
+    await page.goto('/habit-tracker');
+    const closed = page.getByText(
+      'Comments are allowed only from Monday at 16:00 until Saturday at 20:00.',
+    );
+    await expect(closed).toBeVisible();
+    await closed.scrollIntoViewIfNeeded();
+    await expect(page.getByLabel('Write a comment')).toHaveCount(0);
+    await shotScreen(page, 'state-habit-tracker-comments-closed');
   });
 });

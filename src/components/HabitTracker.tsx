@@ -15,7 +15,11 @@ function shiftWeek(week: string, direction: number): string {
   return new Date(Date.parse(`${week}T00:00:00Z`) + direction * WEEK).toISOString().slice(0, 10);
 }
 
-/** Weekly founder/initiator resolutions, read-only for visitors, with local comments. */
+/**
+ * Weekly founder/initiator resolutions, read-only for visitors, with local comments.
+ *
+ * @returns The tracker board.
+ */
 export function HabitTracker(): ReactElement {
   const { t, locale } = useTranslations();
   const session = useAuthStore((state) => state.session);

@@ -148,6 +148,20 @@ export const SCREEN_VARIANTS = [
     visual: 'state-habit-tracker-archived',
     needle: 'Comments for this week are closed.',
   },
+  {
+    route: '/habit-tracker',
+    id: 'comments-closed',
+    image: 'habit-tracker-comments-closed.png',
+    visual: 'state-habit-tracker-comments-closed',
+    needle: 'Comments are allowed only from Monday at 16:00 until Saturday at 20:00.',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'donation-error',
+    image: 'habit-tracker-donation-error.png',
+    visual: 'state-habit-tracker-donation-error',
+    needle: 'Could not start the Bitcoin payment',
+  },
 
   {
     route: '/',

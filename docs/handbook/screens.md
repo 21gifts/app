@@ -4553,3 +4553,15 @@ The same invoice on a smartphone shows the wallet button and no payment QR.
 Comments for this week are closed.
 
 ![Habit-Tracker archived](images/habit-tracker-archived.png)
+
+### Variant: comments-closed
+
+Comments are allowed only from Monday at 16:00 until Saturday at 20:00. The composer is hidden on the current review week.
+
+![Habit-Tracker comments closed](images/habit-tracker-comments-closed.png)
+
+### Variant: donation-error
+
+Could not start the Bitcoin payment. The amount form stays open after Donate fails.
+
+![Habit-Tracker donation error](images/habit-tracker-donation-error.png)

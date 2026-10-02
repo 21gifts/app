@@ -823,19 +823,19 @@
 
 ## Endpoint: GET /habits/data
 
-- **Input:** Optional week query.
-- **Upstream:** GET /habit-tracker.
-- **Output:** Upstream payload, status and cache headers.
-
-Same-origin proxy for API `GET /habit-tracker`, forwarding the optional Monday `week` query. Returns public weekly resolutions, outcomes, and comments with no-store caching. Kept separate from the HTML `/habit-tracker` page.
+- **Purpose:** Same-origin proxy for API `GET /habit-tracker`. Forwards the optional Monday `week` query and returns the public weekly history with no-store caching. Kept separate from the HTML `/habit-tracker` page.
+- **Errors:** Forwards the upstream status. 502 when the API is unreachable.
+- **Used by:** `HabitTracker`.
+- **Auth:** None. The upstream read is public.
 
 ## Endpoint: POST /habits/data
 
-- **Input:** Bearer token and JSON operation.
-- **Upstream:** POST /habit-tracker.
-- **Output:** Upstream acknowledgement or error; no local mutation.
+- **Purpose:** Same-origin proxy for API `POST /habit-tracker`. Forwards Bearer authorization and the add, edit, retire, rate, comment, deleteComment, or invoice JSON body. No local mutation and no forum post.
+- **Errors:** Forwards upstream 400, 401, 403, 404, 409, 429, and 502. 502 also when the API is unreachable.
+- **Used by:** `HabitTracker` and `HabitCommentDonation`.
+- **Auth:** Forwards Bearer authorization. The API requires a session for every mutation.
 
-Same-origin proxy for API `POST /habit-tracker`. Forwards Bearer authorization and the add/edit/retire/rate/comment/deleteComment/invoice JSON operation. The API enforces roles and ownership; browser controls do not confer permission.
+The API requires a session for every mutation. Initiator rank and ownership apply to resolution writes; a comment and a donation invoice are any signed-in role. Browser controls do not confer permission.
 
 Habit-Tracker updates: comments include canReceiveDonation derived from the current author wallet. Authenticated invoice requests resolve the comment author server-side, validate amount and BOLT11, and use the existing invoice rate limiter. Founder/initiator may soft-delete any tracker comment; other roles may not. Owners may edit their resolution text in the latest published review week; weekly revisions preserve older texts and carry forward. No tracker comment or donation publishes a forum post.
 

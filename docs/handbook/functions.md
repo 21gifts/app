@@ -4633,11 +4633,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HabitTracker
 
-- **Input:** Hydrated auth store and localized catalog.
-- **Output:** Weekly resolution board and comments.
-- **Failures:** Retry control and retained unsent drafts.
-
-Public weekly resolution board with founder above initiator. Validates API responses, renders one radio group per resolution, and exposes creation/retirement/rating only to the owner. All signed-in roles can post isolated week comments. Failed saves preserve drafts. Week navigation retains history; the live current week refreshes at Monday 08:00 Manila time and periodically after suspended tabs resume.
+- **Purpose:** Public weekly resolution board. Founder resolutions stay above initiator resolutions. Add, edit, retire, and rate are shown only to the owner at initiator rank. The comment composer is only on the latest review week, and only while `commentsAllowed` is not false. A current week outside that window shows the Monday 16:00 to Saturday 20:00 sentence. An older week shows the archived sentence.
+- **Inputs:** Hydrated auth store and localized catalog. No props.
+- **Returns / side effects:** The tracker element. Loads `GET /habits/data` and posts add, edit, retire, rate, comment, and deleteComment to `POST /habits/data`. A failed save keeps the unsent draft.
+- **Used by:** `HabitTrackerPage` at `/habit-tracker`.
 
 ## Function: HabitTrackerPage
 
