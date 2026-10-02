@@ -3701,7 +3701,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: loadWalletSdk
 
-- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. A rejected initialisation is remembered for `walletNeedsReload`.
+- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. A rejected or still pending initialisation is reported by `walletNeedsReload`.
 - **Inputs:** None.
 - **Returns / side effects:** A `WalletSdk`. Uses `defaultConfig('mainnet')` with the api key, no `lnurlDomain`, and a fixed storage name. The SDK keeps wallet state in IndexedDB; the phrase is passed in memory only.
 - **Used by:** The wallet service as the default loader.
@@ -3729,7 +3729,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: walletNeedsReload
 
-- **Purpose:** True only after the SDK's initialisation rejected in this page. The SDK caches a failed initialisation, so only a reload recovers. A failed import alone does not set it.
+- **Purpose:** True after the SDK's initialisation rejected in this page, or while it is still pending, for example after the connect deadline expired during it. The SDK caches its initialisation promise, so only a reload recovers. A failed import alone does not set it.
 - **Inputs:** None.
 - **Returns / side effects:** boolean.
 - **Used by:** `useWallet.retry`. Implemented in `wallet-sdk`.

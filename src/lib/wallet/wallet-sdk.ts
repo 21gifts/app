@@ -20,13 +20,21 @@ const WALLET_STORAGE_DIR = '21gifts-wallet';
 let sdkInitFailed = false;
 
 /**
- * True after the SDK's initialisation failed in this page; the SDK caches a
- * failed initialisation, so only a reload recovers.
+ * True while `sdk.default()` (SDK init) inside {@link loadWalletSdk} has not
+ * settled. The SDK caches a pending initialisation as well, so a new attempt
+ * would wait on the same promise.
+ */
+let sdkInitPending = false;
+
+/**
+ * True after the SDK's initialisation failed in this page, or while it is still
+ * pending (for example after the connect deadline expired during it). The SDK
+ * caches its initialisation promise, so only a reload recovers.
  *
  * @returns Whether the page must be reloaded before another connect attempt.
  */
 export function walletNeedsReload(): boolean {
-  return sdkInitFailed;
+  return sdkInitFailed || sdkInitPending;
 }
 
 /**
@@ -91,7 +99,7 @@ export interface WalletSdk {
 /**
  * Dynamically imports the Breez Spark SSR package, initializes it, and returns
  * a narrow {@link WalletSdk} wrapper. The only module that names the package.
- * A rejected initialisation is remembered for {@link walletNeedsReload}.
+ * A rejected or still pending initialisation is reported by {@link walletNeedsReload}.
  *
  * @returns A {@link WalletSdk} whose `connect` opens a mainnet wallet and whose
  * `getInfo` can wait for synchronized state.
@@ -99,11 +107,14 @@ export interface WalletSdk {
  */
 export async function loadWalletSdk(): Promise<WalletSdk> {
   const sdk = await import('@breeztech/breez-sdk-spark/ssr');
+  sdkInitPending = true;
   try {
     await sdk.default();
   } catch (error: unknown) {
     sdkInitFailed = true;
     throw error;
+  } finally {
+    sdkInitPending = false;
   }
   return {
     async connect(mnemonic: string, apiKey: string): Promise<WalletConnection> {
