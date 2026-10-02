@@ -30,6 +30,7 @@ import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
+import { bindScrollport, releaseScrollport } from '@/lib/scroll-surface';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -61,12 +62,17 @@ export function SignedInChrome(): ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
+  const [panelMaxHeight, setPanelMaxHeight] = useState('');
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const naturalBottomRef = useRef<number | null>(null);
+  const naturalScrollHeightRef = useRef<number | null>(null);
+  const naturalInnerHeightRef = useRef<number | null>(null);
+  const suppressMeasureRef = useRef(false);
   const frameWidth = useContext(AppShellContext)?.frameWidth ?? null;
   const scroller = useAppShellScroller();
   const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
@@ -137,34 +143,125 @@ export function SignedInChrome(): ReactElement {
       if (tight) {
         setTight(false);
       }
+      setPanelMaxHeight((current) => (current === '' ? current : ''));
+      naturalBottomRef.current = null;
+      naturalScrollHeightRef.current = null;
+      naturalInnerHeightRef.current = null;
       return;
     }
-    const measure = (): void => {
-      const limit = window.innerHeight + 1;
-      const bottom = menuRef.current!.getBoundingClientRect().bottom;
-      setTight((current) => {
-        if (bottom > limit) {
-          return true;
-        }
-        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
-        if (current && bottom <= limit - 48) {
-          return false;
-        }
-        return current;
-      });
+    const menu = menuRef.current!;
+    const readNaturalBottom = (force: boolean): number => {
+      const scrollHeight = menu.scrollHeight;
+      const innerHeight = window.innerHeight;
+      if (
+        !force &&
+        naturalBottomRef.current !== null &&
+        naturalScrollHeightRef.current === scrollHeight &&
+        naturalInnerHeightRef.current === innerHeight
+      ) {
+        return naturalBottomRef.current;
+      }
+      const applied = menu.style.maxHeight;
+      if (applied !== '') {
+        menu.style.maxHeight = '';
+      }
+      const bottom = menu.getBoundingClientRect().bottom;
+      if (applied !== '') {
+        menu.style.maxHeight = applied;
+      }
+      naturalBottomRef.current = bottom;
+      naturalScrollHeightRef.current = scrollHeight;
+      naturalInnerHeightRef.current = innerHeight;
+      return bottom;
     };
-    measure();
-    window.addEventListener('resize', measure);
+    const measure = (forceNatural: boolean): void => {
+      if (suppressMeasureRef.current) {
+        return;
+      }
+      suppressMeasureRef.current = true;
+      try {
+        const limit = window.innerHeight + 1;
+        // Decide from the uncapped bottom. Using the capped box would drop the cap and flutter.
+        const natural = readNaturalBottom(forceNatural);
+        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
+        const nextTight =
+          natural > limit ? true : tight && natural <= limit - 48 ? false : tight;
+        const applied = menu.style.maxHeight;
+        let nextMax = '';
+        if (nextTight && natural > limit) {
+          const top = menu.getBoundingClientRect().top;
+          let cap = Math.max(0, limit - top);
+          nextMax = `${cap}px`;
+          if (applied !== nextMax) {
+            menu.style.maxHeight = nextMax;
+          }
+          const boxed = menu.getBoundingClientRect().bottom;
+          if (boxed > limit && boxed < natural) {
+            const style = getComputedStyle(menu);
+            const border =
+              (Number.parseFloat(style.borderTopWidth) || 0) +
+              (Number.parseFloat(style.borderBottomWidth) || 0);
+            cap = Math.max(0, cap - border);
+            nextMax = `${cap}px`;
+            if (applied !== nextMax) {
+              menu.style.maxHeight = nextMax;
+            }
+          }
+        } else if (applied !== '') {
+          menu.style.maxHeight = '';
+        }
+        if (nextTight === tight && nextMax === applied) {
+          if (menu.style.maxHeight !== applied) {
+            menu.style.maxHeight = applied;
+          }
+          return;
+        }
+        setTight(nextTight);
+        setPanelMaxHeight((current) => (current === nextMax ? current : nextMax));
+      } finally {
+        suppressMeasureRef.current = false;
+      }
+    };
+    measure(true);
+    const onResize = (): void => {
+      measure(true);
+    };
+    window.addEventListener('resize', onResize);
     let observer: ResizeObserver | undefined;
     if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(measure);
-      observer.observe(menuRef.current!);
+      observer = new ResizeObserver(() => {
+        measure(true);
+      });
+      observer.observe(menu);
     }
     return () => {
-      window.removeEventListener('resize', measure);
+      window.removeEventListener('resize', onResize);
       observer?.disconnect();
     };
   }, [open, narrow, tight, account?.role]);
+
+  const menuScrolls = open && !narrow && panelMaxHeight !== '';
+
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (menu === null || !menuScrolls) {
+      if (menu !== null) {
+        releaseScrollport(menu);
+        menu.removeAttribute('data-scrollport');
+        menu.removeAttribute('data-scroll-active');
+        menu.removeAttribute('data-scroll-locked');
+      }
+      return;
+    }
+    menu.setAttribute('data-scrollport', '');
+    bindScrollport(menu);
+    return () => {
+      releaseScrollport(menu);
+      menu.removeAttribute('data-scrollport');
+      menu.removeAttribute('data-scroll-active');
+      menu.removeAttribute('data-scroll-locked');
+    };
+  }, [menuScrolls]);
 
   useEffect(() => {
     if (session === null) {
@@ -190,7 +287,7 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  // A tall wide menu drops its outer spacing so the last row stays inside the window. It does not scroll.
+  // A tall wide menu drops its outer spacing first. If the last row still sticks out, the panel box stays inside the window and the rows scroll.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
@@ -217,7 +314,13 @@ export function SignedInChrome(): ReactElement {
       {panelTarget === null
         ? null
         : createPortal(
-            <div id="signed-in-menu" ref={menuRef} className={panelClass}>
+            <div
+              id="signed-in-menu"
+              ref={menuRef}
+              className={panelClass}
+              style={menuScrolls ? { maxHeight: panelMaxHeight } : undefined}
+              {...(menuScrolls ? { 'data-scrollport': '' } : {})}
+            >
               <Link
                 href="/welcome"
                 onClick={(event) => {
