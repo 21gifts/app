@@ -276,12 +276,7 @@ export function SignedInChrome(): ReactElement {
           nextBottom === ''
             ? undefined
             : { top: nextTop, left: nextLeft, width: nextWidth, bottom: nextBottom };
-        setPanelStyle((current) => {
-          if (current === undefined && nextStyle === undefined) {
-            return current;
-          }
-          return nextStyle;
-        });
+        setPanelStyle(nextStyle);
       } finally {
         suppressMeasureRef.current = false;
       }
