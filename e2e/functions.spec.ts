@@ -2428,7 +2428,7 @@ test('Function: RequirementsOverlay — forum post without a set-up wallet expla
   await expect(dialog).toBeVisible();
   await expect(
     dialog.getByText(
-      'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+      'Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.',
     ),
   ).toBeVisible();
   await expect(dialog.getByRole('textbox')).toHaveCount(0);
@@ -8988,7 +8988,7 @@ const POS_ACCOUNT = {
   missing: [],
 };
 
-/** Signed-in till whose `POST /pos/charge` answers `status`. */
+/** Signed-in till whose `POST /pos/charge` answers 400 with `code` (or no code when `null`). */
 async function openPosAmountAnswering(page: Page, code: string | null): Promise<void> {
   await seedAdaSession(page);
   await page.route(/\/me$/, async (route) => {

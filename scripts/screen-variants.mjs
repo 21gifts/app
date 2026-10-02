@@ -2340,6 +2340,20 @@ export const SCREEN_VARIANTS = [
     needle: 'Point of sale is unavailable.',
   },
   {
+    route: '/pos/amount',
+    id: 'create-wallet-required',
+    image: 'pos-create-wallet-required.png',
+    visual: 'state-pos-create-wallet-required',
+    needle: 'pos create wallet-required',
+  },
+  {
+    route: '/pos/amount',
+    id: 'create-cannot-receive',
+    image: 'pos-create-cannot-receive.png',
+    visual: 'state-pos-create-cannot-receive',
+    needle: 'Your wallet cannot receive this payment right now. Please try again later.',
+  },
+  {
     route: '/pos',
     id: 'cancel-failed',
     image: 'pos-cancel-failed.png',

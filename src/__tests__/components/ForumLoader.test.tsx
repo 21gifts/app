@@ -5250,7 +5250,7 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
   });
 
-  it('shows pay author-wallet error when invoice rejects the author wallet', async () => {
+  it('treats the author-wallet text without a code as a generic pay failure', async () => {
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockRejectedValue(
@@ -5270,9 +5270,7 @@ describe('ForumLoader', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
 
     expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toBe(
-      "The author's wallet cannot receive this Bitcoin payment",
-    );
+    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
   });
 
   it('shows pay author-wallet error when the api says the wallet cannot receive', async () => {
@@ -8632,7 +8630,7 @@ describe('ForumLoader', () => {
     const dialog = screen.getByRole('dialog', { name: 'Your wallet is not set up' });
     expect(
       within(dialog).getByText(
-        'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+        'Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.',
       ),
     ).toBeTruthy();
     expect(within(dialog).queryByRole('textbox')).toBeNull();
@@ -10358,7 +10356,7 @@ describe('forum feed pages', () => {
     );
   });
 
-  it('shows the rate limit, the author wallet, and a failed repayment', async () => {
+  it('shows the rate limit, a generic failure for the author-wallet text, and a failed repayment', async () => {
     fetchMock.mockResolvedValue(fundedCredit());
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -10372,9 +10370,7 @@ describe('forum feed pages', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe(
-        "The author's wallet cannot receive this Bitcoin payment",
-      );
+      expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
     });
     repayMock.mockRejectedValueOnce(new Error('Could not start the Bitcoin payment'));
     fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));

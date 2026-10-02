@@ -529,7 +529,7 @@ const en = {
   'requirements.rulesTitle': 'Agree to the living room rules',
   'requirements.walletTitle': 'Your wallet is not set up',
   'requirements.walletBody':
-    'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+    'Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.',
   'requirements.walletOpen': 'Open your wallet',
   'requirements.close': 'Close',
 
@@ -1681,7 +1681,7 @@ const de = {
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
   'requirements.walletTitle': 'Ihre Wallet ist nicht eingerichtet',
   'requirements.walletBody':
-    'Geschenke für Ihre Beiträge gehen in Ihre eigene 21.gifts-Wallet, und sie ist noch nicht eingerichtet. Sobald sie eingerichtet ist, können Sie schreiben.',
+    'Geschenke und Beiträge brauchen Ihre eigene 21.gifts-Wallet, und sie ist noch nicht eingerichtet. Öffnen Sie Ihre Wallet, um sie einzurichten.',
   'requirements.walletOpen': 'Wallet öffnen',
   'requirements.close': 'Schließen',
 
@@ -2853,7 +2853,7 @@ const es = {
   'requirements.rulesTitle': 'Acepta las reglas del salón',
   'requirements.walletTitle': 'Tu wallet no está configurada',
   'requirements.walletBody':
-    'Los regalos para tus publicaciones van a tu propia wallet de 21.gifts, y todavía no está configurada. En cuanto esté configurada, podrás publicar.',
+    'Los regalos y las publicaciones necesitan tu propia wallet de 21.gifts, y todavía no está configurada. Abre tu wallet para configurarla.',
   'requirements.walletOpen': 'Abrir tu wallet',
   'requirements.close': 'Cerrar',
 
@@ -4006,7 +4006,7 @@ const fil = {
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',
   'requirements.walletTitle': 'Hindi pa naka-set up ang wallet mo',
   'requirements.walletBody':
-    'Sa sarili mong 21.gifts wallet napupunta ang mga regalo para sa mga post mo, at hindi pa ito naka-set up. Kapag naka-set up na ito, puwede ka nang mag-post.',
+    'Kailangan ng mga regalo at post ang sarili mong 21.gifts wallet, at hindi pa ito naka-set up. Buksan ang wallet mo para i-set up ito.',
   'requirements.walletOpen': 'Buksan ang wallet mo',
   'requirements.close': 'Isara',
 

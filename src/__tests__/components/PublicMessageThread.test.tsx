@@ -406,7 +406,7 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it("maps an author's-wallet pay failure onto the pay error", async () => {
+  it('treats the author-wallet text without a code as a generic pay failure', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(
       new Error("The author's wallet cannot receive this Bitcoin payment"),
     );
@@ -417,7 +417,7 @@ describe('PublicMessageThread', () => {
     await openNestedPaySheet();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/wallet cannot receive/i);
+      expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
     });
   });
 
@@ -1249,7 +1249,7 @@ describe('PublicMessageThread', () => {
     const dialog = await screen.findByRole('dialog', { name: WALLET_OVERLAY });
     expect(
       within(dialog).getByText(
-        'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+        'Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.',
       ),
     ).toBeTruthy();
     expect(within(dialog).queryByRole('textbox')).toBeNull();

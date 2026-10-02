@@ -6434,6 +6434,104 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-create-already');
   });
 
+  test('pos create wallet-required', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Wallet answer', code: 'wallet_required' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos/amount');
+    await page.getByRole('button', { name: '2', exact: true }).click();
+    await page.getByRole('button', { name: '1', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(page.getByText('Set up your wallet first.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await page.getByText('Set up your wallet first.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-create-wallet-required');
+  });
+
+  test('pos create cannot-receive', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Wallet answer', code: 'cannot_receive' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos/amount');
+    await page.getByRole('button', { name: '2', exact: true }).click();
+    await page.getByRole('button', { name: '1', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(
+      page.getByText('Your wallet cannot receive this payment right now. Please try again later.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+    await page
+      .getByText('Your wallet cannot receive this payment right now. Please try again later.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-create-cannot-receive');
+  });
+
   test('pos create failed', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -15543,6 +15641,7 @@ test.describe('welcome forum variants', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             error: "The author's wallet cannot receive this Bitcoin payment",
+            code: 'cannot_receive',
           }),
         });
         return;
@@ -18363,6 +18462,7 @@ test.describe('welcome forum variants', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           error: "The author's wallet cannot receive this Bitcoin payment",
+          code: 'cannot_receive',
         }),
       });
     });

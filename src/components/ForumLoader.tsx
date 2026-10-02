@@ -134,20 +134,14 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
 
 /**
  * True when a thrown value is the api answer that the receiving wallet
- * cannot take this payment ({@link CannotReceiveError}, or the older message).
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
  * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  if (err instanceof CannotReceiveError) {
-    return true;
-  }
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /**

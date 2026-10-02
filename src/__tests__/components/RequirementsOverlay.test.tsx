@@ -72,7 +72,7 @@ describe('RequirementsOverlay', () => {
     const dialog = screen.getByRole('dialog', { name: 'Your wallet is not set up' });
     expect(screen.getByRole('heading', { name: 'Your wallet is not set up' })).toBeTruthy();
     expect(dialog.querySelector('p')?.textContent).toBe(
-      'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+      'Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.',
     );
     expect(dialog.querySelector('form')).toBeNull();
     expect(dialog.querySelector('input')).toBeNull();
