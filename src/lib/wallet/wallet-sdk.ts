@@ -52,11 +52,13 @@ export interface WalletSdkEvent {
  */
 export interface WalletConnection {
   /**
-   * Reads the current balance and identity key.
+   * Reads the current balance and identity key, optionally waiting for the SDK
+   * to synchronize first.
    *
+   * @param options - Set `ensureSynced` to wait for synchronized wallet state.
    * @returns Balance and identity public key.
    */
-  getInfo(): Promise<WalletInfo>;
+  getInfo(options?: { ensureSynced?: boolean }): Promise<WalletInfo>;
   /**
    * Registers an event listener on the connection.
    *
@@ -91,7 +93,8 @@ export interface WalletSdk {
  * a narrow {@link WalletSdk} wrapper. The only module that names the package.
  * A rejected initialisation is remembered for {@link walletNeedsReload}.
  *
- * @returns A {@link WalletSdk} whose `connect` opens a mainnet wallet.
+ * @returns A {@link WalletSdk} whose `connect` opens a mainnet wallet and whose
+ * `getInfo` can wait for synchronized state.
  */
 export async function loadWalletSdk(): Promise<WalletSdk> {
   const sdk = await import('@breeztech/breez-sdk-spark/ssr');
@@ -112,8 +115,9 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
         storageDir: WALLET_STORAGE_DIR,
       });
       return {
-        async getInfo(): Promise<WalletInfo> {
-          const info = await handle.getInfo({});
+        async getInfo(options?: { ensureSynced?: boolean }): Promise<WalletInfo> {
+          const request = options?.ensureSynced === true ? { ensureSynced: true } : {};
+          const info = await handle.getInfo(request);
           return {
             balanceSats: info.balanceSats,
             identityPubkey: info.identityPubkey,
