@@ -57,6 +57,7 @@ const en = {
   'nav.inboxUnread': 'Messages, {count} unread',
   'nav.notifications': 'Notifications',
   'nav.notificationsUnread': 'Notifications, {count} unread',
+  'nav.statistics': 'Statistics',
   'nav.moderate': 'Moderation',
   'nav.moderateUnread': 'Moderation, {count} unread',
   'nav.grants': 'Grants',
@@ -858,6 +859,12 @@ const en = {
   'notifications.mention': '{name} marked you',
 
   'moderate.heading': 'Moderation',
+  'statistics.heading': 'Statistics',
+  'statistics.shops.widgetLabel': 'Active shops',
+  'statistics.shops.explainer':
+    'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day.',
+  'statistics.shops.chartLabel': 'Shops by UTC day',
+  'statistics.shops.error': 'Could not load shop activity. Please try again.',
   'moderate.toolsLabel': 'Moderation tools',
   'moderate.lead':
     'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
@@ -1068,6 +1075,7 @@ const de = {
   'nav.inboxUnread': 'Posteingang, {count} ungelesen',
   'nav.notifications': 'Benachrichtigungen',
   'nav.notificationsUnread': 'Benachrichtigungen, {count} ungelesen',
+  'nav.statistics': 'Statistiken',
   'nav.moderate': 'Moderation',
   'nav.moderateUnread': 'Moderation, {count} ungelesen',
   'nav.grants': 'Förderprogramm',
@@ -1870,6 +1878,13 @@ const de = {
   'notifications.mention': '{name} hat dich markiert',
 
   'moderate.heading': 'Moderation',
+  'statistics.heading': 'Statistiken',
+  'statistics.shops.widgetLabel': 'Aktive Shops',
+  'statistics.shops.explainer':
+    'Ein Shop zählt an einem UTC-Tag, wenn ihm ein 21.gifts-Benutzer zugeordnet ist und dieser an dem Tag an der Kasse eine Zahlung angelegt hat.',
+  'statistics.shops.chartLabel': 'Shops je UTC-Tag',
+  'statistics.shops.error':
+    'Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen.',
   'moderate.toolsLabel': 'Moderationswerkzeuge',
   'moderate.lead':
     'Eine Notiz auszublenden ist ein weiches Ausblenden: Die Notiz und ihre nicht markierten direkten Antworten verlassen das Wohnzimmer. Es ist keine endgültige Löschung.',
@@ -2089,6 +2104,7 @@ const es = {
   'nav.inboxUnread': 'Bandeja, {count} sin leer',
   'nav.notifications': 'Notificaciones',
   'nav.notificationsUnread': 'Notificaciones, {count} sin leer',
+  'nav.statistics': 'Estadísticas',
   'nav.moderate': 'Moderación',
   'nav.moderateUnread': 'Moderación, {count} sin leer',
   'nav.grants': 'Beca',
@@ -2881,6 +2897,12 @@ const es = {
   'notifications.mention': '{name} te marcó',
 
   'moderate.heading': 'Moderación',
+  'statistics.heading': 'Estadísticas',
+  'statistics.shops.widgetLabel': 'Tiendas activas',
+  'statistics.shops.explainer':
+    'Una tienda cuenta en un día UTC cuando tiene un usuario de 21.gifts asignado y ese usuario creó un pago en el punto de venta ese día.',
+  'statistics.shops.chartLabel': 'Tiendas por día UTC',
+  'statistics.shops.error': 'No se pudo cargar la actividad de las tiendas. Inténtalo de nuevo.',
   'moderate.toolsLabel': 'Herramientas de moderación',
   'moderate.lead':
     'Ocultar una nota es una ocultación suave: la nota y sus respuestas directas sin etiqueta salen del salón. No es un borrado definitivo.',
@@ -3092,6 +3114,7 @@ const fil = {
   'nav.inboxUnread': 'Mga mensahe, {count} hindi pa nababasa',
   'nav.notifications': 'Mga abiso',
   'nav.notificationsUnread': 'Mga abiso, {count} hindi pa nababasa',
+  'nav.statistics': 'Mga istatistika',
   'nav.moderate': 'Moderasyon',
   'nav.moderateUnread': 'Moderasyon, {count} hindi pa nababasa',
   'nav.grants': 'Grant',
@@ -3893,6 +3916,12 @@ const fil = {
   'notifications.mention': 'Minarkahan ka ni {name}',
 
   'moderate.heading': 'Moderasyon',
+  'statistics.heading': 'Mga istatistika',
+  'statistics.shops.widgetLabel': 'Mga aktibong tindahan',
+  'statistics.shops.explainer':
+    'Binibilang ang isang tindahan sa isang araw na UTC kapag may naka-assign na user ng 21.gifts at ang user na iyon ay gumawa ng bayad sa point of sale sa araw na iyon.',
+  'statistics.shops.chartLabel': 'Mga tindahan ayon sa araw na UTC',
+  'statistics.shops.error': 'Hindi ma-load ang aktibidad ng tindahan. Pakisubukan muli.',
   'moderate.toolsLabel': 'Mga tool sa moderasyon',
   'moderate.lead':
     'Ang pagtatago ng nota ay malambot: ang nota at ang mga direktang sagot nito na walang tag ay umaalis sa living room. Hindi ito tuluyang pagbura.',

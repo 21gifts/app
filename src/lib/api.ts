@@ -18,6 +18,7 @@ import {
   lnAddressResolvedSchema,
   giftDaySchema,
   giftStatsSchema,
+  shopActivitySchema,
   postStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
@@ -51,6 +52,7 @@ import {
   type HiddenMessage,
   type GiftDay,
   type GiftStats,
+  type ShopActivityDay,
   type PostStats,
   type AccountActivity,
   type LnAddressResolved,
@@ -1044,6 +1046,28 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
     return giftStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches shop counts per UTC day for the staff statistics chart.
+ *
+ * @param sessionToken - Bearer session from a completed login.
+ * @returns The 30 {@link ShopActivityDay} rows, oldest first.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link shopActivitySchema}.
+ */
+export async function fetchShopActivity(sessionToken: string): Promise<ShopActivityDay[]> {
+  try {
+    const response = await fetch('/shops/activity', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load shop activity. Please try again.');
+    }
+    return shopActivitySchema.parse(await response.json()).days;
+  } catch {
+    throw new Error('Could not load shop activity. Please try again.');
   }
 }
 

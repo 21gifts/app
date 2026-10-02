@@ -14808,6 +14808,11 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: 'Grants' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Statistics', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Statistics', exact: true })).toHaveAttribute(
+      'href',
+      '/statistics',
+    );
     await expect(page.getByRole('link', { name: 'Moderation', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Install app' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-menu-staff');
@@ -18586,6 +18591,257 @@ test.describe('notifications screens', () => {
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
     await expect(page.getByText('Bob proposed a moderator')).toBeVisible();
     await shotScreen(page, 'state-notifications-moderator-proposal');
+  });
+});
+
+test.describe('statistics screens', () => {
+  // Goldens are regenerated on the build host.
+  const PAYOUT_GOAL_STATS = (() => {
+    const counts: Record<string, number> = {
+      '2026-08-24': 36,
+      '2026-09-19': 12,
+      '2026-09-20': 9,
+    };
+    const start = Date.parse('2026-08-22T00:00:00.000Z');
+    const spendOverTime = Array.from({ length: 30 }, (_, i) => {
+      const day = new Date(start + i * 86_400_000).toISOString().slice(0, 10);
+      const giftCount = counts[day] ?? 0;
+      return {
+        day,
+        giftCount,
+        officialCount: giftCount,
+        sats: 0,
+        cumulativeSats: 0,
+        btc: '0.00000000',
+        cumulativeBtc: '0.00000000',
+        usd: '0.00',
+        cumulativeUsd: '0.00',
+        chf: '0.00',
+        eur: '0.00',
+        php: '0.00',
+        cumulativeChf: '0.00',
+        cumulativeEur: '0.00',
+        cumulativePhp: '0.00',
+      };
+    });
+    return {
+      totalSats: 0,
+      totalBtc: '0.00000000',
+      totalUsd: '0.00',
+      totalChf: '0.00',
+      totalEur: '0.00',
+      totalPhp: '0.00',
+      giftCount: 57,
+      recipientCount: 0,
+      firstPaidAt: '2026-08-22T00:00:00.000Z',
+      lastPaidAt: '2026-09-20T00:00:00.000Z',
+      spendOverTime,
+      byRecipient: [],
+      byMonth: [],
+      fx: FX_USD,
+    };
+  })();
+
+  async function stubPayoutGoal(page: Page): Promise<void> {
+    await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(PAYOUT_GOAL_STATS),
+      });
+    });
+  }
+
+  async function stubShopActivity(page: Page): Promise<void> {
+    const counts: Record<string, number> = {
+      '2026-08-24': 4,
+      '2026-09-19': 2,
+      '2026-09-20': 1,
+    };
+    const start = Date.parse('2026-08-22T00:00:00.000Z');
+    const days = Array.from({ length: 30 }, (_, i) => {
+      const day = new Date(start + i * 86_400_000).toISOString().slice(0, 10);
+      return { day, shopCount: counts[day] ?? 0 };
+    });
+    await page.route('**/shops/activity', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ days }),
+      });
+    });
+  }
+
+  async function shotStatistics(page: Page): Promise<void> {
+    const current = page.viewportSize() ?? { width: 1280, height: 720 };
+    await page.evaluate(() => document.fonts.ready);
+    const styleTag = await page.addStyleTag({
+      content:
+        '[data-scrollport][data-scroll-active]{overflow:clip !important;}' +
+        '[data-scroll-page]{justify-content:flex-start !important;' +
+        'min-height:max-content !important;}' +
+        '[data-scroll-page] > section{height:auto !important;' +
+        'flex:none !important;align-self:center !important;}',
+    });
+    const measured = await page.evaluate(() => {
+      const port = document.querySelector('[data-scrollport][data-scroll-active]');
+      const pageEl = document.querySelector('[data-scroll-page]');
+      if (!(port instanceof HTMLElement) || !(pageEl instanceof HTMLElement)) {
+        return null;
+      }
+      const section = pageEl.querySelector(':scope > section');
+      if (!(section instanceof HTMLElement)) {
+        return null;
+      }
+      const style = getComputedStyle(pageEl);
+      const paddingTop = Number.parseFloat(style.paddingTop);
+      const paddingBottom = Number.parseFloat(style.paddingBottom);
+      const { top, bottom } = port.getBoundingClientRect();
+      return (
+        top + paddingTop + section.offsetHeight + paddingBottom + (window.innerHeight - bottom)
+      );
+    });
+    if (measured == null || !Number.isFinite(measured)) {
+      await styleTag.evaluate((el) => {
+        el.parentNode?.removeChild(el);
+      });
+      return;
+    }
+    // 1600 is an emergency brake, not a grow-to target.
+    const needed = Math.min(1600, Math.ceil(measured));
+    if (needed <= current.height) {
+      await styleTag.evaluate((el) => {
+        el.parentNode?.removeChild(el);
+      });
+      return;
+    }
+    await page.setViewportSize({ width: current.width, height: needed });
+    // clip stays so a light scrollbar cannot change width.
+  }
+
+  async function seedAda(
+    page: Page,
+    role: 'basis' | 'moderator' | 'founder' = 'basis',
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+  }
+
+  test('statistics default', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await page.goto('/statistics');
+    await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
+    await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveAttribute(
+      'href',
+      '/moderate/payouts',
+    );
+    await shotStatistics(page);
+    await shotScreen(page, 'screen-statistics');
+  });
+
+  test('statistics loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/gifts/stats', () => new Promise(() => undefined));
+    await page.route('**/shops/activity', () => new Promise(() => undefined));
+    await page.goto('/statistics');
+    await expect(
+      page.getByRole('group', { name: 'Daily funding goal' }).getByText('Loading…'),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Active shops' }).getByText('Loading…'),
+    ).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-loading');
+  });
+
+  test('statistics error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await stubShopActivity(page);
+    await page.goto('/statistics');
+    await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-error');
+  });
+
+  test('statistics shop-error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await page.route('**/shops/activity', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/statistics');
+    await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
+    await expect(page.getByText('People by UTC day')).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-shop-error');
+  });
+
+  test('statistics both-error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.route('**/shops/activity', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await page.goto('/statistics');
+    await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
+    await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-both-error');
+  });
+
+  test('statistics forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/statistics');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-forbidden');
   });
 });
 

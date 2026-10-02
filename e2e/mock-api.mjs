@@ -2004,6 +2004,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/shops/activity') {
+    const endMs = Date.parse(`${new Date(Date.now()).toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const days = Array.from({ length: 30 }, (_, i) => ({
+      day: new Date(endMs - (29 - i) * 86_400_000).toISOString().slice(0, 10),
+      shopCount: 0,
+    }));
+    json(res, 200, { days });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/e2e/unclaimed-profile') {
     const account = newAccount(null);
     account.name = 'Ada';

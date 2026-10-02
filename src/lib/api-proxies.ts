@@ -421,6 +421,16 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /shops/activity to the 21.gifts api (Bearer forwarded).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyShopActivityGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/shops/activity');
+}
+
+/**
  * Proxies GET /messages/stats to the 21.gifts api.
  *
  * @param request - Incoming App Router request.

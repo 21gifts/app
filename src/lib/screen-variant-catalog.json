@@ -2520,6 +2520,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/statistics:default",
+    "label": "/statistics default",
+    "visual": "screen-statistics",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/statistics:loading",
+    "label": "/statistics loading",
+    "visual": "state-statistics-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/statistics:error",
+    "label": "/statistics error",
+    "visual": "state-statistics-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/statistics:forbidden",
+    "label": "/statistics forbidden",
+    "visual": "state-statistics-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/statistics:shop-error",
+    "label": "/statistics shop-error",
+    "visual": "state-statistics-shop-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/statistics:both-error",
+    "label": "/statistics both-error",
+    "visual": "state-statistics-both-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate:default",
     "label": "/moderate default",
     "visual": "screen-moderate",

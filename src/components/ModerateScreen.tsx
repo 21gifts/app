@@ -2,118 +2,22 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations, type LocaleContextValue } from '@/components/LocaleProvider';
+import { PayoutGoalChart } from '@/components/PayoutGoalChart';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { fetchGiftStats } from '@/lib/api';
 import type { GiftStats } from '@/lib/api-types';
 import type { Locale } from '@/lib/locale';
+import {
+  PAYOUT_GOAL,
+  chartRows,
+  countOnDay,
+  formatUtcDate,
+  previousUtcDay,
+  utcDayFromMs,
+} from '@/lib/payout-goal';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
-
-/** Daily official-payout target shown on the staff hub. */
-const PAYOUT_GOAL = 100;
-
-/** How many UTC days the expanded chart covers, ending today. */
-const CHART_DAYS = 30;
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-/**
- * UTC calendar day `YYYY-MM-DD` for an instant.
- *
- * @param ms - Epoch milliseconds.
- * @returns UTC day string.
- */
-function utcDayFromMs(ms: number): string {
-  return new Date(ms).toISOString().slice(0, 10);
-}
-
-/**
- * UTC calendar day immediately before `day`.
- *
- * @param day - UTC `YYYY-MM-DD`.
- * @returns Previous UTC day.
- */
-function previousUtcDay(day: string): string {
-  return utcDayFromMs(Date.parse(`${day}T00:00:00.000Z`) - MS_PER_DAY);
-}
-
-/**
- * Person count on `yesterday` from `officialCount`. First matching day wins.
- * A missing day is 0. Any omitted `officialCount` is unusable (`null`).
- *
- * @param series - `spendOverTime` oldest-first.
- * @param yesterday - UTC day to look up.
- * @returns Person count, 0 when the day is missing, or `null` when any point
- *   omits `officialCount`.
- */
-function countOnDay(series: GiftStats['spendOverTime'], yesterday: string): number | null {
-  let first: number | undefined;
-  for (const point of series) {
-    if (point.officialCount === undefined) {
-      return null;
-    }
-    if (first === undefined && point.day === yesterday) {
-      first = point.officialCount;
-    }
-  }
-  return first === undefined ? 0 : first;
-}
-
-/**
- * Last `CHART_DAYS` UTC days ending on `today`, with person counts from `series`.
- *
- * Last write wins when a day appears twice. Days without a point stay 0.
- *
- * @param series - `spendOverTime` oldest-first.
- * @param today - UTC day of the clock.
- * @returns Oldest-first `{ day, count }` rows.
- */
-function chartRows(
-  series: GiftStats['spendOverTime'],
-  today: string,
-): { day: string; count: number }[] {
-  const byDay = new Map<string, number>();
-  for (const point of series) {
-    byDay.set(point.day, point.officialCount as number);
-  }
-  const todayMs = Date.parse(`${today}T00:00:00.000Z`);
-  const rows: { day: string; count: number }[] = [];
-  for (let i = CHART_DAYS - 1; i >= 0; i -= 1) {
-    const day = utcDayFromMs(todayMs - i * MS_PER_DAY);
-    rows.push({ day, count: byDay.get(day) ?? 0 });
-  }
-  return rows;
-}
-
-/**
- * Formats a UTC calendar day for the explanation sentence.
- *
- * @param day - UTC `YYYY-MM-DD`.
- * @param locale - Active UI locale.
- * @returns Locale date in the UTC zone.
- */
-function formatUtcDate(day: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${day}T00:00:00.000Z`));
-}
-
-/**
- * Axis tick label for a UTC day (`D.MM.`).
- *
- * @param day - UTC `YYYY-MM-DD`.
- * @returns Short day-month label.
- */
-function chartDayLabel(day: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: 'numeric',
-    month: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(`${day}T00:00:00.000Z`));
-}
 
 /**
  * Signed-in moderation hub of staff tools.
@@ -379,112 +283,5 @@ function PayoutGoalWidget(props: {
         </div>
       ) : null}
     </div>
-  );
-}
-
-/**
- * Count bars for one UTC-day window against the daily person goal.
- *
- * @param props - Chart rows and today's UTC day (drawn lighter).
- * @returns SVG figure.
- */
-function PayoutGoalChart(props: {
-  rows: { day: string; count: number }[];
-  today: string;
-  locale: Locale;
-  ariaLabel: string;
-}): ReactElement {
-  const { rows, today, locale, ariaLabel } = props;
-  const width = 800;
-  const height = 280;
-  const padL = 56;
-  const padR = 16;
-  const padT = 24;
-  const padB = 36;
-  const innerW = width - padL - padR;
-  const innerH = height - padT - padB;
-  const n = rows.length;
-  const slot = innerW / Math.max(n, 1);
-  const barW = slot * 0.64;
-  const labelAt = new Set([0, Math.floor((n - 1) / 2), n - 1]);
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-auto w-full"
-      role="img"
-      aria-label={ariaLabel}
-    >
-      {[0, 25, 50, 75, 100].map((tick) => {
-        const y = padT + innerH - (tick / PAYOUT_GOAL) * innerH;
-        return (
-          <g key={tick}>
-            <line
-              x1={padL}
-              x2={padL + innerW}
-              y1={y}
-              y2={y}
-              className="stroke-app-border"
-              strokeWidth="1"
-            />
-            <text x={padL - 8} y={y + 4} textAnchor="end" className="fill-app-muted" fontSize="12">
-              {tick}
-            </text>
-          </g>
-        );
-      })}
-      <line
-        x1={padL}
-        x2={padL + innerW}
-        y1={padT}
-        y2={padT}
-        className="stroke-app-accent"
-        strokeWidth="2"
-      />
-      {rows.map((row, i) => {
-        const h = (Math.min(row.count, PAYOUT_GOAL) / PAYOUT_GOAL) * innerH;
-        const displayH = row.count > 0 ? Math.max(h, 3) : 0;
-        const x = padL + i * slot + slot * 0.18;
-        const y = padT + innerH - displayH;
-        const isToday = row.day === today;
-        return (
-          <g key={row.day}>
-            {displayH > 0 ? (
-              <rect
-                x={x}
-                y={y}
-                width={barW}
-                height={displayH}
-                rx={3}
-                className={isToday ? 'fill-app-subtle' : 'fill-app-accent'}
-                data-testid="payout-goal-chart-bar"
-              />
-            ) : null}
-            {row.count >= 30 || isToday ? (
-              <text
-                x={x + barW / 2}
-                y={y - 6}
-                textAnchor="middle"
-                className="fill-app-muted"
-                fontSize="11"
-              >
-                {row.count}
-              </text>
-            ) : null}
-            {labelAt.has(i) ? (
-              <text
-                x={x + barW / 2}
-                y={height - 10}
-                textAnchor="middle"
-                className="fill-app-muted"
-                fontSize="12"
-              >
-                {chartDayLabel(row.day, locale)}
-              </text>
-            ) : null}
-          </g>
-        );
-      })}
-    </svg>
   );
 }

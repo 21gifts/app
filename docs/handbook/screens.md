@@ -1558,13 +1558,13 @@ Open **Menu** with two unread inbox rows stubbed on `GET /conversations` → Mes
 
 ### Variant: menu-moderation-unread
 
-Staff (moderator) Open **Menu** with `GET /conversations/moderator-group` stubbed unread true → Moderation shows **1** on the right (`nav.moderateUnread`, accessible name Moderation, 1 unread). Notifications and Messages stay at count 0. Other Menu rows match `menu-open` except Moderation is present because Ada is seeded as moderator.
+Staff (moderator) Open **Menu** with `GET /conversations/moderator-group` stubbed unread true → Moderation shows **1** on the right (`nav.moderateUnread`, accessible name Moderation, 1 unread). Notifications and Messages stay at count 0. Other Menu rows match `menu-open` except **Statistics** (no unread count, immediately before Moderation) and **Moderation** are present because Ada is seeded as moderator.
 
 ![21.gifts welcome menu moderation unread](images/welcome-menu-moderation-unread.png)
 
 ### Variant: menu-staff
 
-Staff (moderator) in a standalone display, so **Install app** is absent. Open **Menu**. Rows: **Home**, **Shops**, **Point of sale**, **Profile**, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Moderation** with no unread count, **Notifications**, **Messages**, **Contact**, **Log out**, then **Version dev**.
+Staff (moderator) in a standalone display, so **Install app** is absent. Open **Menu**. Rows: **Home**, **Shops**, **Point of sale**, **Profile**, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Statistics**, **Moderation** with no unread count, **Notifications**, **Messages**, **Contact**, **Log out**, then **Version dev**.
 
 ![21.gifts welcome menu staff](images/welcome-menu-staff.png)
 
@@ -3323,10 +3323,54 @@ Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator*
 
 ![21.gifts notifications moderator proposal](images/notifications-moderator-proposal.png)
 
+## Screen: /statistics
+
+- **URL:** `/statistics` — signed-in daily funding-goal chart for staff. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/statistics` is the chart page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /gifts/stats`. Not a second moderation hub.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Statistics**. Staff (moderator) see yesterday’s people counted once as a percent of 100, the 100-a-day label, the yesterday count, the three explanation paragraphs, the 30-UTC-day chart (goal line at 100, lighter bar is today), and **Show payout per person** → `/moderate/payouts`. Staff also see an **Active shops** panel under the payout chart: one explainer and the **Shops by UTC day** chart. The shop chart has no goal line and no link. The summary is not a toggle. No **Tap to close**. No Hidden notes, Open proposals, Moderators chat group, or Handbook controls. Non-staff signed-in visitors see the heading plus **This page is for moderators.** Menu row **Statistics** (`nav.statistics`, lucide `BarChart3`, `/statistics`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain and before Moderation.
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Show payout per person** to `/moderate/payouts`. Open **Menu**. No note list on this page. The shop chart has no drill-down.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `StatisticsPage`, `StatisticsScreen`, `ShopActivityChart`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `fetchShopActivity`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Charts only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal panel and `GET /shops/activity` for the shop panel. Each request fails on its own.
+
+### Variant: default
+
+Staff (moderator) page with heading **Statistics**, the daily funding-goal panel always open (yesterday percent of 100, three explanation paragraphs, 30-UTC-day chart, **Show payout per person** → `/moderate/payouts`). The shop chart sits under the payout chart (**Shops by UTC day**). The summary is not a toggle.
+
+![21.gifts statistics](images/statistics.png)
+
+### Variant: loading
+
+Staff (moderator) page. Both panels show **Loading…** while their own request is in flight: the goal panel (group **Daily funding goal**) for `GET /gifts/stats`, and the shop panel (group **Active shops**) for `GET /shops/activity`. One panel can finish while the other is still loading.
+
+![21.gifts statistics loading](images/statistics-loading.png)
+
+### Variant: error
+
+Staff (moderator) page. The goal panel shows **Could not load payouts. Please try again.** and **Try again**. The shop panel under it still shows **Shops by UTC day**. The two panels fail independently.
+
+![21.gifts statistics error](images/statistics-error.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Heading **Statistics**. Copy **This page is for moderators.** No chart.
+
+![21.gifts statistics forbidden](images/statistics-forbidden.png)
+
+### Variant: shop-error
+
+Staff (moderator) page. The payout chart stays up (**People by UTC day**). The shop panel under it shows **Could not load shop activity. Please try again.** and **Try again**.
+
+![21.gifts statistics shop error](images/statistics-shop-error.png)
+
+### Variant: both-error
+
+Staff (moderator) page. The payout panel shows **Could not load payouts. Please try again.** and the shop panel shows **Could not load shop activity. Please try again.**
+
+![21.gifts statistics both error](images/statistics-both-error.png)
+
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, or applications. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s people counted once, as a percent of 100, with the 100-a-day label and the yesterday count on one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s people counted once, as a percent of 100, with the 100-a-day label and the yesterday count on one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
 - **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals or applications itself (Open proposals count comes from `useUnreadCount`).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `useUnreadCount`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal widget.
