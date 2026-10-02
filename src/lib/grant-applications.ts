@@ -21,6 +21,9 @@ export const GRANT_APPLICATION_STILL_OPEN_USERNAMES: readonly string[] = [
 /**
  * Whether this signed-in username still gets the apply walk while applications are paused.
  * Exact match. Null, omitted, and every other username do not.
+ *
+ * @param username - Account username, or null or undefined when it is unset.
+ * @returns `true` only for `joey-rosima`, `vincent`, and `jewel-bacolbas`.
  */
 export function grantApplicationStillOpen(username: string | null | undefined): boolean {
   return (

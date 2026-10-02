@@ -1089,9 +1089,9 @@ Handbook states: default, loading, error.
 
 ### `/grants/apply`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **21 gifts grant**. Usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` still see and complete the apply walk (About me, photo, location, questions, POST). Every other account sees the paused sentence and `https://21.gifts/statistics` and does not start the walk. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **21 gifts grant**. Verified usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` still see and complete the apply walk (About me, photo, location, questions, POST). A basis account with one of those names sees You are not verified yet. Every other account sees the paused sentence and `https://21.gifts/statistics` and does not start the walk. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
 
-Handbook states: default.
+Handbook states: default, about, sunday, photo, location, question, truth, translate, translate-loading, translate-done, translate-hidden, translate-error, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
 
 ### `/profile/apply`
 

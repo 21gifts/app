@@ -3088,7 +3088,7 @@ A failed translate shows Could not translate this note. Please try again.
 
 ### Variant: forbidden
 
-A basis account named joey-rosima, vincent, or jewel-bacolbas still opens the walk and sees **You are not verified yet.** Any other basis account sees the pause card.
+A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** Any other basis account sees the pause card.
 
 ![21.gifts apply forbidden](images/profile-apply-forbidden.png)
 
