@@ -1,3 +1,4 @@
+import { Profiler } from 'react';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaceField } from '@/components/PlaceField';
@@ -546,6 +547,22 @@ describe('PlaceField', () => {
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
   });
 
+  function clientRect(left: number, top: number, right: number, bottom: number): DOMRect {
+    return {
+      x: left,
+      y: top,
+      left,
+      top,
+      right,
+      bottom,
+      width: right - left,
+      height: bottom - top,
+      toJSON() {
+        return {};
+      },
+    } as DOMRect;
+  }
+
   function stubMaps(): Map<string, (event?: unknown) => void> {
     const listeners = new Map<string, (event?: unknown) => void>();
     const map = {
@@ -562,6 +579,7 @@ describe('PlaceField', () => {
           getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
           addListener: () => undefined,
         })),
+        event: { trigger: vi.fn() },
       },
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
@@ -671,5 +689,468 @@ describe('PlaceField', () => {
     );
     expect(screen.queryByText('Happyland')).toBeNull();
     expect(screen.getByRole('button', { name: 'Add a place' })).toBeTruthy();
+  });
+
+  it('hides the preview and panel on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    try {
+      renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+        />,
+      );
+      expect(screen.queryByText('Happyland')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      expect(screen.queryByLabelText('Place name')).toBeNull();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
+  it('hides an open panel when Sunday starts and rebuilds the map afterwards', async () => {
+    stubMaps();
+    try {
+      renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      expect(await screen.findByLabelText('Place name')).toBeTruthy();
+      const Map = (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } })
+        .google.maps.Map;
+      // The open panel builds the map twice: once before the frame box is placed, then again.
+      const builtOnOpen = Map.mock.calls.length;
+      expect(builtOnOpen).toBeGreaterThan(0);
+      document.documentElement.dataset['localSunday'] = '1';
+      await waitFor(() => {
+        expect(screen.queryByLabelText('Place name')).toBeNull();
+      });
+      expect(Map).toHaveBeenCalledTimes(builtOnOpen);
+      delete document.documentElement.dataset['localSunday'];
+      await waitFor(() => {
+        expect(Map).toHaveBeenCalledTimes(builtOnOpen * 2);
+      });
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
+  it('measures a shown preview inside the app frame', () => {
+    renderWithLocale(
+      <div data-app-frame>
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+        />
+      </div>,
+    );
+    expect(screen.getByText('Happyland')).toBeTruthy();
+  });
+
+  it('removes a saved place from the open map panel', async () => {
+    const onChange = vi.fn();
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        showPreview={false}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByRole('textbox', { name: 'Place name' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it('clears the map when the panel closes', async () => {
+    const listeners = stubMaps();
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    const toggle = screen.getByRole('button', { name: 'Add a place' });
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    fireEvent.click(toggle);
+    expect(screen.queryByRole('textbox', { name: 'Place name' })).toBeNull();
+  });
+
+  it('portals a downward preview inside the app frame', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    window.innerWidth = 400;
+    window.innerHeight = 500;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      if (this.hasAttribute('data-app-frame')) {
+        return clientRect(-20, -10, 900, 900);
+      }
+      return clientRect(30, 40, 70, 80);
+    };
+    try {
+      renderWithLocale(
+        <div data-app-frame>
+          <PlaceField
+            place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+            disabled={false}
+            onChange={() => undefined}
+          />
+        </div>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText('Happyland').parentElement?.parentElement).toBe(document.body);
+      });
+      const preview = screen.getByText('Happyland').parentElement as HTMLElement;
+      expect(preview.style.left).toBe('30px');
+      expect(preview.style.width).toBe('256px');
+      expect(preview.style.maxHeight).toBe('');
+      expect(preview.style.top).toBe('88px');
+      expect(preview.style.bottom).toBe('');
+      expect(preview.style.overflow).toBe('');
+      expect(preview.className.split(/\s+/)).toContain('overflow-clip');
+      expect(preview.className.split(/\s+/)).not.toContain('flex-col');
+      expect(preview.parentElement).toBe(document.body);
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerWidth = originalWidth;
+      window.innerHeight = originalHeight;
+    }
+  });
+
+  it('clamps a downward preview to the visual viewport', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    window.innerWidth = 400;
+    window.innerHeight = 500;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      if (this.hasAttribute('data-app-frame')) {
+        return clientRect(-20, -10, 900, 900);
+      }
+      return clientRect(30, 40, 70, 80);
+    };
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: {
+        offsetTop: 120,
+        height: 250,
+        addEventListener(): void {},
+        removeEventListener(): void {},
+      },
+    });
+    try {
+      renderWithLocale(
+        <div data-app-frame>
+          <PlaceField
+            place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+            disabled={false}
+            onChange={() => undefined}
+          />
+        </div>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText('Happyland').parentElement?.parentElement).toBe(document.body);
+      });
+      const preview = screen.getByText('Happyland').parentElement as HTMLElement;
+      expect(preview.style.top).toBe('136px');
+      expect(preview.style.bottom).toBe('');
+      expect(preview.style.left).toBe('30px');
+      expect(preview.style.width).toBe('256px');
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerWidth = originalWidth;
+      window.innerHeight = originalHeight;
+      if (previous === undefined) {
+        delete (window as { visualViewport?: unknown }).visualViewport;
+      } else {
+        Object.defineProperty(window, 'visualViewport', previous);
+      }
+    }
+  });
+
+  it('opens the map panel upward with flex-col and shrink-0 controls', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    window.innerWidth = 400;
+    window.innerHeight = 800;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      return clientRect(56, 660, 96, 700);
+    };
+    const listeners = stubMaps();
+    try {
+      renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      await waitFor(() => {
+        expect(listeners.has('click') || screen.queryByLabelText('Place name') !== null).toBe(true);
+      });
+      await waitFor(() => {
+        expect(listeners.has('click')).toBe(true);
+      });
+      const input = screen.getByLabelText('Place name');
+      expect(input.parentElement?.style.top).toBe('');
+      expect(input.parentElement?.style.bottom).toBe('');
+      const clamp = input.parentElement?.parentElement as HTMLElement;
+      expect(clamp.style.left).toBe('16px');
+      expect(clamp.style.width).toBe('368px');
+      expect(clamp.style.maxHeight).toBe('');
+      expect(clamp.style.top).toBe('16px');
+      expect(clamp.style.bottom).toBe('148px');
+      expect(clamp.style.overflow).toBe('');
+      const clampTokens = clamp.className.split(/\s+/);
+      expect(clampTokens).toContain('fixed');
+      expect(clampTokens).toContain('overflow-clip');
+      expect(clampTokens).toContain('pointer-events-none');
+      expect(clampTokens).toContain('flex-col');
+      expect(clampTokens).toContain('justify-end');
+      expect(clampTokens).not.toContain('justify-start');
+      const innerTokens = (input.parentElement as HTMLElement).className.split(/\s+/);
+      expect(innerTokens).toContain('pointer-events-auto');
+      expect(innerTokens).toContain('flex');
+      expect(innerTokens).toContain('flex-col');
+      expect(innerTokens).toContain('min-h-0');
+      expect(innerTokens).toContain('max-h-full');
+      expect(innerTokens).toContain('overflow-clip');
+      const map = clamp.querySelector('.h-64') as HTMLElement;
+      expect(map.style.height).toBe('');
+      listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+      const confirm = await screen.findByRole('button', { name: 'Use this place' });
+      expect(input.className.split(/\s+/)).toContain('shrink-0');
+      expect(confirm.className.split(/\s+/)).toContain('shrink-0');
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerWidth = originalWidth;
+      window.innerHeight = originalHeight;
+    }
+  });
+
+  it('gives the short map no fixed height', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    window.innerWidth = 400;
+    window.innerHeight = 400;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      if (this.hasAttribute('data-app-frame')) {
+        return clientRect(0, 0, 400, 200);
+      }
+      return clientRect(56, 90, 96, 110);
+    };
+    stubMaps();
+    try {
+      renderWithLocale(
+        <div data-app-frame>
+          <PlaceField place={null} disabled={false} onChange={() => undefined} />
+        </div>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      const input = await screen.findByLabelText('Place name');
+      await waitFor(() => {
+        expect(input.parentElement?.parentElement?.style.bottom).toBe('216px');
+      });
+      const clamp = input.parentElement?.parentElement as HTMLElement;
+      expect(clamp.style.left).toBe('16px');
+      expect(clamp.style.width).toBe('368px');
+      expect(clamp.style.maxHeight).toBe('');
+      expect(clamp.style.top).toBe('16px');
+      expect(clamp.style.bottom).toBe('216px');
+      expect(clamp.style.overflow).toBe('');
+      expect(clamp.className.split(/\s+/)).toContain('overflow-clip');
+      expect(clamp.className.split(/\s+/)).toContain('justify-start');
+      expect(clamp.className.split(/\s+/)).not.toContain('justify-end');
+      const map = clamp.querySelector('.h-64') as HTMLElement;
+      const mapTokens = map.className.split(/\s+/);
+      expect(mapTokens).toContain('min-h-0');
+      expect(map.style.height).toBe('');
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerWidth = originalWidth;
+      window.innerHeight = originalHeight;
+    }
+  });
+
+  it('does not re-render when a second measure yields the same box', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    let anchorLeft = 30;
+    window.innerWidth = 400;
+    window.innerHeight = 500;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      if (this.hasAttribute('data-app-frame')) {
+        return clientRect(-20, -10, 900, 900);
+      }
+      return clientRect(anchorLeft, 40, anchorLeft + 40, 80);
+    };
+    let renders = 0;
+    try {
+      renderWithLocale(
+        <Profiler
+          id="PlaceField"
+          onRender={() => {
+            renders += 1;
+          }}
+        >
+          <div data-app-frame>
+            <PlaceField
+              place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+              disabled={false}
+              onChange={() => undefined}
+            />
+          </div>
+        </Profiler>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText('Happyland').parentElement?.style.left).toBe('30px');
+      });
+      const preview = screen.getByText('Happyland').parentElement as HTMLElement;
+      expect(preview.style.width).toBe('256px');
+      expect(preview.style.maxHeight).toBe('');
+      expect(preview.style.top).toBe('88px');
+      expect(preview.style.bottom).toBe('');
+      expect(preview.style.overflow).toBe('');
+      expect(preview.className.split(/\s+/)).toContain('overflow-clip');
+      expect(preview.className.split(/\s+/)).not.toContain('flex-col');
+      const rendersAfterPreview = renders;
+      await act(async () => {
+        document.documentElement.dispatchEvent(new Event('scroll', { bubbles: false }));
+      });
+      expect(renders).toBe(rendersAfterPreview);
+      expect(preview.style.left).toBe('30px');
+      anchorLeft = 0;
+      await act(async () => {
+        document.documentElement.dispatchEvent(new Event('scroll', { bubbles: false }));
+      });
+      expect(preview.style.left).toBe('16px');
+      expect(renders).toBeGreaterThan(rendersAfterPreview);
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+      window.innerWidth = originalWidth;
+      window.innerHeight = originalHeight;
+    }
+  });
+
+  it('keeps the panel in the anchor when the frame has no room', async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
+      return clientRect(0, 0, 0, 0);
+    };
+    const listeners = stubMaps();
+    try {
+      renderWithLocale(
+        <div data-app-frame>
+          <PlaceField place={null} disabled={false} onChange={() => undefined} />
+        </div>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      const input = await screen.findByLabelText('Place name');
+      expect(input.closest('.fixed')).toBeNull();
+      const wrapper = input.closest('.absolute');
+      expect(wrapper).not.toBeNull();
+      expect(wrapper?.closest('.relative')).not.toBeNull();
+      const map = wrapper?.querySelector('.h-64') as HTMLElement;
+      expect(map.style.height).toBe('');
+      await waitFor(() => {
+        expect(
+          (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } }).google.maps
+            .Map,
+        ).toHaveBeenCalled();
+      });
+      listeners.get('click')?.({ latLng: { lat: () => 1, lng: () => 2 } });
+      expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+    }
+  });
+
+  it('registers visualViewport resize and scroll for a shown preview', () => {
+    const resizeListeners = new Set<EventListener>();
+    const scrollListeners = new Set<EventListener>();
+    const viewport = {
+      addEventListener(type: string, listener: EventListener): void {
+        if (type === 'resize') {
+          resizeListeners.add(listener);
+        }
+        if (type === 'scroll') {
+          scrollListeners.add(listener);
+        }
+      },
+      removeEventListener(type: string, listener: EventListener): void {
+        if (type === 'resize') {
+          resizeListeners.delete(listener);
+        }
+        if (type === 'scroll') {
+          scrollListeners.delete(listener);
+        }
+      },
+    };
+    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: viewport,
+    });
+    try {
+      const view = renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+        />,
+      );
+      expect(resizeListeners.size).toBe(1);
+      expect(scrollListeners.size).toBe(1);
+      view.unmount();
+      expect(resizeListeners.size).toBe(0);
+      expect(scrollListeners.size).toBe(0);
+    } finally {
+      if (previous === undefined) {
+        delete (window as { visualViewport?: unknown }).visualViewport;
+      } else {
+        Object.defineProperty(window, 'visualViewport', previous);
+      }
+    }
+  });
+
+  it('triggers a map resize when the map box shrinks', async () => {
+    const previous = globalThis.ResizeObserver;
+    let resizeCallback: ResizeObserverCallback | undefined;
+    class FakeResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+
+      observe(): void {}
+
+      unobserve(): void {}
+
+      disconnect(): void {}
+    }
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    try {
+      stubMaps();
+      renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      const Map = (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } })
+        .google.maps.Map;
+      await waitFor(() => {
+        expect(Map).toHaveBeenCalled();
+      });
+      resizeCallback?.([], {} as ResizeObserver);
+      const trigger = (
+        window as unknown as {
+          google: { maps: { event: { trigger: ReturnType<typeof vi.fn> } } };
+        }
+      ).google.maps.event.trigger;
+      const created = Map.mock.results[0];
+      expect(created).toBeDefined();
+      if (created === undefined) {
+        return;
+      }
+      expect(trigger).toHaveBeenCalledWith(created.value, 'resize');
+    } finally {
+      globalThis.ResizeObserver = previous;
+    }
   });
 });

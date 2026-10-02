@@ -31,7 +31,15 @@ describe('ForumPhotoGallery', () => {
     expect(scroller?.getAttribute('data-scroll-x')).toBe('');
     const scrollerTokens = (scroller?.className ?? '').split(/\s+/);
     expect(scrollerTokens).toEqual(
-      expect.arrayContaining(['flex', 'snap-x', 'snap-mandatory', 'gap-3', 'overscroll-x-contain']),
+      expect.arrayContaining([
+        'flex',
+        'w-full',
+        'min-w-0',
+        'snap-x',
+        'snap-mandatory',
+        'gap-3',
+        'overscroll-x-contain',
+      ]),
     );
     expect(scrollerTokens).not.toContain('overflow-x-auto');
     expect(scrollerTokens).not.toContain('flex-col');
@@ -213,7 +221,7 @@ describe('ForumPhotoGallery', () => {
         onPhotoClick={onPhotoClick}
       />,
     );
-    expect(container.firstElementChild?.className).toBe('flex flex-col');
+    expect(container.firstElementChild?.className).toBe('flex w-full min-w-0 flex-col');
     const photos = screen.getAllByAltText('Photo from Ada');
     fireEvent.click(photos[0] as HTMLElement);
     expect(onPhotoClick).toHaveBeenCalled();

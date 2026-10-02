@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
+import { pageFrameProblems } from '../src/lib/page-frame';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -659,6 +660,8 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
 }
 
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  const problems = await page.evaluate(pageFrameProblems);
+  expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
   // The app frame is one window. A full-page capture would append the
   // scrolled overflow as an empty band under the frame. Marketing pages
@@ -14377,15 +14380,21 @@ test.describe('welcome forum variants', () => {
 
   test('welcome keyboard-viewport', async ({ page }) => {
     await page.addInitScript(() => {
-      const inner = window.innerHeight;
+      const viewport = {
+        get height() {
+          return Math.round(window.innerHeight * 0.6);
+        },
+        get offsetTop() {
+          return Math.round(window.innerHeight * 0.15);
+        },
+        scale: 1,
+        addEventListener() {},
+        removeEventListener() {},
+      };
       Object.defineProperty(window, 'visualViewport', {
         configurable: true,
-        value: {
-          height: Math.round(inner * 0.6),
-          offsetTop: Math.round(inner * 0.15),
-          scale: 1,
-          addEventListener() {},
-          removeEventListener() {},
+        get() {
+          return viewport;
         },
       });
     });
@@ -16597,7 +16606,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await expect(note.getByText('Cafe Luna')).toBeVisible();
     await expect(note.getByRole('button', { name: 'Add a place' })).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-staff-place');
   });
 
@@ -16778,7 +16787,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
-    const unavailable = note.getByText('The map is not available.');
+    const unavailable = page.getByText('The map is not available.');
     await expect(unavailable).toBeVisible();
     await unavailable.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unavailable');
@@ -16811,7 +16820,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
     await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-staff-place-set');
   });
 
@@ -16842,9 +16851,9 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(remove).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit', false);
   });
@@ -16890,12 +16899,14 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await note.getByRole('button', { name: 'Remove place' }).click();
-    const alert = note.getByRole('alert');
+    await page.getByRole('button', { name: 'Remove place' }).click();
+    const alert = page.getByRole('alert').filter({
+      hasText: 'The place could not be saved. Please try again.',
+    });
     await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(remove).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
     await page.locator('main [data-scrollport]').evaluate((node) => {
       node.scrollTop += 160;
@@ -16929,11 +16940,11 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    const unavailable = note.getByText('The map is not available.');
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const unavailable = page.getByText('The map is not available.');
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(unavailable).toBeVisible();
     await expect(remove).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
   });
@@ -16978,10 +16989,12 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await note.getByRole('button', { name: 'Remove place' }).click();
-    const alert = note.getByRole('alert');
+    await page.getByRole('button', { name: 'Remove place' }).click();
+    const alert = page.getByRole('alert').filter({
+      hasText: 'The place could not be saved. Please try again.',
+    });
     await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(remove).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable-error');
@@ -17049,8 +17062,8 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await note.getByLabel('Place name').fill('Happyland');
-    const confirm = note.getByRole('button', { name: 'Use this place' });
+    await page.getByLabel('Place name').fill('Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
     await confirm.scrollIntoViewIfNeeded();
@@ -17084,8 +17097,8 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    const confirm = note.getByRole('button', { name: 'Use this place' });
-    await expect(note.getByLabel('Place name')).toHaveValue('');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.getByLabel('Place name')).toHaveValue('');
     await expect(confirm).toBeVisible();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unlabeled', false);
@@ -17130,7 +17143,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await note.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(note.getByRole('link', { name: '14.50000, 120.90000' })).toBeVisible();
     await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
     await shotScreen(page, 'state-shops-staff-place-set-coords');
@@ -17177,12 +17190,14 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await note.getByLabel('Place name').fill('Happyland');
-    await note.getByRole('button', { name: 'Use this place' }).click();
-    await expect(note.getByRole('alert')).toHaveText(
-      'The place could not be saved. Please try again.',
-    );
-    const usePlace = note.getByRole('button', { name: 'Use this place' });
+    await page.getByLabel('Place name').fill('Happyland');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'The place could not be saved. Please try again.',
+      }),
+    ).toHaveText('The place could not be saved. Please try again.');
+    const usePlace = page.getByRole('button', { name: 'Use this place' });
     await expect(usePlace).toBeVisible();
     await usePlace.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-error');

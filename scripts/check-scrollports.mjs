@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Fail if production source adds a second layout scrollport.
- * globals.css may scroll in two places only: `overflow: auto` on
- * `[data-scrollport][data-scroll-active]`, and `overflow-x: auto` with
+ * globals.css may scroll in two places only: `overflow-x: clip` and
+ * `overflow-y: auto` on `[data-scrollport][data-scroll-active]` (not the
+ * shorthand `overflow: auto`), and `overflow-x: auto` with
  * `overflow-y: clip` on `[data-scroll-x]`. Anything else is a second
  * page scroll.
  * Run from the repo root. No extra packages.
@@ -16,6 +17,8 @@ const CLASS_BANNED =
   /overflow-(?:x-|y-)?(?:auto|scroll|overlay)\b|overflow-\[(?:auto|scroll|overlay)\]|overflow-(?:x|y)-\[(?:auto|scroll|overlay)\]/;
 const STYLE_BANNED =
   /overflow(?:-x|-y|X|Y)?\s*:\s*['"]?(?:auto|scroll|overlay)\b|overflow(?:X|Y)?\s*=\s*['"](?:auto|scroll|overlay)['"]|setProperty\(\s*['"]overflow(?:-x|-y)?['"]\s*,\s*['"](?:auto|scroll|overlay)['"]/;
+const VIEWPORT_WIDTH =
+  /(?:^|[^\w-])(?:w|min-w|max-w)-screen\b|(?:^|[^\w-])(?:w|min-w|max-w|size|left|right)-\[[^\]\n]*vw[^\]\n]*\]|(?:^|[^\w-])(?:min-|max-)?width\s*:\s*['"]?\d*\.?\d+vw\b|(?:^|[^\w-])(?:min|max)?Width\s*:\s*['"]\d*\.?\d+vw\b/;
 
 /**
  * @param {string} dir
@@ -177,7 +180,10 @@ function globalsScrollProblem(css) {
   const pageOk =
     pages.length === 1 &&
     page !== undefined &&
-    sameDecls(allOverflowDecls(page.body), [{ prop: 'overflow', tokens: ['auto'] }]);
+    sameDecls(allOverflowDecls(page.body), [
+      { prop: 'overflow-x', tokens: ['clip'] },
+      { prop: 'overflow-y', tokens: ['auto'] },
+    ]);
   const rowOk =
     rows.length === 1 &&
     row !== undefined &&
@@ -194,7 +200,7 @@ function globalsScrollProblem(css) {
   if (pageOk && rowOk && !stray) {
     return null;
   }
-  return 'expected one overflow:auto on [data-scrollport][data-scroll-active] and one overflow-x:auto with overflow-y:clip on [data-scroll-x]';
+  return 'expected one overflow-x:clip and overflow-y:auto on [data-scrollport][data-scroll-active] and one overflow-x:auto with overflow-y:clip on [data-scroll-x]';
 }
 
 function selfTest() {
@@ -237,7 +243,7 @@ function selfTest() {
   const passSheet = `
     html, body { overflow: clip !important; }
     [data-scrollport] { overflow: clip !important; }
-    [data-scrollport][data-scroll-active] { overflow: auto !important; }
+    [data-scrollport][data-scroll-active] { overflow-x: clip !important; overflow-y: auto !important; }
     [data-scroll-x] { overflow-x: auto !important; overflow-y: clip !important; }
     * { scroll-behavior: auto !important; }
     :root { --overflow: auto; }
@@ -267,9 +273,10 @@ function selfTest() {
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip; overflow-y: visible }',
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { overflow: AUTO }',
     '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip } .x { OVERFLOW: auto }',
+    '[data-scrollport][data-scroll-active] { overflow: auto } [data-scroll-x] { overflow-x: auto; overflow-y: clip }',
   ];
   const gluedImportant = `
-    [data-scrollport][data-scroll-active] { overflow:auto!important; }
+    [data-scrollport][data-scroll-active] { overflow-x:clip!important; overflow-y:auto!important; }
     [data-scroll-x] { overflow-x:auto!important; overflow-y:clip!important; }
     :root { --overflow: auto; }
   `;
@@ -290,7 +297,50 @@ function selfTest() {
   }
 }
 
+function viewportWidthSelfTest() {
+  const caught = [
+    'className="w-[min(90vw,24rem)]"',
+    'className="w-screen"',
+    'className="min-w-screen"',
+    'className="max-w-screen"',
+    'className="size-[100vw]"',
+    'width: 100vw',
+    'min-width: 50vw',
+    'max-width: 10vw',
+    "width: '100vw'",
+    'width:"100vw"',
+    "minWidth: '100vw'",
+    "maxWidth: '12vw'",
+    'className="left-[10vw]"',
+    'className="right-[8vw]"',
+    'className="w-[100vw]"',
+    'className="max-w-[90vw]"',
+    'className="min-w-[10vw]"',
+  ];
+  const allowed = [
+    'sizes="100vw"',
+    'className="w-full max-w-sm"',
+    'className="shadow-[0_0_1vw_#000]"',
+    'sizes="(min-width: 1100px) 700px, (min-width: 768px) 50vw, 100vw"',
+  ];
+  for (const line of caught) {
+    VIEWPORT_WIDTH.lastIndex = 0;
+    if (!VIEWPORT_WIDTH.test(line)) {
+      console.error('PAGE FRAME: detector self-test failed');
+      process.exit(1);
+    }
+  }
+  for (const line of allowed) {
+    VIEWPORT_WIDTH.lastIndex = 0;
+    if (VIEWPORT_WIDTH.test(line)) {
+      console.error('PAGE FRAME: detector self-test failed');
+      process.exit(1);
+    }
+  }
+}
+
 selfTest();
+viewportWidthSelfTest();
 
 const failures = [];
 
@@ -327,10 +377,34 @@ for (const file of walk(SRC)) {
   });
 }
 
+const viewportFailures = [];
+
+for (const file of walk(SRC)) {
+  const rel = path.relative(ROOT, file);
+  const text = fs.readFileSync(file, 'utf8');
+  const lines = text.split('\n');
+  lines.forEach((line, index) => {
+    VIEWPORT_WIDTH.lastIndex = 0;
+    if (VIEWPORT_WIDTH.test(line)) {
+      viewportFailures.push(`PAGE FRAME: ${rel}:${index + 1}: viewport width escapes the frame`);
+    }
+  });
+}
+
 if (failures.length > 0) {
   console.error('SCROLLPORT: more than one scroll surface is forbidden');
   for (const line of failures) {
     console.error(line);
   }
+}
+
+if (viewportFailures.length > 0) {
+  console.error('PAGE FRAME: viewport width escapes the frame');
+  for (const line of viewportFailures) {
+    console.error(line);
+  }
+}
+
+if (failures.length > 0 || viewportFailures.length > 0) {
   process.exit(1);
 }
