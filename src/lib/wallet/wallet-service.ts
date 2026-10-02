@@ -118,7 +118,7 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
   }
   const run = bumpRun();
   useWalletStore.getState().setConnecting();
-  await dropConnection();
+  void dropConnection();
   const timeoutSentinel = Symbol('connect timeout');
   let timeout!: ReturnType<typeof setTimeout>;
   const deadline = new Promise<typeof timeoutSentinel>((resolve) => {
