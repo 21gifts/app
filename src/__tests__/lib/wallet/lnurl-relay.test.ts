@@ -31,6 +31,8 @@ describe('lnurlRelayTarget', () => {
     ['an own-host address from www', 'bob@21.gifts', 'www.21.gifts'],
     ['a www own-host address', 'bob@www.21.gifts', '21.gifts'],
     ['a www own-host address from www', 'bob@www.21.gifts', 'www.21.gifts'],
+    ['an own-host address on a page host with a trailing dot', 'bob@21.gifts', '21.gifts.'],
+    ['an own-host address on a www page host with a trailing dot', 'bob@21.gifts', 'www.21.gifts.'],
     ['the own deployment host', 'bob@dev.21.gifts', 'dev.21.gifts'],
     ['an own-host address on a local boot', 'bob@21.gifts', 'localhost'],
     ['an own-host LNURL', encodeLnurl('https://21.gifts/.well-known/lnurlp/bob'), '21.gifts'],
