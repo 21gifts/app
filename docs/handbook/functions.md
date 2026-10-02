@@ -3863,7 +3863,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: StatisticsPage
 
-- **Purpose:** Next.js page for `/statistics` (signed-in chart of people paid the daily funding or the welcome gift, for every signed-in user). HTML `/statistics` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `StatisticsScreen`. No `route.ts` beside this page. Gift totals stay on public `/stats`.
+- **Purpose:** Next.js page for `/statistics` (public measured people and shop charts, not a funding goal). Top-right is **Log in** without a session and `SignedInChrome` with one. `OnboardingGate screen="welcome"` `allowGuest`. HTML `/statistics` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left and `OnboardingGate screen="welcome"` `allowGuest` around `StatisticsScreen`. No `route.ts` beside this page. Gift totals stay on public `/stats`.
 - **Inputs:** None.
 - **Returns / side effects:** The statistics screen inside fill AppShell.
 - **Used by:** Route `/statistics`.
@@ -3947,14 +3947,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: fetchShopActivity
 
-- **Purpose:** Loads shop-use counts from same-origin `GET /shops/activity` with a Bearer session. StatisticsScreen calls it for every signed-in role. The body must be 30 unique contiguous UTC days, oldest first; otherwise this throws and the shop panel shows its error state.
-- **Inputs:** `sessionToken` — Bearer session from the signed-in account.
+- **Purpose:** Loads public shop-use counts from same-origin `GET /shops/activity` with no Authorization. StatisticsScreen calls it with or without a session. The body must be 30 unique contiguous UTC days, oldest first; otherwise this throws and the shop panel shows its error state.
+- **Inputs:** None. `fetch('/shops/activity')` with no Authorization.
 - **Returns / side effects:** `ShopActivityDay[]` (`day`, `shopCount`). Network via `fetch`. Does not require the last day to be the browser's today.
 - **Used by:** `StatisticsScreen` shop panel.
 
 ## Function: proxyShopActivityGet
 
-- **Purpose:** Same-origin proxy for api `GET /shops/activity`. App route is `export const GET = proxyShopActivityGet` on `/shops/activity`. Forwards the Bearer session.
+- **Purpose:** Same-origin proxy for api `GET /shops/activity`. App route is `export const GET = proxyShopActivityGet` on `/shops/activity`. No bearer is required. Forwards the incoming request unchanged.
 - **Inputs:** App Router `Request`.
 - **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops/activity')`.
 - **Used by:** `src/app/shops/activity/route.ts`.
@@ -3975,9 +3975,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: StatisticsScreen
 
-- **Purpose:** Client chart of people counted once per UTC day, with a shop-activity panel under the people chart. Any signed-in role fetches both feeds and sees yesterday's person count, the measurement paragraph, and the 30-UTC-day people chart (no goal line), then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The people panel is always open and there is no **Tap to close**. No forbidden card. When `roleAtLeast(..., 'moderator')` and yesterday's person count is a number (including 0; not loading and not the people error panel, including omitted `officialCount`), closed `StaffFunctions` sits after the people chart and before the shop panel; its only child is the payout `ButtonLink` (`href` `/moderate/payouts`, `variant` `secondary`, `size` `lg`, label `moderate.payouts.link`). Basis and verified never render `StaffFunctions`. Renders `null` without a session.
-- **Inputs:** Session and account from `useAuthStore`; catalog and locale via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Any signed-in role fetches `GET /gifts/stats` and also calls `fetchShopActivity`. No session: `null` and no fetch.
+- **Purpose:** Client chart of people counted once per UTC day, with a shop-activity panel under the people chart. A signed-out visitor fetches both feeds and sees both panels. Does not return `null`. Any visitor fetches both feeds and sees yesterday's person count, the measurement paragraph, and the 30-UTC-day people chart (no goal line), then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The people panel is always open and there is no **Tap to close**. No forbidden card. When `roleAtLeast(..., 'moderator')` and yesterday's person count is a number (including 0; not loading and not the people error panel, including omitted `officialCount`), closed `StaffFunctions` sits after the people chart and before the shop panel; its only child is the payout `ButtonLink` (`href` `/moderate/payouts`, `variant` `secondary`, `size` `lg`, label `moderate.payouts.link`). Basis and verified never render `StaffFunctions`. A signed-out visitor never renders `StaffFunctions`.
+- **Inputs:** Account from `useAuthStore`; catalog and locale via `useTranslations`.
+- **Returns / side effects:** A React element. No session still fetches. Fetches `GET /gifts/stats` and also calls `fetchShopActivity`. Does not return `null`.
 - **Used by:** `StatisticsPage`.
 
 ## Function: ModerateScreen

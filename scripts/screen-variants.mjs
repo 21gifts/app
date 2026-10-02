@@ -3041,6 +3041,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/statistics',
+    id: 'signed-out',
+    image: 'statistics-signed-out.png',
+    visual: 'state-statistics-signed-out',
+    needle: 'state-statistics-signed-out',
+  },
+  {
+    route: '/statistics',
     id: 'staff-open',
     image: 'statistics-staff-open.png',
     visual: 'state-statistics-staff-open',

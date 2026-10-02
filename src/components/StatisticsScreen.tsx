@@ -20,20 +20,18 @@ import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Signed-in people-count chart for every signed-in role, with shop activity
- * under it.
+ * People-count chart for every visitor, with shop activity under it.
  *
- * Any signed-in role sees yesterday's person count and the 30-UTC-day chart
+ * Every visitor sees yesterday's person count and the 30-UTC-day chart
  * from {@link fetchGiftStats}, always open, then shop counts from
  * {@link fetchShopActivity}. Each panel loads and fails on its own. Moderators
  * also see closed {@link StaffFunctions} between the panels when yesterday's
- * count is a number. Renders nothing without a session.
+ * count is a number. Fetches both feeds with or without a session.
  *
- * @returns The statistics card, or `null` without a session.
+ * @returns The statistics card.
  */
-export function StatisticsScreen(): ReactElement | null {
+export function StatisticsScreen(): ReactElement {
   const { t, locale } = useTranslations();
-  const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const [stats, setStats] = useState<GiftStats | null>(null);
   const [goalError, setGoalError] = useState(false);
@@ -43,9 +41,6 @@ export function StatisticsScreen(): ReactElement | null {
   const [shopAttempt, setShopAttempt] = useState(0);
 
   useEffect(() => {
-    if (session === null) {
-      return;
-    }
     let cancelled = false;
     setGoalError(false);
     void (async () => {
@@ -66,17 +61,14 @@ export function StatisticsScreen(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, goalAttempt]);
+  }, [goalAttempt]);
 
   useEffect(() => {
-    if (session === null) {
-      return;
-    }
     let cancelled = false;
     setShopError(false);
     void (async () => {
       try {
-        const next = await fetchShopActivity(session);
+        const next = await fetchShopActivity();
         if (cancelled) {
           return;
         }
@@ -92,11 +84,7 @@ export function StatisticsScreen(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, shopAttempt]);
-
-  if (session === null) {
-    return null;
-  }
+  }, [shopAttempt]);
 
   const yesterdayCount =
     stats === null

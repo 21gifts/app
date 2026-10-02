@@ -19073,6 +19073,18 @@ test.describe('statistics screens', () => {
     await shotScreen(page, 'state-statistics-member');
   });
 
+  test('statistics signed-out', async ({ page }) => {
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await page.goto('/statistics');
+    await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-signed-out');
+  });
+
   test('statistics staff-open', async ({ page }) => {
     await seedAda(page, 'founder');
     await stubPayoutGoal(page);

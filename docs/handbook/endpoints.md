@@ -138,9 +138,9 @@
 ## Endpoint: GET /shops/activity
 
 - **Purpose:** Same-origin proxy of api `GET /shops/activity` (shop-use counts, 30 UTC days).
-- **Errors:** The proxy forwards the upstream status. Expected upstream errors are 401 without a session and 503 when shop activity is unavailable, or 502 if this proxy cannot reach the api.
+- **Errors:** The proxy forwards the upstream status. Expected upstream errors are 503 when shop activity is unavailable, or 502 if this proxy cannot reach the api.
 - **Used by:** `fetchShopActivity` on `/statistics`.
-- **Auth:** Bearer session forwarded. StatisticsScreen calls it for every signed-in role.
+- **Auth:** No bearer. StatisticsScreen calls it for every visitor.
 
 ## Endpoint: GET /lightning-address
 

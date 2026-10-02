@@ -2544,6 +2544,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/statistics:signed-out",
+    "label": "/statistics signed-out",
+    "visual": "state-statistics-signed-out",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/statistics:staff-open",
     "label": "/statistics staff-open",
     "visual": "state-statistics-staff-open",

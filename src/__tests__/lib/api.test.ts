@@ -1218,32 +1218,30 @@ describe('fetchShopActivity', () => {
     }));
   }
 
-  it('returns the days array and sends the bearer header', async () => {
+  it('returns the days array without an Authorization header', async () => {
     const days = thirtyDays();
     const fetchMock = stubFetch({ ok: true, status: 200, body: { days } });
-    await expect(fetchShopActivity('sess')).resolves.toEqual(days);
-    expect(fetchMock).toHaveBeenCalledWith('/shops/activity', {
-      headers: { Authorization: 'Bearer sess' },
-    });
+    await expect(fetchShopActivity()).resolves.toEqual(days);
+    expect(fetchMock).toHaveBeenCalledWith('/shops/activity');
   });
 
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'Shop activity is unavailable' } });
-    await expect(fetchShopActivity('sess')).rejects.toThrow(
+    await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
     );
   });
 
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-    await expect(fetchShopActivity('sess')).rejects.toThrow(
+    await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
     );
   });
 
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { days: [] } });
-    await expect(fetchShopActivity('sess')).rejects.toThrow(
+    await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
     );
   });

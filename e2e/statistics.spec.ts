@@ -126,6 +126,20 @@ test('Function: StatisticsPage — basis visitors see Statistics in Menu', async
   );
 });
 
+test('Function: StatisticsPage — a signed-out visitor sees the measured charts', async ({
+  page,
+}) => {
+  await stubPayoutGoal(page);
+  await page.goto('/statistics');
+  await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
+  await expect(page.getByText('People by UTC day')).toBeVisible();
+  await expect(page.getByText('Shops by UTC day')).toBeVisible();
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu', exact: true })).toHaveCount(0);
+  expect(page.url()).toContain('/statistics');
+});
+
 test('Function: StatisticsScreen — opening Moderator functions shows the payout link', async ({
   page,
 }) => {

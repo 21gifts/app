@@ -124,13 +124,15 @@ afterEach(() => {
 });
 
 describe('StatisticsScreen', () => {
-  it('renders nothing when there is no session', () => {
-    useAuthStore.setState({ session: null, account });
-    const { container } = renderWithLocale(<StatisticsScreen />);
-    expect(container.firstChild).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Statistics' })).toBeNull();
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(fetchShopMock).not.toHaveBeenCalled();
+  it('fetches both feeds and shows Statistics when session and account are null', async () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(<StatisticsScreen />);
+    expect(screen.getByRole('heading', { name: 'Statistics' })).toBeTruthy();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+      expect(fetchShopMock).toHaveBeenCalled();
+    });
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
   it.each(['basis', 'verified'] as const)(
