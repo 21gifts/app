@@ -144,7 +144,7 @@ const en = {
     'One tap in your browser. It uses a secure login stored on your device, or creates one. That is your account — there is nothing else to remember.',
   'home.step2Title': 'Set up your wallet',
   'home.step2BodyBefore':
-    'Confirm once with your passkey, and your own wallet in this app gets your address, for example',
+    'Confirm once with your device, and your own wallet in this app gets your address, for example',
   'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin.',
   'home.step3Title': 'Post and receive help',
   'home.step3Body':
@@ -168,7 +168,7 @@ const en = {
   'home.faqTitle': 'Common questions, answered briefly',
   'home.faq1Q': 'Who can use this?',
   'home.faq1A':
-    'Anyone who logs in with a passkey that can hold a 21.gifts wallet. There is no application and no review process.',
+    'Anyone who logs in with a device that can hold a 21.gifts wallet. There is no application and no review process.',
   'home.faq3Q': 'What happens to my keys?',
   'home.faq3A':
     'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and the public key of your 21.gifts wallet. No password and no seed phrase is ever stored on our servers.',
@@ -1295,7 +1295,7 @@ const de = {
     'Ein Tipp im Browser. Es wird ein sicheres, auf Ihrem Gerät gespeichertes Login verwendet oder neu angelegt. Das ist Ihr Konto — mehr müssen Sie sich nicht merken.',
   'home.step2Title': 'Wallet einrichten',
   'home.step2BodyBefore':
-    'Bestätigen Sie einmal mit Ihrem Passkey, dann erhält Ihre eigene Wallet in dieser App Ihre Adresse, zum Beispiel',
+    'Bestätigen Sie einmal mit Ihrem Gerät, dann erhält Ihre eigene Wallet in dieser App Ihre Adresse, zum Beispiel',
   'home.step2BodyAfter': '. Von da an kann Ihnen jede Person Bitcoin senden.',
   'home.step3Title': 'Schreiben und Hilfe empfangen',
   'home.step3Body':
@@ -1319,7 +1319,7 @@ const de = {
   'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
   'home.faq1Q': 'Wer kann das nutzen?',
   'home.faq1A':
-    'Jede Person, die sich mit einem Passkey anmeldet, der eine 21.gifts-Wallet halten kann. Kein Antrag, keine Prüfung.',
+    'Jede Person, die sich mit einem Gerät anmeldet, das eine 21.gifts-Wallet halten kann. Kein Antrag, keine Prüfung.',
   'home.faq3Q': 'Was passiert mit meinen Schlüsseln?',
   'home.faq3A':
     'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und den öffentlichen Schlüssel Ihrer 21.gifts-Wallet. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
@@ -2473,7 +2473,7 @@ const es = {
     'Un toque en tu navegador. Usa un acceso seguro guardado en tu dispositivo, o crea uno nuevo. Esa es tu cuenta — no hay nada más que recordar.',
   'home.step2Title': 'Configura tu wallet',
   'home.step2BodyBefore':
-    'Confirma una vez con tu passkey y tu propia wallet en esta app recibe tu dirección, por ejemplo',
+    'Confirma una vez con tu dispositivo y tu propia wallet en esta app recibe tu dirección, por ejemplo',
   'home.step2BodyAfter': '. A partir de ahí, cualquiera podrá enviarte Bitcoin.',
   'home.step3Title': 'Publica y recibe ayuda',
   'home.step3Body':
@@ -2497,7 +2497,7 @@ const es = {
   'home.faqTitle': 'Preguntas frecuentes, en breve',
   'home.faq1Q': '¿Quién puede usarlo?',
   'home.faq1A':
-    'Cualquiera que entre con una passkey que pueda guardar una wallet de 21.gifts. No hay solicitud ni proceso de revisión.',
+    'Cualquiera que entre con un dispositivo que pueda guardar una wallet de 21.gifts. No hay solicitud ni proceso de revisión.',
   'home.faq3Q': '¿Qué pasa con mis claves?',
   'home.faq3A':
     'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y la clave pública de tu wallet de 21.gifts. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
@@ -3621,7 +3621,7 @@ const fil = {
     'Isang tap sa browser mo. Gagamitin nito ang secure na login na nakaimbak sa device mo, o gagawa ito ng bago. Iyon na ang account mo — wala nang ibang kailangang tandaan.',
   'home.step2Title': 'I-set up ang wallet mo',
   'home.step2BodyBefore':
-    'Kumpirmahin nang isang beses gamit ang passkey mo, at magkakaroon ng address mo ang sarili mong wallet sa app na ito, halimbawa',
+    'Kumpirmahin nang isang beses gamit ang device mo, at magkakaroon ng address mo ang sarili mong wallet sa app na ito, halimbawa',
   'home.step2BodyAfter': '. Mula roon, puwede ka nang padalhan ng Bitcoin ng kahit sino.',
   'home.step3Title': 'Mag-post at tumanggap ng tulong',
   'home.step3Body':
@@ -3645,7 +3645,7 @@ const fil = {
   'home.faqTitle': 'Mga karaniwang tanong, maikling sagot',
   'home.faq1Q': 'Sino ang puwedeng gumamit nito?',
   'home.faq1A':
-    'Sinumang nagla-log in gamit ang passkey na kayang maglaman ng 21.gifts wallet. Walang application at walang review process.',
+    'Sinumang nagla-log in gamit ang device na kayang maglaman ng 21.gifts wallet. Walang application at walang review process.',
   'home.faq3Q': 'Ano ang nangyayari sa mga key ko?',
   'home.faq3A':
     'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at ang public key ng 21.gifts wallet mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
