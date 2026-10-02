@@ -1,10 +1,19 @@
 import { cleanup, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
 import type { Account, OwnerFunding } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
+import { grantApplicationsPaused } from '@/lib/grant-applications';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('@/lib/grant-applications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/grant-applications')>();
+  return {
+    ...actual,
+    grantApplicationsPaused: vi.fn(actual.grantApplicationsPaused),
+  };
+});
 
 const account: Account = {
   id: 'acc_1',
@@ -38,6 +47,7 @@ const pending: OwnerFunding = {
 };
 
 beforeEach(() => {
+  vi.mocked(grantApplicationsPaused).mockReturnValue(true);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -286,5 +296,19 @@ describe('FundingStatusCard', () => {
     });
     renderWithLocale(<FundingStatusCard />);
     expect(screen.getByText('Takes part in the 21.gifts funding program')).toBeTruthy();
+  });
+
+  it('offers the apply link', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(false);
+    renderWithLocale(<FundingStatusCard />);
+    expect(
+      screen.getByText(
+        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
+    expect(
+      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
+    ).toBe('/grants/apply');
   });
 });

@@ -159,7 +159,7 @@ test('Function: grantApplicationStillOpen — joey-rosima still sees the apply w
   ).toBeVisible();
 });
 
-test('Function: aboutMeFilled — the bio step is not offered while applications are paused', async ({
+test('Function: aboutMeFilled — a name-matching About me still asks for the bio', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -174,6 +174,7 @@ test('Function: aboutMeFilled — the bio step is not offered while applications
         linkingKey: null,
         role: 'verified',
         name: 'Ada',
+        username: 'joey-rosima',
         location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
@@ -194,13 +195,12 @@ test('Function: aboutMeFilled — the bio step is not offered while applications
     });
   });
   await page.goto('/grants/apply');
-  await expect(page.getByText(PAUSED)).toBeVisible();
   await expect(
     page.getByText('First, write a short About me so people can get to know you.'),
-  ).toHaveCount(0);
+  ).toBeVisible();
 });
 
-test('Function: nextFillStep — the photo step is not offered while applications are paused', async ({
+test('Function: nextFillStep — the photo step is offered after About me', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -215,6 +215,7 @@ test('Function: nextFillStep — the photo step is not offered while application
         linkingKey: null,
         role: 'verified',
         name: 'Ada',
+        username: 'joey-rosima',
         location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
@@ -236,11 +237,10 @@ test('Function: nextFillStep — the photo step is not offered while application
     });
   });
   await page.goto('/grants/apply');
-  await expect(page.getByText(PAUSED)).toBeVisible();
-  await expect(page.getByText('Next, add a photo to your About me.')).toHaveCount(0);
+  await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
 });
 
-test('Function: locationFilled — the location step is not offered while applications are paused', async ({
+test('Function: locationFilled — the location step is offered after About me and a photo', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -255,6 +255,7 @@ test('Function: locationFilled — the location step is not offered while applic
         linkingKey: null,
         role: 'verified',
         name: 'Ada',
+        username: 'joey-rosima',
         location: null,
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
@@ -276,8 +277,7 @@ test('Function: locationFilled — the location step is not offered while applic
     });
   });
   await page.goto('/grants/apply');
-  await expect(page.getByText(PAUSED)).toBeVisible();
-  await expect(page.getByText('Next, add the place you live.')).toHaveCount(0);
+  await expect(page.getByText('Next, add the place you live.')).toBeVisible();
 });
 
 test('Function: FundingPausedCopy — shows the paused sentence and the statistics link', async ({

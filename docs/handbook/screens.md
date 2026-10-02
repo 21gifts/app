@@ -512,6 +512,12 @@ Signed in, no grant application. The notice title is **Daily payout stopped**, t
 
 ![21.gifts welcome daily payout stopped](images/welcome-daily-payout-stopped.png)
 
+### Variant: daily-payout-stopped-apply
+
+Username joey-rosima sees Apply for the 21 gifts grant under Daily payout stopped, not the paused sentence.
+
+![21.gifts welcome daily payout stopped apply](images/welcome-daily-payout-stopped-apply.png)
+
 ### Variant: renew
 
 Signed in, no seed yet. The dialog explains that the device will ask for a passkey and that nothing changes until the member confirms. **Continue** is the only action. There is no close control.
@@ -2904,6 +2910,12 @@ Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, the
 
 ![21.gifts grants](images/grants.png)
 
+### Variant: funding-apply
+
+Username joey-rosima with no grant sees Apply for the 21 gifts grant instead of the paused sentence.
+
+![21.gifts grants funding apply](images/grants-funding-apply.png)
+
 ### Variant: funding-not-verified
 
 Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button.
@@ -3007,6 +3019,126 @@ Opening `/profile/apply` lands on the paused applications screen. Public paused 
 Verified member, funding none. Heading **21 gifts grant**. The paused sentence. Link `https://21.gifts/statistics`. No Apply control. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 
 ![21.gifts apply](images/profile-apply.png)
+
+### Variant: about
+
+Username joey-rosima sees the first apply step, First, write a short About me so people can get to know you.
+
+![21.gifts apply about](images/grants-apply-about.png)
+
+### Variant: sunday
+
+On Sunday the About-me step shows Writing is paused on Sunday and hides Save.
+
+![21.gifts apply sunday](images/grants-apply-sunday.png)
+
+### Variant: photo
+
+After a real About me, the next step asks for a photo.
+
+![21.gifts apply photo](images/profile-apply-photo.png)
+
+### Variant: location
+
+After About me and a photo, the next step asks for the place you live.
+
+![21.gifts apply location](images/profile-apply-location.png)
+
+### Variant: question
+
+Filled profile asks whether the posts match the core principles of 21.gifts.
+
+![21.gifts apply question](images/grants-apply-question.png)
+
+### Variant: truth
+
+After Yes, the walk asks whether the posts correspond to the truth.
+
+![21.gifts apply truth](images/grants-apply-truth.png)
+
+### Variant: translate
+
+A German living-room post on the walk offers Translate.
+
+![21.gifts apply translate](images/profile-apply-translate.png)
+
+### Variant: translate-loading
+
+Translate is busy and stays on the walk.
+
+![21.gifts apply translate loading](images/profile-apply-translate-loading.png)
+
+### Variant: translate-done
+
+The walk shows the English note and Show original.
+
+![21.gifts apply translate done](images/profile-apply-translate-done.png)
+
+### Variant: translate-hidden
+
+Show original returns the German note and offers Show translation.
+
+![21.gifts apply translate hidden](images/profile-apply-translate-hidden.png)
+
+### Variant: translate-error
+
+A failed translate shows Could not translate this note. Please try again.
+
+![21.gifts apply translate error](images/profile-apply-translate-error.png)
+
+### Variant: pending
+
+An open application says a moderator will review the posts.
+
+![21.gifts apply pending](images/profile-apply-pending.png)
+
+### Variant: trial
+
+A one-day trial says review repeats tomorrow.
+
+![21.gifts apply trial](images/profile-apply-trial.png)
+
+### Variant: admitted
+
+An admitted member sees the daily 21.gifts grant payout sentence.
+
+![21.gifts apply admitted](images/profile-apply-admitted.png)
+
+### Variant: empty-posts
+
+A filled profile with no living-room posts says No living-room posts.
+
+![21.gifts apply empty posts](images/profile-apply-empty-posts.png)
+
+### Variant: loading
+
+Posts have not loaded yet, so the walk shows Loading….
+
+![21.gifts apply loading](images/profile-apply-loading.png)
+
+### Variant: error
+
+A failed post load says Could not load this application. Please try again.
+
+![21.gifts apply error](images/profile-apply-error.png)
+
+### Variant: applying
+
+Both Yes answers are in flight and the Yes button is disabled.
+
+![21.gifts apply applying](images/profile-apply-applying.png)
+
+### Variant: apply-failed
+
+A failed POST says Could not submit your application. Please try again.
+
+![21.gifts apply failed](images/profile-apply-apply-failed.png)
+
+### Variant: unmet
+
+No on the first question says When your posts match, you can apply again.
+
+![21.gifts apply unmet](images/profile-apply-unmet.png)
 
 ## Screen: /messages
 
