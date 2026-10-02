@@ -21845,7 +21845,8 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Edit comment' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('The comment is not valid.')).toBeVisible();
     await shotScreen(page, 'state-grants-payments-invalid-comment');
   });
@@ -21915,7 +21916,8 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments');
-    await page.getByRole('button', { name: 'Update ada@w...' }).click();
+    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('That recipient is not on the list.')).toBeVisible();
     await shotScreen(page, 'state-grants-payments-unknown');
   });
@@ -21933,7 +21935,8 @@ test.describe('daily payments', () => {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
     await page.goto('/grants/payments');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Edit comment' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-grants-payments-save-error');
   });
@@ -21949,8 +21952,9 @@ test.describe('daily payments', () => {
     });
     await page.route(/\/funding\/daily-roster\/comment$/, () => new Promise(() => undefined));
     await page.goto('/grants/payments');
-    await page.getByRole('button', { name: 'Save' }).click();
-    await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Edit comment' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await shotScreen(page, 'state-grants-payments-pending');
   });
 });

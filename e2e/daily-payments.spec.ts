@@ -144,7 +144,8 @@ test('Function: fetchDailyRoster — an initiator loads the roster', async ({ pa
     await fulfillRoster(route, ROSTER);
   });
   await page.goto('/grants/payments');
-  await expect(page.getByLabel('Comment')).toHaveValue('Daily gift');
+  await expect(page.getByText('Daily gift')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
   await expect(page.getByText('ada@w...')).toBeVisible();
   await expect(page.getByText('bob@example.com')).toBeVisible();
 });
@@ -159,14 +160,16 @@ test('Function: saveDailyRosterComment — Save posts the comment JSON', async (
     await fulfillRoster(route, { ...ROSTER, comment: body.comment });
   });
   await page.goto('/grants/payments');
+  await page.getByRole('button', { name: 'Edit comment' }).click();
   await page.getByLabel('Comment').fill('Hello from grants');
   const posted = page.waitForRequest(
     (req) =>
       req.method() === 'POST' && new URL(req.url()).pathname === '/funding/daily-roster/comment',
   );
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   expect((await posted).postDataJSON()).toEqual({ comment: 'Hello from grants' });
-  await expect(page.getByLabel('Comment')).toHaveValue('Hello from grants');
+  await expect(page.getByText('Hello from grants')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
 });
 
 test('Function: saveDailyRosterPayments — Off posts enabled false', async ({ page }) => {
@@ -248,13 +251,14 @@ test('Function: updateDailyRosterRecipient — Update posts the stored address',
     await fulfillRoster(route, ROSTER);
   });
   await page.goto('/grants/payments');
+  await page.getByRole('button', { name: 'Edit ada@w...' }).click();
   await page.getByRole('textbox', { name: 'USD ada@w...' }).fill('2');
   const posted = page.waitForRequest(
     (req) =>
       req.method() === 'POST' &&
       new URL(req.url()).pathname === '/funding/daily-roster/recipients/update',
   );
-  await page.getByRole('button', { name: 'Update ada@w...' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
   expect((await posted).postDataJSON()).toEqual({
     address: 'ada@walletofsatoshi.com',
     amountUsd: 2,

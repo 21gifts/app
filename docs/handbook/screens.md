@@ -3004,12 +3004,12 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 - **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Under the heading, the loaded editor says everyone in the grant program receives the roster `defaultAmountUsd` by default, formatted with `formatUsdDisplay`, and that the page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. The figure is not written into the catalog. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
-- **Actions:** Save the comment with the pencil icon on the same line, to the right of the comment. Its accessible name is **Save**; the word is not shown. Turn payments **On** or **Off**. **Add** a recipient. Update and delete are icon-only (pencil and trash) on the same line as the amount, not labeled buttons. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Actions:** The comment is text until the pencil (**Edit comment**) opens it. The check (**Save**) stores it and the X (**Cancel**) restores it. Neither word is shown. A save in flight replaces the check with a spinner. An empty comment shows **Not set**. Turn payments **On** or **Off**. **Add** a recipient. A recipient row shows the formatted amount, a pencil (**Edit** plus the shown address), and a trash (**Delete** plus the shown address) on one line. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/payments` (`DailyPaymentsPage`). The **Daily payments** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
 
-Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. The note begins **Everyone in the grant program receives $1.00 by default.** Comment **Daily gift**. That address renders as `ada@w...`. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. Needle `Everyone in the grant program receives`.
+Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. The note begins **Everyone in the grant program receives $1.00 by default.** Comment **Daily gift** is text, with the pencil **Edit comment** on the same line. That address renders as `ada@w...`. Its amount is text, with pencil and trash. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. Needle `Everyone in the grant program receives`.
 
 ![21.gifts daily payments](images/grants-payments.png)
 
@@ -3039,7 +3039,7 @@ Moderator on the direct URL. Heading **Daily payments** and **You cannot change 
 
 ### Variant: invalid
 
-Founder, add amount 0, alert **The address or the amount is not valid.** The amount, pencil, and trash share one line. Update and delete stay icon-only, with accessible names **Update** or **Delete** plus the shown address. Needle `The address or the amount is not valid.`
+Founder, add amount 0, alert **The address or the amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown address. The trash is **Delete** plus that address. Needle `The address or the amount is not valid.`
 
 ![21.gifts daily payments invalid](images/grants-payments-invalid.png)
 
@@ -3051,7 +3051,7 @@ Founder with payments switched off. **Off** is pressed and **On** is not. Needle
 
 ### Variant: invalid-comment
 
-Founder saves a comment spend rejects. Alert **The comment is not valid.** Needle `The comment is not valid.`
+Founder opens the comment with the pencil and presses the check. Spend rejects it. The field stays open. Alert **The comment is not valid.** Needle `The comment is not valid.`
 
 ![21.gifts daily payments invalid comment](images/grants-payments-invalid-comment.png)
 
@@ -3069,19 +3069,19 @@ Founder adds an address spend already lists. Alert **That address is already lis
 
 ### Variant: unknown
 
-Founder updates a row spend does not list. Alert **That recipient is not on the list.** Needle `That recipient is not on the list.`
+Founder opens a row with the pencil and presses the check. Spend does not list that address. The field stays open. Alert **That recipient is not on the list.** Needle `That recipient is not on the list.`
 
 ![21.gifts daily payments unknown](images/grants-payments-unknown.png)
 
 ### Variant: save-error
 
-Founder saves and the roster call fails for any other reason, including `Forbidden`. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
+Founder opens the comment and presses the check. The roster call fails for any other reason, including `Forbidden`. The field stays open. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
 
 ![21.gifts daily payments save error](images/grants-payments-save-error.png)
 
 ### Variant: pending
 
-Founder pressed the comment pencil and the roster call has not returned. The editor stays up. That pencil (accessible name **Save**), **On**, **Off**, **Add**, and the row buttons are disabled. There is no alert. Needle `state-grants-payments-pending`.
+Founder opened the comment with the pencil and pressed the check. The roster call has not returned. The check (accessible name **Save**) shows a spinner and is disabled, as are **Cancel**, **On**, **Off**, **Add**, and the row buttons. There is no alert. Needle `state-grants-payments-pending`.
 
 ![21.gifts daily payments pending](images/grants-payments-pending.png)
 
