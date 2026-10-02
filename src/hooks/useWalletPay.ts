@@ -18,7 +18,8 @@ export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
 /**
  * What the in-app pay slot of a pay sheet shows.
  *
- * - `fallback`: the existing invoice QR and external wallet button.
+ * - `fallback`: the existing desktop invoice QR plus Wallet of Satoshi button
+ *   (smartphone: button only).
  * - `unlock`: one passkey prompt opens the wallet.
  * - `preparing`: the wallet opens or reads amount and fee.
  * - `confirm`: fee shown, **Pay from wallet** pays.
