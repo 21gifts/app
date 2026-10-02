@@ -200,6 +200,8 @@ describe('daily payment subpages', () => {
     expect(screen.getByRole('heading', { name: 'Daily payment text' })).toBeTruthy();
     expect(screen.getByText('Daily gift')).toBeTruthy();
     expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull();
+    expect(screen.queryByText('Comment')).toBeNull();
+    expect(screen.queryByText('Edit comment')).toBeNull();
     expect(screen.queryByText('Ada@w...')).toBeNull();
     expect(screen.queryByRole('button', { name: 'On' })).toBeNull();
     expect(screen.queryByText('Save')).toBeNull();
@@ -225,6 +227,7 @@ describe('daily payment subpages', () => {
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Update')).toBeNull();
     expect(screen.queryByText('Delete')).toBeNull();
+    expect(screen.queryByText('Edit Ada@w...')).toBeNull();
     expect(screen.getByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Delete Ada@w...' })).toBeTruthy();
   });
@@ -250,6 +253,8 @@ describe('daily payment subpages', () => {
   it('saves the comment and shows a mapped, unknown, or non-error failure', async () => {
     await renderComment();
     fireEvent.click(screen.getByRole('button', { name: 'Edit comment' }));
+    expect(screen.queryByText('Save')).toBeNull();
+    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.change(screen.getByRole('textbox', { name: 'Comment' }), {
       target: { value: 'Hello' },
     });
@@ -346,6 +351,8 @@ describe('daily payment subpages', () => {
   it('updates and deletes a recipient', async () => {
     await renderAmounts();
     fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    expect(screen.queryByText('Save')).toBeNull();
+    expect(screen.queryByText('Cancel')).toBeNull();
     const amount = screen.getByRole('textbox', { name: 'USD Ada@w...' });
     fireEvent.change(amount, { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
