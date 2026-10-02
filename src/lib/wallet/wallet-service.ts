@@ -17,6 +17,9 @@ let runCounter = 0;
 /** Monotonic balance-read counter; only the latest read may write the store. */
 let balanceReadCounter = 0;
 
+/** Maximum wait for the first synchronized balance read. */
+const FIRST_SYNC_TIMEOUT_MS = 30_000;
+
 /**
  * Advances the run counter so in-flight work from an older run is ignored.
  *
@@ -64,10 +67,21 @@ async function readBalance(
   balanceReadCounter += 1;
   const read = balanceReadCounter;
   try {
-    const info =
+    let timeout!: ReturnType<typeof setTimeout>;
+    const firstRead =
       options?.ensureSynced === true
-        ? await conn.getInfo({ ensureSynced: true })
-        : await conn.getInfo();
+        ? Promise.race([
+            conn.getInfo({ ensureSynced: true }),
+            new Promise<never>((_resolve, reject) => {
+              timeout = setTimeout(() => {
+                reject(new Error('wallet sync timed out'));
+              }, FIRST_SYNC_TIMEOUT_MS);
+            }),
+          ]).finally(() => {
+            clearTimeout(timeout);
+          })
+        : conn.getInfo();
+    const info = await firstRead;
     if (run !== runCounter || read !== balanceReadCounter) {
       return;
     }
@@ -99,9 +113,10 @@ async function failRun(run: number): Promise<void> {
 
 /**
  * Connects the in-app wallet from the tab phrase and Breez API key. The first
- * balance read waits for synchronization, so the store stays `connecting`
- * until synchronized state is available. No-ops when either input is missing.
- * Never rejects; failures end in the store.
+ * balance read waits up to 30 seconds for synchronization, so the store stays
+ * `connecting` until synchronized state is available or moves to `error` on
+ * timeout. No-ops when either input is missing. Never rejects; failures end in
+ * the store.
  *
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
  * @returns Resolves when the attempt finishes (ready, error, or superseded).
