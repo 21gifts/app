@@ -148,10 +148,10 @@ export const accountSchema = z.object({
  * LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `location` is an optional free-text place (never `""`; empty clears to `null`).
- * `lightningAddress` is the receiver's `name@domain.tld` address, or `null` when
- * none is linked. `lightningAddressVerified` is accepted from the api (proof-of-
- * control flag) but unused in the UI — live verification payments are not
- * configured on the api. `forumLawsDismissed` is true after the user dismissed
+ * `lightningAddress` and `lightningAddressVerified` are accepted from the api
+ * for older accounts but unused in the UI: a member receives only on the
+ * in-app wallet (`sparkWalletVerified`), and the app cannot link an external
+ * address. `forumLawsDismissed` is true after the user dismissed
  * the welcome-forum living-room laws hint; false for new accounts and until
  * they click the X. Forum role tags use `role`, not this flag.
  * `rulesAgreedAt` is the epoch ms of the first agreement to the living-room
