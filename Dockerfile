@@ -18,6 +18,10 @@
 # signed-in Menu. It is the deploy run number, not an entrypoint.sh
 # placeholder, and is not substituted at container start.
 #
+# NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed only by
+# the staging deploy and baked at `next build`. It is not an entrypoint.sh
+# placeholder; an unset or empty value still builds.
+#
 # Current NEXT_PUBLIC_* variables:
 #   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
