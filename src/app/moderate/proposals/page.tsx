@@ -9,8 +9,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/moderate/proposals` — signed-in staff confirm/reject queue.
  *
  * This page is the confirm/reject queue. The chrome back returns to the
- * previous in-app view (the card has no back control). Requires name +
- * address + living-room rules agreement via {@link OnboardingGate}
+ * previous in-app view (the card has no back control). Requires name + username +
+ *  living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`, same as `/moderate`. There is no `route.ts` beside this
  * page (Next.js forbids that); proposal HTTP lives under `/trust/proposals`.
  *
