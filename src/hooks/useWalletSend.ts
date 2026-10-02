@@ -179,10 +179,12 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
  * shows that it is not supported yet. A receiver whose server this browser
  * cannot reach shows a plain error. Nothing is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
- * actions inert; under `send-input-busy` and `send-amount-busy`, **Continue**
+ * actions inert (so does any other `?visual=balance-…` or `?visual=send-…`
+ * value there); under `send-input-busy` and `send-amount-busy`, **Continue**
  * only marks that step busy. When the wallet leaves `ready`, an open amount
  * or confirm step and any read or prepare in flight are dropped (a send in
- * flight is kept), so a later reconnect starts at the input.
+ * flight is kept), so a later reconnect starts at the input; a read or
+ * prepare that settles once the wallet is no longer ready is dropped too.
  *
  * @returns The current step, drafts, and actions.
  */
@@ -196,6 +198,7 @@ export function useWalletSend(): UseWalletSendResult {
   const generation = useRef(0);
   const pin = visualName();
   const pinned = visualState(pin);
+  const inert = pinned !== null || (pin !== null && /^(balance|send)-/.test(pin));
   const status = useWalletStore((store) => store.status);
 
   useEffect(
@@ -206,7 +209,7 @@ export function useWalletSend(): UseWalletSendResult {
   );
 
   useEffect(() => {
-    if (pinned !== null || status === 'ready') {
+    if (inert || status === 'ready') {
       return;
     }
     if ((state.step === 'input' && !busy) || state.step === 'sent') {
@@ -219,7 +222,7 @@ export function useWalletSend(): UseWalletSendResult {
     sendRef.current = null;
     setBusy(false);
     setState({ step: 'input', error: null });
-  }, [pinned, status, state.step, busy]);
+  }, [inert, status, state.step, busy]);
 
   const setText = useCallback((value: string): void => {
     setTextState(value);
@@ -232,7 +235,7 @@ export function useWalletSend(): UseWalletSendResult {
     const run = generation.current;
     setBusy(true);
     void payFromWallet(request).then((result) => {
-      if (run !== generation.current) {
+      if (run !== generation.current || useWalletStore.getState().status !== 'ready') {
         return;
       }
       setBusy(false);
@@ -254,7 +257,7 @@ export function useWalletSend(): UseWalletSendResult {
   }, []);
 
   const submitInput = useCallback((): void => {
-    if (pinned !== null) {
+    if (inert) {
       setPinBusy(pin === 'send-input-busy');
       return;
     }
@@ -264,7 +267,7 @@ export function useWalletSend(): UseWalletSendResult {
     const run = generation.current;
     setBusy(true);
     void parseWalletInput(text).then((parsed) => {
-      if (run !== generation.current) {
+      if (run !== generation.current || useWalletStore.getState().status !== 'ready') {
         return;
       }
       if (parsed.kind !== 'target') {
@@ -301,11 +304,11 @@ export function useWalletSend(): UseWalletSendResult {
       setComment('');
       setState({ step: 'amount', target, amountError: false });
     });
-  }, [pin, pinned, busy, state.step, text, prepare]);
+  }, [pin, inert, busy, state.step, text, prepare]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {
-      if (pinned !== null) {
+      if (inert) {
         setPinBusy(pin === 'send-amount-busy');
         return;
       }
@@ -333,12 +336,12 @@ export function useWalletSend(): UseWalletSendResult {
       }
       prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
     },
-    [pin, pinned, busy, state, comment, prepare],
+    [pin, inert, busy, state, comment, prepare],
   );
 
   const confirm = useCallback((): void => {
     const send = sendRef.current;
-    if (pinned !== null || busy || state.step !== 'confirm' || send === null) {
+    if (inert || busy || state.step !== 'confirm' || send === null) {
       return;
     }
     sendRef.current = null;
@@ -361,10 +364,10 @@ export function useWalletSend(): UseWalletSendResult {
         error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
       });
     });
-  }, [pinned, busy, state]);
+  }, [inert, busy, state]);
 
   const cancel = useCallback((): boolean => {
-    if (pinned !== null || state.step === 'input') {
+    if (inert || state.step === 'input') {
       return false;
     }
     if (state.step === 'confirm' && busy) {
@@ -375,7 +378,7 @@ export function useWalletSend(): UseWalletSendResult {
     setBusy(false);
     setState({ step: 'input', error: null });
     return true;
-  }, [pinned, state.step, busy]);
+  }, [inert, state.step, busy]);
 
   return {
     state: pinned ?? state,

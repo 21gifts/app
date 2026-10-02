@@ -28,6 +28,9 @@ let balanceReadCounter = 0;
 /** Maximum wait for a connect attempt. */
 const CONNECT_TIMEOUT_MS = 30_000;
 
+/** Counter value of the read that last wrote the store balance. */
+let writtenReadCounter = 0;
+
 /**
  * Host the app is served from. The wallet's address lives on this host, and
  * the app forwards the wallet's address calls to the api.
@@ -92,6 +95,7 @@ async function readBalance(
     if (run !== runCounter || read !== balanceReadCounter) {
       return;
     }
+    writtenReadCounter = read;
     useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
   } catch (err: unknown) {
     if (run !== runCounter || read !== balanceReadCounter) {
@@ -410,8 +414,9 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
  * Prepares a payment from the in-app wallet and returns its amount and fee for
  * confirmation, checked against a balance read after the wallet has synced.
  * That read also updates the store while it is the latest read; when a newer
- * read overtook it, the check uses the store's newer balance, so the check
- * always matches the balance shown. The returned `send` pays it once and
+ * read already wrote the store, the check uses that newer balance, so the
+ * check matches the balance shown. While a newer read is still pending, the
+ * check uses this read. The returned `send` pays it once and
  * refreshes the balance. Never rejects.
  *
  * @param request - Request text to pay, or a receiver that takes an amount.
@@ -441,8 +446,10 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     }
     let balanceSats = info.balanceSats;
     if (read === balanceReadCounter) {
+      writtenReadCounter = read;
       useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
-    } else {
+    } else if (writtenReadCounter > read) {
+      /* v8 ignore next -- a newer read of this connection wrote a balance */
       balanceSats = useWalletStore.getState().balanceSats ?? info.balanceSats;
     }
     if (balanceSats < amountSats + feeSats) {

@@ -221,6 +221,30 @@ describe('useWalletPay guards', () => {
     expect(result.current.view).toBe('fallback');
   });
 
+  it('starts over when the sheet amount changes for the same invoice', async () => {
+    const oldSend = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce(confirmWith(oldSend))
+      .mockResolvedValueOnce({
+        kind: 'confirm',
+        amountSats: 42,
+        feeSats: 0,
+        send: async () => ({ kind: 'paid' }),
+      });
+    const { result, rerender } = renderHook(({ sats }) => useWalletPay(SPARK, sats), {
+      initialProps: { sats: 21 },
+    });
+    await act(async () => undefined);
+    expect(result.current.view).toBe('confirm');
+    rerender({ sats: 42 });
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(oldSend).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.view).toBe('confirm');
+  });
+
   it('drops a confirm step when the wallet leaves ready, and prepares again once ready', async () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     const { result } = renderHook(() => useWalletPay(SPARK, 21));
