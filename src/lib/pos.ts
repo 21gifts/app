@@ -45,9 +45,10 @@ export async function fetchPosState(sessionToken: string): Promise<PosState> {
  * @param sessionToken - Bearer session.
  * @param amountSats - Whole sats.
  * @returns The created charge.
- * @throws {@link WalletRequiredError} on 412 and {@link CannotReceiveError} on
- * 422 (the member's wallet is not set up, or cannot receive); otherwise Error
- * with the API `error` string, or a status fallback.
+ * @throws {@link WalletRequiredError} or {@link CannotReceiveError} when a 400
+ * carries `code` `wallet_required` or `cannot_receive` (the member's wallet is
+ * not set up, or cannot receive); otherwise Error with the API `error` string,
+ * or a status fallback.
  */
 export async function createPosCharge(
   sessionToken: string,
@@ -61,7 +62,7 @@ export async function createPosCharge(
     },
     body: JSON.stringify({ amountSats }),
   });
-  throwIfWalletAnswer(response);
+  await throwIfWalletAnswer(response);
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const message =
