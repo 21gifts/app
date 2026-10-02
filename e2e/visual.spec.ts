@@ -12030,6 +12030,71 @@ test.describe('profile funding states', () => {
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-grants-applications-error');
   });
+
+  const GRANT_GOAL = {
+    days: [
+      { day: '2026-03-09', shopCount: 1 },
+      { day: '2026-03-10', shopCount: 3 },
+      { day: '2026-03-11', shopCount: 0 },
+      { day: '2026-03-12', shopCount: 2 },
+      { day: '2026-03-13', shopCount: 4 },
+      { day: '2026-03-14', shopCount: 2 },
+      { day: '2026-03-15', shopCount: 1 },
+    ],
+    qualifyingShops: 2,
+  };
+
+  async function stubGrantGoal(page: Page, mode: 'ok' | 'loading' | 'error'): Promise<void> {
+    await page.clock.install({ time: new Date('2026-03-15T12:00:00.000Z') });
+    await page.route('**/funding/goal', async (route) => {
+      if (mode === 'loading') {
+        return;
+      }
+      if (mode === 'error') {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Funding goal is unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(GRANT_GOAL),
+      });
+    });
+  }
+
+  test('screen /grants/goals', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'ok');
+    await page.goto('/grants/goals');
+    await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible();
+    await expect(
+      page.getByText('The grant program continues when we reach 10 active shops.'),
+    ).toBeVisible();
+    await expect(page.getByText('2 shops meet this')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Shops per UTC day' })).toBeVisible();
+    await shotScreen(page, 'screen-grants-goals');
+  });
+
+  test('state /grants/goals loading', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'loading');
+    await page.goto('/grants/goals');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-grants-goals-loading');
+  });
+
+  test('state /grants/goals error', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'error');
+    await page.goto('/grants/goals');
+    await expect(page.getByText('Could not load the shop goal. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-grants-goals-error');
+  });
 });
 
 test.describe('profile apply screens', () => {
@@ -19627,63 +19692,6 @@ test.describe('statistics screens', () => {
 
 test.describe('moderate screens', () => {
   // Goldens are regenerated on the build host.
-  const PAYOUT_GOAL_STATS = (() => {
-    const counts: Record<string, number> = {
-      '2026-08-24': 36,
-      '2026-09-19': 12,
-      '2026-09-20': 9,
-    };
-    const start = Date.parse('2026-08-22T00:00:00.000Z');
-    const spendOverTime = Array.from({ length: 30 }, (_, i) => {
-      const day = new Date(start + i * 86_400_000).toISOString().slice(0, 10);
-      const giftCount = counts[day] ?? 0;
-      return {
-        day,
-        giftCount,
-        officialCount: giftCount,
-        sats: 0,
-        cumulativeSats: 0,
-        btc: '0.00000000',
-        cumulativeBtc: '0.00000000',
-        usd: '0.00',
-        cumulativeUsd: '0.00',
-        chf: '0.00',
-        eur: '0.00',
-        php: '0.00',
-        cumulativeChf: '0.00',
-        cumulativeEur: '0.00',
-        cumulativePhp: '0.00',
-      };
-    });
-    return {
-      totalSats: 0,
-      totalBtc: '0.00000000',
-      totalUsd: '0.00',
-      totalChf: '0.00',
-      totalEur: '0.00',
-      totalPhp: '0.00',
-      giftCount: 57,
-      recipientCount: 0,
-      firstPaidAt: '2026-08-22T00:00:00.000Z',
-      lastPaidAt: '2026-09-20T00:00:00.000Z',
-      spendOverTime,
-      byRecipient: [],
-      byMonth: [],
-      fx: FX_USD,
-    };
-  })();
-
-  async function stubPayoutGoal(page: Page): Promise<void> {
-    await page.clock.install({ time: new Date('2026-09-20T12:00:00.000Z') });
-    await page.route('**/gifts/stats', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(PAYOUT_GOAL_STATS),
-      });
-    });
-  }
-
   async function seedAda(
     page: Page,
     role: 'basis' | 'moderator' | 'founder' = 'basis',
@@ -19726,20 +19734,26 @@ test.describe('moderate screens', () => {
 
   test('screen /moderate', async ({ page }) => {
     await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Goals', exact: true })).toHaveAttribute(
+      'href',
+      '/grants/goals',
+    );
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open applications' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Moderators chat group' })).toBeVisible();
-    await expect(page.getByText('12%')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveAttribute(
+      'href',
+      '/moderate/payouts',
+    );
+    await expect(page.getByText('12%')).toHaveCount(0);
     await shotScreen(page, 'screen-moderate');
   });
 
   test('moderate group-unread', async ({ page }) => {
     await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
     await page.route('**/conversations/moderator-group', async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();
@@ -19764,13 +19778,11 @@ test.describe('moderate screens', () => {
     });
     await page.goto('/moderate');
     await expect(page.getByRole('link', { name: 'Moderators chat group, 1 unread' })).toBeVisible();
-    await expect(page.getByText('12%')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-unread');
   });
 
   test('moderate proposals-unread', async ({ page }) => {
     await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
     await page.route('**/trust/proposals', async (route) => {
       await route.fulfill({
         status: 200,
@@ -19796,32 +19808,6 @@ test.describe('moderate screens', () => {
     await page.goto('/moderate');
     await expect(page.getByText('This page is for moderators.')).toBeVisible();
     await shotScreen(page, 'state-moderate-forbidden');
-  });
-
-  test('moderate goal-open', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
-    await page.goto('/moderate');
-    await expect(page.getByText('12%')).toBeVisible();
-    await page.getByRole('button', { name: /Goal/ }).click();
-    await expect(page.getByText('People by UTC day')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveAttribute(
-      'href',
-      '/moderate/payouts',
-    );
-    await shotScreen(page, 'state-moderate-goal-open');
-  });
-
-  test('moderate goal-payout', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
-    await page.goto('/moderate');
-    await expect(page.getByText('12%')).toBeVisible();
-    await page.getByRole('button', { name: /Goal/ }).click();
-    const link = page.getByRole('link', { name: 'Show payout per person' });
-    await expect(link).toHaveAttribute('href', '/moderate/payouts');
-    await link.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-moderate-goal-payout');
   });
 
   test('moderate payouts', async ({ page }) => {
@@ -19908,30 +19894,6 @@ test.describe('moderate screens', () => {
       page.getByText('Could not load the payout table. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-payouts-error');
-  });
-
-  test('moderate loading', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await page.route('**/gifts/stats', () => new Promise(() => undefined));
-    await page.goto('/moderate');
-    await expect(
-      page.getByRole('group', { name: 'Daily funding goal' }).getByText('Loading…'),
-    ).toBeVisible();
-    await shotScreen(page, 'state-moderate-loading');
-  });
-
-  test('moderate error', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await page.route('**/gifts/stats', async (route) => {
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'unavailable' }),
-      });
-    });
-    await page.goto('/moderate');
-    await expect(page.getByText('Could not load payouts. Please try again.')).toBeVisible();
-    await shotScreen(page, 'state-moderate-error');
   });
 });
 

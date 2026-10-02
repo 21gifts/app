@@ -2893,14 +2893,14 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A moderator or founder with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A moderator or founder with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, and **Apply for the 21 gifts grant**.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, **Apply for the 21 gifts grant**, and **Goals**.
 
 ![21.gifts grants](images/grants.png)
 
@@ -2956,6 +2956,31 @@ Moderator on `/grants` while open applications are still loading. Copy **Loading
 Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`.
 
 ![21.gifts grants applications error](images/grants-applications-error.png)
+
+## Screen: /grants/goals
+
+- **Purpose:** Signed-in grant goal. States that the program continues at 10 active shops, that a shop is active with at least one transaction on 5 of the last 7 days, and what a transaction is. Shows how many shops meet that rule and a 7-day shop chart. The chart is not the public statistics series.
+- **Inputs:** Session via `OnboardingGate screen="profile"` / `useAuthStore`. `GET /funding/goal` when a session exists.
+- **Actions:** Read the goal, the transaction definition, the qualifying count, and the chart. **Try again** repeats the load after an error. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Used by:** Route `/grants/goals` (`GrantGoalsPage`). The **Goals** link on `/grants` opens it.
+
+### Variant: default
+
+Signed-in page with the goal loaded. Heading **Goals**. Copy **The grant program continues when we reach 10 active shops.** A shop is active on 5 of the last 7 days. The transaction sentence names https://21.gifts/pos. The count and **Shops per UTC day** chart are shown. The lighter bar is today, still open.
+
+![21.gifts grant goals](images/grants-goals.png)
+
+### Variant: loading
+
+Signed-in page while `GET /funding/goal` has not returned. Heading, the 10-shop sentence, the 5-of-the-last-7 sentence, and the transaction sentence stay. The measurement says **Loading…**. No chart. Needle `state-grants-goals-loading`.
+
+![21.gifts grant goals loading](images/grants-goals-loading.png)
+
+### Variant: error
+
+Signed-in page when `GET /funding/goal` fails. Heading and the three sentences stay. Copy **Could not load the shop goal. Please try again.** and button **Try again**. No chart. Needle `state-grants-goals-error`.
+
+![21.gifts grant goals error](images/grants-goals-error.png)
 
 ## Screen: /profile/apply
 
@@ -3387,27 +3412,27 @@ Staff (moderator) page. The people panel shows **Could not load payouts. Please 
 
 ## Screen: /moderate
 
-- **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, or applications. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see the daily payout-goal widget (yesterday’s people counted once, as a percent of 100, with the 100-a-day label and the yesterday count on one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook`. Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
-- **Actions:** Tap the goal widget to open or close the explanation and chart. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals or applications itself (Open proposals count comes from `useUnreadCount`).
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `useUnreadCount`.
-- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal widget.
+- **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, applications, or gift stats. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, and **Show payout per person** `ButtonLink` → `/moderate/payouts` (last tool). Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **Actions:** Open **Goals** to `/grants/goals`. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Open **Show payout per person** to `/moderate/payouts`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals, applications, or gift stats itself (Open proposals count comes from `useUnreadCount`).
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `useUnreadCount`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. This page does not call `GET /gifts/stats`.
 
 ### Variant: default
 
-Staff (moderator) hub with heading **Moderation**, collapsed payout-goal widget, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, and **Handbook** control → `/moderate/handbook`.
+Staff (moderator) hub with heading **Moderation**, labeled **Goals** control → `/grants/goals`, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, **Handbook** control → `/moderate/handbook`, and **Show payout per person** → `/moderate/payouts`. No goal widget.
 
 ![21.gifts moderation](images/moderate.png)
 
 ### Variant: group-unread
 
-Staff hub with an unread Moderators chat group. Collapsed payout-goal widget unchanged. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Hidden notes, Open proposals, and Handbook unchanged.
+Staff hub with an unread Moderators chat group. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Goals, Hidden notes, Open proposals, Handbook, and Show payout per person unchanged.
 
 ![21.gifts moderation group unread](images/moderate-group-unread.png)
 
 ### Variant: proposals-unread
 
-Staff hub with one open proposal. Collapsed payout-goal widget unchanged. **Open proposals** control shows **1** and accessible name **Open proposals, 1 unread** (`moderate.proposals.unread`). Hidden notes and Moderators chat group unchanged.
+Staff hub with one open proposal. **Open proposals** control shows **1** and accessible name **Open proposals, 1 unread** (`moderate.proposals.unread`). Goals, Hidden notes, Moderators chat group, Handbook, and Show payout per person unchanged.
 
 ![21.gifts moderation proposals unread](images/moderate-proposals-unread.png)
 
@@ -3416,30 +3441,6 @@ Staff hub with one open proposal. Collapsed payout-goal widget unchanged. **Open
 Signed-in basis account. Copy **This page is for moderators.** No tools list.
 
 ![21.gifts moderation forbidden](images/moderate-forbidden.png)
-
-### Variant: goal-open
-
-Staff (moderator) hub with the payout-goal widget expanded: explanation copy and the 30-UTC-day chart of people counted once (goal line at 100). This shot is the top of the open widget. The button under the chart is the next variant.
-
-![21.gifts moderation goal open](images/moderate-goal-open.png)
-
-### Variant: goal-payout
-
-Same opened widget, scrolled so the secondary large **Show payout per person** button is in view. It links to `/moderate/payouts`. The button is absent while the widget is collapsed, loading, or in error.
-
-![21.gifts moderation goal payout link](images/moderate-goal-payout.png)
-
-### Variant: loading
-
-Staff (moderator) hub with the payout-goal widget showing **Loading…** while `GET /gifts/stats` is in flight. Tools list still visible.
-
-![21.gifts moderation loading](images/moderate-loading.png)
-
-### Variant: error
-
-Staff (moderator) hub with the payout-goal widget showing **Could not load payouts. Please try again.** and labeled **Try again**. Tools list still visible.
-
-![21.gifts moderation error](images/moderate-error.png)
 
 ## Screen: /moderate/payouts
 

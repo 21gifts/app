@@ -433,6 +433,18 @@ export async function proxyShopActivityGet(request: Request): Promise<Response> 
 }
 
 /**
+ * Proxies GET /funding/goal to the 21.gifts api.
+ *
+ * Forwards the incoming Authorization header. Does not add one.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyFundingGoalGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/goal');
+}
+
+/**
  * Proxies GET /messages/stats to the 21.gifts api.
  *
  * @param request - Incoming App Router request.

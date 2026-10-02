@@ -20,6 +20,7 @@ import {
   giftDaySchema,
   giftStatsSchema,
   shopActivitySchema,
+  grantContinuationSchema,
   postStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
@@ -54,6 +55,7 @@ import {
   type GiftDay,
   type GiftStats,
   type ShopActivityDay,
+  type GrantContinuation,
   type PostStats,
   type AccountActivity,
   type LnAddressResolved,
@@ -1066,6 +1068,33 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
     throw new Error('Could not load shop activity. Please try again.');
+  }
+}
+
+const GRANT_GOAL_LOAD_ERROR = 'Could not load the shop goal. Please try again.';
+
+/**
+ * Fetches the signed-in grant goal: shops per UTC day for the last 7 days,
+ * and how many shops meet 5 of those days.
+ *
+ * Does not call {@link fetchShopActivity}.
+ *
+ * @param sessionToken - Bearer session from a completed login.
+ * @returns The 7-day series and `qualifyingShops`.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link grantContinuationSchema}.
+ */
+export async function fetchGrantContinuation(sessionToken: string): Promise<GrantContinuation> {
+  try {
+    const response = await fetch('/funding/goal', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(GRANT_GOAL_LOAD_ERROR);
+    }
+    return grantContinuationSchema.parse(await response.json());
+  } catch {
+    throw new Error(GRANT_GOAL_LOAD_ERROR);
   }
 }
 
