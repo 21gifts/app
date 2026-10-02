@@ -87,7 +87,7 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText('Unnamed')).toBeTruthy();
   });
 
-  it('shows the 21.gifts address when the account has no external address', () => {
+  it('shows the 21.gifts address from the username', () => {
     renderWithLocale(
       <ViewProfileScreen
         profile={{ ...named, lightningAddress: null }}
