@@ -152,6 +152,40 @@ describe('ExternalAuthorProfile', () => {
     expect(screen.queryByText('Payment address on their profile')).toBeNull();
   });
 
+  it('hides verified and payment addresses that are only whitespace', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      nip05: '   ',
+      lud16: '\t',
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByText('Robin')).toBeTruthy();
+    });
+    expect(screen.getByText('Nostr key')).toBeTruthy();
+    expect(screen.getByText('npub1example')).toBeTruthy();
+    expect(screen.queryByText('Verified Nostr address')).toBeNull();
+    expect(screen.queryByText('Payment address on their profile')).toBeNull();
+  });
+
+  it('shows a trimmed address and hides a payment address that matches only after trim', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      nip05: '  ada@nostr.example  ',
+      lud16: ' Ada@Nostr.example ',
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByText('Verified Nostr address')).toBeTruthy();
+    });
+    expect(screen.getByText('Verified Nostr address').nextElementSibling?.textContent).toBe(
+      'ada@nostr.example',
+    );
+    expect(screen.queryByText('Payment address on their profile')).toBeNull();
+  });
+
   it('keeps the fallback name when the fetch returns null', async () => {
     fetchProfile.mockResolvedValue(null);
     renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);

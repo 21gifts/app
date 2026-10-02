@@ -215,8 +215,8 @@ export function ExternalAuthorProfile({
         ? fallbackName
         : t('view.unnamed')
       : profile.name;
-  const nip05 = profile?.nip05 ?? '';
-  const lud16 = profile?.lud16 ?? '';
+  const nip05 = (profile?.nip05 ?? '').trim();
+  const lud16 = (profile?.lud16 ?? '').trim();
   const showNip05 = nip05 !== '';
   const showLud16 = lud16 !== '' && lud16.toLowerCase() !== nip05.toLowerCase();
 
