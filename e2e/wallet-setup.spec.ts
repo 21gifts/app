@@ -294,9 +294,12 @@ test.describe('wallet history', () => {
     await openWallet(page, '?visual=history-rows');
     const payments = await page.getByRole('region', { name: 'Payments' }).boundingBox();
     const address = await page.getByText('ada@', { exact: false }).first().boundingBox();
+    const recovery = await page.getByText('Advanced functions').boundingBox();
     expect(payments).not.toBeNull();
     expect(address).not.toBeNull();
+    expect(recovery).not.toBeNull();
     expect(payments?.y ?? 0).toBeGreaterThan(address?.y ?? 0);
+    expect((payments?.y ?? 0) + (payments?.height ?? 0)).toBeLessThanOrEqual(recovery?.y ?? 0);
   });
 
   test('Function: useWalletHistory — pinned rows stay four after scrolling', async ({ page }) => {
