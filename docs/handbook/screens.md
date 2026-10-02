@@ -1317,6 +1317,18 @@ Signed-in `/welcome` with one paid note longer than the 280-character preview an
 
 ![21.gifts welcome note whole](images/welcome-note-whole.png)
 
+### Variant: note-video-paused
+
+Signed-in /welcome with one note whose text is **A clip** and whose picture is a video. The play button and the fullscreen button sit on that picture. The picture is centered.
+
+![21.gifts welcome note video paused](images/welcome-note-video-paused.png)
+
+### Variant: note-video-playing
+
+Same note after **Play**. The play button is gone. The fullscreen button stays on the picture.
+
+![21.gifts welcome note video playing](images/welcome-note-video-playing.png)
+
 ### Variant: translate-long-loading
 
 Signed-in `/welcome` with one paid German note longer than 560 characters. After clicking **Translate** while POST `/translate` hangs, the original body is fully visible, including its tail, **Show more** is gone, and the control is busy.
@@ -3982,6 +3994,18 @@ Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea a
 Unsigned permalink. Ada note with `photoCount` 2 and empty text. `ForumPhotoGallery` is a horizontal snap row (`data-scroll-x`, 88% peek) with a `1/2` chip and dots.
 
 ![21.gifts public message photos](images/messages-id-photos.png)
+
+### Variant: note-video-paused
+
+Unsigned permalink of Ada's note **A clip**. The picture is a video. The play button and the fullscreen button sit on that picture. The picture is centered.
+
+![21.gifts public message note video paused](images/messages-id-note-video-paused.png)
+
+### Variant: note-video-playing
+
+Same public note after **Play**. The play button is gone. The fullscreen button stays on the picture.
+
+![21.gifts public message note video playing](images/messages-id-note-video-playing.png)
 
 ### Variant: signed-in
 
