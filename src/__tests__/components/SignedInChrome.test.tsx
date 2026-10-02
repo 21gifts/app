@@ -556,6 +556,19 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
+  it('places Habit-Tracker between rules and Trust Chain and closes on click', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    const links = Array.from(menuPanel().querySelectorAll('a'));
+    const habit = screen.getByRole('link', { name: 'Habit-Tracker' });
+    const index = links.indexOf(habit as HTMLAnchorElement);
+    expect(links[index - 1]?.getAttribute('href')).toBe('/rules');
+    expect(habit.getAttribute('href')).toBe('/habit-tracker');
+    expect(links[index + 1]?.getAttribute('href')).toBe('/trust-chain');
+    fireEvent.click(habit);
+    expectMenuClosed();
+  });
+
   it('closes the menu when Trust Chain is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));

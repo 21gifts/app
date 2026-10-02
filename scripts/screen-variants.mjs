@@ -72,6 +72,35 @@ export function comboSnapshotStem(visual, comboId) {
 
 export const SCREEN_VARIANTS = [
   {
+    route: '/habit-tracker',
+    id: 'default',
+    image: 'habit-tracker.png',
+    visual: 'screen-habit-tracker',
+    needle: 'Habit-Tracker',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'empty',
+    image: 'habit-tracker-empty.png',
+    visual: 'state-habit-tracker-empty',
+    needle: 'No resolutions for this week.',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'loading',
+    image: 'habit-tracker-loading.png',
+    visual: 'state-habit-tracker-loading',
+    needle: 'Loading…',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'error',
+    image: 'habit-tracker-error.png',
+    visual: 'state-habit-tracker-error',
+    needle: 'Could not load or save the tracker.',
+  },
+
+  {
     route: '/',
     id: 'default',
     image: 'root.png',

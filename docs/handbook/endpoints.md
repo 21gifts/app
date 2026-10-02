@@ -820,3 +820,19 @@
 - **Errors:** 400 invalid body, 401 without a session, 404 when the thread or message is missing, 503 not configured, 502 upstream.
 - **Used by:** `translateConversationMessage` from `NoteTranslate` on inbox and moderator-room prose.
 - **Auth:** Forwards Bearer authorization. The api requires a participant session.
+
+## Endpoint: GET /habits/data
+
+- **Input:** Optional week query.
+- **Upstream:** GET /habit-tracker.
+- **Output:** Upstream payload, status and cache headers.
+
+Same-origin proxy for API `GET /habit-tracker`, forwarding the optional Monday `week` query. Returns public weekly resolutions, outcomes, and comments with no-store caching. Kept separate from the HTML `/habit-tracker` page.
+
+## Endpoint: POST /habits/data
+
+- **Input:** Bearer token and JSON operation.
+- **Upstream:** POST /habit-tracker.
+- **Output:** Upstream acknowledgement or error; no local mutation.
+
+Same-origin proxy for API `POST /habit-tracker`. Forwards Bearer authorization and the add/retire/rate/comment JSON operation. The API enforces roles and ownership; browser controls do not confer permission.

@@ -2481,6 +2481,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathName === '/habit-tracker') {
+    if (method === 'POST') {
+      json(
+        res,
+        bearer(req) === null ? 401 : 200,
+        bearer(req) === null ? { error: 'Unauthorized' } : { ok: true },
+      );
+      return;
+    }
+    json(res, 200, {
+      week: { start: '2026-09-28', label: '2026-W40', nextAt: 1791129600000 },
+      currentWeek: '2026-09-28',
+      firstWeek: '2026-09-28',
+      habits: [],
+      results: [],
+      comments: [],
+    });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/trust-chain') {
     if (bearer(req) === null) {
       json(res, 401, { error: 'Unauthorized' });

@@ -21543,3 +21543,59 @@ test.describe('stats variant baselines', () => {
     await shotScreen(page, 'state-stats-day-error');
   });
 });
+
+test.describe('habit-tracker screens', () => {
+  const tracker = {
+    week: { start: '2026-09-28', label: '2026-W40', nextAt: 1791129600000 },
+    currentWeek: '2026-09-28',
+    firstWeek: '2026-09-28',
+    habits: [
+      {
+        id: 'f1',
+        accountId: 'founder',
+        role: 'founder',
+        name: 'Founder',
+        text: 'Read every day',
+        firstWeek: '2026-09-28',
+        lastWeek: null,
+      },
+      {
+        id: 'i1',
+        accountId: 'initiator',
+        role: 'initiator',
+        name: 'Initiator',
+        text: 'Walk every day',
+        firstWeek: '2026-09-28',
+        lastWeek: null,
+      },
+    ],
+    results: [{ habitId: 'f1', week: '2026-09-28', status: 'partial' }],
+    comments: [],
+  };
+  test('screen /habit-tracker', async ({ page }) => {
+    await page.route('**/habits/data*', (route) => route.fulfill({ json: tracker }));
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Read every day')).toBeVisible();
+    await shotScreen(page, 'screen-habit-tracker');
+  });
+  test('state /habit-tracker empty', async ({ page }) => {
+    await page.route('**/habits/data*', (route) =>
+      route.fulfill({ json: { ...tracker, habits: [], results: [] } }),
+    );
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No resolutions for this week.')).toHaveCount(2);
+    await shotScreen(page, 'state-habit-tracker-empty');
+  });
+  test('state /habit-tracker loading', async ({ page }) => {
+    await page.route('**/habits/data*', () => new Promise<void>(() => undefined));
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Loading…', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-loading');
+  });
+  test('state /habit-tracker error', async ({ page }) => {
+    await page.route('**/habits/data*', (route) => route.fulfill({ status: 503, json: {} }));
+    await page.goto('/habit-tracker');
+    await expect(page.getByRole('alert')).toContainText('Could not load or save the tracker.');
+    await shotScreen(page, 'state-habit-tracker-error');
+  });
+});

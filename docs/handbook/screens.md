@@ -4477,3 +4477,37 @@ Telegram or another in-app WebView detected on an unclaimed profile. Escape card
 The only state.
 
 ![21.gifts not found](images/not-found.png)
+
+## Screen: /habit-tracker
+
+- **Access:** Public view, signed-in comments.
+- **Order:** Founder above initiator.
+- **History:** Week navigation and archival preserve prior records.
+
+Habit-Tracker appears between living-room rules and Trust Chain in the signed-in menu. Anyone can read the current ISO calendar week and navigate earlier weeks. Founder resolutions appear above initiator resolutions. Each row offers reached, partly reached, or not reached; an unselected row means not yet rated.
+
+Owners can add resolutions and delete them from future weeks while their history stays visible. Active resolutions carry into new Manila weeks without a rating. Current and previous week outcomes remain editable, allowing Monday reporting after Sunday rest. Only signed-in visitors can write comments, and those comments appear solely in the selected Habit-Tracker week. Loading, empty, and retry states are explicit. Text is available in English, German, Spanish, and Filipino.
+
+### Variant: default
+
+Habit-Tracker State shown when weekly records are available.
+
+![Habit-Tracker default](images/habit-tracker.png)
+
+### Variant: empty
+
+No resolutions for this week. State shown when no resolutions exist in the selected week.
+
+![Habit-Tracker empty](images/habit-tracker-empty.png)
+
+### Variant: loading
+
+Loading… State shown when the first request is pending.
+
+![Habit-Tracker loading](images/habit-tracker-loading.png)
+
+### Variant: error
+
+Could not load or save the tracker. State shown when the upstream request fails; retry remains available.
+
+![Habit-Tracker error](images/habit-tracker-error.png)

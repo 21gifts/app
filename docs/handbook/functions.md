@@ -4623,3 +4623,19 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with JSON `{ fiat, onlyIfUnset }`.
 - **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored fiat value.
 - **Used by:** Route POST `/me/fiat`.
+
+## Function: HabitTracker
+
+- **Input:** Hydrated auth store and localized catalog.
+- **Output:** Weekly resolution board and comments.
+- **Failures:** Retry control and retained unsent drafts.
+
+Public weekly resolution board with founder above initiator. Validates API responses, renders one radio group per resolution, and exposes creation/retirement/rating only to the owner. All signed-in roles can post isolated week comments. Failed saves preserve drafts. Week navigation retains history; the live current week refreshes at Monday 00:00 Manila time and periodically after suspended tabs resume.
+
+## Function: HabitTrackerPage
+
+- **Access:** Public reading.
+- **Composition:** Public chrome wraps the tracker.
+- **Session:** Existing hydration enables owner and comment controls.
+
+Renders `/habit-tracker` within the existing session-aware public page chrome. Anonymous visitors can read; a hydrated session enables authorized controls.

@@ -1,6 +1,39 @@
 import type { Locale } from '@/lib/locale';
 
 const en = {
+  'nav.habitTracker': 'Habit-Tracker',
+  'habit.schedule':
+    'A new week every Monday at 00:00 Manila time. Active resolutions carry over without a rating.',
+  'habit.error': 'Could not load or save the tracker. Please try again.',
+  'habit.retry': 'Try again',
+  'habit.loading': 'Loading…',
+  'habit.weeks': 'Calendar weeks',
+  'habit.week': 'Week {week}',
+  'habit.previous': 'Previous',
+  'habit.next': 'Next',
+  'habit.current': 'Current week',
+  'habit.founder': 'Founder’s resolutions',
+  'habit.initiator': 'Initiator’s resolutions',
+  'habit.empty': 'No resolutions for this week.',
+  'habit.archived': 'Archived',
+  'habit.achieved': 'Achieved',
+  'habit.partial': 'Partially achieved',
+  'habit.missed': 'Not achieved',
+  'habit.unrated': 'Not rated yet',
+  'habit.deleteConfirm': 'Remove this resolution from future weeks? Its history remains visible.',
+  'habit.delete': 'Delete resolution',
+  'habit.new': 'New resolution',
+  'habit.placeholder': 'Resolution 1',
+  'habit.add': 'Add resolution',
+  'habit.comments': 'Comments',
+  'habit.commentHint':
+    'These comments appear only in this Habit-Tracker week. Times are shown in Manila time.',
+  'habit.noComments': 'No comments yet.',
+  'habit.member': 'Member',
+  'habit.login': 'Sign in to comment',
+  'habit.writeComment': 'Write a comment',
+  'habit.post': 'Post',
+
   'happyland.title': 'Happyland – a glimpse of life in Manila',
   'happyland.intro':
     'Happyland is in Tondo, Manila. Families live here under difficult, often extremely difficult, conditions. We want to look more closely and portray the people and their surroundings with respect.',
@@ -1019,6 +1052,41 @@ export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;
 
 const de = {
+  'nav.habitTracker': 'Habit-Tracker',
+  'habit.schedule':
+    'Jeden Montag um 00:00 Uhr in Manila beginnt eine neue Woche. Aktive Vorsätze werden ohne Bewertung übernommen.',
+  'habit.error':
+    'Der Habit-Tracker konnte nicht geladen oder gespeichert werden. Bitte erneut versuchen.',
+  'habit.retry': 'Erneut versuchen',
+  'habit.loading': 'Wird geladen…',
+  'habit.weeks': 'Kalenderwochen',
+  'habit.week': 'Kalenderwoche {week}',
+  'habit.previous': 'Zurück',
+  'habit.next': 'Weiter',
+  'habit.current': 'Aktuelle Woche',
+  'habit.founder': 'Vorsätze des Gründers',
+  'habit.initiator': 'Vorsätze des Initiators',
+  'habit.empty': 'Noch keine Vorsätze für diese Woche.',
+  'habit.archived': 'Archiviert',
+  'habit.achieved': 'Erreicht',
+  'habit.partial': 'Teilweise erreicht',
+  'habit.missed': 'Nicht erreicht',
+  'habit.unrated': 'Noch nicht bewertet',
+  'habit.deleteConfirm':
+    'Diesen Vorsatz für kommende Wochen löschen? Der bisherige Verlauf bleibt sichtbar.',
+  'habit.delete': 'Vorsatz löschen',
+  'habit.new': 'Neuer Vorsatz',
+  'habit.placeholder': 'Vorsatz 1',
+  'habit.add': 'Vorsatz hinzufügen',
+  'habit.comments': 'Kommentare',
+  'habit.commentHint':
+    'Diese Kommentare erscheinen nur in dieser Woche des Habit-Trackers. Zeitangaben gelten für Manila.',
+  'habit.noComments': 'Noch keine Kommentare.',
+  'habit.member': 'Mitglied',
+  'habit.login': 'Zum Kommentieren anmelden',
+  'habit.writeComment': 'Kommentar schreiben',
+  'habit.post': 'Posten',
+
   'happyland.title': 'Happyland – ein Einblick in das Leben in Manila',
   'happyland.intro':
     'Happyland liegt in Tondo, Manila. Familien leben hier unter schwierigen, oft sehr schwierigen Bedingungen. Wir möchten genauer hinschauen und die Menschen und ihr Umfeld mit Respekt darstellen.',
@@ -2053,6 +2121,40 @@ const de = {
 } satisfies Messages;
 
 const es = {
+  'nav.habitTracker': 'Habit-Tracker',
+  'habit.schedule':
+    'Cada lunes a las 00:00 de Manila comienza una semana. Los propósitos activos se copian sin valoración.',
+  'habit.error': 'No se pudo cargar o guardar el seguimiento. Inténtalo de nuevo.',
+  'habit.retry': 'Reintentar',
+  'habit.loading': 'Cargando…',
+  'habit.weeks': 'Semanas',
+  'habit.week': 'Semana {week}',
+  'habit.previous': 'Anterior',
+  'habit.next': 'Siguiente',
+  'habit.current': 'Semana actual',
+  'habit.founder': 'Propósitos del fundador',
+  'habit.initiator': 'Propósitos del iniciador',
+  'habit.empty': 'Sin propósitos esta semana.',
+  'habit.archived': 'Archivado',
+  'habit.achieved': 'Logrado',
+  'habit.partial': 'Parcialmente logrado',
+  'habit.missed': 'No logrado',
+  'habit.unrated': 'Sin valoración',
+  'habit.deleteConfirm':
+    '¿Eliminar este propósito de las próximas semanas? Su historial seguirá visible.',
+  'habit.delete': 'Eliminar propósito',
+  'habit.new': 'Nuevo propósito',
+  'habit.placeholder': 'Propósito 1',
+  'habit.add': 'Añadir propósito',
+  'habit.comments': 'Comentarios',
+  'habit.commentHint':
+    'Estos comentarios aparecen solo en esta semana del Habit-Tracker. Las horas corresponden a Manila.',
+  'habit.noComments': 'Todavía no hay comentarios.',
+  'habit.member': 'Miembro',
+  'habit.login': 'Inicia sesión para comentar',
+  'habit.writeComment': 'Escribe un comentario',
+  'habit.post': 'Publicar',
+
   'happyland.title': 'Happyland: una mirada a la vida en Manila',
   'happyland.intro':
     'Happyland está en Tondo, Manila. Las familias viven aquí en condiciones difíciles, a menudo extremadamente difíciles. Queremos conocer mejor a las personas y su entorno y mostrarlos con respeto.',
@@ -3064,6 +3166,40 @@ const es = {
 } satisfies Messages;
 
 const fil = {
+  'nav.habitTracker': 'Habit-Tracker',
+  'habit.schedule':
+    'Bagong linggo tuwing Lunes, 00:00 sa Manila. Ang mga aktibong layunin ay ililipat nang walang marka.',
+  'habit.error': 'Hindi ma-load o ma-save ang tracker. Pakisubukan muli.',
+  'habit.retry': 'Subukan muli',
+  'habit.loading': 'Naglo-load…',
+  'habit.weeks': 'Mga linggo',
+  'habit.week': 'Linggo {week}',
+  'habit.previous': 'Nakaraan',
+  'habit.next': 'Susunod',
+  'habit.current': 'Kasalukuyang linggo',
+  'habit.founder': 'Mga layunin ng tagapagtatag',
+  'habit.initiator': 'Mga layunin ng tagapagpasimula',
+  'habit.empty': 'Wala pang layunin para sa linggong ito.',
+  'habit.archived': 'Naka-archive',
+  'habit.achieved': 'Nakamit',
+  'habit.partial': 'Bahagyang nakamit',
+  'habit.missed': 'Hindi nakamit',
+  'habit.unrated': 'Wala pang marka',
+  'habit.deleteConfirm':
+    'Alisin ang layuning ito sa mga susunod na linggo? Mananatili ang kasaysayan nito.',
+  'habit.delete': 'Tanggalin ang layunin',
+  'habit.new': 'Bagong layunin',
+  'habit.placeholder': 'Layunin 1',
+  'habit.add': 'Magdagdag ng layunin',
+  'habit.comments': 'Mga komento',
+  'habit.commentHint':
+    'Dito lamang sa linggong ito ng Habit-Tracker makikita ang mga komento. Oras ng Manila ang ipinapakita.',
+  'habit.noComments': 'Wala pang komento.',
+  'habit.member': 'Miyembro',
+  'habit.login': 'Mag-sign in upang magkomento',
+  'habit.writeComment': 'Sumulat ng komento',
+  'habit.post': 'I-post',
+
   'happyland.title': 'Happyland – isang sulyap sa buhay sa Maynila',
   'happyland.intro':
     'Ang Happyland ay nasa Tondo, Maynila. Namumuhay rito ang mga pamilya sa mahirap, at kadalasan ay napakahirap, na kalagayan. Nais naming mas maunawaan at mailarawan nang may paggalang ang mga tao at ang kanilang paligid.',
