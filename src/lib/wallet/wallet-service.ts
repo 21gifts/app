@@ -108,7 +108,7 @@ async function failRun(run: number): Promise<void> {
  * input is missing. Never rejects; failures end in the store.
  *
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
- * @returns Resolves when the attempt finishes, is superseded, or reaches its deadline.
+ * @returns Resolves when the attempt leaves `connecting`, is superseded, or reaches its deadline.
  */
 export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): Promise<void> {
   const apiKey = getBreezApiKey();
@@ -157,11 +157,14 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
   })();
   const result: void | typeof timeoutSentinel = await Promise.race([attempt, deadline]);
   if (result !== timeoutSentinel) {
-    clearTimeout(timeout);
-    return;
+    if (run !== runCounter || useWalletStore.getState().status !== 'connecting') {
+      clearTimeout(timeout);
+      return;
+    }
+    await deadline;
   }
   if (run === runCounter && useWalletStore.getState().status === 'connecting') {
-    await failRun(run);
+    void failRun(run);
   }
 }
 
