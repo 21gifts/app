@@ -1010,7 +1010,8 @@ describe('PlaceField', () => {
       expect(map.style.height).toBe('');
       await waitFor(() => {
         expect(
-          (window as { google: { maps: { Map: ReturnType<typeof vi.fn> } } }).google.maps.Map,
+          (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } }).google.maps
+            .Map,
         ).toHaveBeenCalled();
       });
       listeners.get('click')?.({ latLng: { lat: () => 1, lng: () => 2 } });
