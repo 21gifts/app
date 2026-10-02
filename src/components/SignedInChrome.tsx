@@ -33,20 +33,6 @@ import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Whether a wide menu's bottom edge sits more than one pixel past the window height.
- *
- * @param menu - The wide menu node, or null when it is not mounted.
- * @param innerHeight - The window inner height in pixels.
- * @returns True when the menu bottom is more than one pixel past `innerHeight`.
- */
-export function wideMenuSticksOut(menu: HTMLElement | null, innerHeight: number): boolean {
-  if (menu === null) {
-    return false;
-  }
-  return menu.getBoundingClientRect().bottom > innerHeight + 1;
-}
-
-/**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
  * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, staff-only Statistics
  * (`/statistics`, lucide `BarChart3`) then staff-only Moderation
@@ -156,7 +142,8 @@ export function SignedInChrome(): ReactElement {
     if (tight) {
       return;
     }
-    if (wideMenuSticksOut(menuRef.current, window.innerHeight)) {
+    // The menu node is committed before this effect.
+    if (menuRef.current!.getBoundingClientRect().bottom > window.innerHeight + 1) {
       setTight(true);
     }
   }, [open, narrow, tight, account?.role]);
