@@ -418,6 +418,7 @@ describe('ExternalAuthorProfile', () => {
       'true',
     );
     expect(screen.getByRole('status').textContent).toBe('Showing the latest 1 of 2.');
+    expect(screen.queryByRole('button', { name: 'React' })).toBeNull();
   });
 
   it('omits the truncated status line when the loaded list is not shorter than the count', async () => {
@@ -782,6 +783,9 @@ describe('ExternalAuthorProfile', () => {
     view.rerender(<ExternalAuthorProfile messageId="m2" fallbackName="Ada" />);
     expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
+    expect(screen.queryByText('npub1example')).toBeNull();
+    expect(screen.queryByRole('button', { name: '2 posts' })).toBeNull();
+    expect(screen.getByText('Ada')).toBeTruthy();
     await act(async () => {
       resolvePosts([FEED_NOTE]);
       await Promise.resolve();

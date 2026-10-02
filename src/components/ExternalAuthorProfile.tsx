@@ -156,6 +156,8 @@ export function ExternalAuthorProfile({
 
   if (feedMessageId !== messageId) {
     setFeedMessageId(messageId);
+    setProfile(null);
+    setCopied(false);
     setActivity(null);
     setPosts(null);
     setReplies(null);

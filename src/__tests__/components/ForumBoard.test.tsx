@@ -4706,6 +4706,28 @@ describe('ForumBoard', () => {
     );
     expect(screen.queryByRole('button', { name: 'View profile' })).toBeNull();
     expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'React' })).toBeTruthy();
+  });
+
+  it('hides React when the board is read-only and the composer is hidden', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        composerHidden
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'React' })).toBeNull();
   });
 
   it('keeps Damus-only names as plain text', () => {

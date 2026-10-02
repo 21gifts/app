@@ -1382,7 +1382,10 @@ export function ForumBoard({
                 </div>
                 <div className="ml-auto flex flex-wrap items-center gap-5">
                   <div id={`note-translate-${message.id}`} className="contents" />
-                  {message.parentId === undefined && message.deletedAt === undefined ? (
+                  {/* Signed-out forum is readOnly and still shows React. The author feed sets both flags. */}
+                  {message.parentId === undefined &&
+                  message.deletedAt === undefined &&
+                  !(readOnly && composerHidden) ? (
                     <IconButton
                       type="button"
                       size="sm"

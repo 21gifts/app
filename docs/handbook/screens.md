@@ -4209,6 +4209,42 @@ Pressed **1 reaction** button with the note text `Robin wrote a reaction` under 
 
 ![21.gifts external author replies open](images/messages-id-author-replies-open.png)
 
+### Variant: posts-loading
+
+Pressed **1 post**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author posts loading](images/messages-id-author-posts-loading.png)
+
+### Variant: replies-loading
+
+Pressed **1 reaction**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author replies loading](images/messages-id-author-replies-loading.png)
+
+### Variant: posts-error
+
+Pressed **1 post**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author posts error](images/messages-id-author-posts-error.png)
+
+### Variant: replies-error
+
+Pressed **1 reaction**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author replies error](images/messages-id-author-replies-error.png)
+
+### Variant: posts-truncated
+
+Pressed **2 posts**. One note, `Robin wrote a note`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author posts truncated](images/messages-id-author-posts-truncated.png)
+
+### Variant: replies-truncated
+
+Pressed **2 reactions**. One note, `Robin wrote a reaction`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author replies truncated](images/messages-id-author-replies-truncated.png)
+
 ## Screen: /view/[viewKey]
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker only while `useHydrateSession().ready && session === null`, CHF|EUR|USD|PHP, `shell="app"`; unsigned empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; signed-in empty = `profile.chartEmpty` alone; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR.
