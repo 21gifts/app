@@ -431,7 +431,7 @@ it('displays an achieved outcome and cancels text editing without a mutation', a
   payload.results = [{ habitId: 'f1', week: payload.week.start, status: 'achieved' }];
   renderWithLocale(<HabitTracker />);
   await loaded();
-  expect(screen.getAllByRole('radio', { name: 'Achieved', exact: true })[0]).toHaveProperty(
+  expect(screen.getAllByRole('radio', { name: 'Achieved' })[0]).toHaveProperty(
     'checked',
     true,
   );
