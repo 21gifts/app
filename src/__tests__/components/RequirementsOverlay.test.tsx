@@ -59,7 +59,7 @@ describe('RequirementsOverlay', () => {
     expect(setUsername).not.toHaveBeenCalled();
   });
 
-  it('explains the wallet step without a form, with only the Close control', () => {
+  it('explains the wallet step without a form, with an Open your wallet link and Close', () => {
     const onDismiss = vi.fn();
     const onSatisfied = vi.fn();
     useAuthStore.setState({
@@ -79,6 +79,10 @@ describe('RequirementsOverlay', () => {
     expect(
       screen.getAllByRole('button').map((button) => button.getAttribute('aria-label')),
     ).toEqual(['Close']);
+    const openWallet = screen.getByRole('link', { name: 'Open your wallet' });
+    expect(openWallet.getAttribute('href')).toBe('/wallet');
+    expect(dialog.contains(openWallet)).toBe(true);
+    expect(screen.getAllByRole('link')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
     expect(onSatisfied).not.toHaveBeenCalled();

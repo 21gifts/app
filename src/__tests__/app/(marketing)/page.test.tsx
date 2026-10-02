@@ -139,6 +139,31 @@ describe('Home', () => {
     expect(link.getAttribute('href')).toBe('lightning:21gifts@21.gifts');
   });
 
+  it('ignores a forged forwarded host and uses 21.gifts', async () => {
+    setRequestHeaders({ 'x-forwarded-host': 'evil.com', host: 'dev.21.gifts' });
+    renderWithLocale(await Home());
+    const link = screen.getByRole('link', { name: '21gifts@21.gifts' });
+    expect(link.getAttribute('href')).toBe('lightning:21gifts@21.gifts');
+    expect(document.body.textContent).not.toContain('evil');
+  });
+
+  it.each(['21.gifts.evil.com', 'evil21.gifts', 'evil.com:443, dev.21.gifts'])(
+    'falls back to 21.gifts for the foreign host %s',
+    async (host) => {
+      setRequestHeaders({ host });
+      renderWithLocale(await Home());
+      expect(screen.getByRole('link', { name: '21gifts@21.gifts' })).toBeTruthy();
+      expect(document.body.textContent).not.toContain('evil');
+    },
+  );
+
+  it('lower-cases an uppercase 21.gifts subdomain', async () => {
+    setRequestHeaders({ 'x-forwarded-host': 'DEV.21.GIFTS:443' });
+    renderWithLocale(await Home());
+    const link = screen.getByRole('link', { name: '21gifts@dev.21.gifts' });
+    expect(link.getAttribute('href')).toBe('lightning:21gifts@dev.21.gifts');
+  });
+
   it('hides the project section when the platform username is unset', async () => {
     vi.stubEnv('NEXT_PUBLIC_PLATFORM_USERNAME', undefined);
     renderWithLocale(await Home());

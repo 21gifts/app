@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { ImagePlus, Loader2, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -187,6 +188,7 @@ export type InboxFormError =
   | 'amount'
   | 'rateLimit'
   | 'authorWallet'
+  | 'walletRequired'
   | 'unsupported'
   | 'tooLarge'
   | 'tooMany'
@@ -1233,6 +1235,13 @@ export function InboxScreen({
         {formError === 'authorWallet' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorAuthorWallet')}
+          </p>
+        ) : null}
+        {formError === 'walletRequired' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            <Link href="/wallet" className="underline underline-offset-2">
+              {t('inbox.errorWalletRequired')}
+            </Link>
           </p>
         ) : null}
         {formError === 'unsupported' ? (
