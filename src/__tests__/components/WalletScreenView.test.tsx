@@ -655,6 +655,24 @@ describe('WalletScreenView send block', () => {
     expect(details.open).toBe(false);
   });
 
+  it('keeps the send block and holds Back while a send runs or Sent shows, even when not ready', () => {
+    const busy: UseWalletSendResult = { ...sendResult(() => true), busy: true };
+    renderEntry('locked', busy);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(busy.cancel).toHaveBeenCalledTimes(1);
+    expect(historyBack).not.toHaveBeenCalled();
+    cleanup();
+    const sent: UseWalletSendResult = {
+      ...sendResult(() => true),
+      state: { step: 'sent', amountSats: 2_100 },
+    };
+    renderEntry('error', sent);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain("Sent ₿2'100");
+  });
+
   it('Back continues to Advanced functions when no send step is open', () => {
     const send = sendResult(() => false);
     renderEntry('ready', send);
