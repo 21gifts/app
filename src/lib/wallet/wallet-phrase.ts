@@ -91,14 +91,27 @@ export async function rememberPhraseFromPrf(source: PhraseSource): Promise<boole
   }
 }
 
+/** The unlock ceremony in progress in this tab, shared across remounts. */
+let unlockInFlight: Promise<WalletUnlockResult> | null = null;
+
 /**
  * Prompts for the seed passkey, derives the recovery phrase, and remembers it
- * in tab memory. Never rejects.
+ * in tab memory. Never rejects. While a ceremony is in progress in this tab,
+ * further calls join it instead of opening a second prompt.
  *
  * @returns `'unlocked'` on success, `'cancelled'` when the visitor dismisses
  * the ceremony, otherwise `'failed'`.
  */
-export async function unlockWalletPhrase(): Promise<WalletUnlockResult> {
+export function unlockWalletPhrase(): Promise<WalletUnlockResult> {
+  if (unlockInFlight === null) {
+    unlockInFlight = runUnlockCeremony().finally(() => {
+      unlockInFlight = null;
+    });
+  }
+  return unlockInFlight;
+}
+
+async function runUnlockCeremony(): Promise<WalletUnlockResult> {
   try {
     const { session, account } = useAuthStore.getState();
     if (session === null || !canUnlockWallet(account)) {
