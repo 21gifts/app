@@ -3217,7 +3217,7 @@ Verify POST in flight. **Yes** disabled with a spinner; **No** disabled. The nam
 
 ## Screen: /pos
 
-- **Purpose:** Signed-in point of sale. With no charge, this page is only the Open CryptoPay QR and **Set an amount**. The keypad is `/pos/amount`. Confirming there returns here. The button is then **Cancel**, with the countdown and the amount in bitcoin and fiat. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. No paid status: the member's own wallet receives the payment. A missing username links to `/profile`; with a username but no verified wallet (`sparkWalletVerified`), **Set up your wallet first.** links to `/wallet`. The api answers a charge with 412 when the wallet is not set up and 422 when it cannot receive; the page shows **Set up your wallet first.** or **Your wallet cannot receive this payment right now. Please try again later.**
+- **Purpose:** Signed-in point of sale. With no charge, this page is only the Open CryptoPay QR and **Set an amount**. The keypad is `/pos/amount`. Confirming there returns here. The button is then **Cancel**, with the countdown and the amount in bitcoin and fiat. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. No paid status: the member's own wallet receives the payment. A missing username links to `/profile`; with a username but no verified wallet (`sparkWalletVerified`), **Set up your wallet first.** links to `/wallet`. The api answers a charge with 400 and `code` `wallet_required` when the wallet is not set up, or `cannot_receive` when it cannot receive; the page shows **Set up your wallet first.** or **Your wallet cannot receive this payment right now. Please try again later.**
 - **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, centered truncated address, Open CryptoPay QR, content-width **Set an amount** when no charge is open, otherwise the open charge (countdown, including 0:00, bitcoin, default fiat when a gift-day rate exists, and **Cancel**). No keypad on this page.
 - **Actions:** **Set an amount** opens `/pos/amount`. **Cancel** clears the charge. Menu row `pos.nav`.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
@@ -4194,7 +4194,7 @@ Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, invoic
 
 ### Variant: thread-wallet-required
 
-Open thread, Amount **21** submitted, and the api answers the invoice with 412 because the member's own wallet is not set up. No pay sheet opens; under the composer the alert link **Set up your wallet first.** leads to `/wallet`.
+Open thread, Amount **21** submitted, and the api answers the invoice with 400 and `code` `wallet_required` because the member's own wallet is not set up. No pay sheet opens; under the composer the alert link **Set up your wallet first.** leads to `/wallet`.
 
 ![21.gifts inbox thread wallet required](images/messages-thread-wallet-required.png)
 

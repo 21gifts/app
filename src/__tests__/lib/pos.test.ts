@@ -69,10 +69,20 @@ describe('pos client', () => {
     await expect(createPosCharge('tok', 21)).rejects.toThrow();
   });
 
-  it('throws the typed wallet errors on 412 and 422', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: 'wallet_required' }, 412)));
+  it('throws the typed wallet errors on a 400 with a wallet code', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          json({ error: 'Set up your wallet first', code: 'wallet_required' }, 400),
+        ),
+    );
     await expect(createPosCharge('tok', 21)).rejects.toBeInstanceOf(WalletRequiredError);
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: 'cannot_receive' }, 422)));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(json({ error: 'Cannot receive', code: 'cannot_receive' }, 400)),
+    );
     await expect(createPosCharge('tok', 21)).rejects.toBeInstanceOf(CannotReceiveError);
   });
 });

@@ -21703,9 +21703,9 @@ test.describe('inbox screens', () => {
         return;
       }
       await route.fulfill({
-        status: 412,
+        status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'wallet_required' }),
+        body: JSON.stringify({ error: 'Set up your wallet first', code: 'wallet_required' }),
       });
     });
     await page.goto('/messages?c=conv-21');

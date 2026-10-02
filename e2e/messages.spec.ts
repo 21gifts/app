@@ -738,9 +738,9 @@ async function sendInboxGift(page: Page, invoiceStatus: number): Promise<void> {
             body: JSON.stringify({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' }),
           }
         : {
-            status: invoiceStatus,
+            status: 400,
             contentType: 'application/json',
-            body: JSON.stringify({ error: 'cannot_receive' }),
+            body: JSON.stringify({ error: 'Cannot receive', code: 'cannot_receive' }),
           },
     );
   });
@@ -762,10 +762,10 @@ test('inbox pay sheet is wallet-only, with no invoice QR or wallet app link', as
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
 
-test("Function: CannotReceiveError — a 422 inbox invoice says the author's wallet cannot receive", async ({
+test("Function: CannotReceiveError — a cannot_receive inbox invoice says the author's wallet cannot receive", async ({
   page,
 }) => {
-  await sendInboxGift(page, 422);
+  await sendInboxGift(page, 400);
   await expect(
     page.getByText("The author's wallet cannot receive this Bitcoin payment"),
   ).toBeVisible();

@@ -113,16 +113,16 @@ export class NoteDeletedError extends Error {
   }
 }
 
-/** Api status when the signed-in member has no verified in-app wallet yet. */
-export const WALLET_REQUIRED_STATUS = 412;
+/** Api error `code` (HTTP 400) when the signed-in member has no verified in-app wallet yet. */
+export const WALLET_REQUIRED_CODE = 'wallet_required';
 
-/** Api status when the receiving wallet cannot take this payment. */
-export const CANNOT_RECEIVE_STATUS = 422;
+/** Api error `code` (HTTP 400) when the receiving wallet cannot take this payment. */
+export const CANNOT_RECEIVE_CODE = 'cannot_receive';
 
 /**
- * Api {@link WALLET_REQUIRED_STATUS} answer: the action needs the member's own
- * wallet to be set up first. Recognised by status, never by the body text;
- * screens show catalog copy.
+ * Api answer with `code` {@link WALLET_REQUIRED_CODE}: the action needs the
+ * member's own wallet to be set up first. Recognised by the body's `code`,
+ * never by status or text; screens show catalog copy.
  */
 export class WalletRequiredError extends Error {
   constructor() {
@@ -132,9 +132,9 @@ export class WalletRequiredError extends Error {
 }
 
 /**
- * Api {@link CANNOT_RECEIVE_STATUS} answer: the receiving wallet cannot take
- * this payment. Recognised by status, never by the body text; screens show
- * catalog copy.
+ * Api answer with `code` {@link CANNOT_RECEIVE_CODE}: the receiving wallet
+ * cannot take this payment. Recognised by the body's `code`, never by status
+ * or text; screens show catalog copy.
  */
 export class CannotReceiveError extends Error {
   constructor() {
@@ -144,17 +144,29 @@ export class CannotReceiveError extends Error {
 }
 
 /**
- * Throws the typed wallet answer for a {@link WALLET_REQUIRED_STATUS} or
- * {@link CANNOT_RECEIVE_STATUS} response. Other statuses pass through.
+ * Throws the typed wallet answer when a 400 body carries `code`
+ * {@link WALLET_REQUIRED_CODE} or {@link CANNOT_RECEIVE_CODE}. Reads a clone,
+ * so the caller can still read the body; any other status, body, or code
+ * passes through.
  *
  * @param response - The raw fetch response.
- * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422.
+ * @returns Resolves when the response is not a wallet answer.
+ * @throws {@link WalletRequiredError} for `wallet_required`, {@link CannotReceiveError} for `cannot_receive`.
  */
-export function throwIfWalletAnswer(response: Response): void {
-  if (response.status === WALLET_REQUIRED_STATUS) {
+export async function throwIfWalletAnswer(response: Response): Promise<void> {
+  if (response.status !== 400) {
+    return;
+  }
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  const code =
+    body !== null && typeof body === 'object' ? (body as { code?: unknown }).code : undefined;
+  if (code === WALLET_REQUIRED_CODE) {
     throw new WalletRequiredError();
   }
-  if (response.status === CANNOT_RECEIVE_STATUS) {
+  if (code === CANNOT_RECEIVE_CODE) {
     throw new CannotReceiveError();
   }
 }
@@ -2512,7 +2524,7 @@ export async function fetchComposeTarget(
  * @returns `{ pr, amountSats }` (plus `sparkInvoice`) for the in-app wallet. The body may also carry
  *   `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
- * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422.
+ * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
  * @throws Error with collapsed visitor copy on 400/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
  * {@link messageInvoiceSchema}.
@@ -2542,7 +2554,7 @@ export async function postMessageInvoice(
       ...(shown === undefined ? {} : shown),
     }),
   });
-  throwIfWalletAnswer(response);
+  await throwIfWalletAnswer(response);
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
@@ -2640,7 +2652,7 @@ export async function getRepayment(messageId: string): Promise<RepaymentLedger |
  * @param sessionToken - Bearer session of the credit's author.
  * @param messageId - Credit note id.
  * @returns The invoice the author pays from their wallet.
- * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422. The body may also
+ * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`. The body may also
  *   carry `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws Error with visitor copy when the api refuses.
  */
@@ -2652,7 +2664,7 @@ export async function postRepaymentInvoice(
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
-  throwIfWalletAnswer(response);
+  await throwIfWalletAnswer(response);
   if (response.status === 400 || response.status === 429 || response.status === 404) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
@@ -2835,7 +2847,7 @@ export async function fetchConversation(
  * @param text - Optional comment shown as the gift body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
  * @returns `{ pr, amountSats, messageId }` (plus `sparkInvoice`) for the in-app wallet and poll.
- * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422. The
+ * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`. The
  *   body may also carry `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
@@ -2865,7 +2877,7 @@ export async function postConversationInvoice(
       ...(shown === undefined ? {} : shown),
     }),
   });
-  throwIfWalletAnswer(response);
+  await throwIfWalletAnswer(response);
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));

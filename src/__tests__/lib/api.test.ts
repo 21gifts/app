@@ -85,8 +85,8 @@ import {
   postMessage,
   fetchComposeTarget,
   NoteDeletedError,
-  WALLET_REQUIRED_STATUS,
-  CANNOT_RECEIVE_STATUS,
+  WALLET_REQUIRED_CODE,
+  CANNOT_RECEIVE_CODE,
   WalletRequiredError,
   CannotReceiveError,
   throwIfWalletAnswer,
@@ -142,11 +142,13 @@ interface FakeResponse {
 
 /** Installs a `fetch` mock resolving to a minimal Response-like value. */
 function stubFetch(response: FakeResponse): Mock {
-  const fetchMock = vi.fn().mockResolvedValue({
+  const fake = {
     ok: response.ok,
     status: response.status,
     json: () => Promise.resolve(response.body),
-  } as unknown as Response);
+    clone: () => fake,
+  };
+  const fetchMock = vi.fn().mockResolvedValue(fake as unknown as Response);
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
 }
@@ -1793,9 +1795,15 @@ const LEDGER = {
 };
 
 describe('wallet answers', () => {
-  it('names the wallet statuses', () => {
-    expect(WALLET_REQUIRED_STATUS).toBe(412);
-    expect(CANNOT_RECEIVE_STATUS).toBe(422);
+  /** A 400 whose body is read through `clone()`, like a fetch `Response`. */
+  function answer(status: number, body: Promise<unknown>): Response {
+    const fake = { status, json: () => body, clone: () => fake };
+    return fake as unknown as Response;
+  }
+
+  it('names the wallet codes', () => {
+    expect(WALLET_REQUIRED_CODE).toBe('wallet_required');
+    expect(CANNOT_RECEIVE_CODE).toBe('cannot_receive');
   });
 
   it('builds typed errors with stable names and messages', () => {
@@ -1809,17 +1817,39 @@ describe('wallet answers', () => {
     expect(cannot.message).toBe('cannot_receive');
   });
 
-  it('throws WalletRequiredError for a 412 response', () => {
-    expect(() => throwIfWalletAnswer({ status: 412 } as Response)).toThrow(WalletRequiredError);
+  it('throws WalletRequiredError for a 400 with code wallet_required', async () => {
+    await expect(
+      throwIfWalletAnswer(answer(400, Promise.resolve({ error: 'x', code: 'wallet_required' }))),
+    ).rejects.toBeInstanceOf(WalletRequiredError);
   });
 
-  it('throws CannotReceiveError for a 422 response', () => {
-    expect(() => throwIfWalletAnswer({ status: 422 } as Response)).toThrow(CannotReceiveError);
+  it('throws CannotReceiveError for a 400 with code cannot_receive', async () => {
+    await expect(
+      throwIfWalletAnswer(answer(400, Promise.resolve({ error: 'x', code: 'cannot_receive' }))),
+    ).rejects.toBeInstanceOf(CannotReceiveError);
   });
 
-  it('passes other statuses through', () => {
-    for (const status of [200, 400, 404, 409, 500]) {
-      expect(() => throwIfWalletAnswer({ status } as Response)).not.toThrow();
+  it('passes a 400 without a wallet code through, whatever its text', async () => {
+    for (const body of [
+      { error: 'Set up your wallet first' },
+      { error: "The author's wallet cannot receive this Bitcoin payment", code: 'other' },
+      'not an object',
+      null,
+    ]) {
+      await expect(
+        throwIfWalletAnswer(answer(400, Promise.resolve(body))),
+      ).resolves.toBeUndefined();
+    }
+    await expect(
+      throwIfWalletAnswer(answer(400, Promise.reject(new Error('not json')))),
+    ).resolves.toBeUndefined();
+  });
+
+  it('decides by code only, so other statuses pass through even with a wallet code', async () => {
+    for (const status of [200, 404, 409, 412, 422, 500]) {
+      await expect(
+        throwIfWalletAnswer(answer(status, Promise.resolve({ code: 'wallet_required' }))),
+      ).resolves.toBeUndefined();
     }
   });
 });
@@ -1882,13 +1912,21 @@ describe('postRepaymentInvoice', () => {
     );
   });
 
-  it('throws WalletRequiredError on 412', async () => {
-    stubFetch({ ok: false, status: 412, body: { error: 'wallet required' } });
+  it('throws WalletRequiredError on a 400 with code wallet_required', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'wallet required', code: 'wallet_required' },
+    });
     await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(WalletRequiredError);
   });
 
-  it('throws CannotReceiveError on 422', async () => {
-    stubFetch({ ok: false, status: 422, body: { error: 'cannot receive' } });
+  it('throws CannotReceiveError on a 400 with code cannot_receive', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'cannot receive', code: 'cannot_receive' },
+    });
     await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(CannotReceiveError);
   });
 });
@@ -2037,13 +2075,21 @@ describe('postMessageInvoice', () => {
     );
   });
 
-  it('throws WalletRequiredError on 412', async () => {
-    stubFetch({ ok: false, status: 412, body: { error: 'wallet required' } });
+  it('throws WalletRequiredError on a 400 with code wallet_required', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'wallet required', code: 'wallet_required' },
+    });
     await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(WalletRequiredError);
   });
 
-  it('throws CannotReceiveError on 422', async () => {
-    stubFetch({ ok: false, status: 422, body: { error: 'cannot receive' } });
+  it('throws CannotReceiveError on a 400 with code cannot_receive', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'cannot receive', code: 'cannot_receive' },
+    });
     await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(CannotReceiveError);
   });
 });
@@ -3863,15 +3909,23 @@ describe('postConversationInvoice', () => {
     );
   });
 
-  it('throws WalletRequiredError on 412', async () => {
-    stubFetch({ ok: false, status: 412, body: { error: 'wallet required' } });
+  it('throws WalletRequiredError on a 400 with code wallet_required', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'wallet required', code: 'wallet_required' },
+    });
     await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toBeInstanceOf(
       WalletRequiredError,
     );
   });
 
-  it('throws CannotReceiveError on 422', async () => {
-    stubFetch({ ok: false, status: 422, body: { error: 'cannot receive' } });
+  it('throws CannotReceiveError on a 400 with code cannot_receive', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'cannot receive', code: 'cannot_receive' },
+    });
     await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toBeInstanceOf(
       CannotReceiveError,
     );

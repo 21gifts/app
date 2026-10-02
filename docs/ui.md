@@ -700,7 +700,7 @@ Glyph: `aria-hidden` on the lucide node.
 
 **Introduce yourself.** Title, body, labeled `Button` CTA **Write an introduction**. The CTA dismisses the overlay, focuses the welcome composer (`FORUM_COMPOSE_EVENT` / `requestForumCompose`), and `router.push('/welcome')` only when the path is not already `/welcome`. Close dismisses this mount. No Skip.
 
-**Requirements.** Name, username, or living-room rules before a pending post retries; a missing wallet (api `lightning-address`, or a 412 on a gift invoice) shows `requirements.walletTitle` with `requirements.walletBody` and a labeled **Open your wallet** link to `/wallet`, no form. Close dismisses without posting. No Skip. Username has no Skip.
+**Requirements.** Name, username, or living-room rules before a pending post retries; a missing wallet (api `lightning-address`, or a `wallet_required` answer on a gift invoice) shows `requirements.walletTitle` with `requirements.walletBody` and a labeled **Open your wallet** link to `/wallet`, no form. Close dismisses without posting. No Skip. Username has no Skip.
 
 **External link.** Title **Open external link?**, body warning, destination URL as `text-sm text-app-fg break-all` (user content, not catalogized), labeled **Open link**. Close dismisses without opening. No Skip. App body links stay `font-medium underline underline-offset-2` and inherit colour — not `text-accent`.
 

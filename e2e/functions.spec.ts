@@ -5296,16 +5296,16 @@ test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ 
   await openPayInvoice(page, request);
 });
 
-test("Function: CannotReceiveError — a 422 forum invoice says the author's wallet cannot receive", async ({
+test("Function: CannotReceiveError — a cannot_receive forum invoice says the author's wallet cannot receive", async ({
   page,
 }) => {
   await seedAdaSession(page);
   await stubPayableNote(page);
   await page.route('**/messages/r-pay/invoice', async (route) => {
     await route.fulfill({
-      status: 422,
+      status: 400,
       contentType: 'application/json',
-      body: JSON.stringify({ error: 'cannot_receive' }),
+      body: JSON.stringify({ error: 'Cannot receive', code: 'cannot_receive' }),
     });
   });
   await page.goto('/welcome');
@@ -8989,7 +8989,7 @@ const POS_ACCOUNT = {
 };
 
 /** Signed-in till whose `POST /pos/charge` answers `status`. */
-async function openPosAmountAnswering(page: Page, status: number): Promise<void> {
+async function openPosAmountAnswering(page: Page, code: string | null): Promise<void> {
   await seedAdaSession(page);
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -9001,9 +9001,11 @@ async function openPosAmountAnswering(page: Page, status: number): Promise<void>
   await page.route(/\/pos\/charge$/, async (route) => {
     if (route.request().method() === 'POST') {
       await route.fulfill({
-        status,
+        status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Wallet answer' }),
+        body: JSON.stringify(
+          code === null ? { error: 'Wallet answer' } : { error: 'Wallet answer', code },
+        ),
       });
       return;
     }
@@ -9045,28 +9047,36 @@ test('Function: PosTill — a username without a verified wallet links to the wa
   await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
 });
 
-test('Function: WalletRequiredError — a 412 charge answer asks to set up the wallet', async ({
+test('Function: WalletRequiredError — a wallet_required charge answer asks to set up the wallet', async ({
   page,
 }) => {
-  await openPosAmountAnswering(page, 412);
+  await openPosAmountAnswering(page, 'wallet_required');
   await expect(page.getByText('Set up your wallet first.')).toBeVisible();
 });
 
-test('Function: CannotReceiveError — a 422 charge answer says the wallet cannot receive', async ({
+test('Function: CannotReceiveError — a cannot_receive charge answer says the wallet cannot receive', async ({
   page,
 }) => {
-  await openPosAmountAnswering(page, 422);
+  await openPosAmountAnswering(page, 'cannot_receive');
   await expect(
     page.getByText('Your wallet cannot receive this payment right now. Please try again later.'),
   ).toBeVisible();
 });
 
-test('Function: throwIfWalletAnswer — 412 and 422 charge answers are not the generic error', async ({
+test('Function: throwIfWalletAnswer — a 400 is decided by its code, not by its status', async ({
   page,
 }) => {
-  await openPosAmountAnswering(page, 412);
+  await openPosAmountAnswering(page, 'wallet_required');
   await expect(page.getByText('Set up your wallet first.')).toBeVisible();
   await expect(page.getByText('Point of sale is unavailable.')).toHaveCount(0);
+});
+
+test('Function: throwIfWalletAnswer — a 400 without a wallet code stays the generic error', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, null);
+  await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+  await expect(page.getByText('Set up your wallet first.')).toHaveCount(0);
 });
 
 test('Function: resetPosTillWriteForTests — till heading is visible', async ({ page }) => {

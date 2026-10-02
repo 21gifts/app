@@ -593,17 +593,20 @@ describe('PosScreen', () => {
 
   it('maps the wallet-required and cannot-receive create answers', async () => {
     const answers = [
-      [412, 'Set up your wallet first.'],
-      [422, 'Your wallet cannot receive this payment right now. Please try again later.'],
+      ['wallet_required', 'Set up your wallet first.'],
+      [
+        'cannot_receive',
+        'Your wallet cannot receive this payment right now. Please try again later.',
+      ],
     ] as const;
-    for (const [status, copy] of answers) {
+    for (const [code, copy] of answers) {
       cleanup();
       useAuthStore.setState({ session: 'tok', account: ACCOUNT });
       vi.stubGlobal(
         'fetch',
         vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
           if (init?.method === 'POST') {
-            return jsonResponse({ error: 'nope' }, status);
+            return jsonResponse({ error: 'nope', code }, 400);
           }
           return jsonResponse({ charge: null, history: [] });
         }),
