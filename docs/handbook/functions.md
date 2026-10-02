@@ -3354,7 +3354,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Encode bytes as unpadded base64url for WebAuthn JSON.
 - **Inputs:** `Uint8Array`.
 - **Returns / side effects:** Base64url string. No network.
-- **Used by:** `credentialToJSON`.
+- **Used by:** `credentialToJSON`, `usePasskeyLogin` (login PRF salt check).
 
 ## Function: creationOptionsFromJSON
 
@@ -3599,7 +3599,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** SHA-256 of UTF-8 `21gifts-nostr-v1`.
 - **Inputs:** None.
 - **Returns / side effects:** 32-byte `Uint8Array`.
-- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin.register`, `renewPasskey`.
+- **Used by:** `obtainPrfFirst`, `obtainPrfFirstFromGet`, `usePasskeyLogin` (register, and the login PRF salt check), `renewPasskey`.
 
 ## Function: readPrfFirst
 
