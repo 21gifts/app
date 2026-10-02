@@ -25,7 +25,7 @@ export interface UseWalletHistoryResult {
   hasMore: boolean;
   /** Loads the next page; no-op while loading or at the end. */
   loadMore: () => void;
-  /** Loads the list again after an error. */
+  /** Loads the list again after an error; the error stays shown until the result arrives. */
   retry: () => void;
 }
 
@@ -191,7 +191,6 @@ export function useWalletHistory(): UseWalletHistoryResult {
     if (pinned !== null) {
       return;
     }
-    setStatus('loading');
     reload();
   }, [pinned, reload]);
 

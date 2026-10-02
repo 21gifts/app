@@ -2,7 +2,7 @@
 
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { useRef, type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
@@ -23,7 +23,6 @@ export function WalletSetupNotice(): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
   const { view, start, retry } = useWalletSetup();
-  const [leaving, setLeaving] = useState(false);
   const leavingRef = useRef(false);
 
   const logOut = (): void => {
@@ -31,7 +30,6 @@ export function WalletSetupNotice(): ReactElement {
       return;
     }
     leavingRef.current = true;
-    setLeaving(true);
     void (async () => {
       const token = useAuthStore.getState().session;
       if (token !== null) {
@@ -102,15 +100,7 @@ export function WalletSetupNotice(): ReactElement {
         </h2>
         {body}
         {action}
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={leaving}
-          onClick={logOut}
-          icon={
-            leaving ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
-          }
-        >
+        <Button type="button" variant="secondary" onClick={logOut}>
           {t('login.logOut')}
         </Button>
       </Card>
