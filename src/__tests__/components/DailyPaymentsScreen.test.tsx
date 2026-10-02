@@ -328,7 +328,7 @@ describe('daily payment subpages', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Address' }), {
       target: { value: 'new@example.com' },
     });
-    fireEvent.change(screen.getByRole('textbox', { name: 'USD', exact: true }), {
+    fireEvent.change(screen.getByRole('textbox', { name: /^USD$/ }), {
       target: { value: '1' },
     });
     addMock.mockResolvedValueOnce({
