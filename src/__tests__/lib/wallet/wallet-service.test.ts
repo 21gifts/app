@@ -127,7 +127,7 @@ describe('connectWallet', () => {
     expect(useWalletStore.getState().status).toBe('ready');
   });
 
-  describe('first synchronized read timeout', () => {
+  describe('connect attempt timeout', () => {
     beforeEach(() => {
       vi.useFakeTimers();
     });
@@ -136,7 +136,41 @@ describe('connectWallet', () => {
       vi.useRealTimers();
     });
 
-    it('sets error and disconnects when the first read never settles', async () => {
+    it('sets error when loadSdk never settles', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const loadSdk: WalletSdkLoader = vi.fn(() => new Promise<WalletSdk>(() => undefined));
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(loadSdk).toHaveBeenCalled();
+      expect(useWalletStore.getState().status).toBe('connecting');
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('error');
+    });
+
+    it('sets error and disconnects a connection that resolves after the deadline', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      let resolveConnect!: (connection: WalletConnection) => void;
+      const { loadSdk, connection, connect } = createFakeSdk({
+        connect: () =>
+          new Promise<WalletConnection>((resolve) => {
+            resolveConnect = resolve;
+          }),
+      });
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connect).toHaveBeenCalled();
+      expect(useWalletStore.getState().status).toBe('connecting');
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('error');
+      resolveConnect(connection as unknown as WalletConnection);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connection.disconnect).toHaveBeenCalled();
+      expect(useWalletStore.getState().status).toBe('error');
+    });
+
+    it('sets error and disconnects when the first synchronized read never settles', async () => {
       rememberSessionPhrase(MNEMONIC);
       const { loadSdk, connection } = createFakeSdk({
         getInfo: () => new Promise<never>(() => undefined),
@@ -151,18 +185,11 @@ describe('connectWallet', () => {
       expect(connection.disconnect).toHaveBeenCalled();
     });
 
-    it('stays ready after the first read resolves before the timeout', async () => {
+    it('stays ready after the attempt finishes before the deadline', async () => {
       rememberSessionPhrase(MNEMONIC);
-      let resolveInfo!: (info: { balanceSats: number; identityPubkey: string }) => void;
-      const { loadSdk, connection } = createFakeSdk({
-        getInfo: () =>
-          new Promise<{ balanceSats: number; identityPubkey: string }>((resolve) => {
-            resolveInfo = resolve;
-          }),
-      });
+      const { loadSdk, connection } = createFakeSdk();
       const pending = connectWallet(loadSdk);
       await vi.advanceTimersByTimeAsync(0);
-      resolveInfo({ balanceSats: 21_000, identityPubkey: IDENTITY });
       await expect(pending).resolves.toBeUndefined();
       expect(useWalletStore.getState().status).toBe('ready');
       await vi.advanceTimersByTimeAsync(30_001);
@@ -170,7 +197,7 @@ describe('connectWallet', () => {
       expect(connection.disconnect).not.toHaveBeenCalled();
     });
 
-    it('ignores the timeout after a synced refresh wins', async () => {
+    it('leaves a wallet made ready by a synced refresh unchanged at the deadline', async () => {
       rememberSessionPhrase(MNEMONIC);
       const { loadSdk, connection, listeners } = createFakeSdk();
       connection.getInfo

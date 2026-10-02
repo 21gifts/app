@@ -3708,7 +3708,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: connectWallet
 
-- **Purpose:** Connects from the tab phrase. Does nothing without a key or a phrase. The first balance read after connect uses `ensureSynced`, so a cached balance is not shown as final and the store stays `connecting` until that read finishes. This synchronized read is limited to 30 seconds; if it does not finish in time, the wallet shows the `error` state with **Try again**, and a later `synced` event no longer applies to the closed connection. Store otherwise goes to `ready` or `error`. Subscribes to SDK events and refreshes on `synced`. The latest call wins and a superseded connection is closed.
+- **Purpose:** Connects from the tab phrase. Does nothing without a key or a phrase. The first balance read after connect uses `ensureSynced`, so a cached balance is not shown as final and the store stays `connecting` until that read finishes. The whole connect attempt (loading the wallet code, connecting, and the first synchronized read) is limited to 30 seconds; if it does not finish in time while the wallet is still connecting, the wallet shows the `error` state with **Try again**. A wallet that a `synced` refresh already showed as ready is left as it is. Store otherwise goes to `ready` or `error`. Subscribes to SDK events and refreshes on `synced`. The latest call wins and a superseded connection is closed.
 - **Inputs:** Optional `WalletSdkLoader` (defaults to `loadWalletSdk`).
 - **Returns / side effects:** void. Updates `useWalletStore`.
 - **Used by:** `listenForWalletPhrase`, `useWallet.retry`.

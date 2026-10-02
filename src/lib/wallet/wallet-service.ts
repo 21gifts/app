@@ -17,8 +17,8 @@ let runCounter = 0;
 /** Monotonic balance-read counter; only the latest read may write the store. */
 let balanceReadCounter = 0;
 
-/** Maximum wait for the first synchronized balance read. */
-const FIRST_SYNC_TIMEOUT_MS = 30_000;
+/** Maximum wait for a connect attempt. */
+const CONNECT_TIMEOUT_MS = 30_000;
 
 /**
  * Advances the run counter so in-flight work from an older run is ignored.
@@ -67,21 +67,10 @@ async function readBalance(
   balanceReadCounter += 1;
   const read = balanceReadCounter;
   try {
-    let timeout!: ReturnType<typeof setTimeout>;
-    const firstRead =
+    const info =
       options?.ensureSynced === true
-        ? Promise.race([
-            conn.getInfo({ ensureSynced: true }),
-            new Promise<never>((_resolve, reject) => {
-              timeout = setTimeout(() => {
-                reject(new Error('wallet sync timed out'));
-              }, FIRST_SYNC_TIMEOUT_MS);
-            }),
-          ]).finally(() => {
-            clearTimeout(timeout);
-          })
-        : conn.getInfo();
-    const info = await firstRead;
+        ? await conn.getInfo({ ensureSynced: true })
+        : await conn.getInfo();
     if (run !== runCounter || read !== balanceReadCounter) {
       return;
     }
@@ -112,14 +101,14 @@ async function failRun(run: number): Promise<void> {
 }
 
 /**
- * Connects the in-app wallet from the tab phrase and Breez API key. The first
- * balance read waits up to 30 seconds for synchronization, so the store stays
- * `connecting` until synchronized state is available or moves to `error` on
- * timeout. No-ops when either input is missing. Never rejects; failures end in
- * the store.
+ * Connects the in-app wallet from the tab phrase and Breez API key. Loading the
+ * SDK, connecting, and the first synchronized balance read share a 30-second
+ * deadline. A timeout moves a still-connecting wallet to `error`, but leaves a
+ * wallet made ready by a synchronized refresh unchanged. No-ops when either
+ * input is missing. Never rejects; failures end in the store.
  *
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
- * @returns Resolves when the attempt finishes (ready, error, or superseded).
+ * @returns Resolves when the attempt finishes, is superseded, or reaches its deadline.
  */
 export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): Promise<void> {
   const apiKey = getBreezApiKey();
@@ -130,31 +119,48 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
   const run = bumpRun();
   useWalletStore.getState().setConnecting();
   await dropConnection();
-  try {
-    const sdk = await loadSdk();
-    if (run !== runCounter) {
-      return;
-    }
-    const next = await sdk.connect(mnemonic, apiKey);
-    if (run !== runCounter) {
-      try {
-        await next.disconnect();
-      } catch {
-        // Superseded connection is closed best-effort.
+  const timeoutSentinel = Symbol('connect timeout');
+  let timeout!: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<typeof timeoutSentinel>((resolve) => {
+    timeout = setTimeout(() => {
+      resolve(timeoutSentinel);
+    }, CONNECT_TIMEOUT_MS);
+  });
+  const attempt = (async (): Promise<void> => {
+    try {
+      const sdk = await loadSdk();
+      if (run !== runCounter) {
+        return;
       }
-      return;
-    }
-    connection = next;
-    await next.addEventListener((event) => {
-      if (event.type === 'synced') {
-        void refreshWallet();
+      const next = await sdk.connect(mnemonic, apiKey);
+      if (run !== runCounter) {
+        try {
+          await next.disconnect();
+        } catch {
+          // Superseded connection is closed best-effort.
+        }
+        return;
       }
-    });
-    if (run !== runCounter) {
-      return;
+      connection = next;
+      await next.addEventListener((event) => {
+        if (event.type === 'synced') {
+          void refreshWallet();
+        }
+      });
+      if (run !== runCounter) {
+        return;
+      }
+      await readBalance(run, next, { ensureSynced: true });
+    } catch {
+      await failRun(run);
     }
-    await readBalance(run, next, { ensureSynced: true });
-  } catch {
+  })();
+  const result: void | typeof timeoutSentinel = await Promise.race([attempt, deadline]);
+  if (result !== timeoutSentinel) {
+    clearTimeout(timeout);
+    return;
+  }
+  if (run === runCounter && useWalletStore.getState().status === 'connecting') {
     await failRun(run);
   }
 }

@@ -6,7 +6,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { formatBitcoin } from '@/lib/stats-money';
 import type { WalletStatus } from '@/stores/wallet-store';
