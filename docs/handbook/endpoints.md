@@ -725,7 +725,7 @@
 
 ## Endpoint: GET /funding/daily-roster
 
-- **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, and recipient rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML page at `/grants/payments`.
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, `defaultAmountUsd`, and recipient rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML page at `/grants/payments`.
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is not an initiator or founder, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
 - **Used by:** `fetchDailyRoster` via `DailyPaymentsScreen` on `/grants/payments`.
 - **Auth:** Bearer session. The api allows an initiator or founder only. The app does not fetch this roster for other signed-in roles (forbidden copy, no request).
