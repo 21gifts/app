@@ -523,6 +523,102 @@ describe('ExternalAuthorProfile', () => {
     });
   });
 
+  it('reopens a loaded replies feed without calling the fetcher again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+    });
+    fetchReplies.mockResolvedValue([
+      {
+        ...FEED_NOTE,
+        id: 'reply-1',
+        text: 'A reply from Robin',
+        parentId: 'parent-1',
+      },
+    ]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 reaction' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    await waitFor(() => {
+      expect(screen.getByText('A reply from Robin')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    expect(screen.queryByText('A reply from Robin')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    expect(screen.getByText('A reply from Robin')).toBeTruthy();
+    expect(fetchReplies).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps one in-flight replies load when the panel is closed and opened again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+    });
+    let resolveReplies!: (value: ForumMessage[]) => void;
+    fetchReplies.mockReturnValue(
+      new Promise((resolve) => {
+        resolveReplies = resolve;
+      }),
+    );
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 reaction' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    expect(screen.queryByText('Loading…')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(fetchReplies).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveReplies([
+        {
+          ...FEED_NOTE,
+          id: 'reply-1',
+          text: 'A reply from Robin',
+          parentId: 'parent-1',
+        },
+      ]);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('A reply from Robin')).toBeTruthy();
+    });
+  });
+
+  it('shows the truncated status line for a shorter replies list', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 2,
+    });
+    fetchReplies.mockResolvedValue([
+      {
+        ...FEED_NOTE,
+        id: 'reply-1',
+        text: 'A reply from Robin',
+        parentId: 'parent-1',
+      },
+    ]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 reactions' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '2 reactions' }));
+    await waitFor(() => {
+      expect(screen.getByText('A reply from Robin')).toBeTruthy();
+    });
+    expect(screen.getByRole('status').textContent).toBe('Showing the latest 1 of 2.');
+  });
+
   it('opens a reply with a parentId to that parent on expand', async () => {
     fetchProfile.mockResolvedValue({
       name: 'Robin',
