@@ -117,7 +117,8 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
  * ready, a send is in flight, or its Sent line shows), and the receive address,
  * then the payment list while the wallet is ready, above the recovery entry.
  * While the send block shows, Back first closes an open send step (or is held
- * while a confirm send is in flight). The 12 words and recovery errors render
+ * while a confirm send is in flight). The 12 words and
+ * recovery errors render
  * only on `/wallet/phrase`.
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
