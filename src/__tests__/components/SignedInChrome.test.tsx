@@ -1473,7 +1473,7 @@ describe('SignedInChrome', () => {
       HTMLElement.prototype,
       'scrollHeight',
     );
-    const previousComputedStyle = window.getComputedStyle;
+    const previousComputedStyle = globalThis.getComputedStyle;
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
     Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
       configurable: true,
@@ -1499,8 +1499,8 @@ describe('SignedInChrome', () => {
         },
       } as DOMRect;
     };
-    window.getComputedStyle = (elt: Element, pseudoElt?: string | null): CSSStyleDeclaration => {
-      const style = previousComputedStyle.call(window, elt, pseudoElt);
+    const stubComputedStyle = (elt: Element, pseudoElt?: string | null): CSSStyleDeclaration => {
+      const style = previousComputedStyle.call(globalThis, elt, pseudoElt);
       if (elt.id !== 'signed-in-menu') {
         return style;
       }
@@ -1509,6 +1509,12 @@ describe('SignedInChrome', () => {
         borderBottomWidth: { configurable: true, enumerable: true, value: '3px' },
       }) as CSSStyleDeclaration;
     };
+    globalThis.getComputedStyle = stubComputedStyle;
+    const previousWindowComputedStyle =
+      window.getComputedStyle === stubComputedStyle ? undefined : window.getComputedStyle;
+    if (previousWindowComputedStyle !== undefined) {
+      window.getComputedStyle = stubComputedStyle;
+    }
     try {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -1531,7 +1537,10 @@ describe('SignedInChrome', () => {
         Object.defineProperty(HTMLElement.prototype, 'scrollHeight', previousScrollHeight);
       }
       HTMLElement.prototype.getBoundingClientRect = previousRect;
-      window.getComputedStyle = previousComputedStyle;
+      globalThis.getComputedStyle = previousComputedStyle;
+      if (previousWindowComputedStyle !== undefined) {
+        window.getComputedStyle = previousWindowComputedStyle;
+      }
     }
   });
 });
