@@ -22,7 +22,8 @@ import {
  * Close stays on this view. It is not the top-left back arrow. The preview paragraph is left-inset (`pl-12`) so its glyphs clear that control, including the icon button's hit slop.
  *
  * With a `sparkInvoice` and a usable in-app wallet the pay slot pays from
- * the wallet; otherwise it shows the invoice QR and external wallet button.
+ * the wallet; otherwise it shows the invoice QR (not on a smartphone) and the
+ * Wallet of Satoshi button.
  *
  * @param props - Preview, invoice, waiting flag, and cancel handler.
  * @returns The pay page element.
