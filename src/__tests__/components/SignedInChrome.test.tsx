@@ -960,8 +960,9 @@ describe('SignedInChrome', () => {
       }
       expect(menuPanel().className).toContain('absolute');
       expect(menuPanel().className).toContain('w-72');
-      expect(menuPanel().className).toContain('max-h-[calc(100dvh-7rem)]');
-      expect(menuPanel().className).toContain('overflow-y-auto');
+      expect(menuPanel().className).toContain('mt-2');
+      expect(menuPanel().className).toContain('p-2');
+      expect(menuPanel().className).not.toContain('overflow-y-auto');
       expect(menuPanel().className).not.toContain('100%');
       fireEvent.click(scrim);
       expectMenuClosed();
@@ -973,6 +974,89 @@ describe('SignedInChrome', () => {
       } else {
         Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDescriptor);
       }
+    }
+  });
+
+  it('drops the wide menu outer spacing when it would stick out of a 720px window', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: 751,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      const current = useAuthStore.getState().account;
+      if (current === null) {
+        throw new Error('expected account');
+      }
+      useAuthStore.setState({ account: { ...current, role: 'moderator' } });
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('mt-0');
+      expect(panel.className).toContain('px-2');
+      expect(panel.className).toContain('py-0');
+      expect(panel.className).toContain('w-72');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.className).not.toContain('overflow-auto');
+      expect(panel.className).not.toContain('max-h-');
+      expect(panel.querySelector('p')?.className).not.toContain('py-2');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('keeps the wide menu outer spacing when it fits in a 720px window', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: 700,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('mt-2');
+      expect(panel.className).toContain('p-2');
+      expect(panel.className).not.toContain('mt-0');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
     }
   });
 });
