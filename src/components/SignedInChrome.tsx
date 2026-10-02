@@ -74,9 +74,6 @@ export function SignedInChrome(): ReactElement {
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const naturalBottomRef = useRef<number | null>(null);
-  const naturalScrollHeightRef = useRef<number | null>(null);
-  const naturalInnerHeightRef = useRef<number | null>(null);
   const suppressMeasureRef = useRef(false);
   const frameWidth = useContext(AppShellContext)?.frameWidth ?? null;
   const scroller = useAppShellScroller();
@@ -156,23 +153,10 @@ export function SignedInChrome(): ReactElement {
         menuToClear.style.width = '';
       }
       setPanelStyle((current) => (current === undefined ? current : undefined));
-      naturalBottomRef.current = null;
-      naturalScrollHeightRef.current = null;
-      naturalInnerHeightRef.current = null;
       return;
     }
     const menu = menuRef.current!;
-    const readNaturalBottom = (force: boolean): number => {
-      const scrollHeight = menu.scrollHeight;
-      const innerHeight = window.innerHeight;
-      if (
-        !force &&
-        naturalBottomRef.current !== null &&
-        naturalScrollHeightRef.current === scrollHeight &&
-        naturalInnerHeightRef.current === innerHeight
-      ) {
-        return naturalBottomRef.current;
-      }
+    const readNaturalBottom = (): number => {
       const appliedTop = menu.style.top;
       const appliedLeft = menu.style.left;
       const appliedWidth = menu.style.width;
@@ -195,12 +179,9 @@ export function SignedInChrome(): ReactElement {
         menu.classList.add('fixed');
         menu.classList.remove('absolute');
       }
-      naturalBottomRef.current = bottom;
-      naturalScrollHeightRef.current = scrollHeight;
-      naturalInnerHeightRef.current = innerHeight;
       return bottom;
     };
-    const measure = (forceNatural: boolean): void => {
+    const measure = (): void => {
       if (suppressMeasureRef.current) {
         return;
       }
@@ -208,7 +189,7 @@ export function SignedInChrome(): ReactElement {
       try {
         const limit = window.innerHeight + 1;
         // Decide from the uncapped bottom. Using the capped box would drop the cap and flutter.
-        const natural = readNaturalBottom(forceNatural);
+        const natural = readNaturalBottom();
         // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
         const nextTight = natural > limit ? true : tight && natural <= limit - 48 ? false : tight;
         const appliedTop = menu.style.top;
@@ -296,17 +277,6 @@ export function SignedInChrome(): ReactElement {
           nextWidth === appliedWidth &&
           nextBottom === appliedBottom
         ) {
-          if (
-            menu.style.top !== appliedTop ||
-            menu.style.left !== appliedLeft ||
-            menu.style.width !== appliedWidth ||
-            menu.style.bottom !== appliedBottom
-          ) {
-            menu.style.top = appliedTop;
-            menu.style.left = appliedLeft;
-            menu.style.width = appliedWidth;
-            menu.style.bottom = appliedBottom;
-          }
           return;
         }
         setTight(nextTight);
@@ -318,31 +288,21 @@ export function SignedInChrome(): ReactElement {
           if (current === undefined && nextStyle === undefined) {
             return current;
           }
-          if (
-            current !== undefined &&
-            nextStyle !== undefined &&
-            current.top === nextStyle.top &&
-            current.left === nextStyle.left &&
-            current.width === nextStyle.width &&
-            current.bottom === nextStyle.bottom
-          ) {
-            return current;
-          }
           return nextStyle;
         });
       } finally {
         suppressMeasureRef.current = false;
       }
     };
-    measure(true);
+    measure();
     const onResize = (): void => {
-      measure(true);
+      measure();
     };
     window.addEventListener('resize', onResize);
     let observer: ResizeObserver | undefined;
     if (typeof ResizeObserver !== 'undefined') {
       observer = new ResizeObserver(() => {
-        measure(true);
+        measure();
       });
       observer.observe(menu);
     }

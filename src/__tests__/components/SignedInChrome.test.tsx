@@ -1465,4 +1465,73 @@ describe('SignedInChrome', () => {
       HTMLElement.prototype.getBoundingClientRect = previousRect;
     }
   });
+
+  it('shrinks the wide menu cap by the border when the capped box still crosses the viewport', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    const previousScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    const previousComputedStyle = window.getComputedStyle;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 800;
+      },
+    });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      if (this.id !== 'signed-in-menu') {
+        return previousRect.call(this);
+      }
+      return {
+        x: 10,
+        y: 85,
+        top: 85,
+        left: 10,
+        right: 210,
+        width: 200,
+        height: 0,
+        bottom: this.style.bottom === '' ? 900 : 750,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    window.getComputedStyle = (elt: Element, pseudoElt?: string | null): CSSStyleDeclaration => {
+      const style = previousComputedStyle.call(window, elt, pseudoElt);
+      if (elt.id !== 'signed-in-menu') {
+        return style;
+      }
+      return Object.create(style, {
+        borderTopWidth: { configurable: true, enumerable: true, value: '2px' },
+        borderBottomWidth: { configurable: true, enumerable: true, value: '3px' },
+      }) as CSSStyleDeclaration;
+    };
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.style.bottom).toBe('4px');
+      expect(panel.style.top).toBe('85px');
+      expect(panel.style.left).toBe('10px');
+      expect(panel.style.width).toBe('200px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).not.toContain('max-h-');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      if (previousScrollHeight === undefined) {
+        delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', previousScrollHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+      window.getComputedStyle = previousComputedStyle;
+    }
+  });
 });
