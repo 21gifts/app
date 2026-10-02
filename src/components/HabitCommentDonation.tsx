@@ -12,7 +12,15 @@ import { parseAmountDraft } from '@/lib/stats-money';
 import type { AmountUnit } from '@/lib/api-types';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
-/** Direct Lightning donation to a tracker comment's author; no forum post is created. */
+/**
+ * Direct Lightning donation to a tracker comment's author; no forum post is created.
+ *
+ * @param id - Tracker comment id posted with the invoice request.
+ * @param name - Recipient display name on the amount form.
+ * @param session - Authenticated bearer token for POST `/habits/data`.
+ * @param onClose - Closes the amount form or the invoice pay sheet.
+ * @returns ReactElement
+ */
 export function HabitCommentDonation({
   id,
   name,

@@ -120,6 +120,70 @@ test('Function: HabitCommentDonation — signed-in visitors can request a commen
   await expect(page.getByRole('button', { name: 'Delete comment' })).toHaveCount(0);
 });
 
+test('Function: useLatestRateDayState — the donation invoice waits until the gift-day rate has settled', async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('21gifts.session', 'habit-e2e'));
+  await page.route(/\/me$/, (route) =>
+    route.fulfill({
+      json: {
+        id: 'donor',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Donor',
+        username: 'donor',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        walletRequired: true,
+      },
+    }),
+  );
+  const comment = {
+    id: 'comment-1',
+    accountId: 'recipient',
+    name: 'Recipient',
+    text: 'Thanks for sharing',
+    week: payload.week.start,
+    createdAt: 1790899200000,
+    canReceiveDonation: true,
+  };
+  await page.route('**/habits/data*', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({ json: { pr: 'lnbc-local-test-only', amountSats: 100 } });
+    } else
+      await route.fulfill({ json: { ...payload, commentsAllowed: true, comments: [comment] } });
+  });
+  let releaseStats = () => undefined;
+  const statsHeld = new Promise<void>((resolve) => {
+    releaseStats = resolve;
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await statsHeld;
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'unavailable' }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Send Bitcoin', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Amount' }).fill('100');
+  const donate = page.getByRole('button', { name: 'Donate Bitcoin', exact: true }).last();
+  await expect(donate).toBeDisabled();
+  releaseStats();
+  await expect(donate).toBeEnabled();
+  await donate.click();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+});
+
 test('Habit-Tracker — archived weeks hide the description and comment composer', async ({
   page,
 }) => {
