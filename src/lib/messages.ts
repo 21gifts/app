@@ -938,7 +938,14 @@ const en = {
   'funding.goals.heading': 'Goals',
   'funding.goals.lead': 'The grant program continues when we reach 10 active shops.',
   'funding.goals.active':
-    'A shop is active when it has registered at least one transaction on 5 of 7 days.',
+    'A shop is active when it has at least one transaction on 5 of the last 7 days.',
+  'funding.goals.transaction':
+    "A transaction is a payment the shop's assigned member created at the till on https://21.gifts/pos that UTC day. Creating it counts, including when it later expires or is cancelled.",
+  'funding.goals.qualifying': '{count, plural, one {# shop meets this} other {# shops meet this}}',
+  'funding.goals.chartLabel': 'Shops per UTC day',
+  'funding.goals.chartFoot': 'Lighter bar = today, still open.',
+  'funding.goals.error': 'Could not load the shop goal. Please try again.',
+  'funding.goals.widgetLabel': 'Shop goal',
   'funding.notVerified': 'You are not verified yet.',
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
@@ -1959,7 +1966,15 @@ const de = {
   'funding.goals.heading': 'Ziele',
   'funding.goals.lead': 'Das Förderprogramm läuft weiter, wenn wir 10 aktive Shops erreichen.',
   'funding.goals.active':
-    'Ein Shop ist aktiv, wenn er an 5 von 7 Tagen mindestens eine Transaktion registriert hat.',
+    'Ein Shop ist aktiv, wenn er an 5 der letzten 7 Tage mindestens eine Transaktion hat.',
+  'funding.goals.transaction':
+    'Eine Transaktion ist eine Zahlung, die das zugewiesene Mitglied an diesem UTC-Tag an der Kasse auf https://21.gifts/pos angelegt hat. Das Anlegen zählt, auch wenn die Zahlung später abläuft oder storniert wird.',
+  'funding.goals.qualifying':
+    '{count, plural, one {# Shop erfüllt das} other {# Shops erfüllen das}}',
+  'funding.goals.chartLabel': 'Shops je UTC-Tag',
+  'funding.goals.chartFoot': 'Heller Balken = heute, noch offen.',
+  'funding.goals.error': 'Das Shop-Ziel konnte nicht geladen werden. Bitte erneut versuchen.',
+  'funding.goals.widgetLabel': 'Shop-Ziel',
   'funding.notVerified': 'Sie sind noch nicht verifiziert.',
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
@@ -2968,7 +2983,15 @@ const es = {
   'funding.goals.heading': 'Objetivos',
   'funding.goals.lead': 'El programa de becas sigue cuando llegamos a 10 tiendas activas.',
   'funding.goals.active':
-    'Una tienda está activa cuando ha registrado al menos una transacción en 5 de 7 días.',
+    'Una tienda está activa cuando tiene al menos una transacción en 5 de los últimos 7 días.',
+  'funding.goals.transaction':
+    'Una transacción es un pago que el miembro asignado a la tienda creó en la caja en https://21.gifts/pos ese día UTC. Crearlo cuenta, también si después caduca o se cancela.',
+  'funding.goals.qualifying':
+    '{count, plural, one {# tienda cumple esto} other {# tiendas cumplen esto}}',
+  'funding.goals.chartLabel': 'Tiendas por día UTC',
+  'funding.goals.chartFoot': 'La barra más clara = hoy, todavía abierto.',
+  'funding.goals.error': 'No se pudo cargar el objetivo de las tiendas. Inténtalo de nuevo.',
+  'funding.goals.widgetLabel': 'Objetivo de tiendas',
   'funding.notVerified': 'Aún no estás verificada o verificado.',
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
@@ -3982,7 +4005,15 @@ const fil = {
   'funding.goals.heading': 'Mga layunin',
   'funding.goals.lead': 'Tuloy ang grant program kapag umabot tayo sa 10 aktibong tindahan.',
   'funding.goals.active':
-    'Aktibo ang isang tindahan kapag nakapagtala ito ng kahit isang transaksyon sa 5 sa 7 araw.',
+    'Aktibo ang isang tindahan kapag may kahit isang transaksyon ito sa 5 sa huling 7 araw.',
+  'funding.goals.transaction':
+    'Ang transaksyon ay isang bayad na ginawa ng naka-assign na miyembro sa till sa https://21.gifts/pos sa araw na UTC na iyon. Binibilang ang paggawa nito, kahit mag-expire o makansela ito pagkatapos.',
+  'funding.goals.qualifying':
+    '{count, plural, one {# tindahan ang tumutugon dito} other {# na tindahan ang tumutugon dito}}',
+  'funding.goals.chartLabel': 'Mga tindahan bawat araw na UTC',
+  'funding.goals.chartFoot': 'Mas maputlang bar = ngayon, bukas pa.',
+  'funding.goals.error': 'Hindi ma-load ang layunin ng tindahan. Pakisubukan muli.',
+  'funding.goals.widgetLabel': 'Layunin ng tindahan',
   'funding.notVerified': 'Hindi ka pa nabe-verify.',
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',

@@ -12031,14 +12031,69 @@ test.describe('profile funding states', () => {
     await shotScreen(page, 'state-grants-applications-error');
   });
 
+  const GRANT_GOAL = {
+    days: [
+      { day: '2026-03-09', shopCount: 1 },
+      { day: '2026-03-10', shopCount: 3 },
+      { day: '2026-03-11', shopCount: 0 },
+      { day: '2026-03-12', shopCount: 2 },
+      { day: '2026-03-13', shopCount: 4 },
+      { day: '2026-03-14', shopCount: 2 },
+      { day: '2026-03-15', shopCount: 1 },
+    ],
+    qualifyingShops: 2,
+  };
+
+  async function stubGrantGoal(page: Page, mode: 'ok' | 'loading' | 'error'): Promise<void> {
+    await page.clock.install({ time: new Date('2026-03-15T12:00:00.000Z') });
+    await page.route('**/funding/goal', async (route) => {
+      if (mode === 'loading') {
+        return;
+      }
+      if (mode === 'error') {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Funding goal is unavailable' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(GRANT_GOAL),
+      });
+    });
+  }
+
   test('screen /grants/goals', async ({ page }) => {
     await seedFundingProfile(page);
+    await stubGrantGoal(page, 'ok');
     await page.goto('/grants/goals');
     await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible();
     await expect(
       page.getByText('The grant program continues when we reach 10 active shops.'),
     ).toBeVisible();
+    await expect(page.getByText('2 shops meet this')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Shops per UTC day' })).toBeVisible();
     await shotScreen(page, 'screen-grants-goals');
+  });
+
+  test('state /grants/goals loading', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'loading');
+    await page.goto('/grants/goals');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-grants-goals-loading');
+  });
+
+  test('state /grants/goals error', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'error');
+    await page.goto('/grants/goals');
+    await expect(page.getByText('Could not load the shop goal. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-grants-goals-error');
   });
 });
 

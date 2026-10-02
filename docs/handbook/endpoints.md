@@ -142,6 +142,13 @@
 - **Used by:** `fetchShopActivity` on `/statistics`.
 - **Auth:** No bearer. StatisticsScreen calls it for every visitor.
 
+## Endpoint: GET /funding/goal
+
+- **Purpose:** Same-origin proxy of api `GET /funding/goal` (7 UTC days of shop till-charge counts, plus how many shops had a charge on 5 of those days). Not the public 30-day shop series.
+- **Errors:** The proxy forwards the upstream status. Expected upstream errors are 401 without a bearer session and 503 when the goal is unavailable, or 502 if this proxy cannot reach the api.
+- **Used by:** `fetchGrantContinuation` on `/grants/goals`.
+- **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
+
 ## Endpoint: GET /lightning-address
 
 - **Purpose:** Same-origin proxy of public LUD-16 resolve.

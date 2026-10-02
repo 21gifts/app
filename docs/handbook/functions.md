@@ -3987,12 +3987,26 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops/activity')`.
 - **Used by:** `src/app/shops/activity/route.ts`.
 
+## Function: fetchGrantContinuation
+
+- **Purpose:** Loads the signed-in grant goal from same-origin `GET /funding/goal` with `Authorization: Bearer`. GrantGoalsScreen calls it only when a session exists. The body must be 7 unique contiguous UTC days, oldest first, plus a nonnegative `qualifyingShops`; otherwise this throws and the goals page shows its error state. Does not call `fetchShopActivity`.
+- **Inputs:** `sessionToken` — bearer session. `fetch('/funding/goal')` sends that token and does not invent one.
+- **Returns / side effects:** `GrantContinuation` (`days`, `qualifyingShops`). Network via `fetch`. Does not require the last day to be the browser's today.
+- **Used by:** `GrantGoalsScreen`.
+
+## Function: proxyFundingGoalGet
+
+- **Purpose:** Same-origin proxy for api `GET /funding/goal`. App route is `export const GET = proxyFundingGoalGet` on `/funding/goal`. Forwards the incoming Authorization header and does not add one. This is not the public shop-activity proxy.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/funding/goal')`.
+- **Used by:** `src/app/funding/goal/route.ts`.
+
 ## Function: ShopActivityChart
 
-- **Purpose:** Draws the shop-count SVG (`role="img"`) for 30 UTC days. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="shop-activity-chart-bar"`. No goal line.
+- **Purpose:** Draws the shop-count SVG (`role="img"`) for the UTC days it is given. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="shop-activity-chart-bar"`. No goal line.
 - **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
 - **Returns / side effects:** SVG figure. No network.
-- **Used by:** `StatisticsScreen`.
+- **Used by:** `StatisticsScreen` (30 days) and `GrantGoalsScreen` (the last 7 days).
 
 ## Function: PeopleCountChart
 
@@ -4111,7 +4125,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
 - **Used by:** `GrantsPage`.
 
 ## Function: GrantGoalsPage
@@ -4123,9 +4137,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: GrantGoalsScreen
 
-- **Purpose:** Signed-in explanation of what has to stay true for the grant program to continue. Heading **Goals**, then the sentence that the program continues at 10 active shops, then the sentence that a shop is active when it has registered at least one transaction on 5 of 7 days. No chart and no live count. Renders `null` without a session.
-- **Inputs:** Session from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. No network.
+- **Purpose:** Signed-in grant goal. Heading **Goals**, the sentence that the program continues at 10 active shops, the sentence that a shop is active with at least one transaction on 5 of the last 7 days, and the sentence that defines a transaction as a till payment created at https://21.gifts/pos (creating it counts, including later expiry or cancel). When the load succeeds, shows how many shops meet that rule, the label **Shops per UTC day**, `ShopActivityChart` for those 7 days, and the note that the lighter bar is today still open. Loading and error (error sentence plus **Try again**) keep the heading and those sentences. Renders `null` without a session and does not fetch then.
+- **Inputs:** Session from `useAuthStore`; catalog and locale via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/goal` through `fetchGrantContinuation` only when a session exists. Does not call `fetchShopActivity`.
 - **Used by:** `GrantGoalsPage`.
 
 ## Function: FundingStatusCard

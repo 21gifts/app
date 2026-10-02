@@ -2959,16 +2959,28 @@ Moderator on `/grants` when the open-application load fails. Copy **Could not lo
 
 ## Screen: /grants/goals
 
-- **Purpose:** Signed-in explanation of what has to stay true for the 21 gifts grant program to continue. Two sentences only. No chart and no live count.
-- **Inputs:** Session via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read the two sentences. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Purpose:** Signed-in grant goal. States that the program continues at 10 active shops, that a shop is active with at least one transaction on 5 of the last 7 days, and what a transaction is. Shows how many shops meet that rule and a 7-day shop chart. The chart is not the public statistics series.
+- **Inputs:** Session via `OnboardingGate screen="profile"` / `useAuthStore`. `GET /funding/goal` when a session exists.
+- **Actions:** Read the goal, the transaction definition, the qualifying count, and the chart. **Try again** repeats the load after an error. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/goals` (`GrantGoalsPage`). The **Goals** link on `/grants` opens it.
 
 ### Variant: default
 
-Signed-in page. Heading **Goals**. Copy **The grant program continues when we reach 10 active shops.** and **A shop is active when it has registered at least one transaction on 5 of 7 days.**
+Signed-in page with the goal loaded. Heading **Goals**. Copy **The grant program continues when we reach 10 active shops.** A shop is active on 5 of the last 7 days. The transaction sentence names https://21.gifts/pos. The count and **Shops per UTC day** chart are shown. The lighter bar is today, still open.
 
 ![21.gifts grant goals](images/grants-goals.png)
+
+### Variant: loading
+
+Signed-in page while `GET /funding/goal` has not returned. Heading, the 10-shop sentence, the 5-of-the-last-7 sentence, and the transaction sentence stay. The measurement says **Loading…**. No chart. Needle `state-grants-goals-loading`.
+
+![21.gifts grant goals loading](images/grants-goals-loading.png)
+
+### Variant: error
+
+Signed-in page when `GET /funding/goal` fails. Heading and the three sentences stay. Copy **Could not load the shop goal. Please try again.** and button **Try again**. No chart. Needle `state-grants-goals-error`.
+
+![21.gifts grant goals error](images/grants-goals-error.png)
 
 ## Screen: /profile/apply
 

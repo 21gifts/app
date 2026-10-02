@@ -2424,6 +2424,20 @@ export const SCREEN_VARIANTS = [
     needle: 'The grant program continues when we reach 10 active shops.',
   },
   {
+    route: '/grants/goals',
+    id: 'loading',
+    image: 'grants-goals-loading.png',
+    visual: 'state-grants-goals-loading',
+    needle: 'state-grants-goals-loading',
+  },
+  {
+    route: '/grants/goals',
+    id: 'error',
+    image: 'grants-goals-error.png',
+    visual: 'state-grants-goals-error',
+    needle: 'state-grants-goals-error',
+  },
+  {
     route: '/profile/apply',
     id: 'redirect',
     image: 'profile-apply.png',

@@ -1083,9 +1083,9 @@ Handbook states: not-verified, pending, trial, admitted, funding-program-open, o
 
 ### `/grants/goals`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card` `surface={false}` → **h1** **Goals**. Two sentences: the grant program continues when we reach 10 active shops, and a shop is active when it has registered at least one transaction on 5 of 7 days. No chart and no count. Signed-in members open it from **Goals** on `/grants`.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card` `maxWidth="xl"` `surface={false}` → **h1** **Goals**. The grant program continues at 10 active shops. A shop is active with at least one transaction on 5 of the last 7 days. A transaction is a till payment the assigned member created at https://21.gifts/pos that UTC day; creating it counts, including later expiry or cancel. The measurement panel reuses the statistics chart shell: how many shops meet the rule, **Shops per UTC day**, `ShopActivityChart` for those 7 UTC days (lighter bar is today, still open), or **Loading…**, or the error sentence plus **Try again**. It calls `GET /funding/goal`, not `GET /shops/activity`. Signed-in members open it from **Goals** on `/grants`. No session renders nothing and does not fetch.
 
-Handbook states: default.
+Handbook states: default, loading, error.
 
 ### `/grants/apply`
 

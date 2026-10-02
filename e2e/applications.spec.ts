@@ -138,14 +138,31 @@ test('Function: GrantGoalsPage — signed-in goals page explains the shop target
   ).toBeVisible();
 });
 
-test('Function: GrantGoalsScreen — a shop is active on 5 of 7 days', async ({ page }) => {
+test('Function: GrantGoalsScreen — a shop is active on 5 of the last 7 days', async ({ page }) => {
   await seedAdaSession(page, 'basis');
   await page.goto('/grants/goals');
   await expect(
     page.getByText(
-      'A shop is active when it has registered at least one transaction on 5 of 7 days.',
+      'A shop is active when it has at least one transaction on 5 of the last 7 days.',
     ),
   ).toBeVisible();
+  await expect(page.getByText(/https:\/\/21\.gifts\/pos/)).toBeVisible();
+});
+
+test('Function: fetchGrantContinuation — the goals page shows shops that meet the rule', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  await page.goto('/grants/goals');
+  await expect(page.getByText('0 shops meet this')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Shops per UTC day' })).toBeVisible();
+});
+
+test('Function: proxyFundingGoalGet — GET /funding/goal without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/funding/goal');
+  expect(res.status()).toBe(401);
 });
 
 test('Function: fetchFundingApplications — staff see an applicant row', async ({ page }) => {
