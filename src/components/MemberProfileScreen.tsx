@@ -986,7 +986,9 @@ export function MemberProfileScreen({
           ? 'tooLong'
           : isRateLimitError(err)
             ? 'rateLimit'
-            : 'request',
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
       );
     } finally {
       setReplyPosting(false);

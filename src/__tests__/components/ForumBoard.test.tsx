@@ -2252,6 +2252,30 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
   });
 
+  it('shows the author-wallet alert in the reply composer when replyFormError is authorWallet', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyFormError="authorWallet"
+        {...modeProps('all')}
+      />,
+    );
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe("The author's wallet cannot receive this Bitcoin payment");
+    expect(alert.closest('form')).toBe(screen.getByLabelText('Your reaction').closest('form'));
+  });
+
   it('shows pay author-wallet error', () => {
     renderWithLocale(
       <ForumBoard

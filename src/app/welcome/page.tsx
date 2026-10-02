@@ -29,7 +29,7 @@ function WelcomeTopRight(): ReactElement {
 }
 
 /**
- * `/welcome` — shown when name, address, and living-room rules agreement are saved.
+ * `/welcome` — shown when name, username, and living-room rules agreement are saved.
  *
  * @returns The welcome screen.
  */

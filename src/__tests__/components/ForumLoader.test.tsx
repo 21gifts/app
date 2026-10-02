@@ -7058,6 +7058,19 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('maps a paid-reply invoice the author wallet cannot receive onto the author-wallet error', async () => {
+    invoiceMock.mockRejectedValue(new CannotReceiveError());
+    await expandForeignAndPayReply('Hi Bob', '21');
+    const form = screen.getByLabelText('Your reaction').closest('form')!;
+    await waitFor(() => {
+      expect(within(form).getByRole('alert').textContent).toBe(
+        "The author's wallet cannot receive this Bitcoin payment",
+      );
+    });
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText('Could not post your message')).toBeNull();
+  });
+
   it('maps a deleted paid-reply invoice onto the deleted-note error', async () => {
     invoiceMock.mockRejectedValue(new NoteDeletedError());
     await expandForeignAndPayReply('Hi Bob', '21');

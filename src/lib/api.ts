@@ -1653,7 +1653,7 @@ export async function deleteDailyRosterRecipient(
  * Fetches given and received activity for the signed-in account.
  *
  * Hits same-origin `GET /me/activity` (Bearer). Totals include house gifts and
- * forum zaps and do not require a Lightning Address.
+ * forum zaps and do not require a verified wallet.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @returns The {@link AccountActivity} payload.

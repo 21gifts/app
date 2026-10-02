@@ -15,7 +15,7 @@ const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 /**
  * Client loader for `/members/[accountId]`: validates the id, fetches the
  * member profile, then given/received activity for the chart (even when the
- * Lightning Address is blank). An activity fetch failure that is not
+ * member has no wallet yet). An activity fetch failure that is not
  * `MissingRequirementsError` keeps the card and sets `activityFailed`.
  *
  * @param props - Dynamic route `accountId`.

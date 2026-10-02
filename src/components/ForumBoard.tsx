@@ -101,8 +101,11 @@ export type ForumFormError =
   | 'ask'
   | null;
 
-/** Reply composer validation; `amount` is the paid-reply sats field. */
-export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
+/**
+ * Reply composer validation; `amount` is the paid-reply sats field and
+ * `authorWallet` means the note author's wallet cannot take the paid reply.
+ */
+export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted' | 'authorWallet';
 
 /** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
 function editStillUrls(
@@ -1682,6 +1685,11 @@ export function ForumBoard({
                           {replyFormError === 'deleted' ? (
                             <p role="alert" className="text-center text-sm text-app-danger">
                               {t('forum.errorNoteDeleted')}
+                            </p>
+                          ) : null}
+                          {replyFormError === 'authorWallet' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.payErrorAuthorWallet')}
                             </p>
                           ) : null}
                         </form>
