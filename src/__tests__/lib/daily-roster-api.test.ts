@@ -12,6 +12,7 @@ import {
 const ROSTER = {
   comment: 'Daily gift',
   paymentsEnabled: true,
+  defaultAmountUsd: 4,
   recipients: [{ address: 'ada@example.com', amountUsd: 1 }],
 };
 

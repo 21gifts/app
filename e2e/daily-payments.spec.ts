@@ -3,6 +3,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 const ROSTER = {
   comment: 'Daily gift',
   paymentsEnabled: true,
+  defaultAmountUsd: 1,
   recipients: [
     { address: 'ada@walletofsatoshi.com', amountUsd: 1 },
     { address: 'bob@example.com', amountUsd: 0.3 },
@@ -12,6 +13,7 @@ const ROSTER = {
 const EMPTY_ROSTER = {
   comment: '',
   paymentsEnabled: true,
+  defaultAmountUsd: 1,
   recipients: [] as Array<{ address: string; amountUsd: number }>,
 };
 
@@ -126,6 +128,9 @@ test('Function: DailyPaymentsPage — founder opens /grants/payments', async ({ 
   });
   await page.goto('/grants/payments');
   await expect(page.getByRole('heading', { name: 'Daily payments' })).toBeVisible();
+  await expect(
+    page.getByText('Everyone in the grant program receives $1.00 by default.'),
+  ).toBeVisible();
   await expect(page.getByText('ada@w...')).toBeVisible();
 });
 

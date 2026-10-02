@@ -976,6 +976,8 @@ const en = {
   'funding.applications.listLabel': 'Open grant applications',
   'funding.applications.error': 'Could not load open applications. Please try again.',
   'funding.daily.heading': 'Daily payments',
+  'funding.daily.defaultNote':
+    'Everyone in the grant program receives {amount} by default. This page is only for entering a different amount by hand for someone who is eligible, and someone who should receive the default does not need to be on this list.',
   'funding.daily.link': 'Daily payments',
   'funding.daily.forbidden': 'You cannot change daily payments.',
   'funding.daily.commentLabel': 'Comment',
@@ -2032,6 +2034,8 @@ const de = {
   'funding.applications.error':
     'Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'funding.daily.heading': 'Tägliche Zahlungen',
+  'funding.daily.defaultNote':
+    'Wer am Förderprogramm teilnimmt, erhält standardmäßig {amount}. Diese Seite dient nur dazu, für eine berechtigte Person einen anderen Betrag von Hand einzutragen, und wer den Standardbetrag bekommen soll, muss nicht auf dieser Liste stehen.',
   'funding.daily.link': 'Tägliche Zahlungen',
   'funding.daily.forbidden': 'Du kannst die täglichen Zahlungen nicht ändern.',
   'funding.daily.commentLabel': 'Kommentar',
@@ -3070,6 +3074,8 @@ const es = {
   'funding.applications.error':
     'No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo.',
   'funding.daily.heading': 'Pagos diarios',
+  'funding.daily.defaultNote':
+    'Quien participa en la beca recibe {amount} por defecto. Esta página solo sirve para anotar a mano otro importe de una persona con derecho, y quien deba recibir el importe por defecto no tiene que estar en esta lista.',
   'funding.daily.link': 'Pagos diarios',
   'funding.daily.forbidden': 'No puedes cambiar los pagos diarios.',
   'funding.daily.commentLabel': 'Comentario',
@@ -4114,6 +4120,8 @@ const fil = {
   'funding.applications.listLabel': 'Mga bukas na grant application',
   'funding.applications.error': 'Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit.',
   'funding.daily.heading': 'Araw-araw na bayad',
+  'funding.daily.defaultNote':
+    'Ang bawat kalahok sa grant program ay tumatanggap ng {amount} bilang default. Ang pahinang ito ay para lamang maglagay ng ibang halaga para sa isang karapat-dapat, at hindi kailangang nasa listahang ito ang dapat tumanggap ng default.',
   'funding.daily.link': 'Araw-araw na bayad',
   'funding.daily.forbidden': 'Hindi mo mababago ang araw-araw na bayad.',
   'funding.daily.commentLabel': 'Komento',

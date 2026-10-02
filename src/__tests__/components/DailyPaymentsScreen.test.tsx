@@ -57,6 +57,7 @@ const account: Account = {
 const ROSTER: DailyRoster = {
   comment: 'Daily gift',
   paymentsEnabled: true,
+  defaultAmountUsd: 4,
   recipients: [
     { address: 'Ada@WalletOfSatoshi.com', amountUsd: 1 },
     { address: 'bob@example.com', amountUsd: 0.1 },
@@ -178,6 +179,11 @@ describe('DailyPaymentsScreen', () => {
     expect(screen.getByText('bob@example.com')).toBeTruthy();
     expect(screen.getByText('nolocal')).toBeTruthy();
     expect(screen.getByText('$1.30')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Everyone in the grant program receives $4.00 by default. This page is only for entering a different amount by hand for someone who is eligible, and someone who should receive the default does not need to be on this list.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Update')).toBeNull();
@@ -190,6 +196,7 @@ describe('DailyPaymentsScreen', () => {
     fetchMock.mockResolvedValueOnce({
       comment: 'Daily gift',
       paymentsEnabled: true,
+      defaultAmountUsd: 4,
       recipients: [
         { address: 'ada@notwalletofsatoshi.com', amountUsd: 1 },
         { address: 'ada@walletofsatoshi.com.evil', amountUsd: 2 },
