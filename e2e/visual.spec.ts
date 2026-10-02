@@ -12010,6 +12010,7 @@ test.describe('profile funding states', () => {
       });
     });
     await page.goto('/grants');
+    await expect(page.getByRole('link', { name: 'Goals', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Daily payment text', exact: true })).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Daily payment amounts', exact: true }),
