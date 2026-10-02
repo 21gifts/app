@@ -406,6 +406,19 @@ describe('payments', () => {
     await expect(conn.parse('bitcoin:')).resolves.toEqual({ type: 'unsupported' });
   });
 
+  it('parse refuses a BIP21 URI that names an asset', async () => {
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bip21',
+      assetId: 'btkn1',
+      amountSat: 21,
+      paymentMethods: [{ type: 'sparkAddress', address: 'sp1asset' }],
+    });
+    const conn = await connection();
+    await expect(conn.parse('bitcoin:?sp=sp1asset&assetid=btkn1')).resolves.toEqual({
+      type: 'unsupported',
+    });
+  });
+
   it('parse takes the BIP21 amount for a method without one', async () => {
     sdkPay.parse.mockResolvedValueOnce({
       type: 'bip21',

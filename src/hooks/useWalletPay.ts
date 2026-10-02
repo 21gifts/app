@@ -53,6 +53,33 @@ type Phase =
   | 'unconfirmed'
   | 'failed';
 
+/** The invoice and sheet amount a prepared send belongs to. */
+interface PreparedKey {
+  input: string;
+  amountSats: number;
+}
+
+/** A prepared send together with the invoice and amount it was prepared for. */
+interface PreparedSend extends PreparedKey {
+  send: () => Promise<WalletSendResult>;
+}
+
+/**
+ * Whether a prepared send belongs to the invoice and amount the sheet shows now.
+ *
+ * @param key - Prepared send or its key, or `null`.
+ * @param input - Current request text, or `null`.
+ * @param amountSats - Current sheet amount.
+ * @returns `true` only for a prepared send of this invoice and amount.
+ */
+function preparedMatches<T extends PreparedKey>(
+  key: T | null,
+  input: string | null,
+  amountSats: number,
+): key is T {
+  return key !== null && key.input === input && key.amountSats === amountSats;
+}
+
 const VISUAL_VIEWS: Record<string, WalletPayView> = {
   'wallet-pay-unlock': 'unlock',
   'wallet-pay-preparing': 'preparing',
@@ -90,7 +117,8 @@ function visualView(): WalletPayView | null {
  * After `insufficient`, a balance above the one held when that prepare or send
  * started, or the lowest one seen since (or a first known balance), prepares
  * again; a send is never retried on its own. A new `sparkInvoice` or a new
- * `amountSats` starts over. Visual pins (`?visual=wallet-pay-…`) apply only in
+ * `amountSats` starts over, and a send prepared for an earlier one is never
+ * shown or paid. Visual pins (`?visual=wallet-pay-…`) apply only in
  * a Playwright build, only with a `sparkInvoice`, and leave the actions inert.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
@@ -106,7 +134,8 @@ export function useWalletPay(
   const account = useAuthStore((state) => state.account);
   const [phase, setPhase] = useState<Phase>('idle');
   const [feeSats, setFeeSats] = useState<number | null>(null);
-  const sendRef = useRef<(() => Promise<WalletSendResult>) | null>(null);
+  const sendRef = useRef<PreparedSend | null>(null);
+  const [preparedFor, setPreparedFor] = useState<PreparedKey | null>(null);
   const generation = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insufficientBalance = useRef<number | null>(null);
@@ -146,7 +175,8 @@ export function useWalletPay(
       if (result.kind === 'confirm' && result.amountSats !== amountSats) {
         setPhase('failed');
       } else if (result.kind === 'confirm') {
-        sendRef.current = result.send;
+        sendRef.current = { send: result.send, input, amountSats };
+        setPreparedFor({ input, amountSats });
         setFeeSats(result.feeSats);
         setPhase('confirm');
       } else if (result.kind === 'insufficient') {
@@ -201,10 +231,11 @@ export function useWalletPay(
   }, [pinned, phase]);
 
   const pay = useCallback((): void => {
-    const send = sendRef.current;
-    if (pinned !== null || phase !== 'confirm' || send === null) {
+    const prepared = sendRef.current;
+    if (pinned !== null || phase !== 'confirm' || !preparedMatches(prepared, input, amountSats)) {
       return;
     }
+    const send = prepared.send;
     sendRef.current = null;
     const run = generation.current;
     const balanceBefore = useWalletStore.getState().balanceSats;
@@ -225,15 +256,17 @@ export function useWalletPay(
         }
       }, WALLET_PAY_CONFIRM_WAIT_MS);
     });
-  }, [pinned, phase]);
+  }, [pinned, phase, input, amountSats]);
 
   if (pinned !== null) {
     return { view: pinned, feeSats: 0, unlock, pay };
   }
   let view: WalletPayView;
   switch (phase) {
-    case 'preparing':
     case 'confirm':
+      view = preparedMatches(preparedFor, input, amountSats) ? 'confirm' : 'preparing';
+      break;
+    case 'preparing':
     case 'paying':
     case 'insufficient':
     case 'unconfirmed':

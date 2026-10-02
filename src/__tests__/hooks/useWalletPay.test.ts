@@ -221,6 +221,33 @@ describe('useWalletPay guards', () => {
     expect(result.current.view).toBe('fallback');
   });
 
+  it('never pays or shows a confirm prepared for another invoice or amount, even before the reset runs', async () => {
+    const oldSend = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(payFromWallet).mockImplementation(async () => confirmWith(oldSend));
+    for (const next of [
+      { input: SPARK, sats: 42 },
+      { input: 'spark1other', sats: 21 },
+    ]) {
+      const seen: string[] = [];
+      const { result, rerender } = renderHook(
+        ({ input, sats }) => {
+          const slot = useWalletPay(input, sats);
+          if (input !== SPARK || sats !== 21) {
+            seen.push(slot.view);
+            slot.pay();
+          }
+          return slot;
+        },
+        { initialProps: { input: SPARK, sats: 21 } },
+      );
+      await act(async () => undefined);
+      expect(result.current.view).toBe('confirm');
+      rerender(next);
+      expect(seen[0]).toBe('preparing');
+      expect(oldSend).not.toHaveBeenCalled();
+    }
+  });
+
   it('starts over when the sheet amount changes for the same invoice', async () => {
     const oldSend = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     vi.mocked(payFromWallet)

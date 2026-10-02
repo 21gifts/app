@@ -211,7 +211,8 @@ export interface WalletLnurlRequest {
  *   `commentMaxLength` characters (`0` means no comment).
  * - `onchain`: a Bitcoin address on the base chain, not supported yet.
  * - `unsupported`: anything else the SDK recognised but the app does not pay,
- *   including a BOLT11 request for less than one whole sat.
+ *   including a BOLT11 request for less than one whole sat and a BIP21 URI
+ *   that names an asset (a token, not Bitcoin).
  */
 export type WalletTarget =
   | {
@@ -291,7 +292,7 @@ type ParsedInput =
   | { type: 'lightningAddress'; address: string; payRequest: LnurlDetails }
   | ({ type: 'lnurlPay' } & LnurlDetails)
   | { type: 'bitcoinAddress' }
-  | { type: 'bip21'; amountSat?: number; paymentMethods: ParsedInput[] }
+  | { type: 'bip21'; amountSat?: number; assetId?: string; paymentMethods: ParsedInput[] }
   | { type: string };
 
 /** Narrow view of the SDK's pay-request details. */
@@ -351,6 +352,9 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
       return { type: 'onchain' };
     case 'bip21': {
       const bip21 = parsed as Extract<ParsedInput, { type: 'bip21' }>;
+      if (bip21.assetId !== undefined) {
+        return { type: 'unsupported' };
+      }
       const methods = bip21.paymentMethods;
       let onchain = false;
       for (const method of methods) {
