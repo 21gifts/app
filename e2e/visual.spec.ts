@@ -1995,6 +1995,38 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-confirm-sending');
   });
 
+  test('wallet send-input-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-input-busy');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send
+      .getByPlaceholder('Paste a Bitcoin payment request or address')
+      .fill('bob@example.com');
+    await send.getByRole('button', { name: 'Continue' }).click();
+    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(
+      send.getByPlaceholder('Paste a Bitcoin payment request or address'),
+    ).toBeDisabled();
+    await shotScreen(page, 'state-wallet-send-input-busy');
+  });
+
+  test('wallet send-amount-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount-busy');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send.getByLabel('Amount').fill('2100');
+    await send.getByRole('button', { name: 'Continue' }).click();
+    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(send.getByLabel('Amount')).toBeDisabled();
+    await shotScreen(page, 'state-wallet-send-amount-busy');
+  });
+
   test('wallet send-error', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-error');

@@ -120,8 +120,10 @@ function visualState(name: string | null): WalletSendState | null {
   };
   switch (name) {
     case 'send-input':
+    case 'send-input-busy':
       return { step: 'input', error: null };
     case 'send-amount':
+    case 'send-amount-busy':
       return { step: 'amount', target: lnurl, amountError: false };
     case 'send-amount-error':
       return { step: 'amount', target: lnurl, amountError: true };
@@ -176,7 +178,8 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
  * shows that it is not supported yet. A receiver whose server this browser
  * cannot reach shows a plain error. Nothing is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
- * actions inert. When the wallet leaves `ready`, an open amount or confirm
+ * actions inert; under `send-input-busy` and `send-amount-busy`, **Continue**
+ * only marks that step busy. When the wallet leaves `ready`, an open amount or confirm
  * step and any read or prepare in flight are dropped (a send in flight is
  * kept), so a later reconnect starts at the input.
  *
@@ -185,6 +188,7 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
 export function useWalletSend(): UseWalletSendResult {
   const [state, setState] = useState<WalletSendState>({ step: 'input', error: null });
   const [busy, setBusy] = useState(false);
+  const [pinBusy, setPinBusy] = useState(false);
   const [text, setTextState] = useState('');
   const [comment, setComment] = useState('');
   const sendRef = useRef<(() => Promise<WalletSendResult>) | null>(null);
@@ -249,7 +253,11 @@ export function useWalletSend(): UseWalletSendResult {
   }, []);
 
   const submitInput = useCallback((): void => {
-    if (pinned !== null || busy || state.step !== 'input') {
+    if (pinned !== null) {
+      setPinBusy(pin === 'send-input-busy');
+      return;
+    }
+    if (busy || state.step !== 'input') {
       return;
     }
     const run = generation.current;
@@ -292,11 +300,15 @@ export function useWalletSend(): UseWalletSendResult {
       setComment('');
       setState({ step: 'amount', target, amountError: false });
     });
-  }, [pinned, busy, state.step, text, prepare]);
+  }, [pin, pinned, busy, state.step, text, prepare]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {
-      if (pinned !== null || busy || state.step !== 'amount') {
+      if (pinned !== null) {
+        setPinBusy(pin === 'send-amount-busy');
+        return;
+      }
+      if (busy || state.step !== 'amount') {
         return;
       }
       const target = state.target;
@@ -320,7 +332,7 @@ export function useWalletSend(): UseWalletSendResult {
       }
       prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
     },
-    [pinned, busy, state, comment, prepare],
+    [pin, pinned, busy, state, comment, prepare],
   );
 
   const confirm = useCallback((): void => {
@@ -366,7 +378,7 @@ export function useWalletSend(): UseWalletSendResult {
 
   return {
     state: pinned ?? state,
-    busy: pinned === null ? busy : pin === 'send-confirm-sending',
+    busy: pinned === null ? busy : pin === 'send-confirm-sending' || pinBusy,
     text,
     setText,
     comment,

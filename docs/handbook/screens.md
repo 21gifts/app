@@ -350,6 +350,18 @@ Pinned fixture (`?visual=send-confirm-sending`, Playwright builds only). The con
 
 ![21.gifts wallet send confirm sending](images/wallet-send-confirm-sending.png)
 
+### Variant: send-input-busy
+
+Pinned fixture (`?visual=send-input-busy`, Playwright builds only). The input step while the pasted text is read: `bob@example.com` in the disabled **Payment request or address** field and **Continue** disabled with a spinner.
+
+![21.gifts wallet send input busy](images/wallet-send-input-busy.png)
+
+### Variant: send-amount-busy
+
+Pinned fixture (`?visual=send-amount-busy`, Playwright builds only). The amount step while the payment is prepared: **To bob@example.com**, `2100` in the disabled amount field with $2.10 under it, and **Continue** disabled with a spinner.
+
+![21.gifts wallet send amount busy](images/wallet-send-amount-busy.png)
+
 ## Screen: /wallet/phrase
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.

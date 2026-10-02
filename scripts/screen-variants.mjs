@@ -471,6 +471,20 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-wallet-send-confirm-sending')",
   },
   {
+    route: '/wallet',
+    id: 'send-input-busy',
+    image: 'wallet-send-input-busy.png',
+    visual: 'state-wallet-send-input-busy',
+    needle: "shotScreen(page, 'state-wallet-send-input-busy')",
+  },
+  {
+    route: '/wallet',
+    id: 'send-amount-busy',
+    image: 'wallet-send-amount-busy.png',
+    visual: 'state-wallet-send-amount-busy',
+    needle: "shotScreen(page, 'state-wallet-send-amount-busy')",
+  },
+  {
     route: '/wallet/phrase',
     id: 'default',
     image: 'wallet-phrase-add.png',

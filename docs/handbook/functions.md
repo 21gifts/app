@@ -2829,7 +2829,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Client hook returning `{ locale, t }` from the nearest `LocaleProvider`.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active locale and a `t(key, vars?)` bound to that catalog. Throws if used outside `LocaleProvider`.
-- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `WalletBalance`.
+- **Used by:** `MarketingHeader`, `LanguageSwitcher`, `LoginCard`, `LightningAddressForm`, `ForumBoard`, `NameForm`, `HandbookCopyLink`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `WalletBalance`, `WalletPay`, `WalletSend`.
 
 ## Function: useNumberFormat
 
@@ -3948,7 +3948,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Drives the `/wallet` send flow. Paste, then `parseWalletInput`. A request with an amount is prepared at once. A request or address without an amount asks for an amount (1 sat upward); a Lightning address or LNURL receiver asks for an amount within its bounds and, when it takes one, a comment cut to its limit. Confirm shows amount, fee, and recipient; **Send** pays once. A base-chain address shows that it is not supported yet. Unreadable text, a recognised request this wallet cannot pay yet, an unreachable receiver, a failed prepare or send, and a low balance return to the input with an alert. Nothing is retried. Cancel and the header Back close the amount, confirm, or sent step; while a confirm send is in flight, both keep the confirm step. When the wallet leaves `ready`, an open amount or confirm step and any read or prepare in flight are dropped and the flow returns to the input; a send in flight is kept.
 - **Inputs:** None.
-- **Returns / side effects:** `{ state, busy, text, setText, comment, setComment, submitInput, submitAmount, confirm, cancel }`. `state.step` is `input` (with `error`), `amount`, `confirm`, or `sent`. `?visual=send-input|send-amount|send-amount-error|send-amount-request|send-amount-min|send-confirm|send-confirm-sending|send-sent|send-onchain|send-unsupported|send-invalid|send-failed|send-insufficient|send-error` pins a fixture step (recipient `bob@example.com`, `₿2'100`, fee `₿0`; the request target is `sp1qexample…a9f2`) for screenshots, only in a Playwright build; `send-confirm-sending` also reports a send in flight; actions are inert while pinned.
+- **Returns / side effects:** `{ state, busy, text, setText, comment, setComment, submitInput, submitAmount, confirm, cancel }`. `state.step` is `input` (with `error`), `amount`, `confirm`, or `sent`. `?visual=send-input|send-amount|send-amount-error|send-amount-request|send-amount-min|send-confirm|send-confirm-sending|send-input-busy|send-amount-busy|send-sent|send-onchain|send-unsupported|send-invalid|send-failed|send-insufficient|send-error` pins a fixture step (recipient `bob@example.com`, `₿2'100`, fee `₿0`; the request target is `sp1qexample…a9f2`) for screenshots, only in a Playwright build; `send-confirm-sending` also reports a send in flight; actions are inert while pinned, except that under `send-input-busy` and `send-amount-busy` **Continue** marks that step busy.
 - **Used by:** `WalletScreen`.
 
 ## Function: walletSendBounds

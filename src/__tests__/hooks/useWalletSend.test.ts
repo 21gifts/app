@@ -439,6 +439,35 @@ describe('useWalletSend visual pins', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
+  it('pins send-input-busy and send-amount-busy, whose Continue only marks the step busy', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet?visual=send-input-busy');
+    const input = renderHook(() => useWalletSend()).result;
+    expect(input.current.state).toEqual({ step: 'input', error: null });
+    expect(input.current.busy).toBe(false);
+    act(() => {
+      input.current.submitAmount(21);
+    });
+    expect(input.current.busy).toBe(false);
+    act(() => {
+      input.current.submitInput();
+    });
+    expect(input.current.busy).toBe(true);
+    window.history.replaceState({}, '', '/wallet?visual=send-amount-busy');
+    const amount = renderHook(() => useWalletSend()).result;
+    expect(amount.current.state.step).toBe('amount');
+    act(() => {
+      amount.current.submitInput();
+    });
+    expect(amount.current.busy).toBe(false);
+    act(() => {
+      amount.current.submitAmount(21);
+    });
+    expect(amount.current.busy).toBe(true);
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
   it('ignores pins outside a Playwright build and unknown values', () => {
     window.history.replaceState({}, '', '/wallet?visual=send-confirm');
     expect(renderHook(() => useWalletSend()).result.current.state.step).toBe('input');
