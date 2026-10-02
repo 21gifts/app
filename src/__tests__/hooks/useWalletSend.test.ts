@@ -442,6 +442,43 @@ describe('useWalletSend wallet status', () => {
     expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
+  it('returns an idle confirm step to the input when the wallet leaves ready', async () => {
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.state.step).toBe('confirm');
+    setStatus('locked');
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    act(() => {
+      result.current.confirm();
+    });
+    expect(result.current.busy).toBe(false);
+  });
+
+  it('drops a prepare in flight on the amount step when the wallet leaves ready', async () => {
+    target(LNURL);
+    let finish: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@pay.example');
+    act(() => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.busy).toBe(true);
+    setStatus('locked');
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    await act(async () => {
+      finish(confirmWith(async () => ({ kind: 'paid' })));
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
   it('drops a read in flight when the wallet leaves ready', async () => {
     let finish: (value: Awaited<ReturnType<typeof parseWalletInput>>) => void = () => undefined;
     vi.mocked(parseWalletInput).mockReturnValue(
