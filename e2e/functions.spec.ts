@@ -9940,7 +9940,7 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   await expect.poll(() => notificationGets).toBeGreaterThan(0);
   const beforeThread = notificationGets;
-  await page.getByRole('button', { name: '21.gifts', exact: true }).click();
+  await page.getByRole('button').filter({ hasText: 'Hello team' }).click();
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
   await expect.poll(() => notificationGets).toBeGreaterThan(beforeThread);
 });

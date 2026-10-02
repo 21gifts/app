@@ -491,11 +491,15 @@ test('opening the inbox acknowledges listed messages before opening a thread', a
   await page.goto('/messages');
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   await expect.poll(() => readPosts.length).toBe(1);
-  await expect(page.getByRole('button', { name: '21.gifts', exact: true })).toBeVisible();
+  await expect(page.getByRole('button').filter({ hasText: 'Hello team' })).toBeVisible();
+  await expect(page.getByRole('button').filter({ hasText: 'Hello team' })).not.toHaveAttribute(
+    'aria-label',
+    /unread/,
+  );
   const readPost = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
   );
-  await page.getByRole('button', { name: '21.gifts', exact: true }).click();
+  await page.getByRole('button').filter({ hasText: 'Hello team' }).click();
   await readPost;
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
   expect(readPosts).toHaveLength(2);
