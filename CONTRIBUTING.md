@@ -207,7 +207,7 @@ app/
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
-│   │   ├── WalletScreen.tsx     # Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
+│   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase into WalletScreenView (balance, receive, recovery entry)
 │   │   ├── WalletScreenView.tsx # Wallet card and the visible one-step Back
 │   │   ├── WalletBalance.tsx    # /wallet balance block (locked / connecting / ready / error)
 │   │   ├── WalletSync.tsx       # Root-mounted listenForWalletPhrase effect (renders nothing)
