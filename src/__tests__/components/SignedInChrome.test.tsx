@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
-import { SignedInChrome } from '@/components/SignedInChrome';
+import { SignedInChrome, wideMenuSticksOut } from '@/components/SignedInChrome';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
   fetchAccountActivity,
@@ -980,6 +980,7 @@ describe('SignedInChrome', () => {
   it('drops the wide menu outer spacing when it would stick out of a 720px window', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    let bottom = 751;
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
     HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
       return {
@@ -990,7 +991,7 @@ describe('SignedInChrome', () => {
         right: 0,
         width: 0,
         height: 0,
-        bottom: 751,
+        bottom,
         toJSON() {
           return {};
         },
@@ -1014,6 +1015,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('overflow-auto');
       expect(panel.className).not.toContain('max-h-');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      bottom = 700;
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(panel.className).toContain('mt-2');
+      expect(panel.className).toContain('p-2');
+      expect(panel.className).not.toContain('mt-0');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1058,5 +1065,40 @@ describe('SignedInChrome', () => {
       }
       HTMLElement.prototype.getBoundingClientRect = previousRect;
     }
+  });
+
+  it('returns whether a wide menu sticks out of the window', () => {
+    expect(wideMenuSticksOut(null, 720)).toBe(false);
+    const menu = document.createElement('div');
+    menu.getBoundingClientRect = (): DOMRect =>
+      ({
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: 751,
+        toJSON() {
+          return {};
+        },
+      }) as DOMRect;
+    expect(wideMenuSticksOut(menu, 720)).toBe(true);
+    menu.getBoundingClientRect = (): DOMRect =>
+      ({
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: 700,
+        toJSON() {
+          return {};
+        },
+      }) as DOMRect;
+    expect(wideMenuSticksOut(menu, 720)).toBe(false);
   });
 });
