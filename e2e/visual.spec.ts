@@ -18979,6 +18979,8 @@ test.describe('statistics screens', () => {
     await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
     await expect(page.getByText('People by UTC day')).toBeVisible();
     await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
     await shotStatistics(page);
     await shotScreen(page, 'screen-statistics');
   });
@@ -19029,6 +19031,8 @@ test.describe('statistics screens', () => {
     await page.goto('/statistics');
     await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
     await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
     await shotStatistics(page);
     await shotScreen(page, 'state-statistics-shop-error');
   });
@@ -19057,12 +19061,28 @@ test.describe('statistics screens', () => {
     await shotScreen(page, 'state-statistics-both-error');
   });
 
-  test('statistics forbidden', async ({ page }) => {
+  test('statistics member', async ({ page }) => {
     await seedAda(page, 'basis');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
     await page.goto('/statistics');
-    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toHaveCount(0);
     await shotStatistics(page);
-    await shotScreen(page, 'state-statistics-forbidden');
+    await shotScreen(page, 'state-statistics-member');
+  });
+
+  test('statistics staff-open', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await page.goto('/statistics');
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await page.getByText('Moderator functions').click();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-staff-open');
   });
 });
 

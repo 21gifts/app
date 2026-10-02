@@ -133,15 +133,24 @@ describe('StatisticsScreen', () => {
     expect(fetchShopMock).not.toHaveBeenCalled();
   });
 
-  it('shows forbidden copy for a basis account and does not fetch', () => {
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    renderWithLocale(<StatisticsScreen />);
-    expect(screen.getByRole('heading', { name: 'Statistics' })).toBeTruthy();
-    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
-    expect(screen.queryByText('People by UTC day')).toBeNull();
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(fetchShopMock).not.toHaveBeenCalled();
-  });
+  it.each(['basis', 'verified'] as const)(
+    'shows both charts for a %s account and does not show Moderator functions',
+    async (role) => {
+      fetchMock.mockResolvedValue(
+        statsWithDays([{ day: '2026-09-19', giftCount: 40, officialCount: 12 }]),
+      );
+      useAuthStore.setState({ session: 'sess', account: { ...account, role } });
+      renderWithLocale(<StatisticsScreen />);
+      await waitFor(() => {
+        expect(screen.getByText('People by UTC day')).toBeTruthy();
+        expect(screen.getByText('Shops by UTC day')).toBeTruthy();
+      });
+      expect(fetchMock).toHaveBeenCalled();
+      expect(fetchShopMock).toHaveBeenCalled();
+      expect(screen.queryByTestId('staff-functions')).toBeNull();
+      expect(screen.queryByText('This page is for moderators.')).toBeNull();
+    },
+  );
 
   it.each(['moderator', 'founder'] as const)(
     'shows the open chart for a %s account',
@@ -161,7 +170,12 @@ describe('StatisticsScreen', () => {
           'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count. The current UTC day is drawn lighter because it is still open.',
         ),
       ).toBeTruthy();
+      expect(screen.getByText('Moderator functions')).toBeTruthy();
       expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
+      fireEvent.click(screen.getByText('Moderator functions'));
+      expect(
+        screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href'),
+      ).toBe('/moderate/payouts');
       expect(screen.queryByRole('button', { name: /Goal/ })).toBeNull();
       expect(screen.queryByText('Tap to close')).toBeNull();
       expect(screen.queryByText('12%')).toBeNull();
@@ -182,6 +196,7 @@ describe('StatisticsScreen', () => {
     expect(
       within(screen.getByRole('group', { name: 'Active shops' })).queryByText('Loading…'),
     ).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
   });
 
@@ -201,6 +216,8 @@ describe('StatisticsScreen', () => {
     expect(
       within(screen.getByRole('group', { name: 'People paid' })).queryByText('Loading…'),
     ).toBeNull();
+    expect(screen.getByTestId('staff-functions')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
   });
 
   it('shows retry when payout stats fail to load', async () => {
@@ -211,6 +228,7 @@ describe('StatisticsScreen', () => {
       expect(screen.getByText('Could not load payouts. Please try again.')).toBeTruthy();
     });
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
     fetchMock.mockResolvedValue(EMPTY_STATS);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
@@ -250,6 +268,7 @@ describe('StatisticsScreen', () => {
     });
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     expect(screen.queryByText('People by UTC day')).toBeNull();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
   });
 
@@ -277,6 +296,8 @@ describe('StatisticsScreen', () => {
       expect(screen.getByText('Could not load shop activity. Please try again.')).toBeTruthy();
       expect(screen.getByText('People by UTC day')).toBeTruthy();
     });
+    expect(screen.getByTestId('staff-functions')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
     fetchShopMock.mockResolvedValue(shopActivityDays());
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Active shops' })).getByRole('button', {
@@ -297,13 +318,7 @@ describe('StatisticsScreen', () => {
       expect(screen.getByText('Could not load payouts. Please try again.')).toBeTruthy();
       expect(screen.getByText('Shops by UTC day')).toBeTruthy();
     });
-  });
-
-  it('does not fetch shop activity for a non-staff account', () => {
-    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
-    renderWithLocale(<StatisticsScreen />);
-    expect(fetchShopMock).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
   it('ignores payout and shop results that arrive after unmount', async () => {

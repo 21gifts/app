@@ -6,7 +6,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 import { StatisticsScreen } from '@/components/StatisticsScreen';
 
 /**
- * `/statistics` — signed-in daily funding-goal chart for staff.
+ * `/statistics` — measured statistics (people paid and shop activity) for every signed-in user, not a funding goal and not staff-only.
  *
  * Requires name + address + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page (Next.js forbids

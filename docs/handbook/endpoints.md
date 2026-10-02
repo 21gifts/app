@@ -132,15 +132,15 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, the staff people-count chart on `/statistics` (no goal), and the staff payout-goal widget on `/moderate`.
+- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, the people-count chart on `/statistics` (every signed-in role, no goal), and the staff payout-goal widget on `/moderate`.
 - **Auth:** Public.
 
 ## Endpoint: GET /shops/activity
 
-- **Purpose:** Same-origin proxy of api `GET /shops/activity` (staff shop-use counts, 30 UTC days).
-- **Errors:** Upstream 401/403/503, or 502 if the api is unreachable.
+- **Purpose:** Same-origin proxy of api `GET /shops/activity` (shop-use counts, 30 UTC days).
+- **Errors:** The proxy forwards the upstream status. Expected upstream errors are 401 without a session and 503 when shop activity is unavailable, or 502 if this proxy cannot reach the api.
 - **Used by:** `fetchShopActivity` on `/statistics`.
-- **Auth:** Bearer session forwarded; the api allows moderator and above.
+- **Auth:** Bearer session forwarded. StatisticsScreen calls it for every signed-in role.
 
 ## Endpoint: GET /lightning-address
 

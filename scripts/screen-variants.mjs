@@ -3034,10 +3034,17 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/statistics',
-    id: 'forbidden',
-    image: 'statistics-forbidden.png',
-    visual: 'state-statistics-forbidden',
-    needle: 'This page is for moderators.',
+    id: 'member',
+    image: 'statistics-member.png',
+    visual: 'state-statistics-member',
+    needle: 'state-statistics-member',
+  },
+  {
+    route: '/statistics',
+    id: 'staff-open',
+    image: 'statistics-staff-open.png',
+    visual: 'state-statistics-staff-open',
+    needle: 'state-statistics-staff-open',
   },
   {
     route: '/statistics',

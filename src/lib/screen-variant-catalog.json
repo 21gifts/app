@@ -2538,9 +2538,15 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/statistics:forbidden",
-    "label": "/statistics forbidden",
-    "visual": "state-statistics-forbidden",
+    "id": "/statistics:member",
+    "label": "/statistics member",
+    "visual": "state-statistics-member",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/statistics:staff-open",
+    "label": "/statistics staff-open",
+    "visual": "state-statistics-staff-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

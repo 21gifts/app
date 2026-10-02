@@ -102,6 +102,8 @@ test('Function: StatisticsPage — staff see the open people-count chart', async
   await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
   await expect(page.getByText('People by UTC day')).toBeVisible();
   await expect(page.getByText('Shops by UTC day')).toBeVisible();
+  await expect(page.getByText('Moderator functions')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
     'href',
@@ -109,21 +111,31 @@ test('Function: StatisticsPage — staff see the open people-count chart', async
   );
 });
 
-test('Function: StatisticsPage — basis visitors do not see Statistics in Menu', async ({
-  page,
-}) => {
+test('Function: StatisticsPage — basis visitors see Statistics in Menu', async ({ page }) => {
   await seedAdaSession(page, 'basis');
-  await page.goto('/statistics');
-  await page.getByRole('button', { name: 'Menu' }).click();
-  await expect(page.getByRole('link', { name: 'Statistics' })).toHaveCount(0);
-});
-
-test('Function: StatisticsScreen — basis visitors see the forbidden copy', async ({ page }) => {
-  await seedAdaSession(page, 'basis');
+  await stubPayoutGoal(page);
   await page.goto('/statistics');
   await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
-  await expect(page.getByText('This page is for moderators.')).toBeVisible();
-  await expect(page.getByText('People by UTC day')).toHaveCount(0);
+  await expect(page.getByText('People by UTC day')).toBeVisible();
+  await expect(page.getByText('This page is for moderators.')).toHaveCount(0);
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
+    'href',
+    '/statistics',
+  );
+});
+
+test('Function: StatisticsScreen — opening Moderator functions shows the payout link', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'founder');
+  await stubPayoutGoal(page);
+  await page.goto('/statistics');
+  await expect(page.getByText('Moderator functions')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
+  await page.getByText('Moderator functions').click();
+  await expect(page.getByRole('link', { name: 'Show payout per person' })).toBeVisible();
 });
 
 test('Function: StatisticsScreen — payout goal loading', async ({ page }) => {
