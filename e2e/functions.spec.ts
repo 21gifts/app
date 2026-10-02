@@ -1035,10 +1035,88 @@ test('Function: proxyNotificationsReadByMessagePost — POST /forum/notification
   expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
 });
 
-test('Function: markNotificationsReadForMessage — POST /forum/notifications/read-by-message without bearer is 401', async ({
-  request,
+test('Function: markNotificationsReadForMessage — opening a signed-in message page POSTs read-by-message', async ({
+  page,
 }) => {
-  expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+  const messageId = '11111111-1111-4111-8111-111111111111';
+  const noteText = 'Hello from Ada';
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${messageId}`, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (route.request().method() !== 'GET' || pathname !== `/forum/messages/${messageId}`) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: messageId,
+        name: 'Ada',
+        text: noteText,
+        createdAt: '2026-09-12T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${messageId}/replies`, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (route.request().method() !== 'GET' || pathname !== `/forum/messages/${messageId}/replies`) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(/\/forum\/notifications\/read-by-message$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, tags: [] }),
+    });
+  });
+  const readByMessage = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/forum/notifications/read-by-message'),
+  );
+  await page.goto(`/messages/${messageId}`);
+  const post = await readByMessage;
+  expect(post.method()).toBe('POST');
+  expect(post.headers()['authorization']).toBe('Bearer sess-e2e');
+  const body = post.postDataJSON() as { messageId?: unknown; endpoint?: unknown };
+  expect(body.messageId).toBe(messageId);
+  if ('endpoint' in body) {
+    expect(typeof body.endpoint).toBe('string');
+  }
+  await expect(page.getByText(noteText)).toBeVisible();
 });
 
 test('Function: pushTagForNotification — clicking a forum reply closes only that push tag', async ({
@@ -1103,9 +1181,7 @@ test('Function: pushTagForNotification — clicking a forum reply closes only th
   });
   await page.addInitScript(() => {
     if (
-      !Array.isArray(
-        (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
-      )
+      !Array.isArray((window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags)
     ) {
       (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags = [];
     }
@@ -1117,24 +1193,29 @@ test('Function: pushTagForNotification — clicking a forum reply closes only th
         {
           tag: 'forum_reply:r1',
           close: () => {
-            (window as unknown as { __e2eClosedPushTags?: string[] })
-              .__e2eClosedPushTags?.push('forum_reply:r1');
+            (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags?.push(
+              'forum_reply:r1',
+            );
           },
         },
         {
           tag: 'other',
           close: () => {
-            (window as unknown as { __e2eClosedPushTags?: string[] })
-              .__e2eClosedPushTags?.push('other');
+            (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags?.push(
+              'other',
+            );
           },
         },
       ],
     };
+    const serviceWorker = {
+      addEventListener() {},
+      removeEventListener() {},
+      getRegistration: async () => registration,
+    };
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
-      value: {
-        getRegistration: async () => registration,
-      },
+      value: serviceWorker,
     });
   });
   await page.goto('/notifications');
@@ -1210,9 +1291,7 @@ test('Function: currentPushEndpoint — clicking a row POSTs read with the push 
   });
   await page.addInitScript(() => {
     if (
-      !Array.isArray(
-        (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
-      )
+      !Array.isArray((window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags)
     ) {
       (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags = [];
     }
@@ -1224,24 +1303,29 @@ test('Function: currentPushEndpoint — clicking a row POSTs read with the push 
         {
           tag: 'forum_reply:r1',
           close: () => {
-            (window as unknown as { __e2eClosedPushTags?: string[] })
-              .__e2eClosedPushTags?.push('forum_reply:r1');
+            (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags?.push(
+              'forum_reply:r1',
+            );
           },
         },
         {
           tag: 'other',
           close: () => {
-            (window as unknown as { __e2eClosedPushTags?: string[] })
-              .__e2eClosedPushTags?.push('other');
+            (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags?.push(
+              'other',
+            );
           },
         },
       ],
     };
+    const serviceWorker = {
+      addEventListener() {},
+      removeEventListener() {},
+      getRegistration: async () => registration,
+    };
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
-      value: {
-        getRegistration: async () => registration,
-      },
+      value: serviceWorker,
     });
   });
   await page.goto('/notifications');
@@ -1314,9 +1398,7 @@ test('Function: closeLocalPushNotifications — clicking a row closes only the m
   });
   await page.addInitScript(() => {
     if (
-      !Array.isArray(
-        (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags,
-      )
+      !Array.isArray((window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags)
     ) {
       (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags = [];
     }
@@ -1328,24 +1410,29 @@ test('Function: closeLocalPushNotifications — clicking a row closes only the m
         {
           tag: 'forum_reply:r1',
           close: () => {
-            (window as unknown as { __e2eClosedPushTags?: string[] })
-              .__e2eClosedPushTags?.push('forum_reply:r1');
+            (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags?.push(
+              'forum_reply:r1',
+            );
           },
         },
         {
           tag: 'other',
           close: () => {
-            (window as unknown as { __e2eClosedPushTags?: string[] })
-              .__e2eClosedPushTags?.push('other');
+            (window as unknown as { __e2eClosedPushTags?: string[] }).__e2eClosedPushTags?.push(
+              'other',
+            );
           },
         },
       ],
     };
+    const serviceWorker = {
+      addEventListener() {},
+      removeEventListener() {},
+      getRegistration: async () => registration,
+    };
     Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
-      value: {
-        getRegistration: async () => registration,
-      },
+      value: serviceWorker,
     });
   });
   await page.goto('/notifications');
