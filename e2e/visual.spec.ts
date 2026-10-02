@@ -4688,6 +4688,31 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-reaction-rate-limit');
   });
 
+  test('state /welcome reaction-author-wallet', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'The receiving wallet cannot take this payment.',
+          code: 'cannot_receive',
+        }),
+      });
+    });
+    await fillReaction(page);
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const alert = page.getByText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(alert).toBeVisible();
+    await alert.evaluate((node) => {
+      node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    expect(await insideShell(alert)).toBe(true);
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
+    await shotScreen(page, 'state-welcome-reaction-author-wallet');
+  });
+
   test('state /welcome reaction-paid', async ({ page }) => {
     let replyFetches = 0;
     await page.addInitScript(() => {

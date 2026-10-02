@@ -4224,6 +4224,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:reaction-author-wallet",
+    "label": "/welcome reaction-author-wallet",
+    "visual": "state-welcome-reaction-author-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:reaction-paid",
     "label": "/welcome reaction-paid",
     "visual": "state-welcome-reaction-paid",

@@ -1555,6 +1555,12 @@ The payment request was rate-limited. The alert says **Too many messages. Please
 
 ![21.gifts welcome reaction rate limit](images/welcome-reaction-rate-limit.png)
 
+### Variant: reaction-author-wallet
+
+The payment request failed because Bob's wallet cannot receive it (the api answers with `code` `cannot_receive`). The alert says **The author's wallet cannot receive this Bitcoin payment**. The typed sentence is still in the field, and no pay sheet is open.
+
+![21.gifts welcome reaction author wallet](images/welcome-reaction-author-wallet.png)
+
 ### Variant: reaction-paid
 
 The payment was detected. Ada's reply **This is my answer** is in the thread, and the composer is empty again.

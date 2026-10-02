@@ -5003,6 +5003,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'reaction-author-wallet',
+    image: 'welcome-reaction-author-wallet.png',
+    visual: 'state-welcome-reaction-author-wallet',
+    needle: "shotScreen(page, 'state-welcome-reaction-author-wallet')",
+  },
+  {
+    route: '/welcome',
     id: 'reaction-paid',
     image: 'welcome-reaction-paid.png',
     visual: 'state-welcome-reaction-paid',
