@@ -190,7 +190,7 @@ export function ShopAddWizard({
 
   return (
     <form
-      className="flex flex-col gap-3 rounded-2xl border border-app-border p-3"
+      className="flex w-full min-w-0 max-w-full flex-col gap-3 rounded-2xl border border-app-border p-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (step === 5) {
@@ -335,7 +335,7 @@ export function ShopAddWizard({
         />
       ) : null}
       {step === 4 ? (
-        <label className="flex flex-col gap-1">
+        <label className="flex min-w-0 max-w-full flex-col gap-1">
           <span className="text-sm text-app-fg">{t('shops.accountOptional')}</span>
           <input
             aria-label={t('shops.accountLabel')}
@@ -344,7 +344,7 @@ export function ShopAddWizard({
               onUsernameChange(event.target.value);
             }}
             disabled={posting}
-            className="min-h-11 rounded-2xl border border-app-border-strong px-4 text-base text-app-fg disabled:opacity-50"
+            className="min-h-11 w-full min-w-0 max-w-full rounded-2xl border border-app-border-strong px-4 text-base text-app-fg disabled:opacity-50"
           />
         </label>
       ) : null}

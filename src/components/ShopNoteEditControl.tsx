@@ -404,6 +404,7 @@ export function ShopNoteEditControl({
 
   return (
     <div
+      className="min-w-0 max-w-full"
       onClick={(event) => {
         event.stopPropagation();
       }}
@@ -429,7 +430,7 @@ export function ShopNoteEditControl({
         <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
       </IconButton>
       {open ? (
-        <div className="mt-2 flex w-full flex-col gap-2">
+        <div className="mt-2 flex w-full min-w-0 max-w-full flex-col gap-2">
           <SundayWritingGate>
             <ShopAddWizard
               mode="edit"

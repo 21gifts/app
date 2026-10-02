@@ -445,7 +445,7 @@ A photo row may scroll sideways on `[data-scroll-x]`. That row is
 `overflow-x: auto` and `overflow-y: clip`, so it is not a second page
 scroll. `scripts/check-scrollports.mjs` fails CI on scrolling utilities,
 arbitrary values, and assignments, and on any stylesheet scrolling overflow
-except `overflow: auto` on `[data-scrollport][data-scroll-active]` and that
+except `overflow-x: clip` and `overflow-y: auto` on `[data-scrollport][data-scroll-active]` and that
 one sideways row. It rejects its own detector if that check goes blind. The document lock is
 `!important`. AppShell `<main>` stays free of `overflow-hidden` so the
 menu hosts on the frame are not clipped. `--app-offset-top` is
@@ -453,6 +453,13 @@ menu hosts on the frame are not clipped. `--app-offset-top` is
 (`position: fixed; top: var(--app-offset-top); height: var(--app-height)`).
 The offset is never added into the height. The document lock stops the page from
 scrolling under the frame.
+
+A box stays inside the window. Only a slide inside `[data-scroll-x]` may extend past the left or
+right edge, and that row's own box stays inside. A box whose top or bottom leaves the window by more than one pixel fails the same check, except content inside `[data-scrollport]`, which may sit past the top or bottom unless it is position:fixed; a position:fixed box is still reported. Do not size a panel with `vw` or `w-screen`: that
+width is the phone, which is wider than the padded column, and that is what shifts a page.
+`scripts/check-scrollports.mjs` fails lint on those widths. Every visual screenshot runs
+`pageFrameProblems` first, and the Visual job fails when a box sticks out or the page can scroll
+sideways.
 
 ### Components
 
