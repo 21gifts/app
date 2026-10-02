@@ -25,7 +25,7 @@ export interface RequirementsOverlayProps {
 /**
  * Modal to add a missing name, 21.gifts username, or living-room rules
  * agreement before retrying a forum or contact post. No Skip control. The
- * `wallet` step explains that posts need the member's own 21.gifts wallet and
+ * `wallet` step explains that gifts and posts need the member's own 21.gifts wallet and
  * links to `/wallet` (**Open your wallet**); setting it up is the one-time
  * wallet setup, not a field here.
  *

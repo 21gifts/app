@@ -10,7 +10,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  *
  * `/moderate/handbook` is the chapter list. The chrome back returns to the
  * previous in-app view (the card has no back control). Requires name + username +
- *  living-room rules agreement via {@link OnboardingGate}
+ * living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page.
  *
  * @returns The handbook screen.
