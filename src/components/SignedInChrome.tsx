@@ -152,11 +152,12 @@ export function SignedInChrome(): ReactElement {
     open && !narrow && typeof document !== 'undefined'
       ? document.querySelector('[data-menu-scrim-host]')
       : null;
+  // The wide menu scrolls inside the window so a tall staff menu does not stick out.
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
-    : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
+    : `absolute right-0 z-50 mt-2 max-h-[calc(100dvh-7rem)] w-72 overflow-y-auto rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
     <div ref={setRootEl} className="relative">

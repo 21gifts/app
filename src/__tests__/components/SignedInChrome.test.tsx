@@ -960,6 +960,8 @@ describe('SignedInChrome', () => {
       }
       expect(menuPanel().className).toContain('absolute');
       expect(menuPanel().className).toContain('w-72');
+      expect(menuPanel().className).toContain('max-h-[calc(100dvh-7rem)]');
+      expect(menuPanel().className).toContain('overflow-y-auto');
       expect(menuPanel().className).not.toContain('100%');
       fireEvent.click(scrim);
       expectMenuClosed();
