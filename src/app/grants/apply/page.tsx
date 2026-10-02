@@ -6,13 +6,13 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/grants/apply` — guided 21 gifts grant apply for a signed-in member.
+ * `/grants/apply` — paused 21 gifts grant applications for a signed-in member.
  *
  * The chrome back returns to the previous in-app view (the card has no back
  * control). Requires name + address + living-room rules agreement via {@link OnboardingGate}
  * `screen="profile"`.
  *
- * @returns The apply walk.
+ * @returns The paused applications screen.
  */
 export default function FundingApplyPage(): ReactElement {
   return (

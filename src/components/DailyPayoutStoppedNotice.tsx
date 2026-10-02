@@ -1,13 +1,14 @@
 'use client';
 
 import { type ReactElement } from 'react';
+import { FundingPausedCopy } from '@/components/FundingPausedCopy';
 import { useTranslations } from '@/components/LocaleProvider';
-import { ButtonLink } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Non-dismissible info banner when the owner's funding JSON has
- * `dailyPayoutStoppedNotice === true`. Links to `/grants/apply`.
+ * `dailyPayoutStoppedNotice === true`. Shows paused-applications copy instead of
+ * an apply link.
  *
  * @returns The banner, or `null` when the flag is not strictly true.
  */
@@ -27,10 +28,7 @@ export function DailyPayoutStoppedNotice(): ReactElement | null {
         <h2 id={titleId} className="text-sm font-semibold">
           {t('funding.stoppedDaily.title')}
         </h2>
-        <p className="text-sm text-app-muted">{t('funding.stoppedDaily.body')}</p>
-        <ButtonLink href="/grants/apply" size="lg">
-          {t('funding.apply')}
-        </ButtonLink>
+        <FundingPausedCopy />
       </div>
     </div>
   );

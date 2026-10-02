@@ -1077,7 +1077,7 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 ### `/grants`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, a secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). Apply is not a ButtonLink. `none`/`rejected` show the paused sentence and `https://21.gifts/statistics`. A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
 Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
 
@@ -1089,9 +1089,9 @@ Handbook states: default, loading, error.
 
 ### `/grants/apply`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **Apply for the 21 gifts grant**. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Missing About me, photo, or location are the next calm steps (not alerts). Then two questions: whether the profile posts match the core principles of 21.gifts, with a link to `https://21.gifts/about` (Languages **Translate** on living-room post text), then whether the posts are true. **Yes** on the truth question applies and returns to `/grants`; **No** shows the unmet line. `/profile/apply` redirects here.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **21 gifts grant**, the paused sentence, and `https://21.gifts/statistics`. No questions, no POST. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
 
-Handbook states: default, photo, location, question, truth, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
+Handbook states: default.
 
 ### `/profile/apply`
 

@@ -337,92 +337,10 @@ test('Function: FundingStatusCard — basis grants page shows not verified', asy
   await expect(page.getByText('You are not verified yet.')).toBeVisible();
 });
 
-test('Function: postFundingApply — Yes posts apply', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'verified',
-        name: 'Ada',
-        location: 'Zurich',
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        aboutMe: 'I build on Bitcoin',
-        aboutMeHasPhoto: true,
-        setup: null,
-        missing: [],
-        funding: {
-          status: 'none',
-          trialUtcDate: null,
-          admittedAt: null,
-          reviewedByName: null,
-        },
-      }),
-    });
-  });
-  await page.route(/\/forum\/members\/[^/]+\/posts/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        messages: [
-          {
-            id: 'msg_1',
-            accountId: 'acc_e2e',
-            name: 'Ada',
-            text: 'Living-room note.',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            photoCount: 0,
-            hasVideo: false,
-            videoContentType: null,
-            role: 'verified',
-            replyCount: 0,
-          },
-        ],
-      }),
-    });
-  });
-  await page.route(/\/funding\/apply$/, async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        funding: {
-          status: 'pending',
-          trialUtcDate: null,
-          admittedAt: null,
-          reviewedByName: null,
-        },
-      }),
-    });
-  });
-  await page.goto('/grants/apply');
-  const posted = page.waitForRequest(
-    (req) => req.method() === 'POST' && /\/funding\/apply$/.test(new URL(req.url()).pathname),
-  );
-  await page.getByRole('button', { name: 'Yes' }).click();
-  await expect(
-    page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Yes' }).click();
-  expect((await posted).method()).toBe('POST');
+test('Function: postFundingApply — POST /funding/apply without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/funding/apply')).status()).toBe(401);
 });
 
 test('Function: proxyFundingApplicationsGet — GET /funding/applications without bearer is 401', async ({

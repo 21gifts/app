@@ -508,7 +508,7 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ### Variant: daily-payout-stopped
 
-Signed in, no grant application. The notice **Daily payout stopped** sits in the frame under the page-frame header, with **Apply for the 21 gifts grant**. The living room underneath is the default welcome.
+Signed in, no grant application. The notice title is **Daily payout stopped**, then **Applications are currently paused. You can apply again when shop transactions have increased.**, then the link `https://21.gifts/statistics`. No apply control. The living room underneath is the default welcome.
 
 ![21.gifts welcome daily payout stopped](images/welcome-daily-payout-stopped.png)
 
@@ -2895,12 +2895,12 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 - **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A moderator or founder with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. Verified members with no grant or with rejected do not open Apply. They read the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, **Apply for the 21 gifts grant**, and **Goals**.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, the paused sentence **Applications are currently paused. You can apply again when shop transactions have increased.**, the link `https://21.gifts/statistics`, and **Goals**. No About link and no Apply button.
 
 ![21.gifts grants](images/grants.png)
 
@@ -2984,149 +2984,29 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 ## Screen: /profile/apply
 
-- **Purpose:** Permanent redirect to `/grants/apply`. This path renders no grant UI.
+- **Purpose:** Permanent redirect to `/grants/apply`, which is the paused screen, not an apply walk. This path renders no grant UI of its own.
 - **Inputs:** None. The browser lands on `/grants/apply`.
 - **Actions:** `redirect('/grants/apply')`.
 - **Used by:** Old links to `/profile/apply`.
 
 ### Variant: redirect
 
-Opening `/profile/apply` lands on the grants apply walk.
+Opening `/profile/apply` lands on the paused applications screen.
 
 ![21.gifts apply](images/profile-apply.png)
 
 ## Screen: /grants/apply
 
-- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then two yes/no questions against the applicant’s living-room posts (post text is translatable; location and the composer are not): whether the posts match the core principles, with a link to `https://21.gifts/about`, then whether the posts are true. Yes on the truth question submits `POST /funding/apply` and returns to `/grants`. No does not submit.
-- **Inputs:** Session account; `GET /forum/members/:id/posts`; `PUT /me/about`; `POST /me/location`; `POST /funding/apply`.
-- **Actions:** Fill About me, add a photo, set location, answer both questions. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. No second arrow in the card. The wordmark is not that control (wordmark → `/welcome`).
+- **Purpose:** Signed-in paused applications screen. No About-me steps, no questions, no POST.
+- **Inputs:** None (no posts fetch, no apply POST).
+- **Actions:** Read the paused sentence and open `https://21.gifts/statistics`. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).
 
 ### Variant: default
 
-Verified none/rejected with empty About me. Copy **First, write a short About me so people can get to know you.** No `role="alert"`.
+Verified member, funding none. Heading **21 gifts grant**. The paused sentence. Link `https://21.gifts/statistics`. No Apply control.
 
 ![21.gifts apply](images/profile-apply.png)
-
-### Variant: sunday
-
-Device-local Sunday. The step sentence stays. The About me editor is gone. **Writing is paused on Sunday.**
-
-![21.gifts apply sunday](images/grants-apply-sunday.png)
-
-### Variant: photo
-
-About me filled, no photo. Copy **Next, add a photo to your About me.**
-
-![21.gifts apply photo](images/profile-apply-photo.png)
-
-### Variant: location
-
-About me and photo set, location empty. Copy **Next, add the place you live.**
-
-![21.gifts apply location](images/profile-apply-location.png)
-
-### Variant: question
-
-Profile complete. Copy **Do your profile posts match the core principles of 21.gifts?** An **About** link goes to `https://21.gifts/about`. **Yes** and **No** are both visible. No conviction titles.
-
-![21.gifts apply question](images/grants-apply-question.png)
-
-### Variant: truth
-
-**Yes** on the principles question. Copy **Do these posts, to your knowledge, correspond to the truth?** The About link is gone. **Yes** submits. **No** does not.
-
-![21.gifts apply truth](images/grants-apply-truth.png)
-
-### Variant: translate
-
-Signed-in `/grants/apply` on the principles question with a German living-room post. **Translate** is visible under the post body.
-
-![21.gifts apply translate](images/profile-apply-translate.png)
-
-### Variant: translate-loading
-
-Same German post after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
-
-![21.gifts apply translate loading](images/profile-apply-translate-loading.png)
-
-### Variant: translate-done
-
-Same German post after a successful translation. Translated body plus **Show original**; the German original is not shown.
-
-![21.gifts apply translate done](images/profile-apply-translate-done.png)
-
-### Variant: translate-hidden
-
-After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
-
-![21.gifts apply translate hidden](images/profile-apply-translate-hidden.png)
-
-### Variant: translate-error
-
-Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
-
-![21.gifts apply translate error](images/profile-apply-translate-error.png)
-
-### Variant: forbidden
-
-Basis visitor. Copy **You are not verified yet.**
-
-![21.gifts apply forbidden](images/profile-apply-forbidden.png)
-
-### Variant: pending
-
-Already pending. Copy **Your application is open. A moderator will review your posts.**
-
-![21.gifts apply pending](images/profile-apply-pending.png)
-
-### Variant: trial
-
-Already on a one-day trial. Copy **You are on a one-day trial. Review repeats tomorrow.**
-
-![21.gifts apply trial](images/profile-apply-trial.png)
-
-### Variant: admitted
-
-Already admitted. Copy **You are admitted to daily 21.gifts grant payouts.**
-
-![21.gifts apply admitted](images/profile-apply-admitted.png)
-
-### Variant: empty-posts
-
-Profile complete, no living-room posts. Copy **No living-room posts.**
-
-![21.gifts apply empty posts](images/profile-apply-empty-posts.png)
-
-### Variant: loading
-
-Posts fetch hanging. Copy **Loading…**
-
-![21.gifts apply loading](images/profile-apply-loading.png)
-
-### Variant: error
-
-Posts fetch failed. `role="alert"` **Could not load this application. Please try again.**
-
-![21.gifts apply error](images/profile-apply-error.png)
-
-### Variant: applying
-
-Yes on the truth question is in flight. Yes button disabled. The truth question stays visible.
-
-![21.gifts apply applying](images/profile-apply-applying.png)
-
-### Variant: apply-failed
-
-Yes on the truth question failed. The truth question stays visible. `role="alert"` **Could not submit your application. Please try again.**
-
-![21.gifts apply failed](images/profile-apply-apply-failed.png)
-
-### Variant: unmet
-
-Requirement not met. Copy **When your posts match, you can apply again.** No alert.
-
-![21.gifts apply unmet](images/profile-apply-unmet.png)
 
 ## Screen: /messages
 

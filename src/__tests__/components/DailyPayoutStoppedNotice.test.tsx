@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe('DailyPayoutStoppedNotice', () => {
-  it('shows the English title and apply link when the flag is true', () => {
+  it('shows the English title, paused sentence, and statistics link when the flag is true', () => {
     useAuthStore.setState({
       session: 'tok',
       account: {
@@ -47,8 +47,15 @@ describe('DailyPayoutStoppedNotice', () => {
     renderWithLocale(<DailyPayoutStoppedNotice />);
     expect(screen.getByRole('heading', { name: 'Daily payout stopped' })).toBeTruthy();
     expect(
-      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
-    ).toBe('/grants/apply');
+      screen.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'https://21.gifts/statistics' }).getAttribute('href'),
+    ).toBe('https://21.gifts/statistics');
+    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
   it('renders nothing when the flag is false', () => {
