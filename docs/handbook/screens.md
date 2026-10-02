@@ -344,6 +344,12 @@ Pinned fixture (`?visual=send-amount-request`, Playwright builds only). The amou
 
 ![21.gifts wallet send amount request](images/wallet-send-amount-request.png)
 
+### Variant: send-amount-no-comment
+
+Pinned fixture (`?visual=send-amount-no-comment`, Playwright builds only). The amount step for a Lightning address whose receiver takes no comment: **To bob@example.com**, the amount field, the bounds line, and **Continue**; no message field.
+
+![21.gifts wallet send amount no comment](images/wallet-send-amount-no-comment.png)
+
 ### Variant: send-amount-min
 
 Pinned fixture (`?visual=send-amount-min`, Playwright builds only). The same amount step after **Continue** with no usable amount: the alert **Enter an amount of at least ₿1 · $0.00.**

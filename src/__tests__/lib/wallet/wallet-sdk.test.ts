@@ -486,7 +486,7 @@ describe('payments', () => {
   it('sends a BOLT11 request over Lightning and shows only the Lightning fee', async () => {
     const response = {
       amount: 21n,
-      paymentMethod: { type: 'bolt11Invoice', lightningFeeSats: 2, sparkTransferFeeSats: 0 },
+      paymentMethod: { type: 'bolt11Invoice', lightningFeeSats: 2, sparkTransferFeeSats: 7 },
     };
     sdkPay.prepareSendPayment.mockResolvedValueOnce(response);
     sdkPay.sendPayment.mockResolvedValue({ payment: {} });

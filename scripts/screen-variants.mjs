@@ -465,6 +465,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-amount-no-comment',
+    image: 'wallet-send-amount-no-comment.png',
+    visual: 'state-wallet-send-amount-no-comment',
+    needle: "shotScreen(page, 'state-wallet-send-amount-no-comment')",
+  },
+  {
+    route: '/wallet',
     id: 'send-amount-min',
     image: 'wallet-send-amount-min.png',
     visual: 'state-wallet-send-amount-min',

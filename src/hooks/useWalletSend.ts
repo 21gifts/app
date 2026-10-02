@@ -127,6 +127,8 @@ function visualState(name: string | null): WalletSendState | null {
       return { step: 'amount', target: lnurl, amountError: false };
     case 'send-amount-error':
       return { step: 'amount', target: lnurl, amountError: true };
+    case 'send-amount-no-comment':
+      return { step: 'amount', target: { ...lnurl, commentMaxLength: 0 }, amountError: false };
     case 'send-amount-request':
       return { step: 'amount', target: request, amountError: false };
     case 'send-amount-min':

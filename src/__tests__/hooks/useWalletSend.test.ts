@@ -412,6 +412,10 @@ describe('useWalletSend visual pins', () => {
       { step: 'amount', amountError: false, target: { type: 'request', amountSats: null } },
     ],
     ['send-amount-min', { step: 'amount', amountError: true, target: { type: 'request' } }],
+    [
+      'send-amount-no-comment',
+      { step: 'amount', amountError: false, target: { type: 'lnurl', commentMaxLength: 0 } },
+    ],
   ])('pins %s in a Playwright build and keeps actions inert', (visual, state) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);

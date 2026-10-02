@@ -1989,6 +1989,18 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-amount-request');
   });
 
+  test('wallet send-amount-no-comment', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount-no-comment');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText('To bob@example.com')).toBeVisible();
+    await expect(page.getByText(/^Between/)).toBeVisible();
+    await expect(page.getByLabel('Message (optional)')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-send-amount-no-comment');
+  });
+
   test('wallet send-amount-min', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount-min');
