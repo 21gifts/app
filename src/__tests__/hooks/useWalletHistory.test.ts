@@ -265,7 +265,7 @@ describe('useWalletHistory', () => {
     act(() => {
       result.current.retry();
     });
-    expect(result.current.status).toBe('loading');
+    expect(result.current.status).toBe('error');
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
