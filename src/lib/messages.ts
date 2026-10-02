@@ -862,7 +862,7 @@ const en = {
   'statistics.heading': 'Statistics',
   'statistics.shops.widgetLabel': 'Active shops',
   'statistics.shops.explainer':
-    'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day.',
+    'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day at https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Shops by UTC day',
   'statistics.shops.error': 'Could not load shop activity. Please try again.',
   'moderate.toolsLabel': 'Moderation tools',
@@ -1881,7 +1881,7 @@ const de = {
   'statistics.heading': 'Statistiken',
   'statistics.shops.widgetLabel': 'Aktive Shops',
   'statistics.shops.explainer':
-    'Ein Shop zählt an einem UTC-Tag, wenn ihm ein 21.gifts-Benutzer zugeordnet ist und dieser an dem Tag an der Kasse eine Zahlung angelegt hat.',
+    'Ein Shop zählt an einem UTC-Tag, wenn ihm ein 21.gifts-Benutzer zugeordnet ist und dieser an dem Tag über https://21.gifts/pos an der Kasse eine Zahlung angelegt hat.',
   'statistics.shops.chartLabel': 'Shops je UTC-Tag',
   'statistics.shops.error':
     'Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen.',
@@ -2900,7 +2900,7 @@ const es = {
   'statistics.heading': 'Estadísticas',
   'statistics.shops.widgetLabel': 'Tiendas activas',
   'statistics.shops.explainer':
-    'Una tienda cuenta en un día UTC cuando tiene un usuario de 21.gifts asignado y ese usuario creó un pago en el punto de venta ese día.',
+    'Una tienda cuenta en un día UTC cuando tiene un usuario de 21.gifts asignado y ese usuario creó un pago en el punto de venta ese día en https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Tiendas por día UTC',
   'statistics.shops.error': 'No se pudo cargar la actividad de las tiendas. Inténtalo de nuevo.',
   'moderate.toolsLabel': 'Herramientas de moderación',
@@ -3919,7 +3919,7 @@ const fil = {
   'statistics.heading': 'Mga istatistika',
   'statistics.shops.widgetLabel': 'Mga aktibong tindahan',
   'statistics.shops.explainer':
-    'Binibilang ang isang tindahan sa isang araw na UTC kapag may naka-assign na user ng 21.gifts at ang user na iyon ay gumawa ng bayad sa point of sale sa araw na iyon.',
+    'Binibilang ang isang tindahan sa isang araw na UTC kapag may naka-assign na user ng 21.gifts at ang user na iyon ay gumawa ng bayad sa point of sale sa araw na iyon sa https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Mga tindahan ayon sa araw na UTC',
   'statistics.shops.error': 'Hindi ma-load ang aktibidad ng tindahan. Pakisubukan muli.',
   'moderate.toolsLabel': 'Mga tool sa moderasyon',

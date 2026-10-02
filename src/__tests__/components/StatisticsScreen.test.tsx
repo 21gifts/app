@@ -257,7 +257,7 @@ describe('StatisticsScreen', () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day.',
+          'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day at https://21.gifts/pos.',
         ),
       ).toBeTruthy();
     });
