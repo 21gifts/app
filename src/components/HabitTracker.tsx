@@ -1,11 +1,13 @@
 'use client';
 
+import { Gift, Pencil, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { HabitCommentDonation } from '@/components/HabitCommentDonation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button } from '@/components/ui';
+import { Button, IconButton } from '@/components/ui';
 import { habitTrackerSchema, type HabitTrackerData } from '@/lib/habit-tracker';
+import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 const WEEK = 604800000;
@@ -105,7 +107,7 @@ export function HabitTracker(): ReactElement {
       aria-busy={busy || loading}
     >
       <header className="space-y-3 text-center">
-        <h1 className="text-3xl font-semibold">Habit-Tracker</h1>
+        <h1 className="text-3xl font-semibold">{t('nav.habitTracker')}</h1>
         {current && <p className="text-sm text-app-muted">{t('habit.schedule')}</p>}
       </header>
       {error && (
@@ -161,17 +163,25 @@ export function HabitTracker(): ReactElement {
               <h2 className="text-xl font-semibold">
                 {t(role === 'founder' ? 'habit.founder' : 'habit.initiator')}
               </h2>
-              {data.habits.filter((habit) => habit.role === role).length === 0 && (
+              {data.habits.filter((habit) =>
+                role === 'founder'
+                  ? habit.role === 'founder'
+                  : habit.role === 'initiator' || habit.role === 'moderator',
+              ).length === 0 && (
                 <p className="text-sm text-app-muted">{t('habit.empty')}</p>
               )}
               {data.habits
-                .filter((habit) => habit.role === role)
+                .filter((habit) =>
+                  role === 'founder'
+                    ? habit.role === 'founder'
+                    : habit.role === 'initiator' || habit.role === 'moderator',
+                )
                 .map((habit) => {
                   const status = data.results.find((result) => result.habitId === habit.id)?.status;
                   const owner =
                     session !== null &&
                     account?.id === habit.accountId &&
-                    (account.role === 'founder' || account.role === 'initiator');
+                    roleAtLeast(account?.role, 'initiator');
                   return (
                     <fieldset
                       key={habit.id}
@@ -253,38 +263,52 @@ export function HabitTracker(): ReactElement {
                             <Button type="submit" disabled={disabled || editText.trim() === ''}>
                               {t('habit.save')}
                             </Button>
-                            <Button variant="secondary" onClick={() => setEditing(null)}>
-                              {t('forum.payClose')}
-                            </Button>
+                            <IconButton
+                              size="sm"
+                              variant="ghost"
+                              aria-label={t('forum.payClose')}
+                              onClick={() => setEditing(null)}
+                            >
+                              <X aria-hidden="true" className="h-4 w-4" />
+                            </IconButton>
                           </div>
                         </form>
                       )}
                       {owner && current && editing !== habit.id && (
-                        <Button
-                          variant="secondary"
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          aria-label={t('habit.edit')}
                           onClick={() => {
                             setEditing(habit.id);
                             setEditText(habit.text);
                           }}
                         >
-                          {t('habit.edit')}
-                        </Button>
+                          <Pencil aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
                       )}
                       {owner && current && habit.lastWeek === null && (
-                        <Button
-                          variant="secondary"
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          aria-label={t('habit.delete')}
                           onClick={() => {
                             if (window.confirm(t('habit.deleteConfirm')))
                               void submit({ action: 'retire', id: habit.id });
                           }}
                         >
-                          {t('habit.delete')}
-                        </Button>
+                          <Trash2 aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
                       )}
                     </fieldset>
                   );
                 })}
-              {current && account?.role === role && session !== null && (
+              {current &&
+                session !== null &&
+                (role === 'founder'
+                  ? roleAtLeast(account?.role, 'founder')
+                  : roleAtLeast(account?.role, 'initiator') &&
+                    !roleAtLeast(account?.role, 'founder')) && (
                 <form
                   className="space-y-2"
                   onSubmit={(event) => {
@@ -335,29 +359,32 @@ export function HabitTracker(): ReactElement {
                   {session !== null &&
                     post.accountId !== account?.id &&
                     post.canReceiveDonation && (
-                      <Button
-                        variant="secondary"
+                      <IconButton
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t('forum.pay')}
                         onClick={() => setDonationId(donationId === post.id ? null : post.id)}
                       >
-                        {t('habit.donate')}
-                      </Button>
+                        <Gift aria-hidden="true" className="h-4 w-4" />
+                      </IconButton>
                     )}
                   {!post.canReceiveDonation && (
                     <p className="text-xs text-app-muted">{t('habit.noWallet')}</p>
                   )}
-                  {session !== null &&
-                    (account?.role === 'founder' || account?.role === 'initiator') && (
-                      <Button
-                        variant="secondary"
-                        disabled={disabled}
-                        onClick={() => {
-                          if (window.confirm(t('habit.deleteCommentConfirm')))
-                            void submit({ action: 'deleteComment', id: post.id });
-                        }}
-                      >
-                        {t('habit.deleteComment')}
-                      </Button>
-                    )}
+                  {session !== null && roleAtLeast(account?.role, 'initiator') && (
+                    <IconButton
+                      size="sm"
+                      variant="ghost"
+                      aria-label={t('habit.deleteComment')}
+                      disabled={disabled}
+                      onClick={() => {
+                        if (window.confirm(t('habit.deleteCommentConfirm')))
+                          void submit({ action: 'deleteComment', id: post.id });
+                      }}
+                    >
+                      <Trash2 aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                  )}
                 </div>
                 {donationId === post.id && session !== null && (
                   <HabitCommentDonation

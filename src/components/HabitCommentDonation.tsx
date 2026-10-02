@@ -1,14 +1,16 @@
 'use client';
 
+import { X } from 'lucide-react';
 import { useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { AmountEntry } from '@/components/AmountEntry';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { Button } from '@/components/ui';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { Button, IconButton } from '@/components/ui';
 import { parseAmountDraft } from '@/lib/stats-money';
 import type { AmountUnit } from '@/lib/api-types';
+import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
 /** Direct Lightning donation to a tracker comment's author; no forum post is created. */
 export function HabitCommentDonation({
@@ -24,7 +26,7 @@ export function HabitCommentDonation({
 }): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled } = useLatestRateDayState();
   const [draft, setDraft] = useState('');
   const [unit, setUnit] = useState<AmountUnit>('btc');
   const [busy, setBusy] = useState(false);
@@ -32,6 +34,8 @@ export function HabitCommentDonation({
   const [invoice, setInvoice] = useState<{ pr: string; amountSats: number } | null>(null);
   const pending = useRef(false);
   const parsed = parseAmountDraft(unit, draft, rateDay, fiat);
+  const showPaymentQr =
+    typeof navigator !== 'undefined' && !isSmartphoneUserAgent(navigator.userAgent);
   async function submit(): Promise<void> {
     if (pending.current || parsed.kind !== 'sats' || parsed.sats < 1) return;
     pending.current = true;
@@ -63,14 +67,14 @@ export function HabitCommentDonation({
       setBusy(false);
     }
   }
-  return invoice ? (
+  return invoice !== null && settled ? (
     <ForumReplyPayPage
       preview={name}
       amountSats={invoice.amountSats}
       pr={invoice.pr}
       payWaiting={false}
       payBusy={false}
-      showPaymentQr
+      showPaymentQr={showPaymentQr}
       rateDay={rateDay}
       onCancel={onClose}
     />
@@ -100,12 +104,22 @@ export function HabitCommentDonation({
         </p>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={busy || parsed.kind !== 'sats' || parsed.sats < 1}>
+        <Button
+          type="submit"
+          disabled={!settled || busy || parsed.kind !== 'sats' || parsed.sats < 1}
+        >
           {t('habit.donate')}
         </Button>
-        <Button variant="secondary" disabled={busy} onClick={onClose}>
-          {t('forum.payClose')}
-        </Button>
+        <IconButton
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-label={t('forum.payClose')}
+          disabled={busy}
+          onClick={onClose}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </IconButton>
       </div>
     </form>
   );

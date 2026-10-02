@@ -12,7 +12,7 @@ export const habitTrackerSchema = z.object({
     z.object({
       id: z.string(),
       accountId: z.string(),
-      role: z.enum(['founder', 'initiator']),
+      role: z.enum(['founder', 'initiator', 'moderator']),
       name: z.string(),
       text: z.string(),
       firstWeek: z.string(),

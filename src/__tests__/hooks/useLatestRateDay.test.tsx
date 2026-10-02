@@ -1,7 +1,7 @@
 import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDay, useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -21,8 +21,14 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
-/** Mounts {@link useLatestRateDay} for assertions. */
-function Probe(): ReactElement {
+/** Mounts {@link useLatestRateDayState} for assertions. */
+function Probe({ enabled = true }: { enabled?: boolean }): ReactElement {
+  const { rateDay, settled } = useLatestRateDayState(enabled);
+  return <p>{`${settled ? 'settled' : 'loading'}:${rateDay === null ? 'null' : rateDay.sats}`}</p>;
+}
+
+/** Mounts the backwards-compatible rate-only hook. */
+function RateProbe(): ReactElement {
   const rateDay = useLatestRateDay();
   return <p>{rateDay === null ? 'null' : rateDay.sats}</p>;
 }
@@ -41,8 +47,9 @@ describe('useLatestRateDay', () => {
       spendOverTime: [{ ...RATE_DAY, sats: 0 }, RATE_DAY],
     } as never);
     renderWithLocale(<Probe />);
+    expect(screen.getByText('loading:null')).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByText(String(RATE_DAY.sats))).toBeTruthy();
+      expect(screen.getByText(`settled:${RATE_DAY.sats}`)).toBeTruthy();
     });
     expect(fetchGiftStatsMock).toHaveBeenCalledTimes(1);
   });
@@ -54,11 +61,11 @@ describe('useLatestRateDay', () => {
     });
     fetchGiftStatsMock.mockReturnValue(pending as never);
     renderWithLocale(<Probe />);
-    expect(screen.getByText('null')).toBeTruthy();
+    expect(screen.getByText('loading:null')).toBeTruthy();
     await act(async () => {
       resolve({ spendOverTime: [] });
     });
-    expect(screen.getByText('null')).toBeTruthy();
+    expect(screen.getByText('settled:null')).toBeTruthy();
   });
 
   it('resolves to null when fetchGiftStats rejects', async () => {
@@ -68,11 +75,11 @@ describe('useLatestRateDay', () => {
     });
     fetchGiftStatsMock.mockReturnValue(pending as never);
     renderWithLocale(<Probe />);
-    expect(screen.getByText('null')).toBeTruthy();
+    expect(screen.getByText('loading:null')).toBeTruthy();
     await act(async () => {
       reject(new Error('stats down'));
     });
-    expect(screen.getByText('null')).toBeTruthy();
+    expect(screen.getByText('settled:null')).toBeTruthy();
   });
 
   it('does not apply the rate after unmount', async () => {
@@ -98,6 +105,20 @@ describe('useLatestRateDay', () => {
     unmount();
     await act(async () => {
       reject(new Error('stats down'));
+    });
+  });
+
+  it('skips the request and remains unsettled when disabled', () => {
+    renderWithLocale(<Probe enabled={false} />);
+    expect(screen.getByText('loading:null')).toBeTruthy();
+    expect(fetchGiftStatsMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps the rate-only hook compatible', async () => {
+    fetchGiftStatsMock.mockResolvedValue({ spendOverTime: [RATE_DAY] } as never);
+    renderWithLocale(<RateProbe />);
+    await waitFor(() => {
+      expect(screen.getByText(String(RATE_DAY.sats))).toBeTruthy();
     });
   });
 });

@@ -21600,4 +21600,158 @@ test.describe('habit-tracker screens', () => {
     ).toContainText('Could not load or save the tracker.');
     await shotScreen(page, 'state-habit-tracker-error');
   });
+
+  async function signInInitiator(page: Page, account?: object): Promise<void> {
+    const body = account ?? {
+      ...E2E_ACCOUNT,
+      id: 'initiator',
+      role: 'initiator',
+      name: 'Initiator',
+      setup: null,
+      missing: [],
+    };
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    });
+  }
+
+  async function stubTracker(page: Page, body: unknown): Promise<void> {
+    await page.route('**/habits/data*', async (route) => {
+      if (route.request().method() === 'POST') {
+        const posted = route.request().postDataJSON() as { action?: string; amountSats?: number };
+        if (posted.action === 'invoice') {
+          await route.fulfill({
+            json: { pr: 'lnbc210n1habit', amountSats: posted.amountSats },
+          });
+          return;
+        }
+        await route.fulfill({ json: { ok: true } });
+        return;
+      }
+      await route.fulfill({ json: body });
+    });
+  }
+
+  const comment = {
+    id: 'comment-1',
+    accountId: 'founder',
+    name: 'Founder',
+    text: 'Thanks for the week',
+    week: '2026-09-28',
+    createdAt: 1790899200000,
+    canReceiveDonation: true,
+  };
+
+  test('state /habit-tracker comment', async ({ page }) => {
+    await signInInitiator(page);
+    await stubTracker(page, tracker);
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk every day')).toBeVisible();
+    await expect(page.getByLabel('Write a comment')).toBeVisible();
+    await expect(page.getByLabel('New resolution')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-comment');
+  });
+
+  test('state /habit-tracker editing', async ({ page }) => {
+    await signInInitiator(page);
+    await stubTracker(page, tracker);
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk every day')).toBeVisible();
+    await page.getByRole('button', { name: 'Edit resolution' }).click();
+    await expect(page.getByLabel('Edit resolution')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-editing');
+  });
+
+  test('state /habit-tracker donation', async ({ page }) => {
+    await signInInitiator(page);
+    await fulfillRateDay(page);
+    await stubTracker(page, { ...tracker, comments: [comment] });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk every day')).toBeVisible();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByText('Donate Bitcoin · Founder')).toBeVisible();
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donation');
+  });
+
+  test('state /habit-tracker donation-fiat', async ({ page }) => {
+    await signInInitiator(page, {
+      ...E2E_ACCOUNT,
+      id: 'initiator',
+      role: 'initiator',
+      name: 'Initiator',
+      setup: null,
+      missing: [],
+      amountUnit: 'fiat',
+    });
+    await fulfillRateDay(page);
+    await stubTracker(page, { ...tracker, comments: [comment] });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+    await shotScreen(page, 'state-habit-tracker-donation-fiat');
+  });
+
+  test('state /habit-tracker invoice', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'userAgent', {
+        configurable: true,
+        get: () => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)',
+      });
+    });
+    await signInInitiator(page);
+    await fulfillRateDay(page);
+    await stubTracker(page, { ...tracker, comments: [comment] });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('21');
+    await expect(page.getByRole('button', { name: 'Donate Bitcoin' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-invoice');
+  });
+
+  test('state /habit-tracker invoice-phone', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+      });
+    });
+    await signInInitiator(page);
+    await fulfillRateDay(page);
+    await stubTracker(page, { ...tracker, comments: [comment] });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('21');
+    await expect(page.getByRole('button', { name: 'Donate Bitcoin' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await shotScreen(page, 'state-habit-tracker-invoice-phone');
+  });
+
+  test('state /habit-tracker archived', async ({ page }) => {
+    await stubTracker(page, {
+      ...tracker,
+      week: { start: '2026-09-21', label: '2026-W39', nextAt: tracker.week.nextAt },
+      currentWeek: '2026-09-28',
+      firstWeek: '2026-09-21',
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Comments for this week are closed.')).toBeVisible();
+    await expect(page.getByLabel('Write a comment')).toHaveCount(0);
+    await shotScreen(page, 'state-habit-tracker-archived');
+  });
 });

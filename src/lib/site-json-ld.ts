@@ -1,3 +1,4 @@
+/** Public description shared by page metadata and structured data. */
 export const SITE_DESCRIPTION =
   'Direct human-to-human giving in Bitcoin. People helping people — no middleman.';
 

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HabitTracker } from '@/components/HabitTracker';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -77,6 +77,16 @@ describe('HabitTracker', () => {
     signIn();
     renderWithLocale(<HabitTracker />);
     await loaded();
+    const founderBoard = screen
+      .getByRole('heading', { name: 'Founder Cyrill’s resolutions' })
+      .closest('section');
+    const initiatorBoard = screen
+      .getByRole('heading', { name: 'Initiator Pater Severin’s resolutions' })
+      .closest('section');
+    expect(founderBoard).toBeTruthy();
+    expect(initiatorBoard).toBeTruthy();
+    expect(within(founderBoard as HTMLElement).getByLabelText('New resolution')).toBeTruthy();
+    expect(within(initiatorBoard as HTMLElement).queryByLabelText('New resolution')).toBeNull();
     fireEvent.change(screen.getByLabelText('New resolution'), { target: { value: 'Pray daily' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add resolution' }));
     await waitFor(() =>
@@ -114,9 +124,28 @@ describe('HabitTracker', () => {
   });
   it('lets moderators post comments, with drafts retained on a failed save', async () => {
     signIn('moderator', 'm');
+    payload.habits.push({
+      id: 'm1',
+      accountId: 'm',
+      name: 'Moderator',
+      role: 'moderator',
+      text: 'Listen daily',
+      firstWeek: '2026-09-21',
+      lastWeek: null,
+    });
     renderWithLocale(<HabitTracker />);
     await loaded();
-    expect(screen.queryByLabelText('New resolution')).toBeNull();
+    const founderBoard = screen
+      .getByRole('heading', { name: 'Founder Cyrill’s resolutions' })
+      .closest('section');
+    const initiatorBoard = screen
+      .getByRole('heading', { name: 'Initiator Pater Severin’s resolutions' })
+      .closest('section');
+    expect(founderBoard).toBeTruthy();
+    expect(initiatorBoard).toBeTruthy();
+    expect(within(founderBoard as HTMLElement).queryByLabelText('New resolution')).toBeNull();
+    expect(within(initiatorBoard as HTMLElement).getByLabelText('New resolution')).toBeTruthy();
+    expect(within(initiatorBoard as HTMLElement).getByText('Listen daily')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Write a comment'), {
       target: { value: 'Keep going!' },
     });
@@ -226,7 +255,7 @@ it('rejects a failed HTTP read and enables only the initiator’s own group', as
 });
 
 it('keeps old ownership read-only when an account loses its privileged role', async () => {
-  signIn('moderator', 'f');
+  signIn('verified', 'f');
   renderWithLocale(<HabitTracker />);
   await loaded();
   expect(screen.getAllByRole('group')[0]?.hasAttribute('disabled')).toBe(true);
@@ -264,7 +293,34 @@ it('suppresses duplicate form submissions while the first request is pending', a
   await waitFor(() => expect(field).toHaveProperty('value', ''));
 });
 
-it('shows deletion only to founder and initiator and submits after confirmation', async () => {
+it('shows deletion to founder, initiator, and moderator for another account', async () => {
+  payload.comments = [
+    {
+      id: 'comment-1',
+      accountId: 'someone-else',
+      name: 'Visitor',
+      text: 'Comment body',
+      week: payload.week.start,
+      createdAt: Date.now(),
+    },
+  ];
+  for (const role of ['founder', 'initiator', 'moderator'] as const) {
+    cleanup();
+    signIn(role, 'staff');
+    renderWithLocale(<HabitTracker />);
+    await loaded();
+    expect(screen.getByRole('button', { name: 'Delete comment' })).toBeTruthy();
+  }
+  for (const role of ['verified', 'basis'] as const) {
+    cleanup();
+    signIn(role, 'viewer');
+    renderWithLocale(<HabitTracker />);
+    await loaded();
+    expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
+  }
+});
+
+it('submits comment deletion after confirmation', async () => {
   signIn();
   payload.comments = [
     {
@@ -309,7 +365,7 @@ it('lets visitors donate but not delete comments', async () => {
   renderWithLocale(<HabitTracker />);
   await loaded();
   expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
-  expect(screen.getByRole('button', { name: 'Donate Bitcoin' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
 });
 
 it('lets the owner edit the published resolution text', async () => {
@@ -392,7 +448,7 @@ it('renders distinct partial and missed indicators and toggles donation entry wi
     true,
   );
   expect(screen.getAllByRole('radio', { name: 'Not achieved' })[1]).toHaveProperty('checked', true);
-  const toggle = screen.getByRole('button', { name: 'Donate Bitcoin' });
+  const toggle = screen.getByRole('button', { name: 'Send Bitcoin' });
   fireEvent.click(toggle);
   expect(screen.getByText('Donate Bitcoin · Member')).toBeTruthy();
   fireEvent.click(toggle);

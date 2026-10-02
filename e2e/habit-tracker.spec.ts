@@ -110,7 +110,7 @@ test('Function: HabitCommentDonation — signed-in visitors can request a commen
       await route.fulfill({ json: { ...payload, commentsAllowed: true, comments: [comment] } });
   });
   await page.goto('/habit-tracker');
-  await page.getByRole('button', { name: 'Donate Bitcoin', exact: true }).click();
+  await page.getByRole('button', { name: 'Send Bitcoin', exact: true }).click();
   await page.getByRole('textbox', { name: 'Amount' }).fill('100');
   await page.getByRole('button', { name: 'Donate Bitcoin', exact: true }).last().click();
   await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();

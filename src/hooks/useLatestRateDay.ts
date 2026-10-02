@@ -5,18 +5,21 @@ import { fetchGiftStats } from '@/lib/api';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 
 /**
- * Latest gift-day totals for preferred-fiat conversion, or `null`.
+ * Latest gift-day totals and whether the request has finished.
  *
  * Fetches `GET /gifts/stats` once on mount and returns
- * {@link latestRateDay} of `spendOverTime`. Resolves to `null` when no day
- * has a usable rate yet, or when the fetch fails. Never throws into the
- * caller. Drops the response after unmount via a cancelled flag.
+ * {@link latestRateDay} of `spendOverTime`. The request is settled after
+ * either a response or an error, including when no usable rate exists.
  *
- * @param enabled - When false, skip the fetch and stay `null`. Default true.
- * @returns The latest rate day, or `null` without a usable rate.
+ * @param enabled - When false, skip the fetch and remain unsettled. Default true.
+ * @returns The latest rate day and request state.
  */
-export function useLatestRateDay(enabled = true): FiatRateDay | null {
+export function useLatestRateDayState(enabled = true): {
+  rateDay: FiatRateDay | null;
+  settled: boolean;
+} {
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     if (!enabled) {
@@ -27,11 +30,13 @@ export function useLatestRateDay(enabled = true): FiatRateDay | null {
       .then((stats) => {
         if (!cancelled) {
           setRateDay(latestRateDay(stats.spendOverTime));
+          setSettled(true);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setRateDay(null);
+          setSettled(true);
         }
       });
     return () => {
@@ -39,5 +44,15 @@ export function useLatestRateDay(enabled = true): FiatRateDay | null {
     };
   }, [enabled]);
 
-  return rateDay;
+  return enabled ? { rateDay, settled } : { rateDay: null, settled: false };
+}
+
+/**
+ * Latest gift-day totals for preferred-fiat conversion, or `null`.
+ *
+ * @param enabled - When false, skip the fetch and stay `null`. Default true.
+ * @returns The latest rate day, or `null` without a usable rate.
+ */
+export function useLatestRateDay(enabled = true): FiatRateDay | null {
+  return useLatestRateDayState(enabled).rateDay;
 }
