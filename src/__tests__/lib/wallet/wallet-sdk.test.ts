@@ -500,6 +500,26 @@ describe('payments', () => {
     });
   });
 
+  it('prepare rejects a payment that would send a token rather than Bitcoin', async () => {
+    sdkPay.prepareSendPayment
+      .mockResolvedValueOnce({
+        amount: 21n,
+        tokenIdentifier: 'btkn1',
+        paymentMethod: { type: 'sparkInvoice', fee: '0' },
+      })
+      .mockResolvedValueOnce({
+        amount: 21n,
+        paymentMethod: { type: 'sparkInvoice', fee: '0', tokenIdentifier: 'btkn1' },
+      });
+    const conn = await connection();
+    await expect(conn.prepare({ type: 'input', input: 'spark1t' })).rejects.toThrow(
+      'Unsupported payment method',
+    );
+    await expect(conn.prepare({ type: 'input', input: 'spark1t' })).rejects.toThrow(
+      'Unsupported payment method',
+    );
+  });
+
   it('prepare rejects a method the app does not pay', async () => {
     sdkPay.prepareSendPayment.mockResolvedValue({
       amount: 1_000n,

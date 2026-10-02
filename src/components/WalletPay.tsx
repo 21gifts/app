@@ -22,7 +22,8 @@ export interface WalletPayProps {
   amountSats: number;
   /**
    * The existing desktop invoice QR plus Wallet of Satoshi button (smartphone:
-   * button only), shown when the in-app path is not used.
+   * button only), shown when the in-app path is not used, and under the
+   * low-balance alert of a member without a 21.gifts address.
    */
   fallback: ReactNode;
   /** Latest gift-day totals for the fee's fiat line, or `null`. */
@@ -35,11 +36,11 @@ export interface WalletPayProps {
  * as `/wallet`, so it is shown on a smartphone too. It shrinks to fit a narrow
  * card (the reaction pay page on a phone) and never grows past its usual size.
  *
- * @returns The address block, or `null` without a username.
+ * @param props - The member's username, which gives a 21.gifts address.
+ * @returns The address block, or `null` before the page host is known.
  */
-function OwnAddress(): ReactElement | null {
+function OwnAddress({ username }: { username: string }): ReactElement | null {
   const { t } = useTranslations();
-  const username = useAuthStore((state) => state.account?.username ?? null);
   const [host, setHost] = useState<string | null>(null);
   useEffect(() => {
     setHost(window.location.hostname);
@@ -49,6 +50,7 @@ function OwnAddress(): ReactElement | null {
   }
   const address = giftsLightningAddress(username, host);
   const qr = openCryptoPayQrValue(username, host);
+  /* v8 ignore next 3 -- WalletPay renders this only when the username gives an address */
   if (address === null || qr === null) {
     return null;
   }
@@ -69,8 +71,9 @@ function OwnAddress(): ReactElement | null {
  * Pay slot of an invoice pay sheet. With a `sparkInvoice` and a usable in-app
  * wallet it pays from the wallet: unlock when needed, the fee from the prepare
  * response, then **Pay from wallet**. While and after sending it says so; the
- * sheet's own long-poll closes it on confirmation. Otherwise it renders
- * `fallback` unchanged.
+ * sheet's own long-poll closes it on confirmation. Too little balance shows an
+ * alert with the member's own address and QR, or with `fallback` when the
+ * member's username gives no address. Otherwise it renders `fallback` unchanged.
  *
  * @param props - Request, shown amount, fallback, and rate day.
  * @returns The pay slot.
@@ -85,6 +88,8 @@ export function WalletPay({
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const { view, feeSats, unlock, pay } = useWalletPay(sparkInvoice, amountSats);
+  const username = useAuthStore((state) => state.account?.username ?? null);
+  const hasAddress = giftsLightningAddress(username) !== null;
 
   switch (view) {
     case 'fallback':
@@ -129,7 +134,7 @@ export function WalletPay({
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('wallet.payInsufficient')}
           </p>
-          <OwnAddress />
+          {hasAddress && username !== null ? <OwnAddress username={username} /> : fallback}
         </>
       );
     default:

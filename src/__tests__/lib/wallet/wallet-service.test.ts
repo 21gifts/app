@@ -1105,6 +1105,20 @@ describe('payFromWallet', () => {
     expect(useWalletStore.getState().balanceSats).toBeNull();
   });
 
+  it('fails a prepare that rejects after the connection changed, even for low funds', async () => {
+    let reject: (err: Error) => void = () => undefined;
+    await connectPaying({
+      prepare: () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        }),
+    });
+    const pending = payFromWallet({ type: 'input', input: 'a' });
+    await disconnectWallet();
+    reject(new Error('Insufficient funds'));
+    await expect(pending).resolves.toEqual({ kind: 'failed' });
+  });
+
   it('maps a prepare rejection to failed, or to insufficient when the SDK says so', async () => {
     let calls = 0;
     await connectPaying({
@@ -1233,5 +1247,33 @@ describe('parseWalletInput', () => {
       kind: 'unreachable',
     });
     await expect(parseWalletInput('hello world')).resolves.toEqual({ kind: 'invalid' });
+  });
+
+  it('asks to unlock when the connection changed while the text was read', async () => {
+    let settle: { resolve: (t: { type: 'onchain' }) => void; reject: (e: Error) => void } = {
+      resolve: () => undefined,
+      reject: () => undefined,
+    };
+    await connectPaying({
+      parse: () =>
+        new Promise((resolve, reject) => {
+          settle = { resolve, reject };
+        }),
+    });
+    const read = parseWalletInput('bc1q');
+    await disconnectWallet();
+    settle.resolve({ type: 'onchain' });
+    await expect(read).resolves.toEqual({ kind: 'unlock' });
+
+    await connectPaying({
+      parse: () =>
+        new Promise((resolve, reject) => {
+          settle = { resolve, reject };
+        }),
+    });
+    const failed = parseWalletInput('bob@pay.example');
+    await disconnectWallet();
+    settle.reject(new Error('fetch failed'));
+    await expect(failed).resolves.toEqual({ kind: 'unlock' });
   });
 });
