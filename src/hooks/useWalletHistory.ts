@@ -7,7 +7,7 @@ import { listWalletPayments } from '@/lib/wallet/wallet-service';
 import { useWalletStore } from '@/stores/wallet-store';
 
 /** Payments loaded per page. */
-export const WALLET_HISTORY_PAGE = 20;
+export const WALLET_HISTORY_PAGE_LIMIT = 20;
 
 /**
  * Load state of the payment list. `loading` is the first load (nothing is
@@ -136,7 +136,7 @@ export function useWalletHistory(): UseWalletHistoryResult {
   const reload = useCallback((): void => {
     request.current += 1;
     const mine = request.current;
-    const limit = Math.max(WALLET_HISTORY_PAGE, loaded.current);
+    const limit = Math.max(WALLET_HISTORY_PAGE_LIMIT, loaded.current);
     busy.current = true;
     listWalletPayments({ offset: 0, limit }).then(
       (page) => {
@@ -167,7 +167,7 @@ export function useWalletHistory(): UseWalletHistoryResult {
     const mine = request.current;
     const offset = loaded.current;
     busy.current = true;
-    listWalletPayments({ offset, limit: WALLET_HISTORY_PAGE }).then(
+    listWalletPayments({ offset, limit: WALLET_HISTORY_PAGE_LIMIT }).then(
       (page) => {
         if (mine !== request.current) {
           return;
@@ -175,7 +175,7 @@ export function useWalletHistory(): UseWalletHistoryResult {
         busy.current = false;
         loaded.current = offset + page.length;
         setPayments((current) => appendPage(current, page));
-        setHasMore(page.length === WALLET_HISTORY_PAGE);
+        setHasMore(page.length === WALLET_HISTORY_PAGE_LIMIT);
       },
       () => {
         if (mine !== request.current) {
