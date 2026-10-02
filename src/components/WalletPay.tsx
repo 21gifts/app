@@ -32,7 +32,8 @@ export interface WalletPayProps {
 /**
  * The member's own 21.gifts address and its Open CryptoPay QR, shown when the
  * wallet balance is too low so Bitcoin can be added. The same address and QR
- * as `/wallet`, so it is shown on a smartphone too.
+ * as `/wallet`, so it is shown on a smartphone too. It shrinks to fit a narrow
+ * card (the reaction pay page on a phone) and never grows past its usual size.
  *
  * @returns The address block, or `null` without a username.
  */
@@ -58,7 +59,9 @@ function OwnAddress(): ReactElement | null {
       <p className="min-w-0 max-w-full truncate text-center font-mono text-sm text-app-fg">
         {address}
       </p>
-      <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+      <div className="w-full max-w-[266px] [&_svg]:h-auto [&_svg]:w-full">
+        <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+      </div>
     </>
   );
 }
