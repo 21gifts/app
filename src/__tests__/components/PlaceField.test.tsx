@@ -709,6 +709,31 @@ describe('PlaceField', () => {
     }
   });
 
+  it('hides an open panel when Sunday starts and rebuilds the map afterwards', async () => {
+    stubMaps();
+    try {
+      renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      expect(await screen.findByLabelText('Place name')).toBeTruthy();
+      const Map = (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } })
+        .google.maps.Map;
+      // The open panel builds the map twice: once before the frame box is placed, then again.
+      const builtOnOpen = Map.mock.calls.length;
+      expect(builtOnOpen).toBeGreaterThan(0);
+      document.documentElement.dataset['localSunday'] = '1';
+      await waitFor(() => {
+        expect(screen.queryByLabelText('Place name')).toBeNull();
+      });
+      expect(Map).toHaveBeenCalledTimes(builtOnOpen);
+      delete document.documentElement.dataset['localSunday'];
+      await waitFor(() => {
+        expect(Map).toHaveBeenCalledTimes(builtOnOpen * 2);
+      });
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
   it('measures a shown preview inside the app frame', () => {
     renderWithLocale(
       <div data-app-frame>

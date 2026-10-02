@@ -355,11 +355,12 @@ export function PlaceField(props: {
     props.place?.lng,
     props.place?.label,
     mapPlaced,
+    sunday,
   ]);
 
   useLayoutEffect(() => {
-    const showPreviewBox = showPreview && props.place !== null && !open;
-    const showPanelBox = open && !props.disabled && (unavailable || mapsKey !== null);
+    const showPreviewBox = !sunday && showPreview && props.place !== null && !open;
+    const showPanelBox = !sunday && open && !props.disabled && (unavailable || mapsKey !== null);
     const commitPlacedBox = (next: PlacedFrameBox | null): void => {
       if (samePlacedBox(placedBoxRef.current, next)) {
         return;
@@ -416,7 +417,7 @@ export function PlaceField(props: {
       viewport?.removeEventListener('resize', measure);
       viewport?.removeEventListener('scroll', measure);
     };
-  }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey]);
+  }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey, sunday]);
 
   const previewText =
     props.place === null
