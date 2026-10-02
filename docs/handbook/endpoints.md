@@ -9,7 +9,7 @@
 
 ## Endpoint: GET /.well-known/lnurlp/[username]
 
-- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. The callback is the linked Wallet of Satoshi one until the member's in-app wallet is verified; after that the api answers with the callback `GET /lnurlp/[username]/invoice`.
+- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Once the member's in-app wallet is verified the api answers with the callback `GET /lnurlp/[username]/invoice`, so payments to that address settle in the member's own in-app wallet.
 - **Errors:** Upstream 404/502.
 - **Used by:** Lightning wallets.
 - **Auth:** none.
@@ -163,13 +163,6 @@
 - **Used by:** `fetchGrantContinuation` on `/grants/goals`.
 - **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
 
-## Endpoint: GET /lightning-address
-
-- **Purpose:** Same-origin proxy of public LUD-16 resolve.
-- **Errors:** Upstream 400/502, or 502 if the api is unreachable.
-- **Used by:** `resolveLightningAddress` (LUD-16 helper).
-- **Auth:** Public.
-
 ## Endpoint: POST /me/name
 
 - **Purpose:** Same-origin proxy to set or replace the display name.
@@ -305,7 +298,7 @@
 
 ## Endpoint: POST /me/setup/skip
 
-- **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).
+- **Purpose:** Same-origin proxy to skip the name onboarding step (`{ step: 'name' }`). Rules and username cannot be skipped.
 - **Errors:** Upstream 400/401, or 502 if the api is unreachable.
 - **Used by:** `skipSetup`.
 - **Auth:** Bearer.
@@ -589,20 +582,6 @@
 - **Errors:** Route 404 for unknown `file`; upstream 404/502 for known video names when missing or unreachable.
 - **Used by:** Feed `<video src>` via `forumVideoSrc`.
 - **Auth:** None required.
-
-## Endpoint: POST /me/lightning-address
-
-- **Purpose:** Same-origin proxy to link or replace a Wallet of Satoshi address.
-- **Errors:** Upstream 400, or 502 if the api is unreachable.
-- **Used by:** `setLightningAddress`.
-- **Auth:** Bearer.
-
-## Endpoint: DELETE /me/lightning-address
-
-- **Purpose:** Same-origin proxy to unlink a Wallet of Satoshi address.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
-- **Used by:** `unlinkLightningAddress`.
-- **Auth:** Bearer.
 
 ## Endpoint: GET /push/vapid-public
 

@@ -100,7 +100,7 @@ async function confirmNewAccount(page: Page): Promise<string> {
   );
   await page.getByRole('textbox', { name: 'Name' }).fill(handle);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   return handle;
 }
 
@@ -196,7 +196,7 @@ test('login Open a new account creates a passkey after the choice', async ({ pag
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
 });
 
 test('login Log in with existing account does not start register', async ({ page }) => {
@@ -267,7 +267,7 @@ test('login with an existing passkey skips the account choice', async ({ page })
   );
 });
 
-test('signed-in session hydrates, then saves a name, links an address, and reaches welcome', async ({
+test('signed-in session hydrates, saves a name, skips the address step, and reaches welcome', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -281,42 +281,11 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       body: JSON.stringify({
         ...E2E_ACCOUNT,
         name: 'Ada',
+        username: 'ada',
         setup: 'lightning-address',
         missing: ['lightning-address', 'rules'],
       }),
     });
-  });
-  await page.route(/\/me\/lightning-address$/, async (route) => {
-    const method = route.request().method();
-    if (method === 'POST') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: null,
-          setup: 'rules',
-          missing: ['rules'],
-        }),
-      });
-      return;
-    }
-    if (method === 'DELETE') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          lightningAddress: null,
-          setup: 'lightning-address',
-          missing: ['lightning-address', 'rules'],
-        }),
-      });
-      return;
-    }
-    await route.continue();
   });
   await page.route(/\/me\/rules-agreement$/, async (route) => {
     await route.fulfill({
@@ -325,6 +294,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       body: JSON.stringify({
         ...E2E_ACCOUNT,
         name: 'Ada',
+        username: 'ada',
         lightningAddress: null,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
@@ -338,7 +308,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(E2E_ACCOUNT),
+      body: JSON.stringify({ ...E2E_ACCOUNT, username: 'ada' }),
     });
   });
   await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -357,21 +327,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
   await expect(page).toHaveURL(/\/setup\/name/);
   await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
-  await expect(
-    page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
-  ).toHaveCount(0);
-
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
-  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
-  await expect(page.getByText('Hi, Ada')).toBeVisible();
-  await expect(
-    page.getByText(/Add your Wallet of Satoshi address so gifts can reach you/i),
-  ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toHaveCount(0);
-
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page).toHaveURL(/\/setup\/rules/);

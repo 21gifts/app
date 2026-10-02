@@ -78,7 +78,6 @@ export function ForumPaySheet({
     void Promise.resolve(onPaySubmit());
   };
 
-
   if (invoiceForCard === null) {
     return (
       <form

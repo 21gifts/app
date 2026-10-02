@@ -17,19 +17,14 @@ const RATE_DAY: FiatRateDay = {
 };
 
 function hookWith(view: WalletPayView, feeSats: number | null = 0): UseWalletPayResult {
-  const result = { view, feeSats, unlock: vi.fn(), pay: vi.fn() };
+  const result = { view, feeSats, unlock: vi.fn(), pay: vi.fn(), retry: vi.fn() };
   vi.mocked(useWalletPay).mockReturnValue(result);
   return result;
 }
 
 function renderPay(sparkInvoice: string | null = 'spark1x'): void {
   renderWithLocale(
-    <WalletPay
-      sparkInvoice={sparkInvoice}
-      amountSats={21}
-      rateDay={RATE_DAY}
-      fallback={<button type="button">Pay with Wallet of Satoshi</button>}
-    />,
+    <WalletPay sparkInvoice={sparkInvoice} pr="lnbc210n1x" amountSats={21} rateDay={RATE_DAY} />,
   );
 }
 
@@ -44,20 +39,41 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('WalletPay', () => {
-  it('passes the request to the hook and renders the fallback unchanged', () => {
-    hookWith('fallback');
+  it('passes both requests and the amount to the hook', () => {
+    hookWith('preparing');
     renderPay(null);
-    expect(useWalletPay).toHaveBeenCalledWith(null, 21);
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(useWalletPay).toHaveBeenCalledWith(null, 'lnbc210n1x', 21);
   });
 
-  it('offers Unlock wallet and hides the fallback', () => {
+  it('says the wallet is not available here, without any button', () => {
+    hookWith('unavailable');
+    renderPay();
+    expect(screen.getByRole('status').textContent).toBe(
+      'Your 21.gifts wallet is not available here, so this cannot be paid.',
+    );
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('says the payment could not be prepared and Try again retries', () => {
+    const hook = hookWith('failed');
+    renderPay();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your wallet could not prepare this payment. Please try again.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(hook.retry).toHaveBeenCalledTimes(1);
+    expect(hook.unlock).not.toHaveBeenCalled();
+    expect(hook.pay).not.toHaveBeenCalled();
+  });
+
+  it('offers Unlock wallet as the only button', () => {
     const hook = hookWith('unlock');
     renderPay();
     expect(screen.getByText('Unlock your wallet to pay from your Bitcoin balance.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Unlock wallet' }));
     expect(hook.unlock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 
   it('shows checking and paying as status lines without buttons', () => {
