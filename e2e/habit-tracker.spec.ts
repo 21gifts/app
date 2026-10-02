@@ -161,9 +161,11 @@ test('Function: useLatestRateDayState — the donation invoice waits until the g
     } else
       await route.fulfill({ json: { ...payload, commentsAllowed: true, comments: [comment] } });
   });
-  let releaseStats = () => undefined;
+  let releaseStats: () => void = () => undefined;
   const statsHeld = new Promise<void>((resolve) => {
-    releaseStats = resolve;
+    releaseStats = () => {
+      resolve();
+    };
   });
   await page.route('**/gifts/stats', async (route) => {
     await statsHeld;

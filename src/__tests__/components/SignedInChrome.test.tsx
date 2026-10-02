@@ -1029,12 +1029,18 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
       expect(panel.className).toContain('w-72');
-      expect(panel.className).toContain('absolute');
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('overflow-auto');
       expect(panel.className).not.toContain('max-h-');
       expect(panel.hasAttribute('data-scrollport')).toBe(true);
-      expect(panel.style.maxHeight).toBe('721px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(721);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       bottom = 700;
@@ -1044,6 +1050,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('mt-0');
       expect(panel.hasAttribute('data-scrollport')).toBe(false);
       expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1082,6 +1094,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('mt-0');
       expect(panel.hasAttribute('data-scrollport')).toBe(false);
       expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1129,7 +1147,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('max-h-');
       expect(panel.hasAttribute('data-scrollport')).toBe(true);
-      expect(panel.style.maxHeight).toBe('601px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(601);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
     } finally {
       if (previousInnerHeight === undefined) {
@@ -1175,6 +1198,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('mt-0');
       expect(panel.hasAttribute('data-scrollport')).toBe(false);
       expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
@@ -1183,6 +1212,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('mt-0');
       expect(panel.hasAttribute('data-scrollport')).toBe(false);
       expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1226,6 +1261,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('mt-2');
       expect(panel.hasAttribute('data-scrollport')).toBe(false);
       expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1294,7 +1335,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('max-h-');
       expect(panel.hasAttribute('data-scrollport')).toBe(true);
-      expect(panel.style.maxHeight).toBe('721px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(721);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       cleanup();
       expect(disconnected).toBe(true);
     } finally {
@@ -1339,7 +1385,12 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('max-h-');
       expect(panel.hasAttribute('data-scrollport')).toBe(true);
-      expect(panel.style.maxHeight).toBe('721px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(721);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1354,7 +1405,10 @@ describe('SignedInChrome', () => {
   it('keeps the wide menu in scroll mode when the capped box sits in the window', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
-    const previousScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    const previousScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
     Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
       configurable: true,
@@ -1363,7 +1417,7 @@ describe('SignedInChrome', () => {
       },
     });
     HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
-      const capped = this.id === 'signed-in-menu' && this.style.maxHeight !== '';
+      const capped = this.id === 'signed-in-menu' && this.style.bottom !== '';
       return {
         x: 0,
         y: 85,
@@ -1383,7 +1437,9 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(panel.hasAttribute('data-scrollport')).toBe(true);
-      expect(panel.style.maxHeight).not.toBe('');
+      expect(panel.style.bottom).not.toBe('');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).toContain('fixed');
       expect(panel.className).toContain('mt-0');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('max-h-');
@@ -1391,7 +1447,9 @@ describe('SignedInChrome', () => {
         window.dispatchEvent(new Event('resize'));
       });
       expect(panel.hasAttribute('data-scrollport')).toBe(true);
-      expect(panel.style.maxHeight).not.toBe('');
+      expect(panel.style.bottom).not.toBe('');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).toContain('fixed');
       expect(panel.className).toContain('mt-0');
     } finally {
       if (previousInnerHeight === undefined) {

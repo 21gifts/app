@@ -66,6 +66,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:comments-closed",
+    "label": "/habit-tracker comments-closed",
+    "visual": "state-habit-tracker-comments-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donation-error",
+    "label": "/habit-tracker donation-error",
+    "visual": "state-habit-tracker-donation-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:default",
     "label": "/ default",
     "visual": "screen-root",

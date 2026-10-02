@@ -62,7 +62,12 @@ export function SignedInChrome(): ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
-  const [panelMaxHeight, setPanelMaxHeight] = useState('');
+  const [panelStyle, setPanelStyle] = useState<{
+    top: string;
+    left: string;
+    width: string;
+    bottom: string;
+  }>();
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
@@ -143,7 +148,14 @@ export function SignedInChrome(): ReactElement {
       if (tight) {
         setTight(false);
       }
-      setPanelMaxHeight((current) => (current === '' ? current : ''));
+      const menuToClear = menuRef.current;
+      if (menuToClear !== null) {
+        menuToClear.style.top = '';
+        menuToClear.style.bottom = '';
+        menuToClear.style.left = '';
+        menuToClear.style.width = '';
+      }
+      setPanelStyle((current) => (current === undefined ? current : undefined));
       naturalBottomRef.current = null;
       naturalScrollHeightRef.current = null;
       naturalInnerHeightRef.current = null;
@@ -161,13 +173,27 @@ export function SignedInChrome(): ReactElement {
       ) {
         return naturalBottomRef.current;
       }
-      const applied = menu.style.maxHeight;
-      if (applied !== '') {
-        menu.style.maxHeight = '';
+      const appliedTop = menu.style.top;
+      const appliedLeft = menu.style.left;
+      const appliedWidth = menu.style.width;
+      const appliedBottom = menu.style.bottom;
+      const wasFixed = menu.classList.contains('fixed');
+      if (wasFixed) {
+        menu.classList.remove('fixed');
+        menu.classList.add('absolute');
       }
+      menu.style.top = '';
+      menu.style.left = '';
+      menu.style.width = '';
+      menu.style.bottom = '';
       const bottom = menu.getBoundingClientRect().bottom;
-      if (applied !== '') {
-        menu.style.maxHeight = applied;
+      menu.style.top = appliedTop;
+      menu.style.left = appliedLeft;
+      menu.style.width = appliedWidth;
+      menu.style.bottom = appliedBottom;
+      if (wasFixed) {
+        menu.classList.add('fixed');
+        menu.classList.remove('absolute');
       }
       naturalBottomRef.current = bottom;
       naturalScrollHeightRef.current = scrollHeight;
@@ -184,16 +210,53 @@ export function SignedInChrome(): ReactElement {
         // Decide from the uncapped bottom. Using the capped box would drop the cap and flutter.
         const natural = readNaturalBottom(forceNatural);
         // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
-        const nextTight =
-          natural > limit ? true : tight && natural <= limit - 48 ? false : tight;
-        const applied = menu.style.maxHeight;
-        let nextMax = '';
+        const nextTight = natural > limit ? true : tight && natural <= limit - 48 ? false : tight;
+        const appliedTop = menu.style.top;
+        const appliedLeft = menu.style.left;
+        const appliedWidth = menu.style.width;
+        const appliedBottom = menu.style.bottom;
+        let nextTop = '';
+        let nextLeft = '';
+        let nextWidth = '';
+        let nextBottom = '';
         if (nextTight && natural > limit) {
-          const top = menu.getBoundingClientRect().top;
+          const wasFixed = menu.classList.contains('fixed');
+          if (wasFixed) {
+            menu.classList.remove('fixed');
+            menu.classList.add('absolute');
+          }
+          menu.style.top = '';
+          menu.style.left = '';
+          menu.style.width = '';
+          menu.style.bottom = '';
+          const rect = menu.getBoundingClientRect();
+          if (wasFixed) {
+            menu.classList.add('fixed');
+            menu.classList.remove('absolute');
+          }
+          const top = rect.top;
+          const left = rect.left;
+          const width = rect.width;
           let cap = Math.max(0, limit - top);
-          nextMax = `${cap}px`;
-          if (applied !== nextMax) {
-            menu.style.maxHeight = nextMax;
+          nextTop = `${top}px`;
+          nextLeft = `${left}px`;
+          nextWidth = `${width}px`;
+          nextBottom = `${window.innerHeight - (top + cap)}px`;
+          if (
+            appliedTop !== nextTop ||
+            appliedLeft !== nextLeft ||
+            appliedWidth !== nextWidth ||
+            appliedBottom !== nextBottom
+          ) {
+            menu.style.top = nextTop;
+            menu.style.left = nextLeft;
+            menu.style.width = nextWidth;
+            menu.style.bottom = nextBottom;
+          } else {
+            menu.style.top = appliedTop;
+            menu.style.left = appliedLeft;
+            menu.style.width = appliedWidth;
+            menu.style.bottom = appliedBottom;
           }
           const boxed = menu.getBoundingClientRect().bottom;
           if (boxed > limit && boxed < natural) {
@@ -202,22 +265,71 @@ export function SignedInChrome(): ReactElement {
               (Number.parseFloat(style.borderTopWidth) || 0) +
               (Number.parseFloat(style.borderBottomWidth) || 0);
             cap = Math.max(0, cap - border);
-            nextMax = `${cap}px`;
-            if (applied !== nextMax) {
-              menu.style.maxHeight = nextMax;
+            nextBottom = `${window.innerHeight - (top + cap)}px`;
+            if (
+              appliedTop !== nextTop ||
+              appliedLeft !== nextLeft ||
+              appliedWidth !== nextWidth ||
+              appliedBottom !== nextBottom
+            ) {
+              menu.style.top = nextTop;
+              menu.style.left = nextLeft;
+              menu.style.width = nextWidth;
+              menu.style.bottom = nextBottom;
             }
           }
-        } else if (applied !== '') {
-          menu.style.maxHeight = '';
+        } else if (
+          appliedTop !== '' ||
+          appliedLeft !== '' ||
+          appliedWidth !== '' ||
+          appliedBottom !== ''
+        ) {
+          menu.style.top = '';
+          menu.style.bottom = '';
+          menu.style.left = '';
+          menu.style.width = '';
         }
-        if (nextTight === tight && nextMax === applied) {
-          if (menu.style.maxHeight !== applied) {
-            menu.style.maxHeight = applied;
+        if (
+          nextTight === tight &&
+          nextTop === appliedTop &&
+          nextLeft === appliedLeft &&
+          nextWidth === appliedWidth &&
+          nextBottom === appliedBottom
+        ) {
+          if (
+            menu.style.top !== appliedTop ||
+            menu.style.left !== appliedLeft ||
+            menu.style.width !== appliedWidth ||
+            menu.style.bottom !== appliedBottom
+          ) {
+            menu.style.top = appliedTop;
+            menu.style.left = appliedLeft;
+            menu.style.width = appliedWidth;
+            menu.style.bottom = appliedBottom;
           }
           return;
         }
         setTight(nextTight);
-        setPanelMaxHeight((current) => (current === nextMax ? current : nextMax));
+        const nextStyle =
+          nextBottom === ''
+            ? undefined
+            : { top: nextTop, left: nextLeft, width: nextWidth, bottom: nextBottom };
+        setPanelStyle((current) => {
+          if (current === undefined && nextStyle === undefined) {
+            return current;
+          }
+          if (
+            current !== undefined &&
+            nextStyle !== undefined &&
+            current.top === nextStyle.top &&
+            current.left === nextStyle.left &&
+            current.width === nextStyle.width &&
+            current.bottom === nextStyle.bottom
+          ) {
+            return current;
+          }
+          return nextStyle;
+        });
       } finally {
         suppressMeasureRef.current = false;
       }
@@ -240,7 +352,7 @@ export function SignedInChrome(): ReactElement {
     };
   }, [open, narrow, tight, account?.role]);
 
-  const menuScrolls = open && !narrow && panelMaxHeight !== '';
+  const menuScrolls = open && !narrow && panelStyle !== undefined;
 
   useLayoutEffect(() => {
     const menu = menuRef.current;
@@ -291,7 +403,7 @@ export function SignedInChrome(): ReactElement {
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      ? `${menuScrolls ? 'fixed' : 'absolute'} right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
       : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
@@ -318,7 +430,7 @@ export function SignedInChrome(): ReactElement {
               id="signed-in-menu"
               ref={menuRef}
               className={panelClass}
-              style={menuScrolls ? { maxHeight: panelMaxHeight } : undefined}
+              style={menuScrolls ? panelStyle : undefined}
               {...(menuScrolls ? { 'data-scrollport': '' } : {})}
             >
               <Link
