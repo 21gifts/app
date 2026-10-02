@@ -36,5 +36,6 @@ export function lnurlRelayTarget(text: string, hostname: string): string | null 
     .toLowerCase()
     .replace(/\.$/, '')
     .replace(/^www\./, '');
-  return giftsLightningAddress('own', hostname) === `own@${domain}` ? null : bare;
+  const own = giftsLightningAddress('own', hostname.replace(/\.$/, ''));
+  return own === `own@${domain}` ? null : bare;
 }
