@@ -34,8 +34,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, staff-only Statistics
- * (`/statistics`, lucide `BarChart3`) then staff-only Moderation
+ * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, Statistics
+ * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
  * notifications with an
@@ -302,39 +302,39 @@ export function SignedInChrome(): ReactElement {
                 <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 {t('nav.trustChain')}
               </Link>
+              {account !== null ? (
+                <Link
+                  href="/statistics"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <BarChart3 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.statistics')}
+                </Link>
+              ) : null}
               {roleAtLeast(account?.role, 'moderator') ? (
-                <>
-                  <Link
-                    href="/statistics"
-                    onClick={() => {
-                      setOpen(false);
-                    }}
-                    className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-                  >
-                    <BarChart3 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    {t('nav.statistics')}
-                  </Link>
-                  <Link
-                    href="/moderate"
-                    aria-label={
-                      moderationUnreadCount > 0
-                        ? t('nav.moderateUnread', { count: String(moderationUnreadCount) })
-                        : t('nav.moderate')
-                    }
-                    onClick={() => {
-                      setOpen(false);
-                    }}
-                    className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-                  >
-                    <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    {t('nav.moderate')}
-                    {moderationUnreadCount > 0 ? (
-                      <span className="ml-auto font-semibold tabular-nums lining-nums">
-                        {moderationUnreadCount}
-                      </span>
-                    ) : null}
-                  </Link>
-                </>
+                <Link
+                  href="/moderate"
+                  aria-label={
+                    moderationUnreadCount > 0
+                      ? t('nav.moderateUnread', { count: String(moderationUnreadCount) })
+                      : t('nav.moderate')
+                  }
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.moderate')}
+                  {moderationUnreadCount > 0 ? (
+                    <span className="ml-auto font-semibold tabular-nums lining-nums">
+                      {moderationUnreadCount}
+                    </span>
+                  ) : null}
+                </Link>
               ) : null}
               <Link
                 href="/notifications"

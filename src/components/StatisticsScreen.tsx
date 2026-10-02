@@ -2,14 +2,14 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations, type LocaleContextValue } from '@/components/LocaleProvider';
-import { PayoutGoalChart } from '@/components/PayoutGoalChart';
+import { PeopleCountChart } from '@/components/PeopleCountChart';
 import { ShopActivityChart } from '@/components/ShopActivityChart';
+import { StaffFunctions } from '@/components/StaffFunctions';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { fetchGiftStats, fetchShopActivity } from '@/lib/api';
 import type { GiftStats, ShopActivityDay } from '@/lib/api-types';
 import type { Locale } from '@/lib/locale';
 import {
-  PAYOUT_GOAL,
   chartRows,
   countOnDay,
   formatUtcDate,
@@ -20,22 +20,19 @@ import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Signed-in daily funding-goal chart for staff, with shop activity under it.
+ * People-count chart for every visitor, with shop activity under it.
  *
- * Moderators see yesterday versus 100 and the 30-UTC-day chart from
- * {@link fetchGiftStats}, always open, with a secondary ButtonLink to
- * `/moderate/payouts`, then shop counts from {@link fetchShopActivity}. Each
- * panel loads and fails on its own. Other signed-in visitors see a short
- * forbidden message. Does not fetch unless the visitor is staff. Renders
- * nothing without a session.
+ * Every visitor sees yesterday's person count and the 30-UTC-day chart
+ * from {@link fetchGiftStats}, always open, then shop counts from
+ * {@link fetchShopActivity}. Each panel loads and fails on its own. Moderators
+ * also see closed {@link StaffFunctions} between the panels when yesterday's
+ * count is a number. Fetches both feeds with or without a session.
  *
- * @returns The statistics card, forbidden copy, or `null` without a session.
+ * @returns The statistics card.
  */
-export function StatisticsScreen(): ReactElement | null {
+export function StatisticsScreen(): ReactElement {
   const { t, locale } = useTranslations();
-  const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const staff = roleAtLeast(account?.role, 'moderator');
   const [stats, setStats] = useState<GiftStats | null>(null);
   const [goalError, setGoalError] = useState(false);
   const [goalAttempt, setGoalAttempt] = useState(0);
@@ -44,9 +41,6 @@ export function StatisticsScreen(): ReactElement | null {
   const [shopAttempt, setShopAttempt] = useState(0);
 
   useEffect(() => {
-    if (session === null || !staff) {
-      return;
-    }
     let cancelled = false;
     setGoalError(false);
     void (async () => {
@@ -67,17 +61,14 @@ export function StatisticsScreen(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, staff, goalAttempt]);
+  }, [goalAttempt]);
 
   useEffect(() => {
-    if (session === null || !staff) {
-      return;
-    }
     let cancelled = false;
     setShopError(false);
     void (async () => {
       try {
-        const next = await fetchShopActivity(session);
+        const next = await fetchShopActivity();
         if (cancelled) {
           return;
         }
@@ -93,29 +84,20 @@ export function StatisticsScreen(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, staff, shopAttempt]);
+  }, [shopAttempt]);
 
-  if (session === null) {
-    return null;
-  }
-
-  if (!staff) {
-    return (
-      <Card maxWidth="xl" surface={false}>
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('statistics.heading')}
-        </h1>
-        <p className="text-center text-sm text-app-muted">{t('moderate.forbidden')}</p>
-      </Card>
-    );
-  }
+  const yesterdayCount =
+    stats === null
+      ? null
+      : countOnDay(stats.spendOverTime, previousUtcDay(utcDayFromMs(Date.now())));
+  const showStaffFunctions = roleAtLeast(account?.role, 'moderator') && yesterdayCount !== null;
 
   return (
     <Card maxWidth="xl" surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('statistics.heading')}
       </h1>
-      <PayoutGoalPanel
+      <PeopleCountPanel
         t={t}
         locale={locale}
         stats={stats}
@@ -124,6 +106,13 @@ export function StatisticsScreen(): ReactElement | null {
           setGoalAttempt((current) => current + 1);
         }}
       />
+      {showStaffFunctions ? (
+        <StaffFunctions>
+          <ButtonLink href="/moderate/payouts" variant="secondary" size="lg">
+            {t('moderate.payouts.link')}
+          </ButtonLink>
+        </StaffFunctions>
+      ) : null}
       <ShopActivityPanel
         t={t}
         locale={locale}
@@ -138,13 +127,12 @@ export function StatisticsScreen(): ReactElement | null {
 }
 
 /**
- * Staff payout-goal panel: yesterday versus 100 and the 30-day chart, always open.
- * The payout-per-person ButtonLink sits under the chart foot.
+ * People-count panel: yesterday's count and the 30-day chart, always open.
  *
  * @param props - Catalog, locale, stats load state, and retry handler.
  * @returns The panel, or a loading/error stand-in.
  */
-function PayoutGoalPanel(props: {
+function PeopleCountPanel(props: {
   t: LocaleContextValue['t'];
   locale: Locale;
   stats: GiftStats | null;
@@ -154,7 +142,7 @@ function PayoutGoalPanel(props: {
   const { t, locale, stats, error, onRetry } = props;
   const shell =
     'flex w-full flex-col gap-3 rounded-3xl border border-app-border-strong bg-app-card-muted p-4';
-  const labeled = { role: 'group' as const, 'aria-label': t('moderate.goal.widgetLabel') };
+  const labeled = { role: 'group' as const, 'aria-label': t('statistics.people.widgetLabel') };
   const errorPanel = (
     <div className={`${shell} items-center`} {...labeled}>
       <p role="alert" className="text-center text-sm text-app-danger">
@@ -185,74 +173,29 @@ function PayoutGoalPanel(props: {
     return errorPanel;
   }
   const rows = chartRows(stats.spendOverTime, today);
-  const percent = Math.min(100, Math.round((count / PAYOUT_GOAL) * 100));
 
   return (
     <div className={shell} {...labeled}>
-      <div className="flex w-full flex-col gap-3 text-left">
-        <div className="flex w-full items-start justify-between gap-3">
-          <p className="text-base font-semibold text-app-fg">{t('moderate.goal.title')}</p>
-          <p className="shrink-0 text-2xl font-semibold tabular-nums lining-nums text-app-fg">
-            {t('moderate.goal.percent', { percent })}
-          </p>
-        </div>
-        <div className="flex w-full items-baseline justify-between gap-2">
-          <p className="min-w-0 whitespace-nowrap text-xs text-app-muted sm:text-sm">
-            {t('moderate.goal.subtitle')}
-          </p>
-          <p className="shrink-0 whitespace-nowrap text-right text-xs text-app-muted">
-            {t('moderate.goal.yesterdayOf', { count, goal: PAYOUT_GOAL })}
-          </p>
-        </div>
-        <svg
-          className="h-3 w-full"
-          viewBox="0 0 100 12"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <rect width="100" height="12" rx="6" className="fill-app-border" />
-          <rect
-            width={percent}
-            height="12"
-            rx="6"
-            className="fill-app-accent"
-            data-testid="payout-goal-fill"
-          />
-        </svg>
-      </div>
-      <div className="flex flex-col gap-3">
-        <p className="text-sm text-app-muted">
-          {t('moderate.goal.explYesterday', {
-            date: formatUtcDate(yesterday, locale),
-            count,
-            percent,
-            goal: PAYOUT_GOAL,
-          })}
-        </p>
-        <p className="text-sm text-app-muted">{t('moderate.goal.explOfficial')}</p>
-        <p className="text-sm text-app-muted">{t('moderate.goal.explBar')}</p>
-        <p className="text-sm font-medium text-app-fg">{t('moderate.goal.chartTitle')}</p>
-        <PayoutGoalChart
-          rows={rows}
-          today={today}
-          locale={locale}
-          ariaLabel={t('moderate.goal.chartTitle')}
-        />
-        <p className="text-center text-xs text-app-muted">
-          {t('moderate.goal.chartFoot', { goal: PAYOUT_GOAL })}
-        </p>
-        <div className="flex w-full flex-col items-center gap-3">
-          <ButtonLink href="/moderate/payouts" variant="secondary" size="lg">
-            {t('moderate.payouts.link')}
-          </ButtonLink>
-        </div>
-      </div>
+      <p className="text-sm text-app-fg">
+        {t('statistics.people.yesterday', {
+          date: formatUtcDate(yesterday, locale),
+          count,
+        })}
+      </p>
+      <p className="text-sm text-app-muted">{t('statistics.people.explainer')}</p>
+      <p className="text-sm font-medium text-app-fg">{t('statistics.people.chartLabel')}</p>
+      <PeopleCountChart
+        rows={rows}
+        today={today}
+        locale={locale}
+        ariaLabel={t('statistics.people.chartLabel')}
+      />
     </div>
   );
 }
 
 /**
- * Staff shop-activity panel: one explainer and the 30-day shop-count chart.
+ * Shop-activity panel: one explainer and the 30-day shop-count chart.
  *
  * @param props - Catalog, locale, days load state, and retry handler.
  * @returns The panel, or a loading/error stand-in.

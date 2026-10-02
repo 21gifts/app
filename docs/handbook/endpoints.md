@@ -132,15 +132,15 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, the staff payout-goal chart on `/statistics`, and the staff payout-goal widget on `/moderate`.
+- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, the people-count chart on `/statistics` (every visitor, including signed-out, no goal), and the staff payout-goal widget on `/moderate`.
 - **Auth:** Public.
 
 ## Endpoint: GET /shops/activity
 
-- **Purpose:** Same-origin proxy of api `GET /shops/activity` (staff shop-use counts, 30 UTC days).
-- **Errors:** Upstream 401/403/503, or 502 if the api is unreachable.
+- **Purpose:** Same-origin proxy of api `GET /shops/activity` (shop-use counts, 30 UTC days).
+- **Errors:** The proxy forwards the upstream status. Expected upstream errors are 503 when shop activity is unavailable, or 502 if this proxy cannot reach the api.
 - **Used by:** `fetchShopActivity` on `/statistics`.
-- **Auth:** Bearer session forwarded; the api allows moderator and above.
+- **Auth:** No bearer. StatisticsScreen calls it for every visitor.
 
 ## Endpoint: GET /lightning-address
 
@@ -410,9 +410,23 @@
 
 ## Endpoint: GET /public-messages/[id]/external-profile
 
-- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer).
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer). Optional `postCount` and `replyCount` are nonnegative integers; absent still parses.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, upstream 503, or 502 if the api is unreachable.
 - **Used by:** `fetchExternalAuthorProfile`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-posts
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-posts`, body `{ messages }` for that external author, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorPosts`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-replies
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-replies`, body `{ messages }` for that external author, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorReplies`.
 - **Auth:** Public.
 
 ## Endpoint: GET /public-messages/[id]

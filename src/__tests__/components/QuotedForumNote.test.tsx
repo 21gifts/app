@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -1028,7 +1028,8 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Founder')).toBeNull();
   });
 
-  it('shows an external quoted author as a View profile button without a member link', async () => {
+  it('shows an external quoted author as a View profile link without a member link', async () => {
+    const onActivate = vi.fn();
     const viaQuoted: ForumMessage = {
       ...quotedNote,
       role: 'basis',
@@ -1044,12 +1045,13 @@ describe('ForumQuotedBody', () => {
         excludeId={PARENT_ID}
         rateDay={null}
         fiat="USD"
+        onActivate={onActivate}
       />,
     );
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'View profile' })).toBeTruthy();
-    });
-    expect(screen.queryByRole('link', { name: 'View profile' })).toBeNull();
+    const author = await screen.findByRole('link', { name: 'View profile' });
+    expect(author.getAttribute('href')).toBe(`/messages/${viaQuoted.id}/author?name=Robin`);
+    fireEvent.click(author);
+    expect(onActivate).not.toHaveBeenCalled();
     expect(
       screen
         .queryAllByRole('link')
@@ -1059,11 +1061,8 @@ describe('ForumQuotedBody', () => {
       screen.getByRole('link', { name: 'Open linked note from Robin (external)' }),
     ).toBeTruthy();
     expect(screen.getByText('External')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'View profile' }));
-    const dialog = screen.getByRole('dialog', { name: 'Robin' });
-    expect(dialog.parentElement).toBe(document.body);
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog', { name: 'Robin' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
   it('uses the external aria-label for a quoted note with via nostr', async () => {

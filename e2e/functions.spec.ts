@@ -731,7 +731,23 @@ test('Function: proxyExternalAuthorProfileGet — GET /public-messages/[id]/exte
   ).toBeGreaterThanOrEqual(400);
 });
 
-test('Function: fetchExternalAuthorProfile — the sheet shows the address from the client fetch', async ({
+test('Function: proxyExternalAuthorPostsGet — GET /public-messages/[id]/external-posts is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/public-messages/[id]/external-posts')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: proxyExternalAuthorRepliesGet — GET /public-messages/[id]/external-replies is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/public-messages/[id]/external-replies')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
+test('Function: fetchExternalAuthorProfile — the page shows the address from the client fetch', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -799,13 +815,14 @@ test('Function: fetchExternalAuthorProfile — the sheet shows the address from 
     request.url().includes('/public-messages/m-ext/external-profile'),
   );
   await page.getByRole('button', { name: 'View profile' }).click();
+  await expect(page).toHaveURL(/\/messages\/m-ext\/author/);
   expect((await profileRequest).method()).toBe('GET');
-  const dialog = page.getByRole('dialog', { name: 'Robin' });
-  await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
-  await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
+  await expect(page.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+  await expect(page.getByText('npub1example', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-test('Function: ExternalAuthorSheet — dialog shows the name, address, npub, and icon Copy', async ({
+test('Function: ExternalAuthorProfile — card shows the address, npub, and icon Copy', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -871,13 +888,120 @@ test('Function: ExternalAuthorSheet — dialog shows the name, address, npub, an
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await page.getByRole('button', { name: 'View profile' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Robin' });
-  await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
-  await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Copy' })).toBeVisible();
-  await expect(dialog.getByText('Copy', { exact: true })).toHaveCount(0);
-  await expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible();
-  await expect(dialog.getByRole('link')).toHaveCount(0);
+  await expect(page.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+  await expect(page.getByText('npub1example', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
+  await expect(page.getByText('Copy', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Close' })).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('link').first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'robin@nostr.example' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'npub1example' })).toHaveCount(0);
+});
+
+test('Function: fetchExternalAuthorPosts — the page shows a post from the client fetch', async ({
+  page,
+}) => {
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Robin',
+        npub: 'npub1example',
+        nip05: 'robin@nostr.example',
+        lud16: 'pay@ln.example',
+        postCount: 1,
+        replyCount: 1,
+      }),
+    });
+  });
+  await page.route('**/external-posts', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '33333333-3333-4333-8333-333333333333',
+            name: 'Robin',
+            via: 'nostr',
+            text: 'Robin wrote a note',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
+  await page.getByRole('button', { name: '1 post' }).click();
+  await expect(page.getByText('Robin wrote a note')).toBeVisible();
+});
+
+test('Function: fetchExternalAuthorReplies — the page shows a reaction from the client fetch', async ({
+  page,
+}) => {
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Robin',
+        npub: 'npub1example',
+        nip05: 'robin@nostr.example',
+        lud16: 'pay@ln.example',
+        postCount: 1,
+        replyCount: 1,
+      }),
+    });
+  });
+  await page.route('**/external-replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '33333333-3333-4333-8333-333333333333',
+            name: 'Robin',
+            via: 'nostr',
+            text: 'Robin wrote a reaction',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            parentId: '22222222-2222-4222-8222-222222222222',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
+  await page.getByRole('button', { name: '1 reaction' }).click();
+  await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+});
+
+test('Function: ExternalAuthorPage — heading Profile and the published address', async ({
+  page,
+}) => {
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Robin',
+        npub: 'npub1example',
+        nip05: 'robin@nostr.example',
+        lud16: 'pay@ln.example',
+      }),
+    });
+  });
+  await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByText('robin@nostr.example', { exact: true })).toBeVisible();
 });
 
 test('Function: proxyContactPost — POST /contact/submit without bearer is 401', async ({

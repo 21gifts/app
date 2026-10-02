@@ -421,9 +421,11 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies GET /shops/activity to the 21.gifts api (Bearer forwarded).
+ * Proxies GET /shops/activity to the 21.gifts api.
  *
- * @param request - Incoming App Router request (Bearer session).
+ * No session is required. The incoming request is forwarded as received.
+ *
+ * @param request - Incoming App Router request.
  * @returns The upstream response.
  */
 export async function proxyShopActivityGet(request: Request): Promise<Response> {
@@ -798,6 +800,38 @@ export async function proxyExternalAuthorProfileGet(
   messageId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-profile`);
+}
+
+/**
+ * Proxies GET /messages/:id/external-posts to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-posts`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorPostsGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-posts`);
+}
+
+/**
+ * Proxies GET /messages/:id/external-replies to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-replies`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorRepliesGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-replies`);
 }
 
 /**

@@ -4,7 +4,6 @@ import { MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { ExternalAuthorSheet } from '@/components/ExternalAuthorSheet';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
@@ -52,7 +51,6 @@ function PublicThreadCard({
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const [photoUrls, setPhotoUrls] = useState<Record<number, string>>({});
-  const [externalAuthorOpen, setExternalAuthorOpen] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const photoCount = note.photoCount ?? (note.hasPhoto ? 1 : 0);
 
@@ -116,16 +114,13 @@ function PublicThreadCard({
         >
           {note.via === 'nostr' ? (
             <span className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
+              <Link
+                href={`/messages/${note.id}/author?name=${encodeURIComponent(note.name)}`}
                 aria-label={t('forum.authorProfile')}
                 className="text-sm font-medium text-app-fg underline underline-offset-2"
-                onClick={() => {
-                  setExternalAuthorOpen(true);
-                }}
               >
                 {note.name}
-              </button>
+              </Link>
               <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
                 {t('forum.via.nostr')}
               </span>
@@ -223,25 +218,8 @@ function PublicThreadCard({
     </Card>
   );
 
-  const sheet =
-    externalAuthorOpen && note.via === 'nostr' ? (
-      <ExternalAuthorSheet
-        key={note.id}
-        messageId={note.id}
-        fallbackName={note.name}
-        onClose={() => {
-          setExternalAuthorOpen(false);
-        }}
-      />
-    ) : null;
-
   if (!indent) {
-    return (
-      <>
-        {card}
-        {sheet}
-      </>
-    );
+    return card;
   }
 
   return (
@@ -250,7 +228,6 @@ function PublicThreadCard({
       {...(highlight ? { 'data-permalink-target': 'true' } : {})}
     >
       {card}
-      {sheet}
     </div>
   );
 }
