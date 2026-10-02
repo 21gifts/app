@@ -440,7 +440,7 @@
 
 ## Function: UsernameSetup
 
-- **Purpose:** Post-login screen to choose the unique `@21.gifts` username. Cannot skip.
+- **Purpose:** Post-login screen to choose the unique `@21.gifts` username. Cannot skip. The Wallet of Satoshi hint is left out once the account's in-app wallet is verified (`sparkWalletVerified`).
 - **Inputs:** Auth store session; `UsernameForm`.
 - **Returns / side effects:** Heading **Your 21.gifts name**, hint, field, **Continue**. Posts `POST /me/username`. Taken/invalid stay on the form.
 - **Used by:** Screen `/setup/username`.
