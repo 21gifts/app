@@ -3960,7 +3960,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletSend
 
-- **Purpose:** Send block on `/wallet` under the balance, while the wallet is ready. A region named **Send Bitcoin** with the paste field **Payment request or address** and **Continue**. The amount step uses `AmountEntry` with the receiver's bounds and an optional **Message (optional)** field. The confirm step shows **To …**, **Send ₿…** and **Fee ₿…**, each with the default fiat, and labeled **Send**. After sending: **Sent ₿…** and **Done**. The amount and confirm steps have a Close (`X`, **Cancel**) that stays on this view; while a confirm send is in flight, Cancel keeps the confirm step. The sent step closes with **Done**.
+- **Purpose:** Send block on `/wallet` under the balance, while the wallet is ready (and while a send is in flight or its Sent line shows). A region named **Send Bitcoin** with the paste field **Payment request or address** and **Continue**. The amount step uses `AmountEntry`; for a Lightning address or LNURL receiver it adds the receiver's bounds and, when the receiver takes one, an optional **Message (optional)** field. The confirm step shows **To …**, **Send ₿…** and **Fee ₿…**, each with the default fiat, and labeled **Send**. After sending: **Sent ₿…** and **Done**. The amount and confirm steps have a Close (`X`, **Cancel**) that stays on this view; while a confirm send is in flight, Cancel keeps the confirm step. The sent step closes with **Done**.
 - **Inputs:** `send` (`UseWalletSendResult`). Reads the gift-day rate itself.
 - **Returns / side effects:** The region.
 - **Used by:** `WalletScreenView`.
