@@ -239,10 +239,12 @@ describe('daily payment subpages', () => {
         { address: 'ada@walletofsatoshi.com.evil', amountUsd: 2 },
       ],
     });
-    await renderAmounts();
-    expect(screen.getByText('ada@notwalletofsatoshi.com')).toBeTruthy();
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('ada@notwalletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('ada@walletofsatoshi.com.evil')).toBeTruthy();
     expect(screen.queryByText('ada@w...')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit ada@notwalletofsatoshi.com' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit ada@walletofsatoshi.com.evil' })).toBeTruthy();
   });
 
   it('saves the comment and shows a mapped, unknown, or non-error failure', async () => {
