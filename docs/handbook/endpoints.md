@@ -251,7 +251,7 @@
 
 - **Purpose:** Same-origin proxy of api `PUT /me/wallet`. Claims the in-app wallet's identity public key for the account. Write-once after the wallet is verified.
 - **Errors:** Upstream 400, 401, 404 (feature off), 409 (wallet already verified), or 502 if the api is unreachable.
-- **Used by:** `putMyWallet`.
+- **Used by:** `putWallet`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /lnurlpay/[pubkey]
