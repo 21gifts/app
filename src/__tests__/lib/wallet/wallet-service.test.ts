@@ -148,6 +148,43 @@ describe('connectWallet', () => {
       expect(useWalletStore.getState().status).toBe('error');
     });
 
+    it('starts the deadline without waiting for the previous disconnect', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const first = createFakeSdk({
+        disconnect: () => new Promise<never>(() => undefined),
+      });
+      await connectWallet(first.loadSdk);
+      expect(useWalletStore.getState().status).toBe('ready');
+      const secondLoadSdk: WalletSdkLoader = vi.fn(() => new Promise<WalletSdk>(() => undefined));
+      const pending = connectWallet(secondLoadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(secondLoadSdk).toHaveBeenCalled();
+      expect(first.connection.disconnect).toHaveBeenCalledTimes(1);
+      expect(useWalletStore.getState().status).toBe('connecting');
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('error');
+    });
+
+    it('connects a healthy replacement without waiting for the previous disconnect', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const first = createFakeSdk({
+        disconnect: () => new Promise<never>(() => undefined),
+      });
+      await connectWallet(first.loadSdk);
+      const second = createFakeSdk({
+        getInfo: async () => ({ balanceSats: 99_000, identityPubkey: IDENTITY }),
+      });
+      const pending = connectWallet(second.loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      await expect(pending).resolves.toBeUndefined();
+      expect(first.connection.disconnect).toHaveBeenCalledTimes(1);
+      expect(useWalletStore.getState()).toMatchObject({
+        status: 'ready',
+        balanceSats: 99_000,
+      });
+    });
+
     it('sets error and disconnects a connection that resolves after the deadline', async () => {
       rememberSessionPhrase(MNEMONIC);
       let resolveConnect!: (connection: WalletConnection) => void;
