@@ -842,7 +842,7 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('keeps Active selected after posting an Ask', async () => {
+  it('switches to All after posting an unpaid Ask', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({ ...SAMPLE, id: 'm-ask', text: 'Hello', goalSats: 21000 });
     renderWithLocale(<ForumLoader />);
@@ -861,11 +861,11 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
       expect(screen.getByText('Hello')).toBeTruthy();
-      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
     });
   });
 
-  it('switches from Most popular to Active after posting an Ask', async () => {
+  it('switches from Most popular to All after posting an unpaid Ask', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({ ...SAMPLE, id: 'm-ask-popular', text: 'Hello', goalSats: 21000 });
     renderWithLocale(<ForumLoader />);
@@ -890,7 +890,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
       expect(screen.getByText('Hello')).toBeTruthy();
-      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
     });
   });
 
@@ -3787,7 +3787,7 @@ describe('ForumLoader', () => {
       });
     });
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('Active');
+      expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
     });
   });
 
@@ -5351,7 +5351,7 @@ describe('ForumLoader', () => {
       name: 'Ada',
       text: 'Half a dollar',
       createdAt: '2026-08-28T14:00:00.000Z',
-      sats: 0,
+      sats: 1,
       goalSats: 1000,
       goalCurrency: 'USD',
       goalAmount: '1.50',

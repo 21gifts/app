@@ -80,10 +80,7 @@ export function hasUnseenForumPosts(
 }
 
 function isActiveForumMessage(message: ForumMessage): boolean {
-  if (message.sats > 0 || roleAtLeast(message.role, 'moderator')) {
-    return true;
-  }
-  return typeof message.goalSats === 'number' && message.goalSats > 0;
+  return message.sats > 0 || roleAtLeast(message.role, 'moderator');
 }
 
 /**
@@ -92,7 +89,7 @@ function isActiveForumMessage(message: ForumMessage): boolean {
  * Ranking is among the already-loaded messages only. Does not mutate `messages`.
  *
  * @param messages - Newest-first list from the api / loader merge.
- * @param mode - Active (paid, unpaid moderator, or a positive `goalSats` ask, newest-first), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
+ * @param mode - Active (paid, or an unpaid moderator note, newest-first; a zero-sat ask stays out), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
  * @returns A new array of visible messages for the mode.
  */
 export function visibleForumMessages(
