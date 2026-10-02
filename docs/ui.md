@@ -59,7 +59,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 - `public/favicon.svg` — 64×64, fill `#0A090C`, text `21` at 32px/700, fill `#f7931a`. This is the only drawn mark in the app; the shop sticker's outlined sign is print artwork (see **Wordmark**).
 - `public/favicon.ico` — 48×48, same composition.
 - `public/apple-touch-icon.png` / `icon-192.png` / `icon-512.png` — ink field, orange `21`, no rounded-squircle decoration beyond what iOS applies.
-- `public/og.png` — ink, orange kicker `PEER-TO-PEER · BITCOIN · WALLET OF SATOSHI`, white `21.gifts`, subtitle, orange-outline pill. Keep.
+- `public/og.png` — 1200×630 social preview in the landing-page palette. It shows the real Bitcoin symbol and the wallet-to-wallet path; its copy does not claim that wallet or network fees are absent.
 
 ## Color
 
@@ -809,6 +809,8 @@ Glyph 14px (`h-3.5`) + label + `ChevronDown` 14px. `role="combobox"` + listbox.
 
 **Option row:** `flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm min-h-11`. Selected: `font-medium` + `Check` 16px. Dark selected check: `text-accent`. App selected check: `text-app-fg` (not orange — choosing Deutsch is not a gift).
 
+On Home, About, Donate, and Rules, selecting a language loads its public URL as a full page so the shared navigation and footer update with the page content.
+
 #### ThemeSwitcher profile settings section
 
 ThemeSwitcher is **app + Profile only**. Anatomy = PushToggle section: uppercase kicker (`theme.label`), then `SegmentedControl tone="neutral"` with System / Light / Dark. Not a labeled chrome pill. Not a Menu disclosure. Marketing never mounts it. Unsigned visitors follow the cookie if one exists, otherwise the OS.
@@ -934,7 +936,9 @@ Below the `lg` breakpoint, use the menu toggle so the translated links fit witho
 
 **Footer.** `border-t border-paper/10 px-5 py-10`. Inner `mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between`; the nav wraps (`flex flex-wrap gap-4`). Wordmark footer size, not a link. Nav `text-sm text-paper/70 gap-4` (how, why, faq, about, handbook, legal, rules). GitHub `text-sm text-paper/70`. Below the row: centered italic `text-sm text-paper/50` verse plus uppercase `text-xs tracking-widest text-accent` reference (`footer.verse` / `footer.verseRef`).
 
-**Hero CTA pair.** `flex flex-wrap gap-4 mt-10`. Primary `ButtonLink href="/login" variant="accent"` **Ask for help**. Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`.
+Home, About, Donate, and Rules have stable `/en`, `/de`, `/es`, and `/fil` paths. Public navigation and the language switcher keep visitors on those paths. The legacy unprefixed paths still render and point canonically to the matching language URL.
+
+**Home hero CTA pair.** Asking for help is the first action: primary `ButtonLink href="/login" variant="accent" tone="dark"` **Ask for help** (with `ArrowRight`). Secondary `ButtonLink href="/donate" variant="secondary" tone="dark"` **Send help**. Then `PwaInstall tone="dark" placement="hero"`. The light process diagram shows a forum post, a reaction with an amount (Reply glyph), the amount/payment step, and the recipient wallet. It is explanatory, with no payment input or simulated post. The German copy says clearly that `/welcome` requires sign-in and that you give by writing a reaction with an amount under a post, and the Bitcoin goes to the person who wrote the post. The shared marketing header keeps its existing login action.
 
 **Signed-in menu Install.** `PwaInstall placement="menu"` stays the labeled row — app shell, not dark Button.
 
@@ -977,13 +981,13 @@ Composition is top-to-bottom. Source of visual composition: the `page.tsx` plus 
 
 ### `/` — marketing home
 
-`MarketingHeader` → hero (`display` H1 two lines, `body-lg` lead, CTA pair **Ask for help** / **Send help** / `PwaInstall`) → `#how` (kicker, h2, lead, 3 numbered steps) → `#happyland` (localized photo essay; accent kicker, h2 and lead, full-width lead photograph, asymmetric text/image groups, three portraits; intrinsic image proportions and visible captions; stacked on mobile) → `#why` (kicker, h2, three h3+body in `sm:grid-cols-2`) → `#project` (kicker, h2, lead, Lightning Address as `text-accent` code link) → `#faq` (kicker, h2, `details/summary` `border-b border-paper/10 py-4`) → `MarketingFooter`.
+`MarketingHeader` → dark two-column hero (Bitcoin headline, **Ask for help** / **Send help** / `PwaInstall`, clearly labeled static process preview with a wallet → Bitcoin → person diagram) → light `#how` (three donor steps and a distinct receive-help path) → light discovery cards linking to Happyland, Why, and FAQ (graphic cards; no repeated photograph or fictional forum post) → warm `#why` (four concise benefit cards) → dark `#happyland` (localized place portrait, four photographs from the currently published 21.gifts Happyland page, a source link, and three observations; the gallery has equal 4:3 frames) → dark `#project` (separate project support address) → dark `#faq` (`details/summary`) → `MarketingFooter`. The white and warm home sections are local panels within the always-dark marketing shell. Decorative Bitcoin marks use the downloadable [Bitcoin Design Guide symbol](https://bitcoin.design/guide/getting-started/visual-language/) at `public/bitcoin-symbol.svg`; the 21.gifts brand remains the text wordmark. Photo rights and consent documentation still need completion before publication of this local version; see `docs/happyland-content.md`.
 
 Handbook states: live marketing home.
 
 ### `/about`
 
-`MarketingHeader` → `main` → first section `px-5 pt-28 pb-12 sm:pt-36` `max-w-3xl` (accent kicker, H1 `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight` — reading width, not the home display 60px, `body-lg` lead, `blockquote border-l-2 border-accent` italic verse + uppercase accent reference) → second section `max-w-3xl px-5 py-16` (three `article`s, each accent number + h2 + `text-paper/60` body; first article also a second paragraph and a verse blockquote; then `ButtonLink href="/welcome" variant="accent" tone="dark"` **Open the living room**) → `MarketingFooter`. Visitor copy is catalogized; English `title`/`description` metadata is the documented exception. No second typeface, no cross. No separate “origin” section — the convictions carry it.
+`MarketingHeader` → `main` → first section `px-5 pt-28 pb-12 sm:pt-36` `max-w-3xl` (accent kicker, H1 `text-4xl sm:text-5xl font-semibold leading-tight tracking-tight` — reading width, not the home display 60px, `body-lg` lead, `blockquote border-l-2 border-accent` italic verse + uppercase accent reference) → second section `max-w-3xl px-5 py-16` (three `article`s, each accent number + h2 + `text-paper/60` body; first article also a second paragraph and a verse blockquote; then `ButtonLink href="/welcome" variant="accent" tone="dark"` **Go to the forum**) → `MarketingFooter`. Visitor copy is catalogized; English `title`/`description` metadata is the documented exception. No second typeface, no cross. No separate “origin” section — the convictions carry it.
 
 ### `/legal`
 
@@ -1019,7 +1023,7 @@ Starting: `Loader2` + `login.preparing`. Error: `AlertTriangle` + alert + **Try 
 
 ### `/donate`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` with `HomeWordmark` + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Send help**), muted lead, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent). The forum CTA is not a second back control.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` with `HomeWordmark` + LanguageSwitcher. Inner `max-w-md` column: **h1-lg** `donate.pageTitle` (**Help someone**), muted lead, `ButtonLink variant="accent"` **Open the forum** to `/welcome`. Keep orange (gift-intent). The forum CTA is not a second back control.
 
 ### `/setup/name`
 

@@ -1,31 +1,17 @@
-'use client';
-
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
-import Link from 'next/link';
 import { ForumHomeWordmark } from '@/components/ForumHomeWordmark';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
-import { SignedInChrome } from '@/components/SignedInChrome';
-import { useTranslations } from '@/components/LocaleProvider';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
+import { WelcomeTopRight } from '@/components/WelcomeTopRight';
 import { PageChrome } from '@/components/ui';
-import { useAuthStore } from '@/stores/auth-store';
+
+/** The signed-in living room is not public search content. */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 function WelcomeTopLeft(): ReactElement {
   return <ProfileChromeLeft hideWithoutHistory wordmark={<ForumHomeWordmark />} />;
-}
-
-function WelcomeTopRight(): ReactElement {
-  const { t } = useTranslations();
-  const session = useAuthStore((state) => state.session);
-  if (session !== null) {
-    return <SignedInChrome />;
-  }
-  return (
-    <Link href="/login" className="text-sm font-medium text-app-fg underline underline-offset-2">
-      {t('nav.login')}
-    </Link>
-  );
 }
 
 /**

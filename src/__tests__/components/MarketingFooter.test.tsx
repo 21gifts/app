@@ -16,9 +16,9 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('MarketingFooter', () => {
-  it('links About to /about', async () => {
+  it('links About to /en/about', async () => {
     render(await MarketingFooter());
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
+    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/en/about');
   });
 
   it('does not link Trust Chain', async () => {
@@ -38,10 +38,10 @@ describe('MarketingFooter', () => {
     );
   });
 
-  it('links Living room rules to /rules', async () => {
+  it('links Living room rules to /en/rules', async () => {
     render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
-      '/rules',
+      '/en/rules',
     );
   });
 

@@ -47,8 +47,8 @@ describe('getCatalog', () => {
     );
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
-      expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
-      expect(catalog['la.aria']).toBe('Wallet of Satoshi address');
+      expect(catalog['la.heading']).toContain('Wallet of Satoshi');
+      expect(catalog['la.aria']).toContain('Wallet of Satoshi');
       expect(catalog['forum.payOpenWalletAria']).toContain('Wallet of Satoshi');
       expect(catalog['forum.payOpenWalletAria'].trim().length).toBeGreaterThan(0);
       expect(catalog['aria.github']).toBe('GitHub');

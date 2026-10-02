@@ -16,11 +16,17 @@ import {
  * @returns The locale for this request.
  */
 export async function getRequestLocale(): Promise<Locale> {
+  const headerStore = await headers();
+  const fromPublicUrl = parseSupportedLocale(
+    headerStore.get('x-21gifts-public-locale') ?? undefined,
+  );
+  if (fromPublicUrl !== null) {
+    return fromPublicUrl;
+  }
   const cookieStore = await cookies();
   const fromCookie = parseSupportedLocale(cookieStore.get(LOCALE_COOKIE)?.value);
   if (fromCookie !== null) {
     return fromCookie;
   }
-  const headerStore = await headers();
   return parseAcceptLanguage(headerStore.get('accept-language') ?? '');
 }
