@@ -31,8 +31,7 @@ export interface WalletSendProps {
   /**
    * Whether the wallet is ready. When it is not, an input step with an alert
    * shows only that alert, so nothing can be pasted or sent until the wallet
-   * is ready again.
-   * Default `true`.
+   * is ready again. Default `true`.
    */
   walletReady?: boolean;
 }
