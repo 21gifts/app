@@ -17,7 +17,6 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { QrCode } from '@/components/QrCode';
 import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -39,12 +38,6 @@ import {
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
-import {
-  isAndroidUserAgent,
-  isSmartphoneUserAgent,
-  walletOfSatoshiHref,
-  walletOfSatoshiIntentHref,
-} from '@/lib/wos-deep-link';
 
 /** Catalog key for each conversation.kind origin label. */
 const CONVERSATION_ORIGIN_KEY = {
@@ -519,10 +512,8 @@ function ConversationListItem({
  * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
- * Wallet of Satoshi pay sheet. Desktop and iPad also show the invoice QR. A
- * smartphone does not (`isSmartphoneUserAgent`, not viewport). With a
- * `sparkInvoice` and a usable in-app wallet, `WalletPay` pays from that wallet
- * instead and shows neither the wallet button nor the invoice QR. The
+ * pay sheet, where `WalletPay` pays from the member's in-app wallet; it shows
+ * no invoice QR on any device. The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
  * last-text (read inbound last-text stays muted). When the derived unread
@@ -604,7 +595,6 @@ export function InboxScreen({
   });
   const paySheetWasOpen = useRef(false);
   const payWaitingWasOn = useRef(false);
-  const payQrWasOn = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const threadColumnRef = useRef<HTMLDivElement | null>(null);
   const pinningRef = useRef(false);
@@ -615,7 +605,6 @@ export function InboxScreen({
   const prevOpenIdRef = useRef(openId);
   const [armedForOpenId, setArmedForOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>('direct');
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
   const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
@@ -631,10 +620,6 @@ export function InboxScreen({
     /* v8 ignore next -- length > 0, so the last index exists */
     lastMessageId = last === undefined ? '' : last.id;
   }
-
-  useEffect(() => {
-    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
 
   const pinOpenThread = (): void => {
     pinThreadEnd(
@@ -816,16 +801,14 @@ export function InboxScreen({
     const paySheetOpen = invoice !== null;
     const sheetOpened = paySheetOpen && !paySheetWasOpen.current;
     const waitingAppeared = paySheetOpen && payWaiting && !payWaitingWasOn.current;
-    const qrAppeared = paySheetOpen && showPaymentQr && !payQrWasOn.current;
     paySheetWasOpen.current = paySheetOpen;
     payWaitingWasOn.current = paySheetOpen && payWaiting;
-    payQrWasOn.current = paySheetOpen && showPaymentQr;
     if (
       threadOpen &&
       messagesReady &&
       messagesLoading === false &&
       messagesError === false &&
-      (sheetOpened || waitingAppeared || qrAppeared)
+      (sheetOpened || waitingAppeared)
     ) {
       pinOpenThread();
     }
@@ -838,7 +821,6 @@ export function InboxScreen({
     inShell,
     invoice,
     payWaiting,
-    showPaymentQr,
   ]);
 
   useEffect(() => {
@@ -908,43 +890,6 @@ export function InboxScreen({
       ? null
       : (conversations.find((row) => row.id === openId) ?? null);
 
-  /* v8 ignore start -- Android vs iOS wallet href */
-  const android =
-    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
-  const wosHref =
-    invoice === null
-      ? null
-      : android
-        ? walletOfSatoshiIntentHref(invoice.pr)
-        : walletOfSatoshiHref(invoice.pr);
-  /* v8 ignore stop */
-
-  const openWalletOfSatoshi = (href: string): void => {
-    window.location.href = href;
-  };
-
-  const walletButton =
-    wosHref === null ? null : (
-      <Button
-        type="button"
-        aria-label={t('forum.payOpenWalletAria')}
-        icon={
-          <img
-            src="/wos-icon.png"
-            alt=""
-            width={20}
-            height={20}
-            aria-hidden="true"
-            className="h-5 w-5 rounded-md ring-1 ring-white/30"
-          />
-        }
-        onClick={() => {
-          openWalletOfSatoshi(wosHref);
-        }}
-      >
-        {t('forum.payOpenWallet')}
-      </Button>
-    );
 
   let body: ReactElement;
   if (openId !== null) {
@@ -1326,16 +1271,9 @@ export function InboxScreen({
             </p>
             <WalletPay
               sparkInvoice={invoice.sparkInvoice}
+              pr={invoice.pr}
               amountSats={invoice.amountSats}
               rateDay={rateDay}
-              fallback={
-                <>
-                  {showPaymentQr ? (
-                    <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} />
-                  ) : null}
-                  {walletButton}
-                </>
-              }
             />
             {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
             {payWaiting ? (

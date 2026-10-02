@@ -58,7 +58,7 @@ describe('useAuthStore', () => {
     useAuthStore.getState().setAuth('tok', account);
     const linked = {
       ...account,
-      lightningAddress: 'me@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: true,
     };
     useAuthStore.getState().setAccount(linked);

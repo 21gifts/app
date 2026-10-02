@@ -5,7 +5,8 @@
  * module. Keep it in sync with `src/types/env.d.ts`. `NEXT_PUBLIC_API_URL` is
  * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
  * start. `NEXT_PUBLIC_APP_VERSION` is baked at `next build`, not substituted by
- * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
+ * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`, and
+ * `NEXT_PUBLIC_PLATFORM_USERNAME` through `getPlatformUsername`.
  */
 
 /**
@@ -80,6 +81,25 @@ export function getE2eNow(): string | null {
  */
 export function getBreezApiKey(): string | null {
   const value = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  if (value === undefined || value === '') {
+    return null;
+  }
+  return value;
+}
+
+/**
+ * Optional username of the 21.gifts platform account
+ * (`NEXT_PUBLIC_PLATFORM_USERNAME`), baked at `next build`. Donations to the
+ * project go to that account's in-app wallet address `<username>@<app host>`.
+ * Unset or empty means the landing page shows no donation address. Does not
+ * throw.
+ *
+ * Dot access is load-bearing so Next inlines the value when the build sets it.
+ *
+ * @returns The trimmed username, or `null` when unset or blank.
+ */
+export function getPlatformUsername(): string | null {
+  const value = process.env.NEXT_PUBLIC_PLATFORM_USERNAME?.trim();
   if (value === undefined || value === '') {
     return null;
   }

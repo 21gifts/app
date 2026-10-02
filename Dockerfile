@@ -28,6 +28,9 @@
 #   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
 #   NEXT_PUBLIC_BREEZ_API_KEY — Breez SDK key, a build-arg baked at `next build`
 #                               (staging deploy only); empty when unset
+#   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account (from ARG
+#                         PLATFORM_USERNAME); the landing page shows its wallet address for
+#                         donations to the project. Empty hides that address.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -44,6 +47,8 @@ ARG APP_VERSION=dev
 ENV NEXT_PUBLIC_APP_VERSION=$APP_VERSION
 ARG NEXT_PUBLIC_BREEZ_API_KEY
 ENV NEXT_PUBLIC_BREEZ_API_KEY=$NEXT_PUBLIC_BREEZ_API_KEY
+ARG PLATFORM_USERNAME=
+ENV NEXT_PUBLIC_PLATFORM_USERNAME=$PLATFORM_USERNAME
 RUN npm run build
 
 FROM node:22-alpine AS runtime
