@@ -13924,7 +13924,8 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('All');
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();
