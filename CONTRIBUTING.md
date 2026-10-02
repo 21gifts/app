@@ -214,7 +214,7 @@ app/
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
-│   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase into WalletScreenView (balance, receive, payments list while ready, recovery entry)
+│   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, send, receive, payments list while ready, recovery entry)
 │   │   ├── WalletScreenView.tsx # Wallet card and the visible one-step Back
 │   │   ├── WalletBalance.tsx    # /wallet balance block (locked / connecting / ready / error)
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
