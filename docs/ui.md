@@ -1095,7 +1095,7 @@ Handbook states: default, about, sunday, photo, location, question, truth, trans
 
 ### `/grants/payments`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payments**. An initiator or founder sees the editor form. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. The comment is saved with an icon-only pencil (`aria-label` **Save**). The word Save is not shown. Each recipient row has icon-only update (pencil) and delete (trash). **On**, **Off**, **Add**, and **Try again** stay labeled buttons.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payments**. An initiator or founder sees the editor form. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. The comment is saved with an icon-only pencil (`aria-label` **Save**). The word Save is not shown. Each recipient row puts the USD amount, the icon-only pencil, and the icon-only trash on one line. **On**, **Off**, **Add**, and **Try again** stay labeled buttons.
 
 Handbook states: default, empty, loading, error, forbidden, invalid, off, invalid-comment, invalid-switch, duplicate, unknown, save-error, pending.
 

@@ -3004,7 +3004,7 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 - **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
-- **Actions:** Save the comment with the pencil icon. Its accessible name is **Save**; the word is not shown. Turn payments **On** or **Off**. **Add** a recipient. Update and delete are icon-only (pencil and trash), not labeled buttons. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Actions:** Save the comment with the pencil icon. Its accessible name is **Save**; the word is not shown. Turn payments **On** or **Off**. **Add** a recipient. Update and delete are icon-only (pencil and trash) on the same line as the amount, not labeled buttons. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/payments` (`DailyPaymentsPage`). The **Daily payments** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
@@ -3039,7 +3039,7 @@ Moderator on the direct URL. Heading **Daily payments** and **You cannot change 
 
 ### Variant: invalid
 
-Founder, add amount 0, alert **The address or the amount is not valid.** Update and delete are icon-only (pencil and trash) with accessible names **Update** or **Delete** plus the shown address. Needle `The address or the amount is not valid.`
+Founder, add amount 0, alert **The address or the amount is not valid.** The amount, pencil, and trash share one line. Update and delete stay icon-only, with accessible names **Update** or **Delete** plus the shown address. Needle `The address or the amount is not valid.`
 
 ![21.gifts daily payments invalid](images/grants-payments-invalid.png)
 
