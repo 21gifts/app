@@ -3974,7 +3974,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: lnurlRelayTarget
 
-- **Purpose:** Routing decision of the `/wallet` send flow. A Lightning address (`user@domain`) or a bech32 LNURL whose host is not this app's own host is read through the api (`POST /lnurl/pay-request`, `POST /lnurl/invoice`). The own host is the domain `giftsLightningAddress` uses for this page (a local boot counts as `21.gifts`, `www.` is dropped); host comparison ignores case and a trailing dot. Own-host addresses, payment requests, Spark targets, `₿` DNS payment addresses, and anything else stay with the wallet's `parse`.
+- **Purpose:** Routing decision of the `/wallet` send flow. A Lightning address (`user@domain`) or a bech32 LNURL whose host is not this app's own host is read through the api (`POST /lnurl/pay-request`, `POST /lnurl/invoice`). The own host is the domain `giftsLightningAddress` uses for this page (a local boot counts as `21.gifts`); the comparison drops `www.` on both sides and ignores case and a trailing dot. Own-host addresses, payment requests, Spark targets, `₿` DNS payment addresses, and anything else stay with the wallet's `parse`.
 - **Inputs:** `text` as pasted (trimmed; an optional `lightning:` prefix is removed), `hostname` (`window.location.hostname`).
 - **Returns / side effects:** The address or LNURL to send as `target`, or `null` when the wallet reads the text. Pure.
 - **Used by:** `useWalletSend`.
