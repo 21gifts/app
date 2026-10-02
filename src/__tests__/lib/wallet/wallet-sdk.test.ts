@@ -227,7 +227,7 @@ describe('payments', () => {
     return sdk.connect(MNEMONIC, API_KEY);
   }
 
-  it('parse maps a BOLT11 request with amount and description', async () => {
+  it('parse maps a BOLT11 request with amount and shows the request, not its description', async () => {
     sdkPay.parse.mockResolvedValue({
       type: 'bolt11Invoice',
       amountMsat: 2_100_999,
@@ -239,7 +239,7 @@ describe('payments', () => {
       type: 'request',
       input: BOLT11,
       amountSats: 2_100,
-      recipient: 'Coffee',
+      recipient: `${BOLT11.slice(0, 10)}…${BOLT11.slice(-6)}`,
     });
     expect(sdkPay.parse).toHaveBeenCalledWith(BOLT11);
   });
@@ -255,10 +255,9 @@ describe('payments', () => {
     });
   });
 
-  it('parse maps a request with an empty description to the shortened request', async () => {
+  it('parse keeps a short request whole as the recipient', async () => {
     sdkPay.parse.mockResolvedValue({
       type: 'bolt11Invoice',
-      description: '  ',
       invoice: { bolt11: 'lnbc1short' },
     });
     const conn = await connection();
@@ -279,7 +278,7 @@ describe('payments', () => {
       type: 'request',
       input: invoice,
       amountSats: 2_100,
-      recipient: 'Gift',
+      recipient: `${invoice.slice(0, 10)}…${invoice.slice(-6)}`,
     });
     await expect(conn.parse(invoice)).resolves.toEqual({
       type: 'request',
