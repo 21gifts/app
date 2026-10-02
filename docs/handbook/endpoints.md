@@ -536,14 +536,14 @@
 
 ## Endpoint: POST /messages/[id]/repayment
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day. Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
 - **Used by:** `postRepaymentInvoice`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /messages/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty). Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error.
 - **Used by:** `postMessageInvoice`.
 - **Auth:** Bearer.
@@ -655,7 +655,7 @@
 
 ## Endpoint: POST /conversations/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId }` for the inbox pay sheet.
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId, sparkInvoice? }` for the inbox pay sheet; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 400/401/404/429/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationInvoice` in the inbox composer.
 - **Auth:** Bearer.
