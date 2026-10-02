@@ -150,6 +150,25 @@ describe('walletNeedsReload', () => {
     expect(walletNeedsReload()).toBe(true);
   });
 
+  it('is true while init is pending and false once it resolves', async () => {
+    vi.resetModules();
+    let finishInit: () => void = () => undefined;
+    mocks.init.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishInit = resolve;
+      }),
+    );
+    const { loadWalletSdk: load, walletNeedsReload } = await import('@/lib/wallet/wallet-sdk');
+    const loading = load();
+    await vi.waitFor(() => {
+      expect(mocks.callOrder).toContain('init');
+    });
+    expect(walletNeedsReload()).toBe(true);
+    finishInit();
+    await loading;
+    expect(walletNeedsReload()).toBe(false);
+  });
+
   it('stays false when the package import rejects', async () => {
     vi.resetModules();
     vi.doMock('@breeztech/breez-sdk-spark/ssr', () => {
