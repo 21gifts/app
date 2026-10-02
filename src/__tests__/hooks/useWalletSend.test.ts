@@ -469,6 +469,25 @@ describe('useWalletSend visual pins', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
+  it('keeps the send actions inert under any other balance or send pin', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet?visual=balance-ready');
+    const { result } = renderHook(() => useWalletSend());
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    act(() => {
+      result.current.setText('bob@example.com');
+    });
+    act(() => {
+      result.current.submitInput();
+      result.current.submitAmount(21);
+      result.current.confirm();
+    });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.cancel()).toBe(false);
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
   it('ignores pins outside a Playwright build and unknown values', () => {
     window.history.replaceState({}, '', '/wallet?visual=send-confirm');
     expect(renderHook(() => useWalletSend()).result.current.state.step).toBe('input');
@@ -551,6 +570,56 @@ describe('useWalletSend wallet status', () => {
       finish({ kind: 'invalid' });
     });
     expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('drops a read or prepare that settles after the wallet left ready but before the reset ran', async () => {
+    const lockedView = (): void => {
+      const state = useWalletStore.getState();
+      vi.spyOn(useWalletStore, 'getState').mockReturnValue({ ...state, status: 'locked' });
+    };
+    let finishRead: (value: Awaited<ReturnType<typeof parseWalletInput>>) => void = () => undefined;
+    vi.mocked(parseWalletInput).mockReturnValue(
+      new Promise((resolve) => {
+        finishRead = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.setText('x');
+    });
+    act(() => {
+      result.current.submitInput();
+    });
+    lockedView();
+    await act(async () => {
+      finishRead({ kind: 'invalid' });
+    });
+    vi.mocked(useWalletStore.getState).mockRestore();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    setStatus('locked');
+    expect(result.current.busy).toBe(false);
+
+    setStatus('ready');
+    target(LNURL);
+    let finishPrepare: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValue(
+      new Promise((resolve) => {
+        finishPrepare = resolve;
+      }),
+    );
+    await typeAndSubmit(result, 'bob@pay.example');
+    act(() => {
+      result.current.submitAmount(100);
+    });
+    lockedView();
+    await act(async () => {
+      finishPrepare({ kind: 'failed' });
+    });
+    vi.mocked(useWalletStore.getState).mockRestore();
+    expect(result.current.state.step).toBe('amount');
+    setStatus('locked');
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(false);
   });
 
   it('keeps a send in flight and the sent and idle input steps', async () => {

@@ -409,7 +409,9 @@ type PreparedMethod =
   | { type: string };
 
 /**
- * Reads the fee of a prepared send.
+ * Reads the fee of a prepared send. A BOLT11 request is sent over Lightning
+ * (`preferSpark: false`), so its fee is `lightningFeeSats`; the SDK's optional
+ * `sparkTransferFeeSats` belongs to the Spark route, which is not used.
  *
  * @param method - SDK prepared payment method.
  * @returns Whole sats of fee.
@@ -528,7 +530,14 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             amountSats: Number(prepared.amount),
             feeSats,
             async send(): Promise<void> {
-              await handle.sendPayment({ prepareResponse: prepared });
+              await handle.sendPayment(
+                prepared.paymentMethod.type === 'bolt11Invoice'
+                  ? {
+                      prepareResponse: prepared,
+                      options: { type: 'bolt11Invoice', preferSpark: false },
+                    }
+                  : { prepareResponse: prepared },
+              );
             },
           };
         },

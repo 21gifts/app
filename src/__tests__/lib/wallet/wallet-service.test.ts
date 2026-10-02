@@ -1046,7 +1046,7 @@ describe('payFromWallet', () => {
     expect(useWalletStore.getState().balanceSats).toBe(50);
   });
 
-  it('checks an overtaken synced read against the newer store balance, and fails after a disconnect', async () => {
+  it('checks an overtaken synced read against a newer written balance, not a pending one, and fails after a disconnect', async () => {
     const { getInfo } = await connectPaying({});
     let finish: (value: { balanceSats: number; identityPubkey: string }) => void = () => undefined;
     getInfo.mockImplementationOnce(
@@ -1071,7 +1071,7 @@ describe('payFromWallet', () => {
           finish = resolve;
         }),
     );
-    const unknown = payFromWallet({ type: 'input', input: 'a' });
+    const pending = payFromWallet({ type: 'input', input: 'a' });
     await vi.waitFor(() => {
       expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
     });
@@ -1083,9 +1083,9 @@ describe('payFromWallet', () => {
         }),
     );
     const pendingRefresh = refreshWallet();
-    useWalletStore.setState({ balanceSats: null });
     payFinish({ balanceSats: 50, identityPubkey: IDENTITY });
-    await expect(unknown).resolves.toEqual({ kind: 'insufficient' });
+    expect(useWalletStore.getState().balanceSats).toBe(30_000);
+    await expect(pending).resolves.toEqual({ kind: 'insufficient' });
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
     await pendingRefresh;
 

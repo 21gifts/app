@@ -483,6 +483,23 @@ describe('payments', () => {
     });
   });
 
+  it('sends a BOLT11 request over Lightning and shows only the Lightning fee', async () => {
+    const response = {
+      amount: 21n,
+      paymentMethod: { type: 'bolt11Invoice', lightningFeeSats: 2, sparkTransferFeeSats: 0 },
+    };
+    sdkPay.prepareSendPayment.mockResolvedValueOnce(response);
+    sdkPay.sendPayment.mockResolvedValue({ payment: {} });
+    const conn = await connection();
+    const prepared = await conn.prepare({ type: 'input', input: 'lnbc1' });
+    expect(prepared.feeSats).toBe(2);
+    await prepared.send();
+    expect(sdkPay.sendPayment).toHaveBeenCalledWith({
+      prepareResponse: response,
+      options: { type: 'bolt11Invoice', preferSpark: false },
+    });
+  });
+
   it('prepare rejects a method the app does not pay', async () => {
     sdkPay.prepareSendPayment.mockResolvedValue({
       amount: 1_000n,

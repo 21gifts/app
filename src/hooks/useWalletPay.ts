@@ -88,8 +88,9 @@ function visualView(): WalletPayView | null {
  * `amountSats` falls back. A wallet that leaves `ready` before the send or
  * while `insufficient` shows starts over (unlock, opening, or the fallback).
  * After `insufficient`, a balance above the lowest one seen since (or a first
- * known balance) prepares again; a send is never retried on its own. Visual
- * pins (`?visual=wallet-pay-…`) apply only in a Playwright build, only with a
+ * known balance) prepares again; a send is never retried on its own. A new
+ * `sparkInvoice` or a new `amountSats` starts over. Visual pins
+ * (`?visual=wallet-pay-…`) apply only in a Playwright build, only with a
  * `sparkInvoice`, and leave the actions inert.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
@@ -129,7 +130,7 @@ export function useWalletPay(
         timer.current = null;
       }
     };
-  }, [input]);
+  }, [input, amountSats]);
 
   useEffect(() => {
     if (!usable || status !== 'ready' || phase !== 'idle' || input === null) {
