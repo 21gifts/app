@@ -247,15 +247,7 @@ export function SignedInChrome(): ReactElement {
               (Number.parseFloat(style.borderBottomWidth) || 0);
             cap = Math.max(0, cap - border);
             nextBottom = `${window.innerHeight - (top + cap)}px`;
-            if (
-              appliedTop !== nextTop ||
-              appliedLeft !== nextLeft ||
-              appliedWidth !== nextWidth ||
-              appliedBottom !== nextBottom
-            ) {
-              menu.style.top = nextTop;
-              menu.style.left = nextLeft;
-              menu.style.width = nextWidth;
+            if (menu.style.bottom !== nextBottom) {
               menu.style.bottom = nextBottom;
             }
           }
