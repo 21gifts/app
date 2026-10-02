@@ -4245,6 +4245,24 @@ Pressed **2 reactions**. One note, `Robin wrote a reaction`, and the muted line 
 
 ![21.gifts external author replies truncated](images/messages-id-author-replies-truncated.png)
 
+### Variant: copied
+
+Pressed **Copy**. The icon is the check and the accessible name is **Copied**. The key is still `npub1example`.
+
+![21.gifts external author profile copied](images/messages-id-author-copied.png)
+
+### Variant: posts-empty
+
+Pressed **0 posts**. The feed shows `No messages yet — be the first to write one.` The **0 reactions** button stays closed.
+
+![21.gifts external author posts empty](images/messages-id-author-posts-empty.png)
+
+### Variant: replies-empty
+
+Pressed **0 reactions**. The feed shows `No messages yet — be the first to write one.` The **0 posts** button stays closed.
+
+![21.gifts external author replies empty](images/messages-id-author-replies-empty.png)
+
 ## Screen: /view/[viewKey]
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker only while `useHydrateSession().ready && session === null`, CHF|EUR|USD|PHP, `shell="app"`; unsigned empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; signed-in empty = `profile.chartEmpty` alone; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR.

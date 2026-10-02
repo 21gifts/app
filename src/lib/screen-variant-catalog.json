@@ -4012,5 +4012,23 @@
     "label": "/messages/[id]/author replies-truncated",
     "visual": "state-messages-id-author-replies-truncated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:copied",
+    "label": "/messages/[id]/author copied",
+    "visual": "state-messages-id-author-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-empty",
+    "label": "/messages/[id]/author posts-empty",
+    "visual": "state-messages-id-author-posts-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-empty",
+    "label": "/messages/[id]/author replies-empty",
+    "visual": "state-messages-id-author-replies-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

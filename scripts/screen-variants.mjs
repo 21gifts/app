@@ -4754,4 +4754,25 @@ export const SCREEN_VARIANTS = [
     visual: 'state-messages-id-author-replies-truncated',
     needle: 'state /messages/[id]/author replies-truncated',
   },
+  {
+    route: '/messages/[id]/author',
+    id: 'copied',
+    image: 'messages-id-author-copied.png',
+    visual: 'state-messages-id-author-copied',
+    needle: 'state /messages/[id]/author copied',
+  },
+  {
+    route: '/messages/[id]/author',
+    id: 'posts-empty',
+    image: 'messages-id-author-posts-empty.png',
+    visual: 'state-messages-id-author-posts-empty',
+    needle: 'state /messages/[id]/author posts-empty',
+  },
+  {
+    route: '/messages/[id]/author',
+    id: 'replies-empty',
+    image: 'messages-id-author-replies-empty.png',
+    visual: 'state-messages-id-author-replies-empty',
+    needle: 'state /messages/[id]/author replies-empty',
+  },
 ];

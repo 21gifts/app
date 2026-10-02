@@ -153,6 +153,7 @@ export function ExternalAuthorProfile({
   const [feedMessageId, setFeedMessageId] = useState(messageId);
   const copyMounted = useRef(true);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyGen = useRef(0);
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
   const profileLoadGen = useRef(0);
@@ -171,6 +172,11 @@ export function ExternalAuthorProfile({
     postsLoadGen.current += 1;
     repliesLoadGen.current += 1;
     profileLoadGen.current += 1;
+    copyGen.current += 1;
+    if (copyTimer.current !== null) {
+      clearTimeout(copyTimer.current);
+      copyTimer.current = null;
+    }
   }
 
   useEffect(() => {
@@ -225,17 +231,19 @@ export function ExternalAuthorProfile({
     if (profile === null) {
       return;
     }
+    const gen = copyGen.current;
+    const npub = profile.npub;
     try {
-      await navigator.clipboard.writeText(profile.npub);
-      if (!copyMounted.current) {
+      await navigator.clipboard.writeText(npub);
+      if (!copyMounted.current || copyGen.current !== gen) {
         return;
       }
       flashCopied();
     } catch {
-      if (!copyMounted.current) {
+      if (!copyMounted.current || copyGen.current !== gen) {
         return;
       }
-      if (fallbackCopy(profile.npub)) {
+      if (fallbackCopy(npub)) {
         flashCopied();
       }
     }

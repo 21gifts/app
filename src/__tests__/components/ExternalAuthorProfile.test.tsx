@@ -318,6 +318,95 @@ describe('ExternalAuthorProfile', () => {
     expect(exec).not.toHaveBeenCalled();
   });
 
+  it('does not flash Copied when the note changes before the clipboard answers', async () => {
+    let resolveWrite!: () => void;
+    let rejectWrite!: (error: Error) => void;
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          resolveWrite = resolve;
+          rejectWrite = reject;
+        }),
+    );
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const exec = vi.fn<(commandId: string) => boolean>().mockReturnValue(true);
+    Object.defineProperty(document, 'execCommand', {
+      configurable: true,
+      writable: true,
+      value: exec,
+    });
+    fetchProfile.mockImplementation((id: string) => {
+      if (id === 'm1') {
+        return Promise.resolve({ name: 'Robin', npub: 'npub1example' });
+      }
+      if (id === 'm2') {
+        return Promise.resolve({ name: 'Bea', npub: 'npub1other' });
+      }
+      return new Promise(() => undefined);
+    });
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    view.rerender(<ExternalAuthorProfile messageId="m2" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByText('Bea')).toBeTruthy();
+    });
+    await act(async () => {
+      resolveWrite();
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    view.rerender(<ExternalAuthorProfile messageId="m3" fallbackName="Ada" />);
+    await act(async () => {
+      rejectWrite(new Error('denied'));
+      await Promise.resolve();
+    });
+    expect(exec).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull();
+  });
+
+  it('clears the copy timer when the note changes', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    fetchProfile.mockImplementation((id: string) =>
+      Promise.resolve({
+        name: id === 'm1' ? 'Robin' : 'Bea',
+        npub: id === 'm1' ? 'npub1example' : 'npub1other',
+      }),
+    );
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    });
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    await act(async () => {
+      view.rerender(<ExternalAuthorProfile messageId="m2" fallbackName="Ada" />);
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    await act(async () => {
+      vi.advanceTimersByTime(1200);
+    });
+    expect(screen.queryByRole('button', { name: 'Copied' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+  });
+
   it('copies through the textarea fallback when the clipboard rejects', async () => {
     const writeText = vi.fn().mockRejectedValue(new Error('denied'));
     Object.defineProperty(navigator, 'clipboard', {

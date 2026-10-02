@@ -10264,6 +10264,91 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-author-replies-truncated');
   });
 
+  test('state /messages/[id]/author copied', async ({ page, context }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-author-copied');
+  });
+
+  test('state /messages/[id]/author posts-empty', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route('**/external-posts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '0 posts' }).click();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await expect(page.getByRole('button', { name: '0 reactions' })).toBeVisible();
+    await page.getByText('No messages yet — be the first to write one.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-empty');
+  });
+
+  test('state /messages/[id]/author replies-empty', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route('**/external-replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '0 reactions' }).click();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await expect(page.getByRole('button', { name: '0 posts' })).toBeVisible();
+    await page.getByText('No messages yet — be the first to write one.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-empty');
+  });
+
   test('state /messages/[id] quoted-note', async ({ page }) => {
     await fulfillPublicThreadReplies(page, RIANA_ID, [cyrillReply]);
     await page.route(`**/public-messages/${RIANA_ID}`, async (route) => {
