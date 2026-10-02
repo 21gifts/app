@@ -2082,6 +2082,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants/payments/comment:editing",
+    "label": "/grants/payments/comment editing",
+    "visual": "state-grants-payments-comment-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/grants/payments/amounts:default",
     "label": "/grants/payments/amounts default",
     "visual": "screen-grants-payments-amounts",
@@ -2151,6 +2157,12 @@
     "id": "/grants/payments/amounts:pending",
     "label": "/grants/payments/amounts pending",
     "visual": "state-grants-payments-amounts-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:editing",
+    "label": "/grants/payments/amounts editing",
+    "visual": "state-grants-payments-amounts-editing",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

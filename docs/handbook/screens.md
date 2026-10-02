@@ -3043,6 +3043,12 @@ Founder opened the comment with the pencil and pressed the check. The roster cal
 
 ![21.gifts daily payment text pending](images/grants-payments-comment-pending.png)
 
+### Variant: editing
+
+Founder presses the pencil **Edit comment**. The stored comment **Daily gift** is in the open field **Comment**. The check (**Save**) is enabled. **Cancel** is enabled. There is no alert, no spinner, and no **Edit comment** pencil. Needle `getByRole('textbox', { name: 'Comment' })`.
+
+![21.gifts daily payment text editing](images/grants-payments-comment-editing.png)
+
 ## Screen: /grants/payments/amounts
 
 - **Purpose:** Signed-in editor for daily payout amounts only. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Under the heading, the loaded editor says everyone in the grant program receives the roster `defaultAmountUsd` by default, formatted with `formatUsdDisplay`, and that the page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. The figure is not written into the catalog. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). The comment is not on this page. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
@@ -3121,6 +3127,12 @@ Founder opens a row and presses the check. The amount update fails for any other
 Founder opened a row with the pencil and pressed the check. The amount update has not returned. The check (accessible name **Save**) shows a spinner and is disabled, as are **Cancel**, **On**, **Off**, **Add**, and the other row buttons. There is no alert. Needle `state-grants-payments-amounts-pending`.
 
 ![21.gifts daily payment amounts pending](images/grants-payments-amounts-pending.png)
+
+### Variant: editing
+
+Founder presses the row pencil **Edit ada@w...**. The amount field **USD ada@w...** is open and enabled. The check (**Save**) is enabled. **Cancel** is enabled. There is no alert and no spinner. Needle `state-grants-payments-amounts-editing`.
+
+![21.gifts daily payment amounts editing](images/grants-payments-amounts-editing.png)
 
 ## Screen: /profile/apply
 
