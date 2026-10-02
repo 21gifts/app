@@ -1381,21 +1381,21 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. The preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
+- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
 - **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
 - **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
 - **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
 
 ## Function: fitBoxInFrame
 
-- **Purpose:** Places one popover inside the app frame. The width is the preferred width when it fits, otherwise the room between the insets. The left edge stays on the anchor unless that would cross an inset. Vertically it opens downward when that side has at least 280px and at least as much room as above, otherwise upward, otherwise from the top inset across the whole frame height. A frame with no room returns null.
+- **Purpose:** Places one popover inside the app frame. The width is the preferred width when it fits, otherwise the room between the insets. The left edge stays on the anchor unless that would cross an inset. Vertically it opens downward when that side has at least 280px and at least as much room as above, otherwise upward, otherwise from the top inset across the whole frame height. It returns null when the frame has no positive room or the preferred width is not positive.
 - **Inputs:** Frame left, right, top, and bottom, anchor left, top, and bottom, gap, preferred width, inset, and viewport height, all in pixels.
 - **Returns / side effects:** `{ left, width, maxHeight, top, bottom }` with exactly one of top or bottom set, or null. No DOM writes and no network.
 - **Used by:** `PlaceField` for the place preview and the map panel.
 
 ## Function: pageFrameProblems
 
-- **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, and boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom. Content inside `[data-scrollport]` may sit past the top or bottom of the window unless it is position:fixed. A position:fixed box is still reported. Slides inside `[data-scroll-x]` are ignored for the horizontal check. The sideways row itself is not ignored.
+- **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, and boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom. Content inside `[data-scrollport]` may sit past the top or bottom of the window unless it is position:fixed. A position:fixed box is still reported. A box inside `[data-scroll-x]` is ignored for the horizontal check unless it is position:fixed and its border box already crosses the left or right edge of the window. The sideways row itself is not ignored.
 - **Inputs:** None. Uses the open document, `window.innerWidth`, and `window.innerHeight`.
 - **Returns / side effects:** A string array. Empty means the page stays in the window. No DOM writes and no network.
 - **Used by:** `shotScreen` in `e2e/visual.spec.ts`, before every screenshot, and the behavior test `Function: pageFrameProblems`.
@@ -2098,7 +2098,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Reads `documentElement.dataset.localSunday` after the head script sets it. Server render, and the client before that flag, are false, so weekday tests keep their fields.
 - **Inputs:** none.
 - **Returns / side effects:** boolean. Subscribes to attribute changes on `documentElement`.
-- **Used by:** `SundayWritingGate`, `ModeratorGroupScreen`.
+- **Used by:** `SundayWritingGate`, `ModeratorGroupScreen`, and `PlaceField`.
 
 ## Function: SundayWritingGate
 
