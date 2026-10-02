@@ -802,6 +802,11 @@ workflows as `github.run_number`. It is inlined at `next build` as
 It is not substituted at container start and is not an `entrypoint.sh`
 placeholder. Local and Playwright builds without the arg show `dev`.
 
+`NEXT_PUBLIC_BREEZ_API_KEY` is a second Docker **build-arg** (no default),
+passed only by the staging deploy (see [Breez SDK Spark](#breez-sdk-spark)).
+It is inlined at `next build`, is not an `entrypoint.sh` placeholder, and an
+unset or empty value still builds.
+
 ## CI / CD
 
 | Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                    |
