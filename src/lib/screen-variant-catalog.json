@@ -24,6 +24,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:comment",
+    "label": "/habit-tracker comment",
+    "visual": "state-habit-tracker-comment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:editing",
+    "label": "/habit-tracker editing",
+    "visual": "state-habit-tracker-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donation",
+    "label": "/habit-tracker donation",
+    "visual": "state-habit-tracker-donation",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donation-fiat",
+    "label": "/habit-tracker donation-fiat",
+    "visual": "state-habit-tracker-donation-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:invoice",
+    "label": "/habit-tracker invoice",
+    "visual": "state-habit-tracker-invoice",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:invoice-phone",
+    "label": "/habit-tracker invoice-phone",
+    "visual": "state-habit-tracker-invoice-phone",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:archived",
+    "label": "/habit-tracker archived",
+    "visual": "state-habit-tracker-archived",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:default",
     "label": "/ default",
     "visual": "screen-root",
