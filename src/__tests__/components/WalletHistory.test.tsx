@@ -132,6 +132,49 @@ describe('WalletHistory', () => {
     expect(observers[0]?.disconnect).toHaveBeenCalled();
   });
 
+  it('watches the end of the list again after a reload with the same number of rows', () => {
+    const first = [payment({ id: 'a' })];
+    const { rerender } = show({ payments: first, hasMore: true });
+    expect(observers).toHaveLength(1);
+    vi.mocked(useWalletHistory).mockReturnValue({
+      status: 'ready',
+      payments: [payment({ id: 'a' })],
+      hasMore: true,
+      loadMore,
+      retry,
+    });
+    rerender(<WalletHistory />);
+    expect(observers).toHaveLength(2);
+    expect(observers[0]?.disconnect).toHaveBeenCalled();
+    observers[1]?.callback([{ isIntersecting: true }]);
+    expect(loadMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('watches the new end of the list after an error and a retry', () => {
+    const rows = [payment({ id: 'a' })];
+    const { rerender } = show({ payments: rows, hasMore: true });
+    vi.mocked(useWalletHistory).mockReturnValue({
+      status: 'error',
+      payments: rows,
+      hasMore: true,
+      loadMore,
+      retry,
+    });
+    rerender(<WalletHistory />);
+    vi.mocked(useWalletHistory).mockReturnValue({
+      status: 'ready',
+      payments: rows,
+      hasMore: true,
+      loadMore,
+      retry,
+    });
+    rerender(<WalletHistory />);
+    const last = observers[observers.length - 1];
+    expect(observers.length).toBeGreaterThanOrEqual(2);
+    last?.callback([{ isIntersecting: true }]);
+    expect(loadMore).toHaveBeenCalledTimes(1);
+  });
+
   it('does not observe at the end of the list or without IntersectionObserver', () => {
     show({ payments: [payment({})], hasMore: false });
     expect(observers).toHaveLength(0);

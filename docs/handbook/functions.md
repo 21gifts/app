@@ -3701,7 +3701,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: loadWalletSdk
 
-- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `registerAddress`, `listPayments`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. `registerAddress` registers only the given username (no availability check is exposed); `listPayments` asks newest first for one page and maps each row with `toWalletPayment`. A rejected or still pending initialisation is reported by `walletNeedsReload`.
+- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `registerAddress`, `listPayments`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. `registerAddress` registers only the given username (no availability check is exposed); `listPayments` asks for one page of Bitcoin payments newest first (`assetFilter` bitcoin, so token payments whose amounts are not satoshis are left out) and maps each row with `toWalletPayment`. A rejected or still pending initialisation is reported by `walletNeedsReload`.
 - **Inputs:** None.
 - **Returns / side effects:** A `WalletSdk`. Uses `defaultConfig('mainnet')` with the api key, `lnurlDomain` set to the host passed by the service (the app's own host), and a fixed storage name. The SDK keeps wallet state in IndexedDB; the phrase is passed in memory only.
 - **Used by:** The wallet service as the default loader.
@@ -3841,7 +3841,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: listWalletPayments
 
-- **Purpose:** Lists the connected wallet's payments, newest first, one page at a time.
+- **Purpose:** Lists the connected wallet's Bitcoin payments, newest first, one page at a time.
 - **Inputs:** `{ offset, limit }`.
 - **Returns / side effects:** `WalletPayment[]`. Throws `wallet-connect` without a connection, otherwise the SDK's error.
 - **Used by:** `useWalletHistory`.
@@ -3899,7 +3899,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Payments card on `/wallet` under the address while the wallet is ready. Each row: received or sent icon and word (plus **Pending** or **Failed** when not settled), Bitcoin amount with the default fiat, date and time, and the payer's note when there is one. Empty: **No payments yet.** Error: one sentence and **Try again**; the error stays shown until the reload's result arrives. Nothing renders during the first load.
 - **Inputs:** None (reads `useWalletHistory`, the latest rate day, fiat and number format).
-- **Returns / side effects:** The card, or `null`. The next page loads when the end of the list scrolls into view (`IntersectionObserver`).
+- **Returns / side effects:** The card, or `null`. The next page loads when the end of the list is in view (`IntersectionObserver`), checked again after every completed load and after an error and retry.
 - **Used by:** `WalletScreenView`.
 
 ## Function: WalletBalance

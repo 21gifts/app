@@ -310,7 +310,7 @@ export async function registerWalletAddress(username: string): Promise<void> {
 }
 
 /**
- * Lists the connected wallet's payments, newest first.
+ * Lists the connected wallet's Bitcoin payments, newest first.
  *
  * @param page - Offset and limit.
  * @returns The payments on that page.

@@ -16,7 +16,7 @@ import { formatBitcoin } from '@/lib/stats-money';
  * `/wallet` payment list, newest first: direction, Bitcoin amount with the
  * default fiat, date, and the payer's note when there is one. Shown only
  * while the wallet is ready. The next page loads when the end of the list
- * scrolls into view. Nothing renders during the first load.
+ * is in view, checked again after every completed load. Nothing renders during the first load.
  *
  * @returns The payments card, or `null` during the first load.
  */
@@ -40,7 +40,10 @@ export function WalletHistory(): ReactElement | null {
     });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasMore, loadMore, payments.length]);
+    // Re-armed after every completed load (a load always yields a new array,
+    // and an error or retry changes the status), so an end of the list that
+    // is still in view asks for the next page again.
+  }, [hasMore, loadMore, payments, status]);
 
   if (status === 'loading') {
     return null;
