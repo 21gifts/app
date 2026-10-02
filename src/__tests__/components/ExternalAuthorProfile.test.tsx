@@ -83,7 +83,7 @@ const HINT =
   'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
 
 beforeEach(() => {
-  fetchStats.mockResolvedValue({ spendOverTime: [] } as Awaited<ReturnType<typeof fetchStats>>);
+  fetchStats.mockResolvedValue({ spendOverTime: [] } as never);
 });
 
 afterEach(() => {
