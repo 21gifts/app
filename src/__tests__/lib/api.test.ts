@@ -1295,6 +1295,24 @@ describe('fetchGrantContinuation', () => {
       'Could not load the shop goal. Please try again.',
     );
   });
+
+  it('throws when a day is repeated', async () => {
+    const days = sevenDays();
+    days[3] = { day: days[2]!.day, shopCount: 1 };
+    stubFetch({ ok: true, status: 200, body: { days, qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws when the days are not contiguous', async () => {
+    const days = sevenDays();
+    days[4] = { day: '2026-04-01', shopCount: 0 };
+    stubFetch({ ok: true, status: 200, body: { days, qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
 });
 
 describe('fetchPostStats', () => {
