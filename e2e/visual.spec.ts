@@ -9961,6 +9961,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id]/author posts-open', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
     await page.route('**/external-profile', async (route) => {
       await route.fulfill({
         status: 200,
@@ -9998,6 +9999,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
     await page.getByText('Robin wrote a note').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-posts-open');
@@ -10005,6 +10007,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id]/author replies-open', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
     await page.route('**/external-profile', async (route) => {
       await route.fulfill({
         status: 200,
@@ -10043,6 +10046,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}/author?name=Robin`);
     await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Robin wrote a reaction').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-replies-open');
   });
@@ -10169,6 +10173,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id]/author posts-truncated', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
     await page.route('**/external-profile', async (route) => {
       await route.fulfill({
         status: 200,
@@ -10207,12 +10212,14 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 posts' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-posts-truncated');
   });
 
   test('state /messages/[id]/author replies-truncated', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
     await page.route('**/external-profile', async (route) => {
       await route.fulfill({
         status: 200,
@@ -10252,6 +10259,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '2 reactions' }).click();
     await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
     await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-author-replies-truncated');
   });

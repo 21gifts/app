@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { ForumMessage } from '@/lib/api-types';
 
@@ -38,6 +38,7 @@ vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn(),
   fetchExternalAuthorPosts: vi.fn(),
   fetchExternalAuthorReplies: vi.fn(),
+  fetchGiftStats: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchForumMessage: vi.fn(),
@@ -51,12 +52,14 @@ import {
   fetchExternalAuthorPosts,
   fetchExternalAuthorProfile,
   fetchExternalAuthorReplies,
+  fetchGiftStats,
 } from '@/lib/api';
 import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 
 const fetchProfile = vi.mocked(fetchExternalAuthorProfile);
 const fetchPosts = vi.mocked(fetchExternalAuthorPosts);
 const fetchReplies = vi.mocked(fetchExternalAuthorReplies);
+const fetchStats = vi.mocked(fetchGiftStats);
 
 const FEED_NOTE: ForumMessage = {
   id: 'note-1',
@@ -79,12 +82,17 @@ const REACTION_BUTTON = /^\d+ reactions?$/;
 const HINT =
   'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
 
+beforeEach(() => {
+  fetchStats.mockResolvedValue({ spendOverTime: [] } as Awaited<ReturnType<typeof fetchStats>>);
+});
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   push.mockClear();
   fetchPosts.mockReset();
   fetchReplies.mockReset();
+  fetchStats.mockReset();
 });
 
 describe('ExternalAuthorProfile', () => {
@@ -701,6 +709,17 @@ describe('ExternalAuthorProfile', () => {
   });
 
   it('opens a post expand control to that note', async () => {
+    fetchStats.mockResolvedValue({
+      spendOverTime: [
+        {
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        },
+      ],
+    } as Awaited<ReturnType<typeof fetchStats>>);
     fetchProfile.mockResolvedValue({
       name: 'Robin',
       npub: 'npub1example',
@@ -715,6 +734,9 @@ describe('ExternalAuthorProfile', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     await waitFor(() => {
       expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(screen.getByText('$0.00')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     expect(push).toHaveBeenCalledWith('/messages/note-1');

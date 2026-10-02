@@ -12,6 +12,7 @@ import {
 } from '@/components/ForumBoard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton } from '@/components/ui';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import {
   fetchExternalAuthorPosts,
   fetchExternalAuthorProfile,
@@ -139,6 +140,7 @@ export function ExternalAuthorProfile({
 }: ExternalAuthorProfileProps): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
+  const rateDay = useLatestRateDay();
   const [profile, setProfile] = useState<ExternalAuthorProfileData | null>(null);
   const [copied, setCopied] = useState(false);
   const [activity, setActivity] = useState<'posts' | 'replies' | null>(null);
@@ -390,6 +392,7 @@ export function ExternalAuthorProfile({
             <ForumBoard
               {...IDLE_BOARD}
               messages={activityMessages}
+              rateDay={rateDay}
               readOnly
               composerHidden
               modeSelector={false}
