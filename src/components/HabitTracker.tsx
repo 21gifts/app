@@ -167,9 +167,7 @@ export function HabitTracker(): ReactElement {
                 role === 'founder'
                   ? habit.role === 'founder'
                   : habit.role === 'initiator' || habit.role === 'moderator',
-              ).length === 0 && (
-                <p className="text-sm text-app-muted">{t('habit.empty')}</p>
-              )}
+              ).length === 0 && <p className="text-sm text-app-muted">{t('habit.empty')}</p>}
               {data.habits
                 .filter((habit) =>
                   role === 'founder'
@@ -309,31 +307,31 @@ export function HabitTracker(): ReactElement {
                   ? roleAtLeast(account?.role, 'founder')
                   : roleAtLeast(account?.role, 'initiator') &&
                     !roleAtLeast(account?.role, 'founder')) && (
-                <form
-                  className="space-y-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void submit({ action: 'add', text });
-                  }}
-                >
-                  <label className="block text-sm" htmlFor={`new-${role}`}>
-                    {t('habit.new')}
-                  </label>
-                  <input
-                    id={`new-${role}`}
-                    value={text}
-                    onChange={(event) => setText(event.target.value)}
-                    maxLength={200}
-                    required
-                    disabled={disabled}
-                    placeholder={t('habit.placeholder')}
-                    className="min-h-11 w-full rounded-lg border border-app-border bg-app-bg px-3"
-                  />
-                  <Button type="submit" disabled={disabled || text.trim() === ''}>
-                    {t('habit.add')}
-                  </Button>
-                </form>
-              )}
+                  <form
+                    className="space-y-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void submit({ action: 'add', text });
+                    }}
+                  >
+                    <label className="block text-sm" htmlFor={`new-${role}`}>
+                      {t('habit.new')}
+                    </label>
+                    <input
+                      id={`new-${role}`}
+                      value={text}
+                      onChange={(event) => setText(event.target.value)}
+                      maxLength={200}
+                      required
+                      disabled={disabled}
+                      placeholder={t('habit.placeholder')}
+                      className="min-h-11 w-full rounded-lg border border-app-border bg-app-bg px-3"
+                    />
+                    <Button type="submit" disabled={disabled || text.trim() === ''}>
+                      {t('habit.add')}
+                    </Button>
+                  </form>
+                )}
             </section>
           ))}
           <section className="space-y-4 border-t border-app-border pt-6">

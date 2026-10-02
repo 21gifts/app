@@ -2328,6 +2328,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
 - **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
 
+## Function: useLatestRateDayState
+
+- **Purpose:** Latest gift-day totals and whether that request has finished. Fetches `GET /gifts/stats` once on mount via `fetchGiftStats` and returns `latestRateDay` of `spendOverTime` together with a settled flag. A failed fetch, or a response with no usable rate, settles with `rateDay` null. Drops the response after unmount.
+- **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the result stays unsettled.
+- **Returns / side effects:** `{ rateDay: FiatRateDay | null, settled: boolean }`. While `enabled` is false this is `{ rateDay: null, settled: false }` and `fetchGiftStats` is not called. While enabled, one fetch per mount.
+- **Used by:** `useLatestRateDay`, `HabitCommentDonation`.
+
 ## Function: shownFiatForSats
 
 - **Purpose:** The four fiat amounts shown for a sat amount the visitor is about to pay, using the same gift day as the preview.
