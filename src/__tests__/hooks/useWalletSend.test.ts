@@ -1,6 +1,9 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WALLET_SEND_VISUAL_FIXTURE, useWalletSend, walletSendBounds } from '@/hooks/useWalletSend';
+import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
+import type { LnurlPayRequest } from '@/lib/api-types';
+import { encodeLnurl } from '@/lib/lnurl';
 import type { WalletTarget } from '@/lib/wallet/wallet-sdk';
 import {
   parseWalletInput,
@@ -15,6 +18,12 @@ import { useWalletStore } from '@/stores/wallet-store';
 vi.mock('@/lib/wallet/wallet-service', () => ({
   parseWalletInput: vi.fn(),
   payFromWallet: vi.fn(),
+}));
+
+vi.mock('@/lib/api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/api')>()),
+  postLnurlPayRequest: vi.fn(),
+  postLnurlInvoice: vi.fn(),
 }));
 
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
@@ -56,6 +65,9 @@ beforeEach(() => {
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   vi.mocked(parseWalletInput).mockReset();
   vi.mocked(payFromWallet).mockReset();
+  vi.mocked(postLnurlPayRequest).mockReset();
+  vi.mocked(postLnurlInvoice).mockReset();
+  useAuthStore.setState({ session: 'sess' });
 });
 
 afterEach(() => {
@@ -81,6 +93,21 @@ describe('walletSendBounds', () => {
     expect(
       walletSendBounds({ type: 'request', input: 'sp1', amountSats: null, recipient: 'sp1' }),
     ).toEqual({ min: 1, max: Number.MAX_SAFE_INTEGER });
+  });
+});
+
+describe('walletSendBounds relay', () => {
+  it('uses the receiver bounds for an outside address', () => {
+    expect(
+      walletSendBounds({
+        type: 'relay',
+        target: 'bob@example.com',
+        minSats: 2,
+        maxSats: 9,
+        commentMaxLength: 0,
+        recipient: 'bob@example.com',
+      }),
+    ).toEqual({ min: 2, max: 9 });
   });
 });
 
@@ -191,7 +218,7 @@ describe('useWalletSend amount', () => {
     target(LNURL);
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     expect(result.current.state).toMatchObject({ step: 'amount', amountError: false });
     act(() => {
       result.current.submitAmount(5);
@@ -224,7 +251,7 @@ describe('useWalletSend amount', () => {
     target(LNURL);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed' });
     const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     await act(async () => {
       result.current.submitAmount(100);
     });
@@ -270,7 +297,7 @@ describe('useWalletSend amount', () => {
       }),
     );
     const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     act(() => {
       result.current.submitAmount(100);
     });
@@ -425,6 +452,18 @@ describe('useWalletSend visual pins', () => {
       'send-amount-no-comment',
       { step: 'amount', amountError: false, target: { type: 'lnurl', commentMaxLength: 0 } },
     ],
+    ['send-not-payable', { step: 'input', error: 'notPayable' }],
+    ['send-not-found', { step: 'input', error: 'notFound' }],
+    ['send-relay-unreachable', { step: 'input', error: 'relayUnreachable' }],
+    [
+      'send-comment-long',
+      {
+        step: 'amount',
+        target: { type: 'relay', recipient: fixture.recipient },
+        amountError: false,
+        commentError: true,
+      },
+    ],
   ])('pins %s in a Playwright build and keeps actions inert', (visual, state) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
@@ -439,6 +478,7 @@ describe('useWalletSend visual pins', () => {
     expect(result.current.cancel()).toBe(false);
     expect(parseWalletInput).not.toHaveBeenCalled();
     expect(payFromWallet).not.toHaveBeenCalled();
+    expect(postLnurlInvoice).not.toHaveBeenCalled();
   });
 
   it('pins send-confirm-sending as a confirm step with a send in flight', () => {
@@ -523,7 +563,7 @@ describe('useWalletSend wallet status', () => {
   it('returns an open amount step to the input when the wallet leaves ready', async () => {
     target(LNURL);
     const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     expect(result.current.state.step).toBe('amount');
     setStatus('locked');
     expect(result.current.state).toEqual({ step: 'input', error: null });
@@ -552,7 +592,7 @@ describe('useWalletSend wallet status', () => {
       }),
     );
     const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     act(() => {
       result.current.submitAmount(100);
     });
@@ -741,5 +781,298 @@ describe('useWalletSend wallet status', () => {
     useWalletStore.setState({ status: 'disabled' });
     const { result } = renderHook(() => useWalletSend());
     expect(result.current.state.step).toBe('confirm');
+  });
+});
+
+const PAY_REQUEST: LnurlPayRequest = {
+  target: 'bob@example.com',
+  minSendableMsat: 1_500,
+  maxSendableMsat: 1_000_900,
+  commentAllowed: 5,
+  description: 'Pay bob',
+  domain: 'example.com',
+};
+
+const OUTSIDE_LNURL = encodeLnurl('https://example.com/lnurlp/bob');
+
+/**
+ * Pastes an outside address and reaches its amount step.
+ *
+ * @returns The rendered hook.
+ */
+async function relayAmountStep(): Promise<{ current: ReturnType<typeof useWalletSend> }> {
+  vi.mocked(postLnurlPayRequest).mockResolvedValue(PAY_REQUEST);
+  const { result } = renderHook(() => useWalletSend());
+  await typeAndSubmit(result, 'bob@example.com');
+  return result;
+}
+
+describe('useWalletSend routing', () => {
+  it.each([
+    ['an address on another host', 'bob@example.com', 'bob@example.com'],
+    ['a lightning: address on another host', 'lightning:bob@example.com', 'bob@example.com'],
+    ['an LNURL on another host', OUTSIDE_LNURL, OUTSIDE_LNURL],
+  ])('reads %s through the api', async (_label, text, relayed) => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue(PAY_REQUEST);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, text);
+    expect(postLnurlPayRequest).toHaveBeenCalledWith('sess', relayed);
+    expect(parseWalletInput).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an address on the own host', 'bob@21.gifts'],
+    ['an LNURL on the own host', encodeLnurl('https://21.gifts/.well-known/lnurlp/bob')],
+    ['a Spark address', 'sp1qqexample'],
+    ['a payment request', 'lnbc1'],
+  ])('reads %s with the wallet', async (_label, text) => {
+    target({ type: 'request', input: text, amountSats: null, recipient: text });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, text);
+    expect(parseWalletInput).toHaveBeenCalledWith(text);
+    expect(postLnurlPayRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe('useWalletSend relay pay request', () => {
+  it('shows whole-sat bounds, the comment length, and the address', async () => {
+    const result = await relayAmountStep();
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({
+      step: 'amount',
+      target: {
+        type: 'relay',
+        target: 'bob@example.com',
+        minSats: 2,
+        maxSats: 1_000,
+        commentMaxLength: 5,
+        recipient: 'bob@example.com',
+      },
+      amountError: false,
+    });
+  });
+
+  it('names the domain for an LNURL and asks for at least one sat', async () => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue({
+      ...PAY_REQUEST,
+      target: OUTSIDE_LNURL,
+      minSendableMsat: 0,
+    });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, OUTSIDE_LNURL);
+    expect(result.current.state).toMatchObject({
+      step: 'amount',
+      target: { minSats: 1, recipient: 'example.com', target: OUTSIDE_LNURL },
+    });
+  });
+
+  it('calls a receiver unsupported when its bounds leave no whole sat', async () => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue({
+      ...PAY_REQUEST,
+      minSendableMsat: 1_100,
+      maxSendableMsat: 1_900,
+    });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@example.com');
+    expect(result.current.state).toEqual({ step: 'input', error: 'unsupported' });
+  });
+
+  it.each([
+    [new LnurlRelayError('notPayable'), 'notPayable'],
+    [new LnurlRelayError('notFound'), 'notFound'],
+    [new LnurlRelayError('unreachable'), 'relayUnreachable'],
+    [new LnurlRelayError('failed'), 'failed'],
+    [new LnurlRelayError('amount'), 'failed'],
+    [new Error('other'), 'failed'],
+  ])('maps %o to the %s alert', async (error, alert) => {
+    vi.mocked(postLnurlPayRequest).mockRejectedValue(error);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@example.com');
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({ step: 'input', error: alert });
+  });
+
+  it('fails without a session and asks the api nothing', async () => {
+    useAuthStore.setState({ session: null });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@example.com');
+    expect(postLnurlPayRequest).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+  });
+
+  it.each([
+    ['an answer', (finish: Settle<LnurlPayRequest>) => finish.resolve(PAY_REQUEST)],
+    ['a refusal', (finish: Settle<LnurlPayRequest>) => finish.reject(new Error('x'))],
+  ])('drops %s that arrives after the wallet left ready', async (_label, settle) => {
+    const finish = pending(vi.mocked(postLnurlPayRequest));
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.setText('bob@example.com');
+    });
+    act(() => {
+      result.current.submitInput();
+    });
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    await act(async () => {
+      settle(finish);
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+});
+
+/** Controls of a promise a mock returns. */
+interface Settle<T> {
+  resolve: (value: T) => void;
+  reject: (error: unknown) => void;
+}
+
+/**
+ * Makes `mock` return one promise that the test settles.
+ *
+ * @param mock - Mocked async function.
+ * @returns The controls.
+ */
+function pending<T>(mock: { mockReturnValue: (value: Promise<T>) => unknown }): Settle<T> {
+  const controls: Settle<T> = { resolve: () => undefined, reject: () => undefined };
+  mock.mockReturnValue(
+    new Promise<T>((resolve, reject) => {
+      controls.resolve = resolve;
+      controls.reject = reject;
+    }),
+  );
+  return controls;
+}
+
+describe('useWalletSend relay invoice', () => {
+  it('asks the api for an invoice in millisats and pays it with the wallet', async () => {
+    const result = await relayAmountStep();
+    vi.mocked(postLnurlInvoice).mockResolvedValue({ pr: 'lnbc1relay' });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 100,
+      feeSats: 1,
+      send: async () => ({ kind: 'paid' }),
+    });
+    act(() => {
+      result.current.setComment('  Thanks a lot ');
+    });
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(postLnurlInvoice).toHaveBeenCalledWith('sess', 'bob@example.com', 100_000, 'Thank');
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc1relay' });
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'bob@example.com',
+      amountSats: 100,
+      feeSats: 1,
+    });
+  });
+
+  it('checks the bounds before it asks the api', async () => {
+    const result = await relayAmountStep();
+    act(() => {
+      result.current.submitAmount(1);
+    });
+    expect(postLnurlInvoice).not.toHaveBeenCalled();
+    expect(result.current.state).toMatchObject({ step: 'amount', amountError: true });
+  });
+
+  it('refuses an invoice whose amount differs from the one entered', async () => {
+    const result = await relayAmountStep();
+    vi.mocked(postLnurlInvoice).mockResolvedValue({ pr: 'lnbc1relay' });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 101,
+      feeSats: 1,
+      send: async () => ({ kind: 'paid' }),
+    });
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+  });
+
+  it('keeps the amount step with the amount alert on Amount out of range', async () => {
+    const result = await relayAmountStep();
+    vi.mocked(postLnurlInvoice).mockRejectedValue(new LnurlRelayError('amount'));
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({
+      step: 'amount',
+      target: expect.objectContaining({ type: 'relay' }) as unknown,
+      amountError: true,
+    });
+  });
+
+  it('keeps the amount step with the comment alert on Comment too long', async () => {
+    const result = await relayAmountStep();
+    vi.mocked(postLnurlInvoice).mockRejectedValue(new LnurlRelayError('comment'));
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.state).toEqual({
+      step: 'amount',
+      target: expect.objectContaining({ type: 'relay' }) as unknown,
+      amountError: false,
+      commentError: true,
+    });
+    act(() => {
+      result.current.submitAmount(1);
+    });
+    expect(result.current.state).not.toHaveProperty('commentError');
+  });
+
+  it.each([
+    [new LnurlRelayError('notPayable'), 'notPayable'],
+    [new LnurlRelayError('notFound'), 'notFound'],
+    [new LnurlRelayError('unreachable'), 'relayUnreachable'],
+    [new LnurlRelayError('failed'), 'failed'],
+    [new Error('other'), 'failed'],
+  ])('returns to the input with an alert on %o', async (error, alert) => {
+    const result = await relayAmountStep();
+    vi.mocked(postLnurlInvoice).mockRejectedValue(error);
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: alert });
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('fails without a session and asks the api nothing', async () => {
+    const result = await relayAmountStep();
+    act(() => {
+      useAuthStore.setState({ session: null });
+    });
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(postLnurlInvoice).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+  });
+
+  it.each([
+    ['an invoice', (finish: Settle<{ pr: string }>) => finish.resolve({ pr: 'lnbc1relay' })],
+    ['a refusal', (finish: Settle<{ pr: string }>) => finish.reject(new Error('x'))],
+  ])('drops %s that arrives after cancel', async (_label, settle) => {
+    const result = await relayAmountStep();
+    const finish = pending(vi.mocked(postLnurlInvoice));
+    act(() => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      result.current.cancel();
+    });
+    await act(async () => {
+      settle(finish);
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 });
