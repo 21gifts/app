@@ -127,6 +127,74 @@ describe('connectWallet', () => {
     expect(useWalletStore.getState().status).toBe('ready');
   });
 
+  describe('first synchronized read timeout', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('sets error and disconnects when the first read never settles', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const { loadSdk, connection } = createFakeSdk({
+        getInfo: () => new Promise<never>(() => undefined),
+      });
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+      expect(useWalletStore.getState().status).toBe('connecting');
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('error');
+      expect(connection.disconnect).toHaveBeenCalled();
+    });
+
+    it('stays ready after the first read resolves before the timeout', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      let resolveInfo!: (info: { balanceSats: number; identityPubkey: string }) => void;
+      const { loadSdk, connection } = createFakeSdk({
+        getInfo: () =>
+          new Promise<{ balanceSats: number; identityPubkey: string }>((resolve) => {
+            resolveInfo = resolve;
+          }),
+      });
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      resolveInfo({ balanceSats: 21_000, identityPubkey: IDENTITY });
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('ready');
+      await vi.advanceTimersByTimeAsync(30_001);
+      expect(useWalletStore.getState().status).toBe('ready');
+      expect(connection.disconnect).not.toHaveBeenCalled();
+    });
+
+    it('ignores the timeout after a synced refresh wins', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const { loadSdk, connection, listeners } = createFakeSdk();
+      connection.getInfo
+        .mockImplementationOnce(() => new Promise<never>(() => undefined))
+        .mockResolvedValueOnce({ balanceSats: 42_000, identityPubkey: IDENTITY });
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+      listeners[0]?.({ type: 'synced' });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(useWalletStore.getState()).toMatchObject({
+        status: 'ready',
+        balanceSats: 42_000,
+      });
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState()).toMatchObject({
+        status: 'ready',
+        balanceSats: 42_000,
+      });
+      expect(connection.disconnect).not.toHaveBeenCalled();
+    });
+  });
+
   it('lets a synced refresh win while the synchronized first read is pending', async () => {
     rememberSessionPhrase(MNEMONIC);
     let resolveFirst!: (info: { balanceSats: number; identityPubkey: string }) => void;
