@@ -295,4 +295,29 @@ describe('unlockWalletPhrase', () => {
     vi.mocked(obtainPrfFirstFromGet).mockRejectedValueOnce(new Error('boom'));
     await expect(unlockWalletPhrase()).resolves.toBe('failed');
   });
+
+  it('joins the ceremony in progress instead of prompting twice', async () => {
+    let resolvePrf: (value: Uint8Array) => void = () => undefined;
+    vi.mocked(obtainPrfFirstFromGet).mockReturnValueOnce(
+      new Promise<Uint8Array>((resolve) => {
+        resolvePrf = resolve;
+      }),
+    );
+    const first = unlockWalletPhrase();
+    const second = unlockWalletPhrase();
+    expect(second).toBe(first);
+    resolvePrf(PRF);
+    await expect(first).resolves.toBe('unlocked');
+    await expect(second).resolves.toBe('unlocked');
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens a new ceremony after the previous one settled', async () => {
+    vi.mocked(obtainPrfFirstFromGet).mockRejectedValueOnce(
+      Object.assign(new Error('denied'), { name: 'NotAllowedError' }),
+    );
+    await expect(unlockWalletPhrase()).resolves.toBe('cancelled');
+    await expect(unlockWalletPhrase()).resolves.toBe('unlocked');
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(2);
+  });
 });

@@ -3750,7 +3750,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: unlockWalletPhrase
 
-- **Purpose:** On-demand unlock: `obtainPrfFirstFromGet` of the account's `passkeyCredentialId`, then `rememberPhraseFromPrf`. No api call.
+- **Purpose:** On-demand unlock: `obtainPrfFirstFromGet` of the account's `passkeyCredentialId`, then `rememberPhraseFromPrf`. No api call. One ceremony per tab: a call while one is in progress, also from a remounted screen, joins it and gets the same result.
 - **Inputs:** None (reads the auth store).
 - **Returns / side effects:** `'unlocked'`, `'cancelled'`, or `'failed'`.
 - **Used by:** `useWallet.unlock`.
