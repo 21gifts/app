@@ -2070,6 +2070,48 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-error');
   });
 
+  test('wallet send-not-payable', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-not-payable');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText('This address cannot receive a payment.')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-not-payable');
+  });
+
+  test('wallet send-not-found', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-not-found');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText('This address was not found.')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-not-found');
+  });
+
+  test('wallet send-relay-unreachable', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-relay-unreachable');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByText("The receiver's server did not answer. Please try again later."),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-relay-unreachable');
+  });
+
+  test('wallet send-comment-long', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-comment-long');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText('This message is too long for the receiver.')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-comment-long');
+  });
+
   test('wallet error', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

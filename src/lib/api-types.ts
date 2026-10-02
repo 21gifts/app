@@ -853,6 +853,39 @@ export const messageInvoiceSchema = z.object({
 export type MessageInvoice = z.infer<typeof messageInvoiceSchema>;
 
 /**
+ * Runtime schema for the `POST /lnurl/pay-request` success body: the pay
+ * request of a Lightning address or LNURL on another host, as read by the api.
+ */
+export const lnurlPayRequestSchema = z.object({
+  /** Normalised target to pass back to `POST /lnurl/invoice`. */
+  target: z.string().min(1),
+  minSendableMsat: z.number().int().nonnegative(),
+  maxSendableMsat: z.number().int().nonnegative(),
+  /** Longest comment the receiver accepts; `0` means none. */
+  commentAllowed: z.number().int().nonnegative(),
+  description: z.string(),
+  domain: z.string().min(1),
+});
+
+/**
+ * Pay request of an outside Lightning address or LNURL.
+ */
+export type LnurlPayRequest = z.infer<typeof lnurlPayRequestSchema>;
+
+/**
+ * Runtime schema for the `POST /lnurl/invoice` success body.
+ */
+export const lnurlInvoiceSchema = z.object({
+  /** BOLT11 invoice for exactly the requested amount. */
+  pr: z.string().min(1),
+});
+
+/**
+ * Invoice issued by an outside LNURL server through the api.
+ */
+export type LnurlInvoice = z.infer<typeof lnurlInvoiceSchema>;
+
+/**
  * Trimmed contact body length accepted by `POST /contact` (api `MESSAGE_MAX_LENGTH`).
  */
 export const CONTACT_MESSAGE_MAX_LENGTH = 8000;

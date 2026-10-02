@@ -17,6 +17,8 @@ import {
   forumPlacesResponseSchema,
   hiddenListSchema,
   lnAddressResolvedSchema,
+  lnurlInvoiceSchema,
+  lnurlPayRequestSchema,
   giftDaySchema,
   giftStatsSchema,
   shopActivitySchema,
@@ -60,6 +62,8 @@ import {
   type PostStats,
   type AccountActivity,
   type LnAddressResolved,
+  type LnurlInvoice,
+  type LnurlPayRequest,
   type MemberProfile,
   type MessageInvoice,
   type ModeratorProposal,
@@ -3937,4 +3941,136 @@ export async function fetchShopNoteEdits(
     throw new Error('Could not load edit history');
   }
   return shopNoteEditsSchema.parse(await response.json()).edits;
+}
+
+/**
+ * Why the api refused a `/lnurl/…` request.
+ *
+ * - `notPayable`: malformed, not https, not a pay request, or on the app's own host.
+ * - `notFound`: the receiver's server does not know the address.
+ * - `unreachable`: the receiver's server did not answer the api.
+ * - `amount`: the amount is outside the receiver's bounds.
+ * - `comment`: the comment is longer than the receiver accepts.
+ * - `failed`: any other status, a network error, or an unreadable body.
+ */
+export type LnurlRelayErrorReason =
+  'notPayable' | 'notFound' | 'unreachable' | 'amount' | 'comment' | 'failed';
+
+/** Exact api `{ error }` bodies of the `/lnurl/…` endpoints and their reasons. */
+const LNURL_RELAY_ERRORS: Record<string, { status: number; reason: LnurlRelayErrorReason }> = {
+  'Not a payable address': { status: 400, reason: 'notPayable' },
+  'Address not found': { status: 404, reason: 'notFound' },
+  'Address could not be reached': { status: 502, reason: 'unreachable' },
+  'Amount out of range': { status: 400, reason: 'amount' },
+  'Comment too long': { status: 400, reason: 'comment' },
+};
+
+/**
+ * Rejection of `POST /lnurl/pay-request` or `POST /lnurl/invoice`.
+ */
+export class LnurlRelayError extends Error {
+  /** Why the request was refused. */
+  public readonly reason: LnurlRelayErrorReason;
+
+  /**
+   * @param reason - Why the request was refused.
+   */
+  public constructor(reason: LnurlRelayErrorReason) {
+    super(`Lightning address request refused: ${reason}`);
+    this.name = 'LnurlRelayError';
+    this.reason = reason;
+  }
+}
+
+/**
+ * Posts one `/lnurl/…` request and maps a refusal to {@link LnurlRelayError}.
+ *
+ * @param path - Same-origin path.
+ * @param sessionToken - Bearer session.
+ * @param body - JSON body.
+ * @returns The parsed JSON success body.
+ * @throws {@link LnurlRelayError} on a network error or a non-2xx status.
+ */
+async function postLnurlRelay(path: string, sessionToken: string, body: unknown): Promise<unknown> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new LnurlRelayError('failed');
+  }
+  if (!response.ok) {
+    const raw = await readApiError(response);
+    const known = raw === null ? undefined : LNURL_RELAY_ERRORS[raw];
+    throw new LnurlRelayError(
+      known !== undefined && known.status === response.status ? known.reason : 'failed',
+    );
+  }
+  try {
+    return await response.json();
+  } catch {
+    throw new LnurlRelayError('failed');
+  }
+}
+
+/**
+ * Reads the pay request of a Lightning address or LNURL on another host
+ * through the api (`POST /lnurl/pay-request`), for its amount bounds and
+ * comment length.
+ *
+ * @param sessionToken - Bearer session.
+ * @param target - `user@domain` or a bech32 LNURL.
+ * @returns The receiver's bounds, comment length, and normalised target.
+ * @throws {@link LnurlRelayError} with `notPayable`, `notFound`, `unreachable`,
+ * or `failed` (also when the body fails {@link lnurlPayRequestSchema}).
+ */
+export async function postLnurlPayRequest(
+  sessionToken: string,
+  target: string,
+): Promise<LnurlPayRequest> {
+  const parsed = lnurlPayRequestSchema.safeParse(
+    await postLnurlRelay('/lnurl/pay-request', sessionToken, { target }),
+  );
+  if (!parsed.success) {
+    throw new LnurlRelayError('failed');
+  }
+  return parsed.data;
+}
+
+/**
+ * Asks the receiver of a Lightning address or LNURL on another host for an
+ * invoice through the api (`POST /lnurl/invoice`). The api checks amount,
+ * comment, and the returned invoice before it answers.
+ *
+ * @param sessionToken - Bearer session.
+ * @param target - Normalised target from {@link postLnurlPayRequest}.
+ * @param amountMsat - Amount in millisats.
+ * @param comment - Optional comment; omitted when empty.
+ * @returns `{ pr }`, the BOLT11 invoice to pay.
+ * @throws {@link LnurlRelayError} with `notPayable`, `notFound`, `unreachable`,
+ * `amount`, `comment`, or `failed` (also when the body fails {@link lnurlInvoiceSchema}).
+ */
+export async function postLnurlInvoice(
+  sessionToken: string,
+  target: string,
+  amountMsat: number,
+  comment?: string,
+): Promise<LnurlInvoice> {
+  const parsed = lnurlInvoiceSchema.safeParse(
+    await postLnurlRelay('/lnurl/invoice', sessionToken, {
+      target,
+      amountMsat,
+      ...(comment === undefined || comment === '' ? {} : { comment }),
+    }),
+  );
+  if (!parsed.success) {
+    throw new LnurlRelayError('failed');
+  }
+  return parsed.data;
 }

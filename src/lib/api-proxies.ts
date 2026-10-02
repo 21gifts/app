@@ -1086,6 +1086,29 @@ export async function proxyContactPost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /lnurl/pay-request to the 21.gifts api (pay request of a
+ * Lightning address or LNURL on another host).
+ *
+ * @param request - Incoming App Router request (Bearer session + `{ target }` JSON).
+ * @returns The upstream response.
+ */
+export async function proxyLnurlPayRequestPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/lnurl/pay-request');
+}
+
+/**
+ * Proxies POST /lnurl/invoice to the 21.gifts api (invoice from a Lightning
+ * address or LNURL on another host).
+ *
+ * @param request - Incoming App Router request (Bearer session +
+ * `{ target, amountMsat, comment? }` JSON).
+ * @returns The upstream response.
+ */
+export async function proxyLnurlInvoicePost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/lnurl/invoice');
+}
+
+/**
  * Proxies GET /conversations to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).

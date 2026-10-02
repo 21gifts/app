@@ -39,6 +39,9 @@ export interface WalletSendProps {
 const ERROR_KEYS: Record<WalletSendError, MessageKey> = {
   invalid: 'wallet.sendInvalid',
   unreachable: 'wallet.sendUnreachable',
+  notPayable: 'wallet.sendNotPayable',
+  notFound: 'wallet.sendNotFound',
+  relayUnreachable: 'wallet.sendRelayUnreachable',
   onchain: 'wallet.sendOnchain',
   unsupported: 'wallet.sendUnsupported',
   insufficient: 'wallet.payInsufficient',
@@ -158,7 +161,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
       const parsed = parseAmountDraft(amountUnit, amountDraft, rateDay, fiat);
       send.submitAmount(parsed.kind === 'sats' ? parsed.sats : null);
     };
-    const commentMax = target.type === 'lnurl' ? target.commentMaxLength : 0;
+    const commentMax = target.type === 'request' ? 0 : target.commentMaxLength;
     body = (
       <StepBox onClose={close}>
         <form onSubmit={onSubmit} className="flex flex-col items-stretch gap-3">
@@ -174,14 +177,14 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
             onValueChange={setAmountDraft}
             onUnitChange={setAmountUnit}
           />
-          {target.type === 'lnurl' ? (
+          {target.type === 'request' ? null : (
             <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
               {t('wallet.sendAmountRange', {
                 min: boundText(min),
                 max: boundText(max),
               })}
             </p>
-          ) : null}
+          )}
           {commentMax > 0 ? (
             <Field
               label={t('wallet.sendComment')}
@@ -193,11 +196,16 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
               }}
             />
           ) : null}
+          {state.commentError === true ? (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('wallet.sendCommentLong')}
+            </p>
+          ) : null}
           {state.amountError ? (
             <p role="alert" className="text-center text-sm text-app-danger">
-              {target.type === 'lnurl'
-                ? t('wallet.sendAmountInvalid', { min: boundText(min), max: boundText(max) })
-                : t('wallet.sendAmountMin', { min: boundText(min) })}
+              {target.type === 'request'
+                ? t('wallet.sendAmountMin', { min: boundText(min) })
+                : t('wallet.sendAmountInvalid', { min: boundText(min), max: boundText(max) })}
             </p>
           ) : null}
           <div className="flex justify-center">

@@ -8,6 +8,8 @@ import {
   contactSchema,
   conversationInvoiceSchema,
   messageInvoiceSchema,
+  lnurlInvoiceSchema,
+  lnurlPayRequestSchema,
   conversationListSchema,
   conversationMessageSchema,
   conversationResponseSchema,
@@ -1994,5 +1996,32 @@ describe('accountActivitySchema', () => {
       },
     };
     expect(accountActivitySchema.parse(activity)).toEqual(activity);
+  });
+});
+
+describe('lnurlPayRequestSchema', () => {
+  const body = {
+    target: 'bob@example.com',
+    minSendableMsat: 1000,
+    maxSendableMsat: 100_000_000,
+    commentAllowed: 0,
+    description: '',
+    domain: 'example.com',
+  };
+
+  it('parses the contract body', () => {
+    expect(lnurlPayRequestSchema.parse(body)).toEqual(body);
+  });
+
+  it('rejects a fractional bound or an empty target', () => {
+    expect(() => lnurlPayRequestSchema.parse({ ...body, minSendableMsat: 1.5 })).toThrow();
+    expect(() => lnurlPayRequestSchema.parse({ ...body, target: '' })).toThrow();
+  });
+});
+
+describe('lnurlInvoiceSchema', () => {
+  it('parses { pr } and rejects an empty pr', () => {
+    expect(lnurlInvoiceSchema.parse({ pr: 'lnbc1' })).toEqual({ pr: 'lnbc1' });
+    expect(() => lnurlInvoiceSchema.parse({ pr: '' })).toThrow();
   });
 });

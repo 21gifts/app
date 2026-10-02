@@ -631,6 +631,10 @@ const en = {
   'wallet.sendUnreachable':
     'The receiver could not be reached from this browser. Please try again later.',
   'wallet.sendOnchain': 'Sending to this kind of Bitcoin address is not supported yet.',
+  'wallet.sendNotPayable': 'This address cannot receive a payment.',
+  'wallet.sendNotFound': 'This address was not found.',
+  'wallet.sendRelayUnreachable': "The receiver's server did not answer. Please try again later.",
+  'wallet.sendCommentLong': 'This message is too long for the receiver.',
   'wallet.sendUnsupported': 'This payment request cannot be paid from your wallet yet.',
   'wallet.sendFailed': 'The payment could not be sent. Check your balance before you try again.',
 
@@ -1789,6 +1793,11 @@ const de = {
   'wallet.sendUnreachable':
     'Der Empfänger ist von diesem Browser aus nicht erreichbar. Bitte versuchen Sie es später erneut.',
   'wallet.sendOnchain': 'Senden an diese Art von Bitcoin-Adresse wird noch nicht unterstützt.',
+  'wallet.sendNotPayable': 'An diese Adresse kann keine Zahlung gesendet werden.',
+  'wallet.sendNotFound': 'Diese Adresse wurde nicht gefunden.',
+  'wallet.sendRelayUnreachable':
+    'Der Server des Empfängers hat nicht geantwortet. Bitte versuchen Sie es später erneut.',
+  'wallet.sendCommentLong': 'Diese Nachricht ist für den Empfänger zu lang.',
   'wallet.sendUnsupported':
     'Diese Zahlungsanforderung kann noch nicht aus Ihrer Wallet bezahlt werden.',
   'wallet.sendFailed':
@@ -2959,6 +2968,10 @@ const es = {
   'wallet.sendUnreachable':
     'No se pudo contactar al destinatario desde este navegador. Inténtalo más tarde.',
   'wallet.sendOnchain': 'Todavía no se puede enviar a este tipo de dirección Bitcoin.',
+  'wallet.sendNotPayable': 'Esta dirección no puede recibir pagos.',
+  'wallet.sendNotFound': 'No se encontró esta dirección.',
+  'wallet.sendRelayUnreachable': 'El servidor del destinatario no respondió. Inténtalo más tarde.',
+  'wallet.sendCommentLong': 'Este mensaje es demasiado largo para el destinatario.',
   'wallet.sendUnsupported': 'Esta solicitud de pago todavía no se puede pagar desde tu wallet.',
   'wallet.sendFailed': 'No se pudo enviar el pago. Revisa tu saldo antes de volver a intentarlo.',
 
@@ -4116,6 +4129,10 @@ const fil = {
   'wallet.sendUnreachable':
     'Hindi maabot ang tatanggap mula sa browser na ito. Pakisubukan ulit mamaya.',
   'wallet.sendOnchain': 'Hindi pa suportado ang pagpapadala sa ganitong uri ng Bitcoin address.',
+  'wallet.sendNotPayable': 'Hindi makakatanggap ng bayad ang address na ito.',
+  'wallet.sendNotFound': 'Hindi nahanap ang address na ito.',
+  'wallet.sendRelayUnreachable': 'Hindi sumagot ang server ng tatanggap. Pakisubukan ulit mamaya.',
+  'wallet.sendCommentLong': 'Masyadong mahaba ang mensaheng ito para sa tatanggap.',
   'wallet.sendUnsupported': 'Hindi pa mababayaran mula sa wallet mo ang payment request na ito.',
   'wallet.sendFailed': 'Hindi naipadala ang bayad. Tingnan ang balanse mo bago subukan ulit.',
 

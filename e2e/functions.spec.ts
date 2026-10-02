@@ -13074,3 +13074,64 @@ test('Function: ReplyDirectionAmounts — sent and received stay apart', async (
   await expect(page.getByText('received \u20BF100')).toBeVisible();
   await expect(page.getByText("\u20BF21'100")).toHaveCount(0);
 });
+
+test('Function: proxyLnurlPayRequestPost — POST /lnurl/pay-request returns the bounds', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/lnurl/pay-request', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { target: 'bob@example.com' },
+  });
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toMatchObject({
+    target: 'bob@example.com',
+    minSendableMsat: 1_000,
+    commentAllowed: 10,
+  });
+});
+
+test('Function: proxyLnurlInvoicePost — POST /lnurl/invoice returns the invoice', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/lnurl/invoice', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { target: 'bob@example.com', amountMsat: 21_000 },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { pr: string }).pr).toMatch(/^lnbc/);
+});
+
+test('Function: postLnurlPayRequest — refusals carry the contract error texts', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  for (const [target, status, error] of [
+    ['bob@21.gifts', 400, 'Not a payable address'],
+    ['missing@example.com', 404, 'Address not found'],
+    ['down@example.com', 502, 'Address could not be reached'],
+  ] as const) {
+    const res = await request.post('/lnurl/pay-request', { headers, data: { target } });
+    expect(res.status()).toBe(status);
+    expect(await res.json()).toEqual({ error });
+  }
+});
+
+test('Function: postLnurlInvoice — amount and comment refusals', async ({ request }) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  const range = await request.post('/lnurl/invoice', {
+    headers,
+    data: { target: 'bob@example.com', amountMsat: 500 },
+  });
+  expect(range.status()).toBe(400);
+  expect(await range.json()).toEqual({ error: 'Amount out of range' });
+  const comment = await request.post('/lnurl/invoice', {
+    headers,
+    data: { target: 'bob@example.com', amountMsat: 21_000, comment: 'far too long a message' },
+  });
+  expect(comment.status()).toBe(400);
+  expect(await comment.json()).toEqual({ error: 'Comment too long' });
+});

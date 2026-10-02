@@ -366,6 +366,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-not-payable",
+    "label": "/wallet send-not-payable",
+    "visual": "state-wallet-send-not-payable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-not-found",
+    "label": "/wallet send-not-found",
+    "visual": "state-wallet-send-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-relay-unreachable",
+    "label": "/wallet send-relay-unreachable",
+    "visual": "state-wallet-send-relay-unreachable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-comment-long",
+    "label": "/wallet send-comment-long",
+    "visual": "state-wallet-send-comment-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",

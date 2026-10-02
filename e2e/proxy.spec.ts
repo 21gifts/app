@@ -30,6 +30,8 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/l/[code]')).status()).toBe(404);
   expect((await request.post('/messages/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/contact/submit')).status()).toBe(401);
+  expect((await request.post('/lnurl/pay-request')).status()).toBe(401);
+  expect((await request.post('/lnurl/invoice')).status()).toBe(401);
   expect((await request.get('/conversations')).status()).toBe(401);
   expect((await request.post('/conversations')).status()).toBe(401);
   expect((await request.get('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);

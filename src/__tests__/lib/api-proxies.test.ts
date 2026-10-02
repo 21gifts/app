@@ -50,6 +50,8 @@ import {
   proxyMembersPostsGet,
   proxyMembersRepliesGet,
   proxyContactPost,
+  proxyLnurlInvoicePost,
+  proxyLnurlPayRequestPost,
   proxyConversationGet,
   proxyConversationInvoicePost,
   proxyConversationMessagePhotoGet,
@@ -598,6 +600,24 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/contact');
+  });
+
+  it('proxyLnurlPayRequestPost hits POST /lnurl/pay-request', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlPayRequestPost(
+      new Request('http://localhost/lnurl/pay-request', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lnurl/pay-request');
+  });
+
+  it('proxyLnurlInvoicePost hits POST /lnurl/invoice', async () => {
+    const fetchMock = stubApi();
+    await proxyLnurlInvoicePost(
+      new Request('http://localhost/lnurl/invoice', { method: 'POST', body: '{}' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lnurl/invoice');
   });
 
   it('proxyConversationsGet hits /conversations', async () => {

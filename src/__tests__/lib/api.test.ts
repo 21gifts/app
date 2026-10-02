@@ -78,6 +78,9 @@ import {
   postTrustReject,
   postTrustVerify,
   postConversationInvoice,
+  postLnurlInvoice,
+  postLnurlPayRequest,
+  LnurlRelayError,
   postConversationMessage,
   fetchPlaces,
   postMessage,
@@ -5863,5 +5866,133 @@ describe('sunday write header', () => {
     expect(headersOf(1)).not.toHaveProperty('Time-Zone');
     expect(headersOf(2)).not.toHaveProperty('Time-Zone');
     expect(headersOf(3)['Time-Zone']).toBe('Europe/Zurich');
+  });
+});
+
+const PAY_REQUEST = {
+  target: 'bob@example.com',
+  minSendableMsat: 1000,
+  maxSendableMsat: 100_000_000,
+  commentAllowed: 255,
+  description: 'Pay bob',
+  domain: 'example.com',
+};
+
+/**
+ * Reads the reason of a {@link LnurlRelayError} rejection.
+ *
+ * @param promise - Request that rejects.
+ * @returns The reason.
+ */
+async function relayReason(promise: Promise<unknown>): Promise<string> {
+  const error: unknown = await promise.catch((err: unknown) => err);
+  expect(error).toBeInstanceOf(LnurlRelayError);
+  return (error as LnurlRelayError).reason;
+}
+
+describe('postLnurlPayRequest', () => {
+  it('posts the target with the bearer and returns the pay request', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: PAY_REQUEST });
+    await expect(postLnurlPayRequest('sess', 'bob@example.com')).resolves.toEqual(PAY_REQUEST);
+    expect(fetchMock).toHaveBeenCalledWith('/lnurl/pay-request', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: 'bob@example.com' }),
+    });
+  });
+
+  it.each([
+    [400, 'Not a payable address', 'notPayable'],
+    [404, 'Address not found', 'notFound'],
+    [502, 'Address could not be reached', 'unreachable'],
+    [400, 'Amount out of range', 'amount'],
+    [400, 'Comment too long', 'comment'],
+  ])('maps %i %s to %s', async (status, error, reason) => {
+    stubFetch({ ok: false, status, body: { error } });
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(reason);
+  });
+
+  it.each([
+    ['an unknown error text', 400, { error: 'Something else' }],
+    ['a known text with another status', 502, { error: 'Address not found' }],
+    ['a proxy 502 without the api', 502, { error: 'Upstream api unreachable' }],
+    ['a 401', 401, { error: 'Unauthorized' }],
+    ['a body without error', 500, {}],
+  ])('maps %s to failed', async (_label, status, body) => {
+    stubFetch({ ok: false, status, body });
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+
+  it('maps a network error to failed', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+
+  it('maps an unreadable success body to failed', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      } as unknown as Response),
+    );
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+
+  it('maps a body that fails the schema to failed', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...PAY_REQUEST, minSendableMsat: 'x' } });
+    await expect(relayReason(postLnurlPayRequest('sess', 'bob@example.com'))).resolves.toBe(
+      'failed',
+    );
+  });
+});
+
+describe('postLnurlInvoice', () => {
+  it('posts target, amount, and comment and returns the invoice', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { pr: 'lnbc21u1test' } });
+    await expect(postLnurlInvoice('sess', 'bob@example.com', 21_000, 'Thanks')).resolves.toEqual({
+      pr: 'lnbc21u1test',
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/lnurl/invoice', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: 'bob@example.com', amountMsat: 21_000, comment: 'Thanks' }),
+    });
+  });
+
+  it.each([undefined, ''])('omits the comment %j', async (comment) => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { pr: 'lnbc21u1test' } });
+    await postLnurlInvoice('sess', 'bob@example.com', 21_000, comment);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      target: 'bob@example.com',
+      amountMsat: 21_000,
+    });
+  });
+
+  it.each([
+    [400, 'Amount out of range', 'amount'],
+    [400, 'Comment too long', 'comment'],
+    [400, 'Not a payable address', 'notPayable'],
+    [404, 'Address not found', 'notFound'],
+    [502, 'Address could not be reached', 'unreachable'],
+  ])('maps %i %s to %s', async (status, error, reason) => {
+    stubFetch({ ok: false, status, body: { error } });
+    await expect(relayReason(postLnurlInvoice('sess', 'bob@example.com', 21_000))).resolves.toBe(
+      reason,
+    );
+  });
+
+  it('maps a body without pr to failed', async () => {
+    stubFetch({ ok: true, status: 200, body: { pr: '' } });
+    await expect(relayReason(postLnurlInvoice('sess', 'bob@example.com', 21_000))).resolves.toBe(
+      'failed',
+    );
   });
 });
