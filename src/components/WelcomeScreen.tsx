@@ -7,7 +7,7 @@ import { Card } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * The fourth post-login screen: welcome after name, address, and rules agreement.
+ * The last post-login screen: welcome after name, username, and rules agreement.
  *
  * Embeds {@link ForumLoader} (forum list + composer) below the heading.
  * Page column is `max-w-xl` (`Card surface={false}`) so the AppShell frame is
