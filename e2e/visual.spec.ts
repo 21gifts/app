@@ -19681,6 +19681,10 @@ test.describe('moderate screens', () => {
     await seedAda(page, 'founder');
     await page.goto('/moderate');
     await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Goals', exact: true })).toHaveAttribute(
+      'href',
+      '/grants/goals',
+    );
     await expect(page.getByRole('link', { name: 'Hidden notes' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open proposals' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open applications' })).toHaveCount(0);

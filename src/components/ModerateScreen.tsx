@@ -10,8 +10,9 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Signed-in moderation hub of staff tools.
  *
- * Moderators see labeled Hidden notes, Open proposals, Moderators chat group,
- * Handbook, and Show payout per person. The Open proposals control goes to
+ * Moderators see labeled Goals, Hidden notes, Open proposals, Moderators chat
+ * group, Handbook, and Show payout per person. Goals goes to `/grants/goals`.
+ * The Open proposals control goes to
  * `/moderate/proposals` and shows `proposalCount` when greater than zero. The
  * Moderators chat group control goes to `/moderate/group` and shows a
  * staff-room unread count when greater than zero. Handbook goes to
@@ -52,6 +53,11 @@ export function ModerateScreen(): ReactElement | null {
         {t('moderate.heading')}
       </h1>
       <ul aria-label={t('moderate.toolsLabel')} className="flex w-full flex-col gap-3">
+        <li className="flex w-full flex-col items-center gap-3">
+          <ButtonLink href="/grants/goals" variant="secondary" size="lg">
+            {t('funding.goals.link')}
+          </ButtonLink>
+        </li>
         <li className="flex w-full flex-col items-center gap-3">
           <ButtonLink href="/moderate/hidden" variant="secondary" size="lg">
             {t('moderate.listLabel')}

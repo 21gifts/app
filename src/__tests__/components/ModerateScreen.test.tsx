@@ -128,6 +128,7 @@ describe('ModerateScreen', () => {
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByRole('heading', { name: 'Moderation' })).toBeTruthy();
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Goals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
@@ -142,6 +143,7 @@ describe('ModerateScreen', () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Goals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Hidden notes' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
@@ -155,6 +157,7 @@ describe('ModerateScreen', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(<ModerateScreen />);
     expect(screen.getByText('This page is for moderators.')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Goals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open proposals' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
@@ -180,6 +183,9 @@ describe('ModerateScreen', () => {
         ),
       ).toBeNull();
       expect(screen.getByRole('list', { name: 'Moderation tools' })).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Goals' }).getAttribute('href')).toBe(
+        '/grants/goals',
+      );
       expect(screen.getByRole('link', { name: 'Hidden notes' }).getAttribute('href')).toBe(
         '/moderate/hidden',
       );

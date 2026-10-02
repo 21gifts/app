@@ -62,6 +62,10 @@ test('Function: ModeratePage — staff see the moderation hub', async ({ page })
   await stubHiddenList(page);
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Goals', exact: true })).toHaveAttribute(
+    'href',
+    '/grants/goals',
+  );
   await expect(page.getByRole('link', { name: 'Hidden notes' })).toHaveAttribute(
     'href',
     '/moderate/hidden',
@@ -99,6 +103,7 @@ test('Function: ModerateScreen — basis visitors see the forbidden copy', async
   await page.goto('/moderate');
   await expect(page.getByRole('heading', { name: 'Moderation' })).toBeVisible();
   await expect(page.getByText('This page is for moderators.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Goals', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Hidden notes' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('link', { name: 'Moderation' })).toHaveCount(0);
