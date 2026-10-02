@@ -50,6 +50,7 @@ vi.mock('@/lib/api', () => ({
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   CONVERSATION_LIVE_POLL_MS: 5_000,
   CannotReceiveError: class CannotReceiveError extends Error {},
+  WalletRequiredError: class WalletRequiredError extends Error {},
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -67,6 +68,7 @@ import {
   postConversationInvoice,
   markConversationRead,
   postConversationMessage,
+  WalletRequiredError,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import { prepareForumPhoto } from '@/lib/forum-photo';
@@ -597,6 +599,25 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText(expected)).toBeTruthy();
+  });
+
+  it('links to the wallet when the invoice mint needs the payer wallet', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    invoiceMock.mockRejectedValue(new WalletRequiredError());
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Set up your wallet first.');
+    expect(
+      within(alert).getByRole('link', { name: 'Set up your wallet first.' }).getAttribute('href'),
+    ).toBe('/wallet');
   });
 
   it('aborts the paid-row poll when the pay sheet is cancelled', async () => {

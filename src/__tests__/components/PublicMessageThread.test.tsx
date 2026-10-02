@@ -17,6 +17,7 @@ import {
   postMessage,
   postMessageInvoice,
   setName,
+  WalletRequiredError,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type Account, type ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -62,6 +63,12 @@ vi.mock('@/lib/api', () => ({
     constructor() {
       super('cannot_receive');
       this.name = 'CannotReceiveError';
+    }
+  },
+  WalletRequiredError: class WalletRequiredError extends Error {
+    constructor() {
+      super('wallet_required');
+      this.name = 'WalletRequiredError';
     }
   },
   fetchComposeTarget: vi.fn(),
@@ -427,6 +434,28 @@ describe('PublicMessageThread', () => {
         "The author's wallet cannot receive this Bitcoin payment",
       );
     });
+  });
+
+  it('opens the wallet overlay instead of a pay error when the api requires a wallet', async () => {
+    vi.mocked(postMessageInvoice)
+      .mockRejectedValueOnce(new Error('Too many payments'))
+      .mockRejectedValueOnce(new WalletRequiredError());
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
   it('invoices from Gift on a nested reply', async () => {
