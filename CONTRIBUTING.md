@@ -20,7 +20,7 @@ npm run dev    # → http://localhost:3000
 
 | Tool    | Version                | Purpose                       |
 | ------- | ---------------------- | ----------------------------- |
-| Node.js | ≥ 20 (CI runs 22)      | Runtime for all tooling       |
+| Node.js | ≥ 22                   | Runtime for all tooling       |
 | npm     | ≥ 10 (ships with Node) | Package manager (npm ci / CI) |
 
 ## Scripts
