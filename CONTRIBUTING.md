@@ -792,13 +792,18 @@ workflows as `github.run_number`. It is inlined at `next build` as
 It is not substituted at container start and is not an `entrypoint.sh`
 placeholder. Local and Playwright builds without the arg show `dev`.
 
+`NEXT_PUBLIC_BREEZ_API_KEY` is a second Docker **build-arg** (no default),
+passed only by the staging deploy (see [Breez SDK Spark](#breez-sdk-spark)).
+It is inlined at `next build`, is not an `entrypoint.sh` placeholder, and an
+unset or empty value still builds.
+
 ## CI / CD
 
 | Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                    |
 | ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
 | `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                         |
-| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build → push `21gifts/app:staging` → notify → wait for deploy                                                                                                                                                      |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` → notify → wait for deploy                                                                                           |
 | `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                       |
 | `auto-release-pr.yaml` | push to `develop`                                                 | Auto-create Release PR (`develop → main`)                                                                                                                                                                                 |
 | `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                |
@@ -829,16 +834,18 @@ it unset. No deploy workflow passes it yet, so neither deployment has the
 wallet enabled.
 
 This repository stores three GitHub Actions secrets for the Breez SDK (Spark).
-Deploy workflows do not read them. A later workflow can read them as
-`secrets.BREEZ_API_KEY_PRD`, `secrets.BREEZ_API_KEY_DEV`, and
-`secrets.BREEZ_API_KEY_STAGING`. GitHub does not show the values again, and
+`deploy-staging.yaml` passes `BREEZ_API_KEY_STAGING` as the Docker build-arg
+`NEXT_PUBLIC_BREEZ_API_KEY`, which `next build` bakes into the app; unset or
+empty still builds. The DEV and PRD deploys do not read their secrets. A later
+workflow can read them as `secrets.BREEZ_API_KEY_PRD` and
+`secrets.BREEZ_API_KEY_DEV`. GitHub does not show the values again, and
 the values are not in git.
 
 | Secret                  | Use                                                            |
 | ----------------------- | -------------------------------------------------------------- |
 | `BREEZ_API_KEY_PRD`     | Breez SDK API key for production (`https://api.21.gifts`)      |
 | `BREEZ_API_KEY_DEV`     | Breez SDK API key for development (`https://dev-api.21.gifts`) |
-| `BREEZ_API_KEY_STAGING` | Breez SDK API key for the future staging environment           |
+| `BREEZ_API_KEY_STAGING` | Breez SDK API key for staging (`https://staging-api.21.gifts`) |
 
 ```yaml
 env:
