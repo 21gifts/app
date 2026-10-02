@@ -1217,7 +1217,7 @@ Handbook states: default (signed-out loaded card), signed-in, loading, posts-ope
 
 ### `/view/[viewKey]`
 
-Fill `AppShell` (page frame); `ProfileChromeLeft` with `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity `Card` `surface={false}` (chart, About me with Languages **Translate** when `aboutMessageId` is set, icon-only copy-profile-link, name, location, address; no edit/Message; location uses `location.unset` when empty). When a username is set, a centered Open CryptoPay QR (`profile.giftsQr`, center mark `profileQrLogo`) sits under the address, including on a smartphone. A missing username shows no QR. Below: `ViewProfileClaim`.
+Fill `AppShell` (page frame); `ProfileChromeLeft` with `HomeWordmark` + LanguageSwitcher. `ViewProfileLoader` → identity `Card` `surface={false}` (chart, About me with Languages **Translate** when `aboutMessageId` is set, icon-only copy-profile-link, name, location, the public `username@21.gifts`; no edit/Message; location uses `location.unset` when empty). When a username is set, a centered Open CryptoPay QR (`profile.giftsQr`, center mark `profileQrLogo`) sits under the address, including on a smartphone. A missing username shows no QR. Below: `ViewProfileClaim`.
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.
