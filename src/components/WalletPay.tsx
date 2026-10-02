@@ -44,7 +44,6 @@ function OwnAddress(): ReactElement | null {
   useEffect(() => {
     setHost(window.location.hostname);
   }, []);
-  /* v8 ignore next 3 -- host is set right after mount */
   if (host === null) {
     return null;
   }

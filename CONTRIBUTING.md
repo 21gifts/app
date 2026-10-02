@@ -163,7 +163,7 @@ app/
 │   │   │       ├── page.tsx     # GET /grants/applications — grant queue
 │   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth
 │   │   ├── wallet/
-│   │   │   └── page.tsx         # GET /wallet — receive address, optional balance block, payments list while the wallet is ready, Add/Show recovery phrase
+│   │   │   └── page.tsx         # GET /wallet — optional balance and send blocks, receive address, payments list while the wallet is ready, Add/Show recovery phrase
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
@@ -220,6 +220,8 @@ app/
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNotice.tsx # Blocking one-time wallet setup dialog (AppShell)
 │   │   ├── WalletSync.tsx       # Root-mounted listenForWalletPhrase effect (renders nothing)
+│   │   ├── WalletPay.tsx        # In-app wallet pay slot of the gift pay sheets (fallback: QR + Wallet of Satoshi)
+│   │   ├── WalletSend.tsx       # /wallet send block (paste, amount, confirm, sent)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
@@ -288,7 +290,9 @@ app/
 │   │   ├── useWallet.ts         # /wallet balance status, unlock, and retry
 │   │   ├── useWalletHistory.ts  # /wallet payment pages, reloaded on every wallet sync
 │   │   ├── useWalletSetup.ts    # One-time wallet setup dialog view and actions
-│   │   └── useWalletPhrase.ts   # In-tab PRF recovery phrase
+│   │   ├── useWalletPay.ts      # In-app pay path of one invoice (unlock, fee, send, 60 s wait)
+│   │   ├── useWalletPhrase.ts   # In-tab PRF recovery phrase
+│   │   └── useWalletSend.ts     # /wallet send flow steps
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
@@ -302,9 +306,9 @@ app/
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
 │   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM + SESSION_PHRASE_EVENT (never localStorage)
-│   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock)
+│   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock, pay, parse)
 │   │   │   ├── wallet-sdk.ts    # Dynamic Breez SDK load + narrow WalletSdk surface
-│   │   │   ├── wallet-service.ts # connect / refresh / disconnect + phrase-event listener + register / list payments
+│   │   │   ├── wallet-service.ts # connect / refresh / disconnect + phrase-event listener + register / list payments + payFromWallet / parseWalletInput
 │   │   │   ├── wallet-setup.ts  # One-time setup: passkey → connect → claim → register → refresh
 │   │   │   └── wallet-phrase.ts # rememberPhraseFromPrf, unlockWalletPhrase, canUnlockWallet
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
@@ -363,7 +367,8 @@ app/
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
-│   ├── wallet.spec.ts           # /wallet recovery-phrase and balance Function titles
+│   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, and send Function titles
+│   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, fallback)
 │   ├── wallet-setup.spec.ts     # Wallet setup dialog, payments list, username freeze, address proxies
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
