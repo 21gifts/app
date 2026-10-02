@@ -1544,6 +1544,84 @@ describe('SignedInChrome', () => {
     }
   });
 
+  it('keeps the unadjusted menu bottom when the border widths are zero', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    const previousScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    const previousComputedStyle = globalThis.getComputedStyle;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 800;
+      },
+    });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      if (this.id !== 'signed-in-menu') {
+        return previousRect.call(this);
+      }
+      return {
+        x: 10,
+        y: 85,
+        top: 85,
+        left: 10,
+        right: 210,
+        width: 200,
+        height: 0,
+        bottom: this.style.bottom === '' ? 900 : 750,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    const stubComputedStyle = (elt: Element, pseudoElt?: string | null): CSSStyleDeclaration => {
+      const style = previousComputedStyle.call(globalThis, elt, pseudoElt);
+      if (elt.id !== 'signed-in-menu') {
+        return style;
+      }
+      return Object.create(style, {
+        borderTopWidth: { configurable: true, enumerable: true, value: '0px' },
+        borderBottomWidth: { configurable: true, enumerable: true, value: '0px' },
+      }) as CSSStyleDeclaration;
+    };
+    globalThis.getComputedStyle = stubComputedStyle;
+    const previousWindowComputedStyle =
+      window.getComputedStyle === stubComputedStyle ? undefined : window.getComputedStyle;
+    if (previousWindowComputedStyle !== undefined) {
+      window.getComputedStyle = stubComputedStyle;
+    }
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.style.bottom).toBe('-1px');
+      expect(panel.style.top).toBe('85px');
+      expect(panel.style.left).toBe('10px');
+      expect(panel.style.width).toBe('200px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).not.toContain('max-h-');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      if (previousScrollHeight === undefined) {
+        delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', previousScrollHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+      globalThis.getComputedStyle = previousComputedStyle;
+      if (previousWindowComputedStyle !== undefined) {
+        window.getComputedStyle = previousWindowComputedStyle;
+      }
+    }
+  });
+
   it('returns from a resize that starts during the menu measurement', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
