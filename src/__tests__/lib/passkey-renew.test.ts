@@ -2,8 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchMe, finishPasskeySeed, postPasskeyRenewReport, startPasskeySeed } from '@/lib/api';
 import { renewPasskey } from '@/lib/passkey-renew';
 import { obtainPrfFirst } from '@/lib/prf-mnemonic';
+import { clearSessionPhrase, peekSessionPhrase } from '@/lib/tab-phrase';
+import { credentialToJSON } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Account } from '@/lib/api-types';
+
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
 vi.mock('@/lib/api', () => ({
   startPasskeySeed: vi.fn(),
@@ -47,6 +51,8 @@ const account = {
 } as Account;
 
 beforeEach(() => {
+  clearSessionPhrase();
+  delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
   useAuthStore.setState({ session: 'tok', account });
   vi.mocked(startPasskeySeed)
     .mockReset()
@@ -77,6 +83,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  clearSessionPhrase();
+  if (ORIGINAL_BREEZ === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+  }
   vi.unstubAllGlobals();
   useAuthStore.setState({ session: null, account: null });
 });
@@ -349,5 +361,61 @@ describe('renewPasskey', () => {
     });
     await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
     expect(postPasskeyRenewReport).not.toHaveBeenCalled();
+  });
+
+  it('remembers the phrase when the key is set and credential ids match', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    const prfFirst = new Uint8Array(32).fill(7);
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(prfFirst);
+    vi.mocked(finishPasskeySeed).mockResolvedValueOnce({
+      ...account,
+      walletRequired: true,
+      passkeyCredentialId: 'cred',
+    });
+    const result = await renewPasskey('tok');
+    expect(result).toMatchObject({
+      outcome: 'ok',
+      account: { passkeyCredentialId: 'cred' },
+    });
+    if (result.outcome === 'ok') {
+      expect(result.prfFirst).toEqual(prfFirst);
+    }
+    await vi.waitFor(() => {
+      expect(peekSessionPhrase()).not.toBeNull();
+    });
+    expect(finishPasskeySeed).toHaveBeenCalledWith('tok', 'ch', { id: 'cred' });
+    expect(credentialToJSON).toHaveBeenCalled();
+  });
+
+  it('remembers nothing when the key is unset', async () => {
+    const prfFirst = new Uint8Array(32).fill(7);
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(prfFirst);
+    vi.mocked(finishPasskeySeed).mockResolvedValueOnce({
+      ...account,
+      walletRequired: true,
+      passkeyCredentialId: 'cred',
+    });
+    const result = await renewPasskey('tok');
+    expect(result).toMatchObject({ outcome: 'ok', account: { passkeyCredentialId: 'cred' } });
+    expect(peekSessionPhrase()).toBeNull();
+    expect(finishPasskeySeed).toHaveBeenCalledWith('tok', 'ch', { id: 'cred' });
+  });
+
+  it('remembers nothing when the ceremony is cancelled', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    const denied = Object.assign(new Error('nope'), { name: 'NotAllowedError' });
+    vi.mocked(navigator.credentials.create).mockRejectedValueOnce(denied);
+    await expect(renewPasskey('tok')).resolves.toEqual({ outcome: 'cancelled' });
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('remembers nothing when the ceremony fails', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    vi.mocked(obtainPrfFirst).mockResolvedValueOnce(null);
+    await expect(renewPasskey('tok')).resolves.toMatchObject({
+      outcome: 'failed',
+      kind: 'prfUnsupported',
+    });
+    expect(peekSessionPhrase()).toBeNull();
   });
 });

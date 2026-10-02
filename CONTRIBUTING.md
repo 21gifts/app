@@ -18,7 +18,7 @@ npm run dev    # → http://localhost:3000
 
 | Tool    | Version                | Purpose                       |
 | ------- | ---------------------- | ----------------------------- |
-| Node.js | ≥ 20 (CI runs 22)      | Runtime for all tooling       |
+| Node.js | ≥ 22                   | Runtime for all tooling       |
 | npm     | ≥ 10 (ships with Node) | Package manager (npm ci / CI) |
 
 ## Scripts
@@ -154,7 +154,7 @@ app/
 │   │   │       ├── page.tsx     # GET /grants/applications — grant queue
 │   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth
 │   │   ├── wallet/
-│   │   │   └── page.tsx         # GET /wallet — Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
+│   │   │   └── page.tsx         # GET /wallet — receive address, optional balance block, Add/Show recovery phrase
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
@@ -205,8 +205,10 @@ app/
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
-│   │   ├── WalletScreen.tsx     # Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
+│   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase into WalletScreenView (balance, receive, recovery entry)
 │   │   ├── WalletScreenView.tsx # Wallet card and the visible one-step Back
+│   │   ├── WalletBalance.tsx    # /wallet balance block (locked / connecting / ready / error)
+│   │   ├── WalletSync.tsx       # Root-mounted listenForWalletPhrase effect (renders nothing)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
@@ -272,9 +274,10 @@ app/
 │   │   ├── useLatestRateDay.ts  # Latest fiat rate day
 │   │   ├── usePasskeyLogin.ts   # Register / authenticate / claim
 │   │   ├── useUnreadCount.ts    # Menu badge unread
+│   │   ├── useWallet.ts         # /wallet balance status, unlock, and retry
 │   │   └── useWalletPhrase.ts   # In-tab PRF recovery phrase
 │   ├── lib/
-│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
@@ -285,7 +288,11 @@ app/
 │   │   ├── mention-search.ts    # GET /forum/mentions username suggestions
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
-│   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM (never localStorage)
+│   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM + SESSION_PHRASE_EVENT (never localStorage)
+│   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock)
+│   │   │   ├── wallet-sdk.ts    # Dynamic Breez SDK load + narrow WalletSdk surface
+│   │   │   ├── wallet-service.ts # connect / refresh / disconnect + phrase-event listener
+│   │   │   └── wallet-phrase.ts # rememberPhraseFromPrf, unlockWalletPhrase, canUnlockWallet
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand
@@ -342,7 +349,7 @@ app/
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
-│   ├── wallet.spec.ts           # /wallet recovery-phrase Function titles
+│   ├── wallet.spec.ts           # /wallet recovery-phrase and balance Function titles
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
@@ -412,8 +419,9 @@ update stuff
 - **Named exports** — default exports only where Next.js requires them (`layout.tsx`, `page.tsx`, config files)
 - **Path alias `@/`** points at `src/` (configured in `tsconfig.json` and `vitest.config.ts`)
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
-  `process.env` directly in components. Accessors throw on missing values; no
-  silent fallbacks.
+  `process.env` directly in components. Required accessors throw on missing
+  values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`) return
+  `null`. No silent fallbacks.
 - **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can.
 
 ### Styling
@@ -507,9 +515,9 @@ English).
 The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 **binding** rule. New work follows that table, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum Post-path + contact + inbox composers), copy, dismiss, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, **translate** (Languages icon in the footer icon row, `forum.translate`), Menu **row** icons (the Menu _trigger_ stays labeled). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. |
+| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, **Unlock wallet**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum Post-path + contact + inbox composers), copy, dismiss, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, **translate** (Languages icon in the footer icon row, `forum.translate`), Menu **row** icons (the Menu _trigger_ stays labeled). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. |
 
 Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay the same Languages icon. The accessible name is the only label; no visible text.
 
@@ -812,6 +820,13 @@ infrastructure run whose title is `image-published 21gifts/app:<tag> <sha>`
 and fails if that run does not succeed. The wait is what makes a failed DEV deploy visible on the develop→main PR. A failed staging deploy fails that staging workflow, not the release pull request.
 
 ## Breez SDK Spark
+
+The app reads the key as `NEXT_PUBLIC_BREEZ_API_KEY` through `getBreezApiKey()`.
+It is inlined at `next build`. Unset or empty means the in-app wallet is
+disabled and the app behaves as before. Local use:
+`NEXT_PUBLIC_BREEZ_API_KEY=<key> npm run dev`. Playwright and CI builds leave
+it unset. No deploy workflow passes it yet, so neither deployment has the
+wallet enabled.
 
 This repository stores three GitHub Actions secrets for the Breez SDK (Spark).
 Deploy workflows do not read them. A later workflow can read them as
