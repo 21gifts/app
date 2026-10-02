@@ -1189,15 +1189,9 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ### Variant: expanded-external
 
-On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button; this shot leaves that sheet closed (`overlay-external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button that opens `/messages/<id>/author`. This shot stays on the thread. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts welcome expanded external](images/welcome-expanded-external.png)
-
-### Variant: overlay-external-author
-
-On **All**, expand Ada's note and click **View profile** on Robin, who has no 21.gifts account. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example` (shown only because it differs), **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
-
-![21.gifts welcome overlay external author](images/welcome-overlay-external-author.png)
 
 ### Variant: reaction-draft
 
@@ -3961,7 +3955,7 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 ## Screen: /messages/[id]
 
 - **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. A top-level note with a positive `goalSats` shows `ForumGoalBar` (orange through 100%, green overflow; not on replies). Signed-in (hydrated session and account): same per-note actions as `/welcome` (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, **Edit shop note** on a top-level shop note when the viewer is a moderator, author link when `accountId`). A founder or moderator opening a soft-hidden note (root or highlighted reply) sees the note plus `forum.hiddenNotice` (who hid it and when) instead of `view.missing`; React/Gift/Delete/reply composer are omitted on that card. A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note) even though the top-level composer is hidden; extra gifts and Gift-open stay on the card (`payHost: card`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): `ProfileChromeLeft` with wordmark → `/` and one arrow to the previous in-app view, or `/welcome` when this tab has none, plus light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate). A posted goal bar uses the frozen snapshot when that string exists, otherwise the gift-day rate. The pay sheet and an unpaid invoice preview still use the gift-day rate. Signed-in: **Translate** (Languages icon) sits in the footer icon row with react / copy. Unsigned `PublicThreadCard` stacks Translate under the body (no footer row). **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
-- **Inputs:** Dynamic route `id` (UUID). After hydrate: any session loads `GET /forum/messages/:id` (`fetchForumMessage`) and Bearer replies (a hidden note is still 404 for a non-moderator). No session uses `GET /public-messages/:id` and public replies, and the author name stays text. A session shows the member link for a 21.gifts author on the note, a reaction, a quote name (the rest of the quote still opens the note), and the same on hidden notes and the pin list. The public note video has its own fullscreen button, including a narrow portrait clip. If the opened note has `parentId`, a second GET loads that parent, then its replies. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Opening a hidden reply UUID as staff still shows the parent, live replies, AND the opened hidden reply (merged if Bearer replies omit it). Both URLs stay valid (no redirect). Signed-in also auto-expands via Bearer `GET /forum/messages/:id/replies`. Optional photo via `fetchPublicMessagePhoto` or signed-in `fetchMessagePhoto` (via `PublicMessageThread`) → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags. Unsigned/non-staff hidden ids stay `view.missing`.
+- **Inputs:** Dynamic route `id` (UUID). After hydrate: any session loads `GET /forum/messages/:id` (`fetchForumMessage`) and Bearer replies (a hidden note is still 404 for a non-moderator). No session uses `GET /public-messages/:id` and public replies. A `via === 'nostr'` name links to `/messages/[id]/author`; any other unsigned name stays text. A session shows the member link for a 21.gifts author (`accountId` wins over `via`) on the note, a reaction, a quote name (the rest of the quote still opens the note), and the same on hidden notes and the pin list. A signed-in name with no account and `via === 'nostr'` opens `/messages/[id]/author`. The public note video has its own fullscreen button, including a narrow portrait clip. If the opened note has `parentId`, a second GET loads that parent, then its replies. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Opening a hidden reply UUID as staff still shows the parent, live replies, AND the opened hidden reply (merged if Bearer replies omit it). Both URLs stay valid (no redirect). Signed-in also auto-expands via Bearer `GET /forum/messages/:id/replies`. Optional photo via `fetchPublicMessagePhoto` or signed-in `fetchMessagePhoto` (via `PublicMessageThread`) → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags. Unsigned/non-staff hidden ids stay `view.missing`.
 - **Actions:** Change language (unsigned), or open **Menu** (signed-in). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Unsigned **Log in** → `/login` (`login.submit`) below the thread. Signed-in visitors have no second back link below the thread, plus the per-note actions above (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, **Edit shop note** on a top-level shop note when the viewer is a moderator, author link when `accountId`). A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`). On fetch error, **Try again**. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
@@ -4161,15 +4155,9 @@ Parent Ada “Hello from Ada” plus gift reply Pater Severin (empty text, sats 
 
 ### Variant: external-reply
 
-Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each name is a **View profile** button. **External** stays a non-interactive span next to the name (same slot as a role pill; not a button, no hint). This shot leaves the profile sheet closed (`external-author`). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
+Unsigned permalink card (`PublicThreadCard`). Parent Ada “Hello from Ada” plus two replies from **Robin**, who has no 21.gifts account: a gift-only reply (`₿69`) and a text reply containing `https://example.com/hello`. Each name is a **View profile** control to `/messages/<id>/author`. This shot stays on the thread. **External** stays a non-interactive span next to the name (same slot as a role pill; not a button, no hint). The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
 
 ![21.gifts public message external reply](images/messages-id-external-reply.png)
-
-### Variant: external-author
-
-Unsigned permalink of the same thread. Click **View profile** on Robin. The sheet shows Robin, **External**, the hint that they wrote from another app, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, an icon-only Copy, and an icon-only Close. No photo, no pay control, and no outbound link.
-
-![21.gifts public message external author](images/messages-id-external-author.png)
 
 ### Variant: quoted-note
 
@@ -4182,6 +4170,170 @@ Public permalink of Riana Rosello's note. Cyrill's reply shows `just for informa
 Same thread opened on the reply UUID. Parent + gift; permalink target ring (`data-permalink-target="true"`, `ring-1 ring-app-fg`) on the gift reply.
 
 ![21.gifts public message reply](images/messages-id-reply.png)
+
+## Screen: /messages/[id]/author
+
+- **Purpose:** External author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Heading is `profile.title` (**Profile** / **Profil** / **Perfil** / **Profile**), not the person's name. Name section always: heading `name.heading`, truncated name, **External** span (not a button). Optional checked Nostr address (`forum.externalProfileNip05`) when published. Payment address (`forum.externalProfileLud16`) only when it differs ignoring case. Nostr key (`forum.externalProfileNpub`) with the centered secondary IconButton copy control when a profile has loaded; addresses and the key are `break-all`, the name truncates. No photo, pay, outbound link, location, chart, about, message, hint paragraph, or close control. Count buttons appear when both `postCount` and `replyCount` are numbers; the feed is read-only under the card (no pay, no composer, no react); a post opens `/messages/{id}`; a reply opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`. If either count is absent, no buttons. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. Body is `ExternalAuthorProfile` inside `PublicMessageChrome`.
+- **Inputs:** Dynamic route `id` (forum message id, not validated as a UUID) and optional `name` query (`string` or first array entry, trimmed; blank becomes `''`). Profile from `GET /public-messages/:id/external-profile` (`fetchExternalAuthorProfile`). Posts from `GET /public-messages/:id/external-posts` and replies from `GET /public-messages/:id/external-replies`, no Bearer.
+- **Actions:** The top-left arrow is the existing `ProfileChromeLeft` control (previous in-app view, or `/welcome` when this tab has none). Unsigned chrome is wordmark href `/` plus `LanguageSwitcher`. Signed-in chrome is `ProfileChromeLeft` plus `SignedInChrome`. Copy the npub (icon-only **Copy** → **Copied**). Open and close the count buttons; those clicks GET `/public-messages/:id/external-posts` or `/public-messages/:id/external-replies`. No pay, no outbound link, no close control.
+- **Used by:** Route `/messages/[id]/author` (`ExternalAuthorPage`). `ForumBoard`, `QuotedForumNote`, and `PublicMessageLoader` name controls.
+- **Auth:** None required to view; chrome depends on hydrated session. No `OnboardingGate`. Not a `/members` page.
+
+### Variant: default
+
+Signed-out loaded card. Heading **Profile**, name **Robin**, **External**, **Verified Nostr address** `robin@nostr.example`, **Payment address on their profile** `pay@ln.example`, **Nostr key** `npub1example`, icon-only **Copy**. No photo, pay, outbound link, hint paragraph, or close control. Closed buttons are **1 post** and **1 reaction**; the feed is closed.
+
+![21.gifts external author profile](images/messages-id-author.png)
+
+### Variant: signed-in
+
+Same loaded card with the **Menu** control. Heading **Profile**, **Robin**, **External**, `robin@nostr.example`, `pay@ln.example`, `npub1example`, icon-only **Copy**. Closed buttons are **1 post** and **1 reaction**; the feed is closed.
+
+![21.gifts external author profile signed in](images/messages-id-author-signed-in.png)
+
+### Variant: loading
+
+Title **Profile**, name **Robin**, **External**, and no address yet because the profile request has not returned.
+
+![21.gifts external author profile loading](images/messages-id-author-loading.png)
+
+### Variant: posts-open
+
+Pressed **1 post** button with the note text `Robin wrote a note` under the card. The feed is read-only.
+
+![21.gifts external author posts open](images/messages-id-author-posts-open.png)
+
+### Variant: replies-open
+
+Pressed **1 reaction** button with the note text `Robin wrote a reaction` under the card. The feed is read-only.
+
+![21.gifts external author replies open](images/messages-id-author-replies-open.png)
+
+### Variant: posts-loading
+
+Pressed **1 post**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author posts loading](images/messages-id-author-posts-loading.png)
+
+### Variant: replies-loading
+
+Pressed **1 reaction**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author replies loading](images/messages-id-author-replies-loading.png)
+
+### Variant: posts-error
+
+Pressed **1 post**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author posts error](images/messages-id-author-posts-error.png)
+
+### Variant: replies-error
+
+Pressed **1 reaction**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author replies error](images/messages-id-author-replies-error.png)
+
+### Variant: posts-truncated
+
+Pressed **2 posts**. One note, `Robin wrote a note`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author posts truncated](images/messages-id-author-posts-truncated.png)
+
+### Variant: replies-truncated
+
+Pressed **2 reactions**. One note, `Robin wrote a reaction`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author replies truncated](images/messages-id-author-replies-truncated.png)
+
+### Variant: copied
+
+Pressed **Copy**. The icon is the check and the accessible name is **Copied**. The key is still `npub1example`.
+
+![21.gifts external author profile copied](images/messages-id-author-copied.png)
+
+### Variant: posts-empty
+
+Pressed **0 posts**. The feed shows `No messages yet — be the first to write one.` The **0 reactions** button stays closed.
+
+![21.gifts external author posts empty](images/messages-id-author-posts-empty.png)
+
+### Variant: replies-empty
+
+Pressed **0 reactions**. The feed shows `No messages yet — be the first to write one.` The **0 posts** button stays closed.
+
+![21.gifts external author replies empty](images/messages-id-author-replies-empty.png)
+
+### Variant: posts-external
+
+Pressed **1 post**, then **External** on that note. The hint is `Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.`
+
+![21.gifts external author posts external](images/messages-id-author-posts-external.png)
+
+### Variant: replies-external
+
+Pressed **1 reaction**, then **External** on that note. The same hint is open. **1 post** stays closed.
+
+![21.gifts external author replies external](images/messages-id-author-replies-external.png)
+
+### Variant: posts-translate
+
+Pressed **1 post**. The note is German and **Translate** is visible.
+
+![21.gifts external author posts translate](images/messages-id-author-posts-translate.png)
+
+### Variant: posts-translate-loading
+
+Pressed **Translate** while the request hangs. The control is busy.
+
+![21.gifts external author posts translate loading](images/messages-id-author-posts-translate-loading.png)
+
+### Variant: posts-translate-done
+
+After a successful translation. The control is **Show original** and the German original is not shown.
+
+![21.gifts external author posts translate done](images/messages-id-author-posts-translate-done.png)
+
+### Variant: posts-translate-hidden
+
+After **Show original**. The Languages icon is named **Show translation**.
+
+![21.gifts external author posts translate hidden](images/messages-id-author-posts-translate-hidden.png)
+
+### Variant: posts-translate-error
+
+After a failed translation. The feed shows `Could not translate this note. Please try again.`
+
+![21.gifts external author posts translate error](images/messages-id-author-posts-translate-error.png)
+
+### Variant: replies-translate
+
+Pressed **1 reaction**. The note is German and **Translate** is visible. **1 post** stays closed.
+
+![21.gifts external author replies translate](images/messages-id-author-replies-translate.png)
+
+### Variant: replies-translate-loading
+
+Pressed **Translate** on that reaction while the request hangs. The control is busy.
+
+![21.gifts external author replies translate loading](images/messages-id-author-replies-translate-loading.png)
+
+### Variant: replies-translate-done
+
+After a successful translation of that reaction. The control is **Show original**.
+
+![21.gifts external author replies translate done](images/messages-id-author-replies-translate-done.png)
+
+### Variant: replies-translate-hidden
+
+After **Show original** on that reaction. The Languages icon is named **Show translation**.
+
+![21.gifts external author replies translate hidden](images/messages-id-author-replies-translate-hidden.png)
+
+### Variant: replies-translate-error
+
+After a failed translation of that reaction. The feed shows `Could not translate this note. Please try again.`
+
+![21.gifts external author replies translate error](images/messages-id-author-replies-translate-error.png)
 
 ## Screen: /view/[viewKey]
 

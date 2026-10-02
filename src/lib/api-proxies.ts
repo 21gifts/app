@@ -801,6 +801,38 @@ export async function proxyExternalAuthorProfileGet(
 }
 
 /**
+ * Proxies GET /messages/:id/external-posts to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-posts`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorPostsGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-posts`);
+}
+
+/**
+ * Proxies GET /messages/:id/external-replies to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-replies`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorRepliesGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-replies`);
+}
+
+/**
  * Proxies GET /links/:code to the 21.gifts api (public; no auth).
  *
  * App path is `/links/:code`. The visitor redirect lives at `/l/:code`.

@@ -1039,10 +1039,10 @@
 
 ## Function: PublicMessageChrome
 
-- **Purpose:** Client chrome wrapper for public `/messages/[id]`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
-- **Inputs:** `children` (thread body from `PublicMessagePage` — `PublicMessageLoader`). Uses `useHydrateSession` and `useAuthStore` for `session`.
+- **Purpose:** Client chrome wrapper for public `/messages/[id]` and `/messages/[id]/author`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
+- **Inputs:** `children` (page body: `PublicMessageLoader` from `PublicMessagePage`, or `ExternalAuthorProfile` from `ExternalAuthorPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with the matching top-left / top-right slots around `children`. No network beyond session hydration.
-- **Used by:** `PublicMessagePage`.
+- **Used by:** `PublicMessagePage`, `ExternalAuthorPage`.
 
 ## Function: PublicMessagePage
 
@@ -1936,8 +1936,22 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** GET `/public-messages/:id/external-profile` with no Authorization and parse `externalAuthorProfileSchema`.
 - **Inputs:** Forum message `id`.
-- **Returns / side effects:** `{ name, npub, nip05?, lud16? }`, or `null` on 404, any other non-OK response, network failure, JSON failure, or schema mismatch. Does not throw.
-- **Used by:** `ExternalAuthorSheet`.
+- **Returns / side effects:** `{ name, npub, nip05?, lud16? }`, plus optional `postCount` and `replyCount`, or `null` on 404, any other non-OK response, network failure, JSON failure, or schema mismatch. Does not throw.
+- **Used by:** `ExternalAuthorProfile`.
+
+## Function: fetchExternalAuthorPosts
+
+- **Purpose:** GET `/public-messages/:id/external-posts` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
+- **Used by:** `ExternalAuthorProfile`.
+
+## Function: fetchExternalAuthorReplies
+
+- **Purpose:** GET `/public-messages/:id/external-replies` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
+- **Used by:** `ExternalAuthorProfile`.
 
 ## Function: fetchPublicMessage
 
@@ -2158,7 +2172,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ForumQuotedBody
 
-- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs and for `http(s)://<host>/l/<8 hex>` codes that `fetchShortLink` resolves to a shown message (a member, a null lookup, the containing id, and a failed load stay in the text). Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame with one empty stretched permalink (`absolute inset-0`, aria-label `forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`) that covers the card, including the caption, timestamp, role pill, optional photo, and ₿ amount, and points at `/messages/<id>`. That permalink is not an ancestor of the caption, so Show more stays outside any anchor. Card content is `pointer-events-none` with `[&_*]:pointer-events-none`, `[&_a]:pointer-events-auto`, and `[&_button]:pointer-events-auto`, so a click on caption text, photo, timestamp, role pill, or amount hits the permalink, while the author profile link, Translate, Show more, and links inside the caption keep their own targets. `[&_[role=dialog]]:pointer-events-auto` and `[&_[role=dialog]_*]:pointer-events-auto` keep the external-link confirm dialog and everything inside it clickable, because that dialog is a descendant of the card and is not portaled. The photo `img` is `draggable={false}` and is not inside the permalink. Caption rendering is unchanged (`TranslatableNoteBody` when `translate` is true, `plain` only when `via === 'nostr'`; when `translate` is false, `ForumNoteText` when truncate, else `LinkedText`; no nested unfurl). `TranslatableNoteBody` on stripped display text only (a successful translation replaces that original after the same quote/short-link strip; optional `formatTranslated` runs after that strip). Feed remaining text and nested captions go through `ForumNoteText` (280-character preview, Show more only above 560, bodies autolinked) until replaced. Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role). Nested nostr captions use `TranslatableNoteBody` `plain` only when `translate` is true (a URL in a quoted external reply is never a link). When `translate` is false, nested cards use `ForumNoteText` / `LinkedText` and never `TranslatableNoteBody`.
+- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs and for `http(s)://<host>/l/<8 hex>` codes that `fetchShortLink` resolves to a shown message (a member, a null lookup, the containing id, and a failed load stay in the text). Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame with one empty stretched permalink (`absolute inset-0`, aria-label `forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`) that covers the card, including the caption, timestamp, role pill, optional photo, and ₿ amount, and points at `/messages/<id>`. That permalink is not an ancestor of the caption, so Show more stays outside any anchor. Card content is `pointer-events-none` with `[&_*]:pointer-events-none`, `[&_a]:pointer-events-auto`, and `[&_button]:pointer-events-auto`, so a click on caption text, photo, timestamp, role pill, or amount hits the permalink, while the author profile link, Translate, Show more, and links inside the caption keep their own targets. When the quoted note has `via === 'nostr'`, the name is a link to `/messages/<id>/author`, not a dialog. `[&_[role=dialog]]:pointer-events-auto` and `[&_[role=dialog]_*]:pointer-events-auto` keep the external-link confirm dialog and everything inside it clickable, because that dialog is a descendant of the card and is not portaled. The photo `img` is `draggable={false}` and is not inside the permalink. Caption rendering is unchanged (`TranslatableNoteBody` when `translate` is true, `plain` only when `via === 'nostr'`; when `translate` is false, `ForumNoteText` when truncate, else `LinkedText`; no nested unfurl). `TranslatableNoteBody` on stripped display text only (a successful translation replaces that original after the same quote/short-link strip; optional `formatTranslated` runs after that strip). Feed remaining text and nested captions go through `ForumNoteText` (280-character preview, Show more only above 560, bodies autolinked) until replaced. Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role). Nested nostr captions use `TranslatableNoteBody` `plain` only when `translate` is true (a URL in a quoted external reply is never a link). When `translate` is false, nested cards use `ForumNoteText` / `LinkedText` and never `TranslatableNoteBody`.
 - **Inputs:** text, knownNotes, excludeId, rateDay, fiat, optional truncate (default true), optional className (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"` (via `TranslatableNoteBody`)), optional `translate` (default true; `false` renders remaining text and nested quoted cards — including `via === 'nostr'` — through `ForumNoteText` / `LinkedText` without `TranslatableNoteBody`; forwarded to nested `QuotedForumNote`), optional `conversationId` (when set, the remainder translates as that conversation message; nested cards stay forum notes), optional `formatTranslated` (applied only to the visible remainder translation, after the quote/short-link strip), optional `controlSlotId` (forwarded to `TranslatableNoteBody` for the footer icon row), optional onActivate.
 - **Returns / side effects:** React element or null when text==='' and no resolved quotes. Unknown quote ids load via `fetchForumMessage` when a session exists, otherwise `fetchPublicMessage` (catch, never throw). Optional `mentions` are passed only when the quoted author is already the member link. Each nested card has one stretched permalink to `/messages/<id>` covering the caption, photo, time, and amount; the author link, Translate, Show more, and links inside the caption stay outside that permalink.
 - **Used by:** `ForumBoard`, `PublicMessageLoader`, `InboxScreen`.
@@ -2184,12 +2198,19 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Fragment: `<p>` plus optional overlay. Confirm on `https:` calls `openInSystemBrowser`; other http uses `window.open`.
 - **Used by:** `ForumNoteText`, `ForumQuotedBody` (when `truncate` is false), `AboutMeSection`.
 
-## Function: ExternalAuthorSheet
+## Function: ExternalAuthorProfile
 
-- **Purpose:** Dialog for a forum author with no 21.gifts account. Shows the card name and `forum.via.nostrHint` until `fetchExternalAuthorProfile` resolves. A null result keeps that fallback. A profile shows its name, the External badge, optional nip05, lud16 only when it differs from nip05 ignoring case, and the npub with an icon-only Copy.
-- **Inputs:** `messageId`, `fallbackName`, `onClose`.
-- **Returns / side effects:** `role="dialog"`, portaled to `document.body` so a quoted note's `relative z-10` card cannot paint it under the page chrome. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. Close calls `onClose`.
-- **Used by:** `ForumBoard`, `QuotedForumNote`, `PublicMessageLoader`.
+- **Purpose:** Profile card for a forum author with no 21.gifts account. Same fields and hide rules as the member card: heading `profile.title`, name with the External span, optional checked Nostr address, payment address only when it differs ignoring case, and the npub with a centered secondary IconButton copy control. It is not a dialog. Rendered by `ExternalAuthorPage` inside `PublicMessageChrome`. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. When both `postCount` and `replyCount` are numbers, the same count buttons as a member open a read-only feed under the card (no pay, no composer, no react). If either count is absent, no buttons.
+- **Inputs:** `messageId`, `fallbackName`. Empty `fallbackName` shows `view.unnamed` until a profile loads, and when the fetch returns null.
+- **Returns / side effects:** The card. No `onClose`. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. No overlay, portal, hint paragraph, or close control. Count buttons and the read-only feed render when both counts are numbers; a post click opens `/messages/{id}`; a reply click opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`.
+- **Used by:** `ExternalAuthorPage`.
+
+## Function: ExternalAuthorPage
+
+- **Purpose:** Next.js page for `/messages/[id]/author` — the external author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Reads `params.id` and `searchParams.name` (a string or the first array entry, trimmed; blank becomes `''`). Renders `ExternalAuthorProfile` inside `PublicMessageChrome`. No `OnboardingGate`. The note id is not validated as a UUID.
+- **Inputs:** Dynamic route params (`id`) and optional `name` query (`string` or `string[]`).
+- **Returns / side effects:** `ExternalAuthorProfile` inside `PublicMessageChrome` (unsigned wordmark href `/` plus `LanguageSwitcher`, or signed-in `ProfileChromeLeft` plus `SignedInChrome`). No `generateMetadata`.
+- **Used by:** Route `/messages/[id]/author`. `ForumBoard` (name click). `QuotedForumNote` (quoted name). `PublicMessageLoader` (`PublicThreadCard` name).
 
 ## Function: ExternalLinkWarning
 
@@ -3119,6 +3140,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
 - **Used by:** Route GET `/public-messages/[id]/external-profile`.
+
+## Function: proxyExternalAuthorPostsGet
+
+- **Purpose:** Public proxy GET `/messages/:id/external-posts` to the 21.gifts api (no auth). App path is `/public-messages/[id]/external-posts`. Returns the upstream response via `proxyApiRequest`. Does not add a Bearer header.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
+- **Used by:** Route GET `/public-messages/[id]/external-posts`.
+
+## Function: proxyExternalAuthorRepliesGet
+
+- **Purpose:** Public proxy GET `/messages/:id/external-replies` to the 21.gifts api (no auth). App path is `/public-messages/[id]/external-replies`. Returns the upstream response via `proxyApiRequest`. Does not add a Bearer header.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
+- **Used by:** Route GET `/public-messages/[id]/external-replies`.
 
 ## Function: proxyPublicMessageGet
 

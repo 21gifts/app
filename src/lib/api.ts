@@ -1816,6 +1816,82 @@ export async function fetchExternalAuthorProfile(
   }
 }
 
+const EXTERNAL_AUTHOR_FEED_ERROR = 'Could not load messages. Please try again.';
+
+/**
+ * GET `{ messages }` for an external author's public posts or replies.
+ *
+ * @param id - Forum message UUID.
+ * @param kind - Path segment after the id.
+ * @returns Items that pass {@link forumMessageSchema}; invalid items skipped.
+ * @throws Visitor copy on non-OK, network, non-JSON, or a body that is not
+ * `{ messages: array }`.
+ */
+async function fetchExternalAuthorFeed(
+  id: string,
+  kind: 'external-posts' | 'external-replies',
+): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch(`/public-messages/${encodeURIComponent(id)}/${kind}`);
+    if (!response.ok) {
+      throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
+    }
+    const body: unknown = await response.json();
+    if (
+      typeof body !== 'object' ||
+      body === null ||
+      !('messages' in body) ||
+      !Array.isArray(body.messages)
+    ) {
+      throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
+    }
+    const kept: ForumMessage[] = [];
+    for (const item of body.messages) {
+      const parsed = forumMessageSchema.safeParse(item);
+      if (parsed.success) {
+        kept.push(parsed.data);
+      }
+    }
+    return kept;
+  } catch {
+    throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
+  }
+}
+
+/**
+ * Fetches this external author's public posts without a session.
+ *
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty). Does not send Authorization.
+ *
+ * @param id - Forum message UUID.
+ * @returns Post list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchExternalAuthorPosts(id: string): Promise<ForumMessage[]> {
+  return fetchExternalAuthorFeed(id, 'external-posts');
+}
+
+/**
+ * Fetches this external author's public replies without a session.
+ *
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty). Does not send Authorization.
+ *
+ * @param id - Forum message UUID.
+ * @returns Reply list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchExternalAuthorReplies(id: string): Promise<ForumMessage[]> {
+  return fetchExternalAuthorFeed(id, 'external-replies');
+}
+
 /**
  * Resolves a public short code (`/l/<8 hex>`) to a message or member id.
  *
