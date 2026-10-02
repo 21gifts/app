@@ -828,6 +828,49 @@ test('wallet send-error pin shows the plain unreachable error', async ({ page })
   );
 });
 
+test('wallet send-not-payable pin says the address cannot receive a payment', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-not-payable');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+    'This address cannot receive a payment.',
+  );
+});
+
+test('Function: LnurlRelayError — send-not-found pin shows the not-found alert', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-not-found');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+    'This address was not found.',
+  );
+});
+
+test('wallet send-relay-unreachable pin says the receiver server did not answer', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-relay-unreachable');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+    "The receiver's server did not answer. Please try again later.",
+  );
+});
+
+test('Function: lnurlRelayTarget — send-comment-long pin shows an outside address with the comment alert', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-comment-long');
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText('To bob@example.com')).toBeVisible();
+  await expect(region.getByLabel('Message (optional)')).toBeVisible();
+  await expect(region.getByRole('alert')).toHaveText('This message is too long for the receiver.');
+});
+
 test('wallet send pin: Cancel is inert while a step is pinned', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
