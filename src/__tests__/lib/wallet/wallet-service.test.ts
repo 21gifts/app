@@ -105,7 +105,56 @@ describe('connectWallet', () => {
       balanceSats: 21_000,
       identityPubkey: IDENTITY,
     });
-    expect(connection.getInfo).toHaveBeenCalled();
+    expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+  });
+
+  it('stays connecting until the synchronized first read resolves', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let resolveInfo!: (info: { balanceSats: number; identityPubkey: string }) => void;
+    const { loadSdk, connection } = createFakeSdk({
+      getInfo: () =>
+        new Promise<{ balanceSats: number; identityPubkey: string }>((resolve) => {
+          resolveInfo = resolve;
+        }),
+    });
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => {
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+    });
+    expect(useWalletStore.getState().status).toBe('connecting');
+    resolveInfo({ balanceSats: 21_000, identityPubkey: IDENTITY });
+    await expect(pending).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('ready');
+  });
+
+  it('lets a synced refresh win while the synchronized first read is pending', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let resolveFirst!: (info: { balanceSats: number; identityPubkey: string }) => void;
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.getInfo
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({ balanceSats: 42_000, identityPubkey: IDENTITY });
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => {
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+    });
+    expect(useWalletStore.getState().status).toBe('connecting');
+    listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState()).toMatchObject({
+        status: 'ready',
+        balanceSats: 42_000,
+      });
+    });
+    resolveFirst({ balanceSats: 21_000, identityPubkey: IDENTITY });
+    await expect(pending).resolves.toBeUndefined();
+    expect(useWalletStore.getState().balanceSats).toBe(42_000);
+    expect(connection.getInfo.mock.calls).toEqual([[{ ensureSynced: true }], []]);
   });
 
   it('refreshes balance on synced and ignores other events', async () => {
@@ -124,6 +173,7 @@ describe('connectWallet', () => {
       expect(useWalletStore.getState().balanceSats).toBe(42_000);
     });
     expect(connection.getInfo).toHaveBeenCalledTimes(2);
+    expect(connection.getInfo.mock.calls).toEqual([[{ ensureSynced: true }], []]);
   });
 
   it('refreshWallet without a connection does nothing', async () => {

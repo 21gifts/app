@@ -91,6 +91,14 @@ describe('loadWalletSdk', () => {
     expect(mocks.getInfo).toHaveBeenCalledWith({});
   });
 
+  it('getInfo forwards ensureSynced only when requested', async () => {
+    const sdk = await loadWalletSdk();
+    const connection = await sdk.connect(MNEMONIC, API_KEY);
+    await connection.getInfo({ ensureSynced: true });
+    await connection.getInfo({ ensureSynced: false });
+    expect(mocks.getInfo.mock.calls).toEqual([[{ ensureSynced: true }], [{}]]);
+  });
+
   it('addEventListener forwards events and returns the SDK id', async () => {
     let forwarded: ((event: { type: string }) => void) | undefined;
     mocks.addEventListener.mockImplementation(
