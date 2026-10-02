@@ -6644,7 +6644,7 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('maps a compose-pay receiving-wallet answer onto the author-wallet reply error', async () => {
+  it('keeps the generic reply error when the platform fee wallet cannot receive', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
@@ -6661,7 +6661,7 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/author's wallet cannot receive/i);
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
     });
   });
 
