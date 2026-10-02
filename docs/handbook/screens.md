@@ -3002,20 +3002,20 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 ## Screen: /grants/payments
 
-- **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
+- **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Under the heading, the loaded editor says everyone in the grant program receives the roster `defaultAmountUsd` by default, formatted with `formatUsdDisplay`, and that the page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. The figure is not written into the catalog. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
 - **Actions:** Save the comment with the pencil icon. Its accessible name is **Save**; the word is not shown. Turn payments **On** or **Off**. **Add** a recipient. Update and delete are icon-only (pencil and trash) on the same line as the amount, not labeled buttons. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/payments` (`DailyPaymentsPage`). The **Daily payments** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
 
-Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. Comment **Daily gift**. That address renders as `ada@w...`. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. Needle `Daily payments`.
+Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. The note begins **Everyone in the grant program receives $1.00 by default.** Comment **Daily gift**. That address renders as `ada@w...`. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. Needle `Everyone in the grant program receives`.
 
 ![21.gifts daily payments](images/grants-payments.png)
 
 ### Variant: empty
 
-Founder with an empty recipient list. Sentence **No recipients**. The add form stays. Needle `No recipients`.
+Founder with an empty recipient list. The note begins **Everyone in the grant program receives $1.00 by default.** Sentence **No recipients**. The add form stays. Needle `No recipients`.
 
 ![21.gifts daily payments empty](images/grants-payments-empty.png)
 

@@ -2464,7 +2464,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'grants-payments.png',
     visual: 'screen-grants-payments',
-    needle: 'Daily payments',
+    needle: 'Everyone in the grant program receives',
   },
   {
     route: '/grants/payments',

@@ -238,6 +238,11 @@ export function DailyPaymentsScreen(): ReactElement | null {
   } else {
     body = (
       <>
+        <p className="text-center text-sm text-app-fg">
+          {t('funding.daily.defaultNote', {
+            amount: formatUsdDisplay(String(roster.defaultAmountUsd), numberFormat),
+          })}
+        </p>
         {saveError === null ? null : (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(saveError)}

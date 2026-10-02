@@ -1801,7 +1801,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: fetchDailyRoster
 
-- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, recipients }` with `{ address, amountUsd }` rows only.
+- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients }` with `{ address, amountUsd }` rows only. `defaultAmountUsd` is a finite number.
 - **Inputs:** Bearer `session`.
 - **Returns / side effects:** Parsed roster. Throws `funding.daily.forbidden` on api `Forbidden`. Throws visitor copy `Could not load daily payments. Please try again.` on 401, other 403, 503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `DailyPaymentsScreen`.
@@ -4249,7 +4249,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: DailyPaymentsScreen
 
-- **Purpose:** Client editor for the daily payout comment, the payments switch, and the recipient list. An initiator or founder fetches `fetchDailyRoster` and may save the comment, turn payments on or off, and add, update, or delete a recipient. The comment save is an icon-only pencil whose accessible name is **Save**. On a recipient row the USD amount, the pencil, and the trash share one line. Amounts are the stored USD figure (`Field`, not `AmountEntry`). The total uses `formatUsdDisplay` and the visitor grouping style. Wallet of Satoshi addresses render as `local@w...`. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
+- **Purpose:** Client editor for the daily payout comment, the payments switch, and the recipient list. An initiator or founder fetches `fetchDailyRoster` and may save the comment, turn payments on or off, and add, update, or delete a recipient. The comment save is an icon-only pencil whose accessible name is **Save**. The loaded editor shows `funding.daily.defaultNote` with `{amount}` from `roster.defaultAmountUsd` via `formatUsdDisplay`. On a recipient row the USD amount, the pencil, and the trash share one line. Amounts are the stored USD figure (`Field`, not `AmountEntry`). The total uses `formatUsdDisplay` and the visitor grouping style. Wallet of Satoshi addresses render as `local@w...`. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; grouping via `useNumberFormat`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. Saves go to the five same-origin daily-roster POSTs. A save failure shows a `funding.daily.*` catalog sentence.
 - **Used by:** `DailyPaymentsPage`.

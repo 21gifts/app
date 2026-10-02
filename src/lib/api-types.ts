@@ -1328,6 +1328,7 @@ export type FundingDecisionResult = z.infer<typeof fundingDecisionResultSchema>;
 export const dailyRosterSchema = z.object({
   comment: z.string(),
   paymentsEnabled: z.boolean(),
+  defaultAmountUsd: z.number().finite(),
   recipients: z.array(
     z.object({
       address: z.string(),
@@ -1337,10 +1338,12 @@ export const dailyRosterSchema = z.object({
 });
 
 /**
- * Daily payout comment, payments switch, and recipient list.
+ * Daily payout comment, payments switch, unlisted grant default, and recipient list.
  */
 export interface DailyRoster {
   comment: string;
   paymentsEnabled: boolean;
+  /** USD spend pays an unlisted admitted or trial grant. Not a listed row. */
+  defaultAmountUsd: number;
   recipients: { address: string; amountUsd: number }[];
 }

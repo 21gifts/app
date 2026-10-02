@@ -2582,6 +2582,7 @@ const server = http.createServer(async (req, res) => {
     const roster = {
       comment: '',
       paymentsEnabled: true,
+      defaultAmountUsd: 1,
       recipients: [],
     };
     if (method === 'GET' && pathName === '/funding/daily-roster') {

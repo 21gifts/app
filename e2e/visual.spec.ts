@@ -21700,6 +21700,7 @@ test.describe('daily payments', () => {
   const roster = {
     comment: 'Daily gift',
     paymentsEnabled: true,
+    defaultAmountUsd: 1,
     recipients: [
       { address: 'ada@walletofsatoshi.com', amountUsd: 1 },
       { address: 'bob@example.com', amountUsd: 0.3 },
@@ -21757,7 +21758,12 @@ test.describe('daily payments', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ comment: '', paymentsEnabled: true, recipients: [] }),
+        body: JSON.stringify({
+          comment: '',
+          paymentsEnabled: true,
+          defaultAmountUsd: 1,
+          recipients: [],
+        }),
       });
     });
     await page.goto('/grants/payments');
