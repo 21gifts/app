@@ -917,6 +917,18 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('maps a compose-pay receiving-wallet answer onto the author-wallet reply error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toMatch(/author's wallet cannot receive/i);
+    });
+  });
+
   it('opens the wallet overlay when a compose-pay invoice requires a wallet', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new WalletRequiredError());
     signIn();
