@@ -85,8 +85,8 @@ function visualView(): WalletPayView | null {
  * ready, opening, or can be unlocked with one passkey prompt; otherwise the
  * view is `fallback`. A ready wallet prepares at once so the fee is shown
  * before **Pay from wallet**; a prepared amount that differs from
- * `amountSats` falls back. A wallet that leaves `ready` before the send
- * starts over (unlock, opening, or the fallback). After `insufficient`, a
+ * `amountSats` falls back. A wallet that leaves `ready` before the send or
+ * while `insufficient` shows starts over (unlock, opening, or the fallback). After `insufficient`, a
  * balance above the lowest one seen since (or a first known balance) prepares
  * again; a send is never retried on its own. Visual pins (`?visual=wallet-pay-…`)
  * apply only in a Playwright build, only with a `sparkInvoice`, and leave the
@@ -171,10 +171,14 @@ export function useWalletPay(
   }, [phase, balanceSats]);
 
   useEffect(() => {
-    if (status === 'ready' || (phase !== 'preparing' && phase !== 'confirm')) {
+    if (
+      status === 'ready' ||
+      (phase !== 'preparing' && phase !== 'confirm' && phase !== 'insufficient')
+    ) {
       return;
     }
     generation.current += 1;
+    insufficientBalance.current = null;
     sendRef.current = null;
     setFeeSats(null);
     setPhase('idle');
