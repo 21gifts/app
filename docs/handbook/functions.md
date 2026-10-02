@@ -1776,7 +1776,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403. 400 `About me is required` / `About me photo is required` / `Location is required` are rethrown; other failures use visitor copy `Could not submit your application. Please try again.`
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** Exported API client. The paused apply screen does not call it.
+- **Used by:** Exported API client. The paused apply screen does not call it. The apply walk calls it when `grantApplicationsPaused` is false.
 
 ## Function: fetchFundingPayoutDays
 
@@ -3409,9 +3409,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: DailyPayoutStoppedNotice
 
-- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**, then `FundingPausedCopy`; it does not offer Apply.
+- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**. While `grantApplicationsPaused` is true, the body is `FundingPausedCopy` and Apply is not offered. When that switch is false, the body is the stopped-daily sentence and an Apply link to `/grants/apply`.
 - **Inputs:** None. Reads the auth store and translations.
-- **Returns / side effects:** A `role="region"` banner with title plus `FundingPausedCopy`, or `null` when the flag is missing, false, or funding is null. No close control, no localStorage, no extra API call, no apply `ButtonLink`.
+- **Returns / side effects:** A `role="region"` banner, or `null` when the flag is missing, false, or funding is null. No close control, no localStorage, no extra API call. Apply is offered only when applications are not paused.
 - **Used by:** `AppShell`.
 
 ## Function: proxyMePasskeyRenewReportPost
@@ -4151,9 +4151,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): `FundingPausedCopy` for `none`/`rejected` (no Apply, no About link, no date, no denial sentence, and no conviction titles); pending; one-day trial; or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
+- **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): while `grantApplicationsPaused` is true, `FundingPausedCopy` for `none`/`rejected` (no Apply, no About link); when that switch is false, the daily-gift sentence, About link, and Apply link to `/grants/apply`. Then pending, one-day trial, or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` show `FundingPausedCopy` and do not offer Apply.
+- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` do not offer Apply while applications are paused.
 - **Used by:** `GrantsScreen`.
 
 ## Function: FundingApplyPage
@@ -4165,10 +4165,38 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingApplyScreen
 
-- **Purpose:** Signed-in paused applications screen. Heading **21 gifts grant** and `FundingPausedCopy`. No About-me steps, no questions, no POST. The page chrome owns the back; this screen renders no back control.
-- **Inputs:** None. Uses translations. Does not fetch posts or POST `/funding/apply`.
-- **Returns / side effects:** The paused applications card.
+- **Purpose:** Signed-in grant apply screen. While `grantApplicationsPaused` is true, heading **21 gifts grant** and `FundingPausedCopy` only: no About-me steps, no questions, no POST. The apply walk stays in the code and is shown only when that switch is false: fill About me, photo, and location, then two yes/no questions. The page chrome owns the back; this screen renders no back control.
+- **Inputs:** Session and account from `useAuthStore` when the walk is open. Uses translations.
+- **Returns / side effects:** The paused card while applications are paused. Otherwise the apply card, or `null` without a session. Yes on the truth question posts `postFundingApply` only when the walk is open.
 - **Used by:** `FundingApplyPage`.
+
+## Function: grantApplicationsPaused
+
+- **Purpose:** Switch for new grant applications. Returns true while they are paused. The apply walk and the apply API stay in the code and are not offered while this is true.
+- **Inputs:** None.
+- **Returns / side effects:** `true`.
+- **Used by:** `FundingApplyScreen`, `FundingStatusCard`, `DailyPayoutStoppedNotice`.
+
+## Function: aboutMeFilled
+
+- **Purpose:** True when About me is a real bio (not empty or the display-name auto note). Used by the apply walk, which is not shown while applications are paused.
+- **Inputs:** `aboutMe`, `name`.
+- **Returns / side effects:** boolean.
+- **Used by:** `nextFillStep`, `FundingApplyScreen`.
+
+## Function: locationFilled
+
+- **Purpose:** True when location is a non-empty trimmed string. Used by the apply walk, which is not shown while applications are paused.
+- **Inputs:** `location`.
+- **Returns / side effects:** boolean.
+- **Used by:** `nextFillStep`, `FundingApplyScreen`.
+
+## Function: nextFillStep
+
+- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present. Used by the apply walk, which is not shown while applications are paused.
+- **Inputs:** Owner `Account`.
+- **Returns / side effects:** `'about' | 'photo' | 'location' | null`.
+- **Used by:** `FundingApplyScreen`.
 
 ## Function: ModeratorGroupPage
 

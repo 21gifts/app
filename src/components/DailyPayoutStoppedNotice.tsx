@@ -3,12 +3,14 @@
 import { type ReactElement } from 'react';
 import { FundingPausedCopy } from '@/components/FundingPausedCopy';
 import { useTranslations } from '@/components/LocaleProvider';
+import { ButtonLink } from '@/components/ui';
+import { grantApplicationsPaused } from '@/lib/grant-applications';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Non-dismissible info banner when the owner's funding JSON has
- * `dailyPayoutStoppedNotice === true`. Shows paused-applications copy instead of
- * an apply link.
+ * `dailyPayoutStoppedNotice === true`. While applications are paused, shows
+ * paused copy. Otherwise links to `/grants/apply`.
  *
  * @returns The banner, or `null` when the flag is not strictly true.
  */
@@ -28,7 +30,16 @@ export function DailyPayoutStoppedNotice(): ReactElement | null {
         <h2 id={titleId} className="text-sm font-semibold">
           {t('funding.stoppedDaily.title')}
         </h2>
-        <FundingPausedCopy />
+        {grantApplicationsPaused() ? (
+          <FundingPausedCopy />
+        ) : (
+          <>
+            <p className="text-sm text-app-muted">{t('funding.stoppedDaily.body')}</p>
+            <ButtonLink href="/grants/apply" size="lg">
+              {t('funding.apply')}
+            </ButtonLink>
+          </>
+        )}
       </div>
     </div>
   );

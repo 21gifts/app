@@ -704,9 +704,9 @@
 
 ## Endpoint: POST /funding/apply
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. The api does not write a grant. Role `basis` is 403 Forbidden. Every other authenticated role is 403 `{ error: 'Applications are paused' }`. The paused screen does not call this route.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. While applications are paused the api does not write a grant. Role `basis` is 403 Forbidden. Every other authenticated role is 403 `{ error: 'Applications are paused' }`. The paused screen does not call this route. The apply walk calls it only when `grantApplicationsPaused` is false.
 - **Errors:** Upstream 401/403, or 502 if the api is unreachable.
-- **Used by:** `postFundingApply`. `FundingApplyScreen` does not call it.
+- **Used by:** `postFundingApply`. `FundingApplyScreen` calls it only when the apply walk is open.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
 ## Endpoint: GET /funding/payout-days

@@ -78,6 +78,166 @@ test('Function: FundingApplyScreen — shows paused applications copy', async ({
   await expect(page.getByText(PAUSED)).toBeVisible();
 });
 
+test('Function: grantApplicationsPaused — the apply walk is not offered', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'verified',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    });
+  });
+  await page.goto('/grants/apply');
+  await expect(page.getByText(PAUSED)).toBeVisible();
+  await expect(
+    page.getByText('First, write a short About me so people can get to know you.'),
+  ).toHaveCount(0);
+});
+
+test('Function: aboutMeFilled — the bio step is not offered while applications are paused', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'verified',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: 'Ada',
+        setup: null,
+        missing: [],
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    });
+  });
+  await page.goto('/grants/apply');
+  await expect(page.getByText(PAUSED)).toBeVisible();
+  await expect(
+    page.getByText('First, write a short About me so people can get to know you.'),
+  ).toHaveCount(0);
+});
+
+test('Function: nextFillStep — the photo step is not offered while applications are paused', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'verified',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: 'I build on Bitcoin',
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    });
+  });
+  await page.goto('/grants/apply');
+  await expect(page.getByText(PAUSED)).toBeVisible();
+  await expect(page.getByText('Next, add a photo to your About me.')).toHaveCount(0);
+});
+
+test('Function: locationFilled — the location step is not offered while applications are paused', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'verified',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: 'I build on Bitcoin',
+        aboutMeHasPhoto: true,
+        setup: null,
+        missing: [],
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    });
+  });
+  await page.goto('/grants/apply');
+  await expect(page.getByText(PAUSED)).toBeVisible();
+  await expect(page.getByText('Next, add the place you live.')).toHaveCount(0);
+});
+
 test('Function: FundingPausedCopy — shows the paused sentence and the statistics link', async ({
   page,
 }) => {

@@ -2997,7 +2997,7 @@ Opening `/profile/apply` lands on the paused applications screen.
 
 ## Screen: /grants/apply
 
-- **Purpose:** Signed-in paused applications screen. No About-me steps, no questions, no POST.
+- **Purpose:** Signed-in applications screen. While applications are paused there are no About-me steps, no questions, and no POST. The apply walk stays in the code and is shown only when that switch is off.
 - **Inputs:** None (no posts fetch, no apply POST).
 - **Actions:** Read the paused sentence and open `https://21.gifts/statistics`. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).

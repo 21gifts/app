@@ -1089,7 +1089,7 @@ Handbook states: default, loading, error.
 
 ### `/grants/apply`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **21 gifts grant**, the paused sentence, and `https://21.gifts/statistics`. No questions, no POST. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **21 gifts grant**, the paused sentence, and `https://21.gifts/statistics`. No questions and no POST while applications are paused. The apply walk stays in the code and is not shown. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
 
 Handbook states: default.
 

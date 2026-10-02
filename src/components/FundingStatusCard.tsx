@@ -1,9 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { type ReactElement } from 'react';
 import { FundingPausedCopy } from '@/components/FundingPausedCopy';
 import { useTranslations } from '@/components/LocaleProvider';
+import { ButtonLink } from '@/components/ui';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
+import { grantApplicationsPaused } from '@/lib/grant-applications';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -12,9 +15,10 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * Unverified (`basis`) members see that they are not verified and how in-person
  * verification works. Verified and above see funding status from `account.funding`
- * (missing or `null` is treated as `none`): paused applications copy for
- * `none`/`rejected`, open application, one-day trial, or admitted with the
- * participation sentence.
+ * (missing or `null` is treated as `none`): while applications are paused,
+ * paused copy for `none`/`rejected`; otherwise the daily-gift sentence, About
+ * link, and Apply link to `/grants/apply`. Then open application, one-day
+ * trial, or admitted with the participation sentence.
  *
  * @returns The grant section, or `null` without a session or account.
  */
@@ -76,10 +80,23 @@ export function FundingStatusCard(): ReactElement | null {
       </>
     );
   } else {
-    body = (
+    body = grantApplicationsPaused() ? (
       <div className="flex flex-col items-center gap-3 text-center">
         <FundingPausedCopy />
       </div>
+    ) : (
+      <>
+        <p className="text-center text-sm text-app-muted">{t('funding.grace')}</p>
+        <Link
+          href="/about"
+          className="text-center text-sm text-app-fg underline underline-offset-2"
+        >
+          {t('nav.about')}
+        </Link>
+        <ButtonLink href="/grants/apply" size="lg">
+          {t('funding.apply')}
+        </ButtonLink>
+      </>
     );
   }
 
