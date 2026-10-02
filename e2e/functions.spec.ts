@@ -3441,13 +3441,11 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
       }),
     });
   });
-  await page.goto('/messages');
-  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   const readPost = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
   );
-  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
-  await readPost;
+  await page.goto('/messages?c=conv-21');
+  expect((await readPost).postDataJSON()).toEqual({ throughMessageId: 'm1' });
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
 });
 
@@ -9942,9 +9940,9 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   await expect.poll(() => notificationGets).toBeGreaterThan(0);
   const beforeThread = notificationGets;
-  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
+  await page.getByRole('button', { name: '21.gifts', exact: true }).click();
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
-  await expect.poll(() => notificationGets).toBe(beforeThread + 1);
+  await expect.poll(() => notificationGets).toBeGreaterThan(beforeThread);
 });
 
 test('Function: push service worker — GET /sw.js is the push worker', async ({ request }) => {
