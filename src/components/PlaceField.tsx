@@ -267,9 +267,6 @@ export function PlaceField(props: {
     if (authFailedRef.current) {
       return;
     }
-    if (!mapPlaced) {
-      return;
-    }
     if (!open || unavailable || mapsKey === null || !scriptReady) {
       return;
     }

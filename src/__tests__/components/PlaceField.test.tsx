@@ -993,7 +993,7 @@ describe('PlaceField', () => {
     HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
       return clientRect(0, 0, 0, 0);
     };
-    stubMaps();
+    const listeners = stubMaps();
     try {
       renderWithLocale(
         <div data-app-frame>
@@ -1008,6 +1008,13 @@ describe('PlaceField', () => {
       expect(wrapper?.closest('.relative')).not.toBeNull();
       const map = wrapper?.querySelector('.h-64') as HTMLElement;
       expect(map.style.height).toBe('');
+      await waitFor(() => {
+        expect(
+          (window as { google: { maps: { Map: ReturnType<typeof vi.fn> } } }).google.maps.Map,
+        ).toHaveBeenCalled();
+      });
+      listeners.get('click')?.({ latLng: { lat: () => 1, lng: () => 2 } });
+      expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
     } finally {
       HTMLElement.prototype.getBoundingClientRect = originalRect;
     }
