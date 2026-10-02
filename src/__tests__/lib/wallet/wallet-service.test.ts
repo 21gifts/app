@@ -1037,6 +1037,50 @@ describe('payFromWallet', () => {
     });
   });
 
+  it('writes the synced balance read to the store', async () => {
+    const { getInfo } = await connectPaying({});
+    getInfo.mockResolvedValueOnce({ balanceSats: 50, identityPubkey: IDENTITY });
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
+      kind: 'insufficient',
+    });
+    expect(useWalletStore.getState().balanceSats).toBe(50);
+  });
+
+  it('does not write a synced read that a newer read or a disconnect overtook', async () => {
+    const { getInfo } = await connectPaying({});
+    let finish: (value: { balanceSats: number; identityPubkey: string }) => void = () => undefined;
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const overtaken = payFromWallet({ type: 'input', input: 'a' });
+    await vi.waitFor(() => {
+      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    });
+    getInfo.mockResolvedValueOnce({ balanceSats: 30_000, identityPubkey: IDENTITY });
+    await refreshWallet();
+    finish({ balanceSats: 50, identityPubkey: IDENTITY });
+    await expect(overtaken).resolves.toEqual({ kind: 'insufficient' });
+    expect(useWalletStore.getState().balanceSats).toBe(30_000);
+
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const dropped = payFromWallet({ type: 'input', input: 'a' });
+    await vi.waitFor(() => {
+      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    });
+    await disconnectWallet();
+    finish({ balanceSats: 50, identityPubkey: IDENTITY });
+    await expect(dropped).resolves.toEqual({ kind: 'insufficient' });
+    expect(useWalletStore.getState().balanceSats).toBeNull();
+  });
+
   it('maps a prepare rejection to failed, or to insufficient when the SDK says so', async () => {
     let calls = 0;
     await connectPaying({

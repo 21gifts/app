@@ -86,9 +86,11 @@ function visualView(): WalletPayView | null {
  * view is `fallback`. A ready wallet prepares at once so the fee is shown
  * before **Pay from wallet**; a prepared amount that differs from
  * `amountSats` falls back. A wallet that leaves `ready` before the send
- * starts over (unlock, opening, or the fallback). Nothing is retried on its own. Visual pins
- * (`?visual=wallet-pay-…`) apply only in a Playwright build, only with a
- * `sparkInvoice`, and leave the actions inert.
+ * starts over (unlock, opening, or the fallback). After `insufficient`, a
+ * balance above the lowest one seen since (or a first known balance) prepares
+ * again; a send is never retried on its own. Visual pins (`?visual=wallet-pay-…`)
+ * apply only in a Playwright build, only with a `sparkInvoice`, and leave the
+ * actions inert.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
  * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
@@ -160,6 +162,7 @@ export function useWalletPay(
     }
     const seen = insufficientBalance.current;
     if (seen !== null && balanceSats <= seen) {
+      insufficientBalance.current = balanceSats;
       return;
     }
     generation.current += 1;
