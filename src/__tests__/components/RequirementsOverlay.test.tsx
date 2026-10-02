@@ -9,11 +9,10 @@ vi.mock('@/lib/api', () => ({
   agreeToRules: vi.fn(),
   setName: vi.fn(),
   setUsername: vi.fn(),
-  setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
 
-import { agreeToRules, setLightningAddress, setUsername } from '@/lib/api';
+import { agreeToRules, setName, setUsername } from '@/lib/api';
 
 const account: Account = {
   id: 'acc_1',
@@ -60,49 +59,32 @@ describe('RequirementsOverlay', () => {
     expect(setUsername).not.toHaveBeenCalled();
   });
 
-  it('shows the Lightning Address form without a Skip control', () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
-    });
-    renderWithLocale(
-      <RequirementsOverlay
-        requirement="lightning-address"
-        onDismiss={vi.fn()}
-        onSatisfied={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
-  });
-
-  it('saves a Lightning Address and calls onSatisfied', async () => {
+  it('explains the wallet step without a form, with only the Close control', () => {
+    const onDismiss = vi.fn();
     const onSatisfied = vi.fn();
     useAuthStore.setState({
       session: 'sess',
-      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
-    });
-    vi.mocked(setLightningAddress).mockResolvedValue({
-      ...account,
-      lightningAddress: null,
-      missing: [],
-      setup: null,
+      account: { ...account, missing: ['lightning-address'] },
     });
     renderWithLocale(
-      <RequirementsOverlay
-        requirement="lightning-address"
-        onDismiss={vi.fn()}
-        onSatisfied={onSatisfied}
-      />,
+      <RequirementsOverlay requirement="wallet" onDismiss={onDismiss} onSatisfied={onSatisfied} />,
     );
-    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
-      target: { value: 'alice@walletofsatoshi.com' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
-    await waitFor(() => {
-      expect(onSatisfied).toHaveBeenCalled();
-    });
-    expect(useAuthStore.getState().account?.lightningAddress).toBe('alice@walletofsatoshi.com');
+    const dialog = screen.getByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(screen.getByRole('heading', { name: 'Your wallet is not set up' })).toBeTruthy();
+    expect(dialog.querySelector('p')?.textContent).toBe(
+      'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+    );
+    expect(dialog.querySelector('form')).toBeNull();
+    expect(dialog.querySelector('input')).toBeNull();
+    expect(
+      screen.getAllByRole('button').map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Close']);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(onSatisfied).not.toHaveBeenCalled();
+    expect(agreeToRules).not.toHaveBeenCalled();
+    expect(setName).not.toHaveBeenCalled();
+    expect(setUsername).not.toHaveBeenCalled();
   });
 
   it('agrees to rules and calls onSatisfied', async () => {

@@ -281,7 +281,7 @@ const walletAssignByPage = new WeakMap<Page, string>();
 
 async function stubWalletLocationAssign(page: Page): Promise<void> {
   const record = (href: string): void => {
-    if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+    if (href.startsWith('lightning:')) {
       walletAssignByPage.set(page, href);
     }
   };
@@ -295,7 +295,7 @@ async function stubWalletLocationAssign(page: Page): Promise<void> {
     const recordHref = (window as unknown as { __recordWalletAssign?: (href: string) => void })
       .__recordWalletAssign;
     const capture = (href: string): boolean => {
-      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+      if (href.startsWith('lightning:')) {
         (window as unknown as { __recordedWalletHref?: string }).__recordedWalletHref = href;
         recordHref?.(href);
         return true;
@@ -368,18 +368,61 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await stubWalletLocationAssign(page);
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
   await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await replyCard.getByLabel('Amount').fill('21');
   await submitPayAmount(page);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByText('Pay ₿21')).toBeVisible();
 }
+
+/** The 21.gifts wallet sentence a Playwright build (no wallet key) shows in a pay sheet. */
+const WALLET_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** Public pay link for `ada` whose invoice POST answers {@link PAY_INVOICE}. */
+async function stubPayLinkInvoice(page: Page): Promise<void> {
+  await page.route(
+    (url) => new URL(url).pathname.startsWith('/pay/'),
+    async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: PAY_INVOICE, amountSats: 21 }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada Lovelace',
+          username: 'ada',
+          minSats: 1,
+          maxSats: 100000,
+        }),
+      });
+    },
+  );
+}
+
+/** Opens the public pay link and asks for a 21 sat invoice. */
+async function openPayLinkInvoice(page: Page): Promise<void> {
+  await stubWalletLocationAssign(page);
+  await stubPayLinkInvoice(page);
+  await page.goto(`/pl?lightning=${encodeURIComponent(PAY_LINK_LNURL)}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+}
+
+const PAY_LINK_LNURL =
+  'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
 
 async function stubGiftStats(page: Page, body: unknown): Promise<void> {
   await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
@@ -511,7 +554,7 @@ async function confirmNewAccount(page: Page): Promise<string> {
   );
   await page.getByRole('textbox', { name: 'Name' }).fill(handle);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   return handle;
 }
 
@@ -520,7 +563,7 @@ async function signInViaStub(page: Page, _request: APIRequestContext): Promise<s
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   const handle = await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   return handle;
 }
@@ -529,7 +572,7 @@ async function saveOnboardingUsername(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/setup\/username/);
   await page.getByRole('textbox').fill(`ada${Date.now().toString(36)}`);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
 }
 
 async function installFakeWebAuthn(page: Page): Promise<void> {
@@ -610,13 +653,13 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await openSignedInMenu(page);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
@@ -1857,8 +1900,6 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
 
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
   const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
@@ -1882,8 +1923,6 @@ test('Function: postContact — sending from contact shows the official thread',
   request,
 }) => {
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await page.goto('/contact');
   const body = `Contact note ${Date.now()}`;
@@ -1893,11 +1932,25 @@ test('Function: postContact — sending from contact shows the official thread',
   await expect(page.getByText(body)).toBeVisible();
 });
 
+/**
+ * Marks the signed-in stub account's own in-app wallet as verified, so the
+ * api no longer answers that the member cannot receive, then reloads.
+ */
+async function markWalletVerified(page: Page): Promise<void> {
+  const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
+  expect(token).toBeTruthy();
+  const res = await page.request.post('http://127.0.0.1:3001/e2e/wallet-verified', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  await page.reload();
+}
+
 async function reachWelcome(page: Page, request: APIRequestContext): Promise<string> {
   const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
   return handle;
@@ -2201,7 +2254,7 @@ test('Function: fetchViewAboutMePhoto — public view shows the About me photo',
 test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -2235,7 +2288,6 @@ test('Function: NameForm — Skip is absent on the rules setup screen', async ({
   await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
@@ -2247,10 +2299,6 @@ test('Function: proxyMembersGet — GET /forum/members/:id returns a canned prof
   await request.post('/me/name', {
     headers: { authorization: `Bearer ${token}` },
     data: { name: 'Ada' },
-  });
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
   });
   await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
   const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222', {
@@ -2358,8 +2406,6 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.goto('/contact');
@@ -2369,19 +2415,23 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
-test('Function: RequirementsOverlay — forum post without a lightning-address opens the overlay', async ({
+test('Function: RequirementsOverlay — forum post without a set-up wallet explains the wallet', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.getByLabel('Your message').fill('Hello');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Your wallet is not set up' });
+  await expect(dialog).toBeVisible();
   await expect(
-    page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    dialog.getByText(
+      'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
+    ),
   ).toBeVisible();
+  await expect(dialog.getByRole('textbox')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
@@ -2646,7 +2696,7 @@ test('Function: MemberProfileScreen — public card shows About me, copy-profile
   await expect(page.getByLabel('Your reaction')).toHaveCount(0);
 });
 
-test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay from the posts feed', async ({
+test('Function: MemberProfileScreen — reply without a set-up wallet opens the wallet overlay from the posts feed', async ({
   page,
 }) => {
   const memberId = '22222222-2222-4222-8222-222222222222';
@@ -2749,13 +2799,11 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   await expect(page.getByLabel('Your reaction')).toBeVisible();
   await page.getByLabel('Your reaction').fill('Hello');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
-  await expect(
-    page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
-  ).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Your wallet is not set up' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
-test('Function: nextPostRequirement — rules before name before lightning-address for forum overlay order', async ({
+test('Function: nextPostRequirement — rules come right after the username, with no address step', async ({
   page,
   request,
 }) => {
@@ -2763,21 +2811,19 @@ test('Function: nextPostRequirement — rules before name before lightning-addre
   await expect(page).toHaveURL(/\/setup\/name/);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   const chapter = `1 of ${RULES_CHAPTER_IDS.length}`;
   await expect(page.getByText(chapter, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
-test('Function: nextContactRequirement — contact still opens name overlay without requiring lightning-address', async ({
+test('Function: nextContactRequirement — contact still opens the name overlay without requiring a wallet', async ({
   page,
   request,
 }) => {
   await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.goto('/contact');
@@ -3015,8 +3061,6 @@ test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agre
 
 test('Function: dismissForumLaws — welcome laws hint dismisses', async ({ page, request }) => {
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(
@@ -3037,8 +3081,6 @@ test('Function: agreeToRules — signed-in rules screen records agreement', asyn
   request,
 }) => {
   const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
 });
@@ -3138,9 +3180,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
   await expect(page.getByRole('heading', { name: 'Living room rules' })).toBeVisible();
 });
 
-test('Function: hasAgreedToRules — name and address without agreement stay on rules', async ({
-  page,
-}) => {
+test('Function: hasAgreedToRules — a name without agreement stays on rules', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -3171,114 +3211,27 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
+/** After the name step the next screen is rules (no address step) and `/me` has the name. */
+async function expectSavedName(page: Page, name: string): Promise<void> {
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
+  const me = await page.request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { name: string | null }).name).toBe(name);
+}
+
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
   await signInUnnamed(page, request);
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Ada')).toBeVisible();
+  await expectSavedName(page, 'Ada');
 });
 
 test('Function: setName — signed-in form saves a display name', async ({ page, request }) => {
   await signInUnnamed(page, request);
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Ada')).toBeVisible();
-});
-
-test('Function: POST — POST /me/lightning-address links an address', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string }).lightningAddress).toBe(
-    'alice@walletofsatoshi.com',
-  );
-});
-
-test('Function: proxyMeLightningAddressPost — POST links an address', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  expect(res.status()).toBe(200);
-  const bad = await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'not-an-address' },
-  });
-  expect(bad.status()).toBe(400);
-});
-
-test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi address', async ({
-  page,
-  request,
-}) => {
-  const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
-});
-
-test('Function: DELETE — DELETE /me/lightning-address clears the address', async ({ request }) => {
-  const token = await loginHttp(request);
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  const res = await request.delete('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
-});
-
-test('Function: proxyMeLightningAddressDelete — DELETE clears the address', async ({ request }) => {
-  const token = await loginHttp(request);
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  const res = await request.delete('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
-});
-
-test('Function: unlinkLightningAddress — DELETE /me/lightning-address clears the address', async ({
-  request,
-}) => {
-  const token = await loginHttp(request);
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  const res = await request.delete('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
-});
-
-test('Function: proxyLightningAddressGet — GET resolves a Wallet of Satoshi address', async ({
-  request,
-}) => {
-  const res = await request.get('/lightning-address?address=alice@walletofsatoshi.com');
-  expect(res.status()).toBe(200);
-  const body = (await res.json()) as { callback: string; address: string };
-  expect(body.address).toBe('alice@walletofsatoshi.com');
-  expect(body.callback).toBe('https://ln.example.com/pay');
-});
-
-test('Function: resolveLightningAddress — GET /lightning-address still resolves', async ({
-  request,
-}) => {
-  const res = await request.get('/lightning-address?address=alice@walletofsatoshi.com');
-  expect(res.status()).toBe(200);
+  await expectSavedName(page, 'Ada');
 });
 
 test('Function: RootLayout — landing renders', async ({ page }) => {
@@ -3290,9 +3243,9 @@ test('Function: Home — landing renders the pitch', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: '21gifts@21.gifts' })).toHaveAttribute(
     'href',
-    'lightning:21gifts@walletofsatoshi.com',
+    'lightning:21gifts@21.gifts',
   );
 });
 
@@ -5051,9 +5004,24 @@ test('Function: openInSystemBrowser — Open in browser is shown in Telegram Web
   // Do not assert navigation.
 });
 
-test('Function: QrCode — pay sheet shows the invoice QR', async ({ page, request }) => {
+test('Function: QrCode — the public pay link shows the invoice QR on a desktop', async ({
+  page,
+}) => {
+  await openPayLinkInvoice(page);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+  expect(await recordedWalletAssign(page)).toBeUndefined();
+});
+
+test('Function: WalletPay — the forum pay sheet is wallet-only, with no invoice QR or wallet app link', async ({
+  page,
+  request,
+}) => {
   await openPayInvoice(page, request);
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+  const sheet = page.locator('[data-pay-sheet]');
+  await expect(sheet.getByRole('status')).toHaveText(WALLET_UNAVAILABLE);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
@@ -5167,13 +5135,14 @@ test('Function: ForumReplyPayPage — paid reaction replaces the reply composer'
   await expect(payPage).toBeVisible();
   await expect(payPage.getByText(REACTION_PAY_ANSWER)).toBeVisible();
   await expect(payPage.getByText('Waiting for payment…')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(payPage.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByLabel('Your reaction')).toHaveCount(0);
 });
 
-test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet button', async ({
+test('Function: isSmartphoneUserAgent — an iPhone pay link has no invoice QR, only the Pay link', async ({
   page,
-  request,
 }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgent', {
@@ -5181,61 +5150,27 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
         'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
     });
   });
-  await openPayInvoice(page, request);
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  await expect(page.getByText('Pay ₿21')).toBeVisible();
+  await openPayLinkInvoice(page);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveText(
+    'Pay',
+  );
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
-test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({
+test('Function: isSmartphoneUserAgent — a desktop pay link shows the invoice QR', async ({
   page,
-  request,
 }) => {
-  await openPayInvoice(page, request);
-  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
-  const href = await recordedWalletAssign(page);
-  expect(href?.startsWith('walletofsatoshi:lightning:LNBC')).toBe(true);
+  await openPayLinkInvoice(page);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
 });
 
-test('Function: walletOfSatoshiHref — pay sheet opens Wallet of Satoshi', async ({
+test('Function: lightningHref — the pay link Pay button opens lightning:<invoice>', async ({
   page,
-  request,
 }) => {
-  await openPayInvoice(page, request);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-});
-
-test('Function: isAndroidUserAgent — Android pay sheet uses an Intent href', async ({
-  page,
-  request,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () =>
-        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-  });
-  await openPayInvoice(page, request);
-  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
-  const href = await recordedWalletAssign(page);
-  expect(href?.startsWith('intent:lightning:')).toBe(true);
-});
-
-test('Function: walletOfSatoshiIntentHref — Android pay sheet pins the WoS package', async ({
-  page,
-  request,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () =>
-        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-  });
-  await openPayInvoice(page, request);
-  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
-  const href = await recordedWalletAssign(page);
-  expect(href?.includes('com.livingroomofsatoshi.wallet')).toBe(true);
+  await openPayLinkInvoice(page);
+  await page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }).click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe(`lightning:${PAY_INVOICE}`);
 });
 
 test('Function: useAuthStore — live login reaches the signed-in view', async ({
@@ -5243,7 +5178,7 @@ test('Function: useAuthStore — live login reaches the signed-in view', async (
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5256,17 +5191,8 @@ test('Function: saveSession — live login persists the session token', async ({
 test('Function: loadSession — reload keeps the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
-});
-
-test('Function: LightningAddressForm — link reaches welcome', async ({ page, request }) => {
-  const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
 });
 
 test('Function: clearSession — log out returns to the start action', async ({ page, request }) => {
@@ -5280,8 +5206,6 @@ test('Function: clearSession — log out returns to the start action', async ({ 
 test('Function: ForumBoard — welcome forum is the pay surface', async ({ page, request }) => {
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await chooseForumView(page, 'All');
@@ -5322,8 +5246,6 @@ test('Function: RulesDocument — only free donations rule is visible', async ({
 test('Function: ForumLoader — welcome forum is the pay surface', async ({ page, request }) => {
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await chooseForumView(page, 'All');
@@ -5359,10 +5281,38 @@ test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', 
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await compose;
   await invoice;
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
 
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {
   await openPayInvoice(page, request);
+});
+
+test("Function: CannotReceiveError — a 422 forum invoice says the author's wallet cannot receive", async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.route('**/messages/r-pay/invoice', async (route) => {
+    await route.fulfill({
+      status: 422,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'cannot_receive' }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
+  await submitPayAmount(page);
+  await expect(
+    page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+  ).toBeVisible();
+  await expect(page.getByText('Pay ₿21')).toHaveCount(0);
 });
 
 test('Function: NoteDeletedError — deleted reply invoice shows the note-deleted alert', async ({
@@ -5381,10 +5331,9 @@ test('Function: shownFiatForSats — pay sheet sends the shown amounts', async (
   await stubWalletLocationAssign(page);
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
   await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
@@ -6202,7 +6151,7 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6220,7 +6169,7 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6259,7 +6208,7 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   const handle = await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
@@ -6282,7 +6231,7 @@ test('Function: creationOptionsFromJSON — create passkey reaches the signed-in
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6291,7 +6240,7 @@ test('Function: credentialToJSON — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6300,7 +6249,7 @@ test('Function: base64UrlToBytes — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6309,7 +6258,7 @@ test('Function: bytesToBase64Url — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6974,70 +6923,6 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
   });
   await page.goto('/setup/name');
   await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
-});
-
-test('Function: AddressSetupPage — address screen heading is visible', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: 'lightning-address',
-        missing: ['lightning-address', 'rules'],
-      }),
-    });
-  });
-  await page.goto('/setup/address');
-  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
-});
-
-test('Function: AddressSetup — address screen heading is visible', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: 'lightning-address',
-        missing: ['lightning-address', 'rules'],
-      }),
-    });
-  });
-  await page.goto('/setup/address');
-  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(page.locator('#signed-in-menu')).toBeHidden();
-  await openSignedInMenu(page);
-  await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
 });
 
 test('Function: WelcomePage — welcome heading is visible', async ({ page }) => {
@@ -8429,17 +8314,15 @@ test('Function: saveUnpaidSeenAt — opening No gifts yet clears the unpaid coun
   );
 });
 
-test('Function: OnboardingGate — login sends a new account to the address screen', async ({
+test('Function: OnboardingGate — login sends a new account to the rules screen', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: OnboardingGate — name and address without agreement go to rules', async ({
-  page,
-}) => {
+test('Function: OnboardingGate — a name without agreement goes to rules', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -8469,23 +8352,23 @@ test('Function: OnboardingGate — name and address without agreement go to rule
   await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: nextOnboardingPath — login sends a new account to the address screen', async ({
+test('Function: nextOnboardingPath — login sends a new account to the rules screen', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: hasDisplayName — login sends a new account to the address screen', async ({
+test('Function: hasDisplayName — login sends a new account to the rules screen', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: hasLightningAddress — named account without address stays on address screen', async ({
+test('Function: nextOnboardingPath — the api lightning-address step opens rules, with no address screen', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -8500,6 +8383,7 @@ test('Function: hasLightningAddress — named account without address stays on a
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        username: 'ada',
         location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
@@ -8513,14 +8397,14 @@ test('Function: hasLightningAddress — named account without address stays on a
       }),
     });
   });
-  await page.goto('/setup/address');
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await page.goto('/welcome');
+  await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: useHydrateSession — reload keeps the address screen', async ({ page, request }) => {
+test('Function: useHydrateSession — reload keeps the rules screen', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
 test('Function: LogoutButton — log out returns to login', async ({ page, request }) => {
@@ -8628,7 +8512,7 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
 
 test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
@@ -8858,6 +8742,7 @@ test('Function: PosScreen — till heading is visible', async ({ page }) => {
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -8894,6 +8779,7 @@ test('Function: fetchPosState — till shows the amount form', async ({ page }) 
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -8932,6 +8818,7 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -9011,6 +8898,7 @@ test('Function: cancelPosCharge — cancel returns the amount form', async ({ pa
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -9059,6 +8947,7 @@ test('Function: PosAmount — amount page has the keypad and no QR', async ({ pa
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -9073,6 +8962,105 @@ test('Function: PosAmount — amount page has the keypad and no QR', async ({ pa
   await expect(page.getByRole('heading', { name: 'Amount' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
+});
+
+const POS_ACCOUNT = {
+  id: 'acc_e2e',
+  linkingKey: null,
+  role: 'basis',
+  name: 'Ada',
+  username: 'alice',
+  location: null,
+  lightningAddress: null,
+  lightningAddressVerified: false,
+  forumLawsDismissed: false,
+  createdAt: 1,
+  rulesAgreedAt: 1_700_000_001,
+  viewKey: 'a'.repeat(64),
+  aboutMe: null,
+  setup: null,
+  missing: [],
+};
+
+/** Signed-in till whose `POST /pos/charge` answers `status`. */
+async function openPosAmountAnswering(page: Page, status: number): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...POS_ACCOUNT, sparkWalletVerified: true }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Wallet answer' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos/amount');
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+}
+
+test('Function: PosTill — a username without a verified wallet links to the wallet setup', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...POS_ACCOUNT, sparkWalletVerified: false }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveAttribute(
+    'href',
+    '/wallet',
+  );
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
+});
+
+test('Function: WalletRequiredError — a 412 charge answer asks to set up the wallet', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, 412);
+  await expect(page.getByText('Set up your wallet first.')).toBeVisible();
+});
+
+test('Function: CannotReceiveError — a 422 charge answer says the wallet cannot receive', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, 422);
+  await expect(
+    page.getByText('Your wallet cannot receive this payment right now. Please try again later.'),
+  ).toBeVisible();
+});
+
+test('Function: throwIfWalletAnswer — 412 and 422 charge answers are not the generic error', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, 412);
+  await expect(page.getByText('Set up your wallet first.')).toBeVisible();
+  await expect(page.getByText('Point of sale is unavailable.')).toHaveCount(0);
 });
 
 test('Function: resetPosTillWriteForTests — till heading is visible', async ({ page }) => {
@@ -10306,10 +10294,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
   await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Remove Wallet of Satoshi address' })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
 });
 
 test('Function: ViewProfileClaim — public view shows the passkey claim control', async ({
@@ -10815,6 +10800,16 @@ test('Function: postPushSubscription — POST /me/push-subscriptions with bearer
   });
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { endpoint: string }).endpoint).toBe('https://push.example/e2e');
+});
+
+test('Function: POST — POST /me/name without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/name', { data: { name: 'Ada' } })).status()).toBe(401);
+});
+
+test('Function: DELETE — DELETE /me/push-subscriptions without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.delete('/me/push-subscriptions')).status()).toBe(401);
 });
 
 test('Function: proxyMePushSubscriptionsDelete — DELETE /me/push-subscriptions without bearer is 401', async ({
@@ -12553,6 +12548,54 @@ test('Function: getRepayment — GET /messages/[id]/repayment answers without a 
 }) => {
   const response = await request.get('/messages/11111111-1111-4111-8111-111111111111/repayment');
   expect(response.status()).toBeGreaterThanOrEqual(200);
+});
+
+test("Function: postRepaymentInvoice — today's repayment opens the wallet-only pay slot", async ({
+  page,
+}) => {
+  await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1repay', amountSats: 700 }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+  });
+  await seedAdaSession(page);
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-goal-credit',
+            accountId: 'acc_e2e',
+            name: 'Ada',
+            text: 'Need help with a train ticket',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21000,
+            goalSats: 21000,
+            goalRepayable: true,
+            goalTermDays: 30,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: "Pay today's repayment" }).click();
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
 
 test('Function: postRepaymentInvoice — POST /messages/[id]/repayment without bearer is denied', async ({

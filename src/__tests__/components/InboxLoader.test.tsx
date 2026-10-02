@@ -49,6 +49,7 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   CONVERSATION_LIVE_POLL_MS: 5_000,
+  CannotReceiveError: class CannotReceiveError extends Error {},
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -57,6 +58,7 @@ vi.mock('@/lib/app-badge', () => ({
 }));
 
 import {
+  CannotReceiveError,
   fetchConversation,
   fetchConversationMessagePhoto,
   fetchConversations,
@@ -566,17 +568,27 @@ describe('InboxLoader', () => {
   });
 
   it.each([
-    ['Too many payments', 'Too many payments. Please wait a moment and try again.'],
+    [
+      'Too many payments',
+      new Error('Too many payments'),
+      'Too many payments. Please wait a moment and try again.',
+    ],
     [
       "Author's wallet cannot receive this Bitcoin payment",
+      new Error("Author's wallet cannot receive this Bitcoin payment"),
       "The author's wallet cannot receive this Bitcoin payment",
     ],
-    ['boom', 'Could not send your message'],
-  ])('maps invoice mint error %s', async (message, expected) => {
+    [
+      'cannot receive (422)',
+      new CannotReceiveError(),
+      "The author's wallet cannot receive this Bitcoin payment",
+    ],
+    ['boom', new Error('boom'), 'Could not send your message'],
+  ])('maps invoice mint error %s', async (_label, error, expected) => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue(conversationPage([MESSAGE]));
-    invoiceMock.mockRejectedValue(new Error(message));
+    invoiceMock.mockRejectedValue(error);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
     await waitFor(() => {
@@ -2260,7 +2272,8 @@ describe('InboxLoader in-app wallet pay', () => {
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(send).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
     await act(async () => {
       resolvePoll?.(
         conversationPage([

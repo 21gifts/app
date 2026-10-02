@@ -128,7 +128,7 @@ describe('useAccountTotals', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('fetches activity when the Lightning Address is blank', async () => {
+  it('fetches activity when the wallet is not verified', async () => {
     fetchMock.mockResolvedValue(ACTIVITY);
     useAuthStore.setState({
       session: 'tok',
@@ -138,8 +138,9 @@ describe('useAccountTotals', () => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: '   ',
+        lightningAddress: null,
         lightningAddressVerified: false,
+        sparkWalletVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
@@ -157,7 +158,7 @@ describe('useAccountTotals', () => {
     expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 
-  it('fetches activity when the Lightning Address is null', async () => {
+  it('fetches activity when the account has no wallet flag', async () => {
     fetchMock.mockResolvedValue(ACTIVITY);
     useAuthStore.setState({
       session: 'tok',
@@ -212,10 +213,7 @@ describe('useAccountTotals', () => {
     });
     await act(async () => {
       useAuthStore.setState((state) => ({
-        account:
-          state.account === null
-            ? null
-            : { ...state.account, lightningAddress: null },
+        account: state.account === null ? null : { ...state.account, sparkWalletVerified: true },
       }));
     });
     await waitFor(() => {
@@ -272,7 +270,22 @@ describe('useAccountTotals', () => {
     expect(fetchMock).toHaveBeenCalledWith('tok2');
   });
 
-  it('refetches when the Lightning Address changes on the same session', async () => {
+  it('does not refetch when another account field changes on the same session', async () => {
+    fetchMock.mockResolvedValue(ACTIVITY);
+    renderWithLocale(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState((state) => ({
+        account: state.account === null ? null : { ...state.account, name: 'Bea' },
+      }));
+    });
+    expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refetches when the wallet turns verified on the same session', async () => {
     fetchMock.mockResolvedValueOnce(ACTIVITY);
     fetchMock.mockResolvedValueOnce(OTHER_ACTIVITY);
     renderWithLocale(<Probe />);
@@ -281,10 +294,7 @@ describe('useAccountTotals', () => {
     });
     await act(async () => {
       useAuthStore.setState((state) => ({
-        account:
-          state.account === null
-            ? null
-            : { ...state.account, lightningAddress: null },
+        account: state.account === null ? null : { ...state.account, sparkWalletVerified: true },
       }));
     });
     await waitFor(() => {

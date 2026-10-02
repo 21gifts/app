@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  hasAgreedToRules,
-  hasDisplayName,
-  hasLightningAddress,
-  nextOnboardingPath,
-} from '@/lib/onboarding';
+import { hasAgreedToRules, hasDisplayName, nextOnboardingPath } from '@/lib/onboarding';
 import type { Account } from '@/lib/api-types';
 
 const base: Account = {
@@ -46,30 +41,19 @@ describe('onboarding', () => {
     expect(nextOnboardingPath({ ...account, username: '  ' })).toBe('/setup/username');
   });
 
-  it('maps setup wallet to the address screen when the username is set', () => {
-    const account = {
-      ...base,
-      name: 'Ada',
-      username: 'ada',
-      setup: 'wallet' as const,
-      missing: ['lightning-address', 'rules'] as Account['missing'],
-    };
-    expect(nextOnboardingPath(account)).toBe('/setup/address');
-  });
-
-  it('maps setup wallet to the rules screen when the address is set', () => {
+  it('maps setup wallet to the rules screen when the username is set, without an address step', () => {
     const account = {
       ...base,
       name: 'Ada',
       username: 'ada',
       lightningAddress: null,
       setup: 'wallet' as const,
-      missing: ['rules'] as Account['missing'],
+      missing: ['lightning-address', 'rules'] as Account['missing'],
     };
     expect(nextOnboardingPath(account)).toBe('/setup/rules');
   });
 
-  it('maps setup wallet to welcome when name, username, address, and rules are set', () => {
+  it('maps setup wallet to welcome when name, username, and rules are set', () => {
     const account = {
       ...base,
       name: 'Ada',
@@ -97,16 +81,17 @@ describe('onboarding', () => {
     expect(nextOnboardingPath(account)).toBe('/setup/username');
   });
 
-  it('maps setup lightning-address to the address screen', () => {
+  it('maps setup lightning-address to username, rules, then welcome', () => {
     const account = {
       ...base,
       name: 'Ada',
       setup: 'lightning-address' as const,
-      missing: ['lightning-address', 'rules'] as Account['missing'],
+      missing: ['username', 'lightning-address', 'rules'] as Account['missing'],
     };
     expect(hasDisplayName(account)).toBe(true);
-    expect(hasLightningAddress(account)).toBe(false);
-    expect(nextOnboardingPath(account)).toBe('/setup/address');
+    expect(nextOnboardingPath(account)).toBe('/setup/username');
+    expect(nextOnboardingPath({ ...account, username: 'ada' })).toBe('/setup/rules');
+    expect(nextOnboardingPath({ ...account, username: 'ada', rulesAgreedAt: 1 })).toBe('/welcome');
   });
 
   it('maps setup rules to the rules screen', () => {
@@ -134,14 +119,27 @@ describe('onboarding', () => {
     expect(nextOnboardingPath(account)).toBe('/welcome');
   });
 
-  it('follows setup even when name is still missing after a skip', () => {
+  it('follows setup lightning-address past a skipped name', () => {
     const account = {
       ...base,
+      setup: 'lightning-address' as const,
+      missing: ['name', 'username', 'lightning-address', 'rules'] as Account['missing'],
+    };
+    expect(hasDisplayName(account)).toBe(false);
+    expect(nextOnboardingPath(account)).toBe('/setup/username');
+  });
+
+  it('sends a skipped name with a username from setup lightning-address to rules', () => {
+    const account = {
+      ...base,
+      name: null,
+      username: 'ada',
       setup: 'lightning-address' as const,
       missing: ['name', 'lightning-address', 'rules'] as Account['missing'],
     };
     expect(hasDisplayName(account)).toBe(false);
-    expect(nextOnboardingPath(account)).toBe('/setup/address');
+    expect(nextOnboardingPath(account)).toBe('/setup/rules');
+    expect(nextOnboardingPath({ ...account, rulesAgreedAt: 1 })).toBe('/welcome');
   });
 
   it('treats an empty name as incomplete for hasDisplayName', () => {
@@ -152,15 +150,5 @@ describe('onboarding', () => {
   it('treats a whitespace-only name as incomplete for hasDisplayName', () => {
     const account = { ...base, name: '   ' };
     expect(hasDisplayName(account)).toBe(false);
-  });
-
-  it('treats an empty lightning address as incomplete for hasLightningAddress', () => {
-    const account = { ...base, name: 'Ada', lightningAddress: '' };
-    expect(hasLightningAddress(account)).toBe(false);
-  });
-
-  it('treats a whitespace-only lightning address as incomplete for hasLightningAddress', () => {
-    const account = { ...base, name: 'Ada', lightningAddress: '   ' };
-    expect(hasLightningAddress(account)).toBe(false);
   });
 });

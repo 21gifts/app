@@ -590,13 +590,6 @@ export const SCREEN_VARIANTS = [
     needle: 'Your username can no longer be changed because your wallet address uses it.',
   },
   {
-    route: '/setup/address',
-    id: 'default',
-    image: 'setup-address.png',
-    visual: 'screen-setup-address',
-    needle: "getByRole('heading', { name: 'Your Wallet of Satoshi address' })",
-  },
-  {
     route: '/setup/rules',
     id: 'default',
     image: 'setup-rules.png',
@@ -1851,17 +1844,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'pay-qr',
-    image: 'welcome-pay-qr.png',
-    visual: 'state-welcome-pay-qr',
-    needle: 'Bitcoin payment QR code',
-  },
-  {
-    route: '/welcome',
-    id: 'pay-smartphone',
-    image: 'welcome-pay-smartphone.png',
-    visual: 'state-welcome-pay-smartphone',
-    needle: 'iPhone pay sheet has no QR',
+    id: 'wallet-pay-unavailable',
+    image: 'welcome-wallet-pay-unavailable.png',
+    visual: 'state-welcome-wallet-pay-unavailable',
+    needle: 'Your 21.gifts wallet is not available here, so this cannot be paid.',
   },
   {
     route: '/welcome',
@@ -1900,6 +1886,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'wallet-pay-failed',
+    image: 'welcome-wallet-pay-failed.png',
+    visual: 'state-welcome-wallet-pay-failed',
+    needle: 'Your wallet could not prepare this payment. Please try again.',
+  },
+  {
+    route: '/welcome',
     id: 'wallet-pay-unconfirmed',
     image: 'welcome-wallet-pay-unconfirmed.png',
     visual: 'state-welcome-wallet-pay-unconfirmed',
@@ -1928,10 +1921,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'overlay-address',
-    image: 'welcome-overlay-address.png',
-    visual: 'state-welcome-overlay-address',
-    needle: "getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })",
+    id: 'overlay-wallet',
+    image: 'welcome-overlay-wallet.png',
+    visual: 'state-welcome-overlay-wallet',
+    needle: "getByRole('dialog', { name: 'Your wallet is not set up' })",
   },
   {
     route: '/welcome',
@@ -2369,10 +2362,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
-    id: 'need-address',
-    image: 'pos-need-address.png',
-    visual: 'state-pos-need-address',
-    needle: 'Set a Wallet of Satoshi address first.',
+    id: 'need-wallet',
+    image: 'pos-need-wallet.png',
+    visual: 'state-pos-need-wallet',
+    needle: 'Set up your wallet first.',
   },
   {
     route: '/profile',
@@ -2614,10 +2607,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
-    id: 'overlay-address',
-    image: 'members-overlay-address.png',
-    visual: 'state-members-overlay-address',
-    needle: 'state-members-overlay-address',
+    id: 'overlay-wallet',
+    image: 'members-overlay-wallet.png',
+    visual: 'state-members-overlay-wallet',
+    needle: 'state-members-overlay-wallet',
   },
   {
     route: '/members/[accountId]',
@@ -3883,10 +3876,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
-    id: 'thread-pay-qr',
-    image: 'messages-thread-pay-qr.png',
-    visual: 'state-messages-thread-pay-qr',
-    needle: 'Pay with Wallet of Satoshi',
+    id: 'thread-pay-sheet',
+    image: 'messages-thread-pay-sheet.png',
+    visual: 'state-messages-thread-pay-sheet',
+    needle: 'messages thread-pay-sheet',
   },
   {
     route: '/messages',

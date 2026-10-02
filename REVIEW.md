@@ -61,20 +61,21 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 
 Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the latest gift-day rate. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
 
-## Payment QR vs deep links
+## Payment QR vs wallet links
 
-Reject the PR when the forum-post pay sheet, the inbox pay sheet, or the
-public pay-link invoice mounts its invoice QR on a smartphone
-user-agent, or when a profile, member, public view, or point of sale QR
-is hidden on a smartphone. Detection is `isSmartphoneUserAgent`, not
-viewport width. On those invoice screens the phone opens Wallet of
-Satoshi and shows no QR. Everywhere else the phone matches the desktop.
-When the invoice carries a `sparkInvoice` and the member's in-app wallet
-can be used, the forum and inbox pay sheets pay from that wallet and show
-neither the wallet button nor the invoice QR; the member's own address QR
+Reject the PR when a member pay sheet — the forum post pay sheet (including
+the posting fee and today's repayment), the reply pay page, or the inbox pay
+sheet — mounts an invoice QR on any user agent, shows a button or link to
+another wallet app, or falls back to anything but the in-app wallet. Reject
+it when the public pay-link invoice mounts its invoice QR on a smartphone
+user-agent, when its **Pay** names or targets a particular wallet app
+instead of a generic `lightning:` link, or when a profile, member, public
+view, or point of sale QR is hidden on a smartphone. Detection is
+`isSmartphoneUserAgent`, not viewport width. The member's own address QR
 shown when the balance is too low follows the profile rule. That is not a
-reason to reject.
-See CONTRIBUTING.md “Payment QR vs deep links”.
+reason to reject. Reject a screen or string that names another wallet or
+lets a member link an external address.
+See CONTRIBUTING.md “Payment QR vs wallet links”.
 
 ## Completeness gates
 

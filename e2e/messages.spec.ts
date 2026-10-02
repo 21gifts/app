@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const ID = '11111111-1111-4111-8111-111111111111';
 
@@ -657,7 +657,8 @@ test('inbox inbound text+sats shows Hi and ₿21', async ({ page }) => {
   await expect(page.getByText('₿21')).toBeVisible();
 });
 
-test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
+/** Signed-in inbox thread with 21.gifts whose gift invoice answers `invoiceStatus`; sends 21. */
+async function sendInboxGift(page: Page, invoiceStatus: number): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -729,11 +730,19 @@ test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
       await route.continue();
       return;
     }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' }),
-    });
+    await route.fulfill(
+      invoiceStatus === 200
+        ? {
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' }),
+          }
+        : {
+            status: invoiceStatus,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: 'cannot_receive' }),
+          },
+    );
   });
   await page.route(/sinceMessageId=/, async () => {
     /* hang — keep the pay sheet open */
@@ -742,8 +751,27 @@ test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
   await expect(page.getByText('Hello team')).toBeVisible();
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+}
+
+test('inbox pay sheet is wallet-only, with no invoice QR or wallet app link', async ({ page }) => {
+  await sendInboxGift(page, 200);
+  await expect(
+    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+});
+
+test("Function: CannotReceiveError — a 422 inbox invoice says the author's wallet cannot receive", async ({
+  page,
+}) => {
+  await sendInboxGift(page, 422);
+  await expect(
+    page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toHaveCount(0);
 });
 
 test('public message default shows Hello from Ada', async ({ page }) => {

@@ -116,8 +116,12 @@ function hasUsername(account) {
   return account.username !== null && String(account.username).trim() !== '';
 }
 
-function hasLightningAddress(account) {
-  return account.lightningAddress !== null && String(account.lightningAddress).trim() !== '';
+/**
+ * True when the member can receive gifts: their own in-app wallet is
+ * verified. The api reports the gap as the `lightning-address` key.
+ */
+function canReceive(account) {
+  return account.sparkWalletVerified === true;
 }
 
 function hasRules(account) {
@@ -169,44 +173,29 @@ function refreshMissing(account) {
   const missing = [];
   if (!hasName(account)) missing.push('name');
   if (!hasUsername(account)) missing.push('username');
-  if (!hasLightningAddress(account)) missing.push('lightning-address');
+  if (!canReceive(account)) missing.push('lightning-address');
   if (!hasRules(account)) missing.push('rules');
   account.missing = missing;
 }
 
 /**
- * Advance `setup` only when the current step is satisfied.
+ * Advance `setup` only when the current step is satisfied. There is no
+ * address step: a member receives on their own in-app wallet, so the setup
+ * runs name, username, rules. A member who cannot receive yet keeps the
+ * `lightning-address` key in `missing`, which gates forum posts.
  *
  * @param {object} account
  */
 function afterFieldWrite(account) {
   refreshMissing(account);
-  if (account.setup === 'wallet') {
-    account.setup = hasName(account)
-      ? hasUsername(account)
-        ? hasLightningAddress(account)
-          ? hasRules(account)
-            ? null
-            : 'rules'
-          : 'lightning-address'
-        : 'username'
-      : 'name';
+  const afterUsername = hasRules(account) ? null : 'rules';
+  const afterName = hasUsername(account) ? afterUsername : 'username';
+  if (account.setup === 'wallet' || account.setup === 'lightning-address') {
+    account.setup = hasName(account) ? afterName : 'name';
   } else if (account.setup === 'name' && hasName(account)) {
-    account.setup = hasUsername(account)
-      ? hasLightningAddress(account)
-        ? hasRules(account)
-          ? null
-          : 'rules'
-        : 'lightning-address'
-      : 'username';
+    account.setup = afterName;
   } else if (account.setup === 'username' && hasUsername(account)) {
-    account.setup = hasLightningAddress(account)
-      ? hasRules(account)
-        ? null
-        : 'rules'
-      : 'lightning-address';
-  } else if (account.setup === 'lightning-address' && hasLightningAddress(account)) {
-    account.setup = hasRules(account) ? null : 'rules';
+    account.setup = afterUsername;
   } else if (account.setup === 'rules' && hasRules(account)) {
     account.setup = null;
   }
@@ -1999,50 +1988,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (method === 'POST' && pathName === '/me/lightning-address') {
-    const token = bearer(req);
-    const account = token === null ? undefined : byToken.get(token);
-    if (!account) {
-      json(res, 401, { error: 'Unauthorized' });
-      return;
-    }
-    let parsed;
-    try {
-      parsed = JSON.parse(rawBody);
-    } catch {
-      json(res, 400, { error: 'Expected a JSON body with an "address" string' });
-      return;
-    }
-    if (typeof parsed?.address !== 'string') {
-      json(res, 400, { error: 'Expected a JSON body with an "address" string' });
-      return;
-    }
-    const trimmed = parsed.address.trim();
-    if (!/^[^@]+@[^@]+$/.test(trimmed) || trimmed.length > 255) {
-      json(res, 400, { error: 'Not a valid Lightning Address (expected name@domain)' });
-      return;
-    }
-    account.lightningAddress = trimmed;
-    account.lightningAddressVerified = false;
-    afterFieldWrite(account);
-    json(res, 200, account);
-    return;
-  }
-
-  if (method === 'DELETE' && pathName === '/me/lightning-address') {
-    const token = bearer(req);
-    const account = token === null ? undefined : byToken.get(token);
-    if (!account) {
-      json(res, 401, { error: 'Unauthorized' });
-      return;
-    }
-    account.lightningAddress = null;
-    account.lightningAddressVerified = false;
-    afterFieldWrite(account);
-    json(res, 200, account);
-    return;
-  }
-
   if (method === 'GET' && pathName === '/gifts') {
     const day = url.searchParams.get('day');
     if (day === '2026-06-01') {
@@ -2140,6 +2085,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/e2e/wallet-verified') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.sparkPubkey = `02${'ab'.repeat(32)}`;
+    account.sparkWalletVerified = true;
+    afterFieldWrite(account);
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'GET' && pathName === '/funding/goal') {
     if (bearer(req) === null) {
       json(res, 401, { error: 'Unauthorized' });
@@ -2162,7 +2121,6 @@ const server = http.createServer(async (req, res) => {
       username = `ada${hex(randomBytes(8))}`;
     } while (usernameTaken(username, ''));
     account.username = username;
-    account.lightningAddress = 'ada@walletofsatoshi.com';
     account.rulesAgreedAt = Date.now();
     account.forumLawsDismissed = true;
     afterFieldWrite(account);
@@ -2607,23 +2565,6 @@ const server = http.createServer(async (req, res) => {
     account.walletRequired = true;
     account.passkeyRenewClosed = false;
     json(res, 200, account);
-    return;
-  }
-
-  if (method === 'GET' && pathName === '/lightning-address') {
-    const raw = url.searchParams.get('address') ?? '';
-    if (!/^[^@]+@[^@]+$/.test(raw)) {
-      json(res, 400, { error: 'Not a valid Lightning Address (expected name@domain)' });
-      return;
-    }
-    const address = raw.toLowerCase();
-    const highMin = address.startsWith('highmin@');
-    json(res, 200, {
-      address,
-      callback: 'https://ln.example.com/pay',
-      minSendable: highMin ? 100_000 : 1000,
-      maxSendable: 1_000_000_000,
-    });
     return;
   }
 

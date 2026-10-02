@@ -312,7 +312,9 @@ describe('PayLinkScreen', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
-    const pay = screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    const pay = screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+    expect(pay.textContent).toBe('Pay');
+    expect(pay.querySelector('img')).toBeNull();
     expect(pay.parentElement?.className).toContain('w-[16.625rem]');
     const hrefs: string[] = [];
     const previous = window.location;
@@ -329,7 +331,7 @@ describe('PayLinkScreen', () => {
     });
     fireEvent.click(pay);
     Object.defineProperty(window, 'location', { configurable: true, value: previous });
-    expect(hrefs).toEqual(['walletofsatoshi:lightning:LNBC210N1PAYLINK']);
+    expect(hrefs).toEqual(['lightning:lnbc210n1paylink']);
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.getByText('₿21')).toBeTruthy();
@@ -420,7 +422,7 @@ describe('PayLinkScreen', () => {
     });
   });
 
-  it('opens the Android wallet intent without an invoice QR', async () => {
+  it('opens the generic lightning link without an invoice QR on an Android phone', async () => {
     setUserAgent(
       'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
     );
@@ -434,7 +436,7 @@ describe('PayLinkScreen', () => {
     await screen.findByRole('heading', { name: 'Ada Lovelace' });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    const pay = await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    const pay = await screen.findByRole('button', { name: 'Pay with a Bitcoin wallet app' });
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
     const hrefs: string[] = [];
     const previous = window.location;
@@ -451,7 +453,7 @@ describe('PayLinkScreen', () => {
     });
     fireEvent.click(pay);
     Object.defineProperty(window, 'location', { configurable: true, value: previous });
-    expect(hrefs[0]?.startsWith('intent:lightning:LNBC210N1PAYLINK#Intent;')).toBe(true);
+    expect(hrefs).toEqual(['lightning:lnbc210n1paylink']);
   });
 
   it('does not apply an in-flight invoice after the link changes', async () => {
@@ -480,7 +482,7 @@ describe('PayLinkScreen', () => {
       expect(screen.queryByRole('heading', { name: 'Ada Lovelace' })).toBeNull();
     });
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
@@ -610,7 +612,9 @@ describe('PayLinkScreen', () => {
       });
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
-    expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: 'Pay with a Bitcoin wallet app' }),
+    ).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
   });
 
@@ -653,9 +657,9 @@ describe('PayLinkScreen', () => {
         },
       },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }));
     Object.defineProperty(window, 'location', { configurable: true, value: previous });
-    expect(hrefs).toEqual(['walletofsatoshi:lightning:LNBC210N1PAYLINK']);
+    expect(hrefs).toEqual(['lightning:lnbc210n1paylink']);
   });
 
   it('retries a failed till invoice without showing the amount field', async () => {
@@ -678,7 +682,7 @@ describe('PayLinkScreen', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
     expect(screen.queryByLabelText('Amount')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }));
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     expect(invoices).toBe(2);
   });

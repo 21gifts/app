@@ -58,7 +58,6 @@ vi.mock('@/lib/api', () => ({
   deleteMessage: vi.fn(),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
-  setLightningAddress: vi.fn(),
 }));
 
 import { useHydrateSession } from '@/hooks/useHydrateSession';

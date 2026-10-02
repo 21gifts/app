@@ -147,6 +147,12 @@ const E2E_ACCOUNT = {
 
 const SHOT = { animations: 'disabled' as const, caret: 'hide' as const };
 
+/** Pay slot sentence when the wallet cannot be used (Playwright builds leave the wallet key unset). */
+const PAY_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** Any QR image; member pay sheets never show an invoice QR. */
+const ANY_QR = /QR/;
+
 /** Signed-in wallet account for the setup, history, and username-freeze shots. */
 async function stubWalletSetupAccount(
   page: Page,
@@ -1146,7 +1152,9 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
     await shotScreen(page, 'screen-pl');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -1163,7 +1171,7 @@ test.describe('screen baselines', () => {
     } else {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
     }
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
     await shotScreen(page, 'state-pl-invoice');
   });
 
@@ -1343,7 +1351,7 @@ test.describe('screen baselines', () => {
     } else {
       await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
     }
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
     await shotScreen(page, 'state-pl-charge');
   });
 
@@ -1377,7 +1385,7 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('$238.09')).toBeVisible();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
     await shotScreen(page, 'state-pl-charge-failed');
   });
 
@@ -2889,29 +2897,6 @@ test.describe('onboarding screens', () => {
     await page.goto('/setup/username');
     await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
     await shotScreen(page, 'screen-setup-username');
-  });
-
-  test('screen /setup/address', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          setup: 'lightning-address',
-          missing: ['lightning-address', 'rules'],
-        }),
-      });
-    });
-    await page.goto('/setup/address');
-    await expect(
-      page.getByRole('heading', { name: 'Your Wallet of Satoshi address' }),
-    ).toBeVisible();
-    await shotScreen(page, 'screen-setup-address');
   });
 
   test('screen /setup/rules', async ({ page }) => {
@@ -4463,7 +4448,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-reaction-pay');
   });
 
-  test('state /welcome reaction-pay-sheet', async ({ page }, testInfo) => {
+  test('state /welcome reaction-pay-sheet', async ({ page }) => {
     await installReactionThread(page, [REACTION_REPLY]);
     await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
       await route.fulfill({
@@ -4494,13 +4479,8 @@ test.describe('onboarding screens', () => {
         node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       });
     }
-    const mobile = testInfo.project.name.startsWith('mobile');
-    const payControl = mobile
-      ? page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })
-      : page.getByRole('img', { name: 'Bitcoin payment QR code' });
-    if (mobile) {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    }
+    const payControl = page.getByText(PAY_UNAVAILABLE);
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
     expect(await insideShell(page.getByRole('button', { name: 'Close' }))).toBe(true);
     expect(await insideShell(page.getByText(/Pay ₿21/))).toBe(true);
     expect(await insideShell(payControl)).toBe(true);
@@ -5952,6 +5932,7 @@ test.describe('onboarding screens', () => {
           location: null,
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -5989,6 +5970,7 @@ test.describe('onboarding screens', () => {
           location: null,
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6029,6 +6011,7 @@ test.describe('onboarding screens', () => {
           location: null,
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6084,6 +6067,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6112,6 +6096,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6145,6 +6130,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6174,6 +6160,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6210,6 +6197,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6365,6 +6353,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6411,6 +6400,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6457,6 +6447,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6502,6 +6493,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6564,6 +6556,7 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           username: 'alice',
           lightningAddress: null,
+          sparkWalletVerified: true,
           rulesAgreedAt: 1_700_000_001,
           viewKey: 'a'.repeat(64),
           aboutMe: null,
@@ -6644,7 +6637,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-need-username');
   });
 
-  test('pos need address', async ({ page }) => {
+  test('pos need wallet', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -6673,10 +6666,11 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/pos');
-    await expect(
-      page.getByRole('link', { name: 'Set a Wallet of Satoshi address first.' }),
-    ).toBeVisible();
-    await shotScreen(page, 'state-pos-need-address');
+    await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveAttribute(
+      'href',
+      '/wallet',
+    );
+    await shotScreen(page, 'state-pos-need-wallet');
   });
 
   test('profile fiat', async ({ page }) => {
@@ -8901,7 +8895,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-own');
   });
 
-  test('state /members overlay-address', async ({ page }) => {
+  test('state /members overlay-wallet', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
     await page.addInitScript(() => {
@@ -8999,11 +8993,9 @@ test.describe('onboarding screens', () => {
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(
-      page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
-    ).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Your wallet is not set up' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
-    await shotScreen(page, 'state-members-overlay-address');
+    await shotScreen(page, 'state-members-overlay-wallet');
   });
 
   test('state /members overlay-username', async ({ page }) => {
@@ -15012,19 +15004,6 @@ test.describe('welcome forum variants', () => {
     });
   }
 
-  const walletAssignByPage = new WeakMap<Page, string>();
-
-  async function stubWalletLocationAssign(page: Page): Promise<void> {
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send('Page.enable');
-    cdp.on('Page.frameRequestedNavigation', (event: { url?: string }) => {
-      const href = event.url ?? '';
-      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
-        walletAssignByPage.set(page, href);
-      }
-    });
-  }
-
   async function submitPayAmount(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Continue' }).click();
   }
@@ -15043,12 +15022,13 @@ test.describe('welcome forum variants', () => {
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText('$0.02').first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
   }
 
   async function openPaySheet(page: Page): Promise<void> {
     await fulfillRateDay(page);
-    await stubWalletLocationAssign(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
@@ -15057,7 +15037,7 @@ test.describe('welcome forum variants', () => {
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
     await expect(page.getByText('$0.02').first()).toBeVisible();
   }
 
@@ -15603,8 +15583,10 @@ test.describe('welcome forum variants', () => {
     });
     await expect(walletAlert).toBeVisible();
     await walletAlert.scrollIntoViewIfNeeded();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
     await shotScreen(page, 'state-welcome-repay-today-error');
   });
 
@@ -15649,7 +15631,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    const wallet = page.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    const wallet = page.getByText(PAY_UNAVAILABLE);
     await expect(wallet).toBeVisible();
     await wallet.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-today-invoice');
@@ -17836,7 +17818,7 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-error-unsupported-with-text');
   });
 
-  test('welcome pay-composer', async ({ page }, testInfo) => {
+  test('welcome pay-composer', async ({ page }) => {
     await seedAda(page, 'basis', true);
     await emptyForum(page);
     await stubComposeInvoice(page);
@@ -17844,12 +17826,8 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    } else {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-    }
+    await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-composer');
   });
@@ -18252,8 +18230,10 @@ test.describe('welcome forum variants', () => {
     await replyCard.getByLabel('Amount').fill('21');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toHaveCount(0);
@@ -18262,29 +18242,15 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-pay-amount');
   });
 
-  test('welcome pay-qr', async ({ page }, testInfo) => {
+  test('welcome wallet-pay-unavailable', async ({ page }) => {
     await seedAda(page);
     await stubPayInvoice(page);
     await openPaySheet(page);
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    } else {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-    }
-    await shotScreen(page, 'state-welcome-pay-qr');
-  });
-
-  test('welcome pay-smartphone', async ({ page }, testInfo) => {
-    await seedAda(page);
-    await stubPayInvoice(page);
-    await openPaySheet(page);
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-      await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-    } else {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-    }
-    await shotScreen(page, 'state-welcome-pay-smartphone');
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
+    await shotScreen(page, 'state-welcome-wallet-pay-unavailable');
   });
 
   test('welcome wallet-pay-unlock', async ({ page }) => {
@@ -18321,6 +18287,15 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-wallet-pay-insufficient');
   });
 
+  test('welcome wallet-pay-failed', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-failed');
+    await expect(
+      page.getByText('Your wallet could not prepare this payment. Please try again.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-failed');
+  });
+
   test('welcome wallet-pay-unconfirmed', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-unconfirmed');
     await expect(
@@ -18330,7 +18305,6 @@ test.describe('welcome forum variants', () => {
   });
 
   test('welcome pay-author-wallet', async ({ page }) => {
-    await stubWalletLocationAssign(page);
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       const url = route.request().url();
@@ -18403,13 +18377,14 @@ test.describe('welcome forum variants', () => {
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toBeVisible();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
     await shotScreen(page, 'state-welcome-pay-author-wallet');
   });
 
   test('welcome pay-deleted', async ({ page }) => {
-    await stubWalletLocationAssign(page);
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       const url = route.request().url();
@@ -18478,8 +18453,10 @@ test.describe('welcome forum variants', () => {
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText('This note was deleted.')).toBeVisible();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
+      0,
+    );
     await shotScreen(page, 'state-welcome-pay-deleted');
   });
 
@@ -18535,7 +18512,7 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-role-hint');
   });
 
-  test('welcome overlay-address', async ({ page }) => {
+  test('welcome overlay-wallet', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -18561,11 +18538,9 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await page.getByLabel('Your message').fill('Hello');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(
-      page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
-    ).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Your wallet is not set up' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-overlay-address');
+    await shotScreen(page, 'state-welcome-overlay-wallet');
   });
 
   test('welcome overlay-username', async ({ page }) => {
@@ -21494,7 +21469,7 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-text-sats');
   });
 
-  test('messages thread-pay-qr', async ({ page }, testInfo) => {
+  test('messages thread-pay-sheet', async ({ page }) => {
     await fulfillRateDay(page);
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -21560,14 +21535,10 @@ test.describe('inbox screens', () => {
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-    if (isMobileProject(testInfo)) {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    } else {
-      await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
-    }
+    await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
     await expect(page.getByText('$0.02').first()).toBeVisible();
-    await shotScreen(page, 'state-messages-thread-pay-qr');
+    await shotScreen(page, 'state-messages-thread-pay-sheet');
   });
 
   /** Inbox thread whose gift invoice carries a `sparkInvoice`, opened with a wallet pin. */

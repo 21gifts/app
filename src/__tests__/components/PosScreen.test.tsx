@@ -28,6 +28,7 @@ const ACCOUNT = {
   location: null,
   lightningAddress: null,
   lightningAddressVerified: false,
+  sparkWalletVerified: true,
   forumLawsDismissed: false,
   createdAt: 1,
   rulesAgreedAt: 1_700_000_001,
@@ -552,16 +553,66 @@ describe('PosScreen', () => {
     expect(screen.getByRole('alert').textContent).toContain('outside the wallet range');
   });
 
-  it('asks for an address when the wallet is missing', async () => {
+  it('links to the wallet setup when the wallet is not verified', async () => {
+    for (const sparkWalletVerified of [false, undefined]) {
+      cleanup();
+      useAuthStore.setState({
+        session: 'tok',
+        account: { ...ACCOUNT, sparkWalletVerified },
+      });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })),
+      );
+      renderWithLocale(<PosScreen />);
+      const link = await screen.findByRole('link', { name: 'Set up your wallet first.' });
+      expect(link.getAttribute('href')).toBe('/wallet');
+      expect(screen.queryByRole('link', { name: 'Set a username first.' })).toBeNull();
+      expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+    }
+  });
+
+  it('does not ask for the wallet when the account has no username', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: { ...ACCOUNT, lightningAddress: null },
+      account: { ...ACCOUNT, username: null, sparkWalletVerified: false },
     });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
-    expect(
-      await screen.findByRole('link', { name: 'Set a Wallet of Satoshi address first.' }),
-    ).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Set a username first.' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Set up your wallet first.' })).toBeNull();
+  });
+
+  it('can charge with a verified wallet and a username', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
+    renderWithLocale(<PosAmount />);
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Set up your wallet first.' })).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('maps the wallet-required and cannot-receive create answers', async () => {
+    const answers = [
+      [412, 'Set up your wallet first.'],
+      [422, 'Your wallet cannot receive this payment right now. Please try again later.'],
+    ] as const;
+    for (const [status, copy] of answers) {
+      cleanup();
+      useAuthStore.setState({ session: 'tok', account: ACCOUNT });
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return jsonResponse({ error: 'nope' }, status);
+          }
+          return jsonResponse({ charge: null, history: [] });
+        }),
+      );
+      renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      expect((await screen.findByRole('alert')).textContent).toBe(copy);
+    }
   });
 
   it('shows the QR on a phone', async () => {
@@ -604,11 +655,10 @@ describe('PosScreen', () => {
     expect(await screen.findByRole('alert')).toBeTruthy();
   });
 
-  it('maps already-open, username, address, and unknown create errors', async () => {
+  it('maps already-open, username, and unknown create errors', async () => {
     const errors = [
       ['A payment is already open', 'already open'],
       ['Set a username first', 'username first'],
-      ['Set a Wallet of Satoshi address first', 'Wallet of Satoshi'],
       ['nope', 'unavailable'],
     ] as const;
     for (const [apiError, needle] of errors) {
@@ -1075,5 +1125,18 @@ describe('PosScreen', () => {
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/pos');
     });
+  });
+
+  it('sends a member without a verified wallet back to the QR page', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...ACCOUNT, sparkWalletVerified: false },
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
+    renderWithLocale(<PosAmount />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/pos');
+    });
+    expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
   });
 });

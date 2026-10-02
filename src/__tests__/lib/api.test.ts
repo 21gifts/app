@@ -59,7 +59,6 @@ import {
   finishPasskeySeed,
   isUnknownCredentialError,
   isWrongAccountError,
-  LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
   UNKNOWN_CREDENTIAL_ERROR,
   UnknownCredentialError,
   WRONG_ACCOUNT_ERROR,
@@ -86,6 +85,11 @@ import {
   postMessage,
   fetchComposeTarget,
   NoteDeletedError,
+  WALLET_REQUIRED_STATUS,
+  CANNOT_RECEIVE_STATUS,
+  WalletRequiredError,
+  CannotReceiveError,
+  throwIfWalletAnswer,
   postMessageInvoice,
   getRepayment,
   postRepaymentInvoice,
@@ -100,17 +104,14 @@ import {
   postPasskeyRenewReport,
   agreeToRules,
   putAboutMe,
-  setLightningAddress,
   setLocation,
   setName,
   setUsername,
   putWallet,
   skipSetup,
-  resolveLightningAddress,
   startPasskeyAuthentication,
   startPasskeyRegistration,
   startPasskeySeed,
-  unlinkLightningAddress,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 
@@ -629,6 +630,27 @@ describe('setName', () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setName('sess', 'x')).rejects.toThrow();
   });
+
+  it('rewrites Lightning Address jargon to address', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Lightning Address is taken' } });
+    await expect(setName('sess', 'x')).rejects.toThrow('address is taken');
+  });
+
+  it('rewrites login, payment, and Bitcoin jargon', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'LNURL-auth, LNURL auth, and LNURL failed for this Lightning invoice' },
+    });
+    await expect(setName('sess', 'x')).rejects.toThrow(
+      'login, login, and login failed for this Bitcoin payment',
+    );
+  });
+
+  it('rewrites an upstream-unreachable error', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Upstream api unreachable' } });
+    await expect(setName('sess', 'x')).rejects.toThrow('Something went wrong. Please try again.');
+  });
 });
 
 describe('setUsername', () => {
@@ -756,116 +778,6 @@ describe('setLocation', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setLocation('sess', 'x')).rejects.toThrow();
-  });
-});
-
-describe('setLightningAddress', () => {
-  it('posts the address and returns the validated account', async () => {
-    const linked = { ...account, lightningAddress: null };
-    const fetchMock = stubFetch({ ok: true, status: 200, body: linked });
-
-    await expect(setLightningAddress('sess', 'me@walletofsatoshi.com')).resolves.toEqual(linked);
-    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address`, {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer sess',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ address: 'me@walletofsatoshi.com' }),
-    });
-  });
-
-  it('throws the api error message on a 400', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Invalid Lightning Address' } });
-    await expect(setLightningAddress('sess', 'nope')).rejects.toThrow(
-      'That Wallet of Satoshi address is not valid',
-    );
-  });
-
-  it('throws the not-found message when the address could not be resolved', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: 'Lightning Address could not be resolved' },
-    });
-    await expect(setLightningAddress('sess', 'you@walletofsatoshi.com')).rejects.toThrow(
-      'That Wallet of Satoshi address could not be found',
-    );
-  });
-
-  it('rewrites remaining Lightning jargon in a 400', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Lightning Address is taken' } });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Wallet of Satoshi address is taken',
-    );
-  });
-
-  it('falls back when a 400 body is not an error envelope', async () => {
-    stubFetch({ ok: false, status: 400, body: {} });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Could not save your Wallet of Satoshi address',
-    );
-  });
-
-  it('falls back when a 400 body is not JSON', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 400,
-        json: () => Promise.reject(new SyntaxError('not json')),
-      } as unknown as Response),
-    );
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Could not save your Wallet of Satoshi address',
-    );
-  });
-
-  it('throws on a non-400 non-ok response', async () => {
-    stubFetch({ ok: false, status: 500, body: {} });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow(
-      'Could not save your Wallet of Satoshi address',
-    );
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
-    await expect(setLightningAddress('sess', 'x')).rejects.toThrow();
-  });
-
-  it('throws the exact not-zap English string without rewriting', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: LIGHTNING_ADDRESS_NOT_ZAP_ERROR },
-    });
-    await expect(setLightningAddress('sess', 'nozap@walletofsatoshi.com')).rejects.toThrow(
-      LIGHTNING_ADDRESS_NOT_ZAP_ERROR,
-    );
-  });
-});
-
-describe('unlinkLightningAddress', () => {
-  it('deletes the address and returns the validated account', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: account });
-
-    await expect(unlinkLightningAddress('sess')).resolves.toEqual(account);
-    expect(fetchMock).toHaveBeenCalledWith(`/me/lightning-address`, {
-      method: 'DELETE',
-      headers: { Authorization: 'Bearer sess' },
-    });
-  });
-
-  it('throws on a non-ok response', async () => {
-    stubFetch({ ok: false, status: 500, body: {} });
-    await expect(unlinkLightningAddress('sess')).rejects.toThrow(
-      'Could not remove your Wallet of Satoshi address',
-    );
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
-    await expect(unlinkLightningAddress('sess')).rejects.toThrow();
   });
 });
 
@@ -1024,75 +936,6 @@ describe('agreeToRules', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(agreeToRules('sess')).rejects.toThrow();
-  });
-});
-
-describe('resolveLightningAddress', () => {
-  const resolved = {
-    address: 'me@walletofsatoshi.com',
-    callback: 'https://walletofsatoshi.com/lnurlp/callback',
-    minSendable: 1000,
-    maxSendable: 100_000_000,
-  };
-
-  it('returns the validated metadata and encodes the address', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: resolved });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).resolves.toEqual(resolved);
-    expect(fetchMock).toHaveBeenCalledWith(
-      `/lightning-address?address=${encodeURIComponent('me@walletofsatoshi.com')}`,
-    );
-  });
-
-  it('throws the api error message on a 400', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: 'Not a valid Lightning Address (expected name@domain)' },
-    });
-    await expect(resolveLightningAddress('nope')).rejects.toThrow(
-      'Enter an address like you@walletofsatoshi.com',
-    );
-  });
-
-  it('throws the api error message on a 502', async () => {
-    stubFetch({
-      ok: false,
-      status: 502,
-      body: { error: 'Lightning Address could not be resolved' },
-    });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'That Wallet of Satoshi address could not be found',
-    );
-  });
-
-  it('rewrites an upstream-unreachable 502', async () => {
-    stubFetch({
-      ok: false,
-      status: 502,
-      body: { error: 'Upstream api unreachable' },
-    });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Something went wrong. Please try again.',
-    );
-  });
-
-  it('falls back when a 502 body is not an error envelope', async () => {
-    stubFetch({ ok: false, status: 502, body: { error: 123 } });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Could not find that Wallet of Satoshi address',
-    );
-  });
-
-  it('throws on a non-api-message non-ok response', async () => {
-    stubFetch({ ok: false, status: 500, body: {} });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow(
-      'Could not find that Wallet of Satoshi address',
-    );
-  });
-
-  it('throws when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { address: 'x' } });
-    await expect(resolveLightningAddress('me@walletofsatoshi.com')).rejects.toThrow();
   });
 });
 
@@ -1949,6 +1792,38 @@ const LEDGER = {
   next: { dayIndex: 0, sats: 21, recipientAccountId: '11111111-1111-4111-8111-111111111111' },
 };
 
+describe('wallet answers', () => {
+  it('names the wallet statuses', () => {
+    expect(WALLET_REQUIRED_STATUS).toBe(412);
+    expect(CANNOT_RECEIVE_STATUS).toBe(422);
+  });
+
+  it('builds typed errors with stable names and messages', () => {
+    const required = new WalletRequiredError();
+    expect(required).toBeInstanceOf(Error);
+    expect(required.name).toBe('WalletRequiredError');
+    expect(required.message).toBe('wallet_required');
+    const cannot = new CannotReceiveError();
+    expect(cannot).toBeInstanceOf(Error);
+    expect(cannot.name).toBe('CannotReceiveError');
+    expect(cannot.message).toBe('cannot_receive');
+  });
+
+  it('throws WalletRequiredError for a 412 response', () => {
+    expect(() => throwIfWalletAnswer({ status: 412 } as Response)).toThrow(WalletRequiredError);
+  });
+
+  it('throws CannotReceiveError for a 422 response', () => {
+    expect(() => throwIfWalletAnswer({ status: 422 } as Response)).toThrow(CannotReceiveError);
+  });
+
+  it('passes other statuses through', () => {
+    for (const status of [200, 400, 404, 409, 500]) {
+      expect(() => throwIfWalletAnswer({ status } as Response)).not.toThrow();
+    }
+  });
+});
+
 describe('getRepayment', () => {
   it('returns the public ledger and null when it is missing or unusable', async () => {
     stubFetch({ ok: true, status: 200, body: LEDGER });
@@ -2005,6 +1880,16 @@ describe('postRepaymentInvoice', () => {
     await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
+  });
+
+  it('throws WalletRequiredError on 412', async () => {
+    stubFetch({ ok: false, status: 412, body: { error: 'wallet required' } });
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(WalletRequiredError);
+  });
+
+  it('throws CannotReceiveError on 422', async () => {
+    stubFetch({ ok: false, status: 422, body: { error: 'cannot receive' } });
+    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(CannotReceiveError);
   });
 });
 
@@ -2150,6 +2035,16 @@ describe('postMessageInvoice', () => {
     await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
+  });
+
+  it('throws WalletRequiredError on 412', async () => {
+    stubFetch({ ok: false, status: 412, body: { error: 'wallet required' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(WalletRequiredError);
+  });
+
+  it('throws CannotReceiveError on 422', async () => {
+    stubFetch({ ok: false, status: 422, body: { error: 'cannot receive' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(CannotReceiveError);
   });
 });
 
@@ -3965,6 +3860,20 @@ describe('postConversationInvoice', () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toThrow(
       'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('throws WalletRequiredError on 412', async () => {
+    stubFetch({ ok: false, status: 412, body: { error: 'wallet required' } });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toBeInstanceOf(
+      WalletRequiredError,
+    );
+  });
+
+  it('throws CannotReceiveError on 422', async () => {
+    stubFetch({ ok: false, status: 422, body: { error: 'cannot receive' } });
+    await expect(postConversationInvoice('sess', 'c1', 21)).rejects.toBeInstanceOf(
+      CannotReceiveError,
     );
   });
 });
@@ -5856,7 +5765,6 @@ describe('sunday write header', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: named });
     await setName('sess', 'Ada', 'setup');
     await setUsername('sess', 'ada', 'setup');
-    await setLightningAddress('sess', 'ada@walletofsatoshi.com', 'setup');
     await setName('sess', 'Ada', 'enforce');
     const headersOf = (index: number): Record<string, string> => {
       const init = fetchMock.mock.calls[index]?.[1] as { headers: Record<string, string> };
@@ -5864,8 +5772,7 @@ describe('sunday write header', () => {
     };
     expect(headersOf(0)).not.toHaveProperty('Time-Zone');
     expect(headersOf(1)).not.toHaveProperty('Time-Zone');
-    expect(headersOf(2)).not.toHaveProperty('Time-Zone');
-    expect(headersOf(3)['Time-Zone']).toBe('Europe/Zurich');
+    expect(headersOf(2)['Time-Zone']).toBe('Europe/Zurich');
   });
 });
 

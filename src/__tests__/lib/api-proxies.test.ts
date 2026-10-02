@@ -19,7 +19,6 @@ import {
   proxyVerifyGet,
   proxyMePasskeyRenewAckPost,
   proxyMePasskeyRenewReportPost,
-  proxyLightningAddressGet,
   proxyGiftsGet,
   proxyGiftsStatsGet,
   proxyMeActivityGet,
@@ -32,8 +31,6 @@ import {
   proxyMeFiatPost,
   proxyMeLocalePost,
   proxyMeNotificationLevelPost,
-  proxyMeLightningAddressDelete,
-  proxyMeLightningAddressPost,
   proxyMeLocationPost,
   proxyMeAboutPhotoGet,
   proxyProfilePhotoGet,
@@ -433,22 +430,6 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/fiat');
   });
 
-  it('proxyMeLightningAddressPost hits POST /me/lightning-address', async () => {
-    const fetchMock = stubApi();
-    await proxyMeLightningAddressPost(
-      new Request('http://localhost/me/lightning-address', { method: 'POST', body: '{}' }),
-    );
-    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
-  });
-
-  it('proxyMeLightningAddressDelete hits DELETE /me/lightning-address', async () => {
-    const fetchMock = stubApi();
-    await proxyMeLightningAddressDelete(
-      new Request('http://localhost/me/lightning-address', { method: 'DELETE' }),
-    );
-    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('DELETE');
-  });
-
   it('proxyMeRulesAgreementPost hits POST /me/rules-agreement', async () => {
     const fetchMock = stubApi();
     await proxyMeRulesAgreementPost(
@@ -456,14 +437,6 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/rules-agreement');
-  });
-
-  it('proxyLightningAddressGet hits /lightning-address', async () => {
-    const fetchMock = stubApi();
-    await proxyLightningAddressGet(
-      new Request('http://localhost/lightning-address?address=a@b.com'),
-    );
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/lightning-address');
   });
 
   it('proxyGiftsStatsGet hits /gifts/stats', async () => {

@@ -49,15 +49,15 @@ const named = {
   missing: ['lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
 
-const namedAddress = {
+const namedUsername = {
   ...named,
-  lightningAddress: null,
+  username: 'ada',
   setup: 'rules' as const,
   missing: ['rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
 
 const complete = {
-  ...namedAddress,
+  ...namedUsername,
   rulesAgreedAt: 1_700_000_001,
   setup: null,
   missing: [] as ('name' | 'lightning-address' | 'rules')[],
@@ -252,7 +252,7 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('sends a named account from the name screen to the address screen', async () => {
+  it('sends a named account from the name screen to the username screen', async () => {
     useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
       <OnboardingGate screen="name">
@@ -260,40 +260,39 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/setup/address');
+      expect(replace).toHaveBeenCalledWith('/setup/username');
     });
   });
 
-  it('renders address children when the account has a name and no address', async () => {
+  it('renders username children when the account has a name and no username', async () => {
     useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
-      <OnboardingGate screen="address">
-        <p>address-ui</p>
+      <OnboardingGate screen="username">
+        <p>username-ui</p>
       </OnboardingGate>,
     );
-    expect(await screen.findByText('address-ui')).toBeTruthy();
+    expect(await screen.findByText('username-ui')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('sends name+address without agreement from the address screen to rules', async () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: namedAddress,
-    });
+  it('sends a named account with a username from the username screen to rules, without an address step', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...named, username: 'ada' } });
     renderWithLocale(
-      <OnboardingGate screen="address">
-        <p>address-ui</p>
+      <OnboardingGate screen="username">
+        <p>username-ui</p>
       </OnboardingGate>,
     );
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
+    expect(replace).not.toHaveBeenCalledWith('/setup/address');
+    expect(screen.queryByText('username-ui')).toBeNull();
   });
 
-  it('sends name+address without agreement from welcome to rules', async () => {
+  it('sends name+username without agreement from welcome to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: namedAddress,
+      account: namedUsername,
     });
     renderWithLocale(
       <OnboardingGate screen="welcome">
@@ -305,10 +304,10 @@ describe('OnboardingGate', () => {
     });
   });
 
-  it('sends name+address without agreement from profile to rules', async () => {
+  it('sends name+username without agreement from profile to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: namedAddress,
+      account: namedUsername,
     });
     renderWithLocale(
       <OnboardingGate screen="profile">
@@ -320,10 +319,10 @@ describe('OnboardingGate', () => {
     });
   });
 
-  it('renders rules children when name and address are saved but agreement is missing', async () => {
+  it('renders rules children when name and username are saved but agreement is missing', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: namedAddress,
+      account: namedUsername,
     });
     renderWithLocale(
       <OnboardingGate screen="rules">
@@ -334,7 +333,7 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('renders welcome children when name, address, and agreement are saved', async () => {
+  it('renders welcome children when name, username, and agreement are saved', async () => {
     useAuthStore.setState({ session: 'tok', account: complete });
     renderWithLocale(
       <OnboardingGate screen="welcome">
@@ -345,7 +344,7 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('renders profile children when name, address, and agreement are saved', async () => {
+  it('renders profile children when name, username, and agreement are saved', async () => {
     useAuthStore.setState({ session: 'tok', account: complete });
     renderWithLocale(
       <OnboardingGate screen="profile">
@@ -365,7 +364,7 @@ describe('OnboardingGate', () => {
     expect(replace).toHaveBeenCalledWith('/login');
   });
 
-  it('sends a named account without an address from profile to the address screen', async () => {
+  it('sends a named account without a username from profile to the username screen', async () => {
     useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
       <OnboardingGate screen="profile">
@@ -373,7 +372,7 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/setup/address');
+      expect(replace).toHaveBeenCalledWith('/setup/username');
     });
   });
 

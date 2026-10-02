@@ -60,7 +60,6 @@ app/
 │   │   ├── setup/
 │   │   │   ├── name/page.tsx    # GET /setup/name — first onboarding step
 │   │   │   ├── username/page.tsx # GET /setup/username — unique @21.gifts handle
-│   │   │   ├── address/page.tsx # GET /setup/address — Wallet of Satoshi link
 │   │   │   └── rules/page.tsx   # GET /setup/rules — agree to living-room rules
 │   │   ├── me/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
@@ -71,7 +70,6 @@ app/
 │   │   │   ├── about/photo/route.ts  # GET /me/about/photo same-origin proxy
 │   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
-│   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
 │   │   │   ├── notification-level/route.ts  # POST /me/notification-level
@@ -157,7 +155,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   ├── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional this-device On/Off pill
+│   │   │   ├── page.tsx         # GET /profile — signed-in name + location + notification level + optional this-device On/Off pill
 │   │   │   └── apply/page.tsx   # GET /profile/apply — redirect to /grants/apply
 │   │   ├── grants/
 │   │   │   ├── page.tsx         # GET /grants — grant status and the staff queue link
@@ -216,7 +214,7 @@ app/
 │   │   ├── ShopStickerOverlay.tsx # Member-profile shop sticker preview, second language, PDF/PNG/JPG/SVG download
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location + 21.gifts address + notification level + optional this-device On/Off + language + theme + fiat + number format)
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, send, receive, payments list while ready, recovery entry)
 │   │   ├── WalletScreenView.tsx # Wallet card and the visible one-step Back
 │   │   ├── WalletBalance.tsx    # /wallet balance block (locked / connecting / ready / error)
@@ -247,7 +245,7 @@ app/
 │   │   ├── MemberProfileScreen.tsx # Member identity card + About me + location + activity feeds
 │   │   ├── UsernameSetup.tsx    # Onboarding unique @21.gifts username (no Skip)
 │   │   ├── UsernameForm.tsx     # Username field + Continue (setup + overlay)
-│   │   ├── RequirementsOverlay.tsx # Add name, username, Wallet of Satoshi address, or agree to rules before retrying a post
+│   │   ├── RequirementsOverlay.tsx # Add name or username, agree to rules, or explain the missing wallet before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
@@ -324,7 +322,8 @@ app/
 │   │   ├── note-language.ts     # Small deterministic forum-note language detector
 │   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
 │   │   ├── note-links.ts        # splitNoteLinks + isInternalAppUrl for note bodies
-│   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
+│   │   ├── payment-link.ts      # Generic lightning: link + smartphone detection (public pay link)
+│   │   ├── project-donate.ts    # Donation address: platform account username @ app host
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
@@ -445,8 +444,8 @@ update stuff
 - **Path alias `@/`** points at `src/` (configured in `tsconfig.json` and `vitest.config.ts`)
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
   `process.env` directly in components. Required accessors throw on missing
-  values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`) return
-  `null`. No silent fallbacks.
+  values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
+  `getPlatformUsername`) return `null`. No silent fallbacks.
 - **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
 
 ### Styling
@@ -529,8 +528,7 @@ runtime — no silent English fallback.
 New or changed visitor-facing copy goes through a catalog key in the **same
 PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
 catalogize): legal body copy (English), handbook markdown bodies for Functions
-and Endpoints, handbook chapter-navigation labels (English), product tokens such as
-`Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
+and Endpoints, handbook chapter-navigation labels (English), product tokens such as `GitHub`, language-switcher endonym labels (`English` /
 `Deutsch` / `Español` / `Filipino`), stats body copy (English), and
 document/social metadata (`title`, `description`, Open Graph alt text —
 English).
@@ -547,9 +545,9 @@ every locale shows the catalog label.
 The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 **binding** rule. New work follows that table, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, **Unlock wallet**, pay-sheet **Pay from wallet**, wallet send **Continue**, **Send**, and **Done**, **Set up wallet**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum Post-path + contact + inbox composers), copy, dismiss, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, **translate** (Languages icon in the footer icon row, `forum.translate`), Menu **row** icons (the Menu _trigger_ stays labeled). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. The wallet send step Close is the same `X` with `wallet.sendCancel` (“Cancel”). |
+| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, **Unlock wallet**, pay-sheet **Pay from wallet**, wallet send **Continue**, **Send**, and **Done**, **Set up wallet**, **Activate**, pay-link **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with a Bitcoin wallet app”; a `Button` that sets `location.href` to a generic `lightning:` link, not a `ButtonLink`), pay-slot **Try again** (`wallet.payRetry`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum Post-path + contact + inbox composers), copy, dismiss, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, **translate** (Languages icon in the footer icon row, `forum.translate`), Menu **row** icons (the Menu _trigger_ stays labeled). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. The wallet send step Close is the same `X` with `wallet.sendCancel` (“Cancel”). |
 
 Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay the same Languages icon. The accessible name is the only label; no visible text.
 
@@ -573,7 +571,7 @@ Reviewers follow `REVIEW.md` and `docs/ui.md`.
 
 ### One back (hard requirement)
 
-Every screen in the app has exactly one back control. It is the top-left arrow beside the wordmark, including marketing pages, login, donate, the pay link, the public profile, setup name, username, and address, an unsigned public note, and the 404 page. A second back arrow, back link, or back button anywhere else — in the card, footer, wizard, sheet, 404 body, or any other region — is absolutely forbidden. That arrow returns to the in-app view this tab showed immediately before the current one. It does not jump to a fixed parent and it does not leave the site. If this tab has no earlier in-app view, the arrow opens the forum (`/welcome`). `/welcome` itself omits the arrow only when this tab has no earlier view, because that fallback would be the current page; an ask-wizard step still uses that same slot. The wordmark is not that control. A dismiss that stays on the same view is a close icon (`X`), not a back arrow. A handbook lightbox control that shows the previous image stays on the same view and is not a back control. An in-page step (wallet recovery words, wallet Advanced functions, a later rules-setup chapter, an ask-wizard step) is the previously displayed view: the same top-left arrow performs that step and is not joined by a second arrow. A new back control anywhere but that top-left arrow is an undeclared deviation. `npm run lint` runs `scripts/check-one-back.mjs`.
+Every screen in the app has exactly one back control. It is the top-left arrow beside the wordmark, including marketing pages, login, donate, the pay link, the public profile, setup name and username, an unsigned public note, and the 404 page. A second back arrow, back link, or back button anywhere else — in the card, footer, wizard, sheet, 404 body, or any other region — is absolutely forbidden. That arrow returns to the in-app view this tab showed immediately before the current one. It does not jump to a fixed parent and it does not leave the site. If this tab has no earlier in-app view, the arrow opens the forum (`/welcome`). `/welcome` itself omits the arrow only when this tab has no earlier view, because that fallback would be the current page; an ask-wizard step still uses that same slot. The wordmark is not that control. A dismiss that stays on the same view is a close icon (`X`), not a back arrow. A handbook lightbox control that shows the previous image stays on the same view and is not a back control. An in-page step (wallet recovery words, wallet Advanced functions, a later rules-setup chapter, an ask-wizard step) is the previously displayed view: the same top-left arrow performs that step and is not joined by a second arrow. A new back control anywhere but that top-left arrow is an undeclared deviation. `npm run lint` runs `scripts/check-one-back.mjs`.
 
 ### Staff actions (hard requirement)
 
@@ -591,38 +589,45 @@ Signed in, the code is the currency stored for that person. `useFiatPreference` 
 
 The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the latest gift-day rate (`useLatestRateDay`). A missing or unusable rate is the only reason the fiat line is absent. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `REVIEW.md`.
 
-### Payment QR vs deep links (hard requirement)
+### Payment QR vs wallet links (hard requirement)
+
+The in-app wallet is the only wallet. A member's only address is
+`<username>@<app host>`. No screen names, links to, or opens another wallet
+app on a member's behalf, and members cannot link an external address.
 
 A smartphone shows the same payment QR as a desktop for the profile,
 member, public view, and point of sale. The Shop sticker is
 shown wherever that profile QR is shown.
 
-A specific invoice is different. Paying one on a smartphone is the
-wallet deep link only. The forum post pay sheet (`ForumBoard`, including
-the composer pay slot), the inbox pay sheet (`InboxScreen`), and the
-public pay link (`PayLinkScreen`, the open till and **Continue**) do not
-mount the invoice `QrCode` on a smartphone. The wallet button still opens
-Wallet of Satoshi (`walletofsatoshi:` on iOS, Android Intent on
-Android). Desktop and iPad show that invoice QR and the same button.
-The forum amount step is Continue on every user agent, then the same
-invoice card.
+A specific invoice is different. Member pay sheets — the forum post pay
+sheet (`ForumBoard`, including the composer pay slot for the posting fee and
+today's repayment), the reply pay page (`ForumReplyPayPage`), and the inbox
+pay sheet (`InboxScreen`) — pay from the member's in-app wallet only
+(`WalletPay`: the `sparkInvoice` when the api issued one, otherwise the
+payment request). A locked wallet is opened with one passkey prompt. They
+never mount the invoice `QrCode` and never show a button to another wallet
+app, on any user agent. Without a usable wallet they say so; there is no
+fallback.
+
+The public pay link (`PayLinkScreen`, used by people without an account,
+the open till and **Continue**) hands its invoice to the visitor's own
+Bitcoin wallet app with a generic `lightning:` link (`lightningHref`) on
+**Pay**. Desktop and iPad also show that invoice QR. A smartphone does not
+mount it.
 
 Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
 (iPhone, iPod, or Android **with** `Mobile`). Do **not** use viewport
 width: a narrow MacBook window is still a desktop. iPad is not a
 smartphone.
 
-When an invoice carries a `sparkInvoice` and the member's in-app wallet
-can be used, the forum and inbox pay sheets (not the public pay link) pay
-from that wallet and show neither the invoice QR nor the wallet button on
-any user agent. The rules above stay the fallback whenever the in-app path
-is not used. The address QR shown when the wallet balance is too low is the
-member's own profile QR and follows the profile rule.
+The address QR shown when the wallet balance is too low is the member's own
+profile QR and follows the profile rule.
 
-Mounting any of those invoice QRs on a smartphone UA is an undeclared
-deviation and is rejected. Hiding a profile, member, public view, or
-point of sale QR on a smartphone UA is also rejected. Reviewers
-follow `REVIEW.md`.
+Mounting an invoice QR on a member pay sheet, mounting the public pay-link
+invoice QR on a smartphone UA, or adding a link or button to a named wallet
+app is an undeclared deviation and is rejected. Hiding a profile, member,
+public view, or point of sale QR on a smartphone UA is also rejected.
+Reviewers follow `REVIEW.md`.
 
 ### Handbook (hard requirement)
 
@@ -836,6 +841,13 @@ passed only by the staging deploy (see [Breez SDK Spark](#breez-sdk-spark)).
 It is inlined at `next build`, is not an `entrypoint.sh` placeholder, and an
 unset or empty value still builds.
 
+`PLATFORM_USERNAME` is a Docker **build-arg** (default empty), inlined at
+`next build` as `NEXT_PUBLIC_PLATFORM_USERNAME` and read through
+`getPlatformUsername()`. It is the username of the 21.gifts platform account;
+the landing page shows that account's wallet address `<username>@<host>` for
+donations to the project. Empty hides the donation section. Playwright builds
+set it to `21gifts`. No deploy workflow passes it yet.
+
 ## CI / CD
 
 | Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                    |
@@ -866,8 +878,9 @@ and fails if that run does not succeed. The wait is what makes a failed DEV depl
 ## Breez SDK Spark
 
 The app reads the key as `NEXT_PUBLIC_BREEZ_API_KEY` through `getBreezApiKey()`.
-It is inlined at `next build`. Unset or empty means the in-app wallet is
-disabled and the app behaves as before. Local use:
+It is inlined at `next build`. Unset or empty disables the in-app wallet. It
+is the only wallet, so members then cannot pay from the app: the pay sheets say
+that the wallet is not available here. Local use:
 `NEXT_PUBLIC_BREEZ_API_KEY=<key> npm run dev`. Playwright and CI builds leave
 it unset. No deploy workflow passes it yet, so neither deployment has the
 wallet enabled.

@@ -1,8 +1,14 @@
 import { cleanup, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Home, { metadata as homeMetadata } from '@/app/(marketing)/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const headerGet = vi.fn<(name: string) => string | null>();
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => ({ get: headerGet })),
+}));
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -23,7 +29,25 @@ vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn().mockReturnValue(false),
 }));
 
-afterEach(cleanup);
+/**
+ * Answers `headers().get` from a plain map; absent names read as `null`.
+ *
+ * @param values - Request headers by lowercase name.
+ */
+function setRequestHeaders(values: Record<string, string>): void {
+  headerGet.mockImplementation((name) => values[name] ?? null);
+}
+
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_PLATFORM_USERNAME', '21gifts');
+  setRequestHeaders({ host: '21.gifts' });
+});
+
+afterEach(() => {
+  cleanup();
+  headerGet.mockReset();
+  vi.unstubAllEnvs();
+});
 
 describe('Home', () => {
   it('renders the product headline', async () => {
@@ -75,14 +99,58 @@ describe('Home', () => {
     expect(screen.getByRole('heading', { name: 'Donate to this project' })).toBeTruthy();
   });
 
-  it('exposes the project Wallet of Satoshi address as a lightning link', async () => {
+  it('shows the in-app wallet address as the step 2 example', async () => {
     renderWithLocale(await Home());
-    const link = screen.getByRole('link', { name: '21gifts@walletofsatoshi.com' });
-    expect(link.getAttribute('href')).toBe('lightning:21gifts@walletofsatoshi.com');
+    expect(screen.getByText('you@21.gifts').tagName).toBe('CODE');
+  });
+
+  it('exposes the project address on the request host as a lightning link', async () => {
+    renderWithLocale(await Home());
+    const link = screen.getByRole('link', { name: '21gifts@21.gifts' });
+    expect(link.getAttribute('href')).toBe('lightning:21gifts@21.gifts');
     expect(link.className).toContain('text-accent');
     expect(link.className).toContain('underline-offset-2');
     const code = link.querySelector('code');
-    expect(code?.textContent).toBe('21gifts@walletofsatoshi.com');
+    expect(code?.textContent).toBe('21gifts@21.gifts');
     expect(code?.className).toContain('font-mono');
+    expect(document.getElementById('project')).not.toBeNull();
+  });
+
+  it('prefers the first forwarded host without its port', async () => {
+    setRequestHeaders({
+      'x-forwarded-host': 'dev.21.gifts:8443, proxy.internal',
+      host: 'localhost:3000',
+    });
+    renderWithLocale(await Home());
+    const link = screen.getByRole('link', { name: '21gifts@dev.21.gifts' });
+    expect(link.getAttribute('href')).toBe('lightning:21gifts@dev.21.gifts');
+  });
+
+  it('strips the port from the host header', async () => {
+    setRequestHeaders({ host: 'dev.21.gifts:3000' });
+    renderWithLocale(await Home());
+    expect(screen.getByRole('link', { name: '21gifts@dev.21.gifts' })).toBeTruthy();
+  });
+
+  it('falls back to 21.gifts when the request names no host', async () => {
+    setRequestHeaders({});
+    renderWithLocale(await Home());
+    const link = screen.getByRole('link', { name: '21gifts@21.gifts' });
+    expect(link.getAttribute('href')).toBe('lightning:21gifts@21.gifts');
+  });
+
+  it('hides the project section when the platform username is unset', async () => {
+    vi.stubEnv('NEXT_PUBLIC_PLATFORM_USERNAME', undefined);
+    renderWithLocale(await Home());
+    expect(document.getElementById('project')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Donate to this project' })).toBeNull();
+    expect(document.querySelector('a[href^="lightning:"]')).toBeNull();
+  });
+
+  it('does not name any other wallet app', async () => {
+    renderWithLocale(await Home());
+    expect(document.body.textContent).not.toMatch(
+      new RegExp(['wallet', 'of', 'satoshi'].join(' '), 'i'),
+    );
   });
 });
