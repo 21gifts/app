@@ -353,33 +353,30 @@ export function DailyPaymentCommentScreen(): ReactElement | null {
             </IconButton>
           </form>
         ) : (
-          <div className="flex w-full flex-col gap-1 text-left text-sm text-app-fg">
-            <p>{t('funding.daily.commentLabel')}</p>
-            <div className="flex items-start gap-2">
-              <p
-                className={
-                  roster.comment.trim() === ''
-                    ? 'min-w-0 flex-1 whitespace-pre-wrap text-sm text-app-muted'
-                    : 'min-w-0 flex-1 whitespace-pre-wrap text-sm text-app-fg'
-                }
-              >
-                {roster.comment.trim() === '' ? t('funding.daily.commentEmpty') : roster.comment}
-              </p>
-              <IconButton
-                type="button"
-                variant="secondary"
-                size="md"
-                aria-label={t('funding.daily.editComment')}
-                disabled={pending}
-                onClick={() => {
-                  setComment(roster.comment);
-                  setEditing(true);
-                  load.setSaveError(null);
-                }}
-              >
-                <Pencil aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
-            </div>
+          <div className="flex w-full items-start gap-2 text-left">
+            <p
+              className={
+                roster.comment.trim() === ''
+                  ? 'min-w-0 flex-1 whitespace-pre-wrap text-sm text-app-muted'
+                  : 'min-w-0 flex-1 whitespace-pre-wrap text-sm text-app-fg'
+              }
+            >
+              {roster.comment.trim() === '' ? t('funding.daily.commentEmpty') : roster.comment}
+            </p>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              aria-label={t('funding.daily.editComment')}
+              disabled={pending}
+              onClick={() => {
+                setComment(roster.comment);
+                setEditing(true);
+                load.setSaveError(null);
+              }}
+            >
+              <Pencil aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
           </div>
         )}
       </>
@@ -481,9 +478,9 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
             {t(saveError)}
           </p>
         )}
-        <h2 className="text-center text-sm font-semibold tracking-wide text-app-muted uppercase">
+        <p className="text-center text-xs font-medium tracking-widest uppercase text-app-subtle">
           {t('funding.daily.recipients')}
-        </h2>
+        </p>
         <div
           role="group"
           aria-label={t('funding.daily.payments')}
@@ -572,7 +569,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                     </form>
                   ) : (
                     <div className="flex w-full items-center gap-2">
-                      <p className="min-w-0 flex-1 text-sm text-app-fg">
+                      <p className="min-w-0 flex-1 text-sm font-semibold tabular-nums lining-nums text-app-fg">
                         {formatUsdDisplay(String(row.amountUsd), numberFormat)}
                       </p>
                       <IconButton
@@ -608,7 +605,9 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
             })}
             <li className="flex w-full items-baseline justify-between gap-3 px-4 text-sm text-app-fg">
               <span>{t('funding.daily.total')}</span>
-              <span>{formatUsdTotal(roster, numberFormat)}</span>
+              <span className="font-semibold tabular-nums lining-nums">
+                {formatUsdTotal(roster, numberFormat)}
+              </span>
             </li>
           </ul>
         )}
