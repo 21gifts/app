@@ -132,7 +132,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, the people-count chart on `/statistics` (every signed-in role, no goal), and the staff payout-goal widget on `/moderate`.
+- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, the people-count chart on `/statistics` (every visitor, including signed-out, no goal), and the staff payout-goal widget on `/moderate`.
 - **Auth:** Public.
 
 ## Endpoint: GET /shops/activity
