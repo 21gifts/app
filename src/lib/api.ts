@@ -2708,7 +2708,8 @@ export async function getRepayment(messageId: string): Promise<RepaymentLedger |
  *
  * @param sessionToken - Bearer session of the credit's author.
  * @param messageId - Credit note id.
- * @returns The invoice the author pays from their wallet.
+ * @returns The invoice the author pays from their wallet. The body may also
+ *   carry `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws Error with visitor copy when the api refuses.
  */
 export async function postRepaymentInvoice(

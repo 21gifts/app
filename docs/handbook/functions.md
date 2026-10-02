@@ -300,7 +300,7 @@
 - **Purpose:** Reads preferred `FiatCode` and `setFiat` from {@link FiatPreferenceProvider}.
 - **Inputs:** None (context).
 - **Returns / side effects:** `{ fiat, setFiat }`. Throws outside the provider.
-- **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `ForumBoard`, `PublicMessageLoader`, `StatsDashboard`, `DayLoader`, `WalletBalance`.
+- **Used by:** `FiatPreferenceSwitcher`, `AccountActivityChart`, `ForumBoard`, `PublicMessageLoader`, `StatsDashboard`, `DayLoader`, `WalletBalance`, `WalletPay`, `WalletSend`.
 
 ## Function: FiatPreferenceSwitcher
 
@@ -828,7 +828,7 @@
 - **Purpose:** Labeled app button with primary (filled), secondary (bordered), or accent fill. Optional `tone` `app` (default) or `dark` for marketing-ink shells (same class split as `ButtonLink`). Size `sm` / `md` / `lg` (`lg` is full width). All sizes `min-h-11`.
 - **Inputs:** Native button props plus optional `variant` (default `primary`), optional `size` (default `md`), optional `tone` (default `app`), optional leading `icon`, and `children` label. Default `type="button"`.
 - **Returns / side effects:** A `<button>` element. No network. Used across login, forum retry, public note retry, PWA install on dark shells, and forms.
-- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, `PwaInstall`, `WalletBalance`, setup and contact screens.
+- **Used by:** `PublicMessageLoader`, `LightningAddressForm`, `ForumBoard`, `PwaInstall`, `WalletBalance`, `WalletPay`, `WalletSend`, setup and contact screens.
 
 ## Function: ButtonLink
 
@@ -855,7 +855,7 @@
 - **Purpose:** Icon-only control with a required `aria-label`, variant (`primary` / `secondary` / `ghost`), size (`sm` / `md` / `lg`), and optional `tone` `app` (default) or `dark` for marketing-ink shells (ghost+dark is paper hover and `focus-visible:outline-paper`). `sm` is 24px paint with a 44px `::before` hit slop; `md` is 44px; `lg` is 48px.
 - **Inputs:** Native button props; `aria-label` is required for accessible naming. Default `variant="secondary"`, `size="md"`, `tone="app"`, `type="button"`.
 - **Returns / side effects:** A `<button>` wrapping the icon child. No network. Used for attach/post/pay/copy/dismiss controls on the forum board and the handbook copy-link on marketing ink.
-- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `HandbookLightbox`, `ContactScreen`, `NameForm`, `RulesSetup`, `HandbookCopyLink`.
+- **Used by:** `ForumBoard`, `LightningAddressForm`, `InboxScreen`, `HandbookImageViewer`, `HandbookLightbox`, `ContactScreen`, `NameForm`, `RulesSetup`, `HandbookCopyLink`, `WalletSend`.
 
 ## Function: Card
 
@@ -869,7 +869,7 @@
 - **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. `keypad` (the `/pos/amount` page only) replaces the input with a non-focusable amount and an always-visible 3-column keypad. The page heading is already **Amount**, so the keypad does not repeat it; the amount keeps that name for assistive tech. Bitcoin offers no decimal key and ignores a typed decimal. Fiat shows the number-format decimal and keeps two fraction digits. A key scales down and darkens while it is held. When the amount changes and the device can vibrate, and reduced motion is off, it vibrates for 10 ms. Other screens keep the input. Switching the keypad to fiat rewrites the draft with the number-format decimal. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
 - **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`, `layout` (`field` default, `composer`, or `inline`), optional `keypad` (default false; the `/pos/amount` page only).
 - **Returns / side effects:** A labeled input, or with `keypad` a non-focusable amount plus the keypad and no input. The keypad does not show the label again. The switch and a counter line when an amount is defined. Signed-in toggle calls `setAmountUnit`. No other network.
-- **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosAmount`.
+- **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosAmount`, `WalletSend`.
 
 ## Function: Field
 
@@ -1720,7 +1720,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists.
+- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists, and `WalletPay` for the member's own-address QR when the wallet balance is too low (also on a smartphone).
 
 ## Function: RootLayout
 
@@ -2168,7 +2168,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Formats a whole-sat amount as BIP-177 ₿-only display (leading ₿, grouping from `style`, no fraction, no “sats” unit).
 - **Inputs:** `sats` non-negative number (API `sats` / `totalSats`; chart mid-ticks may be fractional and are rounded); optional `style` `NumberFormatStyle` (default `ch`). No locale argument.
 - **Returns / side effects:** Display string such as `₿1'500` or `₿0`.
-- **Used by:** `ForumBoard`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`, `WalletBalance`.
+- **Used by:** `ForumBoard`, `AccountActivityChart`, `StatsDashboard`, `GiftDayTable`, `DayLoader`, `WalletBalance`, `WalletPay`, `WalletSend`.
 
 ## Function: isLocalSunday
 
@@ -2352,7 +2352,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Formats an API fiat amount string for stats display using the visitor grouping style. `null` becomes `—` (U+2014). USD uses `$` and PHP uses `₱`; CHF and EUR prefix the code (`CHF 1'425.00`).
 - **Inputs:** `amount` (`string | null`), `code` (`FiatCode`), and optional `style` `NumberFormatStyle` (default `ch`).
 - **Returns / side effects:** Display string such as `$1'425.00` / `CHF 1'425.00`. No `Intl.NumberFormat`. No network.
-- **Used by:** `StatsDashboard`, `GiftDayTable`, `DayLoader`.
+- **Used by:** `StatsDashboard`, `GiftDayTable`, `DayLoader`, `WalletSend`.
 
 ## Function: formatFiatTick
 
@@ -2401,7 +2401,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Latest gift-day totals for preferred-fiat conversion. Returns the `rateDay` from `useLatestRateDayState`, which skips a newer day that cannot convert the preferred currency. A failed fetch or no usable day yet resolves `null`. Changing the preferred fiat reuses the fetched series. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled. Loading and a settled missing rate are both `null`.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `WalletBalance`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `WalletBalance`, `WalletSend`.
 
 ## Function: useLatestRateDayState
 
@@ -2422,7 +2422,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Scales whole sats into a two-decimal fiat string using one gift day's totals (`Math.round` on cents).
 - **Inputs:** `sats`, `day` (`FiatRateDay | null`), `code` (`FiatCode`).
 - **Returns / side effects:** `"0.02"`-style string, or `null` when the day or that fiat is missing or the gift-day total is `"0.00"` (not a usable rate).
-- **Used by:** `ForumBoard`, `preferredFiatSuffix`, `InboxScreen`.
+- **Used by:** `ForumBoard`, `preferredFiatSuffix`, `InboxScreen`, `WalletSend`.
 
 ## Function: preferredFiatSuffix
 
@@ -2437,7 +2437,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
   A present string is formatted as-is (`rateDay` ignored). A present `null` or a missing field
   falls through to the gift-day rate.
 - **Returns / side effects:** `ReactElement | null`. No side effects.
-- **Used by:** `ForumBoard`, `InboxScreen`, `QuotedForumNote`, `PublicMessageLoader`, `WalletBalance`.
+- **Used by:** `ForumBoard`, `InboxScreen`, `QuotedForumNote`, `PublicMessageLoader`, `WalletBalance`, `WalletPay`, `WalletSend`.
 
 ## Function: ThemeProvider
 
@@ -2507,7 +2507,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads the optional Playwright clock `NEXT_PUBLIC_E2E_NOW`. Production leaves it unset.
 - **Inputs:** None.
 - **Returns / side effects:** The pinned instant, or `null` when unset or empty. Does not throw and does not invent a time. The head script then uses the device clock.
-- **Used by:** `RootLayout` for the `e2e-now` meta tag; `useWallet`, which honours its fixture pins only when it is set.
+- **Used by:** `RootLayout` for the `e2e-now` meta tag; `useWallet`, `useWalletPay`, and `useWalletSend`, which honour their fixture pins only when it is set.
 
 ## Function: getBreezApiKey
 
@@ -2696,7 +2696,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the public `username@21.gifts` address shown on profiles. Loopback hosts fall back to `21.gifts`.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `local@domain` or `null`. No I/O.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `openCryptoPayQrValue`.
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `openCryptoPayQrValue`, `WalletPay`.
 
 ## Function: encodeLnurl
 
@@ -2710,7 +2710,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the Open CryptoPay QR payload for a profile handle. Null when `giftsLightningAddress` is null.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. The browser page for that URL is `/pl`.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopStickerOverlay` (sticker QR payload).
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `WalletPay`, `ShopStickerOverlay` (sticker QR payload).
 
 ## Function: buildShopStickerSvg
 
@@ -2836,7 +2836,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Client hook returning `{ numberFormat, setNumberFormat }` from the nearest `NumberFormatProvider`. Call sites that format counts or money take this hook's style, not UI locale.
 - **Inputs:** None (React context).
 - **Returns / side effects:** Active `NumberFormatStyle` and a setter that writes the `numberFormat` cookie. Throws `useNumberFormat must be used within NumberFormatProvider` when used outside the provider.
-- **Used by:** `NumberFormatSwitcher`, `ForumBoard`, `StatsDashboard`, `DayLoader`, `AccountActivityChart`, `PublicMessageLoader`, `WalletBalance`.
+- **Used by:** `NumberFormatSwitcher`, `ForumBoard`, `StatsDashboard`, `DayLoader`, `AccountActivityChart`, `PublicMessageLoader`, `WalletBalance`, `WalletPay`, `WalletSend`.
 
 ## Function: walletOfSatoshiHref
 
@@ -5075,7 +5075,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip. A positive fiat amount whose gift-day total for that currency is missing, not finite, or zero is `no-rate`. A well-formed amount on a usable total that does not become a safe sat count is `invalid`, not `no-rate`.
 - **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, gift `day` or null, fiat `code`.
 - **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, `{ kind: 'no-rate' }`, or `{ kind: 'sats', sats }`. No I/O.
-- **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosAmount`.
+- **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosAmount`, `WalletSend`.
 
 ## Function: replySatsFromDraft
 

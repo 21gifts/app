@@ -344,7 +344,8 @@ export type WalletSendResult = { kind: 'paid' } | { kind: 'insufficient' } | { k
  *
  * - `confirm`: amount and fee to show; `send` pays it once.
  * - `insufficient`: the balance does not cover amount and fee.
- * - `failed`: the SDK could not prepare the payment.
+ * - `failed`: prepare or the balance read failed, or the connection changed
+ *   during prepare.
  * - `unlock`: no wallet connection; the member has to unlock first.
  */
 export type WalletPayResult =
