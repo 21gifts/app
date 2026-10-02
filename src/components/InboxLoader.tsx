@@ -7,6 +7,7 @@ import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/component
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import {
+  CannotReceiveError,
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
   fetchConversationMessagePhoto,
@@ -49,12 +50,16 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when a thrown value is the api author's-wallet rejection for payments.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment ({@link CannotReceiveError}, or the older message).
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
+  if (err instanceof CannotReceiveError) {
+    return true;
+  }
   /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
   if (!(err instanceof Error)) {
     return false;

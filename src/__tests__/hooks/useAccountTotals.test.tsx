@@ -99,7 +99,7 @@ beforeEach(() => {
       role: 'basis',
       name: 'Ada',
       location: null,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
@@ -215,7 +215,7 @@ describe('useAccountTotals', () => {
         account:
           state.account === null
             ? null
-            : { ...state.account, lightningAddress: 'bob@walletofsatoshi.com' },
+            : { ...state.account, lightningAddress: null },
       }));
     });
     await waitFor(() => {
@@ -284,7 +284,7 @@ describe('useAccountTotals', () => {
         account:
           state.account === null
             ? null
-            : { ...state.account, lightningAddress: 'bob@walletofsatoshi.com' },
+            : { ...state.account, lightningAddress: null },
       }));
     });
     await waitFor(() => {

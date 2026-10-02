@@ -218,7 +218,7 @@ describe('fetchViewProfile', () => {
   const profile = {
     name: 'Ada',
     location: null,
-    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddress: null,
     lightningAddressVerified: false,
     createdAt: 1,
     hasPasskey: false,
@@ -279,7 +279,7 @@ describe('fetchMember', () => {
     name: 'Carol',
     location: null,
     role: 'verified' as const,
-    lightningAddress: 'carol@walletofsatoshi.com',
+    lightningAddress: null,
     createdAt: '2026-01-15T12:00:00.000Z',
     aboutMe: null,
     aboutMeHasPhoto: false,
@@ -761,7 +761,7 @@ describe('setLocation', () => {
 
 describe('setLightningAddress', () => {
   it('posts the address and returns the validated account', async () => {
-    const linked = { ...account, lightningAddress: 'me@walletofsatoshi.com' };
+    const linked = { ...account, lightningAddress: null };
     const fetchMock = stubFetch({ ok: true, status: 200, body: linked });
 
     await expect(setLightningAddress('sess', 'me@walletofsatoshi.com')).resolves.toEqual(linked);

@@ -16,7 +16,6 @@ import {
   externalAuthorProfileSchema,
   forumPlacesResponseSchema,
   hiddenListSchema,
-  lnAddressResolvedSchema,
   lnurlInvoiceSchema,
   lnurlPayRequestSchema,
   giftDaySchema,
@@ -61,7 +60,6 @@ import {
   type GrantContinuation,
   type PostStats,
   type AccountActivity,
-  type LnAddressResolved,
   type LnurlInvoice,
   type LnurlPayRequest,
   type MemberProfile,
@@ -84,13 +82,6 @@ import type { Locale } from '@/lib/locale';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 import { shortLinkPath } from '@/lib/short-link';
 import type { FiatCode } from '@/lib/stats-money';
-
-/**
- * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
- * Matched literally (English) before visitor-facing rewrite.
- */
-export const LIGHTNING_ADDRESS_NOT_ZAP_ERROR =
-  'This Wallet of Satoshi address cannot receive these Bitcoin payments';
 
 /**
  * Exact api 403 body when the visitor signed in with a refused account.
@@ -119,6 +110,52 @@ export class NoteDeletedError extends Error {
   constructor() {
     super('This note was deleted');
     this.name = 'NoteDeletedError';
+  }
+}
+
+/** Api status when the signed-in member has no verified in-app wallet yet. */
+export const WALLET_REQUIRED_STATUS = 412;
+
+/** Api status when the receiving wallet cannot take this payment. */
+export const CANNOT_RECEIVE_STATUS = 422;
+
+/**
+ * Api {@link WALLET_REQUIRED_STATUS} answer: the action needs the member's own
+ * wallet to be set up first. Recognised by status, never by the body text;
+ * screens show catalog copy.
+ */
+export class WalletRequiredError extends Error {
+  constructor() {
+    super('wallet_required');
+    this.name = 'WalletRequiredError';
+  }
+}
+
+/**
+ * Api {@link CANNOT_RECEIVE_STATUS} answer: the receiving wallet cannot take
+ * this payment. Recognised by status, never by the body text; screens show
+ * catalog copy.
+ */
+export class CannotReceiveError extends Error {
+  constructor() {
+    super('cannot_receive');
+    this.name = 'CannotReceiveError';
+  }
+}
+
+/**
+ * Throws the typed wallet answer for a {@link WALLET_REQUIRED_STATUS} or
+ * {@link CANNOT_RECEIVE_STATUS} response. Other statuses pass through.
+ *
+ * @param response - The raw fetch response.
+ * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422.
+ */
+export function throwIfWalletAnswer(response: Response): void {
+  if (response.status === WALLET_REQUIRED_STATUS) {
+    throw new WalletRequiredError();
+  }
+  if (response.status === CANNOT_RECEIVE_STATUS) {
+    throw new CannotReceiveError();
   }
 }
 
@@ -201,30 +238,18 @@ function sundayWriteHeaders(mode: 'enforce' | 'setup'): Record<string, string> {
 /** Runtime shape of the api's error envelope, carrying a human-readable message. */
 const apiErrorSchema = z.object({ error: z.string() });
 
-/** Statuses whose bodies carry a human-readable `{ error }` from the api. */
-const API_MESSAGE_STATUSES = new Set([400, 502]);
-
 /**
  * Rewrites api error text so the visitor never sees Lightning / LNURL jargon.
  *
  * @param raw - The api's `error` string.
- * @returns Copy that speaks only of Bitcoin and Wallet of Satoshi.
+ * @returns Copy that speaks only of Bitcoin, addresses, and login.
  */
 function toUserFacingError(raw: string): string {
-  if (/^Invalid Lightning Address$/i.test(raw)) {
-    return 'That Wallet of Satoshi address is not valid';
-  }
-  if (/^Not a valid Lightning Address/i.test(raw)) {
-    return 'Enter an address like you@walletofsatoshi.com';
-  }
-  if (/Lightning Address could not be resolved/i.test(raw)) {
-    return 'That Wallet of Satoshi address could not be found';
-  }
   if (/upstream api unreachable/i.test(raw)) {
     return 'Something went wrong. Please try again.';
   }
   return raw
-    .replace(/Lightning Address/gi, 'Wallet of Satoshi address')
+    .replace(/Lightning Address/gi, 'address')
     .replace(/LNURL-auth/gi, 'login')
     .replace(/LNURL auth/gi, 'login')
     .replace(/\bLNURL\b/gi, 'login')
@@ -246,26 +271,6 @@ async function readApiError(response: Response): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-/**
- * Throws rewritten api error text when the response is a known client or
- * upstream failure, so the form can surface the reason without jargon.
- * Malformed bodies are left for the caller fallback.
- *
- * @param response - The raw fetch response.
- * @throws Error with user-facing copy when the status is 400 or 502 and the
- * body carries a usable `error` string.
- */
-async function throwIfApiMessage(response: Response): Promise<void> {
-  if (!API_MESSAGE_STATUSES.has(response.status)) {
-    return;
-  }
-  const raw = await readApiError(response);
-  if (raw === null) {
-    return;
-  }
-  throw new Error(toUserFacingError(raw));
 }
 
 /**
@@ -619,14 +624,11 @@ export async function fetchViewProfile(viewKey: string): Promise<ViewProfile | n
  * Skips one onboarding setup step without filling the field.
  *
  * @param sessionToken - Bearer session.
- * @param step - `name` or `lightning-address` (rules cannot be skipped).
+ * @param step - `name` (rules cannot be skipped).
  * @returns The updated {@link Account} with advanced `setup` and refreshed `missing`.
  * @throws Error on a non-2xx status or a body that fails {@link accountSchema}.
  */
-export async function skipSetup(
-  sessionToken: string,
-  step: 'name' | 'lightning-address',
-): Promise<Account> {
+export async function skipSetup(sessionToken: string, step: 'name'): Promise<Account> {
   const response = await fetch('/me/setup/skip', {
     method: 'POST',
     headers: {
@@ -826,65 +828,6 @@ export async function putWallet(sessionToken: string, sparkPubkey: string): Prom
 }
 
 /**
- * Links or replaces the account's receiving Lightning Address.
- *
- * @param sessionToken - A bearer token from a completed challenge.
- * @param address - The `name@domain.tld` Lightning Address to store.
- * @param sundayWrite - `setup` omits `Time-Zone` so onboarding is not refused.
- * @returns The updated {@link Account}.
- * @throws Error when the api rejects the address (400) — rewritten to
- * visitor-facing copy — on any other non-2xx status, or when the body fails
- * {@link accountSchema} validation.
- */
-export async function setLightningAddress(
-  sessionToken: string,
-  address: string,
-  sundayWrite: 'enforce' | 'setup' = 'enforce',
-): Promise<Account> {
-  const response = await fetch('/me/lightning-address', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${sessionToken}`,
-      'Content-Type': 'application/json',
-      ...sundayWriteHeaders(sundayWrite),
-    },
-    body: JSON.stringify({ address }),
-  });
-  if (response.status === 400) {
-    const raw = await readApiError(response);
-    if (raw === LIGHTNING_ADDRESS_NOT_ZAP_ERROR) {
-      throw new Error(LIGHTNING_ADDRESS_NOT_ZAP_ERROR);
-    }
-    throw new Error(
-      raw === null ? 'Could not save your Wallet of Satoshi address' : toUserFacingError(raw),
-    );
-  }
-  if (!response.ok) {
-    throw new Error('Could not save your Wallet of Satoshi address');
-  }
-  return accountSchema.parse(await response.json());
-}
-
-/**
- * Unlinks the account's Lightning Address, clearing it.
- *
- * @param sessionToken - A bearer token from a completed challenge.
- * @returns The updated {@link Account}, with `lightningAddress` set to `null`.
- * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
- * validation.
- */
-export async function unlinkLightningAddress(sessionToken: string): Promise<Account> {
-  const response = await fetch('/me/lightning-address', {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
-  });
-  if (!response.ok) {
-    throw new Error('Could not remove your Wallet of Satoshi address');
-  }
-  return accountSchema.parse(await response.json());
-}
-
-/**
  * Permanently dismisses the welcome-forum living-room laws hint for the account.
  *
  * @param sessionToken - A bearer token from a completed challenge.
@@ -1029,24 +972,6 @@ export async function agreeToRules(sessionToken: string): Promise<Account> {
     throw new Error('Could not save your agreement');
   }
   return accountSchema.parse(await response.json());
-}
-
-/**
- * Resolves a Lightning Address to LNURL-pay metadata via the api cache.
- *
- * @param address - The `name@domain` address to look up.
- * @returns The {@link LnAddressResolved} payload (callback and amount bounds).
- * @throws Error when the api rejects the address (400, 502) — rewritten to
- * visitor-facing copy — on any other non-2xx status, or when the body fails
- * {@link lnAddressResolvedSchema} validation.
- */
-export async function resolveLightningAddress(address: string): Promise<LnAddressResolved> {
-  const response = await fetch(`/lightning-address?address=${encodeURIComponent(address)}`);
-  await throwIfApiMessage(response);
-  if (!response.ok) {
-    throw new Error('Could not find that Wallet of Satoshi address');
-  }
-  return lnAddressResolvedSchema.parse(await response.json());
 }
 
 /**
@@ -2584,9 +2509,10 @@ export async function fetchComposeTarget(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional NIP-57 comment shown as the gift reply body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
- * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi. The body may also carry
+ * @returns `{ pr, amountSats }` (plus `sparkInvoice`) for the in-app wallet. The body may also carry
  *   `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
+ * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422.
  * @throws Error with collapsed visitor copy on 400/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
  * {@link messageInvoiceSchema}.
@@ -2616,6 +2542,7 @@ export async function postMessageInvoice(
       ...(shown === undefined ? {} : shown),
     }),
   });
+  throwIfWalletAnswer(response);
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
@@ -2712,7 +2639,8 @@ export async function getRepayment(messageId: string): Promise<RepaymentLedger |
  *
  * @param sessionToken - Bearer session of the credit's author.
  * @param messageId - Credit note id.
- * @returns The invoice the author pays from their wallet. The body may also
+ * @returns The invoice the author pays from their wallet.
+ * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422. The body may also
  *   carry `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws Error with visitor copy when the api refuses.
  */
@@ -2724,6 +2652,7 @@ export async function postRepaymentInvoice(
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
+  throwIfWalletAnswer(response);
   if (response.status === 400 || response.status === 429 || response.status === 404) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
@@ -2905,7 +2834,8 @@ export async function fetchConversation(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional comment shown as the gift body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
- * @returns `{ pr, amountSats, messageId }` for QR / Wallet of Satoshi and poll. The
+ * @returns `{ pr, amountSats, messageId }` (plus `sparkInvoice`) for the in-app wallet and poll.
+ * @throws {@link WalletRequiredError} on 412, {@link CannotReceiveError} on 422. The
  *   body may also carry `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
@@ -2935,6 +2865,7 @@ export async function postConversationInvoice(
       ...(shown === undefined ? {} : shown),
     }),
   });
+  throwIfWalletAnswer(response);
   if (response.status === 400 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));

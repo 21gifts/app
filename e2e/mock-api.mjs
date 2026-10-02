@@ -244,7 +244,7 @@ const E2E_MEMBER_PROFILE = {
   username: 'carol',
   location: 'Zug',
   role: 'verified',
-  lightningAddress: 'carol@walletofsatoshi.com',
+  lightningAddress: null,
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,

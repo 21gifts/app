@@ -259,7 +259,7 @@ describe('NameForm', () => {
     act(() => {
       useAuthStore.setState({
         session: 'sess',
-        account: { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' },
+        account: { ...baseAccount, lightningAddress: null },
       });
     });
 
@@ -270,7 +270,7 @@ describe('NameForm', () => {
     expect(useAuthStore.getState().account).toEqual({
       ...baseAccount,
       name: 'Ada',
-      lightningAddress: 'me@walletofsatoshi.com',
+      lightningAddress: null,
     });
   });
 

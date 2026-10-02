@@ -172,7 +172,7 @@ const account: Account = {
   role: 'verified',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -8613,7 +8613,7 @@ describe('ForumLoader', () => {
     postMock.mockResolvedValue(SAMPLE);
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       missing: [],
       setup: null,
       forumLawsDismissed: true,

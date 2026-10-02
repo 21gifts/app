@@ -7,16 +7,10 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { QrCode } from '@/components/QrCode';
 import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import type { AmountUnit } from '@/lib/api-types';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
-import {
-  isAndroidUserAgent,
-  walletOfSatoshiHref,
-  walletOfSatoshiIntentHref,
-} from '@/lib/wos-deep-link';
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
@@ -53,7 +47,6 @@ export function ForumPaySheet({
   onPayCancel,
   rateDay,
   ratePending = false,
-  showPaymentQr,
   onInteract,
 }: {
   messageId: string;
@@ -69,7 +62,6 @@ export function ForumPaySheet({
   rateDay: FiatRateDay | null;
   /** When true, Continue does not submit. The rate request is still loading. */
   ratePending?: boolean;
-  showPaymentQr: boolean;
   onInteract: (event: MouseEvent) => void;
 }): ReactElement {
   const { t } = useTranslations();
@@ -77,16 +69,6 @@ export function ForumPaySheet({
   const { fiat } = useFiatPreference();
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
-  /* v8 ignore start -- Android vs iOS wallet href */
-  const android =
-    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
-  const wosHref =
-    invoiceForCard === null
-      ? null
-      : android
-        ? walletOfSatoshiIntentHref(invoiceForCard.pr)
-        : walletOfSatoshiHref(invoiceForCard.pr);
-  /* v8 ignore stop */
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -95,30 +77,6 @@ export function ForumPaySheet({
     }
     void Promise.resolve(onPaySubmit());
   };
-
-  const walletButton =
-    wosHref === null ? null : (
-      <Button
-        type="button"
-        aria-label={t('forum.payOpenWalletAria')}
-        disabled={payBusy}
-        icon={
-          <img
-            src="/wos-icon.png"
-            alt=""
-            width={20}
-            height={20}
-            aria-hidden="true"
-            className="h-5 w-5 rounded-md ring-1 ring-white/30"
-          />
-        }
-        onClick={() => {
-          window.location.href = wosHref;
-        }}
-      >
-        {t('forum.payOpenWallet')}
-      </Button>
-    );
 
   if (invoiceForCard === null) {
     return (
@@ -216,16 +174,9 @@ export function ForumPaySheet({
       </p>
       <WalletPay
         sparkInvoice={invoiceForCard.sparkInvoice}
+        pr={invoiceForCard.pr}
         amountSats={invoiceForCard.amountSats}
         rateDay={rateDay}
-        fallback={
-          <>
-            {showPaymentQr ? (
-              <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
-            ) : null}
-            {walletButton}
-          </>
-        }
       />
       {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
       {payWaiting ? (

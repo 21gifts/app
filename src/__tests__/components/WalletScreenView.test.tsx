@@ -491,7 +491,7 @@ describe('WalletScreenView', () => {
         name: 'Ada',
         username: 'ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,

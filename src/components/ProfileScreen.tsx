@@ -7,7 +7,6 @@ import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
-import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { LocationForm } from '@/components/LocationForm';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -338,8 +337,7 @@ function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
  * the same public gifts facts as the member card (`MemberProfileScreen`
- * `factsOnly`), and address forms,
- * PushToggle (All/Active/Mentions always; This device On/Off when Push APIs
+ * `factsOnly`), PushToggle (All/Active/Mentions always; This device On/Off when Push APIs
  * are ready), LanguagePreferenceSwitcher, ThemeSwitcher,
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
  *
@@ -511,7 +509,6 @@ export function ProfileScreen(): ReactElement {
           </Button>
         </div>
       ) : null}
-      <LightningAddressForm variant="profile" />
       <PushToggle />
       <LanguagePreferenceSwitcher />
       <ThemeSwitcher />

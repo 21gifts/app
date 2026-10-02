@@ -13,7 +13,6 @@ import { messageInvoiceSchema, type AmountUnit } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
 import { paySatsFromDraft } from '@/lib/stats-money';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 type MemberHabit = MemberHabitList['habits'][number];
@@ -72,7 +71,6 @@ export function MemberHabits(): ReactElement {
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
   const payGeneration = useRef(0);
   const listGeneration = useRef(0);
   const listSettled = useRef(false);
@@ -84,10 +82,6 @@ export function MemberHabits(): ReactElement {
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
   const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
-
-  useEffect(() => {
-    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
 
   useEffect(() => {
     listAlive.current = true;
@@ -648,7 +642,6 @@ export function MemberHabits(): ReactElement {
                     payInvoice={payInvoice}
                     rateDay={rateDay}
                     ratePending={!rateSettled}
-                    showPaymentQr={showPaymentQr}
                     onPayOpen={openPay}
                     onPayDraftChange={(value) => {
                       setPayDraft(value);

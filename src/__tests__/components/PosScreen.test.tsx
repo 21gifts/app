@@ -26,7 +26,7 @@ const ACCOUNT = {
   name: 'Ada',
   username: 'alice',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1,

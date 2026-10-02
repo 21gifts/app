@@ -142,44 +142,45 @@ const en = {
   'home.step1Title': 'Log in',
   'home.step1Body':
     'One tap in your browser. It uses a secure login stored on your device, or creates one. That is your account — there is nothing else to remember.',
-  'home.step2Title': 'Add a Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Tell us where gifts should land, for example',
-  'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin from Wallet of Satoshi.',
+  'home.step2Title': 'Set up your wallet',
+  'home.step2BodyBefore':
+    'Confirm once with your passkey, and your own wallet in this app gets your address, for example',
+  'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin.',
   'home.step3Title': 'Post and receive help',
   'home.step3Body':
-    'Once you are logged in, write a post in the forum. Others can send Bitcoin to a payable reaction — it lands in the author’s Wallet of Satoshi, not ours. The platform never touches the money.',
+    'Once you are logged in, write a post in the forum. Others can send Bitcoin to a payable reaction — it lands in the author’s own 21.gifts wallet, not ours. The platform never holds the money.',
   'home.whyKicker': 'Why this exists',
   'home.whyTitle': 'The shortest possible path from one person to another',
   'home.why1Title': 'Truly peer-to-peer',
   'home.why1Body':
-    "Funds move from the donor's Wallet of Satoshi straight to the receiver's Wallet of Satoshi address. 21.gifts never holds, routes, or escrows the money — there is nothing for us to freeze.",
+    'Funds move from the giver’s 21.gifts wallet straight to the receiver’s 21.gifts wallet. Each wallet belongs to its member alone: 21.gifts never holds or escrows the money — there is nothing for us to freeze.',
   'home.why2Title': 'Your login stays on your device',
   'home.why2Body':
     '21.gifts never sees a password — only a signed login assertion. There is no password database that could leak.',
   'home.why3Title': 'Your Bitcoin, not ours',
   'home.why3Body':
-    'Gifts are Bitcoin payments to a Wallet of Satoshi address. If 21.gifts disappeared tomorrow, those addresses would keep working.',
+    'Gifts land in your own wallet, and only you can open it. If 21.gifts disappeared tomorrow, your @21.gifts address would stop working, but your Bitcoin would stay yours: your 12 recovery words open it in any compatible wallet.',
   'home.projectKicker': 'The project',
   'home.projectTitle': 'Donate to this project',
   'home.projectLead':
-    'Gifts in the forum go to the person who wrote the reaction. To help run 21.gifts itself, send Bitcoin to this Wallet of Satoshi address.',
+    'Gifts in the forum go to the person who wrote the reaction. To help run 21.gifts itself, send Bitcoin to the project’s own 21.gifts address.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Common questions, answered briefly',
   'home.faq1Q': 'Who can use this?',
   'home.faq1A':
-    'Anyone with a Wallet of Satoshi address. There is no application and no review process.',
+    'Anyone who logs in with a passkey that can hold a 21.gifts wallet. There is no application and no review process.',
   'home.faq3Q': 'What happens to my keys?',
   'home.faq3A':
-    'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and, if you choose to publish it, your Wallet of Satoshi address. No password and no seed phrase is ever stored on our servers.',
+    'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and the public key of your 21.gifts wallet. No password and no seed phrase is ever stored on our servers.',
   'home.faq4Q': 'Can I lose access to my account?',
   'home.faq4A':
     'Yes. If you lose your login and any platform sync, the account cannot be recovered at this stage. Keep a backup of the device you log in with.',
   'home.faq5Q': 'How do I send a gift?',
   'home.faq5A':
-    'Open Send help, pick a message in the forum, open Show reactions, then choose Send Bitcoin on a reaction. Enter an amount in ₿ and pay with Wallet of Satoshi — the Bitcoin goes straight to the author.',
+    'Open Send help, pick a message in the forum, open Show reactions, then choose Send Bitcoin on a reaction. Enter an amount in ₿ and pay from your 21.gifts wallet — the Bitcoin goes straight to the author.',
   'home.faq6Q': 'Why only Bitcoin?',
   'home.faq6A':
-    'Bitcoin is fast and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without asking permission.',
+    'Bitcoin is fast and censorship-resistant. Your 21.gifts address makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without asking permission.',
   'home.faq7Q': 'Is this regulated, and how do taxes work?',
   'home.faq7A':
     '21.gifts is a non-profit communication and discovery layer. It is not a payment service provider and does not move funds. Donors and receivers are responsible for their own tax treatment in their jurisdiction.',
@@ -277,18 +278,16 @@ const en = {
   'login.copyLink': 'Copy link',
   'login.linkCopied': 'Copied',
   'login.logOut': 'Log out',
-  'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
   'login.welcomeSignedOut': 'Welcome',
   'setup.nameTitle': 'Your name',
   'setup.usernameTitle': 'Your 21.gifts name',
   'setup.usernameHint':
-    'This is the address people send Bitcoin to: you@21.gifts. Wallet of Satoshi still receives it.',
+    'This is the address people send Bitcoin to: you@21.gifts. It goes straight into your own wallet in this app.',
   'setup.usernameEmpty': 'Enter a username',
   'setup.usernameInvalid': 'Use English letters, numbers, hyphen, underscore, or dot',
   'setup.usernameTaken': 'That username is already taken',
   'setup.usernameRequest': 'Could not save your username',
-  'setup.addressTitle': 'Your Wallet of Satoshi address',
   'setup.continue': 'Continue',
   'setup.skip': 'Skip',
   'setup.rulesTitle': 'Living room rules',
@@ -320,19 +319,6 @@ const en = {
   'location.clear': 'Clear location',
   'location.unset': 'Not set',
   'location.errorRequest': 'Could not save your location',
-
-  'la.heading': 'Wallet of Satoshi address',
-  'la.prompt': 'Add your Wallet of Satoshi address so gifts can reach you.',
-  'la.save': 'Save',
-  'la.link': 'Link address',
-  'la.cancel': 'Cancel',
-  'la.edit': 'Edit',
-  'la.unlink': 'Unlink',
-  'la.aria': 'Wallet of Satoshi address',
-  'la.errorEmpty': 'Enter your Wallet of Satoshi address',
-  'la.errorNotFound': 'That Wallet of Satoshi address could not be found',
-  'la.errorRequest': 'Could not update your Wallet of Satoshi address',
-  'la.errorNotZap': 'This Wallet of Satoshi address cannot receive these Bitcoin payments',
 
   'forum.heading': 'Forum',
   'forum.modeLabel': 'Forum view',
@@ -395,8 +381,7 @@ const en = {
   'forum.payBack': 'Back',
   'forum.payClose': 'Close',
   'forum.payOpenWallet': 'Pay',
-  'forum.payOpenWalletAria': 'Pay with Wallet of Satoshi',
-  'forum.payInvoiceQr': 'Bitcoin payment QR code',
+  'forum.payOpenWalletAria': 'Pay with a Bitcoin wallet app',
   'forum.payErrorAmount': 'Enter a whole number greater than zero',
   'forum.payErrorRequest': 'Could not start the Bitcoin payment',
   'forum.payErrorRateLimit': 'Too many payments. Please wait a moment and try again.',
@@ -542,7 +527,9 @@ const en = {
   'requirements.nameTitle': 'Add your name',
   'requirements.usernameTitle': 'Add your 21.gifts name',
   'requirements.rulesTitle': 'Agree to the living room rules',
-  'requirements.addressTitle': 'Add your Wallet of Satoshi address',
+  'requirements.walletTitle': 'Your wallet is not set up',
+  'requirements.walletBody':
+    'Gifts for your posts go to your own 21.gifts wallet, and it is not set up yet. Once it is set up, you can post.',
   'requirements.close': 'Close',
 
   'introduce.title': 'Introduce yourself',
@@ -612,6 +599,9 @@ const en = {
   'wallet.payInsufficient': 'Your wallet does not have enough Bitcoin for this payment.',
   'wallet.payAddFunds': 'To add Bitcoin, send it to your address:',
   'wallet.payUnconfirmed': 'This payment is not confirmed yet. Check your balance again later.',
+  'wallet.payUnavailable': 'Your 21.gifts wallet is not available here, so this cannot be paid.',
+  'wallet.payFailed': 'Your wallet could not prepare this payment. Please try again.',
+  'wallet.payRetry': 'Try again',
   'wallet.sendHeading': 'Send Bitcoin',
   'wallet.sendLabel': 'Payment request or address',
   'wallet.sendPlaceholder': 'Paste a Bitcoin payment request or address',
@@ -714,7 +704,8 @@ const en = {
   'pos.create': 'Create payment',
   'pos.cancel': 'Cancel',
   'pos.needUsername': 'Set a username first.',
-  'pos.needAddress': 'Set a Wallet of Satoshi address first.',
+  'pos.needWallet': 'Set up your wallet first.',
+  'pos.cannotReceive': 'Your wallet cannot receive this payment right now. Please try again later.',
   'pos.left': '{time} left',
   'pos.error': 'Point of sale is unavailable.',
   'pos.outside': 'Amount is outside the wallet range.',
@@ -726,7 +717,6 @@ const en = {
   'profile.message': 'Message',
 
   'view.unnamed': 'Unnamed',
-  'view.noAddress': 'No Wallet of Satoshi address',
   'view.noGiftsAddress': 'No 21.gifts address',
   'view.missing': 'This profile could not be found.',
   'view.error': 'Could not load this profile. Please try again.',
@@ -801,7 +791,7 @@ const en = {
     'Talking about Bitcoin when it helps someone in the room and pushes no one to pay.',
   'rules.allowed3': 'Other languages. Reading along. Staying silent.',
   'rules.allowed4':
-    'Your name and Wallet of Satoshi address on your profile — not repeated in every message.',
+    'Your name and 21.gifts address on your profile — not repeated in every message.',
   'rules.allowed5':
     '“I cannot give right now.” That is a complete sentence, and it needs no explanation.',
   'rules.ratherNotHeading': 'Better not',
@@ -1303,43 +1293,45 @@ const de = {
   'home.step1Title': 'Anmelden',
   'home.step1Body':
     'Ein Tipp im Browser. Es wird ein sicheres, auf Ihrem Gerät gespeichertes Login verwendet oder neu angelegt. Das ist Ihr Konto — mehr müssen Sie sich nicht merken.',
-  'home.step2Title': 'Wallet of Satoshi address hinterlegen',
-  'home.step2BodyBefore': 'Geben Sie an, wo Geschenke ankommen sollen, zum Beispiel',
-  'home.step2BodyAfter': '. Von da an kann Ihnen jede Person aus Wallet of Satoshi Bitcoin senden.',
+  'home.step2Title': 'Wallet einrichten',
+  'home.step2BodyBefore':
+    'Bestätigen Sie einmal mit Ihrem Passkey, dann erhält Ihre eigene Wallet in dieser App Ihre Adresse, zum Beispiel',
+  'home.step2BodyAfter': '. Von da an kann Ihnen jede Person Bitcoin senden.',
   'home.step3Title': 'Schreiben und Hilfe empfangen',
   'home.step3Body':
-    'Nach der Anmeldung schreiben Sie einen Beitrag im Forum. Andere können Bitcoin an eine zahlbare Reaktion senden — es landet in der Wallet of Satoshi der Autorin oder des Autors, nicht bei uns. Die Plattform berührt das Geld nie.',
+    'Nach der Anmeldung schreiben Sie einen Beitrag im Forum. Andere können Bitcoin an eine zahlbare Reaktion senden — es landet in der eigenen 21.gifts-Wallet der Autorin oder des Autors, nicht bei uns. Die Plattform verwahrt das Geld nie.',
   'home.whyKicker': 'Warum es das gibt',
   'home.whyTitle': 'Der kürzeste Weg von einer Person zur anderen',
   'home.why1Title': 'Wirklich von Mensch zu Mensch',
   'home.why1Body':
-    'Das Geld geht von der Wallet of Satoshi der gebenden Person direkt an die Wallet of Satoshi address der empfangenden Person. 21.gifts verwahrt nichts, leitet nichts weiter und hält nichts treuhänderisch — es gibt nichts, was wir einfrieren könnten.',
+    'Das Geld geht von der 21.gifts-Wallet der gebenden Person direkt in die 21.gifts-Wallet der empfangenden Person. Jede Wallet gehört allein ihrem Mitglied: 21.gifts verwahrt nichts und hält nichts treuhänderisch — es gibt nichts, was wir einfrieren könnten.',
   'home.why2Title': 'Ihr Login bleibt auf Ihrem Gerät',
   'home.why2Body':
     '21.gifts sieht nie ein Passwort — nur eine signierte Anmeldebestätigung. Es gibt keine Passwort-Datenbank, die geleakt werden könnte.',
   'home.why3Title': 'Ihr Bitcoin, nicht unserer',
   'home.why3Body':
-    'Geschenke sind Bitcoin-Zahlungen an eine Wallet of Satoshi address. Würde 21.gifts morgen verschwinden, funktionierten diese Adressen weiter.',
+    'Geschenke landen in Ihrer eigenen Wallet, und nur Sie können sie öffnen. Würde 21.gifts morgen verschwinden, funktionierte Ihre @21.gifts-Adresse nicht mehr, Ihr Bitcoin bliebe aber Ihrer: Ihre 12 Wiederherstellungswörter öffnen ihn in jeder kompatiblen Wallet.',
   'home.projectKicker': 'Das Projekt',
   'home.projectTitle': 'An dieses Projekt spenden',
   'home.projectLead':
-    'Geschenke im Forum gehen an die Person, die die Reaktion geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an diese Wallet of Satoshi address.',
+    'Geschenke im Forum gehen an die Person, die die Reaktion geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an die eigene 21.gifts-Adresse des Projekts.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
   'home.faq1Q': 'Wer kann das nutzen?',
-  'home.faq1A': 'Jede Person mit einer Wallet of Satoshi address. Kein Antrag, keine Prüfung.',
+  'home.faq1A':
+    'Jede Person, die sich mit einem Passkey anmeldet, der eine 21.gifts-Wallet halten kann. Kein Antrag, keine Prüfung.',
   'home.faq3Q': 'Was passiert mit meinen Schlüsseln?',
   'home.faq3A':
-    'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und, wenn Sie sie veröffentlichen, Ihre Wallet of Satoshi address. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
+    'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und den öffentlichen Schlüssel Ihrer 21.gifts-Wallet. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
   'home.faq4Q': 'Kann ich den Zugang zu meinem Konto verlieren?',
   'home.faq4A':
     'Ja. Wenn Sie Ihr Login und jede Plattform-Synchronisation verlieren, lässt sich das Konto derzeit nicht wiederherstellen. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
   'home.faq5Q': 'Wie sende ich ein Geschenk?',
   'home.faq5A':
-    'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie «Reaktionen anzeigen» und tippen Sie bei einer Reaktion auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie mit Wallet of Satoshi — das Geld geht direkt an die Person, die die Reaktion geschrieben hat.',
+    'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie «Reaktionen anzeigen» und tippen Sie bei einer Reaktion auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie aus Ihrer 21.gifts-Wallet — das Geld geht direkt an die Person, die die Reaktion geschrieben hat.',
   'home.faq6Q': 'Warum nur Bitcoin?',
   'home.faq6A':
-    'Bitcoin ist schnell und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. So braucht es keine verwahrende Zwischenschicht, und jede Person weltweit kann geben und empfangen, ohne jemanden um Erlaubnis zu fragen.',
+    'Bitcoin ist schnell und zensurresistent. Ihre 21.gifts-Adresse macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. So braucht es keine verwahrende Zwischenschicht, und jede Person weltweit kann geben und empfangen, ohne jemanden um Erlaubnis zu fragen.',
   'home.faq7Q': 'Ist das reguliert, und wie sieht es mit Steuern aus?',
   'home.faq7A':
     '21.gifts ist eine gemeinnützige Kommunikations- und Vermittlungsschicht. Es ist kein Zahlungsdienstleister und bewegt kein Geld. Gebende und Empfangende sind selbst für die steuerliche Behandlung in ihrem Land verantwortlich.',
@@ -1434,18 +1426,16 @@ const de = {
   'login.copyLink': 'Link kopieren',
   'login.linkCopied': 'Kopiert',
   'login.logOut': 'Abmelden',
-  'login.helloName': 'Hallo, {name}',
   'login.welcomeHeading': 'Willkommen, {name}',
   'login.welcomeSignedOut': 'Willkommen',
   'setup.nameTitle': 'Ihr Name',
   'setup.usernameTitle': 'Ihr 21.gifts-Name',
   'setup.usernameHint':
-    'Das ist die Adresse, an die Bitcoin geht: du@21.gifts. Empfangen tut weiter Wallet of Satoshi.',
+    'Das ist die Adresse, an die Bitcoin geht: du@21.gifts. Er kommt direkt in Ihre eigene Wallet in dieser App.',
   'setup.usernameEmpty': 'Bitte einen Benutzernamen eingeben',
   'setup.usernameInvalid': 'Nur englische Buchstaben, Zahlen, Bindestrich, Unterstrich oder Punkt',
   'setup.usernameTaken': 'Dieser Benutzername ist schon vergeben',
   'setup.usernameRequest': 'Benutzername konnte nicht gespeichert werden',
-  'setup.addressTitle': 'Ihre Wallet of Satoshi address',
   'setup.continue': 'Weiter',
   'setup.skip': 'Überspringen',
   'setup.rulesTitle': 'Wohnzimmerregeln',
@@ -1475,18 +1465,6 @@ const de = {
   'location.clear': 'Ort löschen',
   'location.unset': 'Nicht angegeben',
   'location.errorRequest': 'Ort konnte nicht gespeichert werden',
-  'la.heading': 'Wallet of Satoshi address',
-  'la.prompt': 'Hinterlegen Sie Ihre Wallet of Satoshi address, damit Geschenke Sie erreichen.',
-  'la.save': 'Speichern',
-  'la.link': 'Adresse verknüpfen',
-  'la.cancel': 'Abbrechen',
-  'la.edit': 'Bearbeiten',
-  'la.unlink': 'Trennen',
-  'la.aria': 'Wallet of Satoshi address',
-  'la.errorEmpty': 'Bitte geben Sie Ihre Wallet of Satoshi address ein',
-  'la.errorNotFound': 'Diese Wallet of Satoshi address wurde nicht gefunden',
-  'la.errorRequest': 'Wallet of Satoshi address konnte nicht aktualisiert werden',
-  'la.errorNotZap': 'Diese Wallet of Satoshi address kann diese Bitcoin-Zahlungen nicht empfangen',
   'forum.heading': 'Forum',
   'forum.modeLabel': 'Forum-Ansicht',
   'forum.modeActive': 'Aktiv',
@@ -1549,8 +1527,7 @@ const de = {
   'forum.payBack': 'Zurück',
   'forum.payClose': 'Schließen',
   'forum.payOpenWallet': 'Zahlen',
-  'forum.payOpenWalletAria': 'Mit Wallet of Satoshi zahlen',
-  'forum.payInvoiceQr': 'Bitcoin-Zahlungs-QR-Code',
+  'forum.payOpenWalletAria': 'Mit einer Bitcoin-Wallet-App zahlen',
   'forum.payErrorAmount': 'Bitte geben Sie eine ganze Zahl grösser als null ein',
   'forum.payErrorRequest': 'Die Bitcoin-Zahlung konnte nicht gestartet werden',
   'forum.payErrorRateLimit':
@@ -1700,7 +1677,9 @@ const de = {
   'requirements.nameTitle': 'Namen hinzufügen',
   'requirements.usernameTitle': '21.gifts-Namen hinzufügen',
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
-  'requirements.addressTitle': 'Wallet of Satoshi address hinterlegen',
+  'requirements.walletTitle': 'Ihre Wallet ist nicht eingerichtet',
+  'requirements.walletBody':
+    'Geschenke für Ihre Beiträge gehen in Ihre eigene 21.gifts-Wallet, und sie ist noch nicht eingerichtet. Sobald sie eingerichtet ist, können Sie schreiben.',
   'requirements.close': 'Schließen',
 
   'introduce.title': 'Stell dich vor',
@@ -1774,6 +1753,11 @@ const de = {
   'wallet.payAddFunds': 'Um Bitcoin hinzuzufügen, senden Sie es an Ihre Adresse:',
   'wallet.payUnconfirmed':
     'Diese Zahlung ist noch nicht bestätigt. Prüfen Sie Ihr Guthaben später erneut.',
+  'wallet.payUnavailable':
+    'Ihre 21.gifts-Wallet ist hier nicht verfügbar, darum kann dies nicht bezahlt werden.',
+  'wallet.payFailed':
+    'Ihre Wallet konnte diese Zahlung nicht vorbereiten. Bitte versuchen Sie es erneut.',
+  'wallet.payRetry': 'Erneut versuchen',
   'wallet.sendHeading': 'Bitcoin senden',
   'wallet.sendLabel': 'Zahlungsanforderung oder Adresse',
   'wallet.sendPlaceholder': 'Bitcoin-Zahlungsanforderung oder Adresse einfügen',
@@ -1880,7 +1864,9 @@ const de = {
   'pos.create': 'Zahlung anlegen',
   'pos.cancel': 'Abbrechen',
   'pos.needUsername': 'Zuerst einen Benutzernamen setzen.',
-  'pos.needAddress': 'Zuerst eine Wallet of Satoshi-Adresse setzen.',
+  'pos.needWallet': 'Richten Sie zuerst Ihre Wallet ein.',
+  'pos.cannotReceive':
+    'Ihre Wallet kann diese Zahlung gerade nicht empfangen. Bitte versuchen Sie es später erneut.',
   'pos.left': 'noch {time}',
   'pos.error': 'Die Kasse ist gerade nicht erreichbar.',
   'pos.outside': 'Der Betrag liegt außerhalb der Wallet.',
@@ -1892,7 +1878,6 @@ const de = {
   'profile.message': 'Nachricht',
 
   'view.unnamed': 'Unbenannt',
-  'view.noAddress': 'Keine Wallet of Satoshi address',
   'view.noGiftsAddress': 'Keine 21.gifts-Adresse',
   'view.missing': 'Dieses Profil konnte nicht gefunden werden.',
   'view.error': 'Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
@@ -1970,7 +1955,7 @@ const de = {
     'Über Bitcoin sprechen, wenn es jemandem im Raum hilft und niemanden zum Zahlen drängt.',
   'rules.allowed3': 'Andere Sprachen. Mitlesen. Schweigen.',
   'rules.allowed4':
-    'Ihr Name und Ihre Wallet of Satoshi address im Profil — nicht in jeder Nachricht wiederholt.',
+    'Ihr Name und Ihre 21.gifts-Adresse im Profil — nicht in jeder Nachricht wiederholt.',
   'rules.allowed5':
     '«Ich kann gerade nichts geben.» Das ist ein vollständiger Satz und braucht keine Erklärung.',
   'rules.ratherNotHeading': 'Lieber nicht',
@@ -2486,45 +2471,45 @@ const es = {
   'home.step1Title': 'Iniciar sesión',
   'home.step1Body':
     'Un toque en tu navegador. Usa un acceso seguro guardado en tu dispositivo, o crea uno nuevo. Esa es tu cuenta — no hay nada más que recordar.',
-  'home.step2Title': 'Añade una Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Indica dónde deben llegar los regalos, por ejemplo',
-  'home.step2BodyAfter':
-    '. A partir de ahí, cualquiera podrá enviarte Bitcoin desde Wallet of Satoshi.',
+  'home.step2Title': 'Configura tu wallet',
+  'home.step2BodyBefore':
+    'Confirma una vez con tu passkey y tu propia wallet en esta app recibe tu dirección, por ejemplo',
+  'home.step2BodyAfter': '. A partir de ahí, cualquiera podrá enviarte Bitcoin.',
   'home.step3Title': 'Publica y recibe ayuda',
   'home.step3Body':
-    'Una vez dentro, escribe una publicación en el foro. Otras personas pueden enviar Bitcoin a una reacción pagable — llega a la Wallet of Satoshi de quien la escribió, no a la nuestra. La plataforma nunca toca el dinero.',
+    'Una vez dentro, escribe una publicación en el foro. Otras personas pueden enviar Bitcoin a una reacción pagable — llega a la propia wallet de 21.gifts de quien la escribió, no a la nuestra. La plataforma nunca guarda el dinero.',
   'home.whyKicker': 'Por qué existe',
   'home.whyTitle': 'El camino más corto de una persona a otra',
   'home.why1Title': 'De persona a persona, de verdad',
   'home.why1Body':
-    'Los fondos van de la Wallet of Satoshi de quien da directamente a la Wallet of Satoshi address de quien recibe. 21.gifts nunca retiene, enruta ni custodia el dinero — no hay nada que podamos congelar.',
+    'Los fondos van de la wallet de 21.gifts de quien da directamente a la wallet de 21.gifts de quien recibe. Cada wallet pertenece solo a su miembro: 21.gifts nunca retiene ni custodia el dinero — no hay nada que podamos congelar.',
   'home.why2Title': 'Tu login permanece en tu dispositivo',
   'home.why2Body':
     '21.gifts nunca ve una contraseña — solo una confirmación de inicio de sesión firmada. No hay ninguna base de datos de contraseñas que se pueda filtrar.',
   'home.why3Title': 'Tu Bitcoin, no el nuestro',
   'home.why3Body':
-    'Los regalos son pagos en Bitcoin a una Wallet of Satoshi address. Si 21.gifts desapareciera mañana, esas direcciones seguirían funcionando.',
+    'Los regalos llegan a tu propia wallet, y solo tú puedes abrirla. Si 21.gifts desapareciera mañana, tu dirección @21.gifts dejaría de funcionar, pero tu Bitcoin seguiría siendo tuyo: tus 12 palabras de recuperación lo abren en cualquier wallet compatible.',
   'home.projectKicker': 'El proyecto',
   'home.projectTitle': 'Dona a este proyecto',
   'home.projectLead':
-    'Los regalos del foro van a la persona que escribió la reacción. Para ayudar a mantener 21.gifts, envía Bitcoin a esta Wallet of Satoshi address.',
+    'Los regalos del foro van a la persona que escribió la reacción. Para ayudar a mantener 21.gifts, envía Bitcoin a la propia dirección de 21.gifts del proyecto.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Preguntas frecuentes, en breve',
   'home.faq1Q': '¿Quién puede usarlo?',
   'home.faq1A':
-    'Cualquiera con una Wallet of Satoshi address. No hay solicitud ni proceso de revisión.',
+    'Cualquiera que entre con una passkey que pueda guardar una wallet de 21.gifts. No hay solicitud ni proceso de revisión.',
   'home.faq3Q': '¿Qué pasa con mis claves?',
   'home.faq3A':
-    'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y, si decides publicarla, tu Wallet of Satoshi address. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
+    'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y la clave pública de tu wallet de 21.gifts. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
   'home.faq4Q': '¿Puedo perder el acceso a mi cuenta?',
   'home.faq4A':
     'Sí. Si pierdes tu acceso y cualquier sincronización de plataforma, por ahora la cuenta no se puede recuperar. Guarda una copia de seguridad del dispositivo con el que inicias sesión.',
   'home.faq5Q': '¿Cómo envío un regalo?',
   'home.faq5A':
-    'Abre Enviar ayuda, elige un mensaje en el foro, abre Mostrar reacciones y pulsa Enviar Bitcoin en una reacción. Indica un importe en ₿ y paga con Wallet of Satoshi — el Bitcoin va directamente a quien escribió la reacción.',
+    'Abre Enviar ayuda, elige un mensaje en el foro, abre Mostrar reacciones y pulsa Enviar Bitcoin en una reacción. Indica un importe en ₿ y paga desde tu wallet de 21.gifts — el Bitcoin va directamente a quien escribió la reacción.',
   'home.faq6Q': '¿Por qué solo Bitcoin?',
   'home.faq6A':
-    'Bitcoin es rápido y resistente a la censura. Wallet of Satoshi hace que enviar y recibir sea tan sencillo como una dirección de correo. Eso elimina la necesidad de cualquier capa de custodia y permite que cualquier persona del mundo dé o reciba sin pedir permiso.',
+    'Bitcoin es rápido y resistente a la censura. Tu dirección de 21.gifts hace que enviar y recibir sea tan sencillo como una dirección de correo. Eso elimina la necesidad de cualquier capa de custodia y permite que cualquier persona del mundo dé o reciba sin pedir permiso.',
   'home.faq7Q': '¿Está regulado y cómo funcionan los impuestos?',
   'home.faq7A':
     '21.gifts es una capa de comunicación y descubrimiento sin ánimo de lucro. No es un proveedor de servicios de pago y no mueve fondos. Quien da y quien recibe son responsables de su propio tratamiento fiscal en su jurisdicción.',
@@ -2617,18 +2602,16 @@ const es = {
   'login.copyLink': 'Copiar enlace',
   'login.linkCopied': 'Copiado',
   'login.logOut': 'Cerrar sesión',
-  'login.helloName': 'Hola, {name}',
   'login.welcomeHeading': 'Hola, {name}',
   'login.welcomeSignedOut': 'Hola',
   'setup.nameTitle': 'Tu nombre',
   'setup.usernameTitle': 'Tu nombre en 21.gifts',
   'setup.usernameHint':
-    'Esta es la dirección a la que envían Bitcoin: tu@21.gifts. Wallet of Satoshi sigue recibiéndolo.',
+    'Esta es la dirección a la que envían Bitcoin: tu@21.gifts. Llega directamente a tu propia wallet en esta app.',
   'setup.usernameEmpty': 'Escribe un nombre de usuario',
   'setup.usernameInvalid': 'Usa letras inglesas, números, guion, guion bajo o punto',
   'setup.usernameTaken': 'Ese nombre de usuario ya está en uso',
   'setup.usernameRequest': 'No se pudo guardar el nombre de usuario',
-  'setup.addressTitle': 'Tu Wallet of Satoshi address',
   'setup.continue': 'Continuar',
   'setup.skip': 'Omitir',
   'setup.rulesTitle': 'Reglas del salón',
@@ -2657,18 +2640,6 @@ const es = {
   'location.clear': 'Borrar ubicación',
   'location.unset': 'No indicada',
   'location.errorRequest': 'No se pudo guardar la ubicación',
-  'la.heading': 'Wallet of Satoshi address',
-  'la.prompt': 'Añade tu Wallet of Satoshi address para que los regalos te lleguen.',
-  'la.save': 'Guardar',
-  'la.link': 'Vincular dirección',
-  'la.cancel': 'Cancelar',
-  'la.edit': 'Editar',
-  'la.unlink': 'Desvincular',
-  'la.aria': 'Wallet of Satoshi address',
-  'la.errorEmpty': 'Introduce tu Wallet of Satoshi address',
-  'la.errorNotFound': 'No se pudo encontrar esa Wallet of Satoshi address',
-  'la.errorRequest': 'No se pudo actualizar la Wallet of Satoshi address',
-  'la.errorNotZap': 'Esta Wallet of Satoshi address no puede recibir estos pagos de Bitcoin',
   'forum.heading': 'Foro',
   'forum.modeLabel': 'Vista del foro',
   'forum.modeActive': 'Activo',
@@ -2730,8 +2701,7 @@ const es = {
   'forum.payBack': 'Atrás',
   'forum.payClose': 'Cerrar',
   'forum.payOpenWallet': 'Pagar',
-  'forum.payOpenWalletAria': 'Pagar con Wallet of Satoshi',
-  'forum.payInvoiceQr': 'Código QR de pago Bitcoin',
+  'forum.payOpenWalletAria': 'Pagar con una app de wallet de Bitcoin',
   'forum.payErrorAmount': 'Introduce un número entero mayor que cero',
   'forum.payErrorRequest': 'No se pudo iniciar el pago de Bitcoin',
   'forum.payErrorRateLimit': 'Demasiados pagos. Espera un momento e inténtalo de nuevo.',
@@ -2877,7 +2847,9 @@ const es = {
   'requirements.nameTitle': 'Añade tu nombre',
   'requirements.usernameTitle': 'Añade tu nombre en 21.gifts',
   'requirements.rulesTitle': 'Acepta las reglas del salón',
-  'requirements.addressTitle': 'Añade tu Wallet of Satoshi address',
+  'requirements.walletTitle': 'Tu wallet no está configurada',
+  'requirements.walletBody':
+    'Los regalos para tus publicaciones van a tu propia wallet de 21.gifts, y todavía no está configurada. En cuanto esté configurada, podrás publicar.',
   'requirements.close': 'Cerrar',
 
   'introduce.title': 'Preséntate',
@@ -2949,6 +2921,10 @@ const es = {
   'wallet.payInsufficient': 'Tu wallet no tiene suficiente Bitcoin para este pago.',
   'wallet.payAddFunds': 'Para añadir Bitcoin, envíalo a tu dirección:',
   'wallet.payUnconfirmed': 'Este pago aún no está confirmado. Vuelve a revisar tu saldo más tarde.',
+  'wallet.payUnavailable':
+    'Tu wallet de 21.gifts no está disponible aquí, así que esto no se puede pagar.',
+  'wallet.payFailed': 'Tu wallet no pudo preparar este pago. Inténtalo de nuevo.',
+  'wallet.payRetry': 'Intentar de nuevo',
   'wallet.sendHeading': 'Enviar Bitcoin',
   'wallet.sendLabel': 'Solicitud de pago o dirección',
   'wallet.sendPlaceholder': 'Pega una solicitud de pago Bitcoin o una dirección',
@@ -3053,7 +3029,8 @@ const es = {
   'pos.create': 'Crear pago',
   'pos.cancel': 'Cancelar',
   'pos.needUsername': 'Primero elige un nombre de usuario.',
-  'pos.needAddress': 'Primero define una dirección de Wallet of Satoshi.',
+  'pos.needWallet': 'Primero configura tu wallet.',
+  'pos.cannotReceive': 'Tu wallet no puede recibir este pago ahora mismo. Inténtalo más tarde.',
   'pos.left': 'quedan {time}',
   'pos.error': 'La caja no está disponible.',
   'pos.outside': 'El importe está fuera del rango de la wallet.',
@@ -3065,7 +3042,6 @@ const es = {
   'profile.message': 'Mensaje',
 
   'view.unnamed': 'Sin nombre',
-  'view.noAddress': 'Sin Wallet of Satoshi address',
   'view.noGiftsAddress': 'Sin dirección 21.gifts',
   'view.missing': 'No se pudo encontrar este perfil.',
   'view.error': 'No se pudo cargar este perfil. Inténtalo de nuevo.',
@@ -3142,7 +3118,7 @@ const es = {
     'Hablar de Bitcoin cuando ayuda a alguien del salón y no empuja a nadie a pagar.',
   'rules.allowed3': 'Otros idiomas. Leer sin escribir. Guardar silencio.',
   'rules.allowed4':
-    'Tu nombre y tu Wallet of Satoshi address en tu perfil — no repetidos en cada mensaje.',
+    'Tu nombre y tu dirección de 21.gifts en tu perfil — no repetidos en cada mensaje.',
   'rules.allowed5': '«Ahora mismo no puedo dar.» Es una frase completa y no necesita explicación.',
   'rules.ratherNotHeading': 'Mejor no',
   'rules.ratherNotLead': 'Todavía no es una prohibición. Repítelo o sube el volumen, y lo será.',
@@ -3643,45 +3619,45 @@ const fil = {
   'home.step1Title': 'Mag-log in',
   'home.step1Body':
     'Isang tap sa browser mo. Gagamitin nito ang secure na login na nakaimbak sa device mo, o gagawa ito ng bago. Iyon na ang account mo — wala nang ibang kailangang tandaan.',
-  'home.step2Title': 'Magdagdag ng Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Sabihin kung saan dapat dumating ang mga regalo, halimbawa',
-  'home.step2BodyAfter':
-    '. Mula roon, puwede ka nang padalhan ng Bitcoin ng kahit sino mula sa Wallet of Satoshi.',
+  'home.step2Title': 'I-set up ang wallet mo',
+  'home.step2BodyBefore':
+    'Kumpirmahin nang isang beses gamit ang passkey mo, at magkakaroon ng address mo ang sarili mong wallet sa app na ito, halimbawa',
+  'home.step2BodyAfter': '. Mula roon, puwede ka nang padalhan ng Bitcoin ng kahit sino.',
   'home.step3Title': 'Mag-post at tumanggap ng tulong',
   'home.step3Body':
-    'Kapag naka-log in ka na, sumulat ng post sa forum. Puwedeng magpadala ng Bitcoin ang iba sa isang nababayarang reaksyon — sa Wallet of Satoshi ng may-akda ito dumarating, hindi sa amin. Hindi kailanman hinahawakan ng platform ang pera.',
+    'Kapag naka-log in ka na, sumulat ng post sa forum. Puwedeng magpadala ng Bitcoin ang iba sa isang nababayarang reaksyon — sa sariling 21.gifts wallet ng may-akda ito dumarating, hindi sa amin. Hindi kailanman hinahawakan ng platform ang pera.',
   'home.whyKicker': 'Bakit ito umiiral',
   'home.whyTitle': 'Ang pinakamaikling daan mula sa isang tao patungo sa iba',
   'home.why1Title': 'Tunay na peer-to-peer',
   'home.why1Body':
-    'Diretsong lumilipat ang pondo mula sa Wallet of Satoshi ng nagbibigay patungo sa Wallet of Satoshi address ng tumatanggap. Hindi kailanman hinahawakan, nire-route, o ini-escrow ng 21.gifts ang pera — walang anumang puwede naming i-freeze.',
+    'Diretsong lumilipat ang pondo mula sa 21.gifts wallet ng nagbibigay patungo sa 21.gifts wallet ng tumatanggap. Sa miyembro lang pag-aari ang bawat wallet: hindi kailanman hinahawakan o ini-escrow ng 21.gifts ang pera — walang anumang puwede naming i-freeze.',
   'home.why2Title': 'Nasa device mo ang login',
   'home.why2Body':
     'Hindi kailanman nakikita ng 21.gifts ang password — isang naka-sign na login assertion lang. Walang password database na puwedeng ma-leak.',
   'home.why3Title': 'Ang Bitcoin mo, hindi sa amin',
   'home.why3Body':
-    'Ang mga regalo ay Bitcoin payment sa isang Wallet of Satoshi address. Kung mawala man ang 21.gifts bukas, gagana pa rin ang mga address na iyon.',
+    'Sa sarili mong wallet dumarating ang mga regalo, at ikaw lang ang makakapagbukas nito. Kung mawala man ang 21.gifts bukas, hihinto ang @21.gifts address mo, pero sa iyo pa rin ang Bitcoin mo: binubuksan ito ng 12 recovery word mo sa anumang compatible na wallet.',
   'home.projectKicker': 'Ang proyekto',
   'home.projectTitle': 'Mag-donate sa proyektong ito',
   'home.projectLead':
-    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng reaksyon. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa Wallet of Satoshi address na ito.',
+    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng reaksyon. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa sariling 21.gifts address ng proyekto.',
   'home.faqKicker': 'FAQ',
   'home.faqTitle': 'Mga karaniwang tanong, maikling sagot',
   'home.faq1Q': 'Sino ang puwedeng gumamit nito?',
   'home.faq1A':
-    'Sinumang may Wallet of Satoshi address. Walang application at walang review process.',
+    'Sinumang nagla-log in gamit ang passkey na kayang maglaman ng 21.gifts wallet. Walang application at walang review process.',
   'home.faq3Q': 'Ano ang nangyayari sa mga key ko?',
   'home.faq3A':
-    'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at, kung pipiliin mong i-publish, ang Wallet of Satoshi address mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
+    'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at ang public key ng 21.gifts wallet mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
   'home.faq4Q': 'Puwede ba akong mawalan ng access sa account?',
   'home.faq4A':
     'Oo. Kung mawala ang login mo at ang anumang platform sync, hindi pa mababawi ang account sa ngayon. Mag-backup ng device na ginagamit mo sa pag-log in.',
   'home.faq5Q': 'Paano ako magpapadala ng regalo?',
   'home.faq5A':
-    'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang Ipakita ang mga reaksyon, at i-tap ang Magpadala ng Bitcoin sa isang reaksyon. Maglagay ng halaga sa ₿ at magbayad gamit ang Wallet of Satoshi — diretso sa sumulat ng reaksyon ang Bitcoin.',
+    'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang Ipakita ang mga reaksyon, at i-tap ang Magpadala ng Bitcoin sa isang reaksyon. Maglagay ng halaga sa ₿ at magbayad mula sa 21.gifts wallet mo — diretso sa sumulat ng reaksyon ang Bitcoin.',
   'home.faq6Q': 'Bakit Bitcoin lang?',
   'home.faq6A':
-    'Mabilis ang Bitcoin at hindi ito madaling i-censor. Ginagawang kasing-simple ng email address ng Wallet of Satoshi ang pagpapadala at pagtanggap. Inaalis nito ang pangangailangan ng anumang custodial layer at nagbibigay-daan sa sinuman sa mundo na magbigay o tumanggap nang hindi humihingi ng pahintulot.',
+    'Mabilis ang Bitcoin at hindi ito madaling i-censor. Ginagawang kasing-simple ng email address ng 21.gifts address mo ang pagpapadala at pagtanggap. Inaalis nito ang pangangailangan ng anumang custodial layer at nagbibigay-daan sa sinuman sa mundo na magbigay o tumanggap nang hindi humihingi ng pahintulot.',
   'home.faq7Q': 'Regulado ba ito, at paano ang buwis?',
   'home.faq7A':
     'Ang 21.gifts ay isang non-profit na communication at discovery layer. Hindi ito payment service provider at hindi ito naglilipat ng pondo. Responsibilidad ng nagbibigay at ng tumatanggap ang sarili nilang tax treatment sa kanilang bansa.',
@@ -3775,18 +3751,16 @@ const fil = {
   'login.copyLink': 'Kopyahin ang link',
   'login.linkCopied': 'Nakopya',
   'login.logOut': 'Mag-log out',
-  'login.helloName': 'Hi, {name}',
   'login.welcomeHeading': 'Welcome, {name}',
   'login.welcomeSignedOut': 'Welcome',
   'setup.nameTitle': 'Ang pangalan mo',
   'setup.usernameTitle': 'Ang 21.gifts name mo',
   'setup.usernameHint':
-    'Ito ang address na padadalhan ng Bitcoin: ikaw@21.gifts. Wallet of Satoshi pa rin ang tumatanggap.',
+    'Ito ang address na padadalhan ng Bitcoin: ikaw@21.gifts. Diretso itong pumapasok sa sarili mong wallet sa app na ito.',
   'setup.usernameEmpty': 'Maglagay ng username',
   'setup.usernameInvalid': 'Mga English na letra, numero, hyphen, underscore, o tuldok lang',
   'setup.usernameTaken': 'Nakuha na ang username na iyan',
   'setup.usernameRequest': 'Hindi ma-save ang username',
-  'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
   'setup.continue': 'Magpatuloy',
   'setup.skip': 'Laktawan',
   'setup.rulesTitle': 'Mga patakaran sa living room',
@@ -3816,19 +3790,6 @@ const fil = {
   'location.clear': 'Burahin ang lugar',
   'location.unset': 'Hindi nakasaad',
   'location.errorRequest': 'Hindi ma-save ang lugar',
-  'la.heading': 'Wallet of Satoshi address',
-  'la.prompt': 'I-link ang Wallet of Satoshi address mo para makarating sa iyo ang mga regalo.',
-  'la.save': 'I-save',
-  'la.link': 'I-link ang address',
-  'la.cancel': 'Kanselahin',
-  'la.edit': 'I-edit',
-  'la.unlink': 'I-unlink',
-  'la.aria': 'Wallet of Satoshi address',
-  'la.errorEmpty': 'Ilagay ang iyong Wallet of Satoshi address',
-  'la.errorNotFound': 'Hindi mahanap ang Wallet of Satoshi address na iyon',
-  'la.errorRequest': 'Hindi ma-update ang Wallet of Satoshi address',
-  'la.errorNotZap':
-    'Hindi matanggap ng Wallet of Satoshi address na ito ang mga Bitcoin payment na ito',
   'forum.heading': 'Forum',
   'forum.modeLabel': 'View ng forum',
   'forum.modeActive': 'Aktibo',
@@ -3890,8 +3851,7 @@ const fil = {
   'forum.payBack': 'Bumalik',
   'forum.payClose': 'Isara',
   'forum.payOpenWallet': 'Magbayad',
-  'forum.payOpenWalletAria': 'Magbayad gamit ang Wallet of Satoshi',
-  'forum.payInvoiceQr': 'QR code ng bayad sa Bitcoin',
+  'forum.payOpenWalletAria': 'Magbayad gamit ang isang Bitcoin wallet app',
   'forum.payErrorAmount': 'Maglagay ng buong numerong higit sa zero',
   'forum.payErrorRequest': 'Hindi masimulan ang Bitcoin payment',
   'forum.payErrorRateLimit': 'Sobrang daming bayad. Maghintay sandali at subukan ulit.',
@@ -4038,7 +3998,9 @@ const fil = {
   'requirements.nameTitle': 'Idagdag ang pangalan mo',
   'requirements.usernameTitle': 'Idagdag ang 21.gifts name mo',
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',
-  'requirements.addressTitle': 'Idagdag ang Wallet of Satoshi address mo',
+  'requirements.walletTitle': 'Hindi pa naka-set up ang wallet mo',
+  'requirements.walletBody':
+    'Sa sarili mong 21.gifts wallet napupunta ang mga regalo para sa mga post mo, at hindi pa ito naka-set up. Kapag naka-set up na ito, puwede ka nang mag-post.',
   'requirements.close': 'Isara',
 
   'introduce.title': 'Ipakilala ang sarili mo',
@@ -4110,6 +4072,10 @@ const fil = {
   'wallet.payAddFunds': 'Para magdagdag ng Bitcoin, ipadala ito sa address mo:',
   'wallet.payUnconfirmed':
     'Hindi pa kumpirmado ang bayad na ito. Tingnan ulit ang balanse mo mamaya.',
+  'wallet.payUnavailable':
+    'Hindi available dito ang 21.gifts wallet mo, kaya hindi ito mababayaran.',
+  'wallet.payFailed': 'Hindi naihanda ng wallet mo ang bayad na ito. Pakisubukan ulit.',
+  'wallet.payRetry': 'Subukan ulit',
   'wallet.sendHeading': 'Magpadala ng Bitcoin',
   'wallet.sendLabel': 'Payment request o address',
   'wallet.sendPlaceholder': 'I-paste ang Bitcoin payment request o address',
@@ -4214,7 +4180,9 @@ const fil = {
   'pos.create': 'Gumawa ng bayad',
   'pos.cancel': 'Kanselahin',
   'pos.needUsername': 'Maglagay muna ng username.',
-  'pos.needAddress': 'Maglagay muna ng Wallet of Satoshi address.',
+  'pos.needWallet': 'I-set up muna ang wallet mo.',
+  'pos.cannotReceive':
+    'Hindi matanggap ng wallet mo ang bayad na ito ngayon. Pakisubukan ulit mamaya.',
   'pos.left': '{time} na lang',
   'pos.error': 'Hindi available ang point of sale.',
   'pos.outside': 'Labas sa range ng wallet ang halaga.',
@@ -4226,7 +4194,6 @@ const fil = {
   'profile.message': 'Mensahe',
 
   'view.unnamed': 'Walang pangalan',
-  'view.noAddress': 'Walang Wallet of Satoshi address',
   'view.noGiftsAddress': 'Walang 21.gifts address',
   'view.missing': 'Hindi mahanap ang profile na ito.',
   'view.error': 'Hindi ma-load ang profile. Subukan ulit.',
@@ -4305,7 +4272,7 @@ const fil = {
     'Pag-uusap tungkol sa Bitcoin kung nakakatulong ito sa isang tao sa living room at hindi nagtutulak kaninuman na magbayad.',
   'rules.allowed3': 'Ibang mga wika. Pagbabasa lang. Pananahimik.',
   'rules.allowed4':
-    'Ang pangalan mo at ang Wallet of Satoshi address mo sa profile — hindi inuulit sa bawat mensahe.',
+    'Ang pangalan mo at ang 21.gifts address mo sa profile — hindi inuulit sa bawat mensahe.',
   'rules.allowed5':
     '“Hindi ako makapagbigay ngayon.” Kumpleto na iyon, at hindi na kailangan ng paliwanag.',
   'rules.ratherNotHeading': 'Mas mabuting huwag',

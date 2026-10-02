@@ -1,8 +1,7 @@
 import type { Account } from '@/lib/api-types';
 
-/** The post-login path is name, username, address, rules, or welcome, and never `/wallet`. */
-export type OnboardingPath =
-  '/setup/name' | '/setup/username' | '/setup/address' | '/setup/rules' | '/welcome';
+/** The post-login path is name, username, rules, or welcome, and never `/wallet`. */
+export type OnboardingPath = '/setup/name' | '/setup/username' | '/setup/rules' | '/welcome';
 
 /**
  * Whether the account has a display name to show.
@@ -12,16 +11,6 @@ export type OnboardingPath =
  */
 export function hasDisplayName(account: Account): boolean {
   return account.name !== null && account.name.trim() !== '';
-}
-
-/**
- * Whether the account has a Wallet of Satoshi address to receive gifts.
- *
- * @param account - Signed-in account.
- * @returns True when `lightningAddress` is non-null and non-empty after trim.
- */
-export function hasLightningAddress(account: Account): boolean {
-  return account.lightningAddress !== null && account.lightningAddress.trim() !== '';
 }
 
 /**
@@ -37,8 +26,11 @@ export function hasAgreedToRules(account: Account): boolean {
 /**
  * Next path after login from `account.setup`.
  *
- * `'wallet'` is not a route: the path comes from name, username, lightning
- * address, and rules. Other `setup` values stay a 1:1 map.
+ * `'wallet'` is not a route: the path comes from name, username, and rules.
+ * There is no address step: a member receives on their own in-app wallet,
+ * which the one-time wallet setup dialog sets up. The api's
+ * `'lightning-address'` step is therefore resolved like `'wallet'`. Other
+ * `setup` values stay a 1:1 map.
  *
  * @param account - Signed-in account.
  * @returns The screen the visitor should see.
@@ -46,14 +38,12 @@ export function hasAgreedToRules(account: Account): boolean {
 export function nextOnboardingPath(account: Account): OnboardingPath {
   switch (account.setup) {
     case 'wallet':
+    case 'lightning-address':
       if (!hasDisplayName(account)) {
         return '/setup/name';
       }
       if ((account.username ?? '').trim() === '') {
         return '/setup/username';
-      }
-      if (!hasLightningAddress(account)) {
-        return '/setup/address';
       }
       if (!hasAgreedToRules(account)) {
         return '/setup/rules';
@@ -63,8 +53,6 @@ export function nextOnboardingPath(account: Account): OnboardingPath {
       return '/setup/name';
     case 'username':
       return '/setup/username';
-    case 'lightning-address':
-      return '/setup/address';
     case 'rules':
       return '/setup/rules';
     case null:

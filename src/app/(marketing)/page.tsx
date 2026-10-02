@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import type { ReactElement } from 'react';
 import { PwaInstall } from '@/components/PwaInstall';
 import { HappylandSection } from '@/components/HappylandSection';
 import { ButtonLink } from '@/components/ui';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getCatalog, type MessageKey } from '@/lib/messages';
-import { PROJECT_DONATE_ADDRESS } from '@/lib/project-donate';
+import { lightningHref } from '@/lib/payment-link';
+import { projectDonateAddress } from '@/lib/project-donate';
 import { translate } from '@/lib/translate';
 
 /**
@@ -18,8 +20,20 @@ export const metadata: Metadata = {
 };
 
 /**
- * Marketing landing at `/`: pitch, how it works, why, project donate (`#project`),
- * FAQ, CTAs into the app, and an optional PWA install control after Send help.
+ * Host this request was made on, without a port (`x-forwarded-host` first).
+ *
+ * @returns The hostname, or an empty string when the request names none.
+ */
+async function requestHostname(): Promise<string> {
+  const headerStore = await headers();
+  const raw = headerStore.get('x-forwarded-host') ?? headerStore.get('host') ?? '';
+  return raw.replace(/,.*$/, '').trim().replace(/:\d+$/, '');
+}
+
+/**
+ * Marketing landing at `/`: pitch, how it works, why, project donate (`#project`,
+ * only when the build names the platform account), FAQ, CTAs into the app,
+ * and an optional PWA install control after Send help.
  *
  * @returns The home screen.
  */
@@ -27,6 +41,7 @@ export default async function Home(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
   const t = (key: MessageKey): string => translate(messages, key);
+  const donateAddress = projectDonateAddress(await requestHostname());
 
   return (
     <main>
@@ -66,7 +81,7 @@ export default async function Home(): Promise<ReactElement> {
             <span className="text-sm text-paper/60">02</span>
             <h3 className="mt-2 text-xl font-semibold">{t('home.step2Title')}</h3>
             <p className="mt-2 text-paper/60">
-              {t('home.step2BodyBefore')} <code>you@walletofsatoshi.com</code>
+              {t('home.step2BodyBefore')} <code>you@21.gifts</code>
               {t('home.step2BodyAfter')}
             </p>
           </div>
@@ -101,21 +116,23 @@ export default async function Home(): Promise<ReactElement> {
         </div>
       </section>
 
-      <section id="project" className="mx-auto max-w-[1100px] px-5 py-20">
-        <p className="text-sm font-medium tracking-widest text-accent uppercase">
-          {t('home.projectKicker')}
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold">{t('home.projectTitle')}</h2>
-        <p className="mt-4 max-w-3xl text-paper/60">{t('home.projectLead')}</p>
-        <p className="mt-6">
-          <a
-            href={`lightning:${PROJECT_DONATE_ADDRESS}`}
-            className="text-accent underline underline-offset-2"
-          >
-            <code className="font-mono text-sm">{PROJECT_DONATE_ADDRESS}</code>
-          </a>
-        </p>
-      </section>
+      {donateAddress !== null ? (
+        <section id="project" className="mx-auto max-w-[1100px] px-5 py-20">
+          <p className="text-sm font-medium tracking-widest text-accent uppercase">
+            {t('home.projectKicker')}
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold">{t('home.projectTitle')}</h2>
+          <p className="mt-4 max-w-3xl text-paper/60">{t('home.projectLead')}</p>
+          <p className="mt-6">
+            <a
+              href={lightningHref(donateAddress)}
+              className="text-accent underline underline-offset-2"
+            >
+              <code className="font-mono text-sm">{donateAddress}</code>
+            </a>
+          </p>
+        </section>
+      ) : null}
 
       <section id="faq" className="mx-auto max-w-[1100px] px-5 py-20">
         <h2 className="text-sm font-medium tracking-widest text-accent uppercase">

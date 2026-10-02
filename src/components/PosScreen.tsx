@@ -12,6 +12,7 @@ import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import type { AmountUnit } from '@/lib/api-types';
@@ -78,7 +79,7 @@ type PosTillState = {
   rateDay: FiatRateDay | null;
   canCharge: boolean;
   needsUsername: boolean;
-  needsAddress: boolean;
+  needsWallet: boolean;
   onCreate: (event: FormEvent) => Promise<void>;
   onCancel: () => Promise<void>;
   retryLoad: () => void;
@@ -173,12 +174,9 @@ function usePosTillState(): PosTillState {
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
   const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
   const needsUsername = account !== null && (account.username ?? '') === '';
-  const needsAddress =
-    account !== null &&
-    (account.username ?? '') !== '' &&
-    (account.lightningAddress ?? '').trim() === '';
-  const canCharge =
-    (account?.username ?? '') !== '' && (account?.lightningAddress ?? '').trim() !== '';
+  const needsWallet =
+    account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;
+  const canCharge = (account?.username ?? '') !== '' && account?.sparkWalletVerified === true;
 
   useEffect(() => {
     if (
@@ -257,14 +255,16 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- createPosCharge only rejects with Error */
           const message = err instanceof Error ? err.message : t('pos.error');
-          if (message === 'Amount is outside the wallet range') {
+          if (err instanceof WalletRequiredError) {
+            setError(t('pos.needWallet'));
+          } else if (err instanceof CannotReceiveError) {
+            setError(t('pos.cannotReceive'));
+          } else if (message === 'Amount is outside the wallet range') {
             setError(t('pos.outside'));
           } else if (message === 'A payment is already open') {
             setError(t('pos.already'));
           } else if (message === 'Set a username first') {
             setError(t('pos.needUsername'));
-          } else if (message === 'Set a Wallet of Satoshi address first') {
-            setError(t('pos.needAddress'));
           } else {
             setError(t('pos.error'));
           }
@@ -327,7 +327,7 @@ function usePosTillState(): PosTillState {
     rateDay,
     canCharge,
     needsUsername,
-    needsAddress,
+    needsWallet,
     onCreate,
     onCancel,
     retryLoad: () => {
@@ -376,10 +376,10 @@ export function PosTill(): ReactElement {
           </Link>
         </p>
       ) : null}
-      {till.needsAddress ? (
+      {till.needsWallet ? (
         <p className="text-center text-sm text-app-fg">
-          <Link href="/profile" className="underline">
-            {t('pos.needAddress')}
+          <Link href="/wallet" className="underline">
+            {t('pos.needWallet')}
           </Link>
         </p>
       ) : null}

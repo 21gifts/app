@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { throwIfWalletAnswer } from '@/lib/api';
 
 /** One point-of-sale charge. There is no paid status. */
 const posChargeSchema = z.object({
@@ -44,7 +45,9 @@ export async function fetchPosState(sessionToken: string): Promise<PosState> {
  * @param sessionToken - Bearer session.
  * @param amountSats - Whole sats.
  * @returns The created charge.
- * @throws Error with the API `error` string, or a status fallback.
+ * @throws {@link WalletRequiredError} on 412 and {@link CannotReceiveError} on
+ * 422 (the member's wallet is not set up, or cannot receive); otherwise Error
+ * with the API `error` string, or a status fallback.
  */
 export async function createPosCharge(
   sessionToken: string,
@@ -58,6 +61,7 @@ export async function createPosCharge(
     },
     body: JSON.stringify({ amountSats }),
   });
+  throwIfWalletAnswer(response);
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const message =

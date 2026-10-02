@@ -22,7 +22,7 @@ const named: ViewProfile = {
   name: 'Ada',
   username: 'alice',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1,
   hasPasskey: false,

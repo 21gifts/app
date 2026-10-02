@@ -57,7 +57,7 @@ async function signIn(page: Page, overrides: Record<string, unknown> = {}): Prom
         name: 'Ada',
         username: 'ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1_700_000_000,

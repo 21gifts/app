@@ -51,7 +51,7 @@ const named = {
 
 const namedAddress = {
   ...named,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   setup: 'rules' as const,
   missing: ['rules'] as ('name' | 'lightning-address' | 'rules')[],
 };

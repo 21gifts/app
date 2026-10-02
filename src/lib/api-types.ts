@@ -240,27 +240,6 @@ export const viewProfileSchema = z.object({
  */
 export type ViewProfile = z.infer<typeof viewProfileSchema>;
 
-/**
- * Runtime schema for the payload of `GET /lightning-address`.
- *
- * `callback` is the LNURL-pay URL the browser uses to fetch an invoice.
- * `minSendable` / `maxSendable` are millisatoshis. `commentAllowed` is
- * omitted when the provider does not accept a LUD-12 comment.
- */
-export const lnAddressResolvedSchema = z.object({
-  address: z.string(),
-  callback: z.string().url(),
-  minSendable: z.number().int().nonnegative(),
-  maxSendable: z.number().int().nonnegative(),
-  commentAllowed: z.number().int().optional(),
-});
-
-/**
- * Cached LUD-16 metadata from the api, used to fetch a gift invoice in the
- * browser.
- */
-export type LnAddressResolved = z.infer<typeof lnAddressResolvedSchema>;
-
 /** BTC amount string from the api: whole sats as BTC with exactly 8 decimals. */
 export const btcAmountStringSchema = z.string().regex(/^\d+\.\d{8}$/);
 
