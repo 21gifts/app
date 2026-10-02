@@ -35,6 +35,7 @@ function visualStatus(): WalletStatus | null {
   const visual = new URLSearchParams(window.location.search).get('visual');
   switch (visual) {
     case 'balance-locked':
+    case 'send-alert-locked':
       return 'locked';
     case 'balance-connecting':
       return 'connecting';
@@ -52,10 +53,10 @@ function visualStatus(): WalletStatus | null {
 
 /**
  * Selects the wallet balance state and exposes guarded unlock and retry actions.
- * Visual pins (`?visual=balance-…`, and `?visual=history-…` or `?visual=send-…`
- * as ready) are honoured
- * only in a Playwright build (`getE2eNow()` set) and leave unlock and retry
- * inert while pinned.
+ * Visual pins (`?visual=balance-…`, `?visual=send-alert-locked` as locked, and
+ * the other `?visual=history-…` or `?visual=send-…`
+ * pins as ready) are honoured only in a Playwright
+ * build (`getE2eNow()` set) and leave unlock and retry inert while pinned.
  *
  * @returns Wallet balance state and stable actions for `/wallet`.
  */

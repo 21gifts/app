@@ -320,6 +320,12 @@ Pinned fixture (`?visual=send-failed`, Playwright builds only). After a prepare 
 
 ![21.gifts wallet send failed](images/wallet-send-failed.png)
 
+### Variant: send-alert-locked
+
+Pinned fixture (`?visual=send-alert-locked`, Playwright builds only). The same failed send after the wallet locked: the balance block shows **Unlock wallet**, and region **Send Bitcoin** keeps only the alert **The payment could not be sent. Check your balance before you try again.**, without the field and **Continue**.
+
+![21.gifts wallet send alert locked](images/wallet-send-alert-locked.png)
+
 ### Variant: send-insufficient
 
 Pinned fixture (`?visual=send-insufficient`, Playwright builds only). After a payment the balance does not cover: the alert **Your wallet does not have enough Bitcoin for this payment.** under the field.
