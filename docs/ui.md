@@ -905,11 +905,11 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 
 ### Pay sheet
 
-**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Back `IconButton`. `AmountEntry` (`forum.payAmountLabel`): bitcoin entry shows the preferred fiat under the field, fiat entry shows the bitcoin equivalent. A blank field is 21 sats in either unit. Alerts. `Button` primary:
+**Amount step.** Inner `rounded-xl border bg-app-card p-3`. Close `IconButton` (`X`, `forum.payClose`). `AmountEntry` (`forum.payAmountLabel`): bitcoin entry shows the preferred fiat under the field, fiat entry shows the bitcoin equivalent. A blank field is 21 sats in either unit. Alerts. `Button` primary:
 
 - Every user-agent: **Continue** (`forum.payContinue`). Click only requests the invoice, then the invoice card.
 
-**Invoice step.** Centered column, back, confirm sentence with one `formatBitcoin` and optional `·` plus `formatFiatDisplay` when the conversion is non-null, then the invoice card on every user-agent (unless the in-app wallet slot below replaces its QR and **Pay** button):
+**Invoice step.** Centered column, Close `IconButton` (`X`, `forum.payClose`), confirm sentence with one `formatBitcoin` and optional `·` plus `formatFiatDisplay` when the conversion is non-null, then the invoice card on every user-agent (unless the in-app wallet slot below replaces its QR and **Pay** button):
 
 - Confirm sentence, then **Pay** `Button` `variant="primary"` `size="md"` `tone="app"` with `wos-icon.png` 20×20 (`rounded-md ring-1 ring-white/30`) as `icon` (visible `forum.payOpenWallet`, aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”). Click sets `window.location.href` to the Android Intent URL or `walletofsatoshi:` (not a custom-scheme `<a>`). `QrCode` 232px on white plate (`border-app-border`) is mounted only when the user-agent is not a smartphone (`isSmartphoneUserAgent`, not viewport).
 
