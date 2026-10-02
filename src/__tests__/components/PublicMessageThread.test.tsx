@@ -833,6 +833,22 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('opens the wallet overlay when a paid reply invoice requires a wallet', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new WalletRequiredError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const dialog = await screen.findByRole('dialog', { name: WALLET_OVERLAY });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 5, 'thanks', NO_RATE_SHOWN);
+  });
+
   it('maps an explicit-amount rate-limit onto the reply error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Too many payments'));
     signIn();
@@ -880,6 +896,21 @@ describe('PublicMessageThread', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toMatch(/too many/i);
     });
+  });
+
+  it('opens the wallet overlay when a compose-pay invoice requires a wallet', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new WalletRequiredError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const dialog = await screen.findByRole('dialog', { name: WALLET_OVERLAY });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
   });
 
   it('invoices 1 sat when a non-exempt member replies with text and an empty amount', async () => {
@@ -2155,6 +2186,74 @@ describe('PublicMessageThread in-app wallet pay', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+});
+
+describe('PublicMessageThread in-app wallet pay', () => {
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+  });
+
+  afterEach(resetWallet);
+
+  it('pays a Gift from the wallet when the api issues a sparkInvoice', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 21,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    setWalletUsable('ready');
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays a paid reply from the wallet when the api issues a sparkInvoice', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 5));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 5,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    signIn();
+    setWalletUsable('ready');
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', MESSAGE_ID, 5, 'thanks', NO_RATE_SHOWN);
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays the compose fee from the wallet when the api issues a sparkInvoice', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 1,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    signIn();
+    setWalletUsable('ready');
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(postMessageInvoice).toHaveBeenCalledWith(
+      'sess',
+      'fee-note',
+      1,
+      `inReplyTo:${MESSAGE_ID}\nthanks`,
+      NO_RATE_SHOWN,
+    );
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 });

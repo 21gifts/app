@@ -6646,6 +6646,30 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('opens the wallet overlay when a compose-pay invoice requires a wallet', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockRejectedValue(new WalletRequiredError());
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi Bob' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(composeTargetMock).toHaveBeenCalledWith('sess');
+  });
+
   it('shows a request error when a compose-pay overlay retry is still missing requirements', async () => {
     useAuthStore.setState({
       session: 'sess',
@@ -7040,6 +7064,17 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
     });
+  });
+
+  it('opens the wallet overlay when a paid reply invoice requires a wallet', async () => {
+    invoiceMock.mockRejectedValue(new WalletRequiredError());
+    await expandForeignAndPayReply('Hi Bob', '21');
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
   });
 
   it('lets a founder reply without paying', async () => {
@@ -8615,6 +8650,28 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(await screen.findByRole('dialog', { name: 'Your wallet is not set up' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+  });
+
+  it('opens the wallet overlay when the posting fee invoice requires a wallet', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    invoiceMock.mockRejectedValue(new WalletRequiredError());
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
+    expect(postMock).not.toHaveBeenCalled();
   });
 
   it('closes the wallet overlay without posting', async () => {

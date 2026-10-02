@@ -893,6 +893,10 @@ export function MemberProfileScreen({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
@@ -958,6 +962,10 @@ export function MemberProfileScreen({
       startPayPoll(parentId, baselineSats);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
       if (err instanceof MissingRequirementsError) {
