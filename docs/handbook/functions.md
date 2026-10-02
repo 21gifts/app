@@ -2822,7 +2822,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Zustand store for `session` + `account` plus `wrongAccount`. Hydration is explicit (no module-init `localStorage`).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `clearAuth`, `setWrongAccount`, `clearWrongAccount`.
 - **Returns / side effects:** Auth state object. `clearAuth` clears storage, then `bumpUnreadAppBadgeEpoch()` then `setUnreadAppBadge(0)`, then drops `session` and `account`. It clears the tab phrase, which disconnects the wallet. It does not reset `wrongAccount`.
-- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`, `useWallet`, `rememberPhraseFromPrf`, `unlockWalletPhrase`.
+- **Used by:** `LoginCard`, `OnboardingGate`, `NameSetup`, `AddressSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `NameForm`, `LightningAddressForm`, `useWallet`, `rememberPhraseFromPrf`, `unlockWalletPhrase`, `useWalletPay`, `WalletPay`, `WalletSend`.
 
 ## Function: useTranslations
 
