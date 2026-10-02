@@ -3683,6 +3683,15 @@ describe('InboxScreen', () => {
     );
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
   });
+
+  it('links the wallet-required error to the wallet', () => {
+    renderWithLocale(<InboxScreen {...inboxScreenProps({ formError: 'walletRequired' })} />);
+    const alert = screen.getByRole('alert');
+    expect(alert.tagName).toBe('P');
+    expect(alert.textContent).toBe('Set up your wallet first.');
+    const link = within(alert).getByRole('link', { name: 'Set up your wallet first.' });
+    expect(link.getAttribute('href')).toBe('/wallet');
+  });
 });
 
 describe('InboxScreen in-app wallet pay', () => {

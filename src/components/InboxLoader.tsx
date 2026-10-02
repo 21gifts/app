@@ -16,6 +16,7 @@ import {
   markConversationRead,
   postConversationInvoice,
   postConversationMessage,
+  WalletRequiredError,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import {
@@ -708,11 +709,13 @@ export function InboxLoader(): ReactElement | null {
         } catch (err) {
           if (openIdRef.current === conversationId) {
             setFormError(
-              isRateLimitError(err)
-                ? 'rateLimit'
-                : isAuthorWalletError(err)
-                  ? 'authorWallet'
-                  : 'request',
+              err instanceof WalletRequiredError
+                ? 'walletRequired'
+                : isRateLimitError(err)
+                  ? 'rateLimit'
+                  : isAuthorWalletError(err)
+                    ? 'authorWallet'
+                    : 'request',
             );
           }
           setPosting(false);
