@@ -3023,7 +3023,7 @@ export const SCREEN_VARIANTS = [
     id: 'loading',
     image: 'statistics-loading.png',
     visual: 'state-statistics-loading',
-    needle: 'Daily funding goal',
+    needle: 'People paid',
   },
   {
     route: '/statistics',
@@ -3034,10 +3034,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/statistics',
-    id: 'forbidden',
-    image: 'statistics-forbidden.png',
-    visual: 'state-statistics-forbidden',
-    needle: 'This page is for moderators.',
+    id: 'member',
+    image: 'statistics-member.png',
+    visual: 'state-statistics-member',
+    needle: 'state-statistics-member',
+  },
+  {
+    route: '/statistics',
+    id: 'signed-out',
+    image: 'statistics-signed-out.png',
+    visual: 'state-statistics-signed-out',
+    needle: 'state-statistics-signed-out',
+  },
+  {
+    route: '/statistics',
+    id: 'staff-open',
+    image: 'statistics-staff-open.png',
+    visual: 'state-statistics-staff-open',
+    needle: 'state-statistics-staff-open',
   },
   {
     route: '/statistics',

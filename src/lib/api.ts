@@ -1051,18 +1051,15 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
 }
 
 /**
- * Fetches shop counts per UTC day for the staff statistics chart.
+ * Fetches public shop counts per UTC day. No session.
  *
- * @param sessionToken - Bearer session from a completed login.
  * @returns The 30 {@link ShopActivityDay} rows, oldest first.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link shopActivitySchema}.
  */
-export async function fetchShopActivity(sessionToken: string): Promise<ShopActivityDay[]> {
+export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
   try {
-    const response = await fetch('/shops/activity', {
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    const response = await fetch('/shops/activity');
     if (!response.ok) {
       throw new Error('Could not load shop activity. Please try again.');
     }

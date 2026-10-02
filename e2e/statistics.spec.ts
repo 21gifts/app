@@ -95,17 +95,15 @@ async function stubPayoutGoal(page: import('@playwright/test').Page): Promise<vo
   });
 }
 
-test('Function: StatisticsPage — staff see the open payout-goal chart', async ({ page }) => {
+test('Function: StatisticsPage — staff see the open people-count chart', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubPayoutGoal(page);
   await page.goto('/statistics');
   await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
   await expect(page.getByText('People by UTC day')).toBeVisible();
   await expect(page.getByText('Shops by UTC day')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveAttribute(
-    'href',
-    '/moderate/payouts',
-  );
+  await expect(page.getByText('Moderator functions')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await expect(page.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
     'href',
@@ -113,21 +111,45 @@ test('Function: StatisticsPage — staff see the open payout-goal chart', async 
   );
 });
 
-test('Function: StatisticsPage — basis visitors do not see Statistics in Menu', async ({
-  page,
-}) => {
+test('Function: StatisticsPage — basis visitors see Statistics in Menu', async ({ page }) => {
   await seedAdaSession(page, 'basis');
-  await page.goto('/statistics');
-  await page.getByRole('button', { name: 'Menu' }).click();
-  await expect(page.getByRole('link', { name: 'Statistics' })).toHaveCount(0);
-});
-
-test('Function: StatisticsScreen — basis visitors see the forbidden copy', async ({ page }) => {
-  await seedAdaSession(page, 'basis');
+  await stubPayoutGoal(page);
   await page.goto('/statistics');
   await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
-  await expect(page.getByText('This page is for moderators.')).toBeVisible();
-  await expect(page.getByText('People by UTC day')).toHaveCount(0);
+  await expect(page.getByText('People by UTC day')).toBeVisible();
+  await expect(page.getByText('This page is for moderators.')).toHaveCount(0);
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
+    'href',
+    '/statistics',
+  );
+});
+
+test('Function: StatisticsPage — a signed-out visitor sees the measured charts', async ({
+  page,
+}) => {
+  await stubPayoutGoal(page);
+  await page.goto('/statistics');
+  await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
+  await expect(page.getByText('People by UTC day')).toBeVisible();
+  await expect(page.getByText('Shops by UTC day')).toBeVisible();
+  await expect(page.getByText('Moderator functions')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu', exact: true })).toHaveCount(0);
+  expect(page.url()).toContain('/statistics');
+});
+
+test('Function: StatisticsScreen — opening Moderator functions shows the payout link', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'founder');
+  await stubPayoutGoal(page);
+  await page.goto('/statistics');
+  await expect(page.getByText('Moderator functions')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
+  await page.getByText('Moderator functions').click();
+  await expect(page.getByRole('link', { name: 'Show payout per person' })).toBeVisible();
 });
 
 test('Function: StatisticsScreen — payout goal loading', async ({ page }) => {
@@ -136,7 +158,7 @@ test('Function: StatisticsScreen — payout goal loading', async ({ page }) => {
   await page.route('**/shops/activity', () => new Promise(() => undefined));
   await page.goto('/statistics');
   await expect(
-    page.getByRole('group', { name: 'Daily funding goal' }).getByText('Loading…'),
+    page.getByRole('group', { name: 'People paid' }).getByText('Loading…'),
   ).toBeVisible();
 });
 
@@ -169,12 +191,11 @@ test('Function: previousUtcDay — yesterday is UTC September 19', async ({ page
   await expect(page.getByText(/Yesterday \(UTC September 19\)/)).toBeVisible();
 });
 
-test('Function: countOnDay — yesterday 12 of 100 is 12%', async ({ page }) => {
+test('Function: countOnDay — yesterday is 12 people', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubPayoutGoal(page);
   await page.goto('/statistics');
-  await expect(page.getByText('12%')).toBeVisible();
-  await expect(page.getByText('yesterday 12 of 100')).toBeVisible();
+  await expect(page.getByText('Yesterday (UTC September 19): 12 people')).toBeVisible();
 });
 
 test('Function: chartRows — the 30-day People by UTC day image is visible', async ({ page }) => {
@@ -200,7 +221,7 @@ test('Function: chartDayLabel — the last axis tick is 9/20', async ({ page }) 
   ).toBeVisible();
 });
 
-test('Function: PayoutGoalChart — the People by UTC day SVG is visible', async ({ page }) => {
+test('Function: PeopleCountChart — the People by UTC day SVG is visible', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await stubPayoutGoal(page);
   await page.goto('/statistics');
