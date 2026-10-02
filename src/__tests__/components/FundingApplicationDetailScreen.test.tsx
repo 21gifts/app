@@ -47,7 +47,7 @@ const account: Account = {
   role: 'moderator',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
   forumLawsDismissed: false,
@@ -79,7 +79,7 @@ const DETAIL: FundingApplicationDetail = {
     id: 'acc_rose',
     name: 'Rose',
     role: 'verified',
-    lightningAddress: 'rose@walletofsatoshi.com',
+    lightningAddress: null,
   },
   grant: {
     status: 'pending',

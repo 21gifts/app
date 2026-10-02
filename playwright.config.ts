@@ -103,6 +103,7 @@ export default defineConfig({
         NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
         NEXT_PUBLIC_APP_VERSION: 'dev',
         NEXT_PUBLIC_E2E_NOW: '2026-01-07T12:00:00.000Z',
+        NEXT_PUBLIC_PLATFORM_USERNAME: '21gifts',
       },
     },
   ],

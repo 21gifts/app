@@ -64,7 +64,7 @@ async function signInAda(page: Page): Promise<void> {
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1_700_000_000,

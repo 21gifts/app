@@ -46,7 +46,6 @@ import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { QrCode } from '@/components/QrCode';
 import { WalletPay } from '@/components/WalletPay';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { MentionTextarea } from '@/components/MentionTextarea';
@@ -78,12 +77,6 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
-import {
-  isAndroidUserAgent,
-  isSmartphoneUserAgent,
-  walletOfSatoshiHref,
-  walletOfSatoshiIntentHref,
-} from '@/lib/wos-deep-link';
 
 /** Top-level compose mode: messenger post or Ask wizard. */
 export type ForumComposeIntent = 'post' | 'ask';
@@ -413,7 +406,6 @@ function ForumPaySheet({
   onPaySubmit,
   onPayCancel,
   rateDay,
-  showPaymentQr,
   onInteract,
 }: {
   messageId: string;
@@ -427,7 +419,6 @@ function ForumPaySheet({
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   onPayCancel: () => void;
   rateDay: FiatRateDay | null;
-  showPaymentQr: boolean;
   onInteract: (event: MouseEvent) => void;
 }): ReactElement {
   const { t } = useTranslations();
@@ -435,45 +426,12 @@ function ForumPaySheet({
   const { fiat } = useFiatPreference();
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
-  /* v8 ignore start -- Android vs iOS wallet href */
-  const android =
-    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
-  const wosHref =
-    invoiceForCard === null
-      ? null
-      : android
-        ? walletOfSatoshiIntentHref(invoiceForCard.pr)
-        : walletOfSatoshiHref(invoiceForCard.pr);
-  /* v8 ignore stop */
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     void Promise.resolve(onPaySubmit());
   };
 
-  const walletButton =
-    wosHref === null ? null : (
-      <Button
-        type="button"
-        aria-label={t('forum.payOpenWalletAria')}
-        disabled={payBusy}
-        icon={
-          <img
-            src="/wos-icon.png"
-            alt=""
-            width={20}
-            height={20}
-            aria-hidden="true"
-            className="h-5 w-5 rounded-md ring-1 ring-white/30"
-          />
-        }
-        onClick={() => {
-          window.location.href = wosHref;
-        }}
-      >
-        {t('forum.payOpenWallet')}
-      </Button>
-    );
 
   if (invoiceForCard === null) {
     return (
@@ -566,16 +524,9 @@ function ForumPaySheet({
       </p>
       <WalletPay
         sparkInvoice={invoiceForCard.sparkInvoice}
+        pr={invoiceForCard.pr}
         amountSats={invoiceForCard.amountSats}
         rateDay={rateDay}
-        fallback={
-          <>
-            {showPaymentQr ? (
-              <QrCode value={invoiceForCard.pr} label={t('forum.payInvoiceQr')} />
-            ) : null}
-            {walletButton}
-          </>
-        }
       />
       {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
       {payWaiting ? (
@@ -871,7 +822,6 @@ export function ForumBoard({
       observer.disconnect();
     };
   }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -977,10 +927,6 @@ export function ForumBoard({
       window.removeEventListener('touchcancel', onTouchCancel);
     };
   }, [onRefresh, scroller]);
-
-  useEffect(() => {
-    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
 
   useEffect(() => {
     copyMounted.current = true;
@@ -1537,7 +1483,6 @@ export function ForumBoard({
                     onPaySubmit={onPaySubmit}
                     onPayCancel={onPayCancel}
                     rateDay={rateDay}
-                    showPaymentQr={showPaymentQr}
                     onInteract={stopCardToggle}
                   />
                 </SundayWritingGate>
@@ -1779,7 +1724,6 @@ export function ForumBoard({
                                   onPaySubmit={onPaySubmit}
                                   onPayCancel={onPayCancel}
                                   rateDay={rateDay}
-                                  showPaymentQr={showPaymentQr}
                                   onInteract={stopCardToggle}
                                 />
                               </SundayWritingGate>
@@ -1798,8 +1742,6 @@ export function ForumBoard({
                           pr={reactionPay.pr}
                           sparkInvoice={reactionPay.sparkInvoice}
                           payWaiting={payWaiting}
-                          payBusy={payBusy}
-                          showPaymentQr={showPaymentQr}
                           rateDay={rateDay}
                           onCancel={onPayCancel}
                         />
@@ -2223,7 +2165,6 @@ export function ForumBoard({
             onPaySubmit={onPaySubmit}
             onPayCancel={onPayCancel}
             rateDay={rateDay}
-            showPaymentQr={showPaymentQr}
             onInteract={(event) => {
               event.stopPropagation();
             }}

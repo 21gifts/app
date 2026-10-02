@@ -295,7 +295,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
         body: JSON.stringify({
           ...E2E_ACCOUNT,
           name: 'Ada',
-          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddress: null,
           setup: 'rules',
           missing: ['rules'],
         }),
@@ -325,7 +325,7 @@ test('signed-in session hydrates, then saves a name, links an address, and reach
       body: JSON.stringify({
         ...E2E_ACCOUNT,
         name: 'Ada',
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
         aboutMe: null,

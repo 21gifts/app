@@ -21,7 +21,7 @@ const account: Account = {
   role: 'basis',
   name: null,
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1,
@@ -84,7 +84,7 @@ describe('RequirementsOverlay', () => {
     });
     vi.mocked(setLightningAddress).mockResolvedValue({
       ...account,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       missing: [],
       setup: null,
     });
