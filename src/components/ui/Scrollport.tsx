@@ -17,7 +17,7 @@ export interface ScrollportProps {
 
 /**
  * The only layout scrollport. Overflow lives in `globals.css`: clip until
- * `data-scroll-active`, then that attribute's scrolling rule. The innermost
+ * `data-scroll-active`, then the active port scrolls vertically only. The innermost
  * bound port scrolls. Among siblings, the most recently bound one scrolls.
  * Every other port gets `data-scroll-locked`. Stray scrolling elements are
  * clipped by the scroll-surface sync.

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
@@ -11,8 +11,21 @@ const MESSAGE_ID = '11111111-1111-4111-8111-111111111111';
 const push = vi.fn();
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: ReactNode;
+    onClick?: (event: { stopPropagation: () => void }) => void;
+    'aria-label'?: string;
+    className?: string;
+  }) => (
+    <a href={href} onClick={onClick} {...rest}>
+      {children}
+    </a>
   ),
 }));
 
@@ -1212,15 +1225,16 @@ describe('PublicMessageLoader', () => {
     });
     expect(screen.getByText('External')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'External' })).toBeNull();
-    const author = screen.getByRole('button', { name: 'View profile' });
+    const author = screen.getByRole('link', { name: 'View profile' });
     expect(author.textContent).toBe('Robin');
+    expect(author.getAttribute('href')).toBe(
+      '/messages/22222222-2222-4222-8222-222222222222/author?name=Robin',
+    );
     expect(screen.getByText('Greetings! https://example.com/hello')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /example\.com/ })).toBeNull();
     fireEvent.click(author);
     expect(push.mock.calls.some((call) => String(call[0]).includes('/members/'))).toBe(false);
-    const dialog = screen.getByRole('dialog', { name: 'Robin' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
-    expect(screen.queryByRole('dialog', { name: 'Robin' })).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('marks an unsigned via gift reply with a badge and no body paragraph', async () => {

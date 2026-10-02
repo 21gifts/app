@@ -30,9 +30,9 @@ interface OnboardingGateProps {
   /** Visible UI when this is the correct screen. */
   children: ReactNode;
   /**
-   * Living room only. Other `screen="welcome"` routes (shops, inbox,
-   * notifications, trust, contact, moderation) still send a signed-out
-   * visitor to `/login`.
+   * Signed-out exception for the living room and for `/statistics`.
+   * Other `screen="welcome"` routes (shops, inbox, notifications, trust,
+   * contact, moderation) still send a signed-out visitor to `/login`.
    */
   allowGuest?: boolean;
 }

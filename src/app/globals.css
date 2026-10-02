@@ -55,13 +55,30 @@ body {
   overscroll-behavior: none;
 }
 
+/* Vertical only. A sideways swipe must not move the page. Wide children
+   are clipped here; a photo row scrolls inside [data-scroll-x]. */
 [data-scrollport][data-scroll-active] {
-  overflow: auto !important;
+  overflow-x: clip !important;
+  overflow-y: auto !important;
 }
 
-/* Sideways only. `overflow-y: clip` so `overflow-x: auto` does not turn the
+/* The page column stays inside the port. min-width 0 stops a flex item
+   from growing to a photo's intrinsic width. overflow-x clip keeps that
+   width from becoming horizontal page scroll. */
+[data-scroll-page] {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Sideways only, and only inside this box. width 100% gives the
+   percentage slides a definite containing block so they cannot widen
+   the page. `overflow-y: clip` so `overflow-x: auto` does not turn the
    other axis into a second page scroll. */
 [data-scroll-x] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto !important;
   overflow-y: clip !important;
 }

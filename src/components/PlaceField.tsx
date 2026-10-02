@@ -1,11 +1,20 @@
 'use client';
 
 import { MapPin, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { SundayWritingGate } from '@/components/SundayWritingGate';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+} from 'react';
+import { createPortal } from 'react-dom';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
+import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
 
 type GoogleLatLng = {
   lat: () => number;
@@ -37,6 +46,7 @@ type GoogleMapsNamespace = {
     map: GoogleMap;
     draggable: boolean;
   }) => GoogleMarker;
+  event?: { trigger: (map: GoogleMap, name: string) => void };
 };
 
 type GoogleWindow = Window & {
@@ -45,6 +55,41 @@ type GoogleWindow = Window & {
 };
 
 const START_CENTER = { lat: 20, lng: 0 };
+
+const PLACED_BOX_FIELDS = ['left', 'width', 'maxHeight', 'top', 'bottom'] as const;
+
+function samePlacedBox(a: PlacedFrameBox | null, b: PlacedFrameBox | null): boolean {
+  if (a === null || b === null) {
+    return a === b;
+  }
+  for (const field of PLACED_BOX_FIELDS) {
+    if (a[field] !== b[field]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function placedBoxStyle(box: PlacedFrameBox, fill: boolean): CSSProperties {
+  const style: CSSProperties = {
+    left: box.left,
+    width: box.width,
+  };
+  if (box.top !== null) {
+    style.top = box.top;
+  } else {
+    style.bottom = box.bottom!;
+  }
+  if (fill) {
+    const viewportHeight = window.innerHeight;
+    if (box.top !== null) {
+      style.bottom = viewportHeight - box.top - box.maxHeight;
+    } else {
+      style.top = viewportHeight - box.bottom! - box.maxHeight;
+    }
+  }
+  return style;
+}
 
 /**
  * Optional place pin control for a top-level forum composer or staff editor.
@@ -64,6 +109,7 @@ export function PlaceField(props: {
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
 }): ReactElement {
   const { t } = useTranslations();
+  const sunday = useLocalSunday();
   const buttonSize = props.buttonSize ?? 'lg';
   const buttonVariant = props.buttonVariant ?? 'secondary';
   const showPreview = props.showPreview ?? true;
@@ -79,6 +125,10 @@ export function PlaceField(props: {
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
+  const anchorRef = useRef<HTMLDivElement | null>(null);
+  const [placedBox, setPlacedBox] = useState<PlacedFrameBox | null>(null);
+  const placedBoxRef = useRef<PlacedFrameBox | null>(null);
+  const mapPlaced = placedBox !== null;
 
   useEffect(() => {
     if (props.disabled) {
@@ -285,6 +335,17 @@ export function PlaceField(props: {
         },
       );
     }
+    let observer: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => {
+        maps.event?.trigger(map, 'resize');
+      });
+      observer.observe(el);
+    }
+    return () => {
+      observer?.disconnect();
+      el.replaceChildren();
+    };
   }, [
     open,
     unavailable,
@@ -293,7 +354,70 @@ export function PlaceField(props: {
     props.place?.lat,
     props.place?.lng,
     props.place?.label,
+    mapPlaced,
+    sunday,
   ]);
+
+  useLayoutEffect(() => {
+    const showPreviewBox = !sunday && showPreview && props.place !== null && !open;
+    const showPanelBox = !sunday && open && !props.disabled && (unavailable || mapsKey !== null);
+    const commitPlacedBox = (next: PlacedFrameBox | null): void => {
+      if (samePlacedBox(placedBoxRef.current, next)) {
+        return;
+      }
+      placedBoxRef.current = next;
+      setPlacedBox(next);
+    };
+    if (!showPreviewBox && !showPanelBox) {
+      commitPlacedBox(null);
+      return;
+    }
+    const preferredWidth = showPanelBox ? 384 : 256;
+    const measure = (): void => {
+      const anchor = anchorRef.current;
+      /* v8 ignore next 4 -- the anchor div stays mounted for the whole effect */
+      if (anchor === null) {
+        setPlacedBox(null);
+        return;
+      }
+      const anchorRect = anchor.getBoundingClientRect();
+      const frameEl = anchor.closest('[data-app-frame]');
+      const raw =
+        frameEl !== null
+          ? frameEl.getBoundingClientRect()
+          : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
+      const band = window.visualViewport;
+      const viewTop = band?.offsetTop ?? 0;
+      const viewBottom = viewTop + (band?.height ?? window.innerHeight);
+      commitPlacedBox(
+        fitBoxInFrame({
+          frameLeft: Math.max(raw.left, 0),
+          frameRight: Math.min(raw.right, window.innerWidth),
+          frameTop: Math.max(raw.top, viewTop),
+          frameBottom: Math.min(raw.bottom, viewBottom),
+          anchorLeft: anchorRect.left,
+          anchorTop: anchorRect.top,
+          anchorBottom: anchorRect.bottom,
+          gap: 8,
+          preferredWidth,
+          inset: 16,
+          viewportHeight: window.innerHeight,
+        }),
+      );
+    };
+    measure();
+    const viewport = window.visualViewport;
+    window.addEventListener('resize', measure);
+    document.addEventListener('scroll', measure, true);
+    viewport?.addEventListener('resize', measure);
+    viewport?.addEventListener('scroll', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      document.removeEventListener('scroll', measure, true);
+      viewport?.removeEventListener('resize', measure);
+      viewport?.removeEventListener('scroll', measure);
+    };
+  }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey, sunday]);
 
   const previewText =
     props.place === null
@@ -318,9 +442,107 @@ export function PlaceField(props: {
     }
   }
 
+  const previewBody = (
+    <>
+      <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+      <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
+      <IconButton
+        type="button"
+        size="sm"
+        variant="secondary"
+        aria-label={t('forum.placeRemove')}
+        disabled={props.disabled || saving}
+        onClick={() => {
+          void commit(null);
+        }}
+      >
+        <X aria-hidden="true" className="h-4 w-4" />
+      </IconButton>
+    </>
+  );
+
+  const panelBody = unavailable ? (
+    <>
+      <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
+      {saveError ? (
+        <p role="alert" className="mt-3 text-sm text-app-danger">
+          {t('forum.placeSaveFailed')}
+        </p>
+      ) : null}
+      {!showPreview && props.place !== null ? (
+        <IconButton
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="mt-3 shrink-0"
+          aria-label={t('forum.placeRemove')}
+          disabled={props.disabled || saving}
+          onClick={() => {
+            void commit(null);
+          }}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </IconButton>
+      ) : null}
+    </>
+  ) : (
+    <>
+      <div ref={mapElRef} className="h-64 min-h-0 w-full shrink rounded-xl" />
+      <input
+        type="text"
+        maxLength={80}
+        aria-label={t('forum.placeLabel')}
+        value={labelDraft}
+        disabled={props.disabled}
+        onChange={(event) => {
+          setLabelDraft(event.target.value);
+        }}
+        className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+      />
+      {saveError ? (
+        <p role="alert" className="mt-3 text-sm text-app-danger">
+          {t('forum.placeSaveFailed')}
+        </p>
+      ) : null}
+      {markerPos !== null ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className="mt-3 shrink-0"
+          disabled={props.disabled || saving}
+          onClick={() => {
+            const trimmed = labelDraft.trim();
+            void commit({
+              lat: markerPos.lat,
+              lng: markerPos.lng,
+              label: trimmed === '' ? null : trimmed,
+            });
+          }}
+        >
+          {t('forum.placeDone')}
+        </Button>
+      ) : null}
+      {!showPreview && props.place !== null ? (
+        <IconButton
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="mt-3 shrink-0"
+          aria-label={t('forum.placeRemove')}
+          disabled={props.disabled || saving}
+          onClick={() => {
+            void commit(null);
+          }}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </IconButton>
+      ) : null}
+    </>
+  );
+
   return (
     <SundayWritingGate>
-      <div className="relative shrink-0">
+      <div ref={anchorRef} className="relative shrink-0">
         <IconButton
           type="button"
           size={buttonSize}
@@ -338,105 +560,45 @@ export function PlaceField(props: {
             className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
           />
         </IconButton>
-        {showPreview && props.place !== null && !open ? (
-          <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-            <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
-            <IconButton
-              type="button"
-              size="sm"
-              variant="secondary"
-              aria-label={t('forum.placeRemove')}
-              disabled={props.disabled || saving}
-              onClick={() => {
-                void commit(null);
-              }}
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          </div>
+        {!sunday && showPreview && props.place !== null && !open ? (
+          placedBox !== null ? (
+            createPortal(
+              <div
+                className="fixed z-20 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
+                style={placedBoxStyle(placedBox, false)}
+              >
+                {previewBody}
+              </div>,
+              document.body,
+            )
+          ) : (
+            <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {previewBody}
+            </div>
+          )
         ) : null}
-        {open && !props.disabled && (unavailable || mapsKey !== null) ? (
-          <div className="absolute left-0 top-full z-30 mt-2 w-[min(90vw,24rem)] rounded-2xl border border-app-border bg-app-card-muted p-3">
-            {unavailable ? (
-              <>
-                <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
-                {saveError ? (
-                  <p role="alert" className="mt-3 text-sm text-app-danger">
-                    {t('forum.placeSaveFailed')}
-                  </p>
-                ) : null}
-                {!showPreview && props.place !== null ? (
-                  <IconButton
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="mt-3"
-                    aria-label={t('forum.placeRemove')}
-                    disabled={props.disabled || saving}
-                    onClick={() => {
-                      void commit(null);
-                    }}
-                  >
-                    <X aria-hidden="true" className="h-4 w-4" />
-                  </IconButton>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <div ref={mapElRef} className="h-64 w-full rounded-xl" />
-                <input
-                  type="text"
-                  maxLength={80}
-                  aria-label={t('forum.placeLabel')}
-                  value={labelDraft}
-                  disabled={props.disabled}
-                  onChange={(event) => {
-                    setLabelDraft(event.target.value);
-                  }}
-                  className="mt-3 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
-                />
-                {saveError ? (
-                  <p role="alert" className="mt-3 text-sm text-app-danger">
-                    {t('forum.placeSaveFailed')}
-                  </p>
-                ) : null}
-                {markerPos !== null ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="mt-3"
-                    disabled={props.disabled || saving}
-                    onClick={() => {
-                      const trimmed = labelDraft.trim();
-                      void commit({
-                        lat: markerPos.lat,
-                        lng: markerPos.lng,
-                        label: trimmed === '' ? null : trimmed,
-                      });
-                    }}
-                  >
-                    {t('forum.placeDone')}
-                  </Button>
-                ) : null}
-                {!showPreview && props.place !== null ? (
-                  <IconButton
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="mt-3"
-                    aria-label={t('forum.placeRemove')}
-                    disabled={props.disabled || saving}
-                    onClick={() => {
-                      void commit(null);
-                    }}
-                  >
-                    <X aria-hidden="true" className="h-4 w-4" />
-                  </IconButton>
-                ) : null}
-              </>
-            )}
-          </div>
+        {!sunday && open && !props.disabled && (unavailable || mapsKey !== null) ? (
+          placedBox !== null ? (
+            createPortal(
+              <div
+                className={
+                  placedBox.top !== null
+                    ? 'pointer-events-none fixed z-30 flex flex-col justify-start overflow-clip'
+                    : 'pointer-events-none fixed z-30 flex flex-col justify-end overflow-clip'
+                }
+                style={placedBoxStyle(placedBox, true)}
+              >
+                <div className="pointer-events-auto flex max-h-full min-h-0 w-full flex-col overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3">
+                  {panelBody}
+                </div>
+              </div>,
+              document.body,
+            )
+          ) : (
+            <div className="absolute left-0 top-full z-30 mt-2 w-full max-w-sm rounded-2xl border border-app-border bg-app-card-muted p-3">
+              {panelBody}
+            </div>
+          )
         ) : null}
       </div>
     </SundayWritingGate>

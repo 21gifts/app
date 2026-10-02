@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
+import { pageFrameProblems } from '../src/lib/page-frame';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -659,6 +660,8 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
 }
 
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  const problems = await page.evaluate(pageFrameProblems);
+  expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
   // The app frame is one window. A full-page capture would append the
   // scrolled overflow as an empty band under the frame. Marketing pages
@@ -3224,80 +3227,6 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByRole('link', { name: /example\.com/ })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-expanded-external');
-  });
-
-  test('state /welcome overlay-external-author', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          location: null,
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await fulfillMixedSatsMessages(page);
-    await page.route('**/forum/messages/**/replies', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'r-nostr-gift',
-              name: 'Robin',
-              via: 'nostr',
-              text: '',
-              createdAt: '2026-08-28T12:03:00.000Z',
-              sats: 69,
-              payable: false,
-              hasPhoto: false,
-            },
-            {
-              id: 'r-nostr-text',
-              name: 'Robin',
-              via: 'nostr',
-              text: 'Greetings! https://example.com/hello',
-              createdAt: '2026-08-28T12:04:00.000Z',
-              sats: 0,
-              payable: false,
-              hasPhoto: false,
-            },
-          ],
-        }),
-      });
-    });
-    await page.route('**/external-profile', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          name: 'Robin',
-          npub: 'npub1example',
-          nip05: 'robin@nostr.example',
-          lud16: 'pay@ln.example',
-        }),
-      });
-    });
-    await page.goto('/welcome');
-    await page.getByText('Thank you both — that helps.').click();
-    await page.getByRole('button', { name: 'View profile' }).first().click();
-    const dialog = page.getByRole('dialog', { name: 'Robin' });
-    await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('pay@ln.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
-    await expect(dialog.getByRole('link')).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-overlay-external-author');
   });
 
   const REACTION_ANSWER = 'This is my answer';
@@ -9956,48 +9885,50 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-external-reply');
   });
 
-  test('state /messages/[id] external-author', async ({ page }) => {
-    const parentId = '11111111-1111-4111-8111-111111111111';
-    const parent = {
-      id: parentId,
-      name: 'Ada',
-      text: 'Hello from Ada',
-      createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 0,
-      payable: false,
-      hasPhoto: false,
-      role: 'basis',
-      replyCount: 2,
-    };
-    await fulfillPublicThreadReplies(page, parentId, [
-      {
-        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
-        parentId,
-        name: 'Robin',
-        via: 'nostr',
-        text: '',
-        createdAt: '2026-08-28T12:03:00.000Z',
-        sats: 69,
-        payable: false,
-        hasPhoto: false,
-      },
-      {
-        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
-        parentId,
-        name: 'Robin',
-        via: 'nostr',
-        text: 'Greetings! https://example.com/hello',
-        createdAt: '2026-08-28T12:04:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-      },
-    ]);
-    await page.route(`**/public-messages/${parentId}`, async (route) => {
+  test('screen /messages/[id]/author default', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(parent),
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await expect(page.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+    await expect(page.getByText('pay@ln.example', { exact: true })).toBeVisible();
+    await expect(page.getByText('npub1example', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'screen-messages-id-author');
+  });
+
+  test('state /messages/[id]/author signed-in', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
       });
     });
     await page.route('**/external-profile', async (route) => {
@@ -10009,18 +9940,617 @@ test.describe('onboarding screens', () => {
           npub: 'npub1example',
           nip05: 'robin@nostr.example',
           lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
         }),
       });
     });
-    await page.goto(`/messages/${parentId}`);
-    await expect(page.getByText('Hello from Ada')).toBeVisible();
-    await page.getByRole('button', { name: 'View profile' }).first().click();
-    const dialog = page.getByRole('dialog', { name: 'Robin' });
-    await expect(dialog.getByText('robin@nostr.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('pay@ln.example', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('npub1example', { exact: true })).toBeVisible();
-    await expect(dialog.getByRole('link')).toHaveCount(0);
-    await shotScreen(page, 'state-messages-id-external-author');
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await expect(page.getByText('robin@nostr.example', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-author-signed-in');
+  });
+
+  test('state /messages/[id]/author loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', () => new Promise(() => undefined));
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText('Robin', { exact: true })).toBeVisible();
+    await expect(page.getByText('External', { exact: true })).toBeVisible();
+    await expect(page.getByText('robin@nostr.example')).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-author-loading');
+  });
+
+  test('state /messages/[id]/author posts-open', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/external-posts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Robin wrote a note',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'React', exact: true })).toHaveCount(0);
+    await page.getByText('Robin wrote a note').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-open');
+  });
+
+  test('state /messages/[id]/author replies-open', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/external-replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Robin wrote a reaction',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              parentId: '22222222-2222-4222-8222-222222222222',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 reaction' }).click();
+    await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await page.getByText('Robin wrote a reaction').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-open');
+  });
+
+  test('state /messages/[id]/author posts-loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/external-posts', async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    const postsLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
+    await expect(postsLoading).toBeVisible();
+    await postsLoading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-loading');
+    release();
+  });
+
+  test('state /messages/[id]/author replies-loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/external-replies', async (route) => {
+      await held;
+      await route.abort();
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 reaction' }).click();
+    const repliesLoading = page.getByRole('paragraph').filter({ hasText: 'Loading…' });
+    await expect(repliesLoading).toBeVisible();
+    await repliesLoading.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-loading');
+    release();
+  });
+
+  test('state /messages/[id]/author posts-error', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/external-posts', async (route) => {
+      await route.abort();
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await page.getByText('Could not load messages. Please try again.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-error');
+  });
+
+  test('state /messages/[id]/author replies-error', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/external-replies', async (route) => {
+      await route.abort();
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '1 reaction' }).click();
+    await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await page.getByText('Could not load messages. Please try again.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-error');
+  });
+
+  test('state /messages/[id]/author posts-truncated', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 2,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/external-posts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Robin wrote a note',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '2 posts' }).click();
+    await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
+    await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-truncated');
+  });
+
+  test('state /messages/[id]/author replies-truncated', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 2,
+        }),
+      });
+    });
+    await page.route('**/external-replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              name: 'Robin',
+              via: 'nostr',
+              text: 'Robin wrote a reaction',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              parentId: '22222222-2222-4222-8222-222222222222',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '2 reactions' }).click();
+    await expect(page.getByText('Showing the latest 1 of 2.')).toBeVisible();
+    await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await page.getByText('Showing the latest 1 of 2.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-truncated');
+  });
+
+  test('state /messages/[id]/author copied', async ({ page, context }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-author-copied');
+  });
+
+  test('state /messages/[id]/author posts-empty', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route('**/external-posts', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '0 posts' }).click();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await expect(page.getByRole('button', { name: '0 reactions' })).toBeVisible();
+    await page.getByText('No messages yet — be the first to write one.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-empty');
+  });
+
+  test('state /messages/[id]/author replies-empty', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route('**/external-replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}/author?name=Robin`);
+    await page.getByRole('button', { name: '0 reactions' }).click();
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await expect(page.getByRole('button', { name: '0 posts' })).toBeVisible();
+    await page.getByText('No messages yet — be the first to write one.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-empty');
+  });
+
+  const AUTHOR_CARD_ID = '11111111-1111-4111-8111-111111111111';
+  const AUTHOR_NOTE_ID = '33333333-3333-4333-8333-333333333333';
+  const AUTHOR_PARENT_ID = '22222222-2222-4222-8222-222222222222';
+  const EXTERNAL_HINT =
+    'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
+
+  async function fulfillAuthorCard(page: Page): Promise<void> {
+    await fulfillRateDay(page);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+  }
+
+  async function fulfillAuthorList(
+    page: Page,
+    kind: 'posts' | 'replies',
+    text: string,
+  ): Promise<void> {
+    const path = kind === 'posts' ? '**/external-posts' : '**/external-replies';
+    await page.route(path, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: AUTHOR_NOTE_ID,
+              name: 'Robin',
+              via: 'nostr',
+              text,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              ...(kind === 'replies' ? { parentId: AUTHOR_PARENT_ID } : {}),
+            },
+          ],
+        }),
+      });
+    });
+  }
+
+  async function openAuthorFeed(page: Page, kind: 'posts' | 'replies'): Promise<void> {
+    await page.goto(`/messages/${AUTHOR_CARD_ID}/author?name=Robin`);
+    await page.getByRole('button', { name: kind === 'posts' ? '1 post' : '1 reaction' }).click();
+  }
+
+  test('state /messages/[id]/author posts-external', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', 'Robin wrote a note');
+    await openAuthorFeed(page, 'posts');
+    await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await page.getByRole('button', { name: 'External', exact: true }).click();
+    await expect(page.getByText(EXTERNAL_HINT)).toBeVisible();
+    await page.getByText(EXTERNAL_HINT).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-external');
+  });
+
+  test('state /messages/[id]/author replies-external', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', 'Robin wrote a reaction');
+    await openAuthorFeed(page, 'replies');
+    await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await page.getByRole('button', { name: 'External', exact: true }).click();
+    await expect(page.getByText(EXTERNAL_HINT)).toBeVisible();
+    await page.getByText(EXTERNAL_HINT).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-external');
+  });
+
+  test('state /messages/[id]/author posts-translate', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await openAuthorFeed(page, 'posts');
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate');
+  });
+
+  test('state /messages/[id]/author posts-translate-loading', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'hang');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-loading');
+  });
+
+  test('state /messages/[id]/author posts-translate-done', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-done');
+  });
+
+  test('state /messages/[id]/author posts-translate-hidden', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-hidden');
+  });
+
+  test('state /messages/[id]/author posts-translate-error', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'fail');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-error');
+  });
+
+  test('state /messages/[id]/author replies-translate', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await openAuthorFeed(page, 'replies');
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate');
+  });
+
+  test('state /messages/[id]/author replies-translate-loading', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'hang');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-loading');
+  });
+
+  test('state /messages/[id]/author replies-translate-done', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-done');
+  });
+
+  test('state /messages/[id]/author replies-translate-hidden', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-hidden');
+  });
+
+  test('state /messages/[id]/author replies-translate-error', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'fail');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-error');
   });
 
   test('state /messages/[id] quoted-note', async ({ page }) => {
@@ -14377,15 +14907,21 @@ test.describe('welcome forum variants', () => {
 
   test('welcome keyboard-viewport', async ({ page }) => {
     await page.addInitScript(() => {
-      const inner = window.innerHeight;
+      const viewport = {
+        get height() {
+          return Math.round(window.innerHeight * 0.6);
+        },
+        get offsetTop() {
+          return Math.round(window.innerHeight * 0.15);
+        },
+        scale: 1,
+        addEventListener() {},
+        removeEventListener() {},
+      };
       Object.defineProperty(window, 'visualViewport', {
         configurable: true,
-        value: {
-          height: Math.round(inner * 0.6),
-          offsetTop: Math.round(inner * 0.15),
-          scale: 1,
-          addEventListener() {},
-          removeEventListener() {},
+        get() {
+          return viewport;
         },
       });
     });
@@ -16597,7 +17133,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await expect(note.getByText('Cafe Luna')).toBeVisible();
     await expect(note.getByRole('button', { name: 'Add a place' })).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-staff-place');
   });
 
@@ -16778,7 +17314,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
-    const unavailable = note.getByText('The map is not available.');
+    const unavailable = page.getByText('The map is not available.');
     await expect(unavailable).toBeVisible();
     await unavailable.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unavailable');
@@ -16811,7 +17347,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
     await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-staff-place-set');
   });
 
@@ -16842,9 +17378,9 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(remove).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit', false);
   });
@@ -16890,12 +17426,14 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await note.getByRole('button', { name: 'Remove place' }).click();
-    const alert = note.getByRole('alert');
+    await page.getByRole('button', { name: 'Remove place' }).click();
+    const alert = page.getByRole('alert').filter({
+      hasText: 'The place could not be saved. Please try again.',
+    });
     await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(remove).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
     await page.locator('main [data-scrollport]').evaluate((node) => {
       node.scrollTop += 160;
@@ -16929,11 +17467,11 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    const unavailable = note.getByText('The map is not available.');
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const unavailable = page.getByText('The map is not available.');
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(unavailable).toBeVisible();
     await expect(remove).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
   });
@@ -16978,10 +17516,12 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await note.getByRole('button', { name: 'Remove place' }).click();
-    const alert = note.getByRole('alert');
+    await page.getByRole('button', { name: 'Remove place' }).click();
+    const alert = page.getByRole('alert').filter({
+      hasText: 'The place could not be saved. Please try again.',
+    });
     await expect(alert).toHaveText('The place could not be saved. Please try again.');
-    const remove = note.getByRole('button', { name: 'Remove place' });
+    const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(remove).toBeVisible();
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable-error');
@@ -17049,8 +17589,8 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await note.getByLabel('Place name').fill('Happyland');
-    const confirm = note.getByRole('button', { name: 'Use this place' });
+    await page.getByLabel('Place name').fill('Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
     await confirm.scrollIntoViewIfNeeded();
@@ -17084,8 +17624,8 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    const confirm = note.getByRole('button', { name: 'Use this place' });
-    await expect(note.getByLabel('Place name')).toHaveValue('');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.getByLabel('Place name')).toHaveValue('');
     await expect(confirm).toBeVisible();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unlabeled', false);
@@ -17130,7 +17670,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await note.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(note.getByRole('link', { name: '14.50000, 120.90000' })).toBeVisible();
     await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
     await shotScreen(page, 'state-shops-staff-place-set-coords');
@@ -17177,12 +17717,14 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await note.getByLabel('Place name').fill('Happyland');
-    await note.getByRole('button', { name: 'Use this place' }).click();
-    await expect(note.getByRole('alert')).toHaveText(
-      'The place could not be saved. Please try again.',
-    );
-    const usePlace = note.getByRole('button', { name: 'Use this place' });
+    await page.getByLabel('Place name').fill('Happyland');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'The place could not be saved. Please try again.',
+      }),
+    ).toHaveText('The place could not be saved. Please try again.');
+    const usePlace = page.getByRole('button', { name: 'Use this place' });
     await expect(usePlace).toBeVisible();
     await usePlace.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-error');
@@ -18964,10 +19506,8 @@ test.describe('statistics screens', () => {
     await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
     await expect(page.getByText('People by UTC day')).toBeVisible();
     await expect(page.getByText('Shops by UTC day')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveAttribute(
-      'href',
-      '/moderate/payouts',
-    );
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
     await shotStatistics(page);
     await shotScreen(page, 'screen-statistics');
   });
@@ -18978,7 +19518,7 @@ test.describe('statistics screens', () => {
     await page.route('**/shops/activity', () => new Promise(() => undefined));
     await page.goto('/statistics');
     await expect(
-      page.getByRole('group', { name: 'Daily funding goal' }).getByText('Loading…'),
+      page.getByRole('group', { name: 'People paid' }).getByText('Loading…'),
     ).toBeVisible();
     await expect(
       page.getByRole('group', { name: 'Active shops' }).getByText('Loading…'),
@@ -19018,6 +19558,8 @@ test.describe('statistics screens', () => {
     await page.goto('/statistics');
     await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
     await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
     await shotStatistics(page);
     await shotScreen(page, 'state-statistics-shop-error');
   });
@@ -19046,12 +19588,40 @@ test.describe('statistics screens', () => {
     await shotScreen(page, 'state-statistics-both-error');
   });
 
-  test('statistics forbidden', async ({ page }) => {
+  test('statistics member', async ({ page }) => {
     await seedAda(page, 'basis');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
     await page.goto('/statistics');
-    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toHaveCount(0);
     await shotStatistics(page);
-    await shotScreen(page, 'state-statistics-forbidden');
+    await shotScreen(page, 'state-statistics-member');
+  });
+
+  test('statistics signed-out', async ({ page }) => {
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await page.goto('/statistics');
+    await expect(page.getByText('People by UTC day')).toBeVisible();
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(page.getByText('Moderator functions')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-signed-out');
+  });
+
+  test('statistics staff-open', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await page.goto('/statistics');
+    await expect(page.getByText('Moderator functions')).toBeVisible();
+    await page.getByText('Moderator functions').click();
+    await expect(page.getByRole('link', { name: 'Show payout per person' })).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-staff-open');
   });
 });
 
