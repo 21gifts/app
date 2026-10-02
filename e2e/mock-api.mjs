@@ -2024,6 +2024,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/funding/goal') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const endMs = Date.parse(`${new Date(Date.now()).toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const days = Array.from({ length: 7 }, (_, i) => ({
+      day: new Date(endMs - (6 - i) * 86_400_000).toISOString().slice(0, 10),
+      shopCount: 0,
+    }));
+    json(res, 200, { days, qualifyingShops: 0 });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/e2e/unclaimed-profile') {
     const account = newAccount(null);
     account.name = 'Ada';

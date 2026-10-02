@@ -18,6 +18,7 @@ import {
   fetchGiftDay,
   fetchGiftStats,
   fetchShopActivity,
+  fetchGrantContinuation,
   fetchPostStats,
   fetchAboutMePhoto,
   fetchProfilePhoto,
@@ -1245,6 +1246,71 @@ describe('fetchShopActivity', () => {
     stubFetch({ ok: true, status: 200, body: { days: [] } });
     await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
+    );
+  });
+});
+
+describe('fetchGrantContinuation', () => {
+  function sevenDays(): { day: string; shopCount: number }[] {
+    const start = Date.parse('2026-03-09T00:00:00.000Z');
+    return Array.from({ length: 7 }, (_, i) => ({
+      day: new Date(start + i * 86_400_000).toISOString().slice(0, 10),
+      shopCount: i,
+    }));
+  }
+
+  it('returns the series with an Authorization header', async () => {
+    const days = sevenDays();
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { days, qualifyingShops: 2 },
+    });
+    await expect(fetchGrantContinuation('sess-1')).resolves.toEqual({
+      days,
+      qualifyingShops: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/funding/goal', {
+      headers: { Authorization: 'Bearer sess-1' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Funding goal is unavailable' } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { days: [], qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws when a day is repeated', async () => {
+    const days = sevenDays();
+    days[3] = { day: days[2]!.day, shopCount: 1 };
+    stubFetch({ ok: true, status: 200, body: { days, qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws when the days are not contiguous', async () => {
+    const days = sevenDays();
+    days[4] = { day: '2026-04-01', shopCount: 0 };
+    stubFetch({ ok: true, status: 200, body: { days, qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
     );
   });
 });

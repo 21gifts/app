@@ -69,22 +69,6 @@ describe('translate', () => {
     expect(translate(fil, 'forum.replyCount', { count: 2 })).toBe('2 reaksyon');
     expect(translate(fil, 'profile.postCount', { count: 2 })).toBe('2 post');
     expect(translate(fil, 'profile.replyCount', { count: 2 })).toBe('2 reaksyon');
-    expect(
-      translate(fil, 'moderate.goal.explYesterday', {
-        count: 2,
-        date: 'x',
-        percent: 'x',
-        goal: 'x',
-      }),
-    ).toContain('2 tao');
-    expect(
-      translate(fil, 'moderate.goal.explYesterday', {
-        count: 2,
-        date: 'x',
-        percent: 'x',
-        goal: 'x',
-      }),
-    ).not.toContain('mga tao');
   });
 
   it('throws when a plural count is missing or not a finite number', () => {

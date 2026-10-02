@@ -3950,35 +3950,28 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Person count on `yesterday` from `officialCount`. First matching day wins.
 - **Inputs:** `series` — `spendOverTime` oldest-first; `yesterday` — UTC day to look up.
 - **Returns / side effects:** That day's `officialCount`, `0` when the day is missing, or `null` when any point omits `officialCount`. Pure; no I/O.
-- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+- **Used by:** `StatisticsScreen`.
 
 ## Function: chartRows
 
 - **Purpose:** Last 30 UTC days ending on `today`, oldest first, with person counts from `officialCount`.
 - **Inputs:** `series` — `spendOverTime` oldest-first; `today` — UTC day of the clock.
 - **Returns / side effects:** Oldest-first `{ day, count }` rows. Last write wins when a day appears twice; a missing day is 0. Pure; no I/O.
-- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+- **Used by:** `StatisticsScreen`.
 
 ## Function: formatUtcDate
 
 - **Purpose:** Formats a UTC calendar day as numeric day plus long month in `locale` for the yesterday sentence.
 - **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
 - **Returns / side effects:** Locale date string in the UTC zone. Pure; no I/O.
-- **Used by:** `StatisticsScreen` and `ModerateScreen` in the yesterday sentence.
+- **Used by:** `StatisticsScreen` in the yesterday sentence.
 
 ## Function: chartDayLabel
 
 - **Purpose:** Axis tick label for a UTC day as numeric day and month in `locale`.
 - **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
 - **Returns / side effects:** Short numeric day-month label in the UTC zone. Pure; no I/O.
-- **Used by:** `PayoutGoalChart`, `ShopActivityChart`, and `PeopleCountChart` for the first, middle, and last axis labels.
-
-## Function: PayoutGoalChart
-
-- **Purpose:** Draws the 30-day SVG count chart (`role="img"`) with ticks 0/25/50/75/100, a goal line at 100, today's bar `fill-app-subtle`, other bars `fill-app-accent`, and `data-testid="payout-goal-chart-bar"`.
-- **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
-- **Returns / side effects:** SVG figure. No network.
-- **Used by:** `ModerateScreen`.
+- **Used by:** `ShopActivityChart` and `PeopleCountChart` for the first, middle, and last axis labels.
 
 ## Function: fetchShopActivity
 
@@ -3994,12 +3987,26 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops/activity')`.
 - **Used by:** `src/app/shops/activity/route.ts`.
 
+## Function: fetchGrantContinuation
+
+- **Purpose:** Loads the signed-in grant goal from same-origin `GET /funding/goal` with `Authorization: Bearer`. GrantGoalsScreen calls it only when a session exists. The body must be 7 unique contiguous UTC days, oldest first, plus a nonnegative `qualifyingShops`; otherwise this throws and the goals page shows its error state. Does not call `fetchShopActivity`.
+- **Inputs:** `sessionToken` — bearer session. `fetch('/funding/goal')` sends that token and does not invent one.
+- **Returns / side effects:** `GrantContinuation` (`days`, `qualifyingShops`). Network via `fetch`. Does not require the last day to be the browser's today.
+- **Used by:** `GrantGoalsScreen`.
+
+## Function: proxyFundingGoalGet
+
+- **Purpose:** Same-origin proxy for api `GET /funding/goal`. App route is `export const GET = proxyFundingGoalGet` on `/funding/goal`. Forwards the incoming Authorization header and does not add one. This is not the public shop-activity proxy.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/funding/goal')`.
+- **Used by:** `src/app/funding/goal/route.ts`.
+
 ## Function: ShopActivityChart
 
-- **Purpose:** Draws the shop-count SVG (`role="img"`) for 30 UTC days. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="shop-activity-chart-bar"`. No goal line.
+- **Purpose:** Draws the shop-count SVG (`role="img"`) for the UTC days it is given. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="shop-activity-chart-bar"`. No goal line.
 - **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
 - **Returns / side effects:** SVG figure. No network.
-- **Used by:** `StatisticsScreen`.
+- **Used by:** `StatisticsScreen` (30 days) and `GrantGoalsScreen` (the last 7 days).
 
 ## Function: PeopleCountChart
 
@@ -4017,9 +4024,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see the daily payout-goal widget (yesterday versus 100 people, each person counted once, with the 100-a-day label and the yesterday count on one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, and a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, and a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for Open proposals `proposalCount` and Moderators chat group staff-room unread (network for those counts; does not write the home-screen badge).
-- **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` for the goal widget; others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, applications, or the group thread itself.
+- **Returns / side effects:** React element or `null` without a session. Does not fetch `GET /gifts/stats`. Others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, applications, or the group thread itself.
 - **Used by:** `ModeratePage`.
 
 ## Function: ModerateHandbookPage
@@ -4116,10 +4123,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the link.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
 - **Used by:** `GrantsPage`.
+
+## Function: GrantGoalsPage
+
+- **Purpose:** Next.js page for `/grants/goals`. Fill `AppShell` with `ProfileChromeLeft`, `SignedInChrome`, and `OnboardingGate screen="profile"` around `GrantGoalsScreen`.
+- **Inputs:** None.
+- **Returns / side effects:** The goals screen inside fill AppShell.
+- **Used by:** Route `/grants/goals`.
+
+## Function: GrantGoalsScreen
+
+- **Purpose:** Signed-in grant goal. Heading **Goals**, the sentence that the program continues at 10 active shops, the sentence that a shop is active with at least one transaction on 5 of the last 7 days, and the sentence that defines a transaction as a till payment created at https://21.gifts/pos (creating it counts, including later expiry or cancel). When the load succeeds, shows how many shops meet that rule, the label **Shops per UTC day**, `ShopActivityChart` for those 7 days, and the note that the lighter bar is today still open. Loading and error (error sentence plus **Try again**) keep the heading and those sentences. Renders `null` without a session and does not fetch then.
+- **Inputs:** Session from `useAuthStore`; catalog and locale via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/goal` through `fetchGrantContinuation` only when a session exists. Does not call `fetchShopActivity`.
+- **Used by:** `GrantGoalsPage`.
 
 ## Function: FundingStatusCard
 

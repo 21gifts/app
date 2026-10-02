@@ -1077,9 +1077,15 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 ### `/grants`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, a secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
 Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
+
+### `/grants/goals`
+
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card` `maxWidth="xl"` `surface={false}` → **h1** **Goals**. The grant program continues at 10 active shops. A shop is active with at least one transaction on 5 of the last 7 days. A transaction is a till payment the assigned member created at https://21.gifts/pos that UTC day; creating it counts, including later expiry or cancel. The measurement panel reuses the statistics chart shell: how many shops meet the rule, **Shops per UTC day**, `ShopActivityChart` for those 7 UTC days (lighter bar is today, still open), or **Loading…**, or the error sentence plus **Try again**. It calls `GET /funding/goal`, not `GET /shops/activity`. Signed-in members open it from **Goals** on `/grants`. No session renders nothing and does not fetch.
+
+Handbook states: default, loading, error.
 
 ### `/grants/apply`
 
@@ -1104,9 +1110,9 @@ Handbook states: default list, empty, loading, error.
 
 ### `/moderate`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Moderation** (`h1` ramp). Staff (moderator) see the daily payout-goal widget (yesterday UTC vs 100 from `GET /gifts/stats`; the 100-a-day label and the yesterday count share one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`, **Moderators chat group** `ButtonLink` → `/moderate/group`, and **Handbook** `ButtonLink` → `/moderate/handbook` (last tool). Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain. Staff fetch `GET /gifts/stats` for the widget. Does not fetch the hidden list. No un-hide control.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Moderation** (`h1` ramp). Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`, **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, and **Show payout per person** `ButtonLink` → `/moderate/payouts` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Statistics. This page does not fetch `GET /gifts/stats` or the hidden list. No un-hide control.
 
-Handbook states: default hub, forbidden, goal-open, loading, error.
+Handbook states: default hub, group-unread, proposals-unread, forbidden.
 
 ### `/grants/applications`
 
