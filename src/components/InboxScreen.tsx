@@ -1,5 +1,6 @@
 'use client';
 
+import { conversationUnreadCount } from '@/lib/conversation-unread';
 import { ImagePlus, Loader2, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -424,8 +425,7 @@ function ConversationListItem({
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const unreadMessageCount =
-    row.unreadMessageCount > 0 ? row.unreadMessageCount : row.unread ? 1 : 0;
+  const unreadMessageCount = conversationUnreadCount(row);
   return (
     <li>
       <button

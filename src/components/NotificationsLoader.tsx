@@ -1,5 +1,6 @@
 'use client';
 
+import { conversationUnreadCount } from '@/lib/conversation-unread';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { NotificationsScreen } from '@/components/NotificationsScreen';
@@ -18,7 +19,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Set the home-screen badge to remaining unread: inbox unread plus staff-room
- * unread (`0` or `1`) after notifications became 0 (list viewed /
+ * unread messages after notifications became 0 (list viewed /
  * mark-all-read).
  *
  * Captures the badge epoch at start and skips the write if it changed or
@@ -33,12 +34,12 @@ import { useAuthStore } from '@/stores/auth-store';
 async function setHomeScreenBadgeToRemainingUnread(sessionToken: string): Promise<void> {
   const epoch = unreadAppBadgeEpoch();
   const inboxPromise = fetchConversations(sessionToken).then(
-    (rows) => rows.filter((row) => row.unread).length,
+    (rows) => rows.reduce((sum, row) => sum + conversationUnreadCount(row), 0),
     () => 0,
   );
   const moderationPromise = roleAtLeast(useAuthStore.getState().account?.role, 'moderator')
     ? fetchModeratorGroup(sessionToken).then(
-        (conversation) => (conversation.unread ? 1 : 0),
+        (conversation) => conversationUnreadCount(conversation),
         () => 0,
       )
     : Promise.resolve(0);
@@ -74,7 +75,7 @@ function notificationOpenPath(row: Notification): string {
  * Reads the session from the auth store and fetches notifications (posts, replies,
  * payments, moderator appointment, and moderator proposal). After a successful
  * list fetch, marks all as read fire-and-forget and refreshes the home-screen
- * badge to remaining inbox unread plus staff-room unread (`0` or `1`;
+ * badge to remaining inbox unread plus staff-room unread messages (
  * notifications are treated as 0; visiting this screen does not force the badge
  * to 0 when inbox or staff-room unread remains). Fetches the staff room only when
  * `roleAtLeast(account?.role, 'moderator')`; below moderator the remaining

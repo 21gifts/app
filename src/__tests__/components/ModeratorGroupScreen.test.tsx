@@ -211,7 +211,7 @@ describe('ModeratorGroupScreen', () => {
       expect(groupMock).toHaveBeenCalledWith('sess');
       expect(threadMock).toHaveBeenCalledWith('sess', GROUP.id);
       await waitFor(() => {
-        expect(markReadMock).toHaveBeenCalledWith('sess', GROUP.id);
+        expect(markReadMock).toHaveBeenCalledWith('sess', GROUP.id, MESSAGE.id);
       });
       expect(bumpMock).toHaveBeenCalled();
       expect(refreshMock).toHaveBeenCalledWith('sess', undefined, 0);
@@ -352,7 +352,7 @@ describe('ModeratorGroupScreen', () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
     await waitFor(() => {
-      expect(markReadMock).toHaveBeenCalledWith('sess', GROUP.id);
+      expect(markReadMock).toHaveBeenCalledWith('sess', GROUP.id, MESSAGE.id);
     });
     expect(screen.queryByRole('alert')).toBeNull();
   });

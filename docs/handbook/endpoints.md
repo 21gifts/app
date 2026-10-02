@@ -585,6 +585,8 @@
 
 ## Endpoint: POST /conversations/[id]/read
 
+Optional JSON `{ throughMessageId }` is forwarded to acknowledge only messages through the loaded boundary. Newer arrivals remain unread, and server read times cannot regress. An empty body retains legacy server-time acknowledgement. Invalid boundaries return upstream 400.
+
 - **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/read` (mark one conversation read).
 - **Errors:** Upstream 401/404/503, or 502 if the api is unreachable.
 - **Used by:** `markConversationRead` from `InboxLoader` after a successful thread fetch.

@@ -1,3 +1,4 @@
+import { conversationUnreadCount } from '@/lib/conversation-unread';
 import { fetchConversations, fetchModeratorGroup, fetchNotifications } from '@/lib/api';
 import { roleAtLeast } from '@/lib/roles';
 import { loadSession } from '@/lib/session-storage';
@@ -18,6 +19,7 @@ let badgeEpoch = 0;
  */
 export function bumpUnreadAppBadgeEpoch(): number {
   badgeEpoch += 1;
+  window.dispatchEvent(new Event('21gifts:unread-changed'));
   return badgeEpoch;
 }
 
@@ -40,7 +42,7 @@ export function unreadAppBadgeEpoch(): number {
  * throw into the UI.
  *
  * @param count - Unread in-app notification count plus inbox unread
- * conversations plus staff-room unread (`0` or `1`). Open-proposal count is
+ * messages plus staff-room unread messages. Open-proposal count is
  * not included: proposal rows already sit in notification unread. Values
  * greater than 0 set the badge; zero clears it.
  */
@@ -55,13 +57,13 @@ export function setUnreadAppBadge(count: number): void {
 
 /**
  * Refresh the home-screen badge to notification unread plus inbox unread plus
- * staff-room unread (`0` or `1`). Does not fetch or add open-proposal count.
+ * staff-room unread messages. Does not fetch or add open-proposal count.
  *
  * Fetches `GET /forum/notifications` and, unless `inboxUnreadOverride` is
  * passed, `GET /conversations`. Unless `moderationUnreadOverride` is passed,
  * fetches `GET /conversations/moderator-group` only when
  * `roleAtLeast(account?.role, 'moderator')` on the signed-in auth-store
- * account (`unread` true → `1`, else `0`; throw/404 → `0`). A role below
+ * account (message count, with a one-message fallback on older APIs; throw/404 → `0`). A role below
  * moderator contributes `0` without starting that request. When
  * `moderationUnreadOverride` is set, skip the fetch and use that number
  * (even for staff). Any side failing contributes `0`. Captures the badge
@@ -94,7 +96,7 @@ export async function refreshUnreadAppBadge(
     inboxUnreadOverride !== undefined
       ? Promise.resolve(inboxUnreadOverride)
       : fetchConversations(sessionToken).then(
-          (rows) => rows.filter((row) => row.unread).length,
+          (rows) => rows.reduce((sum, row) => sum + conversationUnreadCount(row), 0),
           () => 0,
         );
   const moderationPromise =
@@ -102,7 +104,7 @@ export async function refreshUnreadAppBadge(
       ? Promise.resolve(moderationUnreadOverride)
       : roleAtLeast(useAuthStore.getState().account?.role, 'moderator')
         ? fetchModeratorGroup(sessionToken).then(
-            (conversation) => (conversation.unread ? 1 : 0),
+            (conversation) => conversationUnreadCount(conversation),
             () => 0,
           )
         : Promise.resolve(0);

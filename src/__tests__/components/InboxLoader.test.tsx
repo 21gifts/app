@@ -338,7 +338,7 @@ describe('InboxLoader', () => {
     expect(await screen.findByRole('heading', { name: '21.gifts' })).toBeTruthy();
     expect(await screen.findByText('Hello')).toBeTruthy();
     await waitFor(() => {
-      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
+      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1', MESSAGE.id);
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Follow up  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -860,7 +860,7 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     await waitFor(() => {
-      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
+      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1', MESSAGE.id);
     });
     expect(screen.queryByRole('alert')).toBeNull();
   });
@@ -872,7 +872,7 @@ describe('InboxLoader', () => {
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     await waitFor(() => {
-      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1');
+      expect(markReadMock).toHaveBeenCalledWith('sess', 'conv-1', MESSAGE.id);
     });
     await waitFor(() => {
       expect(bumpMock).toHaveBeenCalled();
@@ -885,7 +885,7 @@ describe('InboxLoader', () => {
     expect(screen.queryByRole('button', { name: '21.gifts, 2 unread' })).toBeNull();
   });
 
-  it('passes remaining inbox unread after opening one of two unread threads', async () => {
+  it('keeps the badge cleared after visiting the inbox before opening a thread', async () => {
     listMock.mockResolvedValue([
       { ...THREAD, unread: true },
       { ...OLDER, unread: true },
@@ -897,7 +897,7 @@ describe('InboxLoader', () => {
     view.rerender(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     await waitFor(() => {
-      expect(refreshMock).toHaveBeenCalledWith('sess', 1);
+      expect(refreshMock).toHaveBeenCalledWith('sess', 0);
     });
     expect(bumpMock).toHaveBeenCalled();
   });
@@ -2212,4 +2212,38 @@ describe('conversation thread pages', () => {
     expect(screen.getByText('Hello')).toBeTruthy();
     expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
   });
+});
+
+it('acknowledges all visible inbox conversations through their loaded message and keeps failures unread', async () => {
+  listMock.mockResolvedValue([
+    { ...THREAD, unread: true, unreadMessageCount: 3, lastMessageId: 'last-1' },
+    { ...OLDER, unread: true, unreadMessageCount: 2, lastMessageId: 'last-2' },
+    { ...OLDER, id: 'staff', kind: 'moderator_group', unread: true },
+  ]);
+  markReadMock.mockImplementation(async (_session, id) => {
+    if (id === OLDER.id) throw new Error('offline');
+  });
+  renderWithLocale(<InboxLoader />);
+  await waitFor(() => expect(refreshMock).toHaveBeenCalledWith('sess'));
+  expect(markReadMock).toHaveBeenCalledWith('sess', THREAD.id, 'last-1');
+  expect(markReadMock).toHaveBeenCalledWith('sess', OLDER.id, 'last-2');
+  expect(markReadMock).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole('button', { name: '21.gifts, 3 unread' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Bob, 2 unread' })).toBeTruthy();
+});
+
+it('does not apply a completed inbox acknowledgement after leaving the screen', async () => {
+  listMock.mockResolvedValue([{ ...THREAD, unread: true, lastMessageId: 'last' }]);
+  let done!: () => void;
+  markReadMock.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        done = resolve;
+      }),
+  );
+  const view = renderWithLocale(<InboxLoader />);
+  await waitFor(() => expect(markReadMock).toHaveBeenCalled());
+  view.unmount();
+  await act(async () => done());
+  expect(refreshMock).not.toHaveBeenCalled();
 });
