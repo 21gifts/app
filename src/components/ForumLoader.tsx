@@ -2470,7 +2470,13 @@ export function ForumLoader({
         return;
       }
       if (expandedIdRef.current === parentId) {
-        setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+        setReplyFormError(
+          isRateLimitError(err)
+            ? 'rateLimit'
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
+        );
       }
     } finally {
       if (!awaitingPay) {
