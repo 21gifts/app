@@ -2971,7 +2971,7 @@ Moderator on `/grants` when the open-application load fails. Copy **Could not lo
 
 ### Variant: daily-payments
 
-Founder on `/grants` sees secondary **Daily payment text** and **Daily payment amounts** links plus **Open applications (2)**. Needle `Daily payment text`.
+Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`.
 
 ![21.gifts grants daily payments](images/grants-daily-payments.png)
 
