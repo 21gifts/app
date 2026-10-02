@@ -21595,7 +21595,9 @@ test.describe('habit-tracker screens', () => {
   test('state /habit-tracker error', async ({ page }) => {
     await page.route('**/habits/data*', (route) => route.fulfill({ status: 503, json: {} }));
     await page.goto('/habit-tracker');
-    await expect(page.getByRole('alert')).toContainText('Could not load or save the tracker.');
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not load or save the tracker.' }),
+    ).toContainText('Could not load or save the tracker.');
     await shotScreen(page, 'state-habit-tracker-error');
   });
 });

@@ -60,6 +60,8 @@ test('Function: HabitTracker — empty, loading and error states', async ({ page
     route.fulfill({ status: 503, json: { error: 'Offline' } }),
   );
   await page.reload();
-  await expect(page.getByRole('alert')).toContainText('Could not load or save the tracker.');
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Could not load or save the tracker.' }),
+  ).toContainText('Could not load or save the tracker.');
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
