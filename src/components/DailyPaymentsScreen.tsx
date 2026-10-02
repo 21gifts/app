@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Trash2 } from 'lucide-react';
+import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -30,6 +30,9 @@ const SAVE_ERROR_KEYS = [
 ] as const satisfies readonly MessageKey[];
 
 type SaveErrorKey = (typeof SAVE_ERROR_KEYS)[number];
+
+/** Which stored value is open for editing. At most one. */
+type Editing = { kind: 'comment' } | { kind: 'amount'; address: string };
 
 /**
  * Wallet of Satoshi addresses render as `local@w...`. Any other string is unchanged.
@@ -102,8 +105,9 @@ function saveErrorKey(err: unknown): SaveErrorKey {
 /**
  * Signed-in editor for the daily payout comment, switch, and recipient list.
  *
- * An initiator or founder loads `GET /funding/daily-roster` and may save the
- * comment, the payments switch, and add, update, or delete a recipient.
+ * An initiator or founder loads `GET /funding/daily-roster` and may edit the
+ * comment or a recipient amount (pencil opens, check saves, X cancels), turn
+ * the payments switch, and add or delete a recipient.
  * Everyone else who is signed in sees the heading and a short refusal, and
  * this screen does not fetch. A load that rejects with
  * `funding.daily.forbidden` shows that same refusal. Renders nothing without
@@ -122,10 +126,12 @@ export function DailyPaymentsScreen(): ReactElement | null {
   const [forbidden, setForbidden] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [comment, setComment] = useState('');
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [amountDraft, setAmountDraft] = useState('');
   const [addAddress, setAddAddress] = useState('');
   const [addUsd, setAddUsd] = useState('');
   const [pending, setPending] = useState(false);
+  const [savingEditor, setSavingEditor] = useState(false);
   const [saveError, setSaveError] = useState<SaveErrorKey | null>(null);
 
   useEffect(() => {
@@ -143,7 +149,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
         }
         setRoster(next);
         setComment(next.comment);
-        setDrafts({});
+        setEditing(null);
       } catch (err) {
         if (cancelled) {
           return;
@@ -180,24 +186,58 @@ export function DailyPaymentsScreen(): ReactElement | null {
     );
   }
 
-  async function runSave(task: () => Promise<DailyRoster>): Promise<void> {
+  async function runSave(task: () => Promise<DailyRoster>, closeEditor = false): Promise<void> {
     setPending(true);
+    if (closeEditor) {
+      setSavingEditor(true);
+    }
     setSaveError(null);
     try {
       const next = await task();
       setRoster(next);
       setComment(next.comment);
-      setDrafts({});
+      if (closeEditor) {
+        setEditing(null);
+      }
     } catch (err) {
       setSaveError(saveErrorKey(err));
     } finally {
       setPending(false);
+      setSavingEditor(false);
     }
   }
 
+  const saveIcon = savingEditor ? (
+    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+  ) : (
+    <Check aria-hidden="true" className="h-4 w-4" />
+  );
+
+  const cancelEdit = (): void => {
+    if (roster !== null) {
+      setComment(roster.comment);
+    }
+    setEditing(null);
+    setSaveError(null);
+  };
+
   const onSaveComment = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    void runSave(() => saveDailyRosterComment(session, comment));
+    void runSave(() => saveDailyRosterComment(session, comment), true);
+  };
+
+  const onSaveAmount = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    if (editing === null || editing.kind !== 'amount') {
+      return;
+    }
+    const amountUsd = parseUsd(amountDraft);
+    if (amountUsd === null) {
+      setSaveError('funding.daily.invalidRow');
+      return;
+    }
+    const address = editing.address;
+    void runSave(() => updateDailyRosterRecipient(session, address, amountUsd), true);
   };
 
   const onAdd = (event: FormEvent<HTMLFormElement>): void => {
@@ -248,28 +288,69 @@ export function DailyPaymentsScreen(): ReactElement | null {
             {t(saveError)}
           </p>
         )}
-        <form className="flex w-full items-end gap-3" onSubmit={onSaveComment}>
-          <Field
-            className="min-w-0 flex-1"
-            multiline
-            label={t('funding.daily.commentLabel')}
-            value={comment}
-            rows={3}
-            disabled={pending}
-            onChange={(event) => {
-              setComment(event.target.value);
-            }}
-          />
-          <IconButton
-            type="submit"
-            variant="secondary"
-            size="md"
-            aria-label={t('funding.daily.save')}
-            disabled={pending}
-          >
-            <Pencil aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-        </form>
+        {editing?.kind === 'comment' ? (
+          <form className="flex w-full items-end gap-2" onSubmit={onSaveComment}>
+            <Field
+              className="min-w-0 flex-1"
+              multiline
+              label={t('funding.daily.commentLabel')}
+              value={comment}
+              rows={3}
+              disabled={pending}
+              onChange={(event) => {
+                setComment(event.target.value);
+              }}
+            />
+            <IconButton
+              type="submit"
+              variant="primary"
+              size="md"
+              aria-label={t('funding.daily.save')}
+              disabled={pending}
+            >
+              {saveIcon}
+            </IconButton>
+            <IconButton
+              type="button"
+              variant="secondary"
+              size="md"
+              aria-label={t('funding.daily.cancel')}
+              disabled={pending}
+              onClick={cancelEdit}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </form>
+        ) : (
+          <div className="flex w-full flex-col gap-1 text-left text-sm text-app-fg">
+            <p>{t('funding.daily.commentLabel')}</p>
+            <div className="flex items-start gap-2">
+              <p
+                className={
+                  roster.comment.trim() === ''
+                    ? 'min-w-0 flex-1 whitespace-pre-wrap text-sm text-app-muted'
+                    : 'min-w-0 flex-1 whitespace-pre-wrap text-sm text-app-fg'
+                }
+              >
+                {roster.comment.trim() === '' ? t('funding.daily.commentEmpty') : roster.comment}
+              </p>
+              <IconButton
+                type="button"
+                variant="secondary"
+                size="md"
+                aria-label={t('funding.daily.editComment')}
+                disabled={pending}
+                onClick={() => {
+                  setComment(roster.comment);
+                  setEditing({ kind: 'comment' });
+                  setSaveError(null);
+                }}
+              >
+                <Pencil aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+          </div>
+        )}
         <h2 className="text-center text-sm font-semibold tracking-wide text-app-muted uppercase">
           {t('funding.daily.recipients')}
         </h2>
@@ -308,8 +389,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
           <ul aria-label={t('funding.daily.recipients')} className="flex w-full flex-col gap-3">
             {roster.recipients.map((row) => {
               const display = displayAddress(row.address);
-              const stored = drafts[row.address];
-              const draft = stored === undefined ? String(row.amountUsd) : stored;
+              const rowEditing = editing?.kind === 'amount' && editing.address === row.address;
               return (
                 <li
                   key={row.address}
@@ -318,52 +398,73 @@ export function DailyPaymentsScreen(): ReactElement | null {
                   <span className="truncate text-sm text-app-fg" title={row.address}>
                     {display}
                   </span>
-                  <div className="flex w-full items-end gap-3">
-                    <Field
-                      className="min-w-0 flex-1"
-                      label={t('funding.daily.usd')}
-                      id={`daily-usd-${row.address}`}
-                      value={draft}
-                      inputMode="decimal"
-                      disabled={pending}
-                      aria-label={`${t('funding.daily.usd')} ${display}`}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setDrafts((current) => ({ ...current, [row.address]: value }));
-                      }}
-                    />
-                    <IconButton
-                      type="button"
-                      variant="secondary"
-                      size="md"
-                      aria-label={`${t('funding.daily.update')} ${display}`}
-                      disabled={pending}
-                      onClick={() => {
-                        const amountUsd = parseUsd(draft);
-                        if (amountUsd === null) {
-                          setSaveError('funding.daily.invalidRow');
-                          return;
-                        }
-                        void runSave(() =>
-                          updateDailyRosterRecipient(session, row.address, amountUsd),
-                        );
-                      }}
-                    >
-                      <Pencil aria-hidden="true" className="h-4 w-4" />
-                    </IconButton>
-                    <IconButton
-                      type="button"
-                      variant="secondary"
-                      size="md"
-                      aria-label={`${t('funding.daily.delete')} ${display}`}
-                      disabled={pending}
-                      onClick={() => {
-                        void runSave(() => deleteDailyRosterRecipient(session, row.address));
-                      }}
-                    >
-                      <Trash2 aria-hidden="true" className="h-4 w-4" />
-                    </IconButton>
-                  </div>
+                  {rowEditing ? (
+                    <form className="flex w-full items-end gap-2" onSubmit={onSaveAmount}>
+                      <Field
+                        className="min-w-0 flex-1"
+                        label={t('funding.daily.usd')}
+                        id={`daily-usd-${row.address}`}
+                        value={amountDraft}
+                        inputMode="decimal"
+                        disabled={pending}
+                        aria-label={`${t('funding.daily.usd')} ${display}`}
+                        onChange={(event) => {
+                          setAmountDraft(event.target.value);
+                        }}
+                      />
+                      <IconButton
+                        type="submit"
+                        variant="primary"
+                        size="md"
+                        aria-label={t('funding.daily.save')}
+                        disabled={pending}
+                      >
+                        {saveIcon}
+                      </IconButton>
+                      <IconButton
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        aria-label={t('funding.daily.cancel')}
+                        disabled={pending}
+                        onClick={cancelEdit}
+                      >
+                        <X aria-hidden="true" className="h-4 w-4" />
+                      </IconButton>
+                    </form>
+                  ) : (
+                    <div className="flex w-full items-center gap-2">
+                      <p className="min-w-0 flex-1 text-sm text-app-fg">
+                        {formatUsdDisplay(String(row.amountUsd), numberFormat)}
+                      </p>
+                      <IconButton
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        aria-label={`${t('funding.daily.edit')} ${display}`}
+                        disabled={pending}
+                        onClick={() => {
+                          setAmountDraft(String(row.amountUsd));
+                          setEditing({ kind: 'amount', address: row.address });
+                          setSaveError(null);
+                        }}
+                      >
+                        <Pencil aria-hidden="true" className="h-4 w-4" />
+                      </IconButton>
+                      <IconButton
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        aria-label={`${t('funding.daily.delete')} ${display}`}
+                        disabled={pending}
+                        onClick={() => {
+                          void runSave(() => deleteDailyRosterRecipient(session, row.address));
+                        }}
+                      >
+                        <Trash2 aria-hidden="true" className="h-4 w-4" />
+                      </IconButton>
+                    </div>
+                  )}
                 </li>
               );
             })}
