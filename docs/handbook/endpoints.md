@@ -17,7 +17,7 @@
 ## Endpoint: GET /pay/[username]
 
 - **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`) from the api.
-- **Errors:** Upstream 404 when the person cannot be paid, 502 when the linked address cannot be resolved.
+- **Errors:** Upstream 404 when the person cannot be paid, 502 when the payee's wallet cannot be resolved.
 - **Used by:** `PayLinkScreen`.
 - **Auth:** none.
 

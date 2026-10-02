@@ -22,7 +22,7 @@ import { useAuthStore } from '@/stores/auth-store';
  * Intermediate **Continue** clicks only advance the chapter index. The last
  * chapter’s **I agree to these rules** POSTs `agreeToRules` and merges
  * `rulesAgreedAt`, `setup`, and `missing` into the auth-store account
- * so concurrent name or address writes are not overwritten. Renders nothing
+ * so concurrent name or location writes are not overwritten. Renders nothing
  * without a session token or when `chapters` is empty.
  *
  * @param props - Server-rendered {@link RulesDocument} chapters in order.

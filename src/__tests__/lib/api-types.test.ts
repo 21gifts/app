@@ -1372,11 +1372,11 @@ describe('forumMessageSchema place', () => {
 });
 
 describe('accountSchema', () => {
-  it('accepts a well-formed account without a linked address', () => {
+  it('accepts a well-formed account', () => {
     expect(accountSchema.parse(account)).toEqual(account);
   });
 
-  it('accepts a linked, verified account', () => {
+  it('accepts the legacy address-verified flag from the api', () => {
     const linked = {
       ...account,
       lightningAddress: null,

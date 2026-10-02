@@ -183,7 +183,7 @@ describe('MemberProfileLoader', () => {
     expect(fetchMemberActivity).toHaveBeenCalledWith('sess', memberId);
   });
 
-  it('fetches activity when lightningAddress is blank', async () => {
+  it('fetches activity before the member has a wallet', async () => {
     vi.mocked(fetchMember).mockResolvedValue({ ...profile, lightningAddress: '   ' });
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
     expect(await screen.findByText('Carol')).toBeTruthy();

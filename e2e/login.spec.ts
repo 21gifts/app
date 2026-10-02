@@ -267,7 +267,7 @@ test('login with an existing passkey skips the account choice', async ({ page })
   );
 });
 
-test('signed-in session hydrates, saves a name, skips the address step, and reaches welcome', async ({
+test('signed-in session hydrates, saves a name, agrees to the rules, and reaches welcome', async ({
   page,
 }) => {
   await page.addInitScript(() => {

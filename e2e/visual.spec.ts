@@ -896,7 +896,7 @@ const RULES_SETUP_ACCOUNT = {
   missing: ['rules'] as Array<'name' | 'username' | 'lightning-address' | 'rules'>,
 };
 
-/** Signed-in visitor at `/setup/rules` (name + address saved, rules not agreed). */
+/** Signed-in visitor at `/setup/rules` (name + username saved, rules not agreed). */
 async function openRulesSetup(
   page: Page,
   agreement: 'none' | 'fail' | 'hang' = 'none',

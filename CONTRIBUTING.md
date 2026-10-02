@@ -240,7 +240,7 @@ app/
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + GET /view-key/:viewKey/activity
-│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + About me + name/location/address, copy-link)
+│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + About me + name/location/21.gifts address, copy-link)
 │   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + GET /forum/members/:id/activity
 │   │   ├── MemberProfileScreen.tsx # Member identity card + About me + location + activity feeds
 │   │   ├── UsernameSetup.tsx    # Onboarding unique @21.gifts username (no Skip)
