@@ -69,6 +69,11 @@ user-agent, or when a profile, member, public view, or point of sale QR
 is hidden on a smartphone. Detection is `isSmartphoneUserAgent`, not
 viewport width. On those invoice screens the phone opens Wallet of
 Satoshi and shows no QR. Everywhere else the phone matches the desktop.
+When the invoice carries a `sparkInvoice` and the member's in-app wallet
+can be used, the forum and inbox pay sheets pay from that wallet and show
+neither the wallet button nor the invoice QR; the member's own address QR
+shown when the balance is too low follows the profile rule. That is not a
+reason to reject.
 See CONTRIBUTING.md “Payment QR vs deep links”.
 
 ## Completeness gates

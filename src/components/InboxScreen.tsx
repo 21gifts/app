@@ -519,7 +519,8 @@ function ConversationListItem({
  * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
- * Wallet of Satoshi pay sheet. Desktop and iPad also show the invoice QR. A
+ * pay sheet. Without the in-app wallet path (the `WalletPay` fallback) that is
+ * the Wallet of Satoshi pay sheet; desktop and iPad also show the invoice QR, a
  * smartphone does not (`isSmartphoneUserAgent`, not viewport). The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
