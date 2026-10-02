@@ -2415,6 +2415,47 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('does not finish authenticate after cancellation during the login salt check', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+    let resolveSalt!: (salt: Uint8Array) => void;
+    vi.mocked(prfEvalFirstSalt).mockReturnValueOnce(
+      new Promise<Uint8Array>((resolve) => {
+        resolveSalt = resolve;
+      }),
+    );
+    vi.mocked(readPrfFirst).mockReturnValue(new Uint8Array(32).fill(7));
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: {
+        create: vi.fn(),
+        get: vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' }),
+      },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.login();
+    });
+    await vi.waitFor(() => {
+      expect(prfEvalFirstSalt).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      result.current.cancel();
+    });
+    await act(async () => {
+      resolveSalt(new Uint8Array(32).fill(1));
+      await Promise.resolve();
+    });
+    expect(readPrfFirst).toHaveBeenCalledTimes(1);
+    expect(finishPasskeyAuthentication).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toBeNull();
+    fetchMock.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
   it('ignores a superseded register success and a late error', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
