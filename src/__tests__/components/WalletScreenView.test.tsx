@@ -676,7 +676,7 @@ describe('WalletScreenView send block', () => {
     expect(historyBack).not.toHaveBeenCalled();
   });
 
-  it('keeps the send block for a send alert while the wallet is not ready', () => {
+  it('keeps only the send alert while the wallet is not ready', () => {
     const failed: UseWalletSendResult = {
       ...sendResult(() => false),
       state: { step: 'input', error: 'failed' },
@@ -686,6 +686,12 @@ describe('WalletScreenView send block', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       'The payment could not be sent. Check your balance before you try again.',
     );
+    expect(screen.queryByLabelText('Payment request or address')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    cleanup();
+    renderEntry('ready', failed);
+    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeTruthy();
     cleanup();
     renderEntry('locked', { ...sendResult(() => false), state: { step: 'input', error: null } });
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();

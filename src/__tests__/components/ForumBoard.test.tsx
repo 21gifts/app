@@ -25,6 +25,7 @@ import type { ForumVideoPayload } from '@/lib/forum-video';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 import {
   SPARK_INVOICE,
   confirmResult,
@@ -36,7 +37,6 @@ vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
   return { ...actual, payFromWallet: vi.fn() };
 });
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 
 const push = vi.fn();
 

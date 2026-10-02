@@ -77,7 +77,9 @@ function WalletReceive({
           onRetry={wallet.retry}
         />
       )}
-      {send !== undefined && isSendBlockShown(wallet, send) ? <WalletSend send={send} /> : null}
+      {send !== undefined && isSendBlockShown(wallet, send) ? (
+        <WalletSend send={send} walletReady={wallet?.status === 'ready'} />
+      ) : null}
       {address !== null ? (
         <div className="flex flex-col items-stretch gap-3">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">

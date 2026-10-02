@@ -53,9 +53,9 @@ function visualStatus(): WalletStatus | null {
 /**
  * Selects the wallet balance state and exposes guarded unlock and retry actions.
  * Visual pins (`?visual=balance-…`, and `?visual=history-…` or `?visual=send-…`
- * as ready) are honoured only in a
- * Playwright build
- * (`getE2eNow()` set) and leave unlock and retry inert while pinned.
+ * as ready) are honoured
+ * only in a Playwright build (`getE2eNow()` set) and leave unlock and retry
+ * inert while pinned.
  *
  * @returns Wallet balance state and stable actions for `/wallet`.
  */
