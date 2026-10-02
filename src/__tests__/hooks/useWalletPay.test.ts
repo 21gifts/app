@@ -300,6 +300,28 @@ describe('useWalletPay balance after insufficient', () => {
     expect(payFromWallet).toHaveBeenCalledTimes(2);
   });
 
+  it('measures a rise from the lowest balance seen after insufficient', async () => {
+    setWallet('ready', 1_000);
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient' })))
+      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
+    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(result.current.view).toBe('insufficient');
+    await act(async () => {
+      setWallet('ready', 10);
+    });
+    expect(result.current.view).toBe('insufficient');
+    await act(async () => {
+      setWallet('ready', 500);
+    });
+    expect(result.current.view).toBe('confirm');
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+  });
+
   it('prepares again after an insufficient send once the balance rises', async () => {
     setWallet('ready', 10);
     vi.mocked(payFromWallet)

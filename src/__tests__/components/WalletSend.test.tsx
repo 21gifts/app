@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletSend } from '@/components/WalletSend';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
@@ -178,6 +178,11 @@ describe('WalletSend amount', () => {
       } as WalletSendState),
     );
     expect(screen.queryByLabelText('Message (optional)')).toBeNull();
+    expect(
+      within(screen.getByRole('group', { name: 'Bitcoin or fiat' }))
+        .getByRole('button', { name: 'USD' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
   });
 });
 

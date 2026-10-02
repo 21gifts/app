@@ -28,6 +28,13 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface WalletSendProps {
   /** Send flow state and actions from `useWalletSend`. */
   send: UseWalletSendResult;
+  /**
+   * Whether the wallet is ready. When it is not, an input step with an alert
+   * shows only that alert, so nothing can be pasted or sent until the wallet
+   * is ready again.
+   * Default `true`.
+   */
+  walletReady?: boolean;
 }
 
 const ERROR_KEYS: Record<WalletSendError, MessageKey> = {
@@ -75,12 +82,13 @@ function StepBox({
 /**
  * Send block on `/wallet` under the balance: paste a Bitcoin payment request
  * or address, enter an amount when the receiver asks for one, confirm amount,
- * fee, and recipient, then send.
+ * fee, and recipient, then send. While the wallet is not ready, an input step
+ * with an alert shows only that alert.
  *
- * @param props - Send flow.
+ * @param props - Send flow and whether the wallet is ready.
  * @returns The send region.
  */
-export function WalletSend({ send }: WalletSendProps): ReactElement {
+export function WalletSend({ send, walletReady = true }: WalletSendProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -105,7 +113,13 @@ export function WalletSend({ send }: WalletSendProps): ReactElement {
   };
 
   let body: ReactElement;
-  if (state.step === 'input') {
+  if (state.step === 'input' && !walletReady && state.error !== null) {
+    body = (
+      <p role="alert" className="text-center text-sm text-app-danger">
+        {t(ERROR_KEYS[state.error])}
+      </p>
+    );
+  } else if (state.step === 'input') {
     const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
       event.preventDefault();
       setAmountDraft('');
