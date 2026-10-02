@@ -117,7 +117,7 @@ test.describe('wallet setup endpoints', () => {
     expect(response.status()).toBe(401);
   });
 
-  test('Function: putMyWallet — put with an unknown session is 401', async ({ request }) => {
+  test('Function: putWallet — put with an unknown session is 401', async ({ request }) => {
     const response = await request.put('/me/wallet', {
       headers: { Authorization: 'Bearer not-a-session' },
       data: { sparkPubkey: PUBKEY },

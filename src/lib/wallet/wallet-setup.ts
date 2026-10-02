@@ -1,4 +1,4 @@
-import { fetchMe, putMyWallet } from '@/lib/api';
+import { fetchMe, putWallet } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { getBreezApiKey } from '@/lib/config';
 import { classifyWebAuthnError, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
@@ -175,7 +175,7 @@ async function setupOnce(
     onStep('claiming');
     let alreadyVerified = false;
     try {
-      const claimed = await putMyWallet(session, identity);
+      const claimed = await putWallet(session, identity);
       if (!current()) {
         return 'superseded';
       }
