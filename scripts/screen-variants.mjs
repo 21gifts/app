@@ -3023,7 +3023,7 @@ export const SCREEN_VARIANTS = [
     id: 'loading',
     image: 'statistics-loading.png',
     visual: 'state-statistics-loading',
-    needle: 'Daily funding goal',
+    needle: 'People paid',
   },
   {
     route: '/statistics',

@@ -3936,14 +3936,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Axis tick label for a UTC day as numeric day and month in `locale`.
 - **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
 - **Returns / side effects:** Short numeric day-month label in the UTC zone. Pure; no I/O.
-- **Used by:** `PayoutGoalChart` and `ShopActivityChart` for the first, middle, and last axis labels.
+- **Used by:** `PayoutGoalChart`, `ShopActivityChart`, and `PeopleCountChart` for the first, middle, and last axis labels.
 
 ## Function: PayoutGoalChart
 
 - **Purpose:** Draws the 30-day SVG count chart (`role="img"`) with ticks 0/25/50/75/100, a goal line at 100, today's bar `fill-app-subtle`, other bars `fill-app-accent`, and `data-testid="payout-goal-chart-bar"`.
 - **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
 - **Returns / side effects:** SVG figure. No network.
-- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+- **Used by:** `ModerateScreen`.
 
 ## Function: fetchShopActivity
 
@@ -3966,9 +3966,16 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** SVG figure. No network.
 - **Used by:** `StatisticsScreen`.
 
+## Function: PeopleCountChart
+
+- **Purpose:** Draws the people-count SVG (`role="img"`) for 30 UTC days. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="people-count-chart-bar"`. No goal line.
+- **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
+- **Returns / side effects:** SVG figure. No network.
+- **Used by:** `StatisticsScreen`.
+
 ## Function: StatisticsScreen
 
-- **Purpose:** Client staff chart of people counted once per UTC day, with a shop-activity panel under the payout chart. Staff (`roleAtLeast(..., 'moderator')`) see yesterday versus 100, the three explanation paragraphs, the 30-UTC-day chart, and a secondary ButtonLink **Show payout per person** → `/moderate/payouts`, then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The summary is not a toggle and there is no **Tap to close**. Non-staff signed-in visitors see the heading **Statistics** plus forbidden copy and do not fetch. Renders `null` without a session.
+- **Purpose:** Client staff chart of people counted once per UTC day, with a shop-activity panel under the people chart. Staff (`roleAtLeast(..., 'moderator')`) see yesterday's person count, the measurement paragraph, and the 30-UTC-day people chart (no goal line), then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The people panel is always open and there is no **Tap to close**. Non-staff signed-in visitors see the heading **Statistics** plus forbidden copy and do not fetch. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog and locale via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` and also call `fetchShopActivity`. Others do not fetch.
 - **Used by:** `StatisticsPage`.

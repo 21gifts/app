@@ -3337,27 +3337,27 @@ Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator*
 
 ## Screen: /statistics
 
-- **URL:** `/statistics` — signed-in daily funding-goal chart for staff. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/statistics` is the chart page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /gifts/stats`. Not a second moderation hub.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Statistics**. Staff (moderator) see yesterday’s people counted once as a percent of 100, the 100-a-day label, the yesterday count, the three explanation paragraphs, the 30-UTC-day chart (goal line at 100, lighter bar is today), and **Show payout per person** → `/moderate/payouts`. Staff also see an **Active shops** panel under the payout chart: one explainer and the **Shops by UTC day** chart. The shop chart has no goal line and no link. The summary is not a toggle. No **Tap to close**. No Hidden notes, Open proposals, Moderators chat group, or Handbook controls. Non-staff signed-in visitors see the heading plus **This page is for moderators.** Menu row **Statistics** (`nav.statistics`, lucide `BarChart3`, `/statistics`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain and before Moderation.
-- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Show payout per person** to `/moderate/payouts`. Open **Menu**. No note list on this page. The shop chart has no drill-down.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `StatisticsPage`, `StatisticsScreen`, `ShopActivityChart`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `fetchShopActivity`.
-- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Charts only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the goal panel and `GET /shops/activity` for the shop panel. Each request fails on its own.
+- **URL:** `/statistics` — signed-in people-count chart for staff. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/statistics` is the chart page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /gifts/stats`. Not a second moderation hub.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Statistics**. Staff (moderator) see the **People paid** panel: yesterday's person count, the measurement paragraph, and the **People by UTC day** chart (lighter bar is today, no goal line). Staff also see an **Active shops** panel under it: one explainer and the **Shops by UTC day** chart. The shop chart has no goal line and no link. The people panel is always open. No **Tap to close**. No Hidden notes, Open proposals, Moderators chat group, or Handbook controls. Non-staff signed-in visitors see the heading plus **This page is for moderators.** Menu row **Statistics** (`nav.statistics`, lucide `BarChart3`, `/statistics`) only when `roleAtLeast(role, 'moderator')`, after Trust Chain and before Moderation.
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No note list on this page. The shop chart has no drill-down.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `StatisticsPage`, `StatisticsScreen`, `PeopleCountChart`, `ShopActivityChart`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `fetchShopActivity`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Charts only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. Staff fetch `GET /gifts/stats` for the people panel and `GET /shops/activity` for the shop panel. Each request fails on its own.
 
 ### Variant: default
 
-Staff (moderator) page with heading **Statistics**, the daily funding-goal panel always open (yesterday percent of 100, three explanation paragraphs, 30-UTC-day chart, **Show payout per person** → `/moderate/payouts`). The shop chart sits under the payout chart (**Shops by UTC day**). The summary is not a toggle.
+Staff (moderator) page with heading **Statistics**, the **People paid** panel always open (yesterday count, measurement paragraph, 30-UTC-day chart). The shop chart sits under the people chart (**Shops by UTC day**). The people panel is not a toggle.
 
 ![21.gifts statistics](images/statistics.png)
 
 ### Variant: loading
 
-Staff (moderator) page. Both panels show **Loading…** while their own request is in flight: the goal panel (group **Daily funding goal**) for `GET /gifts/stats`, and the shop panel (group **Active shops**) for `GET /shops/activity`. One panel can finish while the other is still loading.
+Staff (moderator) page. Both panels show **Loading…** while their own request is in flight: the people panel (group **People paid**) for `GET /gifts/stats`, and the shop panel (group **Active shops**) for `GET /shops/activity`. One panel can finish while the other is still loading.
 
 ![21.gifts statistics loading](images/statistics-loading.png)
 
 ### Variant: error
 
-Staff (moderator) page. The goal panel shows **Could not load payouts. Please try again.** and **Try again**. The shop panel under it still shows **Shops by UTC day**. The two panels fail independently.
+Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and **Try again**. The shop panel under it still shows **Shops by UTC day**. The two panels fail independently.
 
 ![21.gifts statistics error](images/statistics-error.png)
 
@@ -3369,13 +3369,13 @@ Signed-in basis account. Heading **Statistics**. Copy **This page is for moderat
 
 ### Variant: shop-error
 
-Staff (moderator) page. The payout chart stays up (**People by UTC day**). The shop panel under it shows **Could not load shop activity. Please try again.** and **Try again**.
+Staff (moderator) page. The people chart stays up (**People by UTC day**). The shop panel under it shows **Could not load shop activity. Please try again.** and **Try again**.
 
 ![21.gifts statistics shop error](images/statistics-shop-error.png)
 
 ### Variant: both-error
 
-Staff (moderator) page. The payout panel shows **Could not load payouts. Please try again.** and the shop panel shows **Could not load shop activity. Please try again.**
+Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and the shop panel shows **Could not load shop activity. Please try again.**
 
 ![21.gifts statistics both error](images/statistics-both-error.png)
 

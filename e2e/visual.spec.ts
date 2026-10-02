@@ -18979,10 +18979,6 @@ test.describe('statistics screens', () => {
     await expect(page.getByRole('heading', { name: 'Statistics' })).toBeVisible();
     await expect(page.getByText('People by UTC day')).toBeVisible();
     await expect(page.getByText('Shops by UTC day')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveAttribute(
-      'href',
-      '/moderate/payouts',
-    );
     await shotStatistics(page);
     await shotScreen(page, 'screen-statistics');
   });
@@ -18993,7 +18989,7 @@ test.describe('statistics screens', () => {
     await page.route('**/shops/activity', () => new Promise(() => undefined));
     await page.goto('/statistics');
     await expect(
-      page.getByRole('group', { name: 'Daily funding goal' }).getByText('Loading…'),
+      page.getByRole('group', { name: 'People paid' }).getByText('Loading…'),
     ).toBeVisible();
     await expect(
       page.getByRole('group', { name: 'Active shops' }).getByText('Loading…'),

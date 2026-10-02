@@ -153,14 +153,19 @@ describe('StatisticsScreen', () => {
       renderWithLocale(<StatisticsScreen />);
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'Statistics' })).toBeTruthy();
-        expect(screen.getByText('12%')).toBeTruthy();
+        expect(screen.getByText('Yesterday (UTC September 19): 12 people')).toBeTruthy();
       });
       expect(screen.getByText('People by UTC day')).toBeTruthy();
       expect(
-        screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href'),
-      ).toBe('/moderate/payouts');
+        screen.getByText(
+          'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count. The current UTC day is drawn lighter because it is still open.',
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
       expect(screen.queryByRole('button', { name: /Goal/ })).toBeNull();
       expect(screen.queryByText('Tap to close')).toBeNull();
+      expect(screen.queryByText('12%')).toBeNull();
+      expect(screen.queryByText('Goal')).toBeNull();
     },
   );
 
@@ -172,7 +177,7 @@ describe('StatisticsScreen', () => {
       expect(screen.getByText('Shops by UTC day')).toBeTruthy();
     });
     expect(
-      within(screen.getByRole('group', { name: 'Daily funding goal' })).getByText('Loading…'),
+      within(screen.getByRole('group', { name: 'People paid' })).getByText('Loading…'),
     ).toBeTruthy();
     expect(
       within(screen.getByRole('group', { name: 'Active shops' })).queryByText('Loading…'),
@@ -194,7 +199,7 @@ describe('StatisticsScreen', () => {
       within(screen.getByRole('group', { name: 'Active shops' })).getByText('Loading…'),
     ).toBeTruthy();
     expect(
-      within(screen.getByRole('group', { name: 'Daily funding goal' })).queryByText('Loading…'),
+      within(screen.getByRole('group', { name: 'People paid' })).queryByText('Loading…'),
     ).toBeNull();
   });
 

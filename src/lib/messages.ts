@@ -865,6 +865,12 @@ const en = {
     'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day at https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Shops by UTC day',
   'statistics.shops.error': 'Could not load shop activity. Please try again.',
+  'statistics.people.widgetLabel': 'People paid',
+  'statistics.people.yesterday':
+    'Yesterday (UTC {date}): {count, plural, one {# person} other {# people}}',
+  'statistics.people.explainer':
+    'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count. The current UTC day is drawn lighter because it is still open.',
+  'statistics.people.chartLabel': 'People by UTC day',
   'moderate.toolsLabel': 'Moderation tools',
   'moderate.lead':
     'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
@@ -1885,6 +1891,12 @@ const de = {
   'statistics.shops.chartLabel': 'Shops je UTC-Tag',
   'statistics.shops.error':
     'Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen.',
+  'statistics.people.widgetLabel': 'Ausgezahlte Personen',
+  'statistics.people.yesterday':
+    'Gestern (UTC {date}): {count, plural, one {# Person} other {# Personen}}',
+  'statistics.people.explainer':
+    'Gezählt wird jede Person einmal an dem UTC-Tag, an dem 21.gifts ihr die Tagesförderung oder das Willkommensgeschenk gezahlt hat. Wer an einem Tag beides bekommt, zählt einmal. Moderatoren-Stipendien und Geschenke zwischen Mitgliedern zählen nicht. Der laufende UTC-Tag ist heller gezeichnet, weil er noch offen ist.',
+  'statistics.people.chartLabel': 'Personen je UTC-Tag',
   'moderate.toolsLabel': 'Moderationswerkzeuge',
   'moderate.lead':
     'Eine Notiz auszublenden ist ein weiches Ausblenden: Die Notiz und ihre nicht markierten direkten Antworten verlassen das Wohnzimmer. Es ist keine endgültige Löschung.',
@@ -2903,6 +2915,12 @@ const es = {
     'Una tienda cuenta en un día UTC cuando tiene un usuario de 21.gifts asignado y ese usuario creó un pago en el punto de venta ese día en https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Tiendas por día UTC',
   'statistics.shops.error': 'No se pudo cargar la actividad de las tiendas. Inténtalo de nuevo.',
+  'statistics.people.widgetLabel': 'Personas pagadas',
+  'statistics.people.yesterday':
+    'Ayer (UTC {date}): {count, plural, one {# persona} other {# personas}}',
+  'statistics.people.explainer':
+    'Cada persona cuenta una vez en el día UTC en que 21.gifts le pagó la ayuda diaria o el regalo de bienvenida. Quien recibe ambos ese día cuenta una vez. Los estipendios de moderadores y los regalos entre miembros no cuentan. El día UTC en curso se dibuja más claro porque aún está abierto.',
+  'statistics.people.chartLabel': 'Personas por día UTC',
   'moderate.toolsLabel': 'Herramientas de moderación',
   'moderate.lead':
     'Ocultar una nota es una ocultación suave: la nota y sus respuestas directas sin etiqueta salen del salón. No es un borrado definitivo.',
@@ -3922,6 +3940,11 @@ const fil = {
     'Binibilang ang isang tindahan sa isang araw na UTC kapag may naka-assign na user ng 21.gifts at ang user na iyon ay gumawa ng bayad sa point of sale sa araw na iyon sa https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Mga tindahan ayon sa araw na UTC',
   'statistics.shops.error': 'Hindi ma-load ang aktibidad ng tindahan. Pakisubukan muli.',
+  'statistics.people.widgetLabel': 'Mga taong nabayaran',
+  'statistics.people.yesterday': 'Kahapon (UTC {date}): {count, plural, one {# tao} other {# tao}}',
+  'statistics.people.explainer':
+    'Binibilang ang bawat tao nang isang beses sa araw na UTC kung kailan binayaran sila ng 21.gifts ng araw-araw na tulong o ng welcome gift. Ang nakatanggap ng pareho sa araw na iyon ay isang beses lang. Hindi binibilang ang stipend ng moderator at ang mga regalo sa pagitan ng mga miyembro. Mas maputla ang kasalukuyang araw na UTC dahil bukas pa ito.',
+  'statistics.people.chartLabel': 'Mga tao bawat UTC-araw',
   'moderate.toolsLabel': 'Mga tool sa moderasyon',
   'moderate.lead':
     'Ang pagtatago ng nota ay malambot: ang nota at ang mga direktang sagot nito na walang tag ay umaalis sa living room. Hindi ito tuluyang pagbura.',
