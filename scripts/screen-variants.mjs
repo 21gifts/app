@@ -2351,7 +2351,8 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'grants.png',
     visual: 'screen-grants',
-    needle: 'Applications are currently paused. You can apply again when shop transactions have increased.',
+    needle:
+      'Applications are currently paused. You can apply again when shop transactions have increased.',
   },
   {
     route: '/grants',
@@ -2449,7 +2450,8 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'profile-apply.png',
     visual: 'screen-grants-apply',
-    needle: 'Applications are currently paused. You can apply again when shop transactions have increased.',
+    needle:
+      'Applications are currently paused. You can apply again when shop transactions have increased.',
   },
   {
     route: '/view/[viewKey]',
