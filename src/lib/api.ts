@@ -1545,7 +1545,8 @@ export async function postFundingReject(
  * Fetches the daily payout roster for founder and initiator editors.
  *
  * Hits same-origin `GET /funding/daily-roster` (Bearer). Next.js forbids a
- * `route.ts` beside `/grants/payments`, so the proxy lives at this path.
+ * `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`,
+ * so the proxy lives at this path.
  *
  * @param session - A bearer token from a completed challenge.
  * @returns The parsed {@link DailyRoster}.

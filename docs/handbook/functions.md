@@ -86,7 +86,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, `/funding/daily-roster` which re-exports `proxyFundingDailyRosterGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/grants/payments` is the daily payments page, not a GET proxy. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`. `/forum/messages/[id]/edits` re-exports `proxyMessagesEditsGet`.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, `/funding/daily-roster` which re-exports `proxyFundingDailyRosterGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/grants/payments/comment` and `/grants/payments/amounts` are the daily payment pages, not GET proxies. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`. `/forum/messages/[id]/edits` re-exports `proxyMessagesEditsGet`.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo` (`id` + `messageId`), `/conversations/[id]/messages/[messageId]/photo/[file]` (`id` + `messageId` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/maps/key`; `/translate` takes the incoming `Request`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/maps/key` is always 200 `{ key: string | null }`; `/translate` is 200 `{ available: boolean }` or 502; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16.
@@ -1801,45 +1801,45 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: fetchDailyRoster
 
-- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients }` with `{ address, amountUsd }` rows only. `defaultAmountUsd` is a finite number.
+- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients }` with `{ address, amountUsd }` rows only. `defaultAmountUsd` is a finite number.
 - **Inputs:** Bearer `session`.
 - **Returns / side effects:** Parsed roster. Throws `funding.daily.forbidden` on api `Forbidden`. Throws visitor copy `Could not load daily payments. Please try again.` on 401, other 403, 503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** `DailyPaymentsScreen`.
+- **Used by:** `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
 
 ## Function: saveDailyRosterComment
 
 - **Purpose:** POST `/funding/daily-roster/comment` with `{ comment }` and parse the returned roster.
 - **Inputs:** Bearer `session`, comment text.
 - **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid comment` to `funding.daily.invalidComment`. Any other failure is `funding.daily.saveError`.
-- **Used by:** `DailyPaymentsScreen`.
+- **Used by:** `DailyPaymentCommentScreen`.
 
 ## Function: saveDailyRosterPayments
 
 - **Purpose:** POST `/funding/daily-roster/payments` with `{ enabled }` and parse the returned roster. `enabled` is a boolean.
 - **Inputs:** Bearer `session`, `enabled`.
 - **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid payments switch` to `funding.daily.invalidSwitch`. Any other failure is `funding.daily.saveError`.
-- **Used by:** `DailyPaymentsScreen`.
+- **Used by:** `DailyPaymentAmountsScreen`.
 
 ## Function: addDailyRosterRecipient
 
 - **Purpose:** POST `/funding/daily-roster/recipients` with `{ address, amountUsd }` and parse the returned roster. `amountUsd` is a real number, not a numeric string.
 - **Inputs:** Bearer `session`, address, USD amount.
 - **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Address already listed`. Any other failure is `funding.daily.saveError`.
-- **Used by:** `DailyPaymentsScreen`.
+- **Used by:** `DailyPaymentAmountsScreen`.
 
 ## Function: updateDailyRosterRecipient
 
 - **Purpose:** POST `/funding/daily-roster/recipients/update` with `{ address, amountUsd }` and parse the returned roster.
 - **Inputs:** Bearer `session`, stored address, new USD amount.
 - **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Unknown address`. Any other failure is `funding.daily.saveError`.
-- **Used by:** `DailyPaymentsScreen`.
+- **Used by:** `DailyPaymentAmountsScreen`.
 
 ## Function: deleteDailyRosterRecipient
 
 - **Purpose:** POST `/funding/daily-roster/recipients/delete` with `{ address }` and parse the returned roster.
 - **Inputs:** Bearer `session`, stored address.
 - **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Unknown address`. Any other failure is `funding.daily.saveError`.
-- **Used by:** `DailyPaymentsScreen`.
+- **Used by:** `DailyPaymentAmountsScreen`.
 
 ## Function: postFundingAdmit
 
@@ -4013,7 +4013,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** True only for `initiator` and `founder`. This is not `roleAtLeast`: initiator and moderator share rank 2, and the daily payout roster stays closed to moderators. `null` and `undefined` are false.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent.
 - **Returns / side effects:** Boolean. Pure, no side effects.
-- **Used by:** `GrantsScreen`, `DailyPaymentsScreen`.
+- **Used by:** `GrantsScreen`, `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
 
 ## Function: isReplyPaymentExempt
 
@@ -4214,7 +4214,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), a secondary large `ButtonLink` **Daily payments** goes to `/grants/payments` and does not fetch the roster. A moderator does not see that link. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), two secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`, do not fetch the roster. A moderator does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes an initiator and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
 - **Used by:** `GrantsPage`.
@@ -4233,19 +4233,33 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/goal` through `fetchGrantContinuation` only when a session exists. Does not call `fetchShopActivity`.
 - **Used by:** `GrantGoalsPage`.
 
-## Function: DailyPaymentsPage
+## Function: DailyPaymentCommentPage
 
-- **Purpose:** Next.js page for `/grants/payments`. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `DailyPaymentsScreen`. Roster HTTP lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside this page.
+- **Purpose:** Next.js page for `/grants/payments/comment`. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `DailyPaymentCommentScreen`. Amounts are a separate page. Roster HTTP lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside this page.
 - **Inputs:** None.
-- **Returns / side effects:** The daily-payments screen inside fill AppShell.
-- **Used by:** Route `/grants/payments`.
+- **Returns / side effects:** The daily-payment comment screen inside fill AppShell.
+- **Used by:** Route `/grants/payments/comment`.
 
-## Function: DailyPaymentsScreen
+## Function: DailyPaymentCommentScreen
 
-- **Purpose:** Client editor for the daily payout comment, the payments switch, and the recipient list. An initiator or founder fetches `fetchDailyRoster` and may save the comment, turn payments on or off, and add, update, or delete a recipient. The comment is text until an icon-only pencil (`funding.daily.editComment`) opens it. The check (`funding.daily.save`) stores it and the X (`funding.daily.cancel`) restores it. The loaded editor shows `funding.daily.defaultNote` with `{amount}` from `roster.defaultAmountUsd` via `formatUsdDisplay`. On a recipient row the formatted USD amount, the pencil (`funding.daily.edit` plus the shown address), and the trash share one line. The pencil opens a `Field`; the check saves and the X cancels. Amounts are the stored USD figure (`Field`, not `AmountEntry`). The total uses `formatUsdDisplay` and the visitor grouping style. Wallet of Satoshi addresses render as `local@w...`. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
+- **Purpose:** Client editor for the daily payout comment only. An initiator or founder fetches `fetchDailyRoster` and may save the comment. The comment is text until an icon-only pencil (`funding.daily.editComment`) opens it. The check (`funding.daily.save`) stores it and the X (`funding.daily.cancel`) restores the stored comment. An empty comment shows `funding.daily.commentEmpty`. Words Save, Cancel, and Edit are not visible labels. A save in flight replaces the check with a spinner. This screen does not show the default-amount sentence, the payments switch, recipients, or Add. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. The comment save goes to `POST /funding/daily-roster/comment`. A save failure shows a `funding.daily.*` catalog sentence and leaves the field open.
+- **Used by:** `DailyPaymentCommentPage`.
+
+## Function: DailyPaymentAmountsPage
+
+- **Purpose:** Next.js page for `/grants/payments/amounts`. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `DailyPaymentAmountsScreen`. The comment is a separate page. Roster HTTP lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside this page.
+- **Inputs:** None.
+- **Returns / side effects:** The daily-payment amounts screen inside fill AppShell.
+- **Used by:** Route `/grants/payments/amounts`.
+
+## Function: DailyPaymentAmountsScreen
+
+- **Purpose:** Client editor for daily payout amounts only. An initiator or founder fetches `fetchDailyRoster` and may turn payments on or off and add, update, or delete a recipient. The loaded editor shows `funding.daily.defaultNote` with `{amount}` from `roster.defaultAmountUsd` via `formatUsdDisplay`. On a recipient row the formatted USD amount, the pencil (`funding.daily.edit` plus the shown address), and the trash share one line. The pencil opens a `Field`; the check saves and the X cancels. Amounts are the stored USD figure (`Field`, not `AmountEntry`). The total uses `formatUsdDisplay` and the visitor grouping style. Wallet of Satoshi addresses render as `local@w...`. The comment is not on this screen. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; grouping via `useNumberFormat`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. Saves go to the five same-origin daily-roster POSTs. A save failure shows a `funding.daily.*` catalog sentence.
-- **Used by:** `DailyPaymentsPage`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. Saves go to the payments, add, update, and delete daily-roster POSTs. A save failure shows a `funding.daily.*` catalog sentence.
+- **Used by:** `DailyPaymentAmountsPage`.
 
 ## Function: FundingStatusCard
 

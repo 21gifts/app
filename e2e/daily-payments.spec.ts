@@ -75,37 +75,58 @@ async function fulfillRoster(route: Route, body: unknown): Promise<void> {
   });
 }
 
-test('Function: canEditDailyPayoutRoster — initiator sees Daily payments and a moderator does not', async ({
+test('Function: canEditDailyPayoutRoster — initiator sees both daily links and a moderator does not', async ({
   page,
 }) => {
   await seedAdaSession(page, 'initiator');
   await stubApplications(page);
   await page.goto('/grants');
-  await expect(page.getByRole('link', { name: 'Daily payments' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Daily payment text' })).toHaveAttribute(
     'href',
-    '/grants/payments',
+    '/grants/payments/comment',
+  );
+  await expect(page.getByRole('link', { name: 'Daily payment amounts' })).toHaveAttribute(
+    'href',
+    '/grants/payments/amounts',
   );
   await seedAdaSession(page, 'moderator');
   await page.goto('/grants');
-  await expect(page.getByRole('link', { name: 'Daily payments' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment text' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment amounts' })).toHaveCount(0);
   await expect(page.getByText('No open applications.')).toBeVisible();
 });
 
-test('verified and basis grants pages have no Daily payments link', async ({ page }) => {
+test('verified and basis grants pages have no daily payment links', async ({ page }) => {
   await seedAdaSession(page, 'verified');
   await page.goto('/grants');
-  await expect(page.getByRole('link', { name: 'Daily payments' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment text' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment amounts' })).toHaveCount(0);
   await seedAdaSession(page, 'basis');
   await page.goto('/grants');
-  await expect(page.getByRole('link', { name: 'Daily payments' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment text' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment amounts' })).toHaveCount(0);
 });
 
-test('signed-out grants page has no Daily payments link', async ({ page }) => {
+test('signed-out grants page has no daily payment links', async ({ page }) => {
   await page.goto('/grants');
-  await expect(page.getByRole('link', { name: 'Daily payments' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment text' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment amounts' })).toHaveCount(0);
 });
 
-test('Function: DailyPaymentsScreen — a moderator on the direct URL does not load the roster', async ({
+test('Function: DailyPaymentCommentPage — the comment route shows only the text', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'founder');
+  await page.route(/\/funding\/daily-roster$/, async (route) => {
+    await fulfillRoster(route, ROSTER);
+  });
+  await page.goto('/grants/payments/comment');
+  await expect(page.getByRole('heading', { name: 'Daily payment text' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'On' })).toHaveCount(0);
+  await expect(page.getByText('ada@w...')).toHaveCount(0);
+});
+
+test('Function: DailyPaymentCommentScreen — a moderator on the comment URL does not load the roster', async ({
   page,
 }) => {
   let rosterGets = 0;
@@ -115,23 +136,42 @@ test('Function: DailyPaymentsScreen — a moderator on the direct URL does not l
     }
   });
   await seedAdaSession(page, 'moderator');
-  await page.goto('/grants/payments');
-  await expect(page.getByRole('heading', { name: 'Daily payments' })).toBeVisible();
+  await page.goto('/grants/payments/comment');
+  await expect(page.getByRole('heading', { name: 'Daily payment text' })).toBeVisible();
   await expect(page.getByText('You cannot change daily payments.')).toBeVisible();
   expect(rosterGets).toBe(0);
 });
 
-test('Function: DailyPaymentsPage — founder opens /grants/payments', async ({ page }) => {
+test('Function: DailyPaymentAmountsScreen — a moderator on the amounts URL does not load the roster', async ({
+  page,
+}) => {
+  let rosterGets = 0;
+  page.on('request', (req) => {
+    if (new URL(req.url()).pathname === '/funding/daily-roster') {
+      rosterGets += 1;
+    }
+  });
+  await seedAdaSession(page, 'moderator');
+  await page.goto('/grants/payments/amounts');
+  await expect(page.getByRole('heading', { name: 'Daily payment amounts' })).toBeVisible();
+  await expect(page.getByText('You cannot change daily payments.')).toBeVisible();
+  expect(rosterGets).toBe(0);
+});
+
+test('Function: DailyPaymentAmountsPage — founder opens /grants/payments/amounts', async ({
+  page,
+}) => {
   await seedAdaSession(page, 'founder');
   await page.route(/\/funding\/daily-roster$/, async (route) => {
     await fulfillRoster(route, ROSTER);
   });
-  await page.goto('/grants/payments');
-  await expect(page.getByRole('heading', { name: 'Daily payments' })).toBeVisible();
+  await page.goto('/grants/payments/amounts');
+  await expect(page.getByRole('heading', { name: 'Daily payment amounts' })).toBeVisible();
   await expect(
     page.getByText('Everyone in the grant program receives $1.00 by default.'),
   ).toBeVisible();
   await expect(page.getByText('ada@w...')).toBeVisible();
+  await expect(page.getByText('Daily gift')).toHaveCount(0);
 });
 
 test('Function: fetchDailyRoster — an initiator loads the roster', async ({ page }) => {
@@ -143,11 +183,10 @@ test('Function: fetchDailyRoster — an initiator loads the roster', async ({ pa
     }
     await fulfillRoster(route, ROSTER);
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/comment');
   await expect(page.getByText('Daily gift')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
-  await expect(page.getByText('ada@w...')).toBeVisible();
-  await expect(page.getByText('bob@example.com')).toBeVisible();
+  await expect(page.getByText('ada@w...')).toHaveCount(0);
 });
 
 test('Function: saveDailyRosterComment — Save posts the comment JSON', async ({ page }) => {
@@ -159,7 +198,7 @@ test('Function: saveDailyRosterComment — Save posts the comment JSON', async (
     const body = route.request().postDataJSON() as { comment: string };
     await fulfillRoster(route, { ...ROSTER, comment: body.comment });
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/comment');
   await page.getByRole('button', { name: 'Edit comment' }).click();
   await page.getByLabel('Comment').fill('Hello from grants');
   const posted = page.waitForRequest(
@@ -180,7 +219,7 @@ test('Function: saveDailyRosterPayments — Off posts enabled false', async ({ p
   await page.route(/\/funding\/daily-roster\/payments$/, async (route) => {
     await fulfillRoster(route, { ...ROSTER, paymentsEnabled: false });
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/amounts');
   const posted = page.waitForRequest(
     (req) =>
       req.method() === 'POST' && new URL(req.url()).pathname === '/funding/daily-roster/payments',
@@ -190,31 +229,41 @@ test('Function: saveDailyRosterPayments — Off posts enabled false', async ({ p
   await expect(page.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('state-grants-payments-empty — No recipients', async ({ page }) => {
+test('state-grants-payments-comment-empty — Not set', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await page.route(/\/funding\/daily-roster$/, async (route) => {
     await fulfillRoster(route, EMPTY_ROSTER);
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/comment');
+  await expect(page.getByText('Not set')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
+});
+
+test('state-grants-payments-amounts-empty — No recipients', async ({ page }) => {
+  await seedAdaSession(page, 'founder');
+  await page.route(/\/funding\/daily-roster$/, async (route) => {
+    await fulfillRoster(route, EMPTY_ROSTER);
+  });
+  await page.goto('/grants/payments/amounts');
   await expect(page.getByText('No recipients')).toBeVisible();
 });
 
-test('state-grants-payments-loading — the roster request stays open', async ({ page }) => {
+test('state-grants-payments-amounts-loading — the roster request stays open', async ({ page }) => {
   await seedAdaSession(page, 'founder');
   await page.route(/\/funding\/daily-roster$/, () => new Promise(() => undefined));
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/amounts');
   await expect(page.getByText('Loading…')).toBeVisible();
-  await expect(page.getByText('state-grants-payments-loading')).toHaveCount(0);
+  await expect(page.getByText('state-grants-payments-amounts-loading')).toHaveCount(0);
 });
 
-test('state-grants-payments-error — Could not load daily payments. Please try again.', async ({
+test('state-grants-payments-amounts-error — Could not load daily payments. Please try again.', async ({
   page,
 }) => {
   await seedAdaSession(page, 'founder');
   await page.route(/\/funding\/daily-roster$/, async (route) => {
     await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/amounts');
   await expect(page.getByText('Could not load daily payments. Please try again.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
@@ -231,7 +280,7 @@ test('Function: addDailyRosterRecipient — Add posts address and amount', async
       recipients: [{ address: body.address, amountUsd: body.amountUsd }],
     });
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/amounts');
   await page.getByLabel('Address').fill('ada@example.com');
   await page.getByLabel('USD').fill('1.5');
   const posted = page.waitForRequest(
@@ -250,7 +299,7 @@ test('Function: updateDailyRosterRecipient — Update posts the stored address',
   await page.route(/\/funding\/daily-roster\/recipients\/update$/, async (route) => {
     await fulfillRoster(route, ROSTER);
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/amounts');
   await page.getByRole('button', { name: 'Edit ada@w...' }).click();
   await page.getByRole('textbox', { name: 'USD ada@w...' }).fill('2');
   const posted = page.waitForRequest(
@@ -276,7 +325,7 @@ test('Function: deleteDailyRosterRecipient — Delete posts the stored address',
       recipients: ROSTER.recipients.filter((row) => row.address !== 'bob@example.com'),
     });
   });
-  await page.goto('/grants/payments');
+  await page.goto('/grants/payments/amounts');
   const posted = page.waitForRequest(
     (req) =>
       req.method() === 'POST' &&
