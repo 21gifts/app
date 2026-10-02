@@ -377,11 +377,12 @@ app/
 | Branch    | Purpose                            | Deploy target |
 | --------- | ---------------------------------- | ------------- |
 | `develop` | Default branch, active development | DEV           |
-| `staging` | Pre-production staging             | STAGING       |
+| `staging` | Publishes the staging image        | staging       |
 | `main`    | Production releases                | PRD           |
 
 - Push to `develop` via **feature branch + PR**
-- `main` is protected — updates flow via auto-generated Release PRs (`develop → staging`, then `staging → main`)
+- `main` is protected — updates flow via an auto-generated Release PR (`develop → main`)
+- Push to `staging` publishes `21gifts/app:staging` for the staging test stand. That branch is not between `develop` and `main`.
 - Never force-push, never amend published commits
 
 ### Commit messages
@@ -784,7 +785,7 @@ placeholder. Local and Playwright builds without the arg show `dev`.
 | `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                         |
 | `deploy-staging.yaml`  | push to `staging`                                                 | Docker build → push `21gifts/app:staging` → notify → wait for deploy                                                                                                                                                      |
 | `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                       |
-| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | push to `develop` opens develop → staging; push to `staging` opens staging → main                                                                                                                                         |
+| `auto-release-pr.yaml` | push to `develop`                                                 | Auto-create Release PR (`develop → main`)                                                                                                                                                                                 |
 | `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                |
 
 Images target `linux/arm64`.
@@ -801,7 +802,7 @@ Deploy workflows require these GitHub Actions secrets:
 If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, deploy fails loud (the image
 may already be on Hub). After `image-published`, the job waits for the
 infrastructure run whose title is `image-published 21gifts/app:<tag> <sha>`
-and fails if that run does not succeed. The wait is what makes a failed DEV or staging deploy visible on the release PR (`develop → staging` or `staging → main`).
+and fails if that run does not succeed. The wait is what makes a failed DEV deploy visible on the develop→main PR. A failed staging deploy fails that staging workflow, not the release pull request.
 
 ## Related repos
 
