@@ -177,6 +177,7 @@ describe('loadWalletSdk', () => {
       offset: 20,
       limit: 20,
       sortAscending: false,
+      assetFilter: { type: 'bitcoin' },
     });
   });
 
