@@ -286,7 +286,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                 {typeof place.accountId === 'string' && place.accountId !== '' ? (
                   <span
                     data-selected={selected ? 'true' : 'false'}
-                    className={`max-w-full text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                    className={`min-w-0 max-w-full break-words text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
                     <a
                       href={`/members/${place.accountId}`}
@@ -304,7 +304,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                   <a
                     href={`/messages/${place.id}`}
                     data-selected={selected ? 'true' : 'false'}
-                    className={`max-w-full text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
+                    className={`min-w-0 max-w-full break-words text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
                     {place.name} · {label}
                   </a>
