@@ -58,6 +58,32 @@ describe('DailyPayoutStoppedNotice', () => {
     expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
+  it('shows the Apply link for username jewel-bacolbas when the flag is true', () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...baseAccount,
+        username: 'jewel-bacolbas',
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+          dailyPayoutStoppedNotice: true,
+        },
+      },
+    });
+    renderWithLocale(<DailyPayoutStoppedNotice />);
+    expect(
+      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
+    ).toBe('/grants/apply');
+    expect(
+      screen.queryByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeNull();
+  });
+
   it('renders nothing when the flag is false', () => {
     useAuthStore.setState({
       session: 'tok',

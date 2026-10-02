@@ -3409,9 +3409,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: DailyPayoutStoppedNotice
 
-- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**. While `grantApplicationsPaused` is true, the body is `FundingPausedCopy` and Apply is not offered. When that switch is false, the body is the stopped-daily sentence and an Apply link to `/grants/apply`.
+- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**. While `grantApplicationsPaused` is true, the body is `FundingPausedCopy` and Apply is not offered, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see the stopped-daily sentence and an Apply link to `/grants/apply`. When that switch is false, the body is the stopped-daily sentence and an Apply link to `/grants/apply`.
 - **Inputs:** None. Reads the auth store and translations.
-- **Returns / side effects:** A `role="region"` banner, or `null` when the flag is missing, false, or funding is null. No close control, no localStorage, no extra API call. Apply is offered only when applications are not paused.
+- **Returns / side effects:** A `role="region"` banner, or `null` when the flag is missing, false, or funding is null. No close control, no localStorage, no extra API call. Apply is offered when applications are not paused, or when the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 - **Used by:** `AppShell`.
 
 ## Function: proxyMePasskeyRenewReportPost
@@ -4151,49 +4151,56 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): while `grantApplicationsPaused` is true, `FundingPausedCopy` for `none`/`rejected` (no Apply, no About link); when that switch is false, the daily-gift sentence, About link, and Apply link to `/grants/apply`. Then pending, one-day trial, or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
+- **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply), including when the username is `joey-rosima`, `vincent`, or `jewel-bacolbas`. Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): while `grantApplicationsPaused` is true, `FundingPausedCopy` for `none`/`rejected` (no Apply, no About link) except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see the daily-gift sentence, About link, and Apply link to `/grants/apply`; when that switch is false, the daily-gift sentence, About link, and Apply link to `/grants/apply`. Then pending, one-day trial, or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number). Pending, trial, and admitted stay as they are for every username.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` do not offer Apply while applications are paused.
+- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` do not offer Apply while applications are paused, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
 - **Used by:** `GrantsScreen`.
 
 ## Function: FundingApplyPage
 
 - **Purpose:** Next.js page for `/grants/apply`. Fill `AppShell` with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="profile"` around `FundingApplyScreen`. `/profile/apply` redirects to this path.
 - **Inputs:** None.
-- **Returns / side effects:** The paused applications screen inside fill AppShell.
+- **Returns / side effects:** `FundingApplyScreen` inside fill AppShell: the paused card, or the apply walk for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
 - **Used by:** Route `/grants/apply`.
 
 ## Function: FundingApplyScreen
 
-- **Purpose:** Signed-in grant apply screen. While `grantApplicationsPaused` is true, heading **21 gifts grant** and `FundingPausedCopy` only: no About-me steps, no questions, no POST. The apply walk stays in the code and is shown only when that switch is false: fill About me, photo, and location, then two yes/no questions. The page chrome owns the back; this screen renders no back control.
-- **Inputs:** Session and account from `useAuthStore` when the walk is open. Uses translations.
-- **Returns / side effects:** The paused card while applications are paused. Otherwise the apply card, or `null` without a session. Yes on the truth question posts `postFundingApply` only when the walk is open.
+- **Purpose:** Signed-in grant apply screen. While `grantApplicationsPaused` is true and `grantApplicationStillOpen` is false for the signed-in username, heading **21 gifts grant** and `FundingPausedCopy` only: no About-me steps, no questions, no POST. A missing account still shows that paused card. Usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` still see the existing apply walk. The apply walk stays in the code and is shown when that switch is false or the username is one of those three: fill About me, photo, and location, then two yes/no questions. The page chrome owns the back; this screen renders no back control.
+- **Inputs:** Session and account from `useAuthStore` (the account is read before choosing the pause card or the walk). Uses translations.
+- **Returns / side effects:** The paused card while applications are paused for this username. Otherwise the apply card, or `null` without a session when the walk is open. Yes on the truth question posts `postFundingApply` only when the walk is open.
 - **Used by:** `FundingApplyPage`.
 
 ## Function: grantApplicationsPaused
 
-- **Purpose:** Switch for new grant applications. Returns true while they are paused. The apply walk and the apply API stay in the code and are not offered while this is true.
+- **Purpose:** Switch for new grant applications. Returns true while they are paused. The apply walk and the apply API stay in the code. This switch stays true for everyone; `grantApplicationStillOpen` is the username exception in the three screens.
 - **Inputs:** None.
 - **Returns / side effects:** `true`.
 - **Used by:** `FundingApplyScreen`, `FundingStatusCard`, `DailyPayoutStoppedNotice`.
 
+## Function: grantApplicationStillOpen
+
+- **Purpose:** Whether this signed-in username still gets the apply walk while applications are paused. Exact, case-sensitive match against `joey-rosima`, `vincent`, and `jewel-bacolbas`. Null, omitted, empty, and every other username (including `Vincent`) do not.
+- **Inputs:** `username` string, null, or undefined.
+- **Returns / side effects:** `true` only for those three strings.
+- **Used by:** `FundingApplyScreen`, `FundingStatusCard`, `DailyPayoutStoppedNotice`.
+
 ## Function: aboutMeFilled
 
-- **Purpose:** True when About me is a real bio (not empty or the display-name auto note). Used by the apply walk, which is not shown while applications are paused.
+- **Purpose:** True when About me is a real bio (not empty or the display-name auto note). Used by the apply walk. That walk stays hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
 - **Inputs:** `aboutMe`, `name`.
 - **Returns / side effects:** boolean.
 - **Used by:** `nextFillStep`, `FundingApplyScreen`.
 
 ## Function: locationFilled
 
-- **Purpose:** True when location is a non-empty trimmed string. Used by the apply walk, which is not shown while applications are paused.
+- **Purpose:** True when location is a non-empty trimmed string. Used by the apply walk. That walk stays hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
 - **Inputs:** `location`.
 - **Returns / side effects:** boolean.
 - **Used by:** `nextFillStep`, `FundingApplyScreen`.
 
 ## Function: nextFillStep
 
-- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present. Used by the apply walk, which is not shown while applications are paused.
+- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present. Used by the apply walk. That walk stays hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
 - **Inputs:** Owner `Account`.
 - **Returns / side effects:** `'about' | 'photo' | 'location' | null`.
 - **Used by:** `FundingApplyScreen`.

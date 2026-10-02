@@ -72,6 +72,44 @@ describe('FundingStatusCard', () => {
     expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
+  it('shows the Apply link for username vincent when status is none', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, username: 'vincent' },
+    });
+    renderWithLocale(<FundingStatusCard />);
+    expect(
+      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
+    ).toBe('/grants/apply');
+    expect(
+      screen.queryByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeNull();
+  });
+
+  it('shows pending copy and no Apply link for username vincent', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, username: 'vincent', funding: pending },
+    });
+    renderWithLocale(<FundingStatusCard />);
+    expect(
+      screen.getByText('Your application is open. A moderator will review your posts.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
+  });
+
+  it('shows not-verified copy for a basis account even with an open username', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', username: 'vincent', funding: null },
+    });
+    renderWithLocale(<FundingStatusCard />);
+    expect(screen.getByText('You are not verified yet.')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
+  });
+
   it('shows paused copy for none status', () => {
     renderWithLocale(<FundingStatusCard />);
     expect(screen.queryByText('You are not admitted to daily 21.gifts grant payouts.')).toBeNull();

@@ -2895,12 +2895,12 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 - **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A moderator or founder with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant or with rejected do not open Apply. They read the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. Verified members with no grant or with rejected do not open Apply, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see Apply. Other verified members read the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, the paused sentence **Applications are currently paused. You can apply again when shop transactions have increased.**, the link `https://21.gifts/statistics`, and **Goals**. No About link and no Apply button.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, the paused sentence **Applications are currently paused. You can apply again when shop transactions have increased.**, the link `https://21.gifts/statistics`, and **Goals**. No About link and no Apply button. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 
 ![21.gifts grants](images/grants.png)
 
@@ -2984,27 +2984,27 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 ## Screen: /profile/apply
 
-- **Purpose:** Permanent redirect to `/grants/apply`, which is the paused screen, not an apply walk. This path renders no grant UI of its own.
+- **Purpose:** Permanent redirect to `/grants/apply`, which is the paused screen for verified members who are not `joey-rosima`, `vincent`, or `jewel-bacolbas`, not an apply walk for those fixtures. This path renders no grant UI of its own.
 - **Inputs:** None. The browser lands on `/grants/apply`.
 - **Actions:** `redirect('/grants/apply')`.
 - **Used by:** Old links to `/profile/apply`.
 
 ### Variant: redirect
 
-Opening `/profile/apply` lands on the paused applications screen.
+Opening `/profile/apply` lands on the paused applications screen. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 
 ![21.gifts apply](images/profile-apply.png)
 
 ## Screen: /grants/apply
 
-- **Purpose:** Signed-in applications screen. While applications are paused there are no About-me steps, no questions, and no POST. The apply walk stays in the code and is shown only when that switch is off.
-- **Inputs:** None (no posts fetch, no apply POST).
-- **Actions:** Read the paused sentence and open `https://21.gifts/statistics`. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
+- **Purpose:** Signed-in applications screen. While applications are paused there are no About-me steps, no questions, and no POST, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see the apply walk. The apply walk stays in the code and is shown when that switch is off or the username is one of those three.
+- **Inputs:** Account username from the auth store. Public paused fixtures do not fetch posts and do not POST apply.
+- **Actions:** Read the paused sentence and open `https://21.gifts/statistics`, unless the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).
 
 ### Variant: default
 
-Verified member, funding none. Heading **21 gifts grant**. The paused sentence. Link `https://21.gifts/statistics`. No Apply control.
+Verified member, funding none. Heading **21 gifts grant**. The paused sentence. Link `https://21.gifts/statistics`. No Apply control. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 
 ![21.gifts apply](images/profile-apply.png)
 
