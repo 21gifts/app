@@ -222,6 +222,49 @@ describe('connectWallet', () => {
       expect(connection.disconnect).toHaveBeenCalled();
     });
 
+    it('keeps the deadline after a stale first read leaves the wallet connecting', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      let resolveFirst!: (info: { balanceSats: number; identityPubkey: string }) => void;
+      const { loadSdk, connection, listeners } = createFakeSdk();
+      connection.getInfo
+        .mockImplementationOnce(
+          () =>
+            new Promise<{ balanceSats: number; identityPubkey: string }>((resolve) => {
+              resolveFirst = resolve;
+            }),
+        )
+        .mockImplementationOnce(() => new Promise<never>(() => undefined));
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+      listeners[0]?.({ type: 'synced' });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connection.getInfo.mock.calls).toEqual([[{ ensureSynced: true }], []]);
+      resolveFirst({ balanceSats: 21_000, identityPubkey: IDENTITY });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(useWalletStore.getState().status).toBe('connecting');
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('error');
+      expect(connection.disconnect).toHaveBeenCalled();
+    });
+
+    it('resolves at the deadline while disconnect remains pending', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const { loadSdk, connection } = createFakeSdk({
+        getInfo: () => new Promise<never>(() => undefined),
+        disconnect: () => new Promise<never>(() => undefined),
+      });
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+      expect(useWalletStore.getState().status).toBe('connecting');
+      await vi.advanceTimersByTimeAsync(30_000);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('error');
+      expect(connection.disconnect).toHaveBeenCalled();
+    });
+
     it('stays ready after the attempt finishes before the deadline', async () => {
       rememberSessionPhrase(MNEMONIC);
       const { loadSdk, connection } = createFakeSdk();
