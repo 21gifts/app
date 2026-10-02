@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WALLET_HISTORY_PAGE, useWalletHistory } from '@/hooks/useWalletHistory';
+import { WALLET_HISTORY_PAGE_LIMIT, useWalletHistory } from '@/hooks/useWalletHistory';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { listWalletPayments } from '@/lib/wallet/wallet-service';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -72,7 +72,10 @@ describe('useWalletHistory', () => {
     await waitFor(() => {
       expect(result.current.status).toBe('ready');
     });
-    expect(listWalletPayments).toHaveBeenCalledWith({ offset: 0, limit: WALLET_HISTORY_PAGE });
+    expect(listWalletPayments).toHaveBeenCalledWith({
+      offset: 0,
+      limit: WALLET_HISTORY_PAGE_LIMIT,
+    });
     expect(result.current.payments.map((p) => p.id)).toEqual(['p0', 'p1', 'p2']);
     expect(result.current.hasMore).toBe(false);
   });
@@ -88,8 +91,8 @@ describe('useWalletHistory', () => {
 
   it('pages with offsets and skips ids it already has', async () => {
     vi.mocked(listWalletPayments)
-      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE))
-      .mockResolvedValueOnce([...payments(1, WALLET_HISTORY_PAGE - 1), ...payments(2, 20)]);
+      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE_LIMIT))
+      .mockResolvedValueOnce([...payments(1, WALLET_HISTORY_PAGE_LIMIT - 1), ...payments(2, 20)]);
     setReady();
     const { result } = renderHook(() => useWalletHistory());
     await waitFor(() => {
@@ -100,10 +103,10 @@ describe('useWalletHistory', () => {
       await Promise.resolve();
     });
     expect(listWalletPayments).toHaveBeenLastCalledWith({
-      offset: WALLET_HISTORY_PAGE,
-      limit: WALLET_HISTORY_PAGE,
+      offset: WALLET_HISTORY_PAGE_LIMIT,
+      limit: WALLET_HISTORY_PAGE_LIMIT,
     });
-    expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE + 2);
+    expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE_LIMIT + 2);
     expect(result.current.hasMore).toBe(false);
   });
 
@@ -128,7 +131,7 @@ describe('useWalletHistory', () => {
 
   it('stops paging quietly when a later page fails', async () => {
     vi.mocked(listWalletPayments)
-      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE))
+      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE_LIMIT))
       .mockRejectedValueOnce(new Error('down'));
     setReady();
     const { result } = renderHook(() => useWalletHistory());
@@ -141,14 +144,14 @@ describe('useWalletHistory', () => {
     });
     expect(result.current.status).toBe('ready');
     expect(result.current.hasMore).toBe(false);
-    expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE);
+    expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE_LIMIT);
   });
 
   it('reloads every loaded page when the wallet syncs', async () => {
     vi.mocked(listWalletPayments)
-      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE))
-      .mockResolvedValueOnce(payments(5, WALLET_HISTORY_PAGE))
-      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE + 6));
+      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE_LIMIT))
+      .mockResolvedValueOnce(payments(5, WALLET_HISTORY_PAGE_LIMIT))
+      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE_LIMIT + 6));
     setReady();
     const { result } = renderHook(() => useWalletHistory());
     await waitFor(() => {
@@ -158,16 +161,16 @@ describe('useWalletHistory', () => {
       result.current.loadMore();
       await Promise.resolve();
     });
-    expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE + 5);
+    expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE_LIMIT + 5);
     act(() => {
       setReady();
     });
     await waitFor(() => {
-      expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE + 6);
+      expect(result.current.payments).toHaveLength(WALLET_HISTORY_PAGE_LIMIT + 6);
     });
     expect(listWalletPayments).toHaveBeenLastCalledWith({
       offset: 0,
-      limit: WALLET_HISTORY_PAGE + 5,
+      limit: WALLET_HISTORY_PAGE_LIMIT + 5,
     });
     expect(result.current.hasMore).toBe(false);
   });
@@ -176,7 +179,7 @@ describe('useWalletHistory', () => {
     const stale = deferred<WalletPayment[]>();
     const staleMore = deferred<WalletPayment[]>();
     vi.mocked(listWalletPayments)
-      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE))
+      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE_LIMIT))
       .mockReturnValueOnce(staleMore.promise)
       .mockReturnValueOnce(stale.promise)
       .mockResolvedValueOnce(payments(1, 99));
@@ -229,9 +232,9 @@ describe('useWalletHistory', () => {
   it('a stale failed page does not stop paging', async () => {
     const staleMore = deferred<WalletPayment[]>();
     vi.mocked(listWalletPayments)
-      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE))
+      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE_LIMIT))
       .mockReturnValueOnce(staleMore.promise)
-      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE));
+      .mockResolvedValueOnce(payments(WALLET_HISTORY_PAGE_LIMIT));
     setReady();
     const { result } = renderHook(() => useWalletHistory());
     await waitFor(() => {

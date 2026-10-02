@@ -20,7 +20,7 @@ const SESSION = 'sess-1';
 
 const mocks = vi.hoisted(() => ({
   calls: [] as string[],
-  putMyWallet: vi.fn(),
+  putWallet: vi.fn(),
   fetchMe: vi.fn(),
   obtainPrfFirstFromGet: vi.fn(),
   rememberPhraseFromPrf: vi.fn(),
@@ -33,9 +33,9 @@ vi.mock('@breeztech/breez-sdk-spark/ssr', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({
-  putMyWallet: (...args: unknown[]) => {
+  putWallet: (...args: unknown[]) => {
     mocks.calls.push('claim');
-    return mocks.putMyWallet(...args);
+    return mocks.putWallet(...args);
   },
   fetchMe: (...args: unknown[]) => {
     mocks.calls.push('refresh');
@@ -122,7 +122,7 @@ function fakeSdk(overrides?: { connect?: () => Promise<WalletConnection> }): {
 beforeEach(() => {
   process.env.NEXT_PUBLIC_BREEZ_API_KEY = API_KEY;
   mocks.calls.length = 0;
-  mocks.putMyWallet.mockReset().mockResolvedValue(account({ sparkPubkey: IDENTITY.toLowerCase() }));
+  mocks.putWallet.mockReset().mockResolvedValue(account({ sparkPubkey: IDENTITY.toLowerCase() }));
   mocks.fetchMe.mockReset().mockResolvedValue(account({ sparkWalletVerified: true }));
   mocks.obtainPrfFirstFromGet.mockReset().mockResolvedValue(new Uint8Array([1, 2, 3]));
   mocks.rememberPhraseFromPrf.mockReset().mockImplementation(async () => {
@@ -178,7 +178,7 @@ describe('runWalletSetup', () => {
     await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('done');
     expect(steps).toEqual(['passkey', 'connecting', 'claiming', 'registering', 'refreshing']);
     expect(mocks.calls).toEqual(['passkey', 'connect', 'claim', 'register', 'refresh']);
-    expect(mocks.putMyWallet).toHaveBeenCalledWith(SESSION, IDENTITY.toLowerCase());
+    expect(mocks.putWallet).toHaveBeenCalledWith(SESSION, IDENTITY.toLowerCase());
     expect(connection.registerAddress).toHaveBeenCalledWith('ada');
     expect(mocks.fetchMe).toHaveBeenCalledWith(SESSION);
     expect(useAuthStore.getState().account?.sparkWalletVerified).toBe(true);
@@ -205,7 +205,7 @@ describe('runWalletSetup', () => {
 
   it('does not join a run left over from an earlier session', async () => {
     const releases: Array<(value: Account) => void> = [];
-    mocks.putMyWallet.mockImplementation(
+    mocks.putWallet.mockImplementation(
       () =>
         new Promise<Account>((resolve) => {
           releases.push(resolve);
@@ -235,7 +235,7 @@ describe('runWalletSetup', () => {
 
   it('starts a fresh run after the previous one ended', async () => {
     const { loadSdk } = fakeSdk();
-    mocks.putMyWallet.mockRejectedValueOnce(new Error('wallet-request'));
+    mocks.putWallet.mockRejectedValueOnce(new Error('wallet-request'));
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
     expect(walletSetupInFlight()).toBe(false);
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
@@ -254,7 +254,7 @@ describe('runWalletSetup', () => {
   it('never sends the phrase anywhere', async () => {
     const { loadSdk } = fakeSdk();
     await runWalletSetup(() => undefined, loadSdk);
-    const sent = JSON.stringify([mocks.putMyWallet.mock.calls, mocks.fetchMe.mock.calls]);
+    const sent = JSON.stringify([mocks.putWallet.mock.calls, mocks.fetchMe.mock.calls]);
     expect(sent).not.toContain('abandon');
   });
 
@@ -303,18 +303,18 @@ describe('runWalletSetup', () => {
       },
     });
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(mocks.putMyWallet).not.toHaveBeenCalled();
+    expect(mocks.putWallet).not.toHaveBeenCalled();
   });
 
   it('registers the username on the account the claim returns', async () => {
-    mocks.putMyWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
+    mocks.putWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
     const { loadSdk, connection } = fakeSdk();
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
     expect(connection.registerAddress).toHaveBeenCalledWith('ada2');
   });
 
   it('stores the claimed account so a retry starts from it', async () => {
-    mocks.putMyWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
+    mocks.putWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
     const { loadSdk, connection } = fakeSdk();
     connection.registerAddress.mockRejectedValueOnce(new Error('rejected'));
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
@@ -322,7 +322,7 @@ describe('runWalletSetup', () => {
   });
 
   it('fails when the claimed account has no username', async () => {
-    mocks.putMyWallet.mockResolvedValueOnce(account({ username: null }));
+    mocks.putWallet.mockResolvedValueOnce(account({ username: null }));
     const { loadSdk, connection } = fakeSdk();
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
     expect(connection.registerAddress).not.toHaveBeenCalled();
@@ -331,20 +331,20 @@ describe('runWalletSetup', () => {
   });
 
   it('fails when the claim fails and does not register', async () => {
-    mocks.putMyWallet.mockRejectedValueOnce(new Error('wallet-request'));
+    mocks.putWallet.mockRejectedValueOnce(new Error('wallet-request'));
     const { loadSdk, connection } = fakeSdk();
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
     expect(connection.registerAddress).not.toHaveBeenCalled();
   });
 
   it('fails on a non-Error claim rejection', async () => {
-    mocks.putMyWallet.mockRejectedValueOnce('nope');
+    mocks.putWallet.mockRejectedValueOnce('nope');
     const { loadSdk } = fakeSdk();
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
   });
 
   it('skips registration and refreshes when the wallet is already verified (409)', async () => {
-    mocks.putMyWallet.mockRejectedValueOnce(new Error('wallet-verified'));
+    mocks.putWallet.mockRejectedValueOnce(new Error('wallet-verified'));
     const { loadSdk, connection } = fakeSdk();
     const steps: WalletSetupStep[] = [];
     await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('done');
@@ -431,11 +431,11 @@ describe('runWalletSetup', () => {
       'superseded',
     );
     expect(steps).toEqual(['connecting']);
-    expect(mocks.putMyWallet).not.toHaveBeenCalled();
+    expect(mocks.putWallet).not.toHaveBeenCalled();
   });
 
   it('is superseded when the session changes while claiming', async () => {
-    mocks.putMyWallet.mockImplementationOnce(async () => {
+    mocks.putWallet.mockImplementationOnce(async () => {
       swapSession();
       return account();
     });
@@ -445,7 +445,7 @@ describe('runWalletSetup', () => {
   });
 
   it('is superseded when the session changes during a claim that answered 409', async () => {
-    mocks.putMyWallet.mockImplementationOnce(async () => {
+    mocks.putWallet.mockImplementationOnce(async () => {
       swapSession();
       throw new Error('wallet-verified');
     });

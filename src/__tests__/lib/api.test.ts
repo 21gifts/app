@@ -101,7 +101,7 @@ import {
   setLocation,
   setName,
   setUsername,
-  putMyWallet,
+  putWallet,
   skipSetup,
   resolveLightningAddress,
   startPasskeyAuthentication,
@@ -660,13 +660,13 @@ describe('setUsername', () => {
   });
 });
 
-describe('putMyWallet', () => {
+describe('putWallet', () => {
   const key = `02${'a'.repeat(64)}`;
 
   it('puts the key and returns the validated account', async () => {
     const claimed = { ...account, sparkPubkey: key, sparkWalletVerified: false };
     const fetchMock = stubFetch({ ok: true, status: 200, body: claimed });
-    await expect(putMyWallet('sess', key)).resolves.toEqual(claimed);
+    await expect(putWallet('sess', key)).resolves.toEqual(claimed);
     expect(fetchMock).toHaveBeenCalledWith('/me/wallet', {
       method: 'PUT',
       headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
@@ -676,19 +676,19 @@ describe('putMyWallet', () => {
 
   it('throws wallet-verified on 409', async () => {
     stubFetch({ ok: false, status: 409, body: {} });
-    await expect(putMyWallet('sess', key)).rejects.toThrow('wallet-verified');
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-verified');
   });
 
   it('throws wallet-unavailable on 404', async () => {
     stubFetch({ ok: false, status: 404, body: {} });
-    await expect(putMyWallet('sess', key)).rejects.toThrow('wallet-unavailable');
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-unavailable');
   });
 
   it('throws wallet-request on other failures and invalid bodies', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
-    await expect(putMyWallet('sess', key)).rejects.toThrow('wallet-request');
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
     stubFetch({ ok: true, status: 200, body: { id: 'x' } });
-    await expect(putMyWallet('sess', key)).rejects.toThrow('wallet-request');
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -697,7 +697,7 @@ describe('putMyWallet', () => {
         json: () => Promise.reject(new SyntaxError('bad json')),
       }),
     );
-    await expect(putMyWallet('sess', key)).rejects.toThrow('wallet-request');
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
   });
 });
 

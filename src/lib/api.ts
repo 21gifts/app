@@ -796,7 +796,7 @@ export async function setUsername(
  * verified), `wallet-unavailable` on 404 (the feature is off), and
  * `wallet-request` on any other failure or an invalid body.
  */
-export async function putMyWallet(sessionToken: string, sparkPubkey: string): Promise<Account> {
+export async function putWallet(sessionToken: string, sparkPubkey: string): Promise<Account> {
   const response = await fetch('/me/wallet', {
     method: 'PUT',
     headers: {

@@ -2920,7 +2920,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Shared App Router PUT export name. `/me/about` re-exports `proxyMeAboutPut`; `/me/wallet` re-exports `proxyMeWalletPut`.
 - **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }` (`/me/about`) or `{ sparkPubkey }` (`/me/wallet`).
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin About me save (`PUT /me/about` / `putAboutMe`) and the wallet key claim (`PUT /me/wallet` / `putMyWallet`).
+- **Used by:** Same-origin About me save (`PUT /me/about` / `putAboutMe`) and the wallet key claim (`PUT /me/wallet` / `putWallet`).
 
 ## Function: proxyApiRequest
 
@@ -3769,7 +3769,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `{ status, balanceSats, unlock, retry }`.
 - **Used by:** `WalletScreen`.
 
-## Function: putMyWallet
+## Function: putWallet
 
 - **Purpose:** Claims the in-app wallet's identity public key for the signed-in account (`PUT /me/wallet`, body `{ sparkPubkey }`). The api overwrites an unverified claim and refuses once the wallet is verified.
 - **Inputs:** Session token, identity public key (66 lower-case hex).
@@ -3855,7 +3855,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: runWalletSetup
 
-- **Purpose:** Runs the one-time wallet setup in a fixed order: one passkey prompt (`obtainPrfFirstFromGet`) only when the phrase is not in tab memory, then connect (`ensureWalletConnected`), claim (`putMyWallet` with the lower-cased identity key; the returned account is stored), register (`registerWalletAddress` with the username of the account the claim returned, so a rename in another tab is picked up), and refresh (`fetchMe`, then `setAccount`). A 409 on the claim means the wallet is already verified and skips straight to the refresh. The phrase never leaves tab memory.
+- **Purpose:** Runs the one-time wallet setup in a fixed order: one passkey prompt (`obtainPrfFirstFromGet`) only when the phrase is not in tab memory, then connect (`ensureWalletConnected`), claim (`putWallet` with the lower-cased identity key; the returned account is stored), register (`registerWalletAddress` with the username of the account the claim returned, so a rename in another tab is picked up), and refresh (`fetchMe`, then `setAccount`). A 409 on the claim means the wallet is already verified and skips straight to the refresh. The phrase never leaves tab memory.
 - **Inputs:** `onStep` callback (`passkey`, `connecting`, `claiming`, `registering`, `refreshing`), optional `WalletSdkLoader`.
 - **Returns / side effects:** `done` when the refreshed account is verified; `noPrf` when the passkey returns no PRF output; `cancelled` when the prompt is dismissed; `superseded` when the session changed meanwhile; otherwise `failed`. Never rejects. A call while a run for the same session is in progress returns that run's promise (its `onStep` is not called), so a remounted dialog cannot start a second run; a run left over from an earlier session is not joined. A failure after the session changed counts as `superseded`.
 - **Used by:** `useWalletSetup`.
@@ -3890,7 +3890,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletHistory
 
-- **Purpose:** The `/wallet` payment list: loads `WALLET_HISTORY_PAGE` (20) payments newest first once the wallet is ready, appends the next page on `loadMore` (skipping ids it already has), and reloads every loaded page whenever `useWalletStore.syncCount` changes, which happens after connect and after each SDK `synced` event, so the list does not depend on payment events. Only the latest load writes state. A failed later page stops paging quietly. `?visual=history-empty|history-rows|history-error` pins a fixture list only in a Playwright build.
+- **Purpose:** The `/wallet` payment list: loads `WALLET_HISTORY_PAGE_LIMIT` (20) payments newest first once the wallet is ready, appends the next page on `loadMore` (skipping ids it already has), and reloads every loaded page whenever `useWalletStore.syncCount` changes, which happens after connect and after each SDK `synced` event, so the list does not depend on payment events. Only the latest load writes state. A failed later page stops paging quietly. `?visual=history-empty|history-rows|history-error` pins a fixture list only in a Playwright build.
 - **Inputs:** None.
 - **Returns / side effects:** `{ status, payments, hasMore, loadMore, retry }`.
 - **Used by:** `WalletHistory`.
