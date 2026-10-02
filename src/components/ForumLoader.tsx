@@ -1866,6 +1866,10 @@ export function ForumLoader({
       }
       setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
@@ -2270,6 +2274,10 @@ export function ForumLoader({
       if (generation !== payPollGeneration.current) {
         return;
       }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runPaidReply(trimmed, parentId, sats, baselineSats, true);
@@ -2350,6 +2358,10 @@ export function ForumLoader({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(trimmed, parentId, sats, true);

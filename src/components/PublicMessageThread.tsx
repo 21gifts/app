@@ -664,6 +664,10 @@ export function PublicMessageThread(props: {
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
@@ -740,6 +744,10 @@ export function PublicMessageThread(props: {
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () =>
