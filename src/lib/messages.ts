@@ -171,7 +171,7 @@ const en = {
     'Anyone who logs in with a device that can hold a 21.gifts wallet. There is no application and no review process.',
   'home.faq3Q': 'What happens to my keys?',
   'home.faq3A':
-    'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and the public key of your 21.gifts wallet. No password and no seed phrase is ever stored on our servers.',
+    'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and the wallet details that let payments to your 21.gifts address reach your 21.gifts wallet. No password and no seed phrase is ever stored on our servers.',
   'home.faq4Q': 'Can I lose access to my account?',
   'home.faq4A':
     'Yes. If you lose your login and any platform sync, the account cannot be recovered at this stage. Keep a backup of the device you log in with.',
@@ -1324,7 +1324,7 @@ const de = {
     'Jede Person, die sich mit einem Gerät anmeldet, das eine 21.gifts-Wallet halten kann. Kein Antrag, keine Prüfung.',
   'home.faq3Q': 'Was passiert mit meinen Schlüsseln?',
   'home.faq3A':
-    'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und den öffentlichen Schlüssel Ihrer 21.gifts-Wallet. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
+    'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und die Wallet-Angaben, mit denen Zahlungen an Ihre 21.gifts-Adresse Ihre 21.gifts-Wallet erreichen. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
   'home.faq4Q': 'Kann ich den Zugang zu meinem Konto verlieren?',
   'home.faq4A':
     'Ja. Wenn Sie Ihr Login und jede Plattform-Synchronisation verlieren, lässt sich das Konto derzeit nicht wiederherstellen. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
@@ -2504,7 +2504,7 @@ const es = {
     'Cualquiera que entre con un dispositivo que pueda guardar una wallet de 21.gifts. No hay solicitud ni proceso de revisión.',
   'home.faq3Q': '¿Qué pasa con mis claves?',
   'home.faq3A':
-    'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y la clave pública de tu wallet de 21.gifts. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
+    'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y los datos de la wallet que permiten que los pagos a tu dirección de 21.gifts lleguen a tu wallet de 21.gifts. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
   'home.faq4Q': '¿Puedo perder el acceso a mi cuenta?',
   'home.faq4A':
     'Sí. Si pierdes tu acceso y cualquier sincronización de plataforma, por ahora la cuenta no se puede recuperar. Guarda una copia de seguridad del dispositivo con el que inicias sesión.',
@@ -3654,7 +3654,7 @@ const fil = {
     'Sinumang nagla-log in gamit ang device na kayang maglaman ng 21.gifts wallet. Walang application at walang review process.',
   'home.faq3Q': 'Ano ang nangyayari sa mga key ko?',
   'home.faq3A':
-    'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at ang public key ng 21.gifts wallet mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
+    'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at ang wallet details na kailangan para makarating sa 21.gifts wallet mo ang mga bayad sa 21.gifts address mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
   'home.faq4Q': 'Puwede ba akong mawalan ng access sa account?',
   'home.faq4A':
     'Oo. Kung mawala ang login mo at ang anumang platform sync, hindi pa mababawi ang account sa ngayon. Mag-backup ng device na ginagamit mo sa pag-log in.',

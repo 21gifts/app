@@ -74,9 +74,9 @@ export default function LegalPage(): ReactElement {
         <p className="text-paper/70">
           The application on this same origin lets you log in and gives you your own Bitcoin wallet
           in the app, which only you can open. It does not hold funds. Bitcoin payments go directly
-          from the giver&apos;s wallet to the receiver&apos;s wallet. The application stores your
-          wallet&apos;s public key with your account so that payments to your 21.gifts address reach
-          that wallet. Your 12 recovery words open your Bitcoin in any compatible wallet, also if
+          from the giver&apos;s wallet to the receiver&apos;s wallet. The application stores, with
+          your account, the wallet details that let payments to your 21.gifts address reach that
+          wallet. Your 12 recovery words open your Bitcoin in any compatible wallet, also if
           21.gifts stops running; your 21.gifts address works only while 21.gifts runs.
         </p>
         <h3 className="text-lg font-semibold">Contact</h3>

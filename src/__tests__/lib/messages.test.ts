@@ -73,6 +73,14 @@ describe('getCatalog', () => {
     }
   });
 
+  it('names no wallet key in the privacy answer of any locale', () => {
+    for (const locale of LOCALES) {
+      expect(getCatalog(locale)['home.faq3A'], `${locale}.home.faq3A`).not.toMatch(
+        /public key|Schlüssel|clave/i,
+      );
+    }
+  });
+
   it('says the @21.gifts address ends with the service while the 12 words keep the Bitcoin', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
