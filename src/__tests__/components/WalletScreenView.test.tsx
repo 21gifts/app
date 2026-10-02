@@ -671,6 +671,9 @@ describe('WalletScreenView send block', () => {
     renderEntry('error', sent);
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
     expect(screen.getByRole('status').textContent).toContain("Sent ₿2'100");
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(sent.cancel).toHaveBeenCalledTimes(1);
+    expect(historyBack).not.toHaveBeenCalled();
   });
 
   it('Back continues to Advanced functions when no send step is open', () => {

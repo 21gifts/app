@@ -4195,8 +4195,8 @@ test.describe('onboarding screens', () => {
   }
 
   /** Expand Bob's note and type a 21-sat reaction. */
-  async function fillReaction(page: Page): Promise<void> {
-    await page.goto('/welcome');
+  async function fillReaction(page: Page, path = '/welcome'): Promise<void> {
+    await page.goto(path);
     await page.getByText(REACTION_NOTE_TEXT).click();
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeVisible();
@@ -4306,6 +4306,208 @@ test.describe('onboarding screens', () => {
     expect(await insideShell(payControl)).toBe(true);
     expect(await insideShell(waiting)).toBe(true);
     await shotScreen(page, 'state-welcome-reaction-pay-sheet');
+  });
+
+  test('state /welcome reaction-wallet-pay-unlock', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: 'spark1visualreaction',
+        }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page, '/welcome?visual=wallet-pay-unlock');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-reply-pay-page]');
+    await expect(sheet).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-reaction-wallet-pay-unlock');
+  });
+
+  test('state /welcome reaction-wallet-pay-preparing', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: 'spark1visualreaction',
+        }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page, '/welcome?visual=wallet-pay-preparing');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-reply-pay-page]');
+    await expect(sheet).toBeVisible();
+    await expect(page.getByText('Checking your wallet…')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-reaction-wallet-pay-preparing');
+  });
+
+  test('state /welcome reaction-wallet-pay-confirm', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: 'spark1visualreaction',
+        }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page, '/welcome?visual=wallet-pay-confirm');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-reply-pay-page]');
+    await expect(sheet).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-reaction-wallet-pay-confirm');
+  });
+
+  test('state /welcome reaction-wallet-pay-paying', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: 'spark1visualreaction',
+        }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page, '/welcome?visual=wallet-pay-paying');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-reply-pay-page]');
+    await expect(sheet).toBeVisible();
+    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-reaction-wallet-pay-paying');
+  });
+
+  test('state /welcome reaction-wallet-pay-insufficient', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: 'spark1visualreaction',
+        }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page, '/welcome?visual=wallet-pay-insufficient');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-reply-pay-page]');
+    await expect(sheet).toBeVisible();
+    await expect(
+      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-reaction-wallet-pay-insufficient');
+  });
+
+  test('state /welcome reaction-wallet-pay-unconfirmed', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: 'spark1visualreaction',
+        }),
+      });
+    });
+    await page.route(/\/public-messages\/m-bob/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(REACTION_NOTE),
+      });
+    });
+    await fillReaction(page, '/welcome?visual=wallet-pay-unconfirmed');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-reply-pay-page]');
+    await expect(sheet).toBeVisible();
+    await expect(
+      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-reaction-wallet-pay-unconfirmed');
   });
 
   test('state /welcome reaction-pay-kept', async ({ page }) => {
@@ -21114,6 +21316,114 @@ test.describe('inbox screens', () => {
     }
     await expect(page.getByText('$0.02').first()).toBeVisible();
     await shotScreen(page, 'state-messages-thread-pay-qr');
+  });
+
+  /** Inbox thread whose gift invoice carries a `sparkInvoice`, opened with a wallet pin. */
+  async function openInboxWalletPay(page: Page, visual: string): Promise<void> {
+    await fulfillRateDay(page);
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-21',
+              kind: 'member_platform',
+              name: '21.gifts',
+              lastText: 'Hello team',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: '21.gifts',
+              text: 'Hello team',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-21\/invoice$/, async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc21n1test',
+          amountSats: 21,
+          messageId: 'gift-1',
+          sparkInvoice: 'spark1visualinbox',
+        }),
+      });
+    });
+    await page.route(/sinceMessageId=/, async () => {
+      /* hang — keep payWaiting while the sheet is open */
+    });
+    await page.goto(`/messages?c=conv-21&visual=${visual}`);
+    await expect(page.getByText('Hello team')).toBeVisible();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Send' }).click();
+    await expect(page.getByText('Pay ₿21')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+  }
+
+  test('messages thread-wallet-pay-unlock', async ({ page }) => {
+    await openInboxWalletPay(page, 'wallet-pay-unlock');
+    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-wallet-pay-unlock');
+  });
+
+  test('messages thread-wallet-pay-preparing', async ({ page }) => {
+    await openInboxWalletPay(page, 'wallet-pay-preparing');
+    await expect(page.getByText('Checking your wallet…')).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-wallet-pay-preparing');
+  });
+
+  test('messages thread-wallet-pay-confirm', async ({ page }) => {
+    await openInboxWalletPay(page, 'wallet-pay-confirm');
+    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-wallet-pay-confirm');
+  });
+
+  test('messages thread-wallet-pay-paying', async ({ page }) => {
+    await openInboxWalletPay(page, 'wallet-pay-paying');
+    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-wallet-pay-paying');
+  });
+
+  test('messages thread-wallet-pay-insufficient', async ({ page }) => {
+    await openInboxWalletPay(page, 'wallet-pay-insufficient');
+    await expect(
+      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-wallet-pay-insufficient');
+  });
+
+  test('messages thread-wallet-pay-unconfirmed', async ({ page }) => {
+    await openInboxWalletPay(page, 'wallet-pay-unconfirmed');
+    await expect(
+      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-wallet-pay-unconfirmed');
   });
 
   test('messages thread-quoted-note', async ({ page }) => {

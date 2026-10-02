@@ -3102,6 +3102,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-wallet-pay-unlock",
+    "label": "/messages thread-wallet-pay-unlock",
+    "visual": "state-messages-thread-wallet-pay-unlock",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-preparing",
+    "label": "/messages thread-wallet-pay-preparing",
+    "visual": "state-messages-thread-wallet-pay-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-confirm",
+    "label": "/messages thread-wallet-pay-confirm",
+    "visual": "state-messages-thread-wallet-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-paying",
+    "label": "/messages thread-wallet-pay-paying",
+    "visual": "state-messages-thread-wallet-pay-paying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-insufficient",
+    "label": "/messages thread-wallet-pay-insufficient",
+    "visual": "state-messages-thread-wallet-pay-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-unconfirmed",
+    "label": "/messages thread-wallet-pay-unconfirmed",
+    "visual": "state-messages-thread-wallet-pay-unconfirmed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:thread-quoted-note",
     "label": "/messages thread-quoted-note",
     "visual": "state-messages-thread-quoted-note",
@@ -3945,6 +3981,42 @@
     "id": "/welcome:reaction-pay-sheet",
     "label": "/welcome reaction-pay-sheet",
     "visual": "state-welcome-reaction-pay-sheet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-unlock",
+    "label": "/welcome reaction-wallet-pay-unlock",
+    "visual": "state-welcome-reaction-wallet-pay-unlock",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-preparing",
+    "label": "/welcome reaction-wallet-pay-preparing",
+    "visual": "state-welcome-reaction-wallet-pay-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-confirm",
+    "label": "/welcome reaction-wallet-pay-confirm",
+    "visual": "state-welcome-reaction-wallet-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-paying",
+    "label": "/welcome reaction-wallet-pay-paying",
+    "visual": "state-welcome-reaction-wallet-pay-paying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-insufficient",
+    "label": "/welcome reaction-wallet-pay-insufficient",
+    "visual": "state-welcome-reaction-wallet-pay-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-unconfirmed",
+    "label": "/welcome reaction-wallet-pay-unconfirmed",
+    "visual": "state-welcome-reaction-wallet-pay-unconfirmed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

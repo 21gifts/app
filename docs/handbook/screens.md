@@ -1375,6 +1375,42 @@ The same page, scrolled so **Close** (`X`), **Pay ₿21**, the QR or the phone *
 
 ![21.gifts welcome reaction pay sheet](images/welcome-reaction-pay-sheet.png)
 
+### Variant: reaction-wallet-pay-unlock
+
+Pinned fixture (`?visual=wallet-pay-unlock`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: one line that the wallet pays once unlocked and **Unlock wallet**.
+
+![21.gifts welcome reaction wallet pay unlock](images/welcome-reaction-wallet-pay-unlock.png)
+
+### Variant: reaction-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Checking your wallet…**.
+
+![21.gifts welcome reaction wallet pay preparing](images/welcome-reaction-wallet-pay-preparing.png)
+
+### Variant: reaction-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: **Fee ₿0** with the default fiat and **Pay from wallet**.
+
+![21.gifts welcome reaction wallet pay confirm](images/welcome-reaction-wallet-pay-confirm.png)
+
+### Variant: reaction-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Paying from your wallet…**, with **Waiting for payment…** under it.
+
+![21.gifts welcome reaction wallet pay paying](images/welcome-reaction-wallet-pay-paying.png)
+
+### Variant: reaction-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts welcome reaction wallet pay insufficient](images/welcome-reaction-wallet-pay-insufficient.png)
+
+### Variant: reaction-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the neutral not-confirmed-yet sentence.
+
+![21.gifts welcome reaction wallet pay unconfirmed](images/welcome-reaction-wallet-pay-unconfirmed.png)
+
 ### Variant: reaction-pay-kept
 
 The same page. The sentence is a preview, not a disabled **Your reaction** field, and there is no **Amount** field.
@@ -3963,6 +3999,42 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Close (`X`) dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the latest gift-day rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
 
 ![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
+
+### Variant: thread-wallet-pay-unlock
+
+Pinned fixture (`?visual=wallet-pay-unlock`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: one line that the wallet pays once unlocked and **Unlock wallet**.
+
+![21.gifts inbox thread wallet pay unlock](images/messages-thread-wallet-pay-unlock.png)
+
+### Variant: thread-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Checking your wallet…**.
+
+![21.gifts inbox thread wallet pay preparing](images/messages-thread-wallet-pay-preparing.png)
+
+### Variant: thread-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: **Fee ₿0** with the default fiat and **Pay from wallet**.
+
+![21.gifts inbox thread wallet pay confirm](images/messages-thread-wallet-pay-confirm.png)
+
+### Variant: thread-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Paying from your wallet…**, with **Waiting for payment…** under it.
+
+![21.gifts inbox thread wallet pay paying](images/messages-thread-wallet-pay-paying.png)
+
+### Variant: thread-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts inbox thread wallet pay insufficient](images/messages-thread-wallet-pay-insufficient.png)
+
+### Variant: thread-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the neutral not-confirmed-yet sentence.
+
+![21.gifts inbox thread wallet pay unconfirmed](images/messages-thread-wallet-pay-unconfirmed.png)
 
 ### Variant: thread-quoted-note
 
