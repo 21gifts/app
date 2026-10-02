@@ -5,7 +5,8 @@ import { proxyFundingDailyRosterGet } from '@/lib/api-proxies';
  *
  * Same-origin Bearer proxy of api GET `/funding/daily-roster`. Lives under
  * `/funding/daily-roster` because Next.js forbids a `route.ts` beside
- * `/grants/payments`. GET only; comment, payments, and recipient writes have
+ * `/grants/payments/comment` and `/grants/payments/amounts`. GET only; comment,
+ * payments, and recipient writes have
  * their own routes.
  *
  * @param request - Incoming request (Bearer session).

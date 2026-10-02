@@ -1,6 +1,9 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DailyPaymentsScreen } from '@/components/DailyPaymentsScreen';
+import {
+  DailyPaymentAmountsScreen,
+  DailyPaymentCommentScreen,
+} from '@/components/DailyPaymentsScreen';
 import type { Account, DailyRoster } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -78,69 +81,87 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-async function renderLoaded(): Promise<void> {
-  renderWithLocale(<DailyPaymentsScreen />);
+async function renderComment(): Promise<void> {
+  renderWithLocale(<DailyPaymentCommentScreen />);
   expect(await screen.findByRole('button', { name: 'Edit comment' })).toBeTruthy();
 }
 
+async function renderAmounts(): Promise<void> {
+  renderWithLocale(<DailyPaymentAmountsScreen />);
+  expect(await screen.findByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
+}
+
 /** A save disables every control until the mocked request resolves. */
-async function settleSave(): Promise<void> {
+async function settleAmounts(): Promise<void> {
   await waitFor(() => {
-    expect(screen.getByRole('button', { name: 'Edit comment' }).hasAttribute('disabled')).toBe(
+    expect(screen.getByRole('button', { name: 'Edit Ada@w...' }).hasAttribute('disabled')).toBe(
       false,
     );
   });
 }
 
-describe('DailyPaymentsScreen', () => {
-  it('renders nothing without a session and does not fetch', () => {
+const pages = [
+  {
+    Screen: DailyPaymentCommentScreen,
+    heading: 'Daily payment text',
+    ready: 'Edit comment',
+  },
+  {
+    Screen: DailyPaymentAmountsScreen,
+    heading: 'Daily payment amounts',
+    ready: 'Edit Ada@w...',
+  },
+] as const;
+
+describe('daily payment subpages', () => {
+  it.each(pages)('renders nothing without a session and does not fetch', ({ Screen }) => {
     useAuthStore.setState({ session: null, account });
-    const { container } = renderWithLocale(<DailyPaymentsScreen />);
+    const { container } = renderWithLocale(<Screen />);
     expect(container.firstChild).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('shows the refusal when the account snapshot is missing', () => {
+  it.each(pages)('shows the refusal when the account snapshot is missing', ({ Screen }) => {
     useAuthStore.setState({ session: 'sess', account: null });
-    renderWithLocale(<DailyPaymentsScreen />);
+    renderWithLocale(<Screen />);
     expect(screen.getByText('You cannot change daily payments.')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('shows the refusal and does not fetch for a moderator', () => {
+  it.each(pages)('shows the refusal and does not fetch for a moderator', ({ Screen, heading }) => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
-    renderWithLocale(<DailyPaymentsScreen />);
-    expect(screen.getByRole('heading', { name: 'Daily payments' })).toBeTruthy();
+    renderWithLocale(<Screen />);
+    expect(screen.getByRole('heading', { name: heading })).toBeTruthy();
     expect(screen.getByText('You cannot change daily payments.')).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('shows loading copy while the roster is in flight', () => {
+  it.each(pages)('shows loading copy while the roster is in flight', ({ Screen }) => {
     fetchMock.mockImplementation(() => new Promise(() => undefined));
-    renderWithLocale(<DailyPaymentsScreen />);
+    renderWithLocale(<Screen />);
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
-  it('shows an error and retries', async () => {
+  it.each(pages)('shows an error and retries', async ({ Screen, ready }) => {
     fetchMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(ROSTER);
-    renderWithLocale(<DailyPaymentsScreen />);
+    renderWithLocale(<Screen />);
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Could not load daily payments. Please try again.',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByRole('button', { name: 'Edit comment' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: ready })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('shows the catalog refusal when fetch is Forbidden', async () => {
+  it.each(pages)('shows the catalog refusal when fetch is Forbidden', async ({ Screen, ready }) => {
     fetchMock.mockRejectedValueOnce(new Error('funding.daily.forbidden'));
-    renderWithLocale(<DailyPaymentsScreen />);
+    renderWithLocale(<Screen />);
     expect(await screen.findByText('You cannot change daily payments.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Edit comment' })).toBeNull();
+    expect(screen.queryByRole('button', { name: ready })).toBeNull();
   });
 
-  it('ignores a stale resolve after unmount', async () => {
+  it.each(pages)('ignores a stale resolve after unmount', async ({ Screen, ready }) => {
     let resolveList: ((value: DailyRoster) => void) | undefined;
     fetchMock.mockImplementation(
       () =>
@@ -148,16 +169,16 @@ describe('DailyPaymentsScreen', () => {
           resolveList = resolve;
         }),
     );
-    const view = renderWithLocale(<DailyPaymentsScreen />);
+    const view = renderWithLocale(<Screen />);
     view.unmount();
     await act(async () => {
       resolveList?.(ROSTER);
       await Promise.resolve();
     });
-    expect(screen.queryByRole('button', { name: 'Edit comment' })).toBeNull();
+    expect(screen.queryByRole('button', { name: ready })).toBeNull();
   });
 
-  it('ignores a stale reject after unmount', async () => {
+  it.each(pages)('ignores a stale reject after unmount', async ({ Screen }) => {
     let rejectList: ((reason: Error) => void) | undefined;
     fetchMock.mockImplementation(
       () =>
@@ -165,7 +186,7 @@ describe('DailyPaymentsScreen', () => {
           rejectList = reject;
         }),
     );
-    const view = renderWithLocale(<DailyPaymentsScreen />);
+    const view = renderWithLocale(<Screen />);
     view.unmount();
     await act(async () => {
       rejectList?.(new Error('boom'));
@@ -174,11 +195,23 @@ describe('DailyPaymentsScreen', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('shows the comment, truncated addresses, and the total', async () => {
-    await renderLoaded();
+  it('shows the comment without the amounts', async () => {
+    await renderComment();
+    expect(screen.getByRole('heading', { name: 'Daily payment text' })).toBeTruthy();
     expect(screen.getByText('Daily gift')).toBeTruthy();
-    expect(screen.getByText('$1.00')).toBeTruthy();
     expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull();
+    expect(screen.queryByText('Ada@w...')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'On' })).toBeNull();
+    expect(screen.queryByText('Save')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit comment' })).toBeTruthy();
+  });
+
+  it('shows the amounts without the comment', async () => {
+    await renderAmounts();
+    expect(screen.getByRole('heading', { name: 'Daily payment amounts' })).toBeTruthy();
+    expect(screen.queryByText('Daily gift')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit comment' })).toBeNull();
+    expect(screen.getByText('$1.00')).toBeTruthy();
     expect(screen.getByText('Ada@w...')).toBeTruthy();
     expect(screen.getByText('bob@example.com')).toBeTruthy();
     expect(screen.getByText('nolocal')).toBeTruthy();
@@ -192,7 +225,6 @@ describe('DailyPaymentsScreen', () => {
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Update')).toBeNull();
     expect(screen.queryByText('Delete')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Edit comment' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Delete Ada@w...' })).toBeTruthy();
   });
@@ -207,14 +239,14 @@ describe('DailyPaymentsScreen', () => {
         { address: 'ada@walletofsatoshi.com.evil', amountUsd: 2 },
       ],
     });
-    await renderLoaded();
+    await renderAmounts();
     expect(screen.getByText('ada@notwalletofsatoshi.com')).toBeTruthy();
     expect(screen.getByText('ada@walletofsatoshi.com.evil')).toBeTruthy();
     expect(screen.queryByText('ada@w...')).toBeNull();
   });
 
   it('saves the comment and shows a mapped, unknown, or non-error failure', async () => {
-    await renderLoaded();
+    await renderComment();
     fireEvent.click(screen.getByRole('button', { name: 'Edit comment' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Comment' }), {
       target: { value: 'Hello' },
@@ -248,10 +280,10 @@ describe('DailyPaymentsScreen', () => {
   });
 
   it('turns payments off and on', async () => {
-    await renderLoaded();
+    await renderAmounts();
     fireEvent.click(screen.getByRole('button', { name: 'On' }));
     expect(paymentsMock).toHaveBeenCalledWith('sess', true);
-    await settleSave();
+    await settleAmounts();
     fireEvent.click(screen.getByRole('button', { name: 'Off' }));
     expect(paymentsMock).toHaveBeenCalledWith('sess', false);
     expect((await screen.findByRole('button', { name: 'Off' })).getAttribute('aria-pressed')).toBe(
@@ -261,7 +293,8 @@ describe('DailyPaymentsScreen', () => {
 
   it('refuses a bad amount and adds a recipient', async () => {
     fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
-    await renderLoaded();
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
     expect(screen.getByText('No recipients')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Address' }), {
       target: { value: 'new@example.com' },
@@ -286,7 +319,7 @@ describe('DailyPaymentsScreen', () => {
   });
 
   it('updates and deletes a recipient', async () => {
-    await renderLoaded();
+    await renderAmounts();
     fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
     const amount = screen.getByRole('textbox', { name: 'USD Ada@w...' });
     fireEvent.change(amount, { target: { value: '0' } });
@@ -296,13 +329,13 @@ describe('DailyPaymentsScreen', () => {
     fireEvent.change(amount, { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(updateMock).toHaveBeenCalledWith('sess', 'Ada@WalletOfSatoshi.com', 2);
-    await settleSave();
+    await settleAmounts();
     fireEvent.click(screen.getByRole('button', { name: 'Delete bob@example.com' }));
     expect(deleteMock).toHaveBeenCalledWith('sess', 'bob@example.com');
   });
 
   it('disables the editor while a save is in flight', async () => {
-    await renderLoaded();
+    await renderComment();
     let resolveSave: (value: DailyRoster) => void = () => undefined;
     commentMock.mockImplementation(
       () =>
@@ -314,7 +347,7 @@ describe('DailyPaymentsScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: 'Cancel' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Add' })).toBeNull();
     await act(async () => {
       resolveSave(ROSTER);
       await Promise.resolve();
@@ -325,8 +358,30 @@ describe('DailyPaymentsScreen', () => {
     );
   });
 
+  it('disables Add while an amount save is in flight', async () => {
+    await renderAmounts();
+    let resolveSave: (value: DailyRoster) => void = () => undefined;
+    updateMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'On' }).hasAttribute('disabled')).toBe(true);
+    await act(async () => {
+      resolveSave(ROSTER);
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(false);
+  });
+
   it('cancels a comment edit without saving', async () => {
-    await renderLoaded();
+    await renderComment();
     fireEvent.click(screen.getByRole('button', { name: 'Edit comment' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Comment' }), {
       target: { value: 'Hello' },

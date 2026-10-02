@@ -12087,7 +12087,10 @@ test.describe('profile funding states', () => {
       });
     });
     await page.goto('/grants');
-    await expect(page.getByRole('link', { name: 'Daily payments', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Daily payment text', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Daily payment amounts', exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Open applications (2)', exact: true }),
     ).toBeVisible();
@@ -21737,106 +21740,65 @@ test.describe('daily payments', () => {
     });
   }
 
-  test('screen /grants/payments', async ({ page }) => {
+  async function stubRoster(page: Page, body: unknown = roster): Promise<void> {
     await seedEditor(page, 'founder');
     await page.route(/\/funding\/daily-roster$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(roster),
+        body: JSON.stringify(body),
       });
     });
-    await page.goto('/grants/payments');
-    await expect(page.getByRole('heading', { name: 'Daily payments' })).toBeVisible();
-    await expect(page.getByText('ada@w...')).toBeVisible();
-    await shotScreen(page, 'screen-grants-payments');
+  }
+
+  test('screen /grants/payments/comment', async ({ page }) => {
+    await stubRoster(page);
+    await page.goto('/grants/payments/comment');
+    await expect(page.getByRole('heading', { name: 'Daily payment text' })).toBeVisible();
+    await expect(page.getByText('Daily gift')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
+    await expect(page.getByText('Everyone in the grant program receives')).toHaveCount(0);
+    await expect(page.getByText('ada@w...')).toHaveCount(0);
+    await shotScreen(page, 'screen-grants-payments-comment');
   });
 
-  test('state /grants/payments empty', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          comment: '',
-          paymentsEnabled: true,
-          defaultAmountUsd: 1,
-          recipients: [],
-        }),
-      });
-    });
-    await page.goto('/grants/payments');
-    await expect(page.getByText('No recipients')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-empty');
+  test('state /grants/payments/comment empty', async ({ page }) => {
+    await stubRoster(page, { ...roster, comment: '' });
+    await page.goto('/grants/payments/comment');
+    await expect(page.getByText('Not set')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-comment-empty');
   });
 
-  test('state /grants/payments loading', async ({ page }) => {
+  test('state /grants/payments/comment loading', async ({ page }) => {
     await seedEditor(page, 'founder');
     await page.route(/\/funding\/daily-roster$/, () => new Promise(() => undefined));
-    await page.goto('/grants/payments');
+    await page.goto('/grants/payments/comment');
+    await expect(page.getByRole('heading', { name: 'Daily payment text' })).toBeVisible();
     await expect(page.getByText('Loading…')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-loading');
+    await shotScreen(page, 'state-grants-payments-comment-loading');
   });
 
-  test('state /grants/payments error', async ({ page }) => {
+  test('state /grants/payments/comment error', async ({ page }) => {
     await seedEditor(page, 'founder');
     await page.route(/\/funding\/daily-roster$/, async (route) => {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
-    await page.goto('/grants/payments');
+    await page.goto('/grants/payments/comment');
     await expect(page.getByText('Could not load daily payments. Please try again.')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-error');
+    await shotScreen(page, 'state-grants-payments-comment-error');
   });
 
-  test('state /grants/payments forbidden', async ({ page }) => {
+  test('state /grants/payments/comment forbidden', async ({ page }) => {
     await seedEditor(page, 'moderator');
-    await page.goto('/grants/payments');
+    await page.goto('/grants/payments/comment');
+    await expect(page.getByRole('heading', { name: 'Daily payment text' })).toBeVisible();
     await expect(page.getByText('You cannot change daily payments.')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-forbidden');
+    await shotScreen(page, 'state-grants-payments-comment-forbidden');
   });
 
-  test('state /grants/payments invalid', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(roster),
-      });
-    });
-    await page.goto('/grants/payments');
-    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('0');
-    await page.getByRole('button', { name: 'Add' }).click();
-    const invalidAlert = page.getByText('The address or the amount is not valid.');
-    await expect(invalidAlert).toBeVisible();
-    await invalidAlert.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-grants-payments-invalid');
-  });
-
-  test('state /grants/payments off', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ ...roster, paymentsEnabled: false }),
-      });
-    });
-    await page.goto('/grants/payments');
-    await expect(page.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true');
-    await shotScreen(page, 'state-grants-payments-off');
-  });
-
-  test('state /grants/payments invalid-comment', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(roster),
-      });
-    });
+  test('state /grants/payments/comment invalid', async ({ page }) => {
+    await stubRoster(page);
     await page.route(/\/funding\/daily-roster\/comment$/, async (route) => {
       await route.fulfill({
         status: 400,
@@ -21844,22 +21806,106 @@ test.describe('daily payments', () => {
         body: JSON.stringify({ error: 'Invalid comment' }),
       });
     });
-    await page.goto('/grants/payments');
+    await page.goto('/grants/payments/comment');
     await page.getByRole('button', { name: 'Edit comment' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('The comment is not valid.')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-invalid-comment');
+    await shotScreen(page, 'state-grants-payments-comment-invalid');
   });
 
-  test('state /grants/payments invalid-switch', async ({ page }) => {
+  test('state /grants/payments/comment save-error', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/funding\/daily-roster\/comment$/, async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/grants/payments/comment');
+    await page.getByRole('button', { name: 'Edit comment' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-comment-save-error');
+  });
+
+  test('state /grants/payments/comment pending', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/funding\/daily-roster\/comment$/, () => new Promise(() => undefined));
+    await page.goto('/grants/payments/comment');
+    await page.getByRole('button', { name: 'Edit comment' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Add' })).toHaveCount(0);
+    await shotScreen(page, 'state-grants-payments-comment-pending');
+  });
+
+  test('screen /grants/payments/amounts', async ({ page }) => {
+    await stubRoster(page);
+    await page.goto('/grants/payments/amounts');
+    await expect(page.getByRole('heading', { name: 'Daily payment amounts' })).toBeVisible();
+    await expect(page.getByText('Everyone in the grant program receives')).toBeVisible();
+    await expect(page.getByText('ada@w...')).toBeVisible();
+    await expect(page.getByText('Daily gift')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit comment' })).toHaveCount(0);
+    await shotScreen(page, 'screen-grants-payments-amounts');
+  });
+
+  test('state /grants/payments/amounts empty', async ({ page }) => {
+    await stubRoster(page, {
+      comment: '',
+      paymentsEnabled: true,
+      defaultAmountUsd: 1,
+      recipients: [],
+    });
+    await page.goto('/grants/payments/amounts');
+    await expect(page.getByText('No recipients')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-amounts-empty');
+  });
+
+  test('state /grants/payments/amounts loading', async ({ page }) => {
+    await seedEditor(page, 'founder');
+    await page.route(/\/funding\/daily-roster$/, () => new Promise(() => undefined));
+    await page.goto('/grants/payments/amounts');
+    await expect(page.getByRole('heading', { name: 'Daily payment amounts' })).toBeVisible();
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-amounts-loading');
+  });
+
+  test('state /grants/payments/amounts error', async ({ page }) => {
     await seedEditor(page, 'founder');
     await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(roster),
-      });
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
+    await page.goto('/grants/payments/amounts');
+    await expect(page.getByText('Could not load daily payments. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-amounts-error');
+  });
+
+  test('state /grants/payments/amounts forbidden', async ({ page }) => {
+    await seedEditor(page, 'moderator');
+    await page.goto('/grants/payments/amounts');
+    await expect(page.getByRole('heading', { name: 'Daily payment amounts' })).toBeVisible();
+    await expect(page.getByText('You cannot change daily payments.')).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-amounts-forbidden');
+  });
+
+  test('state /grants/payments/amounts invalid', async ({ page }) => {
+    await stubRoster(page);
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('0');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const invalidAlert = page.getByText('The address or the amount is not valid.');
+    await expect(invalidAlert).toBeVisible();
+    await invalidAlert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-invalid');
+  });
+
+  test('state /grants/payments/amounts off', async ({ page }) => {
+    await stubRoster(page, { ...roster, paymentsEnabled: false });
+    await page.goto('/grants/payments/amounts');
+    await expect(page.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true');
+    await shotScreen(page, 'state-grants-payments-amounts-off');
+  });
+
+  test('state /grants/payments/amounts invalid-switch', async ({ page }) => {
+    await stubRoster(page);
     await page.route(/\/funding\/daily-roster\/payments$/, async (route) => {
       await route.fulfill({
         status: 400,
@@ -21867,21 +21913,14 @@ test.describe('daily payments', () => {
         body: JSON.stringify({ error: 'Invalid payments switch' }),
       });
     });
-    await page.goto('/grants/payments');
+    await page.goto('/grants/payments/amounts');
     await page.getByRole('button', { name: 'Off' }).click();
     await expect(page.getByText('The payments switch is not valid.')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-invalid-switch');
+    await shotScreen(page, 'state-grants-payments-amounts-invalid-switch');
   });
 
-  test('state /grants/payments duplicate', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(roster),
-      });
-    });
+  test('state /grants/payments/amounts duplicate', async ({ page }) => {
+    await stubRoster(page);
     await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
       await route.fulfill({
         status: 400,
@@ -21889,25 +21928,18 @@ test.describe('daily payments', () => {
         body: JSON.stringify({ error: 'Address already listed' }),
       });
     });
-    await page.goto('/grants/payments');
+    await page.goto('/grants/payments/amounts');
     await page.getByRole('textbox', { name: 'Address' }).fill('cara@example.com');
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
     const duplicateAlert = page.getByText('That address is already listed.');
     await expect(duplicateAlert).toBeVisible();
     await duplicateAlert.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-grants-payments-duplicate');
+    await shotScreen(page, 'state-grants-payments-amounts-duplicate');
   });
 
-  test('state /grants/payments unknown', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(roster),
-      });
-    });
+  test('state /grants/payments/amounts unknown', async ({ page }) => {
+    await stubRoster(page);
     await page.route(/\/funding\/daily-roster\/recipients\/update$/, async (route) => {
       await route.fulfill({
         status: 400,
@@ -21915,46 +21947,37 @@ test.describe('daily payments', () => {
         body: JSON.stringify({ error: 'Unknown address' }),
       });
     });
-    await page.goto('/grants/payments');
+    await page.goto('/grants/payments/amounts');
     await page.getByRole('button', { name: 'Edit ada@w...' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('That recipient is not on the list.')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-unknown');
+    await shotScreen(page, 'state-grants-payments-amounts-unknown');
   });
 
-  test('state /grants/payments save-error', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(roster),
-      });
-    });
-    await page.route(/\/funding\/daily-roster\/comment$/, async (route) => {
+  test('state /grants/payments/amounts save-error', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/funding\/daily-roster\/recipients\/update$/, async (route) => {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
-    await page.goto('/grants/payments');
-    await page.getByRole('button', { name: 'Edit comment' }).click();
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
-    await shotScreen(page, 'state-grants-payments-save-error');
+    await expect(page.getByRole('textbox', { name: 'USD ada@w...' })).toBeVisible();
+    await shotScreen(page, 'state-grants-payments-amounts-save-error');
   });
 
-  test('state /grants/payments pending', async ({ page }) => {
-    await seedEditor(page, 'founder');
-    await page.route(/\/funding\/daily-roster$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(roster),
-      });
-    });
-    await page.route(/\/funding\/daily-roster\/comment$/, () => new Promise(() => undefined));
-    await page.goto('/grants/payments');
-    await page.getByRole('button', { name: 'Edit comment' }).click();
+  test('state /grants/payments/amounts pending', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(
+      /\/funding\/daily-roster\/recipients\/update$/,
+      () => new Promise(() => undefined),
+    );
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
-    await shotScreen(page, 'state-grants-payments-pending');
+    await expect(page.getByRole('button', { name: 'Add' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-payments-amounts-pending');
   });
 });

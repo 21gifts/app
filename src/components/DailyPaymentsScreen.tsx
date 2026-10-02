@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
-import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
+import { useEffect, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card, Field, IconButton } from '@/components/ui';
@@ -30,9 +30,6 @@ const SAVE_ERROR_KEYS = [
 ] as const satisfies readonly MessageKey[];
 
 type SaveErrorKey = (typeof SAVE_ERROR_KEYS)[number];
-
-/** Which stored value is open for editing. At most one. */
-type Editing = { kind: 'comment' } | { kind: 'amount'; address: string };
 
 /**
  * Wallet of Satoshi addresses render as `local@w...`. Any other string is unchanged.
@@ -102,22 +99,28 @@ function saveErrorKey(err: unknown): SaveErrorKey {
   return 'funding.daily.saveError';
 }
 
+type RosterLoad = {
+  session: string;
+  editor: boolean;
+  roster: DailyRoster | null;
+  loadError: boolean;
+  forbidden: boolean;
+  pending: boolean;
+  savingEditor: boolean;
+  saveError: SaveErrorKey | null;
+  setSaveError: (error: SaveErrorKey | null) => void;
+  attempt: number;
+  retry: () => void;
+  runSave: (task: () => Promise<DailyRoster>, closeEditor?: boolean) => Promise<boolean>;
+};
+
 /**
- * Signed-in editor for the daily payout comment, switch, and recipient list.
+ * Load the daily roster for an initiator or founder. Everyone else is refused
+ * without a fetch. A missing session is `null` so the page renders nothing.
  *
- * An initiator or founder loads `GET /funding/daily-roster` and may edit the
- * comment or a recipient amount (pencil opens, check saves, X cancels), turn
- * the payments switch, and add or delete a recipient.
- * Everyone else who is signed in sees the heading and a short refusal, and
- * this screen does not fetch. A load that rejects with
- * `funding.daily.forbidden` shows that same refusal. Renders nothing without
- * a session. The page chrome owns the back; this screen renders none.
- *
- * @returns The payments card, refusal copy, or `null` without a session.
+ * @returns The load, or `null` without a session.
  */
-export function DailyPaymentsScreen(): ReactElement | null {
-  const { t } = useTranslations();
-  const { numberFormat } = useNumberFormat();
+function useDailyRoster(): RosterLoad | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const editor = canEditDailyPayoutRoster(account?.role);
@@ -125,11 +128,6 @@ export function DailyPaymentsScreen(): ReactElement | null {
   const [loadError, setLoadError] = useState(false);
   const [forbidden, setForbidden] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  const [comment, setComment] = useState('');
-  const [editing, setEditing] = useState<Editing | null>(null);
-  const [amountDraft, setAmountDraft] = useState('');
-  const [addAddress, setAddAddress] = useState('');
-  const [addUsd, setAddUsd] = useState('');
   const [pending, setPending] = useState(false);
   const [savingEditor, setSavingEditor] = useState(false);
   const [saveError, setSaveError] = useState<SaveErrorKey | null>(null);
@@ -148,8 +146,6 @@ export function DailyPaymentsScreen(): ReactElement | null {
           return;
         }
         setRoster(next);
-        setComment(next.comment);
-        setEditing(null);
       } catch (err) {
         if (cancelled) {
           return;
@@ -171,22 +167,10 @@ export function DailyPaymentsScreen(): ReactElement | null {
     return null;
   }
 
-  const heading = (
-    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-      {t('funding.daily.heading')}
-    </h1>
-  );
-
-  if (!editor || forbidden) {
-    return (
-      <Card maxWidth="xl" surface={false}>
-        {heading}
-        <p className="text-center text-sm text-app-muted">{t('funding.daily.forbidden')}</p>
-      </Card>
-    );
-  }
-
-  async function runSave(task: () => Promise<DailyRoster>, closeEditor = false): Promise<void> {
+  const runSave = async (
+    task: () => Promise<DailyRoster>,
+    closeEditor = false,
+  ): Promise<boolean> => {
     setPending(true);
     if (closeEditor) {
       setSavingEditor(true);
@@ -195,100 +179,142 @@ export function DailyPaymentsScreen(): ReactElement | null {
     try {
       const next = await task();
       setRoster(next);
-      setComment(next.comment);
-      if (closeEditor) {
-        setEditing(null);
-      }
+      return true;
     } catch (err) {
       setSaveError(saveErrorKey(err));
+      return false;
     } finally {
       setPending(false);
       setSavingEditor(false);
     }
+  };
+
+  return {
+    session,
+    editor,
+    roster,
+    loadError,
+    forbidden,
+    pending,
+    savingEditor,
+    saveError,
+    setSaveError,
+    attempt,
+    retry: () => {
+      setAttempt((n) => n + 1);
+    },
+    runSave,
+  };
+}
+
+/**
+ * Shared card for one daily-payments subpage: heading, refusal, load failure,
+ * or the loaded editor.
+ *
+ * @returns The card. The caller has already returned `null` without a session.
+ */
+function DailyRosterCard({
+  title,
+  blocked,
+  loadError,
+  loading,
+  onRetry,
+  children,
+}: {
+  title: string;
+  blocked: boolean;
+  loadError: boolean;
+  loading: boolean;
+  onRetry: () => void;
+  children: ReactNode;
+}): ReactElement {
+  const { t } = useTranslations();
+  const heading = (
+    <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      {title}
+    </h1>
+  );
+  let body: ReactNode;
+  if (blocked) {
+    body = <p className="text-center text-sm text-app-muted">{t('funding.daily.forbidden')}</p>;
+  } else if (loadError) {
+    body = (
+      <>
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('funding.daily.error')}
+        </p>
+        <Button type="button" variant="secondary" onClick={onRetry}>
+          {t('moderate.retry')}
+        </Button>
+      </>
+    );
+  } else if (loading) {
+    body = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
+  } else {
+    body = children;
+  }
+  return (
+    <Card maxWidth="xl" surface={false}>
+      {heading}
+      {body}
+    </Card>
+  );
+}
+
+/**
+ * Signed-in editor for the daily payout comment only.
+ *
+ * An initiator or founder loads `GET /funding/daily-roster` and may edit the
+ * comment (pencil opens, check saves, X cancels). Amounts, the payments
+ * switch, and the recipient list are not on this page. Everyone else who is
+ * signed in sees the heading and a short refusal, and this screen does not
+ * fetch. Renders nothing without a session. The page chrome owns the back.
+ *
+ * @returns The comment card, refusal copy, or `null` without a session.
+ */
+export function DailyPaymentCommentScreen(): ReactElement | null {
+  const { t } = useTranslations();
+  const load = useDailyRoster();
+  const [comment, setComment] = useState('');
+  const [editing, setEditing] = useState(false);
+  const attempt = load === null ? 0 : load.attempt;
+
+  useEffect(() => {
+    setEditing(false);
+  }, [attempt]);
+
+  if (load === null) {
+    return null;
   }
 
+  const { session, editor, roster, loadError, forbidden, pending, savingEditor, saveError } = load;
   const saveIcon = savingEditor ? (
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
   ) : (
     <Check aria-hidden="true" className="h-4 w-4" />
   );
 
-  const cancelEdit = (): void => {
-    if (roster !== null) {
-      setComment(roster.comment);
-    }
-    setEditing(null);
-    setSaveError(null);
-  };
-
   const onSaveComment = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    void runSave(() => saveDailyRosterComment(session, comment), true);
+    void load
+      .runSave(() => saveDailyRosterComment(session, comment), true)
+      .then((saved) => {
+        if (saved) {
+          setEditing(false);
+        }
+      });
   };
 
-  const onSaveAmount = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    if (editing === null || editing.kind !== 'amount') {
-      return;
-    }
-    const amountUsd = parseUsd(amountDraft);
-    if (amountUsd === null) {
-      setSaveError('funding.daily.invalidRow');
-      return;
-    }
-    const address = editing.address;
-    void runSave(() => updateDailyRosterRecipient(session, address, amountUsd), true);
-  };
-
-  const onAdd = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    const amountUsd = parseUsd(addUsd);
-    if (amountUsd === null) {
-      setSaveError('funding.daily.invalidRow');
-      return;
-    }
-    void runSave(async () => {
-      const next = await addDailyRosterRecipient(session, addAddress, amountUsd);
-      setAddAddress('');
-      setAddUsd('');
-      return next;
-    });
-  };
-
-  let body: ReactElement;
-  if (loadError) {
-    body = (
+  let editorBody: ReactNode = null;
+  if (roster !== null && editor && !forbidden) {
+    editorBody = (
       <>
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('funding.daily.error')}
-        </p>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            setAttempt((n) => n + 1);
-          }}
-        >
-          {t('moderate.retry')}
-        </Button>
-      </>
-    );
-  } else if (roster === null) {
-    body = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
-  } else {
-    body = (
-      <>
-        <p className="text-center text-sm text-app-fg">
-          {t('funding.daily.defaultNote', {
-            amount: formatUsdDisplay(String(roster.defaultAmountUsd), numberFormat),
-          })}
-        </p>
         {saveError === null ? null : (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(saveError)}
           </p>
         )}
-        {editing?.kind === 'comment' ? (
+        {editing ? (
           <form className="flex w-full items-end gap-2" onSubmit={onSaveComment}>
             <Field
               className="min-w-0 flex-1"
@@ -316,7 +342,10 @@ export function DailyPaymentsScreen(): ReactElement | null {
               size="md"
               aria-label={t('funding.daily.cancel')}
               disabled={pending}
-              onClick={cancelEdit}
+              onClick={() => {
+                setEditing(false);
+                load.setSaveError(null);
+              }}
             >
               <X aria-hidden="true" className="h-4 w-4" />
             </IconButton>
@@ -342,14 +371,117 @@ export function DailyPaymentsScreen(): ReactElement | null {
                 disabled={pending}
                 onClick={() => {
                   setComment(roster.comment);
-                  setEditing({ kind: 'comment' });
-                  setSaveError(null);
+                  setEditing(true);
+                  load.setSaveError(null);
                 }}
               >
                 <Pencil aria-hidden="true" className="h-4 w-4" />
               </IconButton>
             </div>
           </div>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <DailyRosterCard
+      title={t('funding.daily.commentHeading')}
+      blocked={!editor || forbidden}
+      loadError={loadError}
+      loading={roster === null}
+      onRetry={load.retry}
+    >
+      {editorBody}
+    </DailyRosterCard>
+  );
+}
+
+/**
+ * Signed-in editor for daily payout amounts only.
+ *
+ * An initiator or founder loads `GET /funding/daily-roster` and may turn the
+ * payments switch and add, update, or delete a recipient. The comment is not
+ * on this page. A row pencil opens the amount (`Field`, not `AmountEntry`);
+ * the check saves and the X cancels. Everyone else who is signed in sees the
+ * heading and a short refusal, and this screen does not fetch. Renders nothing
+ * without a session. The page chrome owns the back.
+ *
+ * @returns The amounts card, refusal copy, or `null` without a session.
+ */
+export function DailyPaymentAmountsScreen(): ReactElement | null {
+  const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
+  const load = useDailyRoster();
+  const [editingAddress, setEditingAddress] = useState<string | null>(null);
+  const [amountDraft, setAmountDraft] = useState('');
+  const [addAddress, setAddAddress] = useState('');
+  const [addUsd, setAddUsd] = useState('');
+  const attempt = load === null ? 0 : load.attempt;
+
+  useEffect(() => {
+    setEditingAddress(null);
+  }, [attempt]);
+
+  if (load === null) {
+    return null;
+  }
+
+  const { session, editor, roster, loadError, forbidden, pending, savingEditor, saveError } = load;
+  const saveIcon = savingEditor ? (
+    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+  ) : (
+    <Check aria-hidden="true" className="h-4 w-4" />
+  );
+
+  const onSaveAmount = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    if (editingAddress === null) {
+      return;
+    }
+    const amountUsd = parseUsd(amountDraft);
+    if (amountUsd === null) {
+      load.setSaveError('funding.daily.invalidRow');
+      return;
+    }
+    const address = editingAddress;
+    void load
+      .runSave(() => updateDailyRosterRecipient(session, address, amountUsd), true)
+      .then((saved) => {
+        if (saved) {
+          setEditingAddress(null);
+        }
+      });
+  };
+
+  const onAdd = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    const amountUsd = parseUsd(addUsd);
+    if (amountUsd === null) {
+      load.setSaveError('funding.daily.invalidRow');
+      return;
+    }
+    void load.runSave(async () => {
+      const next = await addDailyRosterRecipient(session, addAddress, amountUsd);
+      setAddAddress('');
+      setAddUsd('');
+      return next;
+    });
+  };
+
+  let editorBody: ReactNode = null;
+  if (roster !== null && editor && !forbidden) {
+    editorBody = (
+      <>
+        <p className="text-center text-sm text-app-fg">
+          {t('funding.daily.defaultNote', {
+            amount: formatUsdDisplay(String(roster.defaultAmountUsd), numberFormat),
+          })}
+        </p>
+        {saveError === null ? null : (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t(saveError)}
+          </p>
         )}
         <h2 className="text-center text-sm font-semibold tracking-wide text-app-muted uppercase">
           {t('funding.daily.recipients')}
@@ -366,7 +498,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
             aria-pressed={roster.paymentsEnabled}
             disabled={pending}
             onClick={() => {
-              void runSave(() => saveDailyRosterPayments(session, true));
+              void load.runSave(() => saveDailyRosterPayments(session, true));
             }}
           >
             {t('funding.daily.on')}
@@ -377,7 +509,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
             aria-pressed={!roster.paymentsEnabled}
             disabled={pending}
             onClick={() => {
-              void runSave(() => saveDailyRosterPayments(session, false));
+              void load.runSave(() => saveDailyRosterPayments(session, false));
             }}
           >
             {t('funding.daily.off')}
@@ -389,7 +521,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
           <ul aria-label={t('funding.daily.recipients')} className="flex w-full flex-col gap-3">
             {roster.recipients.map((row) => {
               const display = displayAddress(row.address);
-              const rowEditing = editing?.kind === 'amount' && editing.address === row.address;
+              const rowEditing = editingAddress === row.address;
               return (
                 <li
                   key={row.address}
@@ -427,7 +559,10 @@ export function DailyPaymentsScreen(): ReactElement | null {
                         size="md"
                         aria-label={t('funding.daily.cancel')}
                         disabled={pending}
-                        onClick={cancelEdit}
+                        onClick={() => {
+                          setEditingAddress(null);
+                          load.setSaveError(null);
+                        }}
                       >
                         <X aria-hidden="true" className="h-4 w-4" />
                       </IconButton>
@@ -445,8 +580,8 @@ export function DailyPaymentsScreen(): ReactElement | null {
                         disabled={pending}
                         onClick={() => {
                           setAmountDraft(String(row.amountUsd));
-                          setEditing({ kind: 'amount', address: row.address });
-                          setSaveError(null);
+                          setEditingAddress(row.address);
+                          load.setSaveError(null);
                         }}
                       >
                         <Pencil aria-hidden="true" className="h-4 w-4" />
@@ -458,7 +593,7 @@ export function DailyPaymentsScreen(): ReactElement | null {
                         aria-label={`${t('funding.daily.delete')} ${display}`}
                         disabled={pending}
                         onClick={() => {
-                          void runSave(() => deleteDailyRosterRecipient(session, row.address));
+                          void load.runSave(() => deleteDailyRosterRecipient(session, row.address));
                         }}
                       >
                         <Trash2 aria-hidden="true" className="h-4 w-4" />
@@ -503,9 +638,14 @@ export function DailyPaymentsScreen(): ReactElement | null {
   }
 
   return (
-    <Card maxWidth="xl" surface={false}>
-      {heading}
-      {body}
-    </Card>
+    <DailyRosterCard
+      title={t('funding.daily.amountsHeading')}
+      blocked={!editor || forbidden}
+      loadError={loadError}
+      loading={roster === null}
+      onRetry={load.retry}
+    >
+      {editorBody}
+    </DailyRosterCard>
   );
 }

@@ -2899,9 +2899,9 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees a secondary large **Daily payments** link to `/grants/payments`. That link does not load the roster. A moderator does not see it. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees two secondary large links, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`. Those links do not load the roster. A moderator does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, for every username. A verified account with status none or rejected named `joey-rosima`, `vincent`, or `jewel-bacolbas` opens Apply. Every other verified account with status none or rejected reads the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payments**. An account at least moderator, including an initiator and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, for every username. A verified account with status none or rejected named `joey-rosima`, `vincent`, or `jewel-bacolbas` opens Apply. Every other verified account with status none or rejected reads the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payment text** or **Daily payment amounts**. An account at least moderator, including an initiator and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -2971,7 +2971,7 @@ Moderator on `/grants` when the open-application load fails. Copy **Could not lo
 
 ### Variant: daily-payments
 
-Founder on `/grants` sees a secondary **Daily payments** link plus **Open applications (2)**. Needle `Daily payments`.
+Founder on `/grants` sees secondary **Daily payment text** and **Daily payment amounts** links plus **Open applications (2)**. Needle `Daily payment text`.
 
 ![21.gifts grants daily payments](images/grants-daily-payments.png)
 
@@ -3000,90 +3000,139 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 ![21.gifts grant goals error](images/grants-goals-error.png)
 
-## Screen: /grants/payments
+## Screen: /grants/payments/comment
 
-- **Purpose:** Signed-in daily payout editor for the comment, the payments switch, and the recipient list. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Under the heading, the loaded editor says everyone in the grant program receives the roster `defaultAmountUsd` by default, formatted with `formatUsdDisplay`, and that the page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. The figure is not written into the catalog. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
+- **Purpose:** Signed-in editor for the daily payout comment only. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. The comment is text until the pencil opens it. An empty comment shows **Not set**. This page has no default-amount sentence, no payments switch, no recipients, and no Add. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`. Amounts are `/grants/payments/amounts`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
-- **Actions:** The comment is text until the pencil (**Edit comment**) opens it. The check (**Save**) stores it and the X (**Cancel**) restores it. Neither word is shown. A save in flight replaces the check with a spinner. An empty comment shows **Not set**. Turn payments **On** or **Off**. **Add** a recipient. A recipient row shows the formatted amount, a pencil (**Edit** plus the shown address), and a trash (**Delete** plus the shown address) on one line. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
-- **Used by:** Route `/grants/payments` (`DailyPaymentsPage`). The **Daily payments** link on `/grants` is shown only to an initiator or founder.
+- **Actions:** The comment is text until the pencil (**Edit comment**) opens it. The check (**Save**) stores it and the X (**Cancel**) restores the stored comment. Neither word is shown. A save in flight replaces the check with a spinner. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Used by:** Route `/grants/payments/comment` (`DailyPaymentCommentPage`). The **Daily payment text** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
 
-Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payments**. The note begins **Everyone in the grant program receives $1.00 by default.** Comment **Daily gift** is text, with the pencil **Edit comment** on the same line. That address renders as `ada@w...`. Its amount is text, with pencil and trash. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. Needle `Everyone in the grant program receives`.
+Founder with a stored comment. Heading **Daily payment text**. Comment **Daily gift** is text, with the pencil **Edit comment** on the same line, to the right of the text. No recipients and no payments switch. Needle `Edit comment`.
 
-![21.gifts daily payments](images/grants-payments.png)
+![21.gifts daily payment text](images/grants-payments-comment.png)
 
 ### Variant: empty
 
-Founder with an empty recipient list. The note begins **Everyone in the grant program receives $1.00 by default.** Sentence **No recipients**. The add form stays. Needle `No recipients`.
+Founder with an empty comment. The muted sentence is **Not set**, and the pencil **Edit comment** stays on that line. Needle `Not set`.
 
-![21.gifts daily payments empty](images/grants-payments-empty.png)
+![21.gifts daily payment text empty](images/grants-payments-comment-empty.png)
 
 ### Variant: loading
 
-Founder waiting on `GET /funding/daily-roster`. Copy **Loading…**. Needle `state-grants-payments-loading`.
+Founder waiting on `GET /funding/daily-roster`. Heading **Daily payment text**. Copy **Loading…**. Needle `state-grants-payments-comment-loading`.
 
-![21.gifts daily payments loading](images/grants-payments-loading.png)
+![21.gifts daily payment text loading](images/grants-payments-comment-loading.png)
 
 ### Variant: error
 
 Founder when the roster load fails. Copy **Could not load daily payments. Please try again.** and button **Try again**. Needle `Could not load daily payments. Please try again.`
 
-![21.gifts daily payments error](images/grants-payments-error.png)
+![21.gifts daily payment text error](images/grants-payments-comment-error.png)
 
 ### Variant: forbidden
 
-Moderator on the direct URL. Heading **Daily payments** and **You cannot change daily payments.** No roster request. Needle `You cannot change daily payments.`
+Moderator on the direct URL. Heading **Daily payment text** and **You cannot change daily payments.** No roster request. Needle `You cannot change daily payments.`
 
-![21.gifts daily payments forbidden](images/grants-payments-forbidden.png)
+![21.gifts daily payment text forbidden](images/grants-payments-comment-forbidden.png)
 
 ### Variant: invalid
 
-Founder, add amount 0, alert **The address or the amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown address. The trash is **Delete** plus that address. Needle `The address or the amount is not valid.`
-
-![21.gifts daily payments invalid](images/grants-payments-invalid.png)
-
-### Variant: off
-
-Founder with payments switched off. **Off** is pressed and **On** is not. Needle `state-grants-payments-off`.
-
-![21.gifts daily payments off](images/grants-payments-off.png)
-
-### Variant: invalid-comment
-
 Founder opens the comment with the pencil and presses the check. Spend rejects it. The field stays open. Alert **The comment is not valid.** Needle `The comment is not valid.`
 
-![21.gifts daily payments invalid comment](images/grants-payments-invalid-comment.png)
-
-### Variant: invalid-switch
-
-Founder turns payments off and spend rejects the switch. Alert **The payments switch is not valid.** **On** stays pressed. Needle `The payments switch is not valid.`
-
-![21.gifts daily payments invalid switch](images/grants-payments-invalid-switch.png)
-
-### Variant: duplicate
-
-Founder adds an address spend already lists. Alert **That address is already listed.** Needle `That address is already listed.`
-
-![21.gifts daily payments duplicate](images/grants-payments-duplicate.png)
-
-### Variant: unknown
-
-Founder opens a row with the pencil and presses the check. Spend does not list that address. The field stays open. Alert **That recipient is not on the list.** Needle `That recipient is not on the list.`
-
-![21.gifts daily payments unknown](images/grants-payments-unknown.png)
+![21.gifts daily payment text invalid](images/grants-payments-comment-invalid.png)
 
 ### Variant: save-error
 
 Founder opens the comment and presses the check. The roster call fails for any other reason, including `Forbidden`. The field stays open. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
 
-![21.gifts daily payments save error](images/grants-payments-save-error.png)
+![21.gifts daily payment text save error](images/grants-payments-comment-save-error.png)
 
 ### Variant: pending
 
-Founder opened the comment with the pencil and pressed the check. The roster call has not returned. The check (accessible name **Save**) shows a spinner and is disabled, as are **Cancel**, **On**, **Off**, **Add**, and the row buttons. There is no alert. Needle `state-grants-payments-pending`.
+Founder opened the comment with the pencil and pressed the check. The roster call has not returned. The check (accessible name **Save**) shows a spinner and is disabled, as is **Cancel**. There is no **Add** on this page and no alert. Needle `state-grants-payments-comment-pending`.
 
-![21.gifts daily payments pending](images/grants-payments-pending.png)
+![21.gifts daily payment text pending](images/grants-payments-comment-pending.png)
+
+## Screen: /grants/payments/amounts
+
+- **Purpose:** Signed-in editor for daily payout amounts only. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Under the heading, the loaded editor says everyone in the grant program receives the roster `defaultAmountUsd` by default, formatted with `formatUsdDisplay`, and that the page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. The figure is not written into the catalog. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). The comment is not on this page. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
+- **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
+- **Actions:** Turn payments **On** or **Off**. **Add** a recipient. A recipient row shows the formatted amount, a pencil (**Edit** plus the shown address), and a trash (**Delete** plus the shown address) on one line. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Used by:** Route `/grants/payments/amounts` (`DailyPaymentAmountsPage`). The **Daily payment amounts** link on `/grants` is shown only to an initiator or founder.
+
+### Variant: default
+
+Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payment amounts**. The note begins **Everyone in the grant program receives $1.00 by default.** That address renders as `ada@w...`. Its amount is text, with pencil and trash. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. The comment is not shown. Needle `Everyone in the grant program receives`.
+
+![21.gifts daily payment amounts](images/grants-payments-amounts.png)
+
+### Variant: empty
+
+Founder with an empty recipient list. The note begins **Everyone in the grant program receives $1.00 by default.** Sentence **No recipients**. The add form stays. Needle `No recipients`.
+
+![21.gifts daily payment amounts empty](images/grants-payments-amounts-empty.png)
+
+### Variant: loading
+
+Founder waiting on `GET /funding/daily-roster`. Heading **Daily payment amounts**. Copy **Loading…**. Needle `state-grants-payments-amounts-loading`.
+
+![21.gifts daily payment amounts loading](images/grants-payments-amounts-loading.png)
+
+### Variant: error
+
+Founder when the roster load fails. Copy **Could not load daily payments. Please try again.** and button **Try again**. Needle `Could not load daily payments. Please try again.`
+
+![21.gifts daily payment amounts error](images/grants-payments-amounts-error.png)
+
+### Variant: forbidden
+
+Moderator on the direct URL. Heading **Daily payment amounts** and **You cannot change daily payments.** No roster request. Needle `You cannot change daily payments.`
+
+![21.gifts daily payment amounts forbidden](images/grants-payments-amounts-forbidden.png)
+
+### Variant: invalid
+
+Founder, add amount 0, alert **The address or the amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown address. The trash is **Delete** plus that address. Needle `The address or the amount is not valid.`
+
+![21.gifts daily payment amounts invalid](images/grants-payments-amounts-invalid.png)
+
+### Variant: off
+
+Founder with payments switched off. **Off** is pressed and **On** is not. Needle `state-grants-payments-amounts-off`.
+
+![21.gifts daily payment amounts off](images/grants-payments-amounts-off.png)
+
+### Variant: invalid-switch
+
+Founder turns payments off and spend rejects the switch. Alert **The payments switch is not valid.** **On** stays pressed. Needle `The payments switch is not valid.`
+
+![21.gifts daily payment amounts invalid switch](images/grants-payments-amounts-invalid-switch.png)
+
+### Variant: duplicate
+
+Founder adds an address spend already lists. Alert **That address is already listed.** Needle `That address is already listed.`
+
+![21.gifts daily payment amounts duplicate](images/grants-payments-amounts-duplicate.png)
+
+### Variant: unknown
+
+Founder opens a row with the pencil and presses the check. Spend does not list that address. The field stays open. Alert **That recipient is not on the list.** Needle `That recipient is not on the list.`
+
+![21.gifts daily payment amounts unknown](images/grants-payments-amounts-unknown.png)
+
+### Variant: save-error
+
+Founder opens a row and presses the check. The amount update fails for any other reason, including `Forbidden`. The field stays open. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
+
+![21.gifts daily payment amounts save error](images/grants-payments-amounts-save-error.png)
+
+### Variant: pending
+
+Founder opened a row with the pencil and pressed the check. The amount update has not returned. The check (accessible name **Save**) shows a spinner and is disabled, as are **Cancel**, **On**, **Off**, **Add**, and the other row buttons. There is no alert. Needle `state-grants-payments-amounts-pending`.
+
+![21.gifts daily payment amounts pending](images/grants-payments-amounts-pending.png)
 
 ## Screen: /profile/apply
 

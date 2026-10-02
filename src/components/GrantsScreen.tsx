@@ -10,12 +10,13 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in grants page: the owner grant card, the continuation-goals link,
- * the daily-payments link, plus the staff queue for moderators.
+ * the daily-payment text and amounts links, plus the staff queue for moderators.
  *
  * Renders nothing without a session. A signed-in account sees a secondary link
- * to `/grants/goals` under the grant card. An initiator or founder also sees a
- * secondary link to `/grants/payments`. That link does not fetch the daily
- * roster. A missing account shows neither link. Accounts at least moderator,
+ * to `/grants/goals` under the grant card. An initiator or founder also sees
+ * two secondary links, one to the daily payment text and one to the amounts.
+ * Those links do not fetch the daily roster. A missing account shows neither
+ * the goals link nor those payment links. Accounts at least moderator,
  * including an initiator and a founder, see how many open grant applications
  * exist. When the count is greater than zero, a secondary link to
  * `/grants/applications` shows that count. When the count is zero, that
@@ -107,9 +108,14 @@ export function GrantsScreen(): ReactElement | null {
         </ButtonLink>
       ) : null}
       {editor ? (
-        <ButtonLink href="/grants/payments" variant="secondary" size="lg">
-          {t('funding.daily.link')}
-        </ButtonLink>
+        <>
+          <ButtonLink href="/grants/payments/comment" variant="secondary" size="lg">
+            {t('funding.daily.commentLink')}
+          </ButtonLink>
+          <ButtonLink href="/grants/payments/amounts" variant="secondary" size="lg">
+            {t('funding.daily.amountsLink')}
+          </ButtonLink>
+        </>
       ) : null}
       {queue}
     </Card>
