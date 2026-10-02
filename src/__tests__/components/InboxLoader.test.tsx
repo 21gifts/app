@@ -576,12 +576,12 @@ describe('InboxLoader', () => {
       'Too many payments. Please wait a moment and try again.',
     ],
     [
-      "Author's wallet cannot receive this Bitcoin payment",
+      'the author-wallet text without a code',
       new Error("Author's wallet cannot receive this Bitcoin payment"),
-      "The author's wallet cannot receive this Bitcoin payment",
+      'Could not send your message',
     ],
     [
-      'cannot receive (422)',
+      'cannot_receive',
       new CannotReceiveError(),
       "The author's wallet cannot receive this Bitcoin payment",
     ],
