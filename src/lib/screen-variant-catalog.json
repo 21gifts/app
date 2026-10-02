@@ -312,6 +312,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-alert-locked",
+    "label": "/wallet send-alert-locked",
+    "visual": "state-wallet-send-alert-locked",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-insufficient",
     "label": "/wallet send-insufficient",
     "visual": "state-wallet-send-insufficient",

@@ -1046,7 +1046,7 @@ describe('payFromWallet', () => {
     expect(useWalletStore.getState().balanceSats).toBe(50);
   });
 
-  it('does not write a synced read that a newer read or a disconnect overtook', async () => {
+  it('checks an overtaken synced read against the newer store balance, and fails after a disconnect', async () => {
     const { getInfo } = await connectPaying({});
     let finish: (value: { balanceSats: number; identityPubkey: string }) => void = () => undefined;
     getInfo.mockImplementationOnce(
@@ -1062,8 +1062,32 @@ describe('payFromWallet', () => {
     getInfo.mockResolvedValueOnce({ balanceSats: 30_000, identityPubkey: IDENTITY });
     await refreshWallet();
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
-    await expect(overtaken).resolves.toEqual({ kind: 'insufficient' });
+    await expect(overtaken).resolves.toMatchObject({ kind: 'confirm', amountSats: 2_100 });
     expect(useWalletStore.getState().balanceSats).toBe(30_000);
+
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const unknown = payFromWallet({ type: 'input', input: 'a' });
+    await vi.waitFor(() => {
+      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    });
+    const payFinish = finish;
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const pendingRefresh = refreshWallet();
+    useWalletStore.setState({ balanceSats: null });
+    payFinish({ balanceSats: 50, identityPubkey: IDENTITY });
+    await expect(unknown).resolves.toEqual({ kind: 'insufficient' });
+    finish({ balanceSats: 50, identityPubkey: IDENTITY });
+    await pendingRefresh;
 
     getInfo.mockImplementationOnce(
       () =>
@@ -1077,7 +1101,7 @@ describe('payFromWallet', () => {
     });
     await disconnectWallet();
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
-    await expect(dropped).resolves.toEqual({ kind: 'insufficient' });
+    await expect(dropped).resolves.toEqual({ kind: 'failed' });
     expect(useWalletStore.getState().balanceSats).toBeNull();
   });
 

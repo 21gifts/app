@@ -148,6 +148,7 @@ function visualState(name: string | null): WalletSendState | null {
     case 'send-invalid':
       return { step: 'input', error: 'invalid' };
     case 'send-failed':
+    case 'send-alert-locked':
       return { step: 'input', error: 'failed' };
     case 'send-insufficient':
       return { step: 'input', error: 'insufficient' };
@@ -179,9 +180,9 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
  * cannot reach shows a plain error. Nothing is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
  * actions inert; under `send-input-busy` and `send-amount-busy`, **Continue**
- * only marks that step busy. When the wallet leaves `ready`, an open amount or confirm
- * step and any read or prepare in flight are dropped (a send in flight is
- * kept), so a later reconnect starts at the input.
+ * only marks that step busy. When the wallet leaves `ready`, an open amount
+ * or confirm step and any read or prepare in flight are dropped (a send in
+ * flight is kept), so a later reconnect starts at the input.
  *
  * @returns The current step, drafts, and actions.
  */

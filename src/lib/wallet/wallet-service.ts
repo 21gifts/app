@@ -345,7 +345,7 @@ export type WalletSendResult = { kind: 'paid' } | { kind: 'insufficient' } | { k
  * - `confirm`: amount and fee to show; `send` pays it once.
  * - `insufficient`: the balance does not cover amount and fee.
  * - `failed`: prepare or the balance read failed, or the connection changed
- *   during prepare.
+ *   during prepare or that read.
  * - `unlock`: no wallet connection; the member has to unlock first.
  */
 export type WalletPayResult =
@@ -409,9 +409,10 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 /**
  * Prepares a payment from the in-app wallet and returns its amount and fee for
  * confirmation, checked against a balance read after the wallet has synced.
- * That read also updates the store while it is the latest read of the current
- * connection, so the shown balance matches the check. The returned `send` pays
- * it once and refreshes the balance. Never rejects.
+ * That read also updates the store while it is the latest read; when a newer
+ * read overtook it, the check uses the store's newer balance, so the check
+ * always matches the balance shown. The returned `send` pays it once and
+ * refreshes the balance. Never rejects.
  *
  * @param request - Request text to pay, or a receiver that takes an amount.
  * @returns Confirmation with `send`, or why the payment cannot be made.
@@ -435,10 +436,16 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     balanceReadCounter += 1;
     const read = balanceReadCounter;
     const info = await conn.getInfo({ ensureSynced: true });
-    if (connection === conn && read === balanceReadCounter) {
-      useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
+    if (connection !== conn) {
+      return { kind: 'failed' };
     }
-    if (info.balanceSats < amountSats + feeSats) {
+    let balanceSats = info.balanceSats;
+    if (read === balanceReadCounter) {
+      useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
+    } else {
+      balanceSats = useWalletStore.getState().balanceSats ?? info.balanceSats;
+    }
+    if (balanceSats < amountSats + feeSats) {
       return { kind: 'insufficient' };
     }
   } catch {

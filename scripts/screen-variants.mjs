@@ -437,6 +437,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-alert-locked',
+    image: 'wallet-send-alert-locked.png',
+    visual: 'state-wallet-send-alert-locked',
+    needle: "shotScreen(page, 'state-wallet-send-alert-locked')",
+  },
+  {
+    route: '/wallet',
     id: 'send-insufficient',
     image: 'wallet-send-insufficient.png',
     visual: 'state-wallet-send-insufficient',

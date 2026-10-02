@@ -1937,6 +1937,23 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-failed');
   });
 
+  test('wallet send-alert-locked', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-alert-locked');
+    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible({
+      timeout: 15_000,
+    });
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(
+      send.getByText('The payment could not be sent. Check your balance before you try again.'),
+    ).toBeVisible();
+    await expect(send.getByPlaceholder('Paste a Bitcoin payment request or address')).toHaveCount(
+      0,
+    );
+    await expect(send.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-send-alert-locked');
+  });
+
   test('wallet send-insufficient', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-insufficient');

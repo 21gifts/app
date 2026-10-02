@@ -89,6 +89,7 @@ describe('useWallet', () => {
     ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
     ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
     ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+    ['send-alert-locked', 'locked', null],
   ] as const)('pins %s to %s', (visual, status, balanceSats) => {
     setPlaywrightBuild();
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
