@@ -370,7 +370,7 @@ export type WalletPayResult =
  * - `unreachable`: the text names a receiver whose server did not answer
  *   this browser.
  * - `invalid`: not a payment request or address.
- * - `unlock`: no wallet connection.
+ * - `unlock`: no wallet connection, or it changed while the text was read.
  */
 export type WalletParseResult =
   | { kind: 'target'; target: WalletTarget }
@@ -431,6 +431,9 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
   try {
     prepared = await conn.prepare(request);
   } catch (err: unknown) {
+    if (connection !== conn) {
+      return { kind: 'failed' };
+    }
     return isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
   }
   const { amountSats, feeSats } = prepared;
@@ -507,9 +510,17 @@ export async function parseWalletInput(text: string): Promise<WalletParseResult>
   if (conn === null) {
     return { kind: 'unlock' };
   }
+  let target: WalletTarget;
   try {
-    return { kind: 'target', target: await conn.parse(trimmed) };
+    target = await conn.parse(trimmed);
   } catch {
+    if (connection !== conn) {
+      return { kind: 'unlock' };
+    }
     return isReceiverServerName(trimmed) ? { kind: 'unreachable' } : { kind: 'invalid' };
   }
+  if (connection !== conn) {
+    return { kind: 'unlock' };
+  }
+  return { kind: 'target', target };
 }

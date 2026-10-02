@@ -177,7 +177,8 @@ export interface WalletConnection {
    *
    * @param request - Payment request text, or a receiver that asks for an amount.
    * @returns The prepared payment and the function that sends it.
-   * @throws When the SDK cannot prepare the payment.
+   * @throws When the SDK cannot prepare the payment, or it would pay a token
+   *   rather than Bitcoin.
    */
   prepare(request: WalletPayRequest): Promise<WalletPreparedPayment>;
   /**
@@ -525,6 +526,11 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             paymentRequest: { type: 'input', input: request.input },
             ...(request.amountSats === undefined ? {} : { amount: BigInt(request.amountSats) }),
           });
+          const methodToken = (prepared.paymentMethod as { tokenIdentifier?: string })
+            .tokenIdentifier;
+          if (prepared.tokenIdentifier !== undefined || methodToken !== undefined) {
+            throw new Error('Unsupported payment method');
+          }
           const feeSats = feeOf(prepared.paymentMethod as PreparedMethod);
           return {
             amountSats: Number(prepared.amount),
