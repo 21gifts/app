@@ -86,7 +86,7 @@
 
 ## Function: GET
 
-- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`. `/forum/messages/[id]/edits` re-exports `proxyMessagesEditsGet`.
+- **Purpose:** Shared export name for App Router GET handlers. Healthz and `/maps/key` use `export function GET` (`/maps/key` is always 200 `{ key: string | null }`); same-origin api proxies re-export unique functions as `GET` (including `/forum/messages`, `/forum/messages/places` which re-exports `proxyMessagesPlacesGet`, `/forum/messages/hidden` which re-exports `proxyMessagesHiddenGet`, `/forum/notifications` which re-exports `proxyNotificationsGet`, `/messages/[id]/photo`, `/messages/[id]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo`, `/conversations/[id]/messages/[messageId]/photo/[file]` (`{1-9}.{jpg|jpeg|png|webp}`, proxy always requests `{n}.jpg` from the api), `/messages/[id]/[file]`, `/messages/[id]/repayment` which re-exports `proxyMessagesRepaymentGet`, `/view-key/[viewKey]`, `/push/vapid-public`, `/trust/graph`, `/trust/proposals` which re-exports `proxyTrustProposalsGet`, `/funding/applications` which re-exports `proxyFundingApplicationsGet`, `/funding/daily-roster` which re-exports `proxyFundingDailyRosterGet`, and `/funding/applications/[accountId]` which calls `proxyFundingApplicationGet`). `/translate` re-exports `proxyTranslateAvailableGet` (api GET `/translate`). HTML `/messages` is the inbox page, not a GET proxy. HTML `/notifications` is the notifications page, not a GET proxy. HTML `/moderate` is the moderation hub, not a GET proxy. HTML `/moderate/hidden` is the hidden-notes page, not a GET proxy. HTML `/moderate/proposals` is the confirm/reject queue, not a GET proxy. HTML `/moderate/applications` is the grant-application queue, not a GET proxy. HTML `/grants/payments/comment` and `/grants/payments/amounts` are the daily payment pages, not GET proxies. HTML `/moderate/applications/[accountId]` is the grant-application review, not a GET proxy. HTML `/moderate/group` is the closed staff-room page, not a GET proxy. The signed-in HTML page `/trust-chain` is `TrustChainPage`, not this GET. `GET /l/[code]` redirects an 8-hex short code or calls `notFound()`. `GET /links/[code]` re-exports `proxyShortLinkGet`. HTML `/pos` is the till page, not a GET proxy; `GET /pos/charge` re-exports `proxyPosGet`. `/forum/messages/[id]/edits` re-exports `proxyMessagesEditsGet`.
 - **Inputs:** Incoming `Request` on proxy routes (plus async `params` on dynamic photo, `/messages/[id]/photo/[file]` (`id` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), `/conversations/[id]/messages/[messageId]/photo` (`id` + `messageId`), `/conversations/[id]/messages/[messageId]/photo/[file]` (`id` + `messageId` + `file` matching `{1-9}.{jpg|jpeg|png|webp}`; proxy always requests `{n}.jpg` from the api), file, and view-key); none on healthz or `/maps/key`; `/translate` takes the incoming `Request`.
 - **Returns / side effects:** `Response`. Healthz is `{ status: 'ok' }` 200; `/maps/key` is always 200 `{ key: string | null }`; `/translate` is 200 `{ available: boolean }` or 502; proxies return the upstream api response (JSON or raw photo/video bytes).
 - **Used by:** Container probes, browser/wallet same-origin calls, and `fetchTranslateAvailable` via `GET /translate`. `GET /.well-known/nostr.json` proxies NIP-05. `GET /.well-known/lnurlp/[username]` proxies LUD-16.
@@ -1799,6 +1799,48 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Account, grant, and living-room posts. Throws visitor copy `Could not load this application. Please try again.` on 401/403/404/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingApplicationDetailScreen`.
 
+## Function: fetchDailyRoster
+
+- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients }` with `{ address, amountUsd }` rows only. `defaultAmountUsd` is a finite number.
+- **Inputs:** Bearer `session`.
+- **Returns / side effects:** Parsed roster. Throws `funding.daily.forbidden` on api `Forbidden`. Throws visitor copy `Could not load daily payments. Please try again.` on 401, other 403, 503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
+
+## Function: saveDailyRosterComment
+
+- **Purpose:** POST `/funding/daily-roster/comment` with `{ comment }` and parse the returned roster.
+- **Inputs:** Bearer `session`, comment text.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid comment` to `funding.daily.invalidComment`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentCommentScreen`.
+
+## Function: saveDailyRosterPayments
+
+- **Purpose:** POST `/funding/daily-roster/payments` with `{ enabled }` and parse the returned roster. `enabled` is a boolean.
+- **Inputs:** Bearer `session`, `enabled`.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid payments switch` to `funding.daily.invalidSwitch`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentAmountsScreen`.
+
+## Function: addDailyRosterRecipient
+
+- **Purpose:** POST `/funding/daily-roster/recipients` with `{ address, amountUsd }` and parse the returned roster. `amountUsd` is a real number, not a numeric string.
+- **Inputs:** Bearer `session`, address, USD amount.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Address already listed`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentAmountsScreen`.
+
+## Function: updateDailyRosterRecipient
+
+- **Purpose:** POST `/funding/daily-roster/recipients/update` with `{ address, amountUsd }` and parse the returned roster.
+- **Inputs:** Bearer `session`, stored address, new USD amount.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Unknown address`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentAmountsScreen`.
+
+## Function: deleteDailyRosterRecipient
+
+- **Purpose:** POST `/funding/daily-roster/recipients/delete` with `{ address }` and parse the returned roster.
+- **Inputs:** Bearer `session`, stored address.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Unknown address`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentAmountsScreen`.
+
 ## Function: postFundingAdmit
 
 - **Purpose:** POST `/funding/admit` with `{ accountId }` (staff). Target pending or trial.
@@ -2821,10 +2863,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed}/{begin,finish}` re-export the eight passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/read-by-message` re-exports `proxyNotificationsReadByMessagePost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed}/{begin,finish}` re-export the eight passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/read-by-message` re-exports `proxyNotificationsReadByMessagePost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`; `/funding/daily-roster/comment` re-exports `proxyFundingDailyRosterCommentPost`; `/funding/daily-roster/payments` re-exports `proxyFundingDailyRosterPaymentsPost`; `/funding/daily-roster/recipients` re-exports `proxyFundingDailyRosterRecipientsPost`; `/funding/daily-roster/recipients/update` re-exports `proxyFundingDailyRosterRecipientsUpdatePost`; `/funding/daily-roster/recipients/delete` re-exports `proxyFundingDailyRosterRecipientsDeletePost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText, cached }` or 400/404/503/502 from the 21.gifts api.
-- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), renew report (`POST /me/passkey-renew/report`), renew acknowledgement (`POST /me/passkey-renew/ack`), passkey begin/finish (register, authenticate, replace, and seed), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), today's repayment (`POST /messages/[id]/repayment`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`), mark-by-message (`POST /forum/notifications/read-by-message`), and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), and staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`).
+- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), renew report (`POST /me/passkey-renew/report`), renew acknowledgement (`POST /me/passkey-renew/ack`), passkey begin/finish (register, authenticate, replace, and seed), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), today's repayment (`POST /messages/[id]/repayment`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`), mark-by-message (`POST /forum/notifications/read-by-message`), and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`), and daily-roster saves (`POST /funding/daily-roster/comment`, `POST /funding/daily-roster/payments`, `POST /funding/daily-roster/recipients`, `POST /funding/daily-roster/recipients/update`, `POST /funding/daily-roster/recipients/delete`).
 
 ## Function: PUT
 
@@ -2874,6 +2916,48 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` (Bearer session).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/funding/applications`.
+
+## Function: proxyFundingDailyRosterGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /funding/daily-roster`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/funding/daily-roster`.
+
+## Function: proxyFundingDailyRosterCommentPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/comment` with JSON `{ comment }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/comment`.
+
+## Function: proxyFundingDailyRosterPaymentsPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/payments` with JSON `{ enabled }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/payments`.
+
+## Function: proxyFundingDailyRosterRecipientsPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/recipients` with JSON `{ address, amountUsd }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/recipients`.
+
+## Function: proxyFundingDailyRosterRecipientsUpdatePost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/recipients/update` with JSON `{ address, amountUsd }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/recipients/update`.
+
+## Function: proxyFundingDailyRosterRecipientsDeletePost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/recipients/delete` with JSON `{ address }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/recipients/delete`.
 
 ## Function: proxyFundingApplicationGet
 
@@ -3924,6 +4008,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleRank`.
 - **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `FundingApplicationsScreen`, `FundingApplicationDetailScreen`, `FundingStatusCard`, `DeletePostControl`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`.
 
+## Function: canEditDailyPayoutRoster
+
+- **Purpose:** True only for `initiator` and `founder`. This is not `roleAtLeast`: initiator and moderator share rank 2, and the daily payout roster stays closed to moderators. `null` and `undefined` are false.
+- **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent.
+- **Returns / side effects:** Boolean. Pure, no side effects.
+- **Used by:** `GrantsScreen`, `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
+
 ## Function: isReplyPaymentExempt
 
 - **Purpose:** True when the signed-in account may reply without paying: anyone at least verified is exempt. Basis, including the parent note's author, is not exempt.
@@ -4123,9 +4214,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), two secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`, do not fetch the roster. A moderator does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes an initiator and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
 - **Used by:** `GrantsPage`.
 
 ## Function: GrantGoalsPage
@@ -4141,6 +4232,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session from `useAuthStore`; catalog and locale via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/goal` through `fetchGrantContinuation` only when a session exists. Does not call `fetchShopActivity`.
 - **Used by:** `GrantGoalsPage`.
+
+## Function: DailyPaymentCommentPage
+
+- **Purpose:** Next.js page for `/grants/payments/comment`. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `DailyPaymentCommentScreen`. Amounts are a separate page. Roster HTTP lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside this page.
+- **Inputs:** None.
+- **Returns / side effects:** The daily-payment comment screen inside fill AppShell.
+- **Used by:** Route `/grants/payments/comment`.
+
+## Function: DailyPaymentCommentScreen
+
+- **Purpose:** Client editor for the daily payout comment only. An initiator or founder fetches `fetchDailyRoster` and may save the comment. The comment is text until an icon-only pencil (`funding.daily.editComment`) opens it. The check (`funding.daily.save`) stores it and the X (`funding.daily.cancel`) restores the stored comment. An empty comment shows `funding.daily.commentEmpty`. Words Save, Cancel, and Edit are not visible labels. A save in flight replaces the check with a spinner. This screen does not show the default-amount sentence, the payments switch, recipients, or Add. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. The comment save goes to `POST /funding/daily-roster/comment`. A save failure shows a `funding.daily.*` catalog sentence and leaves the field open.
+- **Used by:** `DailyPaymentCommentPage`.
+
+## Function: DailyPaymentAmountsPage
+
+- **Purpose:** Next.js page for `/grants/payments/amounts`. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `DailyPaymentAmountsScreen`. The comment is a separate page. Roster HTTP lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside this page.
+- **Inputs:** None.
+- **Returns / side effects:** The daily-payment amounts screen inside fill AppShell.
+- **Used by:** Route `/grants/payments/amounts`.
+
+## Function: DailyPaymentAmountsScreen
+
+- **Purpose:** Client editor for daily payout amounts only. An initiator or founder fetches `fetchDailyRoster` and may turn payments on or off and add, update, or delete a recipient. The loaded editor shows `funding.daily.defaultNote` with `{amount}` from `roster.defaultAmountUsd` via `formatUsdDisplay`. On a recipient row the formatted USD amount, the pencil (`funding.daily.edit` plus the shown address), and the trash share one line. The pencil opens a `Field`; the check saves and the X cancels. Amounts are the stored USD figure (`Field`, not `AmountEntry`). The total uses `formatUsdDisplay` and the visitor grouping style. Wallet of Satoshi addresses render as `local@w...`. The comment is not on this screen. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; grouping via `useNumberFormat`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. Saves go to the payments, add, update, and delete daily-roster POSTs. A save failure shows a `funding.daily.*` catalog sentence.
+- **Used by:** `DailyPaymentAmountsPage`.
 
 ## Function: FundingStatusCard
 

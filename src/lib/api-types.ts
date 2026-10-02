@@ -1320,3 +1320,25 @@ export const fundingDecisionResultSchema = z.object({
  * Updated account snapshot after a staff funding decision.
  */
 export type FundingDecisionResult = z.infer<typeof fundingDecisionResultSchema>;
+
+/**
+ * Runtime schema for the daily payout roster (`GET /funding/daily-roster`
+ * and the matching POST success bodies).
+ */
+export const dailyRosterSchema = z.object({
+  comment: z.string(),
+  paymentsEnabled: z.boolean(),
+  /** USD spend pays an unlisted admitted or trial grant. Not a listed row. */
+  defaultAmountUsd: z.number().finite(),
+  recipients: z.array(
+    z.object({
+      address: z.string(),
+      amountUsd: z.number(),
+    }),
+  ),
+});
+
+/**
+ * Daily payout comment, payments switch, unlisted grant default, and recipient list.
+ */
+export type DailyRoster = z.infer<typeof dailyRosterSchema>;

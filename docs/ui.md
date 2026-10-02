@@ -33,7 +33,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 
 9. **Staff action stacks stay closed.** A stack of labeled moderator or founder actions on a member card is not painted as loose buttons. _Implication:_ one closed disclosure, catalog `staff.functions` ("Moderator functions" / "Moderatorenfunktionen"), the same `details` / `summary` as wallet **Advanced functions** (`wallet.advanced`), not a full-width button. Opening it reveals only the actions that viewer may use on that person. The opened disclosure is its own screenshot state, not only the closed summary. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not add a second disclosure around their own tools. The Menu row **Moderation** stays. The staff inbox origin filter stays. Role pills are identity, not actions.
 
-10. **Amount fields carry the unit switch.** Every typed amount uses the gift ₿ / fiat-code control, and the other unit sits under the field. The last choice is stored on the account and is the default everywhere. A signed-out pay link still shows the switch and starts at ₿. What is sent is always whole sats. _Implication:_ a new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state. The input box, its placeholder, and the start of the digits do not change when the unit changes; the switch and the counter do.
+10. **Amount fields carry the unit switch.** Every typed amount uses the gift ₿ / fiat-code control, and the other unit sits under the field. The last choice is stored on the account and is the default everywhere. A signed-out pay link still shows the switch and starts at ₿. What is sent is always whole sats. _Implication:_ a new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` is the stored USD figure spend pays, so those inputs stay `Field` and the body stays `amountUsd`. Fiat mode is its own screenshot state. The input box, its placeholder, and the start of the digits do not change when the unit changes; the switch and the counter do.
 
 11. **A press that changes the screen has its own baseline.** The picture before the press does not count. _Implication:_ an icon-only status mark whose press reveals or hides its meaning is that kind of control. The same PR adds the handbook variant, the e2e needle, the `shotScreen` call, and a Playwright Linux baseline for every combo. The resting shot alone is rejected.
 
@@ -720,7 +720,7 @@ transition focus-visible:border-app-fg disabled:opacity-50
 
 16px (`text-base`) so iOS Safari does not auto-zoom on focus. No `outline-none`. The global `:focus-visible` ring is the keyboard encoding. No `error` prop; screens keep external `role="alert"` siblings.
 
-Textarea: add `min-h-11 resize-none`. Composer textareas that sit beside an IconButton may omit the visible label and use `aria-label` only — that is a **composer**, not `Field`. An amount the person types is `AmountEntry`, not `Field`: the gift `SegmentedControl` (₿ | fiat code) and the other unit under the field. The inbox composer keeps attach, the message, and send on one row and puts that amount on the next row (`layout="composer"`: switch beside the input, counter under the input, label for assistive tech only).
+Textarea: add `min-h-11 resize-none`. Composer textareas that sit beside an IconButton may omit the visible label and use `aria-label` only — that is a **composer**, not `Field`. An amount the person types is `AmountEntry`, not `Field`: the gift `SegmentedControl` (₿ | fiat code) and the other unit under the field. The daily payout roster amounts are the stored USD figure, so they stay `Field`. The inbox composer keeps attach, the message, and send on one row and puts that amount on the next row (`layout="composer"`: switch beside the input, counter under the input, label for assistive tech only).
 
 **API.** `FieldProps` input/textarea union (`multiline?: false` / `multiline: true`).
 
@@ -1077,9 +1077,9 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 ### `/grants`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, a secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, a secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null. Two secondary `size="lg"` `ButtonLink`s, **Daily payment text** (`/grants/payments/comment`) and **Daily payment amounts** (`/grants/payments/amounts`), render only when `canEditDailyPayoutRoster`. Neither link fetches the roster. Plus, for an account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
-Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
+Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications, daily-payments.
 
 ### `/grants/goals`
 
@@ -1092,6 +1092,18 @@ Handbook states: default, loading, error.
 Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **Apply for the 21 gifts grant**. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Missing About me, photo, or location are the next calm steps (not alerts). Then two questions: whether the profile posts match the core principles of 21.gifts, with a link to `https://21.gifts/about` (Languages **Translate** on living-room post text), then whether the posts are true. **Yes** on the truth question applies and returns to `/grants`; **No** shows the unmet line. `/profile/apply` redirects here.
 
 Handbook states: default, photo, location, question, truth, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
+
+### `/grants/payments/comment`
+
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payment text**. An initiator or founder sees the stored comment. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. The comment is text, with an icon-only pencil (`aria-label` **Edit comment**) on the same line, to the right of the text. The pencil opens the field. Save is an icon-only check (`aria-label` **Save**, primary) and cancel is an icon-only X (`aria-label` **Cancel**). Those words are not shown. A save in flight replaces the check with a spinner. An empty comment shows **Not set**. This page has no default-amount sentence, no payments switch, no recipients, and no **Add**.
+
+Handbook states: default, empty, loading, error, forbidden, invalid, save-error, pending, editing.
+
+### `/grants/payments/amounts`
+
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Daily payment amounts**. An initiator or founder sees the amount editor. Everyone else who is signed in sees **You cannot change daily payments.** There is no in-card back. Under the heading, one sentence says everyone in the grant program receives the roster `defaultAmountUsd` by default (`formatUsdDisplay`, not a fixed figure in the copy) and that this page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. Each recipient row shows the formatted USD amount, an icon-only pencil (**Edit** plus the shown address), and an icon-only trash (**Delete** plus the shown address) on one line. The pencil opens a `Field` for that amount; the check saves and the X cancels. **On**, **Off**, **Add**, and **Try again** stay labeled buttons. The comment is not on this page.
+
+Handbook states: default, empty, loading, error, forbidden, invalid, off, invalid-switch, duplicate, unknown, save-error, pending, editing.
 
 ### `/profile/apply`
 

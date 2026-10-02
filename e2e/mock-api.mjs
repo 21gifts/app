@@ -32,7 +32,7 @@ const aboutMePhotos = new Map();
 const messageTranslations = new Map();
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
-const ROLE_ORDER = ['basis', 'verified', 'moderator', 'founder'];
+const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'];
 
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
@@ -2555,6 +2555,35 @@ const server = http.createServer(async (req, res) => {
       ],
       rows: [],
     });
+    return;
+  }
+
+  if (pathName === '/funding/daily-roster' || pathName.startsWith('/funding/daily-roster/')) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.role !== 'initiator' && account.role !== 'founder') {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    const roster = {
+      comment: '',
+      paymentsEnabled: true,
+      defaultAmountUsd: 1,
+      recipients: [],
+    };
+    if (method === 'GET' && pathName === '/funding/daily-roster') {
+      json(res, 200, roster);
+      return;
+    }
+    if (method === 'POST') {
+      json(res, 200, roster);
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
     return;
   }
 

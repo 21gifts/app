@@ -92,6 +92,8 @@ describe('GrantsScreen', () => {
     expect(screen.getByText('You are not verified yet.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Goals' }).getAttribute('href')).toBe('/grants/goals');
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
@@ -101,6 +103,8 @@ describe('GrantsScreen', () => {
     renderWithLocale(<GrantsScreen />);
     expect(screen.getByText('21 gifts grant')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Goals' }).getAttribute('href')).toBe('/grants/goals');
+    expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -127,8 +131,33 @@ describe('GrantsScreen', () => {
       renderWithLocale(<GrantsScreen />);
       expect(screen.getByText('Loading…')).toBeTruthy();
       expect(screen.queryByRole('link', { name: /Open applications/ })).toBeNull();
+      if (role === 'founder') {
+        expect(screen.getByRole('link', { name: 'Daily payment text' }).getAttribute('href')).toBe(
+          '/grants/payments/comment',
+        );
+        expect(
+          screen.getByRole('link', { name: 'Daily payment amounts' }).getAttribute('href'),
+        ).toBe('/grants/payments/amounts');
+      } else {
+        expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
+        expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
+      }
     },
   );
+
+  it('shows daily payments for an initiator and still loads applications', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'initiator' } });
+    listMock.mockResolvedValue([]);
+    renderWithLocale(<GrantsScreen />);
+    expect(screen.getByRole('link', { name: 'Daily payment text' }).getAttribute('href')).toBe(
+      '/grants/payments/comment',
+    );
+    expect(screen.getByRole('link', { name: 'Daily payment amounts' }).getAttribute('href')).toBe(
+      '/grants/payments/amounts',
+    );
+    expect(await screen.findByText('No open applications.')).toBeTruthy();
+    expect(listMock).toHaveBeenCalledWith('sess');
+  });
 
   it('shows empty copy without a link or button', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
@@ -136,6 +165,8 @@ describe('GrantsScreen', () => {
     renderWithLocale(<GrantsScreen />);
     expect(await screen.findByText('No open applications.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /Open applications/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
   });
 

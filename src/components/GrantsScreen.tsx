@@ -5,20 +5,23 @@ import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { fetchFundingApplications } from '@/lib/api';
-import { roleAtLeast } from '@/lib/roles';
+import { canEditDailyPayoutRoster, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Signed-in grants page: the owner grant card, the continuation-goals link, plus
- * the staff queue for moderators.
+ * Signed-in grants page: the owner grant card, the continuation-goals link,
+ * the daily-payment text and amounts links, plus the staff queue for moderators.
  *
  * Renders nothing without a session. A signed-in account sees a secondary link
- * to `/grants/goals` under the grant card. A missing account shows no link.
- * Moderators and founders see how many open grant applications exist. When the
- * count is greater than zero, a secondary link to `/grants/applications` shows
- * that count. When the count is zero, that control is the empty sentence as
- * plain text. Members below moderator never see the queue and never trigger
- * the fetch.
+ * to `/grants/goals` under the grant card. An initiator or founder also sees
+ * two secondary links, one to the daily payment text and one to the amounts.
+ * Those links do not fetch the daily roster. A missing account shows neither
+ * the goals link nor those payment links. Accounts at least moderator,
+ * including an initiator and a founder, see how many open grant applications
+ * exist. When the count is greater than zero, a secondary link to
+ * `/grants/applications` shows that count. When the count is zero, that
+ * control is the empty sentence as plain text. Members below moderator never
+ * see the queue and never trigger that fetch.
  *
  * @returns The grants card, or `null` without a session.
  */
@@ -27,6 +30,7 @@ export function GrantsScreen(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = session !== null && roleAtLeast(account?.role, 'moderator');
+  const editor = canEditDailyPayoutRoster(account?.role);
   const [openCount, setOpenCount] = useState<number | null>(null);
   const [applicationsError, setApplicationsError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -102,6 +106,16 @@ export function GrantsScreen(): ReactElement | null {
         <ButtonLink href="/grants/goals" variant="secondary" size="lg">
           {t('funding.goals.link')}
         </ButtonLink>
+      ) : null}
+      {editor ? (
+        <>
+          <ButtonLink href="/grants/payments/comment" variant="secondary" size="lg">
+            {t('funding.daily.commentLink')}
+          </ButtonLink>
+          <ButtonLink href="/grants/payments/amounts" variant="secondary" size="lg">
+            {t('funding.daily.amountsLink')}
+          </ButtonLink>
+        </>
       ) : null}
       {queue}
     </Card>
