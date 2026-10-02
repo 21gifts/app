@@ -314,19 +314,20 @@ export function DailyPaymentsScreen(): ReactElement | null {
                   <span className="truncate text-sm text-app-fg" title={row.address}>
                     {display}
                   </span>
-                  <Field
-                    label={t('funding.daily.usd')}
-                    id={`daily-usd-${row.address}`}
-                    value={draft}
-                    inputMode="decimal"
-                    disabled={pending}
-                    aria-label={`${t('funding.daily.usd')} ${display}`}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setDrafts((current) => ({ ...current, [row.address]: value }));
-                    }}
-                  />
-                  <div className="flex w-full flex-wrap gap-3">
+                  <div className="flex w-full items-end gap-3">
+                    <Field
+                      className="min-w-0 flex-1"
+                      label={t('funding.daily.usd')}
+                      id={`daily-usd-${row.address}`}
+                      value={draft}
+                      inputMode="decimal"
+                      disabled={pending}
+                      aria-label={`${t('funding.daily.usd')} ${display}`}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setDrafts((current) => ({ ...current, [row.address]: value }));
+                      }}
+                    />
                     <IconButton
                       type="button"
                       variant="secondary"
