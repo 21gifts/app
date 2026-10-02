@@ -3727,6 +3727,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'note-video-paused',
+    image: 'messages-id-note-video-paused.png',
+    visual: 'state-messages-id-note-video-paused',
+    needle: 'state /messages/[id] note-video-paused',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'note-video-playing',
+    image: 'messages-id-note-video-playing.png',
+    visual: 'state-messages-id-note-video-playing',
+    needle: 'state /messages/[id] note-video-playing',
+  },
+  {
+    route: '/messages/[id]',
     id: 'signed-in',
     image: 'messages-id-signed-in.png',
     visual: 'state-messages-id-signed-in',
@@ -3969,6 +3983,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-note-whole.png',
     visual: 'state-welcome-note-whole',
     needle: 'WHOLETAIL',
+  },
+  {
+    route: '/welcome',
+    id: 'note-video-paused',
+    image: 'welcome-note-video-paused.png',
+    visual: 'state-welcome-note-video-paused',
+    needle: 'state /welcome note-video-paused',
+  },
+  {
+    route: '/welcome',
+    id: 'note-video-playing',
+    image: 'welcome-note-video-playing.png',
+    visual: 'state-welcome-note-video-playing',
+    needle: 'state /welcome note-video-playing',
   },
   {
     route: '/welcome',

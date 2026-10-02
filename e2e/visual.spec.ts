@@ -4102,6 +4102,132 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-note-whole');
   });
 
+  test('state /welcome note-video-paused', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-clip',
+              name: 'Ada',
+              text: 'A clip',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: true,
+              videoContentType: 'video/mp4',
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-clip/video.mp4', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'video/mp4',
+        path: 'e2e/fixtures/note-still.mp4',
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('A clip')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((el: HTMLVideoElement) => el.videoWidth > 0))
+      .toBe(true);
+    await shotScreen(page, 'state-welcome-note-video-paused');
+  });
+
+  test('state /welcome note-video-playing', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-clip',
+              name: 'Ada',
+              text: 'A clip',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: true,
+              videoContentType: 'video/mp4',
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-clip/video.mp4', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'video/mp4',
+        path: 'e2e/fixtures/note-still.mp4',
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('A clip')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((el: HTMLVideoElement) => el.videoWidth > 0))
+      .toBe(true);
+    await page.getByRole('button', { name: 'Play' }).click();
+    await expect(page.getByRole('button', { name: 'Play' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((el: HTMLVideoElement) => el.paused))
+      .toBe(false);
+    await shotScreen(page, 'state-welcome-note-video-playing');
+  });
+
   test('state /welcome translate-long-loading', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -9134,6 +9260,90 @@ test.describe('onboarding screens', () => {
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
     await expect(page.getByText('1/2')).toBeVisible();
     await shotScreen(page, 'state-messages-id-photos');
+  });
+
+  test('state /messages/[id] note-video-paused', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111113';
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'A clip',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          hasVideo: true,
+          videoContentType: 'video/mp4',
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/messages/${id}/video.mp4`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'video/mp4',
+        path: 'e2e/fixtures/note-still.mp4',
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText('A clip')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((el: HTMLVideoElement) => el.videoWidth > 0))
+      .toBe(true);
+    await shotScreen(page, 'state-messages-id-note-video-paused');
+  });
+
+  test('state /messages/[id] note-video-playing', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111114';
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'A clip',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          hasVideo: true,
+          videoContentType: 'video/mp4',
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/messages/${id}/video.mp4`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'video/mp4',
+        path: 'e2e/fixtures/note-still.mp4',
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText('A clip')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((el: HTMLVideoElement) => el.videoWidth > 0))
+      .toBe(true);
+    await page.getByRole('button', { name: 'Play' }).click();
+    await expect(page.getByRole('button', { name: 'Play' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Full screen' })).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((el: HTMLVideoElement) => el.paused))
+      .toBe(false);
+    await shotScreen(page, 'state-messages-id-note-video-playing');
   });
 
   test('state /messages/[id] signed-in', async ({ page }) => {

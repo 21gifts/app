@@ -2,7 +2,7 @@
 
 import { MapPin } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ExternalAuthorSheet } from '@/components/ExternalAuthorSheet';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -24,6 +24,7 @@ import {
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
+  markNotificationsReadForMessage,
 } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
@@ -141,8 +142,6 @@ function PublicThreadCard({
         <ForumVideo
           src={forumVideoSrc(note.id, note.videoContentType)}
           poster={photoUrl ?? undefined}
-          controls
-          playsInline
           preload="metadata"
           className="mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
           onError={() => {
@@ -265,8 +264,10 @@ function PublicThreadCard({
  * the read-only cards. When hydrate is ready and both session and account are
  * set, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
  * so copy, reply, Gift on a payable nested reply, and staff delete work.
- * Passes optional `seedReply` when the highlighted row is a hidden reply. No
- * OnboardingGate, top-level composer, or envelope.
+ * Passes optional `seedReply` when the highlighted row is a hidden reply. A
+ * signed-in load that reaches ready with a root marks that root's
+ * notifications read once (`markNotificationsReadForMessage`); a signed-out
+ * visitor does not. No OnboardingGate, top-level composer, or envelope.
  *
  * @param props - Dynamic route `id`.
  * @returns Loading, missing, error, unsigned cards, or the signed-in thread.
@@ -285,6 +286,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const markedRootStampRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!MESSAGE_ID_RE.test(id)) {
@@ -305,12 +307,13 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     setReplies([]);
     setHighlightId(null);
 
-    const authed = session !== null;
+    const sessionToken = session;
+    const authed = sessionToken !== null;
     const loadNote = authed
-      ? (noteId: string) => fetchForumMessage(session, noteId)
+      ? (noteId: string) => fetchForumMessage(sessionToken, noteId)
       : fetchPublicMessage;
     const loadReplies = authed
-      ? (rootId: string) => fetchReplies(session, rootId)
+      ? (rootId: string) => fetchReplies(sessionToken, rootId)
       : fetchPublicReplies;
 
     void (async () => {
@@ -350,6 +353,13 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
         setReplies(replies);
         setHighlightId(highlight);
         setStatus('ready');
+        if (authed) {
+          const stamp = `${sessionToken}:${id}:${rootNote.id}`;
+          if (markedRootStampRef.current !== stamp) {
+            markedRootStampRef.current = stamp;
+            void markNotificationsReadForMessage(sessionToken, rootNote.id).catch(() => undefined);
+          }
+        }
       } catch {
         if (!cancelled) {
           setStatus('error');

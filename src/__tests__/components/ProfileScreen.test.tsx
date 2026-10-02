@@ -96,6 +96,7 @@ vi.mock('@/lib/api', () => ({
   openConversation: vi.fn(),
   postMessage: vi.fn(),
   postMessageInvoice: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 vi.mock('@/components/WideImageCropper', () => ({

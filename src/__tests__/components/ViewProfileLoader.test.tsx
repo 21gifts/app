@@ -44,6 +44,7 @@ const EMPTY_ACTIVITY: AccountActivity = {
 vi.mock('@/lib/api', () => ({
   fetchViewProfile: vi.fn(),
   fetchViewActivity: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 import { fetchViewActivity, fetchViewProfile } from '@/lib/api';

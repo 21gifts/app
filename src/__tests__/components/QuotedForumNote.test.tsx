@@ -34,6 +34,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
   fetchShortLink: vi.fn(),
   fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 vi.mock('@/lib/note-translate', () => ({

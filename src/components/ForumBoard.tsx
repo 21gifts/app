@@ -1251,8 +1251,6 @@ export function ForumBoard({
                   <ForumVideo
                     src={videoSrc}
                     poster={photoUrl}
-                    controls
-                    playsInline
                     preload="metadata"
                     className="mt-2 mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
                     onClick={stopCardToggle}

@@ -55,6 +55,7 @@ vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn().mockResolvedValue(null),
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 import { fetchPublicMessage } from '@/lib/api';
@@ -4055,8 +4056,7 @@ describe('ForumBoard', () => {
     const video = document.querySelector('ul video');
     expect(video).toBeTruthy();
     expect(video?.getAttribute('src')).toBe('/messages/vid-webm/video.webm');
-    expect(video?.hasAttribute('controls')).toBe(true);
-    expect(video?.getAttribute('controlsList')).toContain('nofullscreen');
+    expect(video?.hasAttribute('controls')).toBe(false);
     expect(video?.hasAttribute('playsinline')).toBe(true);
     const frame = video?.parentElement;
     if (!(frame instanceof HTMLElement)) {

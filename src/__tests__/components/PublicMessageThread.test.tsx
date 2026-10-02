@@ -12,6 +12,7 @@ import {
   setMessageShopText,
   fetchPublicMessage,
   fetchReplies,
+  markNotificationsReadForMessage,
   postMessage,
   postMessageInvoice,
   setLightningAddress,
@@ -56,6 +57,7 @@ vi.mock('@/lib/api', () => ({
   setLightningAddress: vi.fn(),
   setName: vi.fn(),
   agreeToRules: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 const account: Account = {
@@ -197,6 +199,7 @@ beforeEach(() => {
     parentId: MESSAGE_ID,
   });
   vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  vi.mocked(markNotificationsReadForMessage).mockResolvedValue({ ok: true, tags: [] });
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -1502,15 +1505,19 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
+    vi.mocked(markNotificationsReadForMessage).mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
     await waitFor(() => {
       expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
     });
+    expect(markNotificationsReadForMessage).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Write a reaction')).toBeTruthy();
     });
     expect(fetchReplies).toHaveBeenCalledTimes(2);
+    expect(markNotificationsReadForMessage).toHaveBeenCalledTimes(1);
+    expect(markNotificationsReadForMessage).toHaveBeenCalledWith('sess', MESSAGE_ID);
   });
 
   it('keeps the replies error when retry fails', async () => {

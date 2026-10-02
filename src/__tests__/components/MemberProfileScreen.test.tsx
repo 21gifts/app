@@ -16,6 +16,7 @@ import {
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchReplies,
+  markNotificationsReadForMessage,
   openConversation,
   postMessage,
   postMessageInvoice,
@@ -80,6 +81,7 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchShopNoteEdits: vi.fn(),
   setMessageShopText: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 let hydrateReady = true;
@@ -1265,6 +1267,7 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     expect(fetchReplies).toHaveBeenCalledWith('sess', note.id);
+    expect(markNotificationsReadForMessage).toHaveBeenCalledWith('sess', note.id);
   });
 
   it('rejects a non-numeric pay amount', async () => {
