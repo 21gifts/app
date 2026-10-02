@@ -13100,7 +13100,8 @@ test('Function: proxyLnurlInvoicePost — POST /lnurl/invoice returns the invoic
     data: { target: 'bob@example.com', amountMsat: 21_000 },
   });
   expect(res.status()).toBe(200);
-  expect(((await res.json()) as { pr: string }).pr).toMatch(/^lnbc/);
+  // 21'000 msat is 210'000 pico-bitcoin (BOLT11 multiplier p).
+  expect(((await res.json()) as { pr: string }).pr).toBe('lnbc210000p1mockrelay');
 });
 
 test('Function: postLnurlPayRequest — refusals carry the contract error texts', async ({

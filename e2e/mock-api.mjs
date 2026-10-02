@@ -864,7 +864,8 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Comment too long' });
       return;
     }
-    json(res, 200, { pr: `lnbc${amountMsat}n1mockrelay` });
+    // BOLT11 pico (p) is 0.1 msat, so this invoice encodes exactly amountMsat.
+    json(res, 200, { pr: `lnbc${amountMsat * 10}p1mockrelay` });
     return;
   }
 
