@@ -442,7 +442,7 @@
 
 - **Purpose:** Post-login screen to choose the unique `@21.gifts` username. Cannot skip. The Wallet of Satoshi hint is left out once the account's in-app wallet is verified (`sparkWalletVerified`).
 - **Inputs:** Auth store session; `UsernameForm`.
-- **Returns / side effects:** Heading **Your 21.gifts name**, hint, field, **Continue**. Posts `POST /me/username`. Taken/invalid stay on the form.
+- **Returns / side effects:** Heading **Your 21.gifts name**, hint (left out once the wallet is verified), field, **Continue**. Posts `POST /me/username`. Taken/invalid stay on the form.
 - **Used by:** Screen `/setup/username`.
 
 ## Function: UsernameSetupPage
@@ -3764,7 +3764,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWallet
 
-- **Purpose:** State the `/wallet` balance block shows plus `unlock` and `retry`. `disabled` for an unconfigured wallet or an account that cannot produce a phrase. Shows `connecting` during the passkey prompt; a failed unlock shows `error`; a dismissed prompt returns to `locked`. `?visual=balance-locked|balance-connecting|balance-ready|balance-error` pins a fixture state for screenshots (ready fixture `₿21'000`); `?visual=history-empty|history-rows|history-error` pins `ready` for the payment-list shots only in a Playwright build (`getE2eNow()` set); while pinned, unlock and retry are inert. `retry` unlocks again without a tab phrase, reloads the page when `walletNeedsReload()` is true, and otherwise reconnects.
+- **Purpose:** State the `/wallet` balance block shows plus `unlock` and `retry`. `disabled` for an unconfigured wallet or an account that cannot produce a phrase. Shows `connecting` during the passkey prompt; a failed unlock shows `error`; a dismissed prompt returns to `locked`. `?visual=balance-locked|balance-connecting|balance-ready|balance-error` (ready fixture `₿21'000`) and `?visual=history-empty|history-rows|history-error` (pinned as `ready` for the payment-list shots) pin a fixture state for screenshots only in a Playwright build (`getE2eNow()` set); while pinned, unlock and retry are inert. `retry` unlocks again without a tab phrase, reloads the page when `walletNeedsReload()` is true, and otherwise reconnects.
 - **Inputs:** None (reads the auth store and `useWalletStore`).
 - **Returns / side effects:** `{ status, balanceSats, unlock, retry }`.
 - **Used by:** `WalletScreen`.

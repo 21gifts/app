@@ -1039,7 +1039,7 @@ Fill `AppShell` `align="start"`; `topLeft={<ProfileChromeLeft wordmark={<Wordmar
 
 ### `/setup/username`
 
-Fill `AppShell` `align="start"`; `topLeft={<ProfileChromeLeft wordmark={<Wordmark />} />}` (span, not a link) `topRight={<SignedInChrome />}`. `OnboardingGate screen="username"` → `UsernameSetup`: `AppShellHeader` **h1** “Your 21.gifts name”, hint, `UsernameForm onboarding` (field, alert, **Continue** in `AppShellFooter`). No Skip. Once `sparkWalletVerified` is true the field shows the current username, field and **Continue** are `disabled`, and a muted line `setup.usernameFrozen` (linked by `aria-describedby`) says why. Handbook states: default, username-frozen.
+Fill `AppShell` `align="start"`; `topLeft={<ProfileChromeLeft wordmark={<Wordmark />} />}` (span, not a link) `topRight={<SignedInChrome />}`. `OnboardingGate screen="username"` → `UsernameSetup`: `AppShellHeader` **h1** “Your 21.gifts name”, hint (`setup.usernameHint`, left out once `sparkWalletVerified` is true), `UsernameForm onboarding` (field, alert, **Continue** in `AppShellFooter`). No Skip. Once `sparkWalletVerified` is true the field shows the current username, field and **Continue** are `disabled`, and a muted line `setup.usernameFrozen` (linked by `aria-describedby`) says why. Handbook states: default, username-frozen.
 
 ### `/setup/address`
 
