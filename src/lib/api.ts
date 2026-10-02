@@ -1537,7 +1537,7 @@ export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | nul
 export async function fetchMessages(
   sessionToken: string,
   args: {
-    mode?: 'active' | 'unpaid' | 'all' | 'popular';
+    mode?: 'active' | 'unpaid' | 'donations' | 'all' | 'popular';
     limit?: number;
     cursor?: string | null;
     hashtag?: string;

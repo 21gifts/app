@@ -12025,3 +12025,50 @@ test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', 
   await expect(people).toHaveCount(0);
   await expect(box).toHaveValue('xhi @');
 });
+
+test('Donations and loans filters progress bars and orders open goals before funded goals', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  const modes: string[] = [];
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    modes.push(new URL(route.request().url()).searchParams.get('mode') ?? '');
+    const base = {
+      name: 'Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+    };
+    await route.fulfill({
+      json: {
+        messages: [
+          { ...base, id: 'funded', text: 'Funded goal', goalSats: 9000, sats: 9000 },
+          { ...base, id: 'small', text: 'Small loan', goalSats: 100, goalRepayable: true },
+          { ...base, id: 'ordinary', text: 'Ordinary post', sats: 1 },
+          { ...base, id: 'large', text: 'Large donation', goalSats: 1000 },
+        ],
+      },
+    });
+  });
+  await page.goto('/welcome');
+  const view = page.getByRole('combobox', { name: 'Forum view' });
+  await view.click();
+  await expect(page.getByRole('option')).toHaveText([
+    'Active',
+    'No gifts yet',
+    'Donations and loans',
+    'All',
+    'Most popular',
+  ]);
+  await page.getByRole('option', { name: 'Donations and loans', exact: true }).click();
+  await expect.poll(() => modes.includes('donations')).toBe(true);
+  const notes = page.locator('[data-message-id]');
+  await expect(notes).toHaveCount(3);
+  await expect(notes.nth(0)).toContainText('Large donation');
+  await expect(notes.nth(1)).toContainText('Small loan');
+  await expect(notes.nth(2)).toContainText('Funded goal');
+  await expect(page.getByText('Ordinary post', { exact: true })).toHaveCount(0);
+  await chooseForumView(page, 'All');
+  await expect(page.getByText('Ordinary post', { exact: true })).toBeVisible();
+});

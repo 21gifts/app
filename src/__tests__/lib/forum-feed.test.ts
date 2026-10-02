@@ -155,7 +155,7 @@ afterEach(() => {
 describe('forum-feed', () => {
   it('defaults to active and lists modes Active → No gifts yet → All → Most popular', () => {
     expect(DEFAULT_FORUM_FEED_MODE).toBe('active');
-    expect(FORUM_FEED_MODES).toEqual(['active', 'unpaid', 'all', 'popular']);
+    expect(FORUM_FEED_MODES).toEqual(['active', 'unpaid', 'donations', 'all', 'popular']);
   });
 
   it('detects a fetched message id missing from the loaded list', () => {
@@ -327,5 +327,87 @@ describe('forum-feed', () => {
     requestForumCompose();
     expect(consumePendingForumCompose()).toBe(true);
     expect(consumeSkipIntroduceOverlay()).toBe(true);
+  });
+});
+
+describe('donations and loans', () => {
+  it('selects progress-bar posts and ranks open goals before funded goals without mutation', () => {
+    const goal = (
+      id: string,
+      goalSats: number,
+      sats = 0,
+      extra: Partial<ForumMessage> = {},
+    ): ForumMessage => ({ ...BOB, id, goalSats, sats, ...extra });
+    const rows = [
+      goal('paid', 9000, 9000),
+      goal('small', 100),
+      ADA,
+      goal('large', 1000, 1),
+      goal('credit', 500, 0, { goalRepayable: true }),
+      goal('over', 10000, 20000),
+      goal('reply', 99999, 0, { parentId: 'parent' }),
+      goal('zero', 0),
+      goal('invalid', Infinity),
+      goal('tie-a', 1000),
+      goal('tie-z', 1000),
+      goal('newer', 1000, 0, { createdAt: '2026-09-01T00:00:00.000Z' }),
+    ];
+    const before = [...rows];
+    expect(visibleForumMessages(rows, 'donations').map((row) => row.id)).toEqual([
+      'newer',
+      'tie-z',
+      'tie-a',
+      'large',
+      'credit',
+      'small',
+      'over',
+      'paid',
+    ]);
+    expect(rows).toEqual(before);
+    expect(visibleForumMessages([], 'donations')).toEqual([]);
+  });
+  it('uses definition-currency totals instead of rounded percentages or Bitcoin conversion', () => {
+    const base = { ...BOB, goalSats: 1000, sats: 1000 };
+    for (const [goalCurrency, field] of [
+      ['USD', 'amountUsd'],
+      ['CHF', 'amountChf'],
+      ['EUR', 'amountEur'],
+      ['PHP', 'amountPhp'],
+    ] as const) {
+      const paid = {
+        ...base,
+        id: 'paid',
+        goalCurrency,
+        goalAmount: '10',
+        [field]: '10.00',
+        sats: 1,
+      };
+      const open = {
+        ...base,
+        id: 'open',
+        goalCurrency,
+        goalAmount: '10.00000001',
+        [field]: '10.00',
+      };
+      expect(visibleForumMessages([paid, open], 'donations').map((row) => row.id)).toEqual([
+        'open',
+        'paid',
+      ]);
+    }
+    const paid = { ...base, id: 'paid', goalCurrency: 'BTC' as const };
+    const missing = { ...base, id: 'missing', goalCurrency: 'EUR' as const, goalAmount: '10' };
+    expect(visibleForumMessages([paid, missing], 'donations').map((row) => row.id)).toEqual([
+      'missing',
+      'paid',
+    ]);
+    expect(
+      visibleForumMessages(
+        [
+          { ...paid, goalCurrency: 'USD', goalAmount: 'bad' },
+          { ...paid, id: 'second', goalCurrency: 'USD' },
+        ],
+        'donations',
+      ),
+    ).toHaveLength(2);
   });
 });

@@ -13688,6 +13688,9 @@ test.describe('welcome forum variants', () => {
     await expect(list).toBeVisible();
     await expect(list.getByRole('option', { name: 'Active', exact: true })).toBeVisible();
     await expect(list.getByRole('option', { name: 'No gifts yet', exact: true })).toBeVisible();
+    await expect(
+      list.getByRole('option', { name: 'Donations and loans', exact: true }),
+    ).toBeVisible();
     await expect(list.getByRole('option', { name: 'All', exact: true })).toBeVisible();
     await expect(list.getByRole('option', { name: 'Most popular', exact: true })).toBeVisible();
     await shotScreen(page, 'state-welcome-filter-open');
