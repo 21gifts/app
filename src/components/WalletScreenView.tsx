@@ -122,12 +122,11 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
 
 /**
  * `/wallet` shows the wallet balance, the send block (while the wallet is
- * ready, a send is in flight, its Sent line shows, or a send alert is up), and the receive address,
- * then the payment list while the wallet is ready, above the recovery entry.
- * While the send block shows, Back first closes an open send step (or is held
- * while a confirm send is in flight). The 12 words and
- * recovery errors render
- * only on `/wallet/phrase`.
+ * ready, a send is in flight, its Sent line shows, or a send alert is up), and
+ * the receive address, then the payment list while the wallet is ready, above
+ * the recovery entry. While the send block shows, Back first closes an open
+ * send step (or is held while a confirm send is in flight). The 12 words and
+ * recovery errors render only on `/wallet/phrase`.
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.

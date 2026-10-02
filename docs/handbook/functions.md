@@ -3697,11 +3697,11 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Zustand store for the in-app wallet: `status` (`disabled`, `locked`, `connecting`, `ready`, `error`), `balanceSats`, `identityPubkey`, and `syncCount` (advanced by every `setReady`, that is after connect and after each SDK sync; the payment list reloads when it changes).
 - **Inputs:** Hook. Actions `setConnecting`, `setReady`, `setError`, `reset`.
 - **Returns / side effects:** Wallet state object. Resting status is `disabled` without a key, else `locked`.
-- **Used by:** The wallet service, `useWallet`, and `useWalletHistory`.
+- **Used by:** The wallet service, `useWallet`,, `useWallet`, `useWalletPay`, and `useWalletHistorySend`.
 
 ## Function: loadWalletSdk
 
-- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `registerAddress`, `listPayments`, `parse`, `prepare`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. `registerAddress` registers only the given username (no availability check is exposed); `listPayments` asks for one page of Bitcoin payments newest first (`assetFilter` bitcoin, so token payments whose amounts are not satoshis are left out) and maps each row with `toWalletPayment`. `parse` maps the SDK's `parse` result to a `WalletTarget`: a payment request or address it pays from text (BOLT11, Spark address, Spark invoice; a BIP21 URI uses its first payable method, and its amount when that method has none, marked `amountFromUri` so it is passed to `prepare`), an LNURL-pay receiver or Lightning address with its sat bounds (at least 1 sat; bounds that leave no whole sat make it `unsupported`) and comment limit, `onchain` for a base-chain address, or `unsupported` (token invoices, a BOLT11 request for less than one whole sat, and everything else). `prepare` calls `prepareSendPayment({ paymentRequest: { type: 'input', input } })` (with `amount` when the text has none) or `prepareLnurlPay`, reads amount and fee, and returns `send`, which calls `sendPayment` or `lnurlPay` with that prepare response. A rejected or still pending initialisation is reported by `walletNeedsReload`.
+- **Purpose:** The only module that imports `@breeztech/breez-sdk-spark` (its `/ssr` entry, dynamic import, `init()` first). Returns the narrow `WalletSdk` (`connect` → `getInfo`, `addEventListener`, `registerAddress`, `listPayments`, `parse`, `prepare`, `disconnect`); `getInfo` can request a synchronized read with `ensureSynced`. `registerAddress` registers only the given username (no availability check is exposed); `listPayments` asks for one page of Bitcoin payments newest first (`assetFilter` bitcoin, so token payments whose amounts are not satoshis are left out) and maps each row with `toWalletPayment`. `parse` maps the SDK's `parse` result to a `WalletTarget`: a payment request or address it pays from text (BOLT11, Spark address, Spark invoice; a BIP21 URI uses its first payable method, and its amount when that method has none, marked `amountFromUri` so it is passed to `prepare`; its recipient is the shortened request or address, never the issuer's description), an LNURL-pay receiver or Lightning address with its sat bounds (at least 1 sat; bounds that leave no whole sat make it `unsupported`) and comment limit, `onchain` for a base-chain address, or `unsupported` (token invoices, a BOLT11 request for less than one whole sat, and everything else). `prepare` calls `prepareSendPayment({ paymentRequest: { type: 'input', input } })` (with `amount` when the text has none) or `prepareLnurlPay`, reads amount and fee, and returns `send`, which calls `sendPayment` or `lnurlPay` with that prepare response. A rejected or still pending initialisation is reported by `walletNeedsReload`.
 - **Inputs:** None.
 - **Returns / side effects:** A `WalletSdk`. Uses `defaultConfig('mainnet')` with the api key, `lnurlDomain` set to the host passed by the service (the app's own host), and a fixed storage name. The SDK keeps wallet state in IndexedDB; the phrase is passed in memory only.
 - **Used by:** The wallet service as the default loader.
@@ -3715,10 +3715,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: refreshWallet
 
-- **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. When reads overlap only the latest one counts: it alone writes the store, and only its failure closes the connection and sets `error`. The failure of a stale read is ignored.
+- **Purpose:** Reads `getInfo` and stores balance and identity key. The balance is never derived from payment events. When reads overlap only the latest one counts (this one or the synced read inside `payFromWallet`, which shares the read counter): it alone writes the store, and only a failed refresh that is still the latest closes the connection and sets `error`. The failure of a stale read is ignored.
 - **Inputs:** None.
 - **Returns / side effects:** void. Updates `useWalletStore`.
-- **Used by:** The `synced` listener that `connectWallet` registers.
+- **Used by:** The `synced` listener that `connectWallet` registers, and the `send` that `payFromWallet` returns.
 
 ## Function: disconnectWallet
 
@@ -3760,14 +3760,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** On-demand unlock: `obtainPrfFirstFromGet` of the account's `passkeyCredentialId`, then `rememberPhraseFromPrf`. No api call. One ceremony per tab: a call while one is in progress, also from a remounted screen, joins it and gets the same result.
 - **Inputs:** None (reads the auth store).
 - **Returns / side effects:** `'unlocked'`, `'cancelled'`, or `'failed'`.
-- **Used by:** `useWallet.unlock`.
+- **Used by:** `useWallet.unlock`, `useWalletPay.unlock`.
 
 ## Function: canUnlockWallet
 
 - **Purpose:** True when the account has `walletRequired === true` and a non-empty `passkeyCredentialId`.
 - **Inputs:** `account` or `null`.
 - **Returns / side effects:** Type predicate `account is Account & { passkeyCredentialId: string }`.
-- **Used by:** `useWallet`, `rememberPhraseFromPrf`, `unlockWalletPhrase`.
+- **Used by:** `useWallet`, `useWalletPay`, `rememberPhraseFromPrf`, `unlockWalletPhrase`.
 
 ## Function: useWallet
 
@@ -3920,7 +3920,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** The wallet pay primitive. Prepares a payment on the current connection and returns amount and fee for confirmation; the returned `send` pays it once, gives up waiting after 30 s, and refreshes the balance. Nothing is retried. A send after the wallet was disconnected or replaced, or a second call of `send`, reports `failed` without paying.
 - **Inputs:** `WalletPayRequest`: `{ type: 'input', input, amountSats? }` or `{ type: 'lnurl', request, amountSats, comment? }`.
-- **Returns / side effects:** `confirm` (`amountSats`, `feeSats`, `send`), `insufficient` (the balance read before confirmation does not cover amount plus fee, or the SDK says so), `failed` (prepare or the balance read failed), or `unlock` (no connection). `send` resolves to `paid`, `insufficient`, or `failed` (an error or the 30 s limit). Never rejects.
+- **Returns / side effects:** `confirm` (`amountSats`, `feeSats`, `send`), `insufficient` (the balance read before confirmation does not cover amount plus fee, or the SDK says so), `failed` (prepare or the balance read failed, or the connection changed during prepare), or `unlock` (no connection). The synced balance read also updates `useWalletStore` while it is the latest read of the current connection. `send` resolves to `paid`, `insufficient`, or `failed` (an error or the 30 s limit). Never rejects.
 - **Used by:** `useWalletPay` (gift pay sheets), `useWalletSend` (`/wallet`).
 
 ## Function: parseWalletInput
@@ -3932,7 +3932,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletPay
 
-- **Purpose:** Chooses and runs the in-app pay path for one invoice of a gift pay sheet. The path is offered only when the api sent a `sparkInvoice` and the wallet is `ready`, `connecting`, or `locked` for an account that can unlock it with one passkey prompt (`canUnlockWallet`). Otherwise the view is `fallback`, which is the existing desktop QR plus Wallet of Satoshi button (smartphone: button only). A ready wallet prepares at once so the fee is known before **Pay from wallet**. After a send the view stays `paying` while the sheet's own long-poll waits; it closes the sheet on confirmation. If the sheet is still open 60 s after the send (a send that failed or timed out, or a repayment, whose screen refreshes its ledger but does not close the sheet), it shows `unconfirmed`. A failed prepare or a failed unlock shows `fallback`. A prepared amount that differs from `amountSats` shows `fallback`. When the wallet leaves `ready` before the send (opening again, locked, or failed), the phase restarts and late results are dropped. After `insufficient`, a balance above the lowest one seen since (or a first known balance) prepares again; a send is never retried on its own. A new `sparkInvoice` starts over; late results of the old one are dropped.
+- **Purpose:** Chooses and runs the in-app pay path for one invoice of a gift pay sheet. The path is offered only when the api sent a `sparkInvoice` and the wallet is `ready`, `connecting`, or `locked` for an account that can unlock it with one passkey prompt (`canUnlockWallet`). Otherwise the view is `fallback`, which is the existing desktop QR plus Wallet of Satoshi button (smartphone: button only). A ready wallet prepares at once so the fee is known before **Pay from wallet**. After a send the view stays `paying` while the sheet's own long-poll waits; it closes the sheet on confirmation. If the sheet is still open 60 s after the send (a send that failed or timed out, or a repayment, whose screen refreshes its ledger but does not close the sheet), it shows `unconfirmed`. A failed prepare or a failed unlock shows `fallback`. A prepared amount that differs from `amountSats` shows `fallback`. When the wallet leaves `ready` before the send or while `insufficient` shows (opening again, locked, or failed), the phase restarts and late results are dropped. After `insufficient`, a balance above the lowest one seen since (or a first known balance) prepares again; a send is never retried on its own. A new `sparkInvoice` starts over; late results of the old one are dropped.
 - **Inputs:** `sparkInvoice` (`string`, `null`, or `undefined`) and `amountSats` (the whole sats the sheet shows). Reads `useWalletStore` and the auth store.
 - **Returns / side effects:** `{ view, feeSats, unlock, pay }`. `view` is `fallback`, `unlock`, `preparing`, `confirm`, `paying`, `insufficient`, or `unconfirmed`. `?visual=wallet-pay-unlock|wallet-pay-preparing|wallet-pay-confirm|wallet-pay-paying|wallet-pay-insufficient|wallet-pay-unconfirmed` pins a view with a zero fee for screenshots, only in a Playwright build and only with a `sparkInvoice`; actions are inert while pinned.
 - **Used by:** `WalletPay`.

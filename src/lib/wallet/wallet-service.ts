@@ -427,6 +427,9 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     return isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
   }
   const { amountSats, feeSats } = prepared;
+  if (connection !== conn) {
+    return { kind: 'failed' };
+  }
   try {
     balanceReadCounter += 1;
     const read = balanceReadCounter;

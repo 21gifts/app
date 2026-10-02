@@ -201,9 +201,10 @@ export interface WalletLnurlRequest {
  * What a pasted text pays, as read by {@link WalletConnection.parse}.
  *
  * - `request`: a payment request or an address the SDK pays from `input`.
- *   `amountSats` is `null` when the text carries no amount. `amountFromUri`
- *   marks an amount taken from a BIP21 URI for a method without one; it has
- *   to be passed to `prepare`.
+ *   `amountSats` is `null` when the text carries no amount. `recipient` is the
+ *   shortened request or address, never the issuer's description.
+ *   `amountFromUri` marks an amount taken from a BIP21 URI for a method
+ *   without one; it has to be passed to `prepare`.
  * - `lnurl`: an address whose server issues the request for a chosen amount,
  *   between `minSats` and `maxSats`, with a comment of at most
  *   `commentMaxLength` characters (`0` means no comment).
@@ -277,7 +278,6 @@ type ParsedInput =
   | {
       type: 'bolt11Invoice';
       amountMsat?: number;
-      description?: string;
       invoice: { bolt11: string };
     }
   | {
@@ -285,7 +285,6 @@ type ParsedInput =
       invoice: string;
       amount?: string;
       tokenIdentifier?: string;
-      description?: string;
     }
   | { type: 'sparkAddress'; address: string }
   | { type: 'lightningAddress'; address: string; payRequest: LnurlDetails }
@@ -316,12 +315,11 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
       if (bolt11.amountMsat !== undefined && bolt11.amountMsat < 1000) {
         return { type: 'unsupported' };
       }
-      const description = bolt11.description?.trim() ?? '';
       return {
         type: 'request',
         input: bolt11.invoice.bolt11,
         amountSats: bolt11.amountMsat === undefined ? null : Math.floor(bolt11.amountMsat / 1000),
-        recipient: description === '' ? shorten(bolt11.invoice.bolt11) : description,
+        recipient: shorten(bolt11.invoice.bolt11),
       };
     }
     case 'sparkInvoice': {
@@ -329,12 +327,11 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
       if (invoice.tokenIdentifier !== undefined) {
         return { type: 'unsupported' };
       }
-      const description = invoice.description?.trim() ?? '';
       return {
         type: 'request',
         input: invoice.invoice,
         amountSats: invoice.amount === undefined ? null : Number(invoice.amount),
-        recipient: description === '' ? shorten(invoice.invoice) : description,
+        recipient: shorten(invoice.invoice),
       };
     }
     case 'sparkAddress': {

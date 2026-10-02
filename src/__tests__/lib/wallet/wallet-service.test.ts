@@ -1104,6 +1104,24 @@ describe('payFromWallet', () => {
     });
   });
 
+  it('fails without reading the balance when the connection changed during prepare', async () => {
+    let finish: () => void = () => undefined;
+    const { getInfo } = await connectPaying({
+      prepare: () =>
+        new Promise((resolve) => {
+          finish = () => {
+            resolve({ amountSats: 1, feeSats: 0, send: async () => undefined });
+          };
+        }),
+    });
+    const reads = getInfo.mock.calls.length;
+    const pending = payFromWallet({ type: 'input', input: 'a' });
+    await disconnectWallet();
+    finish();
+    await expect(pending).resolves.toEqual({ kind: 'failed' });
+    expect(getInfo.mock.calls.length).toBe(reads);
+  });
+
   it('fails when the balance cannot be read before confirmation', async () => {
     const { getInfo } = await connectPaying({});
     getInfo.mockRejectedValueOnce(new Error('offline'));
