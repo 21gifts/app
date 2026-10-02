@@ -4160,14 +4160,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Next.js page for `/grants/apply`. Fill `AppShell` with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="profile"` around `FundingApplyScreen`. `/profile/apply` redirects to this path.
 - **Inputs:** None.
-- **Returns / side effects:** `FundingApplyScreen` inside fill AppShell: the paused card, or the apply walk for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
+- **Returns / side effects:** `FundingApplyScreen` inside fill AppShell: the paused card, the apply walk for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas`, or **You are not verified yet.** for a basis account with one of those names.
 - **Used by:** Route `/grants/apply`.
 
 ## Function: FundingApplyScreen
 
-- **Purpose:** Signed-in grant apply screen. While `grantApplicationsPaused` is true and `grantApplicationStillOpen` is false for the signed-in username, heading **21 gifts grant** and `FundingPausedCopy` only: no About-me steps, no questions, no POST. A missing account still shows that paused card. Usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` still see the existing apply walk. The apply walk stays in the code and is shown when that switch is false or the username is one of those three: fill About me, photo, and location, then two yes/no questions. The page chrome owns the back; this screen renders no back control.
+- **Purpose:** Signed-in grant apply screen. While `grantApplicationsPaused` is true and `grantApplicationStillOpen` is false for the signed-in username, heading **21 gifts grant** and `FundingPausedCopy` only: no About-me steps, no questions, no POST. A missing account still shows that paused card. Usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` open the existing apply card: a verified account fills About me, photo, and location, then two yes/no questions; a basis account sees **You are not verified yet.** and does not post. When that switch is false, every signed-in account opens that same card. The page chrome owns the back; this screen renders no back control.
 - **Inputs:** Session and account from `useAuthStore` (the account is read before choosing the pause card or the walk). Uses translations.
-- **Returns / side effects:** The paused card while applications are paused for this username. Otherwise the apply card, or `null` without a session when the walk is open. Yes on the truth question posts `postFundingApply` only when the walk is open.
+- **Returns / side effects:** The paused card while applications are paused and the username is not one of those three. Otherwise the apply card (verified: the walk; basis: **You are not verified yet.**), or `null` without a session when the walk is open. Yes on the truth question posts `postFundingApply` only when the walk is open and the account is verified.
 - **Used by:** `FundingApplyPage`.
 
 ## Function: grantApplicationsPaused

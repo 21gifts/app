@@ -90,16 +90,18 @@ function PausedGrantApply(): ReactElement {
 
 /**
  * Signed-in grant apply screen. While applications are paused this is the
- * pause card except for usernames in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`,
- * who still see the apply walk. A missing account still shows the pause card.
- * The walk stays in the code: fill About me, photo, and location, then two
- * yes/no questions. The first asks whether the posts match the core principles
- * and links to the about page. The second asks whether the posts are true.
- * Missing fields are next steps, not errors. Yes on the truth question posts
- * apply. No does not apply. The page chrome owns the back; this screen renders
- * none.
+ * pause card except for usernames in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`.
+ * A verified account with one of those names still sees the apply walk. A
+ * basis account with one of those names sees "You are not verified yet." and
+ * does not post. A missing account still shows the pause card. The walk stays
+ * in the code: fill About me, photo, and location, then two yes/no questions.
+ * The first asks whether the posts match the core principles and links to the
+ * about page. The second asks whether the posts are true. Missing fields are
+ * next steps, not errors. Yes on the truth question posts apply. No does not
+ * apply. The page chrome owns the back; this screen renders none.
  *
- * @returns The pause card, or the apply card, or `null` without a session when the walk is open.
+ * @returns The pause card, the apply card, the not-verified card for a basis
+ * account on the named roster, or `null` without a session when the walk is open.
  */
 export function FundingApplyScreen(): ReactElement | null {
   const account = useAuthStore((state) => state.account);
@@ -110,10 +112,11 @@ export function FundingApplyScreen(): ReactElement | null {
 }
 
 /**
- * The apply walk used when `grantApplicationsPaused` is false, or when
- * `grantApplicationStillOpen` is true for the signed-in username.
+ * The apply card used when `grantApplicationsPaused` is false, or when
+ * `grantApplicationStillOpen` is true for the signed-in username. A basis
+ * account stops at "You are not verified yet." and does not post.
  *
- * @returns The apply card, or `null` without a session.
+ * @returns The apply card, the not-verified card, or `null` without a session.
  */
 function OpenGrantApply(): ReactElement | null {
   const { t, locale } = useTranslations();
