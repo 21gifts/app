@@ -143,7 +143,7 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
       }
       connection = next;
       await next.addEventListener((event) => {
-        if (event.type === 'synced') {
+        if (event.type === 'synced' && run === runCounter && connection === next) {
           void refreshWallet();
         }
       });
