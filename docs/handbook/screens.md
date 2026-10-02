@@ -1101,7 +1101,7 @@ Ask step 4 of 4, **Daily** pressed, after the post fails.
 
 ### Variant: ask-open
 
-Active feed (default). Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000 · $1.00** (viewer USD from the gift-day rate; this fixture stores no snapshot), photo + caption, `ForumGoalBar` at 0%. Asks are not hidden on Active.
+**All**, not Active. Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000 · $1.00** (viewer USD from the gift-day rate; this fixture stores no snapshot), photo + caption, `ForumGoalBar` at 0%. A zero-sat ask is absent from Active, so this shot opens **All**.
 
 ![21.gifts welcome ask open](images/welcome-ask-open.png)
 

@@ -5618,6 +5618,7 @@ test('Function: formatDefinedGoalAmount — a peso ask shows the typed amount on
     });
   });
   await page.goto('/welcome');
+  await chooseForumView(page, 'All');
   await expect(page.getByText('₱200.00')).toBeVisible();
   await expect(page.getByText("₿1'000")).toBeVisible();
   await expect(page.getByText('$3.50')).toBeVisible();
@@ -5690,6 +5691,7 @@ test('Function: fiatPrefix — francs keep the code and pesos use the sign', asy
     });
   });
   await page.goto('/welcome');
+  await chooseForumView(page, 'All');
   await expect(page.getByText('CHF 10.00')).toBeVisible();
   await expect(page.getByText('₱200.00')).toBeVisible();
   await expect(page.getByText('PHP 200.00')).toHaveCount(0);
@@ -6949,6 +6951,7 @@ test('Function: noteKinds — a credit, a donation, and a shop each get their ta
     });
   });
   await page.goto('/welcome');
+  await chooseForumView(page, 'All');
   await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Donation', expanded: false })).toBeVisible();
   await expect(page.getByRole('link', { name: '#Shop' })).toBeVisible();
@@ -7007,6 +7010,7 @@ test('Function: MessageKindTags — pressing Loan explains the credit', async ({
     });
   });
   await page.goto('/welcome');
+  await chooseForumView(page, 'All');
   const loan = page.getByRole('button', { name: 'Loan' });
   await loan.click();
   await expect(page.getByRole('status')).toContainText('paid back');
