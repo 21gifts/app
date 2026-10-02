@@ -389,7 +389,7 @@ describe('ExternalAuthorProfile', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
     });
-    expect(screen.getByRole('button', { name: '0 reactions' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '0 reactions', pressed: false })).toBeTruthy();
     expect(screen.getByRole('button', { name: '2 posts' }).getAttribute('aria-pressed')).toBe(
       'false',
     );
@@ -438,7 +438,7 @@ describe('ExternalAuthorProfile', () => {
       expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
     });
     expect(screen.queryByRole('status')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '0 reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '0 reactions', pressed: false }));
     await waitFor(() => {
       expect(fetchReplies).toHaveBeenCalledWith('m1');
     });
