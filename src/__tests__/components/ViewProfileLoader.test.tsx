@@ -168,7 +168,7 @@ describe('ViewProfileLoader', () => {
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
   });
 
-  it('fetches activity when lightningAddress is blank', async () => {
+  it('fetches activity before the profile has a wallet', async () => {
     fetchProfile.mockResolvedValue({ ...profile, name: null, lightningAddress: '   ' });
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     await waitFor(() => {
