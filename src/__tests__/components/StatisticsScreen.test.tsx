@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatisticsScreen } from '@/components/StatisticsScreen';
 import type { Account } from '@/lib/api-types';
@@ -299,5 +299,63 @@ describe('StatisticsScreen', () => {
     renderWithLocale(<StatisticsScreen />);
     expect(fetchShopMock).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('ignores payout and shop results that arrive after unmount', async () => {
+    let resolvePayout!: (value: GiftStats) => void;
+    let resolveShop!: (value: ShopActivityDay[]) => void;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePayout = resolve;
+        }),
+    );
+    fetchShopMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveShop = resolve;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    const { unmount } = renderWithLocale(<StatisticsScreen />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+      expect(fetchShopMock).toHaveBeenCalled();
+    });
+    unmount();
+    await act(async () => {
+      resolvePayout(EMPTY_STATS);
+      resolveShop(shopActivityDays());
+    });
+    expect(screen.queryByRole('heading', { name: 'Statistics' })).toBeNull();
+  });
+
+  it('ignores payout and shop failures that arrive after unmount', async () => {
+    let rejectPayout!: (reason: Error) => void;
+    let rejectShop!: (reason: Error) => void;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectPayout = reject;
+        }),
+    );
+    fetchShopMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectShop = reject;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    const { unmount } = renderWithLocale(<StatisticsScreen />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+      expect(fetchShopMock).toHaveBeenCalled();
+    });
+    unmount();
+    await act(async () => {
+      rejectPayout(new Error('offline'));
+      rejectShop(new Error('offline'));
+    });
+    expect(screen.queryByRole('heading', { name: 'Statistics' })).toBeNull();
   });
 });

@@ -678,6 +678,10 @@ describe('SignedInChrome', () => {
       expect(moderation.querySelector('svg')).toBeTruthy();
       fireEvent.click(statistics);
       expectMenuClosed();
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expectMenuOpen();
+      fireEvent.click(moderation);
+      expectMenuClosed();
     },
   );
 
