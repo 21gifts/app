@@ -92,7 +92,7 @@ describe('HabitTracker', () => {
         screen.getByRole('button', { name: 'Delete resolution' }).hasAttribute('disabled'),
       ).toBe(false),
     );
-    fireEvent.click(screen.getAllByRole('radio', { name: 'Achieved', exact: true })[0]!);
+    fireEvent.click(screen.getAllByRole('radio', { name: /^Achieved$/ })[0]!);
     await waitFor(() =>
       expect(posted()[1]).toEqual({
         action: 'rate',
