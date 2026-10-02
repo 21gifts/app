@@ -20,7 +20,10 @@ export interface WalletPayProps {
   sparkInvoice: string | null | undefined;
   /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
   amountSats: number;
-  /** The existing invoice QR and external wallet button, shown when the in-app path is not used. */
+  /**
+   * The existing desktop invoice QR plus Wallet of Satoshi button (smartphone:
+   * button only), shown when the in-app path is not used.
+   */
   fallback: ReactNode;
   /** Latest gift-day totals for the fee's fiat line, or `null`. */
   rateDay: FiatRateDay | null;
