@@ -111,7 +111,7 @@ export function HabitTracker(): ReactElement {
         <>
           <nav
             aria-label={t('habit.weeks')}
-            className="flex flex-wrap items-center justify-between gap-3"
+            className="grid grid-cols-2 items-center gap-3 sm:grid-cols-[auto_1fr_auto]"
           >
             <Button
               variant="secondary"
@@ -120,7 +120,9 @@ export function HabitTracker(): ReactElement {
             >
               {t('habit.previous')}
             </Button>
-            <h2 className="font-semibold">{t('habit.week', { week: data.week.label })}</h2>
+            <h2 className="order-first col-span-2 text-center font-semibold sm:order-none sm:col-span-1">
+              {t('habit.week', { week: data.week.label })}
+            </h2>
             <Button
               variant="secondary"
               disabled={disabled || current}
