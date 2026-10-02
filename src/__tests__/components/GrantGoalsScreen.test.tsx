@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GrantGoalsScreen } from '@/components/GrantGoalsScreen';
 import type { Account, GrantContinuation } from '@/lib/api-types';
@@ -102,5 +102,39 @@ describe('GrantGoalsScreen', () => {
       expect(screen.getByText('1 shop meets this')).toBeTruthy();
     });
     expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('ignores a result that arrives after the screen unmounts', async () => {
+    let resolveGoal: (value: GrantContinuation) => void = () => undefined;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveGoal = resolve;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account });
+    const view = renderWithLocale(<GrantGoalsScreen />);
+    view.unmount();
+    await act(async () => {
+      resolveGoal(goal(1));
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess');
+  });
+
+  it('ignores a failure that arrives after the screen unmounts', async () => {
+    let rejectGoal: (error: Error) => void = () => undefined;
+    fetchMock.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectGoal = reject;
+        }),
+    );
+    useAuthStore.setState({ session: 'sess', account });
+    const view = renderWithLocale(<GrantGoalsScreen />);
+    view.unmount();
+    await act(async () => {
+      rejectGoal(new Error('down'));
+    });
+    expect(fetchMock).toHaveBeenCalledWith('sess');
   });
 });
