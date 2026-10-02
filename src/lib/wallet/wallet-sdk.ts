@@ -157,7 +157,8 @@ export interface WalletConnection {
    */
   registerAddress(username: string): Promise<void>;
   /**
-   * Lists payments newest first.
+   * Lists Bitcoin payments newest first (token payments are left out, since
+   * their amounts are not satoshis).
    *
    * @param page - Offset and limit.
    * @returns The payments on that page.
@@ -240,6 +241,7 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             offset: page.offset,
             limit: page.limit,
             sortAscending: false,
+            assetFilter: { type: 'bitcoin' },
           });
           return response.payments.map(toWalletPayment);
         },
