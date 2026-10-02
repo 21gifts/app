@@ -4633,7 +4633,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HabitTracker
 
-- **Purpose:** Public weekly resolution board. Founder resolutions stay above initiator resolutions. Add, edit, retire, and rate are shown only to the owner at initiator rank. The comment composer is only on the latest review week, and only while `commentsAllowed` is not false. A current week outside that window shows the Monday 16:00 to Saturday 20:00 sentence. An older week shows the archived sentence.
+- **Purpose:** Public weekly resolution board. Founder resolutions stay above initiator resolutions. Add is shown on the founder board at founder rank, and on the initiator board at initiator rank but not founder rank. Edit, retire, and rate are shown on the latest published week only for a habit the signed-in account authored, and only at initiator rank. Retire is shown only while that habit is not archived. The comment composer is only on the latest review week, and only while `commentsAllowed` is not false. A current week outside that window shows the Monday 16:00 to Saturday 20:00 sentence. An older week shows the archived sentence.
 - **Inputs:** Hydrated auth store and localized catalog. No props.
 - **Returns / side effects:** The tracker element. Loads `GET /habits/data` and posts add, edit, retire, rate, comment, and deleteComment to `POST /habits/data`. A failed save keeps the unsent draft.
 - **Used by:** `HabitTrackerPage` at `/habit-tracker`.

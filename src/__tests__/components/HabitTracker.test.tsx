@@ -491,6 +491,7 @@ it('displays an achieved outcome and cancels text editing without a mutation', a
   fireEvent.click(screen.getByRole('button', { name: 'Edit resolution' }));
   fireEvent.change(screen.getByLabelText('Edit resolution'), { target: { value: 'Unsaved' } });
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-  expect(screen.queryByLabelText('Edit resolution')).toBeNull();
+  expect(screen.queryByRole('textbox', { name: 'Edit resolution' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Edit resolution' })).toBeTruthy();
   expect(fetcher.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
 });
