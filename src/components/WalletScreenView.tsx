@@ -20,6 +20,19 @@ import { goToPreviousView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
+ * Whether the send block is on screen: while the wallet is ready, and also
+ * while a send is in flight or its Sent line shows, so a wallet that stops
+ * being ready does not hide a payment that may already have left.
+ *
+ * @param wallet - Balance state, or `undefined`.
+ * @param send - Send flow state.
+ * @returns Whether `WalletSend` renders and Back may ask it to close a step.
+ */
+function sendBlockShown(wallet: UseWalletResult | undefined, send: UseWalletSendResult): boolean {
+  return wallet?.status === 'ready' || send.busy || send.state.step === 'sent';
+}
+
+/**
  * Receive handle: the 21.gifts address and Open CryptoPay QR, plus a link
  * to `/pos`. No keypad and no charge. The button is content width, like the
  * other centered actions, not a full-width bar.
@@ -58,7 +71,7 @@ function WalletReceive({
           onRetry={wallet.retry}
         />
       )}
-      {wallet?.status === 'ready' && send !== undefined ? <WalletSend send={send} /> : null}
+      {send !== undefined && sendBlockShown(wallet, send) ? <WalletSend send={send} /> : null}
       {address !== null ? (
         <div className="flex flex-col items-stretch gap-3">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
@@ -99,8 +112,9 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
 /**
  * `/wallet` shows the wallet balance, the send block while the wallet is
  * ready, and the receive address, then the payment list while the wallet is
- * ready, above the recovery entry. While the wallet is ready, Back first
- * closes an open send step (or is held while a confirm send is in flight). The 12
+ * ready, above the recovery entry. While the wallet is ready, or while a send is in flight or its Sent line shows, Back first
+ * closes
+ * an open send step (or is held while a confirm send is in flight). The 12
  * words and recovery errors render only on `/wallet/phrase`.
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
@@ -128,7 +142,12 @@ export function WalletScreenView({
       hidePhrase();
       return;
     }
-    if (surface !== 'phrase' && wallet?.status === 'ready' && send?.cancel() === true) {
+    if (
+      surface !== 'phrase' &&
+      send !== undefined &&
+      sendBlockShown(wallet, send) &&
+      send.cancel() === true
+    ) {
       return;
     }
     if (surface !== 'phrase' && detailsRef.current?.open === true) {
