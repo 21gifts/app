@@ -810,12 +810,10 @@ test('wallet send-sent pin shows the sent amount and Done', async ({ page }) => 
   await expect(region.getByRole('button', { name: 'Done' })).toBeVisible();
 });
 
-test('wallet send-unsupported pin says a base-chain address is not supported yet', async ({
-  page,
-}) => {
+test('wallet send-onchain pin says a base-chain address is not supported yet', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
-  await page.goto('/wallet?visual=send-unsupported');
+  await page.goto('/wallet?visual=send-onchain');
   await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
     'Sending to this kind of Bitcoin address is not supported yet.',
   );

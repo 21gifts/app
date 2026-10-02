@@ -1012,6 +1012,7 @@ describe('payFromWallet', () => {
     });
     const result = await payFromWallet({ type: 'input', input: 'spark1x' });
     expect(prepare).toHaveBeenCalledWith({ type: 'input', input: 'spark1x' });
+    expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
     expect(result).toMatchObject({ kind: 'confirm', amountSats: 2_100, feeSats: 0 });
     if (result.kind !== 'confirm') {
       throw new Error('expected confirm');

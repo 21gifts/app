@@ -21,15 +21,21 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Whether the send block is on screen: while the wallet is ready, and also
- * while a send is in flight or its Sent line shows, so a wallet that stops
- * being ready does not hide a payment that may already have left.
+ * while a send is in flight, its Sent line shows, or an alert is up, so a
+ * wallet that stops being ready does not hide a payment that may already
+ * have left or the alert of one that failed.
  *
  * @param wallet - Balance state, or `undefined`.
  * @param send - Send flow state.
  * @returns Whether `WalletSend` renders and Back may ask it to close a step.
  */
-function sendBlockShown(wallet: UseWalletResult | undefined, send: UseWalletSendResult): boolean {
-  return wallet?.status === 'ready' || send.busy || send.state.step === 'sent';
+function isSendBlockShown(wallet: UseWalletResult | undefined, send: UseWalletSendResult): boolean {
+  return (
+    wallet?.status === 'ready' ||
+    send.busy ||
+    send.state.step === 'sent' ||
+    (send.state.step === 'input' && send.state.error !== null)
+  );
 }
 
 /**
@@ -71,7 +77,7 @@ function WalletReceive({
           onRetry={wallet.retry}
         />
       )}
-      {send !== undefined && sendBlockShown(wallet, send) ? <WalletSend send={send} /> : null}
+      {send !== undefined && isSendBlockShown(wallet, send) ? <WalletSend send={send} /> : null}
       {address !== null ? (
         <div className="flex flex-col items-stretch gap-3">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
@@ -106,15 +112,15 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
   /** Balance block state. Entry surface only. */
   wallet?: UseWalletResult;
   /**
-   * Send block state, shown while the wallet is ready, a send is in flight, or
-   * its Sent line shows. Entry surface only.
+   * Send block state, shown while the wallet is ready, a send is in flight, its
+   * Sent line shows, or a send alert is up. Entry surface only.
    */
   send?: UseWalletSendResult;
 };
 
 /**
  * `/wallet` shows the wallet balance, the send block (while the wallet is
- * ready, a send is in flight, or its Sent line shows), and the receive address,
+ * ready, a send is in flight, its Sent line shows, or a send alert is up), and the receive address,
  * then the payment list while the wallet is ready, above the recovery entry.
  * While the send block shows, Back first closes an open send step (or is held
  * while a confirm send is in flight). The 12 words and
@@ -149,7 +155,7 @@ export function WalletScreenView({
     if (
       surface !== 'phrase' &&
       send !== undefined &&
-      sendBlockShown(wallet, send) &&
+      isSendBlockShown(wallet, send) &&
       send.cancel() === true
     ) {
       return;

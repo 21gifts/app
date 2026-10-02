@@ -289,6 +289,16 @@ describe('payments', () => {
     });
   });
 
+  it('parse refuses a BOLT11 request for less than one whole sat', async () => {
+    sdkPay.parse.mockResolvedValue({
+      type: 'bolt11Invoice',
+      amountMsat: 500,
+      invoice: { bolt11: 'lnbc5p1' },
+    });
+    const conn = await connection();
+    await expect(conn.parse('lnbc5p1')).resolves.toEqual({ type: 'unsupported' });
+  });
+
   it('parse refuses a token invoice', async () => {
     sdkPay.parse.mockResolvedValue({
       type: 'sparkInvoice',

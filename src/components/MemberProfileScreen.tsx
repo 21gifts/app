@@ -872,6 +872,7 @@ export function MemberProfileScreen({
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -941,6 +942,7 @@ export function MemberProfileScreen({
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
       setReplyDraft('');
@@ -1089,6 +1091,7 @@ export function MemberProfileScreen({
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);

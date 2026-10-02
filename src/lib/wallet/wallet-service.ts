@@ -407,7 +407,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 
 /**
  * Prepares a payment from the in-app wallet and returns its amount and fee for
- * confirmation; the returned `send` pays it once and refreshes the balance.
+ * confirmation, checked against a balance read after the wallet has synced; the returned `send` pays it once and refreshes the balance.
  * Never rejects.
  *
  * @param request - Request text to pay, or a receiver that takes an amount.
@@ -426,7 +426,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
   }
   const { amountSats, feeSats } = prepared;
   try {
-    const info = await conn.getInfo();
+    const info = await conn.getInfo({ ensureSynced: true });
     if (info.balanceSats < amountSats + feeSats) {
       return { kind: 'insufficient' };
     }
@@ -462,7 +462,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
  * @param text - Trimmed input.
  * @returns Whether the text looks like `name@domain` or an LNURL.
  */
-function namesReceiverServer(text: string): boolean {
+function isReceiverServerName(text: string): boolean {
   const bare = text.replace(/^lightning:/i, '');
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bare) || /^lnurl/i.test(bare);
 }
@@ -485,6 +485,6 @@ export async function parseWalletInput(text: string): Promise<WalletParseResult>
   try {
     return { kind: 'target', target: await conn.parse(trimmed) };
   } catch {
-    return namesReceiverServer(trimmed) ? { kind: 'unreachable' } : { kind: 'invalid' };
+    return isReceiverServerName(trimmed) ? { kind: 'unreachable' } : { kind: 'invalid' };
   }
 }

@@ -10324,6 +10324,70 @@ describe('ForumLoader in-app wallet pay', () => {
 
   afterEach(resetWallet);
 
+  it('pays a gift on a payable reply from the wallet when the api issues a sparkInvoice', async () => {
+    setWalletUsable('ready');
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, sats: 21, replyCount: 1 }]));
+    repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21', amountSats: 21, sparkInvoice: SPARK_INVOICE });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy());
+    await revealAll();
+    const replyCard = await clickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays a paid reaction from the wallet when the api issues a sparkInvoice', async () => {
+    setWalletUsable('ready');
+    fetchMock.mockResolvedValue(forumPage([FOREIGN]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({
+      pr: 'lnbc21n1example',
+      amountSats: 21,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    publicFetchMock.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    fireEvent.click(await screen.findByRole('button', { name: 'Show reactions' }));
+    fireEvent.change(await screen.findByLabelText('Your reaction'), {
+      target: { value: 'Hi Bob' },
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(document.querySelector('[data-reply-pay-page]')).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays the posting fee for a reply from the wallet when the api issues a sparkInvoice', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, sats: 1, replyCount: 0 }]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
+    publicFetchMock.mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(<ForumLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Show reactions' }));
+    fireEvent.change(await screen.findByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(invoiceMock).toHaveBeenCalledWith(
+      'sess',
+      'fee-note',
+      1,
+      'inReplyTo:m-bob\nHi',
+      NO_RATE_SHOWN,
+    );
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
   it('pays the posting fee from the wallet when the api issues a sparkInvoice', async () => {
     useAuthStore.setState({
       session: 'sess',

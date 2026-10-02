@@ -18,7 +18,8 @@ import {
  * - `onchain`: a base-chain Bitcoin address, not supported yet.
  * - `unsupported`: recognised but not payable from this wallet.
  * - `insufficient`: the balance does not cover amount and fee.
- * - `failed`: prepare or send failed.
+ * - `failed`: prepare or send failed, or the wallet had no connection when the
+ *   text was read.
  */
 export type WalletSendError =
   'invalid' | 'unreachable' | 'onchain' | 'unsupported' | 'insufficient' | 'failed';
@@ -76,14 +77,15 @@ export const WALLET_SEND_VISUAL_FIXTURE = {
   minSats: 1,
   maxSats: 1_000_000,
   commentMaxLength: 140,
+  requestRecipient: 'sp1qexample…a9f2',
 } as const;
 
 /**
- * Pinned step from `?visual=send-…`, honoured only in a Playwright build.
+ * Name of the `?visual=` pin, honoured only in a Playwright build.
  *
- * @returns The pinned step, or `null`.
+ * @returns The pin name, or `null`.
  */
-function visualState(): WalletSendState | null {
+function visualName(): string | null {
   /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
     return null;
@@ -91,24 +93,44 @@ function visualState(): WalletSendState | null {
   if (getE2eNow() === null) {
     return null;
   }
+  return new URLSearchParams(window.location.search).get('visual');
+}
+
+/**
+ * Pinned step from `?visual=send-…`, honoured only in a Playwright build.
+ *
+ * @param name - Pin name from {@link visualName}.
+ * @returns The pinned step, or `null`.
+ */
+function visualState(name: string | null): WalletSendState | null {
   const fixture = WALLET_SEND_VISUAL_FIXTURE;
-  switch (new URLSearchParams(window.location.search).get('visual')) {
+  const lnurl: WalletSendAmountTarget = {
+    type: 'lnurl',
+    request: { details: null },
+    minSats: fixture.minSats,
+    maxSats: fixture.maxSats,
+    commentMaxLength: fixture.commentMaxLength,
+    recipient: fixture.recipient,
+  };
+  const request: WalletSendAmountTarget = {
+    type: 'request',
+    input: fixture.requestRecipient,
+    amountSats: null,
+    recipient: fixture.requestRecipient,
+  };
+  switch (name) {
     case 'send-input':
       return { step: 'input', error: null };
     case 'send-amount':
-      return {
-        step: 'amount',
-        target: {
-          type: 'lnurl',
-          request: { details: null },
-          minSats: fixture.minSats,
-          maxSats: fixture.maxSats,
-          commentMaxLength: fixture.commentMaxLength,
-          recipient: fixture.recipient,
-        },
-        amountError: false,
-      };
+      return { step: 'amount', target: lnurl, amountError: false };
+    case 'send-amount-error':
+      return { step: 'amount', target: lnurl, amountError: true };
+    case 'send-amount-request':
+      return { step: 'amount', target: request, amountError: false };
+    case 'send-amount-min':
+      return { step: 'amount', target: request, amountError: true };
     case 'send-confirm':
+    case 'send-confirm-sending':
       return {
         step: 'confirm',
         recipient: fixture.recipient,
@@ -117,8 +139,16 @@ function visualState(): WalletSendState | null {
       };
     case 'send-sent':
       return { step: 'sent', amountSats: fixture.amountSats };
-    case 'send-unsupported':
+    case 'send-onchain':
       return { step: 'input', error: 'onchain' };
+    case 'send-unsupported':
+      return { step: 'input', error: 'unsupported' };
+    case 'send-invalid':
+      return { step: 'input', error: 'invalid' };
+    case 'send-failed':
+      return { step: 'input', error: 'failed' };
+    case 'send-insufficient':
+      return { step: 'input', error: 'insufficient' };
     case 'send-error':
       return { step: 'input', error: 'unreachable' };
     default:
@@ -159,7 +189,8 @@ export function useWalletSend(): UseWalletSendResult {
   const [comment, setComment] = useState('');
   const sendRef = useRef<(() => Promise<WalletSendResult>) | null>(null);
   const generation = useRef(0);
-  const pinned = visualState();
+  const pin = visualName();
+  const pinned = visualState(pin);
   const status = useWalletStore((store) => store.status);
 
   useEffect(
@@ -335,7 +366,7 @@ export function useWalletSend(): UseWalletSendResult {
 
   return {
     state: pinned ?? state,
-    busy: pinned === null ? busy : false,
+    busy: pinned === null ? busy : pin === 'send-confirm-sending',
     text,
     setText,
     comment,

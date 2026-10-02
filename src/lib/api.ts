@@ -2580,7 +2580,8 @@ export async function fetchComposeTarget(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional NIP-57 comment shown as the gift reply body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
- * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi.
+ * @returns `{ pr, amountSats }` for QR / Wallet of Satoshi. The body may also carry
+ *   `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
  * @throws Error with collapsed visitor copy on 400/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
@@ -2899,7 +2900,8 @@ export async function fetchConversation(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional comment shown as the gift body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
- * @returns `{ pr, amountSats, messageId }` for QR / Wallet of Satoshi and poll.
+ * @returns `{ pr, amountSats, messageId }` for QR / Wallet of Satoshi and poll. The
+ *   body may also carry `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws Error with collapsed visitor copy on 400/404/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
  * {@link conversationInvoiceSchema}.

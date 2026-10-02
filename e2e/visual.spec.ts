@@ -1836,7 +1836,12 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByPlaceholder('Paste a Bitcoin payment request or address')).toBeVisible();
+    const field = page.getByPlaceholder('Paste a Bitcoin payment request or address');
+    await expect(field).toBeVisible();
+    await field.fill('bob@example.com');
+    await expect(
+      page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('button', { name: 'Continue' }),
+    ).toBeEnabled();
     await shotScreen(page, 'state-wallet-send-input');
   });
 
@@ -1886,6 +1891,18 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-sent');
   });
 
+  test('wallet send-onchain', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-onchain');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByText('Sending to this kind of Bitcoin address is not supported yet.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-onchain');
+  });
+
   test('wallet send-unsupported', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-unsupported');
@@ -1893,9 +1910,89 @@ test.describe('screen baselines', () => {
       timeout: 15_000,
     });
     await expect(
-      page.getByText('Sending to this kind of Bitcoin address is not supported yet.'),
+      page.getByText('This payment request cannot be paid from your wallet yet.'),
     ).toBeVisible();
     await shotScreen(page, 'state-wallet-send-unsupported');
+  });
+
+  test('wallet send-invalid', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-invalid');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText('This is not a Bitcoin payment request or address.')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-invalid');
+  });
+
+  test('wallet send-failed', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-failed');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByText('The payment could not be sent. Check your balance before you try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-failed');
+  });
+
+  test('wallet send-insufficient', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-insufficient');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-insufficient');
+  });
+
+  test('wallet send-amount-error', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount-error');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByRole('alert').filter({ hasText: /^Enter an amount between/ }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-amount-error');
+  });
+
+  test('wallet send-amount-request', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount-request');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText('To sp1qexample…a9f2')).toBeVisible();
+    await expect(page.getByLabel('Message (optional)')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-send-amount-request');
+  });
+
+  test('wallet send-amount-min', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount-min');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByRole('alert').filter({ hasText: /^Enter an amount of at least/ }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-amount-min');
+  });
+
+  test('wallet send-confirm-sending', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-sending');
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-wallet-send-confirm-sending');
   });
 
   test('wallet send-error', async ({ page }) => {
@@ -15561,6 +15658,106 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-repay-today-invoice');
   });
 
+  /** Opens today's repayment card with an in-app wallet pin (`?visual=wallet-pay-…`). */
+  async function openRepayWalletPay(page: Page, visual: string): Promise<void> {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            pr: 'lnbc21n1repay',
+            amountSats: 700,
+            sparkInvoice: 'spark1visualrepay',
+          }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/welcome?visual=${visual}`);
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: "Pay today's repayment" }).click();
+    await expect(page.getByText('Pay ₿700')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+  }
+
+  test('state /welcome repay-wallet-pay-unlock', async ({ page }) => {
+    await openRepayWalletPay(page, 'wallet-pay-unlock');
+    const slot = page.getByRole('button', { name: 'Unlock wallet' });
+    await expect(slot).toBeVisible();
+    await slot.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-repay-wallet-pay-unlock');
+  });
+
+  test('state /welcome repay-wallet-pay-preparing', async ({ page }) => {
+    await openRepayWalletPay(page, 'wallet-pay-preparing');
+    const slot = page.getByText('Checking your wallet…');
+    await expect(slot).toBeVisible();
+    await slot.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-repay-wallet-pay-preparing');
+  });
+
+  test('state /welcome repay-wallet-pay-confirm', async ({ page }) => {
+    await openRepayWalletPay(page, 'wallet-pay-confirm');
+    const slot = page.getByRole('button', { name: 'Pay from wallet' });
+    await expect(slot).toBeVisible();
+    await slot.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-repay-wallet-pay-confirm');
+  });
+
+  test('state /welcome repay-wallet-pay-paying', async ({ page }) => {
+    await openRepayWalletPay(page, 'wallet-pay-paying');
+    const slot = page.getByText('Paying from your wallet…');
+    await expect(slot).toBeVisible();
+    await slot.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-repay-wallet-pay-paying');
+  });
+
+  test('state /welcome repay-wallet-pay-insufficient', async ({ page }) => {
+    await openRepayWalletPay(page, 'wallet-pay-insufficient');
+    const slot = page.getByText('Your wallet does not have enough Bitcoin for this payment.');
+    await expect(slot).toBeVisible();
+    await slot.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-repay-wallet-pay-insufficient');
+  });
+
+  test('state /welcome repay-wallet-pay-unconfirmed', async ({ page }) => {
+    await openRepayWalletPay(page, 'wallet-pay-unconfirmed');
+    const slot = page.getByText(
+      'This payment is not confirmed yet. Check your balance again later.',
+    );
+    await expect(slot).toBeVisible();
+    await slot.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-repay-wallet-pay-unconfirmed');
+  });
+
   test('state /welcome ask-amount', async ({ page }) => {
     await seedAda(page);
     await fulfillRateDay(page);
@@ -17146,7 +17343,7 @@ test.describe('welcome forum variants', () => {
     });
   }
 
-  async function stubComposeInvoice(page: Page): Promise<void> {
+  async function stubComposeInvoice(page: Page, sparkInvoice?: string): Promise<void> {
     await page.route('**/messages/compose-target', async (route) => {
       await route.fulfill({
         status: 200,
@@ -17158,9 +17355,27 @@ test.describe('welcome forum variants', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc1test', amountSats: 1 }),
+        body: JSON.stringify(
+          sparkInvoice === undefined
+            ? { pr: 'lnbc1test', amountSats: 1 }
+            : { pr: 'lnbc1test', amountSats: 1, sparkInvoice },
+        ),
       });
     });
+  }
+
+  /** Opens the posting-fee pay slot with an in-app wallet pin (`?visual=wallet-pay-…`). */
+  async function openComposerWalletPay(page: Page, visual: string): Promise<void> {
+    await seedAda(page, 'basis', true);
+    await emptyForum(page);
+    await stubComposeInvoice(page, 'spark1visualcomposer');
+    await fulfillRateDay(page);
+    await page.goto(`/welcome?visual=${visual}`);
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello gifts');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    await expect(page.getByText('Pay ₿1')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
   }
 
   const TINY_GIF = Buffer.from(
@@ -17640,6 +17855,46 @@ test.describe('welcome forum variants', () => {
     }
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await shotScreen(page, 'state-welcome-pay-composer');
+  });
+
+  test('welcome composer-wallet-pay-unlock', async ({ page }) => {
+    await openComposerWalletPay(page, 'wallet-pay-unlock');
+    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-wallet-pay-unlock');
+  });
+
+  test('welcome composer-wallet-pay-preparing', async ({ page }) => {
+    await openComposerWalletPay(page, 'wallet-pay-preparing');
+    await expect(page.getByText('Checking your wallet…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-wallet-pay-preparing');
+  });
+
+  test('welcome composer-wallet-pay-confirm', async ({ page }) => {
+    await openComposerWalletPay(page, 'wallet-pay-confirm');
+    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-wallet-pay-confirm');
+  });
+
+  test('welcome composer-wallet-pay-paying', async ({ page }) => {
+    await openComposerWalletPay(page, 'wallet-pay-paying');
+    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-wallet-pay-paying');
+  });
+
+  test('welcome composer-wallet-pay-insufficient', async ({ page }) => {
+    await openComposerWalletPay(page, 'wallet-pay-insufficient');
+    await expect(
+      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-wallet-pay-insufficient');
+  });
+
+  test('welcome composer-wallet-pay-unconfirmed', async ({ page }) => {
+    await openComposerWalletPay(page, 'wallet-pay-unconfirmed');
+    await expect(
+      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-wallet-pay-unconfirmed');
   });
 
   test('welcome error-too-large', async ({ page }) => {

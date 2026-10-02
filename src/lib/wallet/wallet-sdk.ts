@@ -208,7 +208,8 @@ export interface WalletLnurlRequest {
  *   between `minSats` and `maxSats`, with a comment of at most
  *   `commentMaxLength` characters (`0` means no comment).
  * - `onchain`: a Bitcoin address on the base chain, not supported yet.
- * - `unsupported`: anything else the SDK recognised but the app does not pay.
+ * - `unsupported`: anything else the SDK recognised but the app does not pay,
+ *   including a BOLT11 request for less than one whole sat.
  */
 export type WalletTarget =
   | {
@@ -312,6 +313,9 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
   switch (parsed.type) {
     case 'bolt11Invoice': {
       const bolt11 = parsed as Extract<ParsedInput, { type: 'bolt11Invoice' }>;
+      if (bolt11.amountMsat !== undefined && bolt11.amountMsat < 1000) {
+        return { type: 'unsupported' };
+      }
       const description = bolt11.description?.trim() ?? '';
       return {
         type: 'request',

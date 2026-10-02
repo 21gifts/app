@@ -172,7 +172,7 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /wallet
 
 - **URL:** `/wallet` — signed-in receive address. The recovery phrase is a separate page. When the in-app wallet is enabled by configuration and the account can produce a phrase (`walletRequired` with a `passkeyCredentialId`), a balance block sits under the heading and above the address.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet** is first. With the wallet configured for an eligible account, the balance region is next: locked shows one line and **Unlock wallet**; connecting shows the pending line; ready shows the Bitcoin balance, with the default fiat beside it once a usable rate is loaded; error shows a sentence and **Try again**. A reload locks the wallet again because the phrase is kept in tab memory only. Without configuration the screen is as before and there is no balance region. While the wallet is ready (and while a send is in flight or its Sent line shows), a **Send Bitcoin** region fos`. While the wallet is ready, a **Payments** card under the address card lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list is in view, checked again after every completed load, and the list reloads after every wallet sync. Below the address card (and below the **Payments** card llowhiles the wallete is ready),balance: a **Payment request or address** field and **Continue**. A request or address without an amount then asks for an amount (the amount field with the ₿ / fiat switch and **Continue**); a Lightning address or LNURL receiver also shows its bounds and, when it takes one, an optional message within its limit. The confirm step shows **To …**, **Send ₿…** and **Fee With the wallet configured, a signed-in member whose account requires a wallet but whose wallet is not verified sees the blocking **Set up your wallet** dialog on every app screen until the setup succeeds or they log out. Wh₿…** with the default fiat, and **Send**. After sending: **Sent ₿…** and **Done**. A base-chain Bitcoin address shows that it is not supported yet; text that is not a payment request, a payment request this wallet cannot pay yet, a receiver whose server this browser cannot reach, a failed send, and too little balance each show one plain alert under the field. Then the centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. Below that card, the phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet** is first. With the wallet configured for an eligible account, the balance region is next: locked shows one line and **Unlock wallet**; connecting shows the pending line; ready shows the Bitcoin balance, with the default fiat beside it once a usable rate is loaded; error shows a sentence and **Try again**. A reload locks the wallet again because the phrase is kept in tab memory only. Without configuration the screen is as before and there is no balance region. While the wallet is ready (and while a send is in flight, its Sent line shows, or a send alert is up), a **Send Bitcoin** region fos`. While the wallet is ready, a **Payments** card under the address card lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list is in view, checked again after every completed load, and the list reloads after every wallet sync. Below the address card (and below the **Payments** card llowhiles the wallete is ready),balance: a **Payment request or address** field and **Continue**. A request or address without an amount then asks for an amount (the amount field with the ₿ / fiat switch and **Continue**); a Lightning address or LNURL receiver also shows its bounds and, when it takes one, an optional message within its limit. The confirm step shows **To …**, **Send ₿…** and **Fee With the wallet configured, a signed-in member whose account requires a wallet but whose wallet is not verified sees the blocking **Set up your wallet** dialog on every app screen until the setup succeeds or they log out. Wh₿…** with the default fiat, and **Send**. After sending: **Sent ₿…** and **Done**. A base-chain Bitcoin address shows that it is not supported yet; text that is not a payment request, a payment request this wallet cannot pay yet, a receiver whose server this browser cannot reach, a failed send, and too little balance each show one plain alert under the field. Then the centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. Below that card, the phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
 - **Actions:** **Unlock wallet** asks the device for the passkey and opens the wallet. **Try again** retries opening, and reloads the page when the wallet's initialisation failed. **Set up wallet** in the setup dialog asks the device for the passkey once and runs the setup; **Try again** there runs it again (reloading the page when the wallet's initialisation failed); **Log out** in the dialog ends the session and opens `/login`. **Try again** on the **Payments** card loads the list again. **Set an amount** opens `/pos`. **Add recovery phrase** opens `/wallet/phrase`. **Show recovery phrase** opens `/wallet/phrase` and is only inside **Advanced functions**. Open **Menu** (Home, Shops, Point of sale, Profile, Grants, Wallet, …). Back first closes an open send step (while a confirm send is in flight it keeps the confirm step instead), then **Advanced functions** when that row is open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Paste a payment request or address and **Continue**; enter an amount and **Continue**; **Send**; **Done**. The step Close (`X`, **Cancel**) closes an open send step, back to the field, except while a confirm send is in flight, when it keeps the confirm step.
 - **Calls:** `AppShell`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `WalletHistory`, `useWalletHistory`, `WalletSetupNotice`, `useWalletSetup`, `useWalletPhrase`, `useWalletSend`, `WalletSend`, `parseWalletInput`, `payFromWallet`, `AmountEntry`.
 
@@ -290,17 +290,65 @@ Pinned fixture (`?visual=send-sent`, Playwright builds only). **Sent ₿2'100** 
 
 ![21.gifts wallet send sent](images/wallet-send-sent.png)
 
-### Variant: send-unsupported
+### Variant: send-onchain
 
-Pinned fixture (`?visual=send-unsupported`, Playwright builds only). After a base-chain Bitcoin address: the alert **Sending to this kind of Bitcoin address is not supported yet.** under the field.
+Pinned fixture (`?visual=send-onchain`, Playwright builds only). After a base-chain Bitcoin address: the alert **Sending to this kind of Bitcoin address is not supported yet.** under the field.
 
-![21.gifts wallet send unsupported](images/wallet-send-unsupported.png)
+![21.gifts wallet send onchain](images/wallet-send-onchain.png)
 
 ### Variant: send-error
 
-Pinned fixture (`?visual=send-error`, Playwright builds only). After a receiver whose server this browser cannot reach: one plain alert under the field. The same slot carries the other send alerts (not a payment request, a payment request this wallet cannot pay yet, could not be sent, not enough Bitcoin). The `send-unsupported` pin shows the base-chain alert.
+Pinned fixture (`?visual=send-error`, Playwright builds only). After a receiver whose server this browser cannot reach: the plain alert **The receiver could not be reached from this browser. Please try again later.** under the field.
 
 ![21.gifts wallet send error](images/wallet-send-error.png)
+
+### Variant: send-unsupported
+
+Pinned fixture (`?visual=send-unsupported`, Playwright builds only). After a payment request the wallet recognises but cannot pay (for example a token invoice): the alert **This payment request cannot be paid from your wallet yet.** under the field.
+
+![21.gifts wallet send unsupported](images/wallet-send-unsupported.png)
+
+### Variant: send-invalid
+
+Pinned fixture (`?visual=send-invalid`, Playwright builds only). After text that is not a payment request or address: the alert **This is not a Bitcoin payment request or address.** under the field.
+
+![21.gifts wallet send invalid](images/wallet-send-invalid.png)
+
+### Variant: send-failed
+
+Pinned fixture (`?visual=send-failed`, Playwright builds only). After a prepare or send that failed or timed out: the alert **The payment could not be sent. Check your balance before you try again.** under the field.
+
+![21.gifts wallet send failed](images/wallet-send-failed.png)
+
+### Variant: send-insufficient
+
+Pinned fixture (`?visual=send-insufficient`, Playwright builds only). After a payment the balance does not cover: the alert **Your wallet does not have enough Bitcoin for this payment.** under the field.
+
+![21.gifts wallet send insufficient](images/wallet-send-insufficient.png)
+
+### Variant: send-amount-error
+
+Pinned fixture (`?visual=send-amount-error`, Playwright builds only). The amount step for a Lightning address after **Continue** with an amount outside the receiver's bounds: the alert **Enter an amount between ₿1 · $0.00 and ₿1'000'000 · $1'000.00.**
+
+![21.gifts wallet send amount error](images/wallet-send-amount-error.png)
+
+### Variant: send-amount-request
+
+Pinned fixture (`?visual=send-amount-request`, Playwright builds only). The amount step for an address without an amount and without receiver bounds: **To sp1qexample…a9f2**, the amount field and **Continue**; no bounds line and no message field.
+
+![21.gifts wallet send amount request](images/wallet-send-amount-request.png)
+
+### Variant: send-amount-min
+
+Pinned fixture (`?visual=send-amount-min`, Playwright builds only). The same amount step after **Continue** with no usable amount: the alert **Enter an amount of at least ₿1 · $0.00.**
+
+![21.gifts wallet send amount min](images/wallet-send-amount-min.png)
+
+### Variant: send-confirm-sending
+
+Pinned fixture (`?visual=send-confirm-sending`, Playwright builds only). The confirm step while the send runs: **Send** is disabled with a spinner; Cancel and Back keep this step.
+
+![21.gifts wallet send confirm sending](images/wallet-send-confirm-sending.png)
 
 ## Screen: /wallet/phrase
 
@@ -858,6 +906,42 @@ Same funded credit note as **repay-today**, after **Pay today's repayment** is p
 Same note as **repay-today**, after **Pay today's repayment** is pressed. The invoice card is open, with **Pay with Wallet of Satoshi**. The amount form is not shown.
 
 ![21.gifts welcome repay today invoice](images/welcome-repay-today-invoice.png)
+
+### Variant: repay-wallet-pay-unlock
+
+Pinned fixture (`?visual=wallet-pay-unlock`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: one line that the wallet pays once unlocked and **Unlock wallet**.
+
+![21.gifts welcome repay wallet pay unlock](images/welcome-repay-wallet-pay-unlock.png)
+
+### Variant: repay-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Checking your wallet…**.
+
+![21.gifts welcome repay wallet pay preparing](images/welcome-repay-wallet-pay-preparing.png)
+
+### Variant: repay-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: **Fee ₿0** with the default fiat and **Pay from wallet**.
+
+![21.gifts welcome repay wallet pay confirm](images/welcome-repay-wallet-pay-confirm.png)
+
+### Variant: repay-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Paying from your wallet…**.
+
+![21.gifts welcome repay wallet pay paying](images/welcome-repay-wallet-pay-paying.png)
+
+### Variant: repay-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts welcome repay wallet pay insufficient](images/welcome-repay-wallet-pay-insufficient.png)
+
+### Variant: repay-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the neutral not-confirmed-yet sentence.
+
+![21.gifts welcome repay wallet pay unconfirmed](images/welcome-repay-wallet-pay-unconfirmed.png)
 
 ### Variant: ask-credit-amount
 
@@ -1785,6 +1869,42 @@ Staff (moderator) in a standalone display, so **Install app** is absent. Open **
 Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stays on the composer (`payHost` `'composer'`), not on a listed note. Desktop shows the Bitcoin payment QR and **Pay with Wallet of Satoshi**. A smartphone shows the same invoice card without a mounted `QrCode`; the wallet button remains. The empty-feed copy stays visible.
 
 ![21.gifts welcome pay composer](images/welcome-pay-composer.png)
+
+### Variant: composer-wallet-pay-unlock
+
+Pinned fixture (`?visual=wallet-pay-unlock`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: one line that the wallet pays once unlocked and **Unlock wallet**.
+
+![21.gifts welcome composer wallet pay unlock](images/welcome-composer-wallet-pay-unlock.png)
+
+### Variant: composer-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Checking your wallet…**.
+
+![21.gifts welcome composer wallet pay preparing](images/welcome-composer-wallet-pay-preparing.png)
+
+### Variant: composer-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: **Fee ₿0** with the default fiat and **Pay from wallet**.
+
+![21.gifts welcome composer wallet pay confirm](images/welcome-composer-wallet-pay-confirm.png)
+
+### Variant: composer-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: a spinner and **Paying from your wallet…**.
+
+![21.gifts welcome composer wallet pay paying](images/welcome-composer-wallet-pay-paying.png)
+
+### Variant: composer-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts welcome composer wallet pay insufficient](images/welcome-composer-wallet-pay-insufficient.png)
+
+### Variant: composer-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot instead of the invoice QR and the Wallet of Satoshi button: the neutral not-confirmed-yet sentence.
+
+![21.gifts welcome composer wallet pay unconfirmed](images/welcome-composer-wallet-pay-unconfirmed.png)
 
 ### Variant: pay-amount
 

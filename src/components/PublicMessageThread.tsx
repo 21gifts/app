@@ -652,6 +652,7 @@ export function PublicMessageThread(props: {
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -728,6 +729,7 @@ export function PublicMessageThread(props: {
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
       setReplyDraft('');
@@ -837,6 +839,7 @@ export function PublicMessageThread(props: {
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);

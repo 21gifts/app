@@ -399,8 +399,18 @@ describe('useWalletSend visual pins', () => {
       },
     ],
     ['send-sent', { step: 'sent', amountSats: fixture.amountSats }],
-    ['send-unsupported', { step: 'input', error: 'onchain' }],
+    ['send-onchain', { step: 'input', error: 'onchain' }],
+    ['send-unsupported', { step: 'input', error: 'unsupported' }],
+    ['send-invalid', { step: 'input', error: 'invalid' }],
+    ['send-failed', { step: 'input', error: 'failed' }],
+    ['send-insufficient', { step: 'input', error: 'insufficient' }],
     ['send-error', { step: 'input', error: 'unreachable' }],
+    ['send-amount-error', { step: 'amount', amountError: true, target: { type: 'lnurl' } }],
+    [
+      'send-amount-request',
+      { step: 'amount', amountError: false, target: { type: 'request', amountSats: null } },
+    ],
+    ['send-amount-min', { step: 'amount', amountError: true, target: { type: 'request' } }],
   ])('pins %s in a Playwright build and keeps actions inert', (visual, state) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
@@ -414,6 +424,18 @@ describe('useWalletSend visual pins', () => {
     });
     expect(result.current.cancel()).toBe(false);
     expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('pins send-confirm-sending as a confirm step with a send in flight', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet?visual=send-confirm-sending');
+    const { result } = renderHook(() => useWalletSend());
+    expect(result.current.state.step).toBe('confirm');
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      result.current.confirm();
+    });
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
