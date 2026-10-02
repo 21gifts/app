@@ -15,11 +15,12 @@ import { useAuthStore } from '@/stores/auth-store';
  * Renders nothing without a session. A signed-in account sees a secondary link
  * to `/grants/goals` under the grant card. An initiator or founder also sees a
  * secondary link to `/grants/payments`. That link does not fetch the daily
- * roster. A missing account shows neither link. Moderators and founders see
- * how many open grant applications exist. When the count is greater than zero,
- * a secondary link to `/grants/applications` shows that count. When the count
- * is zero, that control is the empty sentence as plain text. Members below
- * moderator never see the queue and never trigger the fetch.
+ * roster. A missing account shows neither link. Accounts at least moderator,
+ * including an initiator and a founder, see how many open grant applications
+ * exist. When the count is greater than zero, a secondary link to
+ * `/grants/applications` shows that count. When the count is zero, that
+ * control is the empty sentence as plain text. Members below moderator never
+ * see the queue and never trigger that fetch.
  *
  * @returns The grants card, or `null` without a session.
  */
