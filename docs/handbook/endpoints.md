@@ -9,7 +9,7 @@
 
 ## Endpoint: GET /.well-known/lnurlp/[username]
 
-- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Settlement stays on the linked Wallet of Satoshi callback.
+- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. The callback is the linked Wallet of Satoshi one until the member's in-app wallet is verified; after that the api answers with the callback `GET /lnurlp/[username]/invoice`.
 - **Errors:** Upstream 404/502.
 - **Used by:** Lightning wallets.
 - **Auth:** none.

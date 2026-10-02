@@ -45,4 +45,18 @@ describe('UsernameSetup', () => {
     expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
+
+  it('leaves out the Wallet of Satoshi hint once the account wallet is verified', () => {
+    const account = useAuthStore.getState().account;
+    useAuthStore.setState({
+      account: account === null ? null : { ...account, username: 'ada', sparkWalletVerified: true },
+    });
+    renderWithLocale(<UsernameSetup />);
+    expect(screen.queryByText(/Wallet of Satoshi still receives it/)).toBeNull();
+    expect(
+      screen.getByText(
+        'Your username can no longer be changed because your wallet address uses it.',
+      ),
+    ).toBeTruthy();
+  });
 });
