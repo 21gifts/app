@@ -4030,5 +4030,77 @@
     "label": "/messages/[id]/author replies-empty",
     "visual": "state-messages-id-author-replies-empty",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-external",
+    "label": "/messages/[id]/author posts-external",
+    "visual": "state-messages-id-author-posts-external",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-external",
+    "label": "/messages/[id]/author replies-external",
+    "visual": "state-messages-id-author-replies-external",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-translate",
+    "label": "/messages/[id]/author posts-translate",
+    "visual": "state-messages-id-author-posts-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-translate-loading",
+    "label": "/messages/[id]/author posts-translate-loading",
+    "visual": "state-messages-id-author-posts-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-translate-done",
+    "label": "/messages/[id]/author posts-translate-done",
+    "visual": "state-messages-id-author-posts-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-translate-hidden",
+    "label": "/messages/[id]/author posts-translate-hidden",
+    "visual": "state-messages-id-author-posts-translate-hidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:posts-translate-error",
+    "label": "/messages/[id]/author posts-translate-error",
+    "visual": "state-messages-id-author-posts-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-translate",
+    "label": "/messages/[id]/author replies-translate",
+    "visual": "state-messages-id-author-replies-translate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-translate-loading",
+    "label": "/messages/[id]/author replies-translate-loading",
+    "visual": "state-messages-id-author-replies-translate-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-translate-done",
+    "label": "/messages/[id]/author replies-translate-done",
+    "visual": "state-messages-id-author-replies-translate-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-translate-hidden",
+    "label": "/messages/[id]/author replies-translate-hidden",
+    "visual": "state-messages-id-author-replies-translate-hidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:replies-translate-error",
+    "label": "/messages/[id]/author replies-translate-error",
+    "visual": "state-messages-id-author-replies-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

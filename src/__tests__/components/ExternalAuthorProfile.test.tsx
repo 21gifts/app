@@ -902,40 +902,122 @@ describe('ExternalAuthorProfile', () => {
   });
 
   it('clears an open feed on messageId change and ignores a stale posts response', async () => {
+    let resolveM2!: (value: {
+      name: string;
+      npub: string;
+      postCount: number;
+      replyCount: number;
+    }) => void;
     fetchProfile.mockImplementation((id: string) => {
       if (id === 'm1') {
         return Promise.resolve({
           name: 'Robin',
           npub: 'npub1example',
-          postCount: 2,
+          postCount: 1,
           replyCount: 0,
+        });
+      }
+      return new Promise((resolve) => {
+        resolveM2 = resolve;
+      });
+    });
+    let resolvePosts!: (value: ForumMessage[]) => void;
+    const postedIds: string[] = [];
+    fetchPosts.mockImplementation((id: string) => {
+      postedIds.push(id);
+      if (id === 'm1') {
+        return new Promise((resolve) => {
+          resolvePosts = resolve;
         });
       }
       return new Promise(() => undefined);
     });
-    let resolvePosts!: (value: ForumMessage[]) => void;
-    fetchPosts.mockReturnValue(
-      new Promise((resolve) => {
-        resolvePosts = resolve;
-      }),
-    );
     const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: '2 posts' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: '1 post' })).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: '2 posts' }));
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(screen.getByText('Loading…')).toBeTruthy();
     view.rerender(<ExternalAuthorProfile messageId="m2" fallbackName="Ada" />);
     expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.queryByText('npub1example')).toBeNull();
-    expect(screen.queryByRole('button', { name: '2 posts' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '1 post' })).toBeNull();
     expect(screen.getByText('Ada')).toBeTruthy();
+    await act(async () => {
+      resolveM2({ name: 'Bea', npub: 'npub1other', postCount: 1, replyCount: 0 });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 post' })).toBeTruthy();
+    });
     await act(async () => {
       resolvePosts([FEED_NOTE]);
       await Promise.resolve();
     });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(screen.getByText('Loading…')).toBeTruthy();
+    });
     expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    expect(postedIds).toContain('m2');
+  });
+
+  it('ignores a stale replies response after the note changes', async () => {
+    let resolveM2!: (value: {
+      name: string;
+      npub: string;
+      postCount: number;
+      replyCount: number;
+    }) => void;
+    fetchProfile.mockImplementation((id: string) => {
+      if (id === 'm1') {
+        return Promise.resolve({
+          name: 'Robin',
+          npub: 'npub1example',
+          postCount: 0,
+          replyCount: 1,
+        });
+      }
+      return new Promise((resolve) => {
+        resolveM2 = resolve;
+      });
+    });
+    let resolveReplies!: (value: ForumMessage[]) => void;
+    const repliedIds: string[] = [];
+    fetchReplies.mockImplementation((id: string) => {
+      repliedIds.push(id);
+      if (id === 'm1') {
+        return new Promise((resolve) => {
+          resolveReplies = resolve;
+        });
+      }
+      return new Promise(() => undefined);
+    });
+    const view = renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 reaction' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    view.rerender(<ExternalAuthorProfile messageId="m2" fallbackName="Ada" />);
+    await act(async () => {
+      resolveM2({ name: 'Bea', npub: 'npub1other', postCount: 0, replyCount: 1 });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 reaction' })).toBeTruthy();
+    });
+    await act(async () => {
+      resolveReplies([FEED_NOTE]);
+      await Promise.resolve();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    await waitFor(() => {
+      expect(screen.getByText('Loading…')).toBeTruthy();
+    });
+    expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
+    expect(repliedIds).toContain('m2');
   });
 
   it('ignores a profile response from the previous note', async () => {

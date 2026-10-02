@@ -10349,6 +10349,207 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-author-replies-empty');
   });
 
+  const AUTHOR_CARD_ID = '11111111-1111-4111-8111-111111111111';
+  const AUTHOR_NOTE_ID = '33333333-3333-4333-8333-333333333333';
+  const AUTHOR_PARENT_ID = '22222222-2222-4222-8222-222222222222';
+  const EXTERNAL_HINT =
+    'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
+
+  async function fulfillAuthorCard(page: Page): Promise<void> {
+    await fulfillRateDay(page);
+    await page.route('**/external-profile', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Robin',
+          npub: 'npub1example',
+          nip05: 'robin@nostr.example',
+          lud16: 'pay@ln.example',
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+  }
+
+  async function fulfillAuthorList(
+    page: Page,
+    kind: 'posts' | 'replies',
+    text: string,
+  ): Promise<void> {
+    const path = kind === 'posts' ? '**/external-posts' : '**/external-replies';
+    await page.route(path, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: AUTHOR_NOTE_ID,
+              name: 'Robin',
+              via: 'nostr',
+              text,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              ...(kind === 'replies' ? { parentId: AUTHOR_PARENT_ID } : {}),
+            },
+          ],
+        }),
+      });
+    });
+  }
+
+  async function openAuthorFeed(page: Page, kind: 'posts' | 'replies'): Promise<void> {
+    await page.goto(`/messages/${AUTHOR_CARD_ID}/author?name=Robin`);
+    await page.getByRole('button', { name: kind === 'posts' ? '1 post' : '1 reaction' }).click();
+  }
+
+  test('state /messages/[id]/author posts-external', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', 'Robin wrote a note');
+    await openAuthorFeed(page, 'posts');
+    await expect(page.getByText('Robin wrote a note')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await page.getByRole('button', { name: 'External', exact: true }).click();
+    await expect(page.getByText(EXTERNAL_HINT)).toBeVisible();
+    await page.getByText(EXTERNAL_HINT).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-external');
+  });
+
+  test('state /messages/[id]/author replies-external', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', 'Robin wrote a reaction');
+    await openAuthorFeed(page, 'replies');
+    await expect(page.getByText('Robin wrote a reaction')).toBeVisible();
+    await page.getByRole('button', { name: 'External', exact: true }).click();
+    await expect(page.getByText(EXTERNAL_HINT)).toBeVisible();
+    await page.getByText(EXTERNAL_HINT).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-external');
+  });
+
+  test('state /messages/[id]/author posts-translate', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await openAuthorFeed(page, 'posts');
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate');
+  });
+
+  test('state /messages/[id]/author posts-translate-loading', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'hang');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-loading');
+  });
+
+  test('state /messages/[id]/author posts-translate-done', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-done');
+  });
+
+  test('state /messages/[id]/author posts-translate-hidden', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-hidden');
+  });
+
+  test('state /messages/[id]/author posts-translate-error', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'posts', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'fail');
+    await openAuthorFeed(page, 'posts');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-posts-translate-error');
+  });
+
+  test('state /messages/[id]/author replies-translate', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await openAuthorFeed(page, 'replies');
+    await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate');
+  });
+
+  test('state /messages/[id]/author replies-translate-loading', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'hang');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Translate' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    await page.getByRole('button', { name: 'Translate' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-loading');
+  });
+
+  test('state /messages/[id]/author replies-translate-done', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-done');
+  });
+
+  test('state /messages/[id]/author replies-translate-hidden', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'ok');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByRole('button', { name: 'Show original' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show original' }).click();
+    await expect(page.getByRole('button', { name: 'Show translation' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show translation' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-hidden');
+  });
+
+  test('state /messages/[id]/author replies-translate-error', async ({ page }) => {
+    await fulfillAuthorCard(page);
+    await fulfillAuthorList(page, 'replies', GERMAN_NOTE_TEXT);
+    await fulfillTranslatePost(page, 'fail');
+    await openAuthorFeed(page, 'replies');
+    await page.getByRole('button', { name: 'Translate' }).click();
+    await expect(page.getByText('Could not translate this note. Please try again.')).toBeVisible();
+    await page
+      .getByText('Could not translate this note. Please try again.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-author-replies-translate-error');
+  });
+
   test('state /messages/[id] quoted-note', async ({ page }) => {
     await fulfillPublicThreadReplies(page, RIANA_ID, [cyrillReply]);
     await page.route(`**/public-messages/${RIANA_ID}`, async (route) => {

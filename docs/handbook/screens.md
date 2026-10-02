@@ -4263,6 +4263,78 @@ Pressed **0 reactions**. The feed shows `No messages yet — be the first to wri
 
 ![21.gifts external author replies empty](images/messages-id-author-replies-empty.png)
 
+### Variant: posts-external
+
+Pressed **1 post**, then **External** on that note. The hint is `Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.`
+
+![21.gifts external author posts external](images/messages-id-author-posts-external.png)
+
+### Variant: replies-external
+
+Pressed **1 reaction**, then **External** on that note. The same hint is open. **1 post** stays closed.
+
+![21.gifts external author replies external](images/messages-id-author-replies-external.png)
+
+### Variant: posts-translate
+
+Pressed **1 post**. The note is German and **Translate** is visible.
+
+![21.gifts external author posts translate](images/messages-id-author-posts-translate.png)
+
+### Variant: posts-translate-loading
+
+Pressed **Translate** while the request hangs. The control is busy.
+
+![21.gifts external author posts translate loading](images/messages-id-author-posts-translate-loading.png)
+
+### Variant: posts-translate-done
+
+After a successful translation. The control is **Show original** and the German original is not shown.
+
+![21.gifts external author posts translate done](images/messages-id-author-posts-translate-done.png)
+
+### Variant: posts-translate-hidden
+
+After **Show original**. The Languages icon is named **Show translation**.
+
+![21.gifts external author posts translate hidden](images/messages-id-author-posts-translate-hidden.png)
+
+### Variant: posts-translate-error
+
+After a failed translation. The feed shows `Could not translate this note. Please try again.`
+
+![21.gifts external author posts translate error](images/messages-id-author-posts-translate-error.png)
+
+### Variant: replies-translate
+
+Pressed **1 reaction**. The note is German and **Translate** is visible. **1 post** stays closed.
+
+![21.gifts external author replies translate](images/messages-id-author-replies-translate.png)
+
+### Variant: replies-translate-loading
+
+Pressed **Translate** on that reaction while the request hangs. The control is busy.
+
+![21.gifts external author replies translate loading](images/messages-id-author-replies-translate-loading.png)
+
+### Variant: replies-translate-done
+
+After a successful translation of that reaction. The control is **Show original**.
+
+![21.gifts external author replies translate done](images/messages-id-author-replies-translate-done.png)
+
+### Variant: replies-translate-hidden
+
+After **Show original** on that reaction. The Languages icon is named **Show translation**.
+
+![21.gifts external author replies translate hidden](images/messages-id-author-replies-translate-hidden.png)
+
+### Variant: replies-translate-error
+
+After a failed translation of that reaction. The feed shows `Could not translate this note. Please try again.`
+
+![21.gifts external author replies translate error](images/messages-id-author-replies-translate-error.png)
+
 ## Screen: /view/[viewKey]
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker only while `useHydrateSession().ready && session === null`, CHF|EUR|USD|PHP, `shell="app"`; unsigned empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; signed-in empty = `profile.chartEmpty` alone; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR.
