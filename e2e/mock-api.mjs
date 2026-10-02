@@ -813,6 +813,61 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && (pathName === '/lnurl/pay-request' || pathName === '/lnurl/invoice')) {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const target = typeof parsed?.target === 'string' ? parsed.target.trim() : '';
+    // Fixed outside receivers: bob@example.com pays 1–100'000 sats with a 10-character comment.
+    if (target === 'missing@example.com') {
+      json(res, 404, { error: 'Address not found' });
+      return;
+    }
+    if (target === 'down@example.com') {
+      json(res, 502, { error: 'Address could not be reached' });
+      return;
+    }
+    if (target !== 'bob@example.com') {
+      json(res, 400, { error: 'Not a payable address' });
+      return;
+    }
+    const payRequest = {
+      target,
+      minSendableMsat: 1_000,
+      maxSendableMsat: 100_000_000,
+      commentAllowed: 10,
+      description: 'Pay bob',
+      domain: 'example.com',
+    };
+    if (pathName === '/lnurl/pay-request') {
+      json(res, 200, payRequest);
+      return;
+    }
+    const amountMsat = parsed.amountMsat;
+    if (
+      !Number.isInteger(amountMsat) ||
+      amountMsat < payRequest.minSendableMsat ||
+      amountMsat > payRequest.maxSendableMsat
+    ) {
+      json(res, 400, { error: 'Amount out of range' });
+      return;
+    }
+    if (typeof parsed.comment === 'string' && parsed.comment.length > payRequest.commentAllowed) {
+      json(res, 400, { error: 'Comment too long' });
+      return;
+    }
+    json(res, 200, { pr: `lnbc${amountMsat}n1mockrelay` });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/contact') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

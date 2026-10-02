@@ -95,6 +95,9 @@ app/
 │   │   │   └── page.tsx         # GET /shops — signed-in shop listings (forum notes tagged #21GiftsShop)
 │   │   ├── maps/
 │   │   │   └── key/route.ts     # GET /maps/key — browser map key or null
+│   │   ├── lnurl/
+│   │   │   ├── pay-request/route.ts  # POST /lnurl/pay-request — outside address pay request
+│   │   │   └── invoice/route.ts      # POST /lnurl/invoice — outside address invoice
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
@@ -310,7 +313,8 @@ app/
 │   │   │   ├── wallet-sdk.ts    # Dynamic Breez SDK load + narrow WalletSdk surface
 │   │   │   ├── wallet-service.ts # connect / refresh / disconnect + phrase-event listener + register / list payments + payFromWallet / parseWalletInput
 │   │   │   ├── wallet-setup.ts  # One-time setup: passkey → connect → claim → register → refresh
-│   │   │   └── wallet-phrase.ts # rememberPhraseFromPrf, unlockWalletPhrase, canUnlockWallet
+│   │   │   ├── wallet-phrase.ts # rememberPhraseFromPrf, unlockWalletPhrase, canUnlockWallet
+│   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand

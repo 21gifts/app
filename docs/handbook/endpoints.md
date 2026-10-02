@@ -548,6 +548,20 @@
 - **Used by:** `postMessageInvoice`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /lnurl/pay-request
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/lnurl/pay-request`. Body `{ target }` (`user@domain` or a bech32 LNURL on another host). 200 `{ target, minSendableMsat, maxSendableMsat, commentAllowed, description, domain }`.
+- **Errors:** Upstream 400 `Not a payable address` (malformed, not https, not a pay request, or on this app's own host), 404 `Address not found`, 502 `Address could not be reached`, 401 without a session; 502 `Upstream api unreachable` when the api is unreachable.
+- **Used by:** `postLnurlPayRequest`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurl/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/lnurl/invoice`. Body `{ target, amountMsat, comment? }`. The api resolves the target again, never takes a callback URL from the client, and checks amount, comment, invoice amount, and description hash. 200 `{ pr }`.
+- **Errors:** The errors of `POST /lnurl/pay-request`, plus 400 `Amount out of range` and 400 `Comment too long`.
+- **Used by:** `postLnurlInvoice`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /contact/submit
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/contact` (create an in-app contact message to 21.gifts). Nested under `/contact/submit` because the UI page already owns `/contact`.

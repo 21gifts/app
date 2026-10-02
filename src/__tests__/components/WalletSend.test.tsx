@@ -98,6 +98,9 @@ describe('WalletSend input', () => {
     ['unsupported', 'This payment request cannot be paid from your wallet yet.'],
     ['insufficient', 'Your wallet does not have enough Bitcoin for this payment.'],
     ['failed', 'The payment could not be sent. Check your balance before you try again.'],
+    ['notPayable', 'This address cannot receive a payment.'],
+    ['notFound', 'This address was not found.'],
+    ['relayUnreachable', "The receiver's server did not answer. Please try again later."],
   ] as const)('shows the %s alert', (error, text) => {
     renderSend(sendWith({ step: 'input', error }));
     expect(screen.getByRole('alert').textContent).toBe(text);
@@ -116,6 +119,29 @@ describe('WalletSend amount', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '100' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(send.submitAmount).toHaveBeenCalledWith(100);
+  });
+
+  it('shows bounds and comment for an outside address, and the comment alert', () => {
+    const send = sendWith({
+      step: 'amount',
+      target: {
+        type: 'relay',
+        target: 'bob@example.com',
+        minSats: 10,
+        maxSats: 1_000,
+        commentMaxLength: 5,
+        recipient: 'bob@example.com',
+      },
+      amountError: false,
+      commentError: true,
+    });
+    renderSend(send);
+    expect(screen.getByText('To bob@example.com')).toBeTruthy();
+    expect(screen.getByText("Between ₿10 · $0.01 and ₿1'000 · $1.00")).toBeTruthy();
+    expect(screen.getByLabelText('Message (optional)').getAttribute('maxlength')).toBe('5');
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This message is too long for the receiver.',
+    );
   });
 
   it('submits null for an amount that cannot be read', () => {
