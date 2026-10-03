@@ -2826,18 +2826,29 @@ export async function openConversation(
 }
 
 /**
- * Marks one private-message thread as read.
+ * Marks one private-message thread read through the last loaded message.
+ * Omit the boundary only for older clients, which acknowledge server time.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Conversation UUID.
+ * @param throughMessageId - Last loaded message id; newer arrivals remain unread.
  * @returns Nothing on success.
  * @throws Error with visitor-facing copy when the api is unavailable.
  */
-export async function markConversationRead(sessionToken: string, id: string): Promise<void> {
+export async function markConversationRead(
+  sessionToken: string,
+  id: string,
+  throughMessageId?: string,
+): Promise<void> {
   try {
     const response = await fetch(`/conversations/${encodeURIComponent(id)}/read`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        ...deviceTimeZoneHeader(),
+        ...(throughMessageId === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      ...(throughMessageId === undefined ? {} : { body: JSON.stringify({ throughMessageId }) }),
     });
     if (!response.ok) {
       throw new Error('Could not mark conversation as read');

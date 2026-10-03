@@ -1,5 +1,6 @@
 'use client';
 
+import { conversationUnreadCount } from '@/lib/conversation-unread';
 import { useEffect, useState } from 'react';
 import {
   fetchConversations,
@@ -19,17 +20,19 @@ import { useAuthStore } from '@/stores/auth-store';
  * Calls `GET /forum/notifications` and `GET /conversations` in parallel when a
  * session exists, plus `GET /conversations/moderator-group` and
  * `GET /trust/proposals` when `roleAtLeast(account?.role, 'moderator')`.
- * `refreshKey` retriggers the fetches (Menu open). No session → all counts
+ * `refreshKey` retriggers the fetches (Menu open). Successful read acknowledgements
+ * broadcast an unread-change event; visible tabs also refresh every 30 seconds
+ * and when becoming visible. Stale responses cannot restore cleared counts. No session → all counts
  * `0`. A failure on one side resolves that count to `0` without failing the
  * others. A role below moderator skips the staff-room and proposals fetches
  * and contributes `0`. Does not mark notifications or conversations read.
  *
- * `moderationUnreadCount` is staff-room unread (`0` or `1`) plus
+ * `moderationUnreadCount` is staff-room unread messages plus
  * `proposalCount`, for the Menu Moderation row. Hub Open proposals uses
  * `proposalCount` alone.
  *
  * The home-screen app badge is the **sum** of notification unread, inbox
- * unread, and staff-room unread (`0` or `1`), written once all started
+ * unread, and staff-room unread messages, written once all started
  * fetches settle (success or failure), unless `options.writeBadge` is
  * `false`. Open-proposal count is **not** added: proposal rows already sit
  * in notification unread. A side that was not started, or that failed,
@@ -61,10 +64,28 @@ export function useUnreadCount(
   const account = useAuthStore((state) => state.account);
   const staff = roleAtLeast(account?.role, 'moderator');
   const writeBadge = options?.writeBadge !== false;
+  const [revision, setRevision] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
   const [staffRoomUnread, setStaffRoomUnread] = useState(0);
   const [proposalCount, setProposalCount] = useState(0);
+
+  useEffect(() => {
+    const refresh = (): void => {
+      setRevision((value) => value + 1);
+    };
+    const visibleRefresh = (): void => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    window.addEventListener('21gifts:unread-changed', refresh);
+    document.addEventListener('visibilitychange', visibleRefresh);
+    const interval = setInterval(visibleRefresh, 30000);
+    return () => {
+      window.removeEventListener('21gifts:unread-changed', refresh);
+      document.removeEventListener('visibilitychange', visibleRefresh);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,13 +105,13 @@ export function useUnreadCount(
       const epoch = unreadAppBadgeEpoch();
       const notificationsPromise = fetchNotifications(session).then(
         (list) => {
-          if (!cancelled) {
+          if (!cancelled && epoch === unreadAppBadgeEpoch()) {
             setUnreadCount(list.unreadCount);
           }
           return { ok: true as const, unreadCount: list.unreadCount };
         },
         () => {
-          if (!cancelled) {
+          if (!cancelled && epoch === unreadAppBadgeEpoch()) {
             setUnreadCount(0);
           }
           return { ok: false as const, unreadCount: 0 };
@@ -98,14 +119,14 @@ export function useUnreadCount(
       );
       const conversationsPromise = fetchConversations(session).then(
         (rows) => {
-          const count = rows.filter((row) => row.unread).length;
-          if (!cancelled) {
+          const count = rows.reduce((sum, row) => sum + conversationUnreadCount(row), 0);
+          if (!cancelled && epoch === unreadAppBadgeEpoch()) {
             setInboxUnreadCount(count);
           }
           return { ok: true as const, unreadCount: count };
         },
         () => {
-          if (!cancelled) {
+          if (!cancelled && epoch === unreadAppBadgeEpoch()) {
             setInboxUnreadCount(0);
           }
           return { ok: false as const, unreadCount: 0 };
@@ -114,21 +135,21 @@ export function useUnreadCount(
       const moderationPromise = staff
         ? fetchModeratorGroup(session).then(
             (conversation) => {
-              const count = conversation.unread ? 1 : 0;
-              if (!cancelled) {
+              const count = conversationUnreadCount(conversation);
+              if (!cancelled && epoch === unreadAppBadgeEpoch()) {
                 setStaffRoomUnread(count);
               }
               return { ok: true as const, unreadCount: count };
             },
             () => {
-              if (!cancelled) {
+              if (!cancelled && epoch === unreadAppBadgeEpoch()) {
                 setStaffRoomUnread(0);
               }
               return { ok: false as const, unreadCount: 0 };
             },
           )
         : Promise.resolve().then(() => {
-            if (!cancelled) {
+            if (!cancelled && epoch === unreadAppBadgeEpoch()) {
               setStaffRoomUnread(0);
             }
             return { ok: false as const, unreadCount: 0 };
@@ -137,20 +158,20 @@ export function useUnreadCount(
         ? fetchTrustProposals(session).then(
             (rows) => {
               const count = rows.length;
-              if (!cancelled) {
+              if (!cancelled && epoch === unreadAppBadgeEpoch()) {
                 setProposalCount(count);
               }
               return { ok: true as const, count };
             },
             () => {
-              if (!cancelled) {
+              if (!cancelled && epoch === unreadAppBadgeEpoch()) {
                 setProposalCount(0);
               }
               return { ok: false as const, count: 0 };
             },
           )
         : Promise.resolve().then(() => {
-            if (!cancelled) {
+            if (!cancelled && epoch === unreadAppBadgeEpoch()) {
               setProposalCount(0);
             }
             return { ok: false as const, count: 0 };
@@ -175,7 +196,7 @@ export function useUnreadCount(
     return () => {
       cancelled = true;
     };
-  }, [session, refreshKey, staff, writeBadge]);
+  }, [session, refreshKey, staff, writeBadge, revision]);
 
   return {
     unreadCount,

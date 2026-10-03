@@ -5695,3 +5695,13 @@ describe('sunday write header', () => {
     expect(headersOf(3)['Time-Zone']).toBe('Europe/Zurich');
   });
 });
+
+it('sends the loaded message boundary when marking a conversation read', async () => {
+  const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+  await markConversationRead('sess', 'c1', 'm1');
+  expect(fetchMock).toHaveBeenCalledWith('/conversations/c1/read', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ throughMessageId: 'm1' }),
+  });
+});

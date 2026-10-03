@@ -344,7 +344,7 @@ describe('useUnreadCount', () => {
       resolveList({ notifications: [], unreadCount: 7 });
     });
     await waitFor(() => {
-      expect(screen.getByText('count:7')).toBeTruthy();
+      expect(screen.getByText('count:0')).toBeTruthy();
       expect(screen.getByText('inbox:0')).toBeTruthy();
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(7);
@@ -546,7 +546,7 @@ describe('useUnreadCount', () => {
       resolveGroup(STAFF_ROOM);
     });
     await waitFor(() => {
-      expect(screen.getByText('moderation:1')).toBeTruthy();
+      expect(screen.getByText('moderation:0')).toBeTruthy();
       expect(screen.getByText('count:0')).toBeTruthy();
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(1);
@@ -689,5 +689,61 @@ describe('useUnreadCount', () => {
     });
     expect(screen.getByText('moderation:0')).toBeTruthy();
     expect(setBadgeMock).not.toHaveBeenCalled();
+  });
+  it('counts messages rather than conversations, clears on acknowledgement and restores only new counts', async () => {
+    useAuthStore.setState({ session: 'tok', account: STAFF_ACCOUNT });
+    fetchMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+    conversationsMock.mockResolvedValue([{ ...UNREAD_ROW, unreadMessageCount: 4 }]);
+    moderationMock.mockResolvedValue({ ...STAFF_ROOM, unreadMessageCount: 6 });
+    renderWithLocale(<Probe refreshKey={false} />);
+    await waitFor(() => expect(screen.getByText('moderation:6')).toBeTruthy());
+    expect(screen.getByText('inbox:4')).toBeTruthy();
+    expect(setBadgeMock).toHaveBeenLastCalledWith(10);
+    conversationsMock.mockResolvedValue([{ ...UNREAD_ROW, unread: false, unreadMessageCount: 0 }]);
+    moderationMock.mockResolvedValue({ ...STAFF_ROOM, unread: false, unreadMessageCount: 0 });
+    act(() => window.dispatchEvent(new Event('21gifts:unread-changed')));
+    await waitFor(() => expect(setBadgeMock).toHaveBeenLastCalledWith(0));
+    expect(screen.getByText('inbox:0')).toBeTruthy();
+    expect(screen.getByText('moderation:0')).toBeTruthy();
+    conversationsMock.mockResolvedValue([{ ...UNREAD_ROW, unreadMessageCount: 1 }]);
+    moderationMock.mockResolvedValue({ ...STAFF_ROOM, unreadMessageCount: 2 });
+    act(() => window.dispatchEvent(new Event('21gifts:unread-changed')));
+    await waitFor(() => expect(setBadgeMock).toHaveBeenLastCalledWith(3));
+    expect(screen.getByText('inbox:1')).toBeTruthy();
+    expect(screen.getByText('moderation:2')).toBeTruthy();
+  });
+
+  it('refreshes on a visible-tab interval and visibility return, but never while hidden', async () => {
+    vi.useFakeTimers();
+    const descriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+    try {
+      fetchMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+      const view = renderWithLocale(<Probe refreshKey={false} />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      const initial = conversationsMock.mock.calls.length;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30000);
+      });
+      expect(conversationsMock).toHaveBeenCalledTimes(initial + 1);
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+        await vi.advanceTimersByTimeAsync(30000);
+      });
+      expect(conversationsMock).toHaveBeenCalledTimes(initial + 1);
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      expect(conversationsMock).toHaveBeenCalledTimes(initial + 2);
+      view.unmount();
+    } finally {
+      if (descriptor) Object.defineProperty(document, 'visibilityState', descriptor);
+      else Reflect.deleteProperty(document, 'visibilityState');
+      vi.useRealTimers();
+    }
   });
 });
