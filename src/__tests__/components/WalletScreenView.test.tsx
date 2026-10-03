@@ -14,8 +14,13 @@ vi.mock('@/hooks/useLatestRateDay', () => ({
   useLatestRateDay: vi.fn(),
 }));
 
+const { cameraRenders } = vi.hoisted(() => ({ cameraRenders: { count: 0 } }));
+
 vi.mock('@/components/QrScanner', () => ({
-  QrScanner: () => <p>Camera stub</p>,
+  QrScanner: () => {
+    cameraRenders.count += 1;
+    return <p>Camera stub</p>;
+  },
 }));
 
 vi.mock('@/components/WalletHistory', () => ({
@@ -754,7 +759,9 @@ describe('WalletScreenView Send', () => {
     rerenderEntry(view, 'ready', idleSend({ state: CONFIRM_STATE }));
     rerenderEntry(view, 'ready', idleSend({ state: { step: 'sent', amountSats: 2_100 } }));
     expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy();
+    const before = cameraRenders.count;
     rerenderEntry(view, 'ready', idleSend());
+    expect(cameraRenders.count).toBe(before);
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
   });
@@ -763,7 +770,9 @@ describe('WalletScreenView Send', () => {
     const view = renderEntry('ready', idleSend());
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    const before = cameraRenders.count;
     rerenderEntry(view, 'locked', idleSend());
+    expect(cameraRenders.count).toBe(before);
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
     rerenderEntry(view, 'ready', idleSend());
