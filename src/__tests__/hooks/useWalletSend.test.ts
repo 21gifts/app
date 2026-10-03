@@ -8,6 +8,8 @@ import {
   type WalletPayResult,
   type WalletSendResult,
 } from '@/lib/wallet/wallet-service';
+import { setWalletUsable } from '@/__tests__/wallet-pay-fixture';
+import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
@@ -47,7 +49,8 @@ async function typeAndSubmit(
 }
 
 beforeEach(() => {
-  useWalletStore.setState({ status: 'ready', balanceSats: 21_000, identityPubkey: null });
+  useAuthStore.setState({ session: null, account: null });
+  setWalletUsable();
   window.history.replaceState({}, '', '/wallet');
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   vi.mocked(parseWalletInput).mockReset();
@@ -624,6 +627,48 @@ describe('useWalletSend wallet status', () => {
     setStatus('locked');
     expect(result.current.state).toEqual({ step: 'input', error: null });
     expect(result.current.busy).toBe(false);
+  });
+
+  it('drops an open confirm or prepare when the account leaves wallet mode', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(send));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.state.step).toBe('confirm');
+    const eligible = useAuthStore.getState().account;
+    act(() => {
+      useAuthStore.setState({ account: { ...eligible!, passkeyCredentialId: null } });
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    act(() => {
+      useAuthStore.setState({ account: eligible });
+    });
+    act(() => {
+      result.current.confirm();
+    });
+    expect(send).not.toHaveBeenCalled();
+
+    target(LNURL);
+    let finish: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    await typeAndSubmit(result, 'bob@pay.example');
+    act(() => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      useAuthStore.setState({ account: { ...eligible!, walletRequired: false } });
+    });
+    expect(result.current.busy).toBe(false);
+    await act(async () => {
+      finish(confirmWith(send));
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
   it('keeps a send in flight and the sent and idle input steps', async () => {
