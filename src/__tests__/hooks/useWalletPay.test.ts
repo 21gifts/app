@@ -40,6 +40,7 @@ const account = {
 
 const SPARK = 'spark1invoice';
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+const ORIGINAL_BREEZ_KEY = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
 function setWallet(status: WalletStatus, balanceSats: number | null = null): void {
   useWalletStore.setState({ status, balanceSats, identityPubkey: null });
@@ -66,6 +67,11 @@ afterEach(() => {
   } else {
     process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
   }
+  if (ORIGINAL_BREEZ_KEY === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ_KEY;
+  }
 });
 
 describe('useWalletPay path choice', () => {
@@ -89,17 +95,24 @@ describe('useWalletPay path choice', () => {
   });
 
   it('falls back while the account is in the one-time wallet setup', () => {
-    const key = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     const { result } = renderHook(() => useWalletPay(SPARK, 21));
     expect(result.current.view).toBe('fallback');
     expect(payFromWallet).not.toHaveBeenCalled();
-    if (key === undefined) {
-      delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
-    } else {
-      process.env.NEXT_PUBLIC_BREEZ_API_KEY = key;
-    }
+  });
+
+  it('prepares once the account finishes the one-time wallet setup', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    expect(result.current.view).toBe('fallback');
+    await act(async () => {
+      useAuthStore.setState({ account: { ...account, sparkWalletVerified: true } });
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(result.current.view).toBe('confirm');
   });
 
   it('falls back when the account cannot unlock a wallet', () => {
