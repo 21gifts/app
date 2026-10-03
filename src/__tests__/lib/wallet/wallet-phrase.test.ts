@@ -3,6 +3,7 @@ import type { Account } from '@/lib/api-types';
 import {
   canUnlockWallet,
   rememberPhraseFromPrf,
+  settlePhraseDerivations,
   unlockWalletPhrase,
 } from '@/lib/wallet/wallet-phrase';
 import { mnemonicFromPrfFirst, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
@@ -59,6 +60,41 @@ afterEach(() => {
   } else {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
   }
+});
+
+describe('settlePhraseDerivations', () => {
+  it('resolves at once when no derivation runs', async () => {
+    await expect(settlePhraseDerivations()).resolves.toBeUndefined();
+  });
+
+  it('waits until a running derivation has stored the phrase', async () => {
+    let resolveDerive!: (mnemonic: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    const pending = rememberPhraseFromPrf({
+      prfFirst: PRF,
+      credentialId: CREDENTIAL_ID,
+      account: baseAccount,
+      sessionToken: 'tok',
+    });
+    let settled = false;
+    const waiting = settlePhraseDerivations().then(() => {
+      settled = true;
+    });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    resolveDerive(
+      'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    );
+    await waiting;
+    await expect(pending).resolves.toBe(true);
+    expect(peekSessionPhrase()).not.toBeNull();
+    await expect(settlePhraseDerivations()).resolves.toBeUndefined();
+  });
 });
 
 describe('canUnlockWallet', () => {

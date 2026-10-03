@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   fetchMe: vi.fn(),
   obtainPrfFirstFromGet: vi.fn(),
   rememberPhraseFromPrf: vi.fn(),
+  settlePhraseDerivations: vi.fn(),
 }));
 
 vi.mock('@breeztech/breez-sdk-spark/ssr', () => ({
@@ -56,7 +57,11 @@ vi.mock('@/lib/prf-mnemonic', async (importOriginal) => {
 
 vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
-  return { ...actual, rememberPhraseFromPrf: mocks.rememberPhraseFromPrf };
+  return {
+    ...actual,
+    rememberPhraseFromPrf: mocks.rememberPhraseFromPrf,
+    settlePhraseDerivations: mocks.settlePhraseDerivations,
+  };
 });
 
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
@@ -125,6 +130,7 @@ beforeEach(() => {
   mocks.putWallet.mockReset().mockResolvedValue(account({ sparkPubkey: IDENTITY.toLowerCase() }));
   mocks.fetchMe.mockReset().mockResolvedValue(account({ sparkWalletVerified: true }));
   mocks.obtainPrfFirstFromGet.mockReset().mockResolvedValue(new Uint8Array([1, 2, 3]));
+  mocks.settlePhraseDerivations.mockReset().mockResolvedValue(undefined);
   mocks.rememberPhraseFromPrf.mockReset().mockImplementation(async () => {
     rememberSessionPhrase(MNEMONIC);
     return true;
@@ -239,6 +245,27 @@ describe('runWalletSetup', () => {
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
     expect(walletSetupInFlight()).toBe(false);
     await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
+  });
+
+  it('waits for a phrase the login is still deriving instead of prompting again', async () => {
+    mocks.settlePhraseDerivations.mockImplementationOnce(async () => {
+      rememberSessionPhrase(MNEMONIC);
+    });
+    const { loadSdk } = fakeSdk();
+    const steps: WalletSetupStep[] = [];
+    await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('done');
+    expect(mocks.settlePhraseDerivations).toHaveBeenCalledTimes(1);
+    expect(mocks.obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(steps[0]).toBe('connecting');
+  });
+
+  it('is superseded when the session changes while waiting for a running derivation', async () => {
+    mocks.settlePhraseDerivations.mockImplementationOnce(async () => {
+      useAuthStore.setState({ session: 'other' });
+    });
+    const { loadSdk } = fakeSdk();
+    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
+    expect(mocks.obtainPrfFirstFromGet).not.toHaveBeenCalled();
   });
 
   it('skips the passkey prompt when the phrase is already in tab memory', async () => {

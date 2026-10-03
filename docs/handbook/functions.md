@@ -3743,10 +3743,17 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: rememberPhraseFromPrf
 
-- **Purpose:** Derives the phrase from PRF bytes a passkey response already carried and keeps it in tab memory. Only when the key is configured, the bytes are present, the account is `walletRequired`, the response's credential is the account's `passkeyCredentialId`, and the session is still the one that started it. Never throws, never sends the bytes or the phrase and never stores them persistently (tab memory only). A derivation overtaken by a later remember or clear (`sessionPhraseGeneration`) remembers nothing.
+- **Purpose:** Derives the phrase from PRF bytes a passkey response already carried and keeps it in tab memory. Only when the key is configured, the bytes are present, the account is `walletRequired`, the response's credential is the account's `passkeyCredentialId`, and the session is still the one that started it. Never throws, never sends the bytes or the phrase and never stores them persistently (tab memory only). A derivation overtaken by a later remember or clear (`sessionPhraseGeneration`) remembers nothing. While a derivation runs, `settlePhraseDerivations` waits for it.
 - **Inputs:** `PhraseSource` (`prfFirst`, `credentialId`, `account`, `sessionToken`).
 - **Returns / side effects:** `true` when the phrase was remembered, else `false`.
-- **Used by:** `usePasskeyLogin` (login and registration), `renewPasskey`, `unlockWalletPhrase`.
+- **Used by:** `usePasskeyLogin` (login and registration), `renewPasskey`, `unlockWalletPhrase`, `runWalletSetup`.
+
+## Function: settlePhraseDerivations
+
+- **Purpose:** Waits until every phrase derivation running in this tab (`rememberPhraseFromPrf`) has finished. The login derives the phrase from its passkey response without waiting for it, so a caller that needs the phrase right after login waits here instead of asking for the passkey a second time.
+- **Inputs:** None.
+- **Returns / side effects:** Resolves once no derivation is running. Never rejects.
+- **Used by:** `runWalletSetup`.
 
 ## Function: unlockWalletPhrase
 
@@ -3855,7 +3862,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: runWalletSetup
 
-- **Purpose:** Runs the one-time wallet setup in a fixed order: one passkey prompt (`obtainPrfFirstFromGet`) only when the phrase is not in tab memory, then connect (`ensureWalletConnected`), claim (`putWallet` with the lower-cased identity key; the returned account is stored), register (`registerWalletAddress` with the username of the account the claim returned, so a rename in another tab is picked up), and refresh (`fetchMe`, then `setAccount`). A 409 on the claim means the wallet is already verified and skips straight to the refresh. The phrase never leaves tab memory.
+- **Purpose:** Runs the one-time wallet setup in a fixed order: one passkey prompt (`obtainPrfFirstFromGet`) only when the phrase is not in tab memory after any derivation still running from the login has finished (`settlePhraseDerivations`), then connect (`ensureWalletConnected`), claim (`putWallet` with the lower-cased identity key; the returned account is stored), register (`registerWalletAddress` with the username of the account the claim returned, so a rename in another tab is picked up), and refresh (`fetchMe`, then `setAccount`). A 409 on the claim means the wallet is already verified and skips straight to the refresh. The phrase never leaves tab memory.
 - **Inputs:** `onStep` callback (`passkey`, `connecting`, `claiming`, `registering`, `refreshing`), optional `WalletSdkLoader`.
 - **Returns / side effects:** `done` when the refreshed account is verified; `noPrf` when the passkey returns no PRF output; `cancelled` when the prompt is dismissed; `superseded` when the session changed meanwhile; otherwise `failed`. Never rejects. A call while a run for the same session is in progress returns that run's promise (its `onStep` is not called), so a remounted dialog cannot start a second run; a run left over from an earlier session is not joined. A failure after the session changed counts as `superseded`.
 - **Used by:** `useWalletSetup`.

@@ -3,7 +3,11 @@ import type { Account } from '@/lib/api-types';
 import { getBreezApiKey } from '@/lib/config';
 import { classifyWebAuthnError, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
-import { canUnlockWallet, rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
+import {
+  canUnlockWallet,
+  rememberPhraseFromPrf,
+  settlePhraseDerivations,
+} from '@/lib/wallet/wallet-phrase';
 import { loadWalletSdk } from '@/lib/wallet/wallet-sdk';
 import {
   ensureWalletConnected,
@@ -157,6 +161,13 @@ async function setupOnce(
   let username = account.username;
   const current = (): boolean => useAuthStore.getState().session === session;
   try {
+    if (peekSessionPhrase() === null) {
+      // The login may still be deriving the phrase from its own passkey prompt.
+      await settlePhraseDerivations();
+      if (!current()) {
+        return 'superseded';
+      }
+    }
     if (peekSessionPhrase() === null) {
       onStep('passkey');
       const unlocked = await unlockForSetup(account, session);
