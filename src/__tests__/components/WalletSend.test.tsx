@@ -147,6 +147,31 @@ describe('WalletSend camera', () => {
     expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
   });
 
+  it('keeps the camera off after a scan until the flow moves on or the field is edited', () => {
+    const send = sendWith({ step: 'input', error: null });
+    const view = renderWithLocale(<WalletSend send={send} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
+    const pasted = { ...send, text: 'lnbc1scanned' };
+    view.rerender(<WalletSend send={pasted} />);
+    view.rerender(<WalletSend send={{ ...pasted }} />);
+    expect(send.submitInput).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    view.rerender(<WalletSend send={{ ...pasted, text: 'lnbc1scanned2' }} />);
+    expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
+    expect(send.submitInput).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the camera again when the input step returns after a scan', () => {
+    const send = sendWith({ step: 'input', error: null });
+    const view = renderWithLocale(<WalletSend send={send} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
+    view.rerender(<WalletSend send={{ ...send, text: 'lnbc1scanned' }} />);
+    view.rerender(<WalletSend send={{ ...send, text: 'lnbc1scanned', state: LNURL_STATE }} />);
+    view.rerender(<WalletSend send={{ ...send, text: 'lnbc1scanned' }} />);
+    expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
+    expect(send.submitInput).toHaveBeenCalledTimes(1);
+  });
+
   it('waits for the field to hold the scanned text before submitting', () => {
     const send = sendWith({ step: 'input', error: null }, { text: 'typed' });
     const view = renderWithLocale(<WalletSend send={send} />);
