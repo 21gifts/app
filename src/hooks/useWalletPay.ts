@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
+import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { payFromWallet, type WalletSendResult } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -109,8 +110,8 @@ function visualView(): WalletPayView | null {
 /**
  * Chooses and runs the in-app pay path for one invoice. The in-app path is
  * offered only when `sparkInvoice` is a string and the member's wallet is
- * ready, opening, or can be unlocked with one passkey prompt; otherwise the
- * view is `fallback`. A ready wallet prepares at once so the fee is shown
+ * ready, opening, or can be unlocked with one passkey prompt, and not while
+ * the one-time wallet setup is due; otherwise the view is `fallback`. A ready wallet prepares at once so the fee is shown
  * before **Pay from wallet**; a prepared amount that differs from
  * `amountSats` falls back. A wallet that leaves `ready` before the send or
  * while `insufficient` shows, or an account that leaves wallet mode then,
@@ -146,6 +147,7 @@ export function useWalletPay(
     input !== null &&
     pinned === null &&
     canUnlockWallet(account) &&
+    !needsWalletSetup(account) &&
     (status === 'ready' || status === 'locked' || status === 'connecting');
 
   useEffect(() => {

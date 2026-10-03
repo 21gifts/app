@@ -88,6 +88,20 @@ describe('useWalletPay path choice', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
+  it('falls back while the account is in the one-time wallet setup', () => {
+    const key = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    expect(result.current.view).toBe('fallback');
+    expect(payFromWallet).not.toHaveBeenCalled();
+    if (key === undefined) {
+      delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    } else {
+      process.env.NEXT_PUBLIC_BREEZ_API_KEY = key;
+    }
+  });
+
   it('falls back when the account cannot unlock a wallet', () => {
     useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
     const { result } = renderHook(() => useWalletPay(SPARK, 21));
