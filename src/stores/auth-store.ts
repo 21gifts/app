@@ -27,7 +27,7 @@ interface AuthState {
   /**
    * Replaces the account while keeping the current session token.
    *
-   * Used after a profile change (e.g. linking a Lightning Address) where the api
+   * Used after a profile change (e.g. saving a name or username) where the api
    * returns the updated account but the session is unchanged — the persisted
    * token is deliberately left untouched.
    *

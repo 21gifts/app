@@ -20,7 +20,6 @@ import {
   FORUM_MESSAGE_MAX_LENGTH,
   forumMessageSchema,
   hiddenMessageSchema,
-  lnAddressResolvedSchema,
   giftStatsSchema,
   shopActivitySchema,
   memberProfileSchema,
@@ -68,7 +67,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -88,7 +87,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       profileMessage: null,
     };
@@ -103,7 +102,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -120,7 +119,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: true,
@@ -138,7 +137,7 @@ describe('memberProfileSchema', () => {
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: null,
         aboutMeHasPhoto: 'yes',
@@ -173,7 +172,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -190,7 +189,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -211,7 +210,7 @@ describe('memberProfileSchema', () => {
       name: 'Carol',
       location: null,
       role: 'verified' as const,
-      lightningAddress: 'carol@walletofsatoshi.com',
+      lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
       aboutMeHasPhoto: false,
@@ -235,7 +234,7 @@ describe('memberProfileSchema', () => {
         name: 'Carol',
         location: '',
         role: 'verified',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
         postCount: 0,
@@ -1244,14 +1243,14 @@ describe('forumMessageSchema place', () => {
 });
 
 describe('accountSchema', () => {
-  it('accepts a well-formed account without a linked address', () => {
+  it('accepts a well-formed account', () => {
     expect(accountSchema.parse(account)).toEqual(account);
   });
 
-  it('accepts a linked, verified account', () => {
+  it('accepts the legacy address-verified flag from the api', () => {
     const linked = {
       ...account,
-      lightningAddress: 'me@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: true,
     };
     expect(accountSchema.parse(linked)).toEqual(linked);
@@ -1444,7 +1443,7 @@ describe('viewProfileSchema', () => {
   const profile = {
     name: 'Ada',
     location: null,
-    lightningAddress: 'alice@walletofsatoshi.com',
+    lightningAddress: null,
     lightningAddressVerified: false,
     createdAt: 1_700_000_000,
     hasPasskey: false,
@@ -1585,28 +1584,6 @@ describe('passkeySessionSchema', () => {
       token: 'tok',
       account: { ...account, linkingKey: null },
     });
-  });
-});
-
-describe('lnAddressResolvedSchema', () => {
-  const resolved = {
-    address: 'me@walletofsatoshi.com',
-    callback: 'https://walletofsatoshi.com/lnurlp/callback',
-    minSendable: 1000,
-    maxSendable: 100_000_000,
-  };
-
-  it('accepts metadata without commentAllowed', () => {
-    expect(lnAddressResolvedSchema.parse(resolved)).toEqual(resolved);
-  });
-
-  it('accepts metadata with commentAllowed', () => {
-    const withComment = { ...resolved, commentAllowed: 255 };
-    expect(lnAddressResolvedSchema.parse(withComment)).toEqual(withComment);
-  });
-
-  it('rejects a non-url callback', () => {
-    expect(() => lnAddressResolvedSchema.parse({ ...resolved, callback: 'not-a-url' })).toThrow();
   });
 });
 

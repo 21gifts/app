@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const ID = '11111111-1111-4111-8111-111111111111';
 
@@ -80,7 +80,7 @@ test('signed-in inbox heading is Messages', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -137,7 +137,7 @@ test('inbox lastFromMe preview shows You: Hello team', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -192,7 +192,7 @@ test('inbox empty shows No private messages yet.', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -230,7 +230,7 @@ test('inbox loading', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -263,7 +263,7 @@ test('inbox error shows Could not load messages. Please try again.', async ({ pa
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -300,7 +300,7 @@ test('inbox thread shows Hello team', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -371,7 +371,7 @@ test('inbox gift-only last preview shows ₿21', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -424,7 +424,7 @@ test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -516,7 +516,7 @@ test('inbox gift-only bubble shows send ₿21', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -595,7 +595,7 @@ test('inbox inbound text+sats shows Hi and ₿21', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -653,7 +653,8 @@ test('inbox inbound text+sats shows Hi and ₿21', async ({ page }) => {
   await expect(page.getByText('₿21')).toBeVisible();
 });
 
-test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
+/** Signed-in inbox thread with 21.gifts whose gift invoice answers `invoiceStatus`; sends 21. */
+async function sendInboxGift(page: Page, invoiceStatus: number): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -667,7 +668,7 @@ test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -725,11 +726,19 @@ test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
       await route.continue();
       return;
     }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' }),
-    });
+    await route.fulfill(
+      invoiceStatus === 200
+        ? {
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' }),
+          }
+        : {
+            status: 400,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: 'Cannot receive', code: 'cannot_receive' }),
+          },
+    );
   });
   await page.route(/sinceMessageId=/, async () => {
     /* hang — keep the pay sheet open */
@@ -738,8 +747,27 @@ test('inbox pay sheet shows Pay with Wallet of Satoshi', async ({ page }) => {
   await expect(page.getByText('Hello team')).toBeVisible();
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Send' }).click();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+}
+
+test('inbox pay sheet is wallet-only, with no invoice QR or wallet app link', async ({ page }) => {
+  await sendInboxGift(page, 200);
+  await expect(
+    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+});
+
+test("Function: CannotReceiveError — a cannot_receive inbox invoice says the author's wallet cannot receive", async ({
+  page,
+}) => {
+  await sendInboxGift(page, 400);
+  await expect(
+    page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toHaveCount(0);
 });
 
 test('public message default shows Hello from Ada', async ({ page }) => {
@@ -859,7 +887,7 @@ test('welcome external reply shows a badge and keeps the url as text', async ({ 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -1006,7 +1034,7 @@ test('welcome reply copy control copies the reply permalink', async ({ page, con
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,

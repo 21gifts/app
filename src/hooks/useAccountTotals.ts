@@ -8,15 +8,16 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Fetches given and received activity for the signed-in session.
  *
- * Calls `GET /me/activity` whenever a session exists, including when the
- * Lightning Address is blank (forum zaps do not need a handle). Refetches when
- * the session or Lightning Address changes so house gifts to a newly linked
- * handle appear without a full reload. No session → zeros, empty series,
- * `loading: false`, `failed: false`. On each fetch start (including session
- * or address change) totals and series reset to zeros/empty and `failed` is
- * false; `AccountActivityChart` then shows `profile.chartEmpty` (no SVG) while
- * the request is in flight. Drops stale responses when the session or address
- * changes mid-flight. A thrown fetch sets `failed` true with zeros and empty
+ * Calls `GET /me/activity` whenever a session exists, including before the
+ * wallet is verified (forum gifts do not need it). Refetches when the session
+ * changes or the account's wallet becomes verified (`sparkWalletVerified`) so
+ * gifts to the newly set up wallet appear without a full reload. No session →
+ * zeros, empty series, `loading: false`, `failed: false`. On each fetch start
+ * (including a session or verification change) totals and series reset to
+ * zeros/empty and `failed` is false; `AccountActivityChart` then shows
+ * `profile.chartEmpty` (no SVG) while the request is in flight. Drops stale
+ * responses when the session or verification changes mid-flight. A thrown
+ * fetch sets `failed` true with zeros and empty
  * series so the chart shows `profile.chartError`. Does not call
  * `fetchGiftStats`.
  *
@@ -32,7 +33,7 @@ export function useAccountTotals(): {
   failed: boolean;
 } {
   const session = useAuthStore((state) => state.session);
-  const lightningAddress = useAuthStore((state) => state.account?.lightningAddress ?? null);
+  const walletVerified = useAuthStore((state) => state.account?.sparkWalletVerified === true);
   const [donatedSats, setDonatedSats] = useState(0);
   const [receivedSats, setReceivedSats] = useState(0);
   const [donateOverTime, setDonateOverTime] = useState<AccountActivity['donatedOverTime']>([]);
@@ -89,7 +90,7 @@ export function useAccountTotals(): {
     return () => {
       cancelled = true;
     };
-  }, [session, lightningAddress]);
+  }, [session, walletVerified]);
 
   return { donatedSats, receivedSats, donateOverTime, receiveOverTime, loading, failed };
 }

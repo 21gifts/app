@@ -2,16 +2,15 @@
 
 import { Loader2, X } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
-import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
 import { UsernameForm } from '@/components/UsernameForm';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Button, ButtonLink, Card, IconButton } from '@/components/ui';
 import { agreeToRules } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Field collected by {@link RequirementsOverlay} before a pending post retries. */
-export type OverlayRequirement = 'name' | 'username' | 'rules' | 'lightning-address';
+export type OverlayRequirement = 'name' | 'username' | 'rules' | 'wallet';
 
 /** Props for {@link RequirementsOverlay}. */
 export interface RequirementsOverlayProps {
@@ -24,9 +23,11 @@ export interface RequirementsOverlayProps {
 }
 
 /**
- * Modal to add a missing name, 21.gifts username, Wallet of Satoshi
- * address, or living-room rules agreement before retrying a forum or
- * contact post. No Skip control.
+ * Modal to add a missing name, 21.gifts username, or living-room rules
+ * agreement before retrying a forum or contact post. No Skip control. The
+ * `wallet` step explains that gifts and posts need the member's own 21.gifts wallet and
+ * links to `/wallet` (**Open your wallet**); setting it up is the one-time
+ * wallet setup, not a field here.
  *
  * @param props - See {@link RequirementsOverlayProps}.
  * @returns The overlay dialog.
@@ -49,7 +50,7 @@ export function RequirementsOverlay({
         ? 'requirements.usernameTitle'
         : requirement === 'rules'
           ? 'requirements.rulesTitle'
-          : 'requirements.addressTitle';
+          : 'requirements.walletTitle';
 
   const handleAgree = (): void => {
     if (session === null || busy) {
@@ -107,8 +108,13 @@ export function RequirementsOverlay({
           <NameForm variant="profile" onSaved={onSatisfied} />
         ) : requirement === 'username' ? (
           <UsernameForm variant="overlay" onSaved={onSatisfied} />
-        ) : requirement === 'lightning-address' ? (
-          <LightningAddressForm variant="profile" onSaved={onSatisfied} />
+        ) : requirement === 'wallet' ? (
+          <div className="flex flex-col items-stretch gap-3">
+            <p className="text-center text-sm text-app-muted">{t('requirements.walletBody')}</p>
+            <ButtonLink href="/wallet" size="lg">
+              {t('requirements.walletOpen')}
+            </ButtonLink>
+          </div>
         ) : (
           <div className="flex flex-col items-stretch gap-3">
             <p className="text-center text-sm text-app-muted">{t('setup.rulesPromptLast')}</p>

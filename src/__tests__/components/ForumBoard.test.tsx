@@ -24,14 +24,19 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
+  return { ...actual, unlockWalletPhrase: vi.fn() };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -73,33 +78,27 @@ vi.mock('@/lib/api', () => ({
 import { fetchPublicMessage } from '@/lib/api';
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
-const originalUserAgent = navigator.userAgent;
-const locationAssign = vi.fn();
-const locationStub = { assign: locationAssign, href: 'http://localhost/' };
 
-const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)';
-const ANDROID_MOBILE_UA =
-  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+/** Pay slot sentence while the in-app wallet is not configured (no Breez key in unit tests). */
+const WALLET_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** Asserts that no pay sheet shows an invoice QR or hands the payment to a wallet app. */
+function expectWalletOnly(): void {
+  expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
+}
 
 beforeEach(() => {
   push.mockClear();
   consumePendingForumCompose();
   consumeSkipIntroduceOverlay();
   HTMLElement.prototype.scrollIntoView = vi.fn();
-  locationAssign.mockReset();
-  locationStub.href = 'http://localhost/';
-  vi.stubGlobal('location', locationStub);
 });
 
 afterEach(() => {
   cleanup();
   useAuthStore.getState().clearAuth();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
-  Object.defineProperty(navigator, 'userAgent', {
-    configurable: true,
-    value: originalUserAgent,
-  });
-  vi.unstubAllGlobals();
 });
 
 const SAMPLE: ForumMessage = {
@@ -1965,7 +1964,6 @@ describe('ForumBoard', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(locationAssign).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByText('Back')).toBeNull();
     expect(onPayCancel).toHaveBeenCalledTimes(1);
@@ -1991,8 +1989,8 @@ describe('ForumBoard', () => {
         replies={[{ ...SAMPLE, id: 'r1' }]}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expectWalletOnly();
   });
 
   it('shows a composer pay sheet when the fee note is hidden on Active', () => {
@@ -2014,7 +2012,8 @@ describe('ForumBoard', () => {
         payWaiting
       />,
     );
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expectWalletOnly();
   });
 
   it('keeps the composer pay sheet when payHost is composer and the fee note is listed', () => {
@@ -2037,7 +2036,7 @@ describe('ForumBoard', () => {
         payWaiting
       />,
     );
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
     expect(document.querySelector('[data-message-id="fee-note"]')).not.toBeNull();
   });
 
@@ -2061,14 +2060,10 @@ describe('ForumBoard', () => {
         replies={[{ ...SAMPLE, id: 'r1', parentId: SAMPLE.id }]}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
   });
 
-  it('labels the iPhone amount CTA Continue in English and Weiter in German', () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
+  it('labels the amount CTA Continue in English and Weiter in German', () => {
     const { unmount } = renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2111,44 +2106,6 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: 'Bezahlen' })).toBeNull();
   });
 
-  it('does not assign the wallet href on iPhone after Continue', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
-    const onPaySubmit = vi.fn().mockResolvedValue({
-      messageId: 'm1',
-      pr: 'lnbc21n1example',
-      amountSats: 21,
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payDraft="21"
-        onPaySubmit={onPaySubmit}
-        {...modeProps('all')}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-    expect(onPaySubmit).toHaveBeenCalledTimes(1);
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe('http://localhost/');
-  });
-
   it('shows a live CHF equivalent on the German pay sheet without a picker', () => {
     renderWithLocale(
       <ForumBoard
@@ -2177,46 +2134,6 @@ describe('ForumBoard', () => {
     );
     expect(screen.queryByRole('group', { name: 'Fiatwährung' })).toBeNull();
     expect(screen.getAllByText('CHF 0.02').length).toBeGreaterThan(0);
-  });
-
-  it('keeps Continue on Android Mobile and does not auto-open the wallet', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: ANDROID_MOBILE_UA,
-    });
-    const onPaySubmit = vi.fn().mockResolvedValue({
-      messageId: 'm1',
-      pr: 'lnbc21n1example',
-      amountSats: 21,
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payDraft="21"
-        onPaySubmit={onPaySubmit}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-    expect(onPaySubmit).toHaveBeenCalledTimes(1);
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe('http://localhost/');
   });
 
   it('keeps ₿-only when the preferred fiat has no rate on that gift day', () => {
@@ -2334,6 +2251,30 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
   });
 
+  it('shows the author-wallet alert in the reply composer when replyFormError is authorWallet', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        replyFormError="authorWallet"
+        {...modeProps('all')}
+      />,
+    );
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe("The author's wallet cannot receive this Bitcoin payment");
+    expect(alert.closest('form')).toBe(screen.getByLabelText('Your reaction').closest('form'));
+  });
+
   it('shows pay author-wallet error', () => {
     renderWithLocale(
       <ForumBoard
@@ -2357,7 +2298,7 @@ describe('ForumBoard', () => {
     );
   });
 
-  it('shows the invoice QR and wallet button', async () => {
+  it('shows the wallet slot without an invoice QR or wallet-app button', () => {
     const onPayCancel = vi.fn();
     renderWithLocale(
       <ForumBoard
@@ -2379,10 +2320,9 @@ describe('ForumBoard', () => {
       />,
     );
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    const walletButton = screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
-    expect(walletButton.textContent).toContain('Pay');
-    expect(walletButton.querySelector('img[src="/wos-icon.png"]')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe(WALLET_UNAVAILABLE);
+    expectWalletOnly();
+    expect(document.querySelector('[data-pay-sheet] img')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     expect(screen.queryByText('Back')).toBeNull();
     const back = screen.getByRole('button', { name: 'Close' });
@@ -2395,7 +2335,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
   });
 
-  it('shows a fiat equivalent on the pay confirm line', async () => {
+  it('shows a fiat equivalent on the pay confirm line', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2423,48 +2363,10 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
     expect(screen.getByText('$0.02')).toBeTruthy();
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
   });
 
-  it('hides the invoice QR on iPhone and keeps the wallet button', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        {...modeProps('all')}
-      />,
-    );
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe(walletOfSatoshiHref('lnbc21n1example'));
-  });
-
-  it('shows the invoice amount on iPhone when payDraft is empty', () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
+  it('shows the invoice amount when payDraft is empty', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2496,11 +2398,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
-  it('shows waiting copy on iPhone after the invoice is minted', () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: IPHONE_UA,
-    });
+  it('shows waiting copy after the invoice is minted', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -2521,7 +2419,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
@@ -2550,41 +2448,6 @@ describe('ForumBoard', () => {
     );
   });
 
-  it('hides the invoice QR on Android Mobile and uses an Intent href', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value:
-        'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, parentId: 'p1' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        payMessageId="m1"
-        payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        {...modeProps('all')}
-      />,
-    );
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(locationAssign).not.toHaveBeenCalled();
-    expect(locationStub.href).toMatch(/^intent:lightning:/);
-  });
-
   it('shows German invoice sheet labels', () => {
     renderWithLocale(
       <ForumBoard
@@ -2607,9 +2470,10 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Zurück' })).toBeNull();
     expect(screen.queryByText('Zurück')).toBeNull();
-    const walletButton = screen.getByRole('button', { name: 'Mit Wallet of Satoshi zahlen' });
-    expect(walletButton.textContent).toContain('Zahlen');
-    expect(walletButton.textContent).not.toContain('Pay');
+    expect(screen.getByRole('status').textContent).toBe(
+      'Ihre 21.gifts-Wallet ist hier nicht verfügbar, darum kann dies nicht bezahlt werden.',
+    );
+    expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
   });
 
   it('shows formError empty alert', () => {
@@ -3122,7 +2986,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3164,7 +3028,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3218,7 +3082,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3319,7 +3183,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3361,7 +3225,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -3415,7 +3279,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -5134,7 +4998,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -6478,7 +6342,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -6542,7 +6406,7 @@ describe('ForumBoard', () => {
         role: 'moderator',
         name: 'Mod',
         location: null,
-        lightningAddress: 'mod@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -6600,7 +6464,7 @@ describe('ForumBoard', () => {
         role: 'founder',
         name: 'Ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -6980,7 +6844,7 @@ describe('ForumBoard', () => {
         role: 'founder',
         name: 'Ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -7327,7 +7191,7 @@ describe('ForumBoard in-app wallet pay', () => {
 
   afterEach(resetWallet);
 
-  it('pays a gift from a ready wallet instead of opening an external wallet', async () => {
+  it('pays a gift from a ready wallet, with no invoice QR and no wallet-app button', async () => {
     setWalletUsable('ready');
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
@@ -7335,30 +7199,44 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
     expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expectWalletOnly();
     fireEvent.click(screen.getByRole('button', { name: 'Pay from wallet' }));
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it('offers unlock for a locked wallet', () => {
+  it('opens a locked wallet with one passkey prompt, then offers Pay from wallet', async () => {
     setWalletUsable('locked');
+    vi.mocked(unlockWalletPhrase)
+      .mockReset()
+      .mockImplementation(async () => {
+        setWalletUsable('ready');
+        return 'unlocked';
+      });
     renderWithLocale(cardBoard(SPARK_INVOICE));
-    expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(payFromWallet).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock wallet' }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expectWalletOnly();
   });
 
-  it('keeps the external wallet without a sparkInvoice or without a usable wallet', async () => {
+  it('pays the payment request from the wallet without a sparkInvoice', async () => {
     setWalletUsable('ready');
     renderWithLocale(cardBoard(null));
-    expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    cleanup();
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
+    expectWalletOnly();
+  });
+
+  it('offers no other way to pay when the wallet is not configured', () => {
     setWalletUsable('disabled');
     renderWithLocale(cardBoard(SPARK_INVOICE));
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expectWalletOnly();
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
@@ -7390,7 +7268,7 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expectWalletOnly();
   });
 
   it('passes the sparkInvoice to the reaction pay page', async () => {

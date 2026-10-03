@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState } from '@/lib/pos';
 
 const CHARGE = {
@@ -66,5 +67,22 @@ describe('pos client', () => {
   it('rejects a create response that is not a charge', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ charge: { id: 'x' } }, 201)));
     await expect(createPosCharge('tok', 21)).rejects.toThrow();
+  });
+
+  it('throws the typed wallet errors on a 400 with a wallet code', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          json({ error: 'Set up your wallet first', code: 'wallet_required' }, 400),
+        ),
+    );
+    await expect(createPosCharge('tok', 21)).rejects.toBeInstanceOf(WalletRequiredError);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(json({ error: 'Cannot receive', code: 'cannot_receive' }, 400)),
+    );
+    await expect(createPosCharge('tok', 21)).rejects.toBeInstanceOf(CannotReceiveError);
   });
 });

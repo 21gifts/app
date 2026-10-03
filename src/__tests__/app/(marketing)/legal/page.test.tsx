@@ -57,4 +57,12 @@ describe('LegalPage', () => {
       expect(link.getAttribute('href')).toBe('/contact');
     }
   });
+
+  it('describes only the in-app wallet and names no other wallet app', () => {
+    const { container } = render(<LegalPage />);
+    expect(container.textContent).toContain('your own Bitcoin wallet');
+    expect(container.textContent).not.toMatch(
+      new RegExp(['wallet', 'of', 'satoshi'].join(' '), 'i'),
+    );
+  });
 });

@@ -79,7 +79,7 @@ Should not appear without a screen path.
       expect((description ?? '').trim().length).toBeGreaterThan(0);
     }
 
-    expect(map.get('/welcome:pay-qr')).toMatch(/Bitcoin payment QR/);
+    expect(map.get('/welcome:pay-amount')).toMatch(/Amount CTA is Continue/);
     expect(map.get('/:mobile-nav')).toMatch(/hamburger|Menu button/i);
   });
 });

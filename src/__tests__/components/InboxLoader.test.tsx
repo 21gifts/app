@@ -49,6 +49,8 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   CONVERSATION_LIVE_POLL_MS: 5_000,
+  CannotReceiveError: class CannotReceiveError extends Error {},
+  WalletRequiredError: class WalletRequiredError extends Error {},
 }));
 vi.mock('@/lib/app-badge', () => ({
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -57,6 +59,7 @@ vi.mock('@/lib/app-badge', () => ({
 }));
 
 import {
+  CannotReceiveError,
   fetchConversation,
   fetchConversationMessagePhoto,
   fetchConversations,
@@ -65,6 +68,7 @@ import {
   postConversationInvoice,
   markConversationRead,
   postConversationMessage,
+  WalletRequiredError,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import { prepareForumPhoto } from '@/lib/forum-photo';
@@ -87,7 +91,7 @@ const account: Account = {
   role: 'basis',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -566,17 +570,27 @@ describe('InboxLoader', () => {
   });
 
   it.each([
-    ['Too many payments', 'Too many payments. Please wait a moment and try again.'],
     [
-      "Author's wallet cannot receive this Bitcoin payment",
+      'Too many payments',
+      new Error('Too many payments'),
+      'Too many payments. Please wait a moment and try again.',
+    ],
+    [
+      'the author-wallet text without a code',
+      new Error("Author's wallet cannot receive this Bitcoin payment"),
+      'Could not send your message',
+    ],
+    [
+      'cannot_receive',
+      new CannotReceiveError(),
       "The author's wallet cannot receive this Bitcoin payment",
     ],
-    ['boom', 'Could not send your message'],
-  ])('maps invoice mint error %s', async (message, expected) => {
+    ['boom', new Error('boom'), 'Could not send your message'],
+  ])('maps invoice mint error %s', async (_label, error, expected) => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue(conversationPage([MESSAGE]));
-    invoiceMock.mockRejectedValue(new Error(message));
+    invoiceMock.mockRejectedValue(error);
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Amount')).toBeTruthy();
     await waitFor(() => {
@@ -585,6 +599,25 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText(expected)).toBeTruthy();
+  });
+
+  it('links to the wallet when the invoice mint needs the payer wallet', async () => {
+    searchParams.set('c', 'conv-1');
+    listMock.mockResolvedValue([THREAD]);
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    invoiceMock.mockRejectedValue(new WalletRequiredError());
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByLabelText('Amount')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Set up your wallet first.');
+    expect(
+      within(alert).getByRole('link', { name: 'Set up your wallet first.' }).getAttribute('href'),
+    ).toBe('/wallet');
   });
 
   it('aborts the paid-row poll when the pay sheet is cancelled', async () => {
@@ -2260,7 +2293,8 @@ describe('InboxLoader in-app wallet pay', () => {
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(send).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
     await act(async () => {
       resolvePoll?.(
         conversationPage([

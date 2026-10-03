@@ -9,7 +9,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/grants/apply` — guided 21 gifts grant apply for a signed-in member.
  *
  * The chrome back returns to the previous in-app view (the card has no back
- * control). Requires name + address + living-room rules agreement via {@link OnboardingGate}
+ * control). Requires name + username + living-room rules agreement via {@link OnboardingGate}
  * `screen="profile"`.
  *
  * @returns The apply walk.

@@ -25,7 +25,9 @@ import {
   shownFiatForSats,
 } from '@/lib/stats-money';
 import {
+  CannotReceiveError,
   dismissForumLaws,
+  fetchComposeTarget,
   fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
@@ -34,15 +36,15 @@ import {
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
-  PublicForumUnauthorizedError,
   markNotificationRead,
   markNotificationsReadForMessage,
   NoteDeletedError,
   postMessage,
-  fetchComposeTarget,
   postMessageInvoice,
-  postRepaymentInvoice,
   postMessageVideo,
+  postRepaymentInvoice,
+  PublicForumUnauthorizedError,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -128,17 +130,15 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
 }
 
 /**
- * True when a thrown value is the api author's-wallet rejection for payments.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /**
@@ -489,7 +489,7 @@ export function ForumLoader({
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
@@ -749,6 +749,11 @@ export function ForumLoader({
             return;
           }
           setRepayNotice({ messageId, error: 'request' });
+          return;
+        }
+        if (err instanceof WalletRequiredError) {
+          setRepayNotice(null);
+          setOverlayRequirement('wallet');
           return;
         }
         setRepayNotice({
@@ -1866,6 +1871,10 @@ export function ForumLoader({
       }
       setAccount({ ...current.account, hasPosted: true });
     } catch (err) {
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
@@ -2021,6 +2030,11 @@ export function ForumLoader({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
@@ -2265,6 +2279,10 @@ export function ForumLoader({
       if (generation !== payPollGeneration.current) {
         return;
       }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runPaidReply(trimmed, parentId, sats, baselineSats, true);
@@ -2286,7 +2304,9 @@ export function ForumLoader({
             ? 'tooLong'
             : isRateLimitError(err)
               ? 'rateLimit'
-              : 'request',
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
         );
       }
     } finally {
@@ -2345,6 +2365,10 @@ export function ForumLoader({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(trimmed, parentId, sats, true);
