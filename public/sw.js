@@ -27,6 +27,50 @@ self.addEventListener('push', (event) => {
     payload = {};
   }
 
+  if (payload.type === 'dismiss') {
+    const tags = Array.isArray(payload.tags)
+      ? payload.tags.filter((tag) => typeof tag === 'string' && tag !== '')
+      : [];
+    const tasks = [
+      Promise.all(
+        tags.map((tag) =>
+          self.registration.getNotifications({ tag }).then((notes) => {
+            for (const note of notes) {
+              note.close();
+            }
+          }),
+        ),
+      ),
+      self.registration
+        .showNotification('21.gifts', {
+          silent: true,
+          tag: 'dismiss-ack',
+          data: { url: '/welcome' },
+        })
+        .then(() => self.registration.getNotifications({ tag: 'dismiss-ack' }))
+        .then((notes) => {
+          for (const note of notes) {
+            note.close();
+          }
+        }),
+    ];
+    const setBadge =
+      typeof self.navigator.setAppBadge === 'function'
+        ? self.navigator.setAppBadge.bind(self.navigator)
+        : typeof self.registration.setAppBadge === 'function'
+          ? self.registration.setAppBadge.bind(self.registration)
+          : null;
+    if (
+      setBadge !== null &&
+      typeof payload.unreadCount === 'number' &&
+      Number.isFinite(payload.unreadCount)
+    ) {
+      tasks.push(setBadge(Math.max(0, Math.floor(payload.unreadCount))).catch(() => undefined));
+    }
+    event.waitUntil(Promise.all(tasks));
+    return;
+  }
+
   // Public posts and zaps stay quiet on Sunday. A private message still rings.
   // The subscription requires a visible notification, so show one and close it.
   if (isDeviceSunday() && payload.type !== 'conversation') {

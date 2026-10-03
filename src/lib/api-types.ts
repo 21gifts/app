@@ -387,6 +387,43 @@ export const shopActivitySchema = z.object({
 export type ShopActivityDay = z.infer<typeof shopActivityDaySchema>;
 
 /**
+ * Runtime schema for the payload of `GET /funding/goal`.
+ *
+ * Exactly 7 unique contiguous UTC days, oldest first, plus how many shops
+ * had a charge on at least 5 of those days. Not {@link shopActivitySchema}.
+ */
+export const grantContinuationSchema = z.object({
+  days: z
+    .array(shopActivityDaySchema)
+    .length(7)
+    .refine((days) => {
+      const seen = new Set<string>();
+      for (let i = 0; i < days.length; i += 1) {
+        const day = days[i]!.day;
+        if (seen.has(day)) {
+          return false;
+        }
+        seen.add(day);
+        if (i === 0) {
+          continue;
+        }
+        const prevMs = Date.parse(`${days[i - 1]!.day}T00:00:00.000Z`);
+        const dayMs = Date.parse(`${day}T00:00:00.000Z`);
+        if (dayMs - prevMs !== 86_400_000) {
+          return false;
+        }
+      }
+      return true;
+    }),
+  qualifyingShops: z.number().int().nonnegative(),
+});
+
+/**
+ * Grant-goal measurement from `GET /funding/goal`.
+ */
+export type GrantContinuation = z.infer<typeof grantContinuationSchema>;
+
+/**
  * Runtime schema for `GET /messages/stats`.
  * `postCount` counts living notes and replies together.
  */
@@ -749,12 +786,16 @@ export type ForumMessage = z.infer<typeof forumMessageSchema>;
 
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.
+ * `postCount` and `replyCount` are optional nonnegative integers so today's
+ * API still parses.
  */
 export const externalAuthorProfileSchema = z.object({
   name: z.string(),
   npub: z.string(),
   nip05: z.string().optional(),
   lud16: z.string().optional(),
+  postCount: z.number().int().nonnegative().optional(),
+  replyCount: z.number().int().nonnegative().optional(),
 });
 
 /**

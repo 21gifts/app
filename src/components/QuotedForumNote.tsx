@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
-import { ExternalAuthorSheet } from '@/components/ExternalAuthorSheet';
 import { ForumNoteText } from '@/components/ForumNoteText';
 import { LinkedText, type TextMention } from '@/components/LinkedText';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -61,7 +60,6 @@ function QuotedForumNote({
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [externalAuthorOpen, setExternalAuthorOpen] = useState(false);
 
   useEffect(() => {
     if (!note.hasPhoto) {
@@ -135,17 +133,16 @@ function QuotedForumNote({
                 {note.name}
               </Link>
             ) : note.via === 'nostr' ? (
-              <button
-                type="button"
+              <Link
+                href={`/messages/${note.id}/author?name=${encodeURIComponent(note.name)}`}
                 aria-label={t('forum.authorProfile')}
                 className="pointer-events-auto text-sm font-medium text-app-fg underline underline-offset-2"
                 onClick={(event) => {
                   event.stopPropagation();
-                  setExternalAuthorOpen(true);
                 }}
               >
                 {note.name}
-              </button>
+              </Link>
             ) : (
               <span className="text-sm font-medium text-app-fg">{note.name}</span>
             )}
@@ -204,15 +201,6 @@ function QuotedForumNote({
           {formatBitcoin(note.sats, numberFormat)}
           {fiatSuffix}
         </p>
-        {externalAuthorOpen ? (
-          <ExternalAuthorSheet
-            messageId={note.id}
-            fallbackName={note.name}
-            onClose={() => {
-              setExternalAuthorOpen(false);
-            }}
-          />
-        ) : null}
       </div>
     </div>
   );
@@ -243,7 +231,8 @@ function QuotedForumNote({
  *   that short URL. Each nested card has one stretched permalink to
  *   `/messages/<id>` covering the caption, photo, time, and amount; the author
  *   link, Translate, Show more, and links inside the caption stay outside that
- *   permalink. `[&_[role=dialog]]:pointer-events-auto` and
+ *   permalink. A `via === 'nostr'` name is a link to `/messages/<id>/author`,
+ *   not a dialog. `[&_[role=dialog]]:pointer-events-auto` and
  *   `[&_[role=dialog]_*]:pointer-events-auto` keep the external-link confirm
  *   dialog and everything inside it clickable, because that dialog is a
  *   descendant of the card and is not portaled.

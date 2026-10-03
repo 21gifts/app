@@ -660,7 +660,6 @@ const en = {
   'forum.via.nostr': 'External',
   'forum.via.nostrHint':
     'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.',
-  'forum.externalProfileClose': 'Close',
   'forum.externalProfileNip05': 'Verified Nostr address',
   'forum.externalProfileLud16': 'Payment address on their profile',
   'forum.externalProfileNpub': 'Nostr key',
@@ -862,9 +861,15 @@ const en = {
   'statistics.heading': 'Statistics',
   'statistics.shops.widgetLabel': 'Active shops',
   'statistics.shops.explainer':
-    'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day.',
+    'A shop counts on a UTC day when a 21.gifts user is assigned to it and that user created a point-of-sale payment that day at https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Shops by UTC day',
   'statistics.shops.error': 'Could not load shop activity. Please try again.',
+  'statistics.people.widgetLabel': 'People paid',
+  'statistics.people.yesterday':
+    'Yesterday (UTC {date}): {count, plural, one {# person} other {# people}}',
+  'statistics.people.explainer':
+    'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count. The current UTC day is drawn lighter because it is still open.',
+  'statistics.people.chartLabel': 'People by UTC day',
   'moderate.toolsLabel': 'Moderation tools',
   'moderate.lead':
     'Hiding a note is a soft hide: the note and its untagged direct replies leave the living room. It is not a hard delete.',
@@ -886,23 +891,9 @@ const en = {
   'moderate.proposals.proposedBy': 'Proposed by {name}',
   'moderate.proposals.error': 'Could not load open proposals. Please try again.',
   'moderate.proposals.unread': 'Open proposals, {count} unread',
-  'moderate.goal.title': 'Goal',
-  'moderate.goal.subtitle': '100 people a day',
-  'moderate.goal.percent': '{percent}%',
-  'moderate.goal.yesterdayOf': 'yesterday {count} of {goal}',
-  'moderate.goal.closeHint': 'Tap to close',
-  'moderate.goal.explYesterday':
-    'Yesterday (UTC {date}) 21.gifts paid {count, plural, one {# person} other {# people}} the daily funding or the welcome gift. Each person counts once. That is {percent} percent of the {goal} a day we are aiming for.',
-  'moderate.goal.explOfficial':
-    'Each person counts once on the UTC day 21.gifts paid them the daily funding or the welcome gift. Someone who receives both that day counts once. Moderator stipends and gifts between members do not count.',
-  'moderate.goal.explBar':
-    'The bar uses the last completed UTC day. The current day is drawn lighter on the chart.',
-  'moderate.goal.chartTitle': 'People by UTC day',
-  'moderate.goal.chartFoot': 'Line at the top = goal {goal} · lighter bar = today, still open',
   'moderate.goal.loading': 'Loading…',
   'moderate.goal.error': 'Could not load payouts. Please try again.',
   'moderate.goal.retry': 'Try again',
-  'moderate.goal.widgetLabel': 'Daily funding goal',
   'moderate.payouts.link': 'Show payout per person',
   'moderate.payouts.heading': 'Payout per person',
   'moderate.payouts.lead':
@@ -943,6 +934,18 @@ const en = {
   'moderate.handbook.funding.ruleCap': 'New members are capped at 1 USD per day.',
   'moderate.handbook.funding.principlesLead': 'The 3 principles of 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.goals.link': 'Goals',
+  'funding.goals.heading': 'Goals',
+  'funding.goals.lead': 'The grant program continues when we reach 10 active shops.',
+  'funding.goals.active':
+    'A shop is active when it has at least one transaction on 5 of the last 7 days.',
+  'funding.goals.transaction':
+    "A transaction is a payment the shop's assigned member created at the till on https://21.gifts/pos that UTC day. Creating it counts, including when it later expires or is cancelled.",
+  'funding.goals.qualifying': '{count, plural, one {# shop meets this} other {# shops meet this}}',
+  'funding.goals.chartLabel': 'Shops per UTC day',
+  'funding.goals.chartFoot': 'Lighter bar = today, still open.',
+  'funding.goals.error': 'Could not load the shop goal. Please try again.',
+  'funding.goals.widgetLabel': 'Shop goal',
   'funding.notVerified': 'You are not verified yet.',
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
@@ -1674,7 +1677,6 @@ const de = {
   'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
     'Hat aus einer anderen App geschrieben, nicht aus einem 21.gifts-Konto. Wird hier gezeigt, weil diese Person Bitcoin an einen Beitrag gesendet hat.',
-  'forum.externalProfileClose': 'Schließen',
   'forum.externalProfileNip05': 'Geprüfte Nostr-Adresse',
   'forum.externalProfileLud16': 'Zahlungsadresse laut Profil',
   'forum.externalProfileNpub': 'Nostr-Schlüssel',
@@ -1881,10 +1883,16 @@ const de = {
   'statistics.heading': 'Statistiken',
   'statistics.shops.widgetLabel': 'Aktive Shops',
   'statistics.shops.explainer':
-    'Ein Shop zählt an einem UTC-Tag, wenn ihm ein 21.gifts-Benutzer zugeordnet ist und dieser an dem Tag an der Kasse eine Zahlung angelegt hat.',
+    'Ein Shop zählt an einem UTC-Tag, wenn ihm ein 21.gifts-Benutzer zugeordnet ist und dieser an dem Tag über https://21.gifts/pos an der Kasse eine Zahlung angelegt hat.',
   'statistics.shops.chartLabel': 'Shops je UTC-Tag',
   'statistics.shops.error':
     'Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen.',
+  'statistics.people.widgetLabel': 'Ausgezahlte Personen',
+  'statistics.people.yesterday':
+    'Gestern (UTC {date}): {count, plural, one {# Person} other {# Personen}}',
+  'statistics.people.explainer':
+    'Gezählt wird jede Person einmal an dem UTC-Tag, an dem 21.gifts ihr die Tagesförderung oder das Willkommensgeschenk gezahlt hat. Wer an einem Tag beides bekommt, zählt einmal. Moderatoren-Stipendien und Geschenke zwischen Mitgliedern zählen nicht. Der laufende UTC-Tag ist heller gezeichnet, weil er noch offen ist.',
+  'statistics.people.chartLabel': 'Personen je UTC-Tag',
   'moderate.toolsLabel': 'Moderationswerkzeuge',
   'moderate.lead':
     'Eine Notiz auszublenden ist ein weiches Ausblenden: Die Notiz und ihre nicht markierten direkten Antworten verlassen das Wohnzimmer. Es ist keine endgültige Löschung.',
@@ -1909,24 +1917,10 @@ const de = {
   'moderate.proposals.error':
     'Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.proposals.unread': 'Offene Vorschläge, {count} ungelesen',
-  'moderate.goal.title': 'Ziel',
-  'moderate.goal.subtitle': '100 Personen am Tag',
-  'moderate.goal.percent': '{percent} %',
-  'moderate.goal.yesterdayOf': 'gestern {count} von {goal}',
-  'moderate.goal.closeHint': 'Tippen zum Schliessen',
-  'moderate.goal.explYesterday':
-    'Gestern (UTC {date}) hat 21.gifts {count, plural, one {# Person} other {# Personen}} die Tagesförderung oder das Willkommensgeschenk gezahlt. Jede Person zählt einmal. Das sind {percent} Prozent der angepeilten {goal} am Tag.',
-  'moderate.goal.explOfficial':
-    'Gezählt wird jede Person einmal an dem UTC-Tag, an dem 21.gifts ihr die Tagesförderung oder das Willkommensgeschenk gezahlt hat. Wer an einem Tag beides bekommt, zählt einmal. Moderatoren-Stipendien und Geschenke zwischen Mitgliedern zählen nicht.',
-  'moderate.goal.explBar':
-    'Der Balken nimmt den letzten abgeschlossenen UTC-Tag. Der laufende Tag ist im Diagramm heller gezeichnet.',
-  'moderate.goal.chartTitle': 'Personen je UTC-Tag',
-  'moderate.goal.chartFoot': 'Linie oben = Ziel {goal} · heller Balken = heute, noch offen',
   'moderate.goal.loading': 'Wird geladen…',
   'moderate.goal.error':
     'Auszahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.goal.retry': 'Erneut versuchen',
-  'moderate.goal.widgetLabel': 'Tägliches Förderziel',
   'moderate.payouts.link': 'Auszahlung pro Person anzeigen',
   'moderate.payouts.heading': 'Auszahlung pro Person',
   'moderate.payouts.lead':
@@ -1968,6 +1962,19 @@ const de = {
   'moderate.handbook.funding.ruleCap': 'Neue Mitglieder sind auf 1 USD pro Tag begrenzt.',
   'moderate.handbook.funding.principlesLead': 'Die 3 Prinzipien von 21.gifts:',
   'funding.heading': '21-Förderprogramm',
+  'funding.goals.link': 'Ziele',
+  'funding.goals.heading': 'Ziele',
+  'funding.goals.lead': 'Das Förderprogramm läuft weiter, wenn wir 10 aktive Shops erreichen.',
+  'funding.goals.active':
+    'Ein Shop ist aktiv, wenn er an 5 der letzten 7 Tage mindestens eine Transaktion hat.',
+  'funding.goals.transaction':
+    'Eine Transaktion ist eine Zahlung, die das zugewiesene Mitglied an diesem UTC-Tag an der Kasse auf https://21.gifts/pos angelegt hat. Das Anlegen zählt, auch wenn die Zahlung später abläuft oder storniert wird.',
+  'funding.goals.qualifying':
+    '{count, plural, one {# Shop erfüllt das} other {# Shops erfüllen das}}',
+  'funding.goals.chartLabel': 'Shops je UTC-Tag',
+  'funding.goals.chartFoot': 'Heller Balken = heute, noch offen.',
+  'funding.goals.error': 'Das Shop-Ziel konnte nicht geladen werden. Bitte erneut versuchen.',
+  'funding.goals.widgetLabel': 'Shop-Ziel',
   'funding.notVerified': 'Sie sind noch nicht verifiziert.',
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
@@ -2699,7 +2706,6 @@ const es = {
   'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
     'Escribió desde otra app, no desde una cuenta de 21.gifts. Se muestra aquí porque esta persona envió bitcoin a una publicación.',
-  'forum.externalProfileClose': 'Cerrar',
   'forum.externalProfileNip05': 'Dirección Nostr comprobada',
   'forum.externalProfileLud16': 'Dirección de pago de su perfil',
   'forum.externalProfileNpub': 'Clave de Nostr',
@@ -2900,9 +2906,15 @@ const es = {
   'statistics.heading': 'Estadísticas',
   'statistics.shops.widgetLabel': 'Tiendas activas',
   'statistics.shops.explainer':
-    'Una tienda cuenta en un día UTC cuando tiene un usuario de 21.gifts asignado y ese usuario creó un pago en el punto de venta ese día.',
+    'Una tienda cuenta en un día UTC cuando tiene un usuario de 21.gifts asignado y ese usuario creó un pago en el punto de venta ese día en https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Tiendas por día UTC',
   'statistics.shops.error': 'No se pudo cargar la actividad de las tiendas. Inténtalo de nuevo.',
+  'statistics.people.widgetLabel': 'Personas pagadas',
+  'statistics.people.yesterday':
+    'Ayer (UTC {date}): {count, plural, one {# persona} other {# personas}}',
+  'statistics.people.explainer':
+    'Cada persona cuenta una vez en el día UTC en que 21.gifts le pagó la ayuda diaria o el regalo de bienvenida. Quien recibe ambos ese día cuenta una vez. Los estipendios de moderadores y los regalos entre miembros no cuentan. El día UTC en curso se dibuja más claro porque aún está abierto.',
+  'statistics.people.chartLabel': 'Personas por día UTC',
   'moderate.toolsLabel': 'Herramientas de moderación',
   'moderate.lead':
     'Ocultar una nota es una ocultación suave: la nota y sus respuestas directas sin etiqueta salen del salón. No es un borrado definitivo.',
@@ -2924,23 +2936,9 @@ const es = {
   'moderate.proposals.proposedBy': 'Propuesto por {name}',
   'moderate.proposals.error': 'No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo.',
   'moderate.proposals.unread': 'Propuestas abiertas, {count} sin leer',
-  'moderate.goal.title': 'Meta',
-  'moderate.goal.subtitle': '100 personas al día',
-  'moderate.goal.percent': '{percent} %',
-  'moderate.goal.yesterdayOf': 'ayer {count} de {goal}',
-  'moderate.goal.closeHint': 'Toca para cerrar',
-  'moderate.goal.explYesterday':
-    'Ayer (UTC {date}) 21.gifts pagó a {count, plural, one {# persona} other {# personas}} la ayuda diaria o el regalo de bienvenida. Cada persona cuenta una vez. Eso es el {percent} por ciento de las {goal} al día que buscamos.',
-  'moderate.goal.explOfficial':
-    'Cada persona cuenta una vez en el día UTC en que 21.gifts le pagó la ayuda diaria o el regalo de bienvenida. Quien recibe ambos ese día cuenta una vez. Los estipendios de moderación y los regalos entre miembros no cuentan.',
-  'moderate.goal.explBar':
-    'La barra usa el último día UTC cerrado. El día en curso se dibuja más claro en el gráfico.',
-  'moderate.goal.chartTitle': 'Personas por día UTC',
-  'moderate.goal.chartFoot': 'Línea de arriba = meta {goal} · barra más clara = hoy, aún abierto',
   'moderate.goal.loading': 'Cargando…',
   'moderate.goal.error': 'No se pudieron cargar los pagos. Inténtalo de nuevo.',
   'moderate.goal.retry': 'Intentar de nuevo',
-  'moderate.goal.widgetLabel': 'Meta diaria de la ayuda',
   'moderate.payouts.link': 'Mostrar el pago por persona',
   'moderate.payouts.heading': 'Pago por persona',
   'moderate.payouts.lead':
@@ -2981,6 +2979,19 @@ const es = {
   'moderate.handbook.funding.ruleCap': 'Los miembros nuevos tienen un tope de 1 USD al día.',
   'moderate.handbook.funding.principlesLead': 'Los 3 principios de 21.gifts:',
   'funding.heading': 'Beca 21 gifts',
+  'funding.goals.link': 'Objetivos',
+  'funding.goals.heading': 'Objetivos',
+  'funding.goals.lead': 'El programa de becas sigue cuando llegamos a 10 tiendas activas.',
+  'funding.goals.active':
+    'Una tienda está activa cuando tiene al menos una transacción en 5 de los últimos 7 días.',
+  'funding.goals.transaction':
+    'Una transacción es un pago que el miembro asignado a la tienda creó en la caja en https://21.gifts/pos ese día UTC. Crearlo cuenta, también si después caduca o se cancela.',
+  'funding.goals.qualifying':
+    '{count, plural, one {# tienda cumple esto} other {# tiendas cumplen esto}}',
+  'funding.goals.chartLabel': 'Tiendas por día UTC',
+  'funding.goals.chartFoot': 'La barra más clara = hoy, todavía abierto.',
+  'funding.goals.error': 'No se pudo cargar el objetivo de las tiendas. Inténtalo de nuevo.',
+  'funding.goals.widgetLabel': 'Objetivo de tiendas',
   'funding.notVerified': 'Aún no estás verificada o verificado.',
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
@@ -3712,7 +3723,6 @@ const fil = {
   'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':
     'Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post.',
-  'forum.externalProfileClose': 'Isara',
   'forum.externalProfileNip05': 'Beripikadong address sa Nostr',
   'forum.externalProfileLud16': 'Address ng bayad sa profile nila',
   'forum.externalProfileNpub': 'Susi ng Nostr',
@@ -3919,9 +3929,14 @@ const fil = {
   'statistics.heading': 'Mga istatistika',
   'statistics.shops.widgetLabel': 'Mga aktibong tindahan',
   'statistics.shops.explainer':
-    'Binibilang ang isang tindahan sa isang araw na UTC kapag may naka-assign na user ng 21.gifts at ang user na iyon ay gumawa ng bayad sa point of sale sa araw na iyon.',
+    'Binibilang ang isang tindahan sa isang araw na UTC kapag may naka-assign na user ng 21.gifts at ang user na iyon ay gumawa ng bayad sa point of sale sa araw na iyon sa https://21.gifts/pos.',
   'statistics.shops.chartLabel': 'Mga tindahan ayon sa araw na UTC',
   'statistics.shops.error': 'Hindi ma-load ang aktibidad ng tindahan. Pakisubukan muli.',
+  'statistics.people.widgetLabel': 'Mga taong nabayaran',
+  'statistics.people.yesterday': 'Kahapon (UTC {date}): {count, plural, one {# tao} other {# tao}}',
+  'statistics.people.explainer':
+    'Binibilang ang bawat tao nang isang beses sa araw na UTC kung kailan binayaran sila ng 21.gifts ng araw-araw na tulong o ng welcome gift. Ang nakatanggap ng pareho sa araw na iyon ay isang beses lang. Hindi binibilang ang stipend ng moderator at ang mga regalo sa pagitan ng mga miyembro. Mas maputla ang kasalukuyang araw na UTC dahil bukas pa ito.',
+  'statistics.people.chartLabel': 'Mga tao bawat UTC-araw',
   'moderate.toolsLabel': 'Mga tool sa moderasyon',
   'moderate.lead':
     'Ang pagtatago ng nota ay malambot: ang nota at ang mga direktang sagot nito na walang tag ay umaalis sa living room. Hindi ito tuluyang pagbura.',
@@ -3943,24 +3958,9 @@ const fil = {
   'moderate.proposals.proposedBy': 'Iminungkahi ni {name}',
   'moderate.proposals.error': 'Hindi ma-load ang mga bukas na mungkahi. Subukan ulit.',
   'moderate.proposals.unread': 'Mga bukas na mungkahi, {count} hindi pa nababasa',
-  'moderate.goal.title': 'Layunin',
-  'moderate.goal.subtitle': '100 tao kada araw',
-  'moderate.goal.percent': '{percent}%',
-  'moderate.goal.yesterdayOf': 'kahapon {count} sa {goal}',
-  'moderate.goal.closeHint': 'I-tap para isara',
-  'moderate.goal.explYesterday':
-    'Kahapon (UTC {date}) binayaran ng 21.gifts ang {count, plural, one {# tao} other {# tao}} ng araw-araw na tulong o ng welcome gift. Isang beses lang ang bawat tao. Iyon ay {percent} porsyento ng {goal} kada araw na tinatarget.',
-  'moderate.goal.explOfficial':
-    'Isang beses lang binibilang ang bawat tao sa UTC-araw na binayaran siya ng 21.gifts ng araw-araw na tulong o ng welcome gift. Ang nakatanggap ng pareho sa araw na iyon ay isang beses lang. Hindi binibilang ang stipend ng moderator at ang mga regalo sa pagitan ng mga miyembro.',
-  'moderate.goal.explBar':
-    'Ginagamit ng bar ang huling kumpletong UTC-araw. Mas maliwanag ang kasalukuyang araw sa tsart.',
-  'moderate.goal.chartTitle': 'Mga tao bawat UTC-araw',
-  'moderate.goal.chartFoot':
-    'Linya sa itaas = layunin {goal} · mas maliwanag na bar = ngayon, bukas pa',
   'moderate.goal.loading': 'Naglo-load…',
   'moderate.goal.error': 'Hindi ma-load ang mga bayad. Subukan ulit.',
   'moderate.goal.retry': 'Subukan ulit',
-  'moderate.goal.widgetLabel': 'Araw-araw na layunin ng tulong',
   'moderate.payouts.link': 'Ipakita ang bayad bawat tao',
   'moderate.payouts.heading': 'Bayad bawat tao',
   'moderate.payouts.lead':
@@ -4001,6 +4001,19 @@ const fil = {
   'moderate.handbook.funding.ruleCap': 'Ang mga bagong miyembro ay naka-cap sa 1 USD bawat araw.',
   'moderate.handbook.funding.principlesLead': 'Ang 3 prinsipyo ng 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.goals.link': 'Mga layunin',
+  'funding.goals.heading': 'Mga layunin',
+  'funding.goals.lead': 'Tuloy ang grant program kapag umabot tayo sa 10 aktibong tindahan.',
+  'funding.goals.active':
+    'Aktibo ang isang tindahan kapag may kahit isang transaksyon ito sa 5 sa huling 7 araw.',
+  'funding.goals.transaction':
+    'Ang transaksyon ay isang bayad na ginawa ng naka-assign na miyembro sa till sa https://21.gifts/pos sa araw na UTC na iyon. Binibilang ang paggawa nito, kahit mag-expire o makansela ito pagkatapos.',
+  'funding.goals.qualifying':
+    '{count, plural, one {# tindahan ang tumutugon dito} other {# na tindahan ang tumutugon dito}}',
+  'funding.goals.chartLabel': 'Mga tindahan bawat araw na UTC',
+  'funding.goals.chartFoot': 'Mas maputlang bar = ngayon, bukas pa.',
+  'funding.goals.error': 'Hindi ma-load ang layunin ng tindahan. Pakisubukan muli.',
+  'funding.goals.widgetLabel': 'Layunin ng tindahan',
   'funding.notVerified': 'Hindi ka pa nabe-verify.',
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',

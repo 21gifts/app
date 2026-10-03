@@ -25,6 +25,7 @@ vi.mock('@/lib/api', () => ({
   fetchMemberReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchMessagePhoto: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 let hydrateReady = true;

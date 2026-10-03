@@ -18,6 +18,7 @@ import {
   fetchGiftDay,
   fetchGiftStats,
   fetchShopActivity,
+  fetchGrantContinuation,
   fetchPostStats,
   fetchAboutMePhoto,
   fetchProfilePhoto,
@@ -44,6 +45,8 @@ import {
   fetchForumMessage,
   fetchPublicMessage,
   fetchExternalAuthorProfile,
+  fetchExternalAuthorPosts,
+  fetchExternalAuthorReplies,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
@@ -63,6 +66,7 @@ import {
   WrongAccountError,
   listHiddenMessages,
   markAllNotificationsRead,
+  markNotificationsReadForMessage,
   markConversationRead,
   markNotificationRead,
   openConversation,
@@ -139,6 +143,19 @@ function stubFetch(response: FakeResponse): Mock {
   } as unknown as Response);
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
+}
+
+/** Installs a test navigator and returns an exact descriptor restore. */
+function installNavigator(value: unknown): () => void {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value });
+  return () => {
+    if (descriptor === undefined) {
+      delete (globalThis as { navigator?: unknown }).navigator;
+      return;
+    }
+    Object.defineProperty(globalThis, 'navigator', descriptor);
+  };
 }
 
 afterEach(() => {
@@ -1204,33 +1221,96 @@ describe('fetchShopActivity', () => {
     }));
   }
 
-  it('returns the days array and sends the bearer header', async () => {
+  it('returns the days array without an Authorization header', async () => {
     const days = thirtyDays();
     const fetchMock = stubFetch({ ok: true, status: 200, body: { days } });
-    await expect(fetchShopActivity('sess')).resolves.toEqual(days);
-    expect(fetchMock).toHaveBeenCalledWith('/shops/activity', {
-      headers: { Authorization: 'Bearer sess' },
-    });
+    await expect(fetchShopActivity()).resolves.toEqual(days);
+    expect(fetchMock).toHaveBeenCalledWith('/shops/activity');
   });
 
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'Shop activity is unavailable' } });
-    await expect(fetchShopActivity('sess')).rejects.toThrow(
+    await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
     );
   });
 
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-    await expect(fetchShopActivity('sess')).rejects.toThrow(
+    await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
     );
   });
 
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { days: [] } });
-    await expect(fetchShopActivity('sess')).rejects.toThrow(
+    await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
+    );
+  });
+});
+
+describe('fetchGrantContinuation', () => {
+  function sevenDays(): { day: string; shopCount: number }[] {
+    const start = Date.parse('2026-03-09T00:00:00.000Z');
+    return Array.from({ length: 7 }, (_, i) => ({
+      day: new Date(start + i * 86_400_000).toISOString().slice(0, 10),
+      shopCount: i,
+    }));
+  }
+
+  it('returns the series with an Authorization header', async () => {
+    const days = sevenDays();
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { days, qualifyingShops: 2 },
+    });
+    await expect(fetchGrantContinuation('sess-1')).resolves.toEqual({
+      days,
+      qualifyingShops: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/funding/goal', {
+      headers: { Authorization: 'Bearer sess-1' },
+    });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Funding goal is unavailable' } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { days: [], qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws when a day is repeated', async () => {
+    const days = sevenDays();
+    days[3] = { day: days[2]!.day, shopCount: 1 };
+    stubFetch({ ok: true, status: 200, body: { days, qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
+    );
+  });
+
+  it('throws when the days are not contiguous', async () => {
+    const days = sevenDays();
+    days[4] = { day: '2026-04-01', shopCount: 0 };
+    stubFetch({ ok: true, status: 200, body: { days, qualifyingShops: 0 } });
+    await expect(fetchGrantContinuation('sess-1')).rejects.toThrow(
+      'Could not load the shop goal. Please try again.',
     );
   });
 });
@@ -3032,6 +3112,177 @@ describe('fetchExternalAuthorProfile', () => {
   });
 });
 
+describe('fetchExternalAuthorPosts', () => {
+  it('GETs /public-messages/:id/external-posts without bearer and parses messages', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage] },
+    });
+    await expect(fetchExternalAuthorPosts('parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/external-posts');
+    expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('returns an empty list on HTTP 200 with messages: []', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await expect(fetchExternalAuthorPosts('parent')).resolves.toEqual([]);
+  });
+
+  it('keeps valid messages and skips an invalid empty name', async () => {
+    const invalidEmptyName = { ...forumMessage, id: 'm-invalid', name: '' };
+    const secondValid = { ...forumMessage, id: 'm2' };
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, invalidEmptyName, secondValid] },
+    });
+    await expect(fetchExternalAuthorPosts('parent')).resolves.toEqual([forumMessage, secondValid]);
+  });
+
+  it('returns an empty list when every message is invalid', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [{ ...forumMessage, name: '' }] },
+    });
+    await expect(fetchExternalAuthorPosts('parent')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy on HTTP 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchExternalAuthorPosts('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchExternalAuthorPosts('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not { messages: array }', async () => {
+    stubFetch({ ok: true, status: 200, body: { notMessages: [] } });
+    await expect(fetchExternalAuthorPosts('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchExternalAuthorPosts('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      } as unknown as Response),
+    );
+    await expect(fetchExternalAuthorPosts('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchExternalAuthorPosts('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchExternalAuthorReplies', () => {
+  it('GETs /public-messages/:id/external-replies without bearer and parses messages', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage] },
+    });
+    await expect(fetchExternalAuthorReplies('parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/external-replies');
+    expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('returns an empty list on HTTP 200 with messages: []', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await expect(fetchExternalAuthorReplies('parent')).resolves.toEqual([]);
+  });
+
+  it('keeps valid messages and skips an invalid empty name', async () => {
+    const invalidEmptyName = { ...forumMessage, id: 'm-invalid', name: '' };
+    const secondValid = { ...forumMessage, id: 'm2' };
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, invalidEmptyName, secondValid] },
+    });
+    await expect(fetchExternalAuthorReplies('parent')).resolves.toEqual([
+      forumMessage,
+      secondValid,
+    ]);
+  });
+
+  it('returns an empty list when every message is invalid', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [{ ...forumMessage, name: '' }] },
+    });
+    await expect(fetchExternalAuthorReplies('parent')).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy on HTTP 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchExternalAuthorReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchExternalAuthorReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not { messages: array }', async () => {
+    stubFetch({ ok: true, status: 200, body: { notMessages: [] } });
+    await expect(fetchExternalAuthorReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchExternalAuthorReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('Unexpected token')),
+      } as unknown as Response),
+    );
+    await expect(fetchExternalAuthorReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchExternalAuthorReplies('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
 describe('fetchForumMessage', () => {
   it('GETs /forum/messages/:id with Bearer and returns the message', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
@@ -3876,6 +4127,113 @@ describe('markNotificationRead', () => {
       'Could not mark notification as read',
     );
   });
+
+  it('sends the push endpoint when this browser has one', async () => {
+    const read = { ...notification, readAt: '2026-08-28T13:00:00.000Z' };
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+      },
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      const fetchMock = stubFetch({ ok: true, status: 200, body: read });
+      await expect(markNotificationRead('sess', 'n1')).resolves.toEqual(read);
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/n1/read', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
+      });
+    } finally {
+      restoreNavigator();
+    }
+  });
+});
+
+describe('markNotificationsReadForMessage', () => {
+  it('posts the message id without an endpoint when service workers are unavailable', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+      await expect(markNotificationsReadForMessage('sess', 'm1')).resolves.toEqual({
+        ok: true,
+        tags: [],
+      });
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-by-message', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageId: 'm1' }),
+      });
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('posts the push endpoint and closes notifications for returned tags', async () => {
+    const matchingClose = vi.fn();
+    const otherClose = vi.fn();
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+      },
+      getNotifications: vi.fn().mockResolvedValue([
+        { tag: 'forum_post:m1', close: matchingClose },
+        { tag: 'forum_post:m2', close: otherClose },
+      ]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      const fetchMock = stubFetch({
+        ok: true,
+        status: 200,
+        body: { ok: true, tags: ['forum_post:m1'] },
+      });
+      await expect(markNotificationsReadForMessage('sess', 'm1')).resolves.toEqual({
+        ok: true,
+        tags: ['forum_post:m1'],
+      });
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-by-message', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageId: 'm1', endpoint: 'https://push.example/sub' }),
+      });
+      expect(matchingClose).toHaveBeenCalledTimes(1);
+      expect(otherClose).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      stubFetch({ ok: false, status: 503, body: {} });
+      await expect(markNotificationsReadForMessage('sess', 'm1')).rejects.toThrow(
+        'Could not mark notification as read',
+      );
+    } finally {
+      restoreNavigator();
+    }
+  });
 });
 
 describe('markAllNotificationsRead', () => {
@@ -3888,11 +4246,141 @@ describe('markAllNotificationsRead', () => {
     });
   });
 
+  it('does not close local notifications when tags are missing', async () => {
+    const close = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(close).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('closes local notifications for returned tags', async () => {
+    const matchingClose = vi.fn();
+    const otherClose = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([
+        { tag: 'forum_post:m1', close: matchingClose },
+        { tag: 'forum_post:m2', close: otherClose },
+      ]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true, tags: ['forum_post:m1'] } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(matchingClose).toHaveBeenCalledTimes(1);
+      expect(otherClose).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('does not close local notifications when tags are not an array', async () => {
+    const close = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true, tags: 'forum_post:m1' } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(close).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: {} });
     await expect(markAllNotificationsRead('sess')).rejects.toThrow(
       'Could not mark notifications as read',
     );
+  });
+
+  it('sends the push endpoint when this browser has one', async () => {
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+      },
+      getNotifications: vi.fn().mockResolvedValue([]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true, tags: [] } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-all', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ endpoint: 'https://push.example/sub' }),
+      });
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('ignores a body that is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new Error('not json')),
+      }),
+    );
+    await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+  });
+
+  it('closes only string tags', async () => {
+    const close = vi.fn();
+    const registration = {
+      pushManager: { getSubscription: vi.fn().mockResolvedValue(null) },
+      getNotifications: vi.fn().mockResolvedValue([{ tag: 'forum_post:m1', close }]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      stubFetch({ ok: true, status: 200, body: { ok: true, tags: [1, 'forum_post:m1'] } });
+      await expect(markAllNotificationsRead('sess')).resolves.toBeUndefined();
+      expect(close).toHaveBeenCalledTimes(1);
+    } finally {
+      restoreNavigator();
+    }
   });
 });
 

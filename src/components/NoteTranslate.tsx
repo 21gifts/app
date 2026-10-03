@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui/IconButton';
+import { markNotificationsReadForMessage } from '@/lib/api';
 import { shouldOfferNoteTranslate } from '@/lib/note-language';
 import {
   fetchTranslateAvailable,
@@ -64,6 +65,9 @@ export interface NoteTranslateProps {
  *   success, optional `onTranslateRequest` (synchronously when Translate
  *   is clicked, before the request; not from Show original / Show
  *   translation), and `onToggleShowing` for Show original / Show translation.
+ *   A non-null session marks that forum note read at the same Translate click,
+ *   without waiting for the translation. A conversation message is not marked
+ *   read.
  * @returns Translation control, or null when unavailable or unnecessary.
  * @throws Does not throw.
  */
@@ -119,6 +123,9 @@ export function NoteTranslate({
     event.stopPropagation();
     event.preventDefault();
     onTranslateRequest?.();
+    if (session !== null && source.kind === 'message') {
+      void markNotificationsReadForMessage(session, messageId).catch(() => undefined);
+    }
     setStatus('loading');
     const id = requestId.current + 1;
     requestId.current = id;

@@ -35,6 +35,7 @@ vi.mock('@/lib/api', () => ({
   postConversationMessage: vi.fn(),
   fetchConversationMessagePhoto: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   CONVERSATION_LIVE_POLL_MS: 5_000,
 }));
 vi.mock('@/lib/app-badge', () => ({

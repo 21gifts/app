@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { closeLocalPushNotifications, currentPushEndpoint } from '@/lib/push';
 import {
   accountSchema,
   contactSchema,
@@ -19,6 +20,7 @@ import {
   giftDaySchema,
   giftStatsSchema,
   shopActivitySchema,
+  grantContinuationSchema,
   postStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
@@ -53,6 +55,7 @@ import {
   type GiftDay,
   type GiftStats,
   type ShopActivityDay,
+  type GrantContinuation,
   type PostStats,
   type AccountActivity,
   type LnAddressResolved,
@@ -1050,24 +1053,48 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
 }
 
 /**
- * Fetches shop counts per UTC day for the staff statistics chart.
+ * Fetches public shop counts per UTC day. No session.
  *
- * @param sessionToken - Bearer session from a completed login.
  * @returns The 30 {@link ShopActivityDay} rows, oldest first.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link shopActivitySchema}.
  */
-export async function fetchShopActivity(sessionToken: string): Promise<ShopActivityDay[]> {
+export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
   try {
-    const response = await fetch('/shops/activity', {
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    const response = await fetch('/shops/activity');
     if (!response.ok) {
       throw new Error('Could not load shop activity. Please try again.');
     }
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
     throw new Error('Could not load shop activity. Please try again.');
+  }
+}
+
+const GRANT_GOAL_LOAD_ERROR = 'Could not load the shop goal. Please try again.';
+
+/**
+ * Fetches the signed-in grant goal: shops per UTC day for the last 7 days,
+ * and how many shops meet 5 of those days.
+ *
+ * Does not call {@link fetchShopActivity}.
+ *
+ * @param sessionToken - Bearer session from a completed login.
+ * @returns The 7-day series and `qualifyingShops`.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link grantContinuationSchema}.
+ */
+export async function fetchGrantContinuation(sessionToken: string): Promise<GrantContinuation> {
+  try {
+    const response = await fetch('/funding/goal', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (!response.ok) {
+      throw new Error(GRANT_GOAL_LOAD_ERROR);
+    }
+    return grantContinuationSchema.parse(await response.json());
+  } catch {
+    throw new Error(GRANT_GOAL_LOAD_ERROR);
   }
 }
 
@@ -1813,6 +1840,82 @@ export async function fetchExternalAuthorProfile(
   } catch {
     return null;
   }
+}
+
+const EXTERNAL_AUTHOR_FEED_ERROR = 'Could not load messages. Please try again.';
+
+/**
+ * GET `{ messages }` for an external author's public posts or replies.
+ *
+ * @param id - Forum message UUID.
+ * @param kind - Path segment after the id.
+ * @returns Items that pass {@link forumMessageSchema}; invalid items skipped.
+ * @throws Visitor copy on non-OK, network, non-JSON, or a body that is not
+ * `{ messages: array }`.
+ */
+async function fetchExternalAuthorFeed(
+  id: string,
+  kind: 'external-posts' | 'external-replies',
+): Promise<ForumMessage[]> {
+  try {
+    const response = await fetch(`/public-messages/${encodeURIComponent(id)}/${kind}`);
+    if (!response.ok) {
+      throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
+    }
+    const body: unknown = await response.json();
+    if (
+      typeof body !== 'object' ||
+      body === null ||
+      !('messages' in body) ||
+      !Array.isArray(body.messages)
+    ) {
+      throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
+    }
+    const kept: ForumMessage[] = [];
+    for (const item of body.messages) {
+      const parsed = forumMessageSchema.safeParse(item);
+      if (parsed.success) {
+        kept.push(parsed.data);
+      }
+    }
+    return kept;
+  } catch {
+    throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
+  }
+}
+
+/**
+ * Fetches this external author's public posts without a session.
+ *
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty). Does not send Authorization.
+ *
+ * @param id - Forum message UUID.
+ * @returns Post list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchExternalAuthorPosts(id: string): Promise<ForumMessage[]> {
+  return fetchExternalAuthorFeed(id, 'external-posts');
+}
+
+/**
+ * Fetches this external author's public replies without a session.
+ *
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty). Does not send Authorization.
+ *
+ * @param id - Forum message UUID.
+ * @returns Reply list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchExternalAuthorReplies(id: string): Promise<ForumMessage[]> {
+  return fetchExternalAuthorFeed(id, 'external-replies');
 }
 
 /**
@@ -2791,10 +2894,14 @@ export async function markNotificationRead(
   id: string,
 ): Promise<Notification> {
   try {
-    const response = await fetch(`/forum/notifications/${encodeURIComponent(id)}/read`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    const endpoint = await currentPushEndpoint();
+    const headers: Record<string, string> = { Authorization: `Bearer ${sessionToken}` };
+    const init: RequestInit = { method: 'POST', headers };
+    if (typeof endpoint === 'string' && endpoint !== '') {
+      headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify({ endpoint });
+    }
+    const response = await fetch(`/forum/notifications/${encodeURIComponent(id)}/read`, init);
     if (!response.ok) {
       throw new Error('Could not mark notification as read');
     }
@@ -2813,15 +2920,71 @@ export async function markNotificationRead(
  */
 export async function markAllNotificationsRead(sessionToken: string): Promise<void> {
   try {
-    const response = await fetch('/forum/notifications/read-all', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${sessionToken}` },
-    });
+    const endpoint = await currentPushEndpoint();
+    const headers: Record<string, string> = { Authorization: `Bearer ${sessionToken}` };
+    const init: RequestInit = { method: 'POST', headers };
+    if (typeof endpoint === 'string' && endpoint !== '') {
+      headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify({ endpoint });
+    }
+    const response = await fetch('/forum/notifications/read-all', init);
     if (!response.ok) {
       throw new Error('Could not mark notifications as read');
     }
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      return;
+    }
+    if (body !== null && typeof body === 'object' && 'tags' in body && Array.isArray(body.tags)) {
+      const tags = body.tags.filter((tag): tag is string => typeof tag === 'string');
+      await closeLocalPushNotifications(tags);
+    }
   } catch {
     throw new Error('Could not mark notifications as read');
+  }
+}
+
+/**
+ * Marks every notification for one forum note as read.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param messageId - Forum message id (thread root or reply).
+ * @returns `{ ok: true, tags }` from the api (`tags` defaults to `[]`).
+ * @throws Error with visitor-facing copy when the api is unavailable — same
+ * family as {@link markNotificationRead}.
+ */
+export async function markNotificationsReadForMessage(
+  sessionToken: string,
+  messageId: string,
+): Promise<{ ok: true; tags: string[] }> {
+  try {
+    const endpoint = await currentPushEndpoint();
+    const payload: { messageId: string; endpoint?: string } = { messageId };
+    if (typeof endpoint === 'string' && endpoint !== '') {
+      payload.endpoint = endpoint;
+    }
+    const response = await fetch('/forum/notifications/read-by-message', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error('Could not mark notification as read');
+    }
+    const body: unknown = await response.json();
+    const tags =
+      body !== null && typeof body === 'object' && 'tags' in body && Array.isArray(body.tags)
+        ? body.tags.filter((tag): tag is string => typeof tag === 'string')
+        : [];
+    await closeLocalPushNotifications(tags);
+    return { ok: true, tags };
+  } catch {
+    throw new Error('Could not mark notification as read');
   }
 }
 

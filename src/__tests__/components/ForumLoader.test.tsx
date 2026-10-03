@@ -72,6 +72,7 @@ vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchNotifications: vi.fn(),
   markNotificationRead: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
@@ -87,6 +88,13 @@ vi.mock('@/lib/forum-video', () => ({
   prepareForumVideo: vi.fn(),
   forumVideoSrc: (id: string) => `/messages/${id}/video.mp4`,
 }));
+vi.mock('@/lib/push', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/push')>();
+  return {
+    ...actual,
+    closeLocalPushNotifications: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 import {
   agreeToRules,
@@ -103,6 +111,7 @@ import {
   PublicForumUnauthorizedError,
   NoteDeletedError,
   markNotificationRead,
+  markNotificationsReadForMessage,
   fetchComposeTarget,
   postMessage,
   postMessageInvoice,
@@ -118,6 +127,7 @@ import {
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
+import { closeLocalPushNotifications } from '@/lib/push';
 
 const fetchMock = vi.mocked(fetchMessages);
 const publicListMock = vi.mocked(fetchPublicForumMessages);
@@ -125,6 +135,8 @@ const publicPhotoMock = vi.mocked(fetchPublicMessagePhoto);
 const publicRepliesMock = vi.mocked(fetchPublicReplies);
 const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const markNotificationReadMock = vi.mocked(markNotificationRead);
+const markNotificationsReadForMessageMock = vi.mocked(markNotificationsReadForMessage);
+const closeLocalPushNotificationsMock = vi.mocked(closeLocalPushNotifications);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
@@ -337,6 +349,7 @@ beforeEach(() => {
     createdAt: '2026-08-22T12:00:00.000Z',
     readAt: '2026-08-28T13:00:00.000Z',
   });
+  markNotificationsReadForMessageMock.mockResolvedValue({ ok: true, tags: [] });
   isVideoMock.mockReturnValue(false);
   push.mockReset();
   replace.mockReset();
@@ -1612,10 +1625,10 @@ describe('ForumLoader', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-    fireEvent.change(within(card).getByLabelText('Place name'), {
+    fireEvent.change(screen.getByLabelText('Place name'), {
       target: { value: 'Happyland' },
     });
-    fireEvent.click(within(card).getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
       expect(within(card).getByRole('link', { name: 'Happyland' })).toBeTruthy();
     });
@@ -1670,8 +1683,8 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit place' }));
-    expect(await within(card).findByRole('button', { name: 'Remove place' })).toBeTruthy();
-    fireEvent.click(within(card).getByRole('button', { name: 'Remove place' }));
+    expect(await screen.findByRole('button', { name: 'Remove place' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
     await waitFor(() => {
       expect(screen.queryByRole('link', { name: 'Happyland' })).toBeNull();
     });
@@ -5682,6 +5695,23 @@ describe('ForumLoader', () => {
     expect(screen.queryByLabelText('Your reaction')).toBeNull();
   });
 
+  it('marks the note read when expanded and not when collapsed', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(markNotificationsReadForMessageMock).toHaveBeenCalledWith('sess', 'm1');
+    });
+    markNotificationsReadForMessageMock.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect(markNotificationsReadForMessageMock).not.toHaveBeenCalled();
+  });
+
   it('loads replies via fetchReplies when a row is expanded', async () => {
     fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([
@@ -8683,6 +8713,33 @@ describe('ForumLoader', () => {
       expect(markNotificationReadMock).toHaveBeenCalledWith('sess', 'n-mod');
       expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
     });
+    expect(closeLocalPushNotificationsMock).toHaveBeenCalledWith([
+      'moderator_appointed:acc-subject',
+    ]);
+  });
+
+  it('closes local push notifications with an empty list when the read row has no tag', async () => {
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    fetchNotificationsMock.mockResolvedValue({
+      notifications: [UNREAD_APPOINTED],
+      unreadCount: 1,
+    });
+    markNotificationReadMock.mockResolvedValue({
+      id: 'n-mod',
+      type: 'moderator_proposal',
+      parentId: 'acc-subject',
+      replyId: 'acc-subject',
+      name: 'Cyrill',
+      text: '',
+      createdAt: '2026-08-22T12:00:00.000Z',
+      readAt: '2026-08-28T13:00:00.000Z',
+    });
+    renderWithLocale(<ForumLoader />);
+    fireEvent.click(await screen.findByRole('button', { name: 'You are a moderator' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'You are a moderator' })).toBeNull();
+    });
+    expect(closeLocalPushNotificationsMock).toHaveBeenCalledWith([]);
   });
 
   it('leaves the moderator banner when markNotificationRead rejects', async () => {
@@ -8698,6 +8755,7 @@ describe('ForumLoader', () => {
       expect(markNotificationReadMock).toHaveBeenCalledWith('sess', 'n-mod');
     });
     expect(screen.getByRole('button', { name: 'You are a moderator' })).toBeTruthy();
+    expect(closeLocalPushNotificationsMock).not.toHaveBeenCalled();
   });
 
   it('does not hide the moderator banner after logout during mark-read', async () => {
@@ -8724,6 +8782,7 @@ describe('ForumLoader', () => {
       await Promise.resolve();
     });
     expect(useAuthStore.getState().session).toBeNull();
+    expect(closeLocalPushNotificationsMock).not.toHaveBeenCalled();
   });
 
   it('hides the moderator banner when fetchNotifications rejects', async () => {

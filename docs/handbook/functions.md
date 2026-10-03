@@ -475,9 +475,9 @@
 
 ## Function: SignedInChrome
 
-- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`); User Profile (`/profile`, lucide `User`, `profile.title`) with no given or received amounts; **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member; **Wallet** (`/wallet`); ScrollText Living room rules `/rules`; **Trust Chain**; **Statistics** (`/statistics`, lucide `BarChart3`, `nav.statistics`) only when `roleAtLeast(account?.role, 'moderator')`; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
+- **Purpose:** Top-right signed-in chrome: one **Menu** control; open it for icon+label dropdown rows (Home `/welcome` lucide `Home` `nav.home` — when the path is already `/welcome`, Home `preventDefault`s and dispatches `FORUM_HOME_EVENT` instead of a no-op navigation; **Shops** (`/shops`, lucide `Store`, `nav.shops`); **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`); User Profile (`/profile`, lucide `User`, `profile.title`) with no given or received amounts; **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member; **Wallet** (`/wallet`); ScrollText Living room rules `/rules`; **Trust Chain**; **Statistics** (`/statistics`, lucide `BarChart3`, `nav.statistics`) for every signed-in account, immediately after Trust Chain, with no unread count; **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0; **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count `ml-auto` only when `unreadCount` > 0, `aria-label` `nav.notificationsUnread` then); Messages `/messages` (`nav.inbox`, unread count `ml-auto` only when inbox unread > 0, `aria-label` `nav.inboxUnread` then); MessageCircle Contact `/contact`; optional Download **Install app** via `PwaInstall` `placement="menu"` when install is offered; LogOut log out; then a quiet Version line (`app.version`, `getAppVersion()`)). On mount with a session, calls `resyncPushSubscription`. Clicking Notifications asks for OS permission via `enablePush` when it is not already granted and Service Worker plus `PushManager` exist (otherwise resync, which no-ops without those APIs). When `account.setup` is null and `account.hasPosted` is false, also mounts `IntroduceYourselfOverlay` (Close dismisses this mount only; **Write an introduction** calls `requestForumCompose` so a remount after `router.push('/welcome')` stays hidden).
 - **Inputs:** Session `account` and `session` from `useAuthStore` (introduce overlay gate and push resync). Composes `useUnreadCount(open)` (default write-badge: writes the home-screen badge), `PwaInstall` (`placement="menu"`, closes Menu via `onMenuAction`), and `LogoutButton` inside the Menu dropdown.
-- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) in the AppShell page-frame header (`[data-app-chrome]`). The panel stays mounted. Wide (frame content box at least 576px; until `frameWidth` is measured, `matchMedia('(max-width: 36rem)')`, and a missing `matchMedia` counts as wide): it portals to the trigger parent as `absolute right-0 z-50 mt-2 w-72` (18rem, not a percentage, because a percentage would resolve against the trigger). The scrim `#signed-in-menu-scrim` portals to `[data-menu-scrim-host]` inside `[data-app-frame]` as `absolute inset-0 z-40 rounded-3xl` (the radius is set on the scrim; the host is `display: contents`, so `inherit` would be 0). Narrow (content box under 576px): it portals to `[data-menu-sheet-host]` (`px-8`, the same horizontal inset as `[data-scroll-page]`) inside the one scrollport as `w-full` and stays in that host while closed (`hidden`), reads the scrollport `scrollTop` before it sets `html[data-menu-sheet='1']` (which hides `[data-scroll-page]`), sets that scroll position to 0, and writes the saved position back after the page is shown again. Not a body portal. `PwaInstall` stays mounted via the `hidden` class when closed. When open, icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), **Shops** (`/shops`, lucide `Store`, `nav.shops`), **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`), Profile link (`/profile`, lucide `User`, `profile.title`) with no given or received amounts, **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member, **Wallet** (`/wallet`, lucide `Wallet`, `wallet.title`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Statistics** (`/statistics`, lucide `BarChart3`, `nav.statistics`) only when `roleAtLeast(account?.role, 'moderator')`, **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
+- **Returns / side effects:** Relative **Menu** button (`aria-expanded`, `aria-controls`) in the AppShell page-frame header (`[data-app-chrome]`). The panel stays mounted. Wide (frame content box at least 576px; until `frameWidth` is measured, `matchMedia('(max-width: 36rem)')`, and a missing `matchMedia` counts as wide): it portals to the trigger parent as `absolute right-0 z-50 mt-2 w-72` (18rem, not a percentage, because a percentage would resolve against the trigger). When that wide panel's bottom would pass the window, the same panel uses `mt-0`, `px-2 py-0`, and the version line uses `py-0`. It does not scroll. A window resize or a later change in the panel's own size measures again. The panel returns to `mt-2` and `p-2` only when the compact box still has 48px of room under the window, so the two layouts do not alternate. The scrim `#signed-in-menu-scrim` portals to `[data-menu-scrim-host]` inside `[data-app-frame]` as `absolute inset-0 z-40 rounded-3xl` (the radius is set on the scrim; the host is `display: contents`, so `inherit` would be 0). Narrow (content box under 576px): it portals to `[data-menu-sheet-host]` (`px-8`, the same horizontal inset as `[data-scroll-page]`) inside the one scrollport as `w-full` and stays in that host while closed (`hidden`), reads the scrollport `scrollTop` before it sets `html[data-menu-sheet='1']` (which hides `[data-scroll-page]`), sets that scroll position to 0, and writes the saved position back after the page is shown again. Not a body portal. `PwaInstall` stays mounted via the `hidden` class when closed. When open, icon+label rows: **Home** (`/welcome`, lucide `Home`, `nav.home`), **Shops** (`/shops`, lucide `Store`, `nav.shops`), **Point of sale** (`/pos`, lucide `Banknote`, `pos.nav`), Profile link (`/profile`, lucide `User`, `profile.title`) with no given or received amounts, **Grants** (`/grants`, lucide `HandCoins`, `nav.grants`) for every signed-in member, **Wallet** (`/wallet`, lucide `Wallet`, `wallet.title`), **Living room rules** (`/rules`), **Trust Chain** (`/trust-chain`), **Statistics** (`/statistics`, lucide `BarChart3`, `nav.statistics`) for every signed-in account, immediately after Trust Chain, with no unread count, **Moderation** (`/moderate`, lucide `Shield`, `nav.moderate`) only when `roleAtLeast(account?.role, 'moderator')` — `aria-label` `nav.moderateUnread` with `{ count }` when `moderationUnreadCount` > 0 (staff-room unread plus open-proposal count) else `nav.moderate`; visible `nav.moderate` plus `ml-auto` tabular-nums count when > 0, **Notifications** (`/notifications`, lucide `Bell`, `nav.notifications`, unread count on the right when greater than zero), **Messages** (`/messages`, `nav.inbox`, inbox unread count on the right when greater than zero), **Contact** (`/contact`), optional **Install app**, and log out, then a quiet Version line (`app.version`, `getAppVersion()`). Escape always closes Menu and restores focus to Menu. Local `useState` dismissed flag for `IntroduceYourselfOverlay` (initialized from `consumeSkipIntroduceOverlay`); does not write `forumLawsDismissed` or any account field.
 - **Used by:** `NameSetupPage`, `UsernameSetupPage`, `AddressSetupPage`, `RulesSetupPage`, `WelcomePage`, `ShopsPage`, `PosPage`, `ProfilePage`, `GrantsPage`, `FundingApplyPage`, `WalletPage`, `MemberProfilePage`, `ContactPage`, `MessagesPage`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `TrustChainPage`, `StatisticsPage`, `RulesPageChrome`, `PublicMessageChrome`.
 
 ## Function: ProfilePage
@@ -650,6 +650,27 @@ Inbox and moderator badges count unread incoming messages, with a one-message fa
 - **Returns / side effects:** `Promise<void>`. Calls `setUnreadAppBadge` with the sum only when the epoch is unchanged and `loadSession() === sessionToken`. Fire-and-forget safe.
 - **Used by:** `InboxLoader` after a successful thread load and mark-read (inbox override only; fetches staff-room only when the account is at least moderator). `ModeratorGroupScreen` after opening the room (moderation override `0`).
 
+## Function: pushTagForNotification
+
+- **Purpose:** Collapse tag for one in-app notification, matching the api: `forum_post:<parentId>`, `forum_reply:<replyId>`, `forum_mention:<replyId>`, `zap:<replyId>`, `moderator_appointed:<parentId>`. Any other type, including `moderator_proposal`, is null.
+- **Inputs:** `type`, `parentId`, and `replyId`.
+- **Returns / side effects:** Tag string or `null`. No network.
+- **Used by:** `NotificationsLoader` before it closes the local banner for a row that is not a proposal, and `ForumLoader` after the welcome appointment pill's `markNotificationRead` succeeds.
+
+## Function: currentPushEndpoint
+
+- **Purpose:** Read this browser's Web Push subscription endpoint so a mark-read request can ask the api to skip this device. Calls `getRegistration()` and does not wait on `ready`.
+- **Inputs:** None. Uses `navigator.serviceWorker` when it exists.
+- **Returns / side effects:** The endpoint string, or `undefined` when Push APIs are missing, the lookup rejects, or the endpoint is empty. Never throws.
+- **Used by:** `markNotificationRead`, `markAllNotificationsRead`, and `markNotificationsReadForMessage`.
+
+## Function: closeLocalPushNotifications
+
+- **Purpose:** Close shown Web Push notifications whose tag is in the list, so a note already read on this device does not stay on screen. Calls `getRegistration()` and does not wait on `ready`.
+- **Inputs:** Tag strings. An empty list is a no-op.
+- **Returns / side effects:** Nothing. Missing `serviceWorker` or `getNotifications` is a no-op. Never throws.
+- **Used by:** `markAllNotificationsRead`, `markNotificationsReadForMessage`, `NotificationsLoader` when a row is opened, and `ForumLoader` after the welcome appointment pill's `markNotificationRead` succeeds.
+
 ## Function: vapidPublicKeyToBytes
 
 - **Purpose:** Decode a VAPID application server public key (url-safe base64) to bytes for `pushManager.subscribe`.
@@ -666,9 +687,9 @@ Inbox and moderator badges count unread incoming messages, with a one-message fa
 
 ## Function: push service worker
 
-- **Purpose:** Push-only service worker at `/sw.js`. On the device's local Sunday, a push whose `type` is not exactly `conversation` does not stay on screen and does not change the badge: it calls `showNotification` with tag `sunday-quiet` and closes that note in the same `waitUntil`, so the browser does not invent its own banner. Every other push, including a private message, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. A thrown weekday lookup does not pause notifications. No asset or offline cache. A notification click stores a short-lived `21gifts-push-open` entry so a reloaded page can still open the path when `postMessage` was missed.
-- **Inputs:** Push `event` with optional JSON payload (`type`, `title`, `body`, `url`, `tag`, `unreadCount`).
-- **Returns / side effects:** On a non-conversation Sunday push, `event.waitUntil` shows and closes `sunday-quiet`. Otherwise `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients. Notification click closes the note, stores the in-app path in the `21gifts-push-open` cache, then the focused same-origin window (or the first one, if none is focused) is focused and, after that, receives `{ type: '21gifts-push-open', url }` (pathname + search + hash) before `navigate` (only when that function exists and the URL differs; rejection or null still focuses). No window: `clients.openWindow` on the same-origin href. Empty, invalid, or foreign `data.url` becomes `/welcome`.
+- **Purpose:** Push-only service worker at `/sw.js`. A payload whose `type` is `dismiss` closes the named tags, shows and closes a silent `dismiss-ack`, sets the badge to `max(0, floor(unreadCount))` including 0, and returns before the Sunday check. On the device's local Sunday, a push whose `type` is not exactly `conversation` does not stay on screen and does not change the badge: it calls `showNotification` with tag `sunday-quiet` and closes that note in the same `waitUntil`, so the browser does not invent its own banner. Every other push, including a private message, shows a notification (`registration.showNotification`) and, when `navigator.setAppBadge` (or `registration.setAppBadge` as fallback) exists, sets the home-screen badge: floor `payload.unreadCount` first, use it when that integer is greater than 0, otherwise `1`. `setAppBadge` rejections are swallowed so `waitUntil` still follows `showNotification`. Missing `setAppBadge` still shows the notification. A thrown weekday lookup does not pause notifications. No asset or offline cache. A notification click stores a short-lived `21gifts-push-open` entry so a reloaded page can still open the path when `postMessage` was missed.
+- **Inputs:** Push `event` with optional JSON payload (`type`, `title`, `body`, `url`, `tag`, `tags`, `unreadCount`).
+- **Returns / side effects:** When `type` is `dismiss`, closes the named tags, shows and closes a silent `dismiss-ack`, sets the badge to `max(0, floor(unreadCount))` when `unreadCount` is finite, and returns before the Sunday check. On a non-conversation Sunday push, `event.waitUntil` shows and closes `sunday-quiet`. Otherwise `event.waitUntil` of `showNotification` plus optional `setAppBadge` via `Promise.all`. Install skips waiting; activate claims clients. Notification click closes the note, stores the in-app path in the `21gifts-push-open` cache, then the focused same-origin window (or the first one, if none is focused) is focused and, after that, receives `{ type: '21gifts-push-open', url }` (pathname + search + hash) before `navigate` (only when that function exists and the URL differs; rejection or null still focuses). No window: `clients.openWindow` on the same-origin href. Empty, invalid, or foreign `data.url` becomes `/welcome`.
 - **Used by:** Browser Web Push runtime (registered by `registerPushWorker`).
 
 ## Function: isStandaloneDisplay
@@ -920,7 +941,7 @@ Inbox and moderator badges count unread incoming messages, with a one-message fa
 
 ## Function: Scrollport
 
-- **Purpose:** The only layout scrollport. Renders `[data-scrollport]`. Overflow is the `globals.css` rule, not a Tailwind utility: clip until `data-scroll-active`, then `overflow: auto`. The innermost bound port scrolls. Among siblings, the most recently bound one scrolls and gets `data-scroll-active`. Every other port gets `data-scroll-locked`. `html` and `body` stay `overflow: clip`.
+- **Purpose:** The only layout scrollport. Renders `[data-scrollport]`. Overflow is the `globals.css` rule, not a Tailwind utility: clip until `data-scroll-active`, then the active port scrolls vertically only (`overflow-x: clip` and `overflow-y: auto`). The innermost bound port scrolls. Among siblings, the most recently bound one scrolls and gets `data-scroll-active`. Every other port gets `data-scroll-locked`. `html` and `body` stay `overflow: clip`.
 - **Inputs:** `children`, optional `className`, optional `scrollRef`, optional `onClick`.
 - **Returns / side effects:** A `div`. Binds on mount and releases on unmount. No network.
 - **Used by:** `AppShell`, marketing layout, `NotFound`, `HandbookLightbox`.
@@ -1020,10 +1041,10 @@ Inbox and moderator badges count unread incoming messages, with a one-message fa
 
 ## Function: PublicMessageChrome
 
-- **Purpose:** Client chrome wrapper for public `/messages/[id]`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
-- **Inputs:** `children` (thread body from `PublicMessagePage` — `PublicMessageLoader`). Uses `useHydrateSession` and `useAuthStore` for `session`.
+- **Purpose:** Client chrome wrapper for public `/messages/[id]` and `/messages/[id]/author`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
+- **Inputs:** `children` (page body: `PublicMessageLoader` from `PublicMessagePage`, or `ExternalAuthorProfile` from `ExternalAuthorPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with the matching top-left / top-right slots around `children`. No network beyond session hydration.
-- **Used by:** `PublicMessagePage`.
+- **Used by:** `PublicMessagePage`, `ExternalAuthorPage`.
 
 ## Function: PublicMessagePage
 
@@ -1341,7 +1362,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlacesMapScreen
 
-- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card.
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
 - **Used by:** `ShopsScreen`.
@@ -1362,10 +1383,24 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin.
+- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
 - **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
 - **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
 - **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
+
+## Function: fitBoxInFrame
+
+- **Purpose:** Places one popover inside the app frame. The width is the preferred width when it fits, otherwise the room between the insets. The left edge stays on the anchor unless that would cross an inset. Vertically it opens downward when that side has at least 280px and at least as much room as above, otherwise upward, otherwise from the top inset across the whole frame height. It returns null when the frame has no positive room or the preferred width is not positive.
+- **Inputs:** Frame left, right, top, and bottom, anchor left, top, and bottom, gap, preferred width, inset, and viewport height, all in pixels.
+- **Returns / side effects:** `{ left, width, maxHeight, top, bottom }` with exactly one of top or bottom set, or null. No DOM writes and no network.
+- **Used by:** `PlaceField` for the place preview and the map panel.
+
+## Function: pageFrameProblems
+
+- **Purpose:** Reads the live document and lists sideways scroll of the document, sideways scroll of the active page scroller, and boxes whose border box leaves the window by more than one pixel on the left, right, top, or bottom. Content inside `[data-scrollport]` may sit past the top or bottom of the window unless it is position:fixed. A position:fixed box is still reported. A box inside `[data-scroll-x]` is ignored for the horizontal check unless it is position:fixed and its border box already crosses the left or right edge of the window. The sideways row itself is not ignored.
+- **Inputs:** None. Uses the open document, `window.innerWidth`, and `window.innerHeight`.
+- **Returns / side effects:** A string array. Empty means the page stays in the window. No DOM writes and no network.
+- **Used by:** `shotScreen` in `e2e/visual.spec.ts`, before every screenshot, and the behavior test `Function: pageFrameProblems`.
 
 ## Function: ShopPlaceControl
 
@@ -1824,10 +1859,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: StaffFunctions
 
-- **Purpose:** Closed disclosure for moderator and founder actions on a member card. The summary is `staff.functions`. Same `details` / `summary` as wallet **Advanced functions**. Children mount only while it is open.
+- **Purpose:** Closed disclosure for moderator and founder actions. On a member card the children are the verify, propose, confirm, and appoint controls. On `/statistics` the only child is the payout link, and `StatisticsScreen` mounts the disclosure only for a moderator when yesterday's person count is a number. The summary is `staff.functions`. Same `details` / `summary` as wallet **Advanced functions**. Children mount only while it is open.
 - **Inputs:** `children`.
 - **Returns / side effects:** `data-testid="staff-functions"`. `open` while expanded. Clicking the summary toggles. Clicks do not propagate.
-- **Used by:** `MemberTrustActions`.
+- **Used by:** `MemberTrustActions`, `StatisticsScreen`.
 
 ## Function: MemberTrustActions
 
@@ -1903,8 +1938,22 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** GET `/public-messages/:id/external-profile` with no Authorization and parse `externalAuthorProfileSchema`.
 - **Inputs:** Forum message `id`.
-- **Returns / side effects:** `{ name, npub, nip05?, lud16? }`, or `null` on 404, any other non-OK response, network failure, JSON failure, or schema mismatch. Does not throw.
-- **Used by:** `ExternalAuthorSheet`.
+- **Returns / side effects:** `{ name, npub, nip05?, lud16? }`, plus optional `postCount` and `replyCount`, or `null` on 404, any other non-OK response, network failure, JSON failure, or schema mismatch. Does not throw.
+- **Used by:** `ExternalAuthorProfile`.
+
+## Function: fetchExternalAuthorPosts
+
+- **Purpose:** GET `/public-messages/:id/external-posts` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
+- **Used by:** `ExternalAuthorProfile`.
+
+## Function: fetchExternalAuthorReplies
+
+- **Purpose:** GET `/public-messages/:id/external-replies` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
+- **Used by:** `ExternalAuthorProfile`.
 
 ## Function: fetchPublicMessage
 
@@ -2065,7 +2114,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Reads `documentElement.dataset.localSunday` after the head script sets it. Server render, and the client before that flag, are false, so weekday tests keep their fields.
 - **Inputs:** none.
 - **Returns / side effects:** boolean. Subscribes to attribute changes on `documentElement`.
-- **Used by:** `SundayWritingGate`, `ModeratorGroupScreen`.
+- **Used by:** `SundayWritingGate`, `ModeratorGroupScreen`, and `PlaceField`.
 
 ## Function: SundayWritingGate
 
@@ -2125,7 +2174,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ForumQuotedBody
 
-- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs and for `http(s)://<host>/l/<8 hex>` codes that `fetchShortLink` resolves to a shown message (a member, a null lookup, the containing id, and a failed load stay in the text). Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame with one empty stretched permalink (`absolute inset-0`, aria-label `forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`) that covers the card, including the caption, timestamp, role pill, optional photo, and ₿ amount, and points at `/messages/<id>`. That permalink is not an ancestor of the caption, so Show more stays outside any anchor. Card content is `pointer-events-none` with `[&_*]:pointer-events-none`, `[&_a]:pointer-events-auto`, and `[&_button]:pointer-events-auto`, so a click on caption text, photo, timestamp, role pill, or amount hits the permalink, while the author profile link, Translate, Show more, and links inside the caption keep their own targets. `[&_[role=dialog]]:pointer-events-auto` and `[&_[role=dialog]_*]:pointer-events-auto` keep the external-link confirm dialog and everything inside it clickable, because that dialog is a descendant of the card and is not portaled. The photo `img` is `draggable={false}` and is not inside the permalink. Caption rendering is unchanged (`TranslatableNoteBody` when `translate` is true, `plain` only when `via === 'nostr'`; when `translate` is false, `ForumNoteText` when truncate, else `LinkedText`; no nested unfurl). `TranslatableNoteBody` on stripped display text only (a successful translation replaces that original after the same quote/short-link strip; optional `formatTranslated` runs after that strip). Feed remaining text and nested captions go through `ForumNoteText` (280-character preview, Show more only above 560, bodies autolinked) until replaced. Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role). Nested nostr captions use `TranslatableNoteBody` `plain` only when `translate` is true (a URL in a quoted external reply is never a link). When `translate` is false, nested cards use `ForumNoteText` / `LinkedText` and never `TranslatableNoteBody`.
+- **Purpose:** Remaining body text plus nested post cards for resolved `/messages/<uuid>` URLs and for `http(s)://<host>/l/<8 hex>` codes that `fetchShortLink` resolves to a shown message (a member, a null lookup, the containing id, and a failed load stay in the text). Fills from knownNotes first; otherwise fetchPublicMessage (catch, never throw). 404/null leaves the URL, which `LinkedText` then autolinks as an internal `/messages/<uuid>` path. Nested card is an outer frame with one empty stretched permalink (`absolute inset-0`, aria-label `forum.quotedNote`, or `forum.quotedNoteExternal` when the quoted note has `via === 'nostr'`) that covers the card, including the caption, timestamp, role pill, optional photo, and ₿ amount, and points at `/messages/<id>`. That permalink is not an ancestor of the caption, so Show more stays outside any anchor. Card content is `pointer-events-none` with `[&_*]:pointer-events-none`, `[&_a]:pointer-events-auto`, and `[&_button]:pointer-events-auto`, so a click on caption text, photo, timestamp, role pill, or amount hits the permalink, while the author profile link, Translate, Show more, and links inside the caption keep their own targets. When the quoted note has `via === 'nostr'`, the name is a link to `/messages/<id>/author`, not a dialog. `[&_[role=dialog]]:pointer-events-auto` and `[&_[role=dialog]_*]:pointer-events-auto` keep the external-link confirm dialog and everything inside it clickable, because that dialog is a descendant of the card and is not portaled. The photo `img` is `draggable={false}` and is not inside the permalink. Caption rendering is unchanged (`TranslatableNoteBody` when `translate` is true, `plain` only when `via === 'nostr'`; when `translate` is false, `ForumNoteText` when truncate, else `LinkedText`; no nested unfurl). `TranslatableNoteBody` on stripped display text only (a successful translation replaces that original after the same quote/short-link strip; optional `formatTranslated` runs after that strip). Feed remaining text and nested captions go through `ForumNoteText` (280-character preview, Show more only above 560, bodies autolinked) until replaced. Permalink passes `truncate={false}` so the original stays full (`LinkedText`). Callers skip this component for `via === 'nostr'` rows (plain text and the **External** badge are handled by the caller). A nested card whose quoted note has `via === 'nostr'` shows the non-interactive **External** span in the role-pill slot (such notes carry no tagged role). Nested nostr captions use `TranslatableNoteBody` `plain` only when `translate` is true (a URL in a quoted external reply is never a link). When `translate` is false, nested cards use `ForumNoteText` / `LinkedText` and never `TranslatableNoteBody`.
 - **Inputs:** text, knownNotes, excludeId, rateDay, fiat, optional truncate (default true), optional className (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"` (via `TranslatableNoteBody`)), optional `translate` (default true; `false` renders remaining text and nested quoted cards — including `via === 'nostr'` — through `ForumNoteText` / `LinkedText` without `TranslatableNoteBody`; forwarded to nested `QuotedForumNote`), optional `conversationId` (when set, the remainder translates as that conversation message; nested cards stay forum notes), optional `formatTranslated` (applied only to the visible remainder translation, after the quote/short-link strip), optional `controlSlotId` (forwarded to `TranslatableNoteBody` for the footer icon row), optional onActivate.
 - **Returns / side effects:** React element or null when text==='' and no resolved quotes. Unknown quote ids load via `fetchForumMessage` when a session exists, otherwise `fetchPublicMessage` (catch, never throw). Optional `mentions` are passed only when the quoted author is already the member link. Each nested card has one stretched permalink to `/messages/<id>` covering the caption, photo, time, and amount; the author link, Translate, Show more, and links inside the caption stay outside that permalink.
 - **Used by:** `ForumBoard`, `PublicMessageLoader`, `InboxScreen`.
@@ -2151,12 +2200,19 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Fragment: `<p>` plus optional overlay. Confirm on `https:` calls `openInSystemBrowser`; other http uses `window.open`.
 - **Used by:** `ForumNoteText`, `ForumQuotedBody` (when `truncate` is false), `AboutMeSection`.
 
-## Function: ExternalAuthorSheet
+## Function: ExternalAuthorProfile
 
-- **Purpose:** Dialog for a forum author with no 21.gifts account. Shows the card name and `forum.via.nostrHint` until `fetchExternalAuthorProfile` resolves. A null result keeps that fallback. A profile shows its name, the External badge, optional nip05, lud16 only when it differs from nip05 ignoring case, and the npub with an icon-only Copy.
-- **Inputs:** `messageId`, `fallbackName`, `onClose`.
-- **Returns / side effects:** `role="dialog"`, portaled to `document.body` so a quoted note's `relative z-10` card cannot paint it under the page chrome. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. Close calls `onClose`.
-- **Used by:** `ForumBoard`, `QuotedForumNote`, `PublicMessageLoader`.
+- **Purpose:** Profile card for a forum author with no 21.gifts account. Same fields and hide rules as the member card: heading `profile.title`, name with the External span, optional checked Nostr address, payment address only when it differs ignoring case, and the npub with a centered secondary IconButton copy control. It is not a dialog. Rendered by `ExternalAuthorPage` inside `PublicMessageChrome`. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. When both `postCount` and `replyCount` are numbers, the same count buttons as a member open a read-only feed under the card (no pay, no composer, no react). If either count is absent, no buttons.
+- **Inputs:** `messageId`, `fallbackName`. Empty `fallbackName` shows `view.unnamed` until a profile loads, and when the fetch returns null.
+- **Returns / side effects:** The card. No `onClose`. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. No overlay, portal, hint paragraph, or close control. Count buttons and the read-only feed render when both counts are numbers; a post click opens `/messages/{id}`; a reply click opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`.
+- **Used by:** `ExternalAuthorPage`.
+
+## Function: ExternalAuthorPage
+
+- **Purpose:** Next.js page for `/messages/[id]/author` — the external author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Reads `params.id` and `searchParams.name` (a string or the first array entry, trimmed; blank becomes `''`). Renders `ExternalAuthorProfile` inside `PublicMessageChrome`. No `OnboardingGate`. The note id is not validated as a UUID.
+- **Inputs:** Dynamic route params (`id`) and optional `name` query (`string` or `string[]`).
+- **Returns / side effects:** `ExternalAuthorProfile` inside `PublicMessageChrome` (unsigned wordmark href `/` plus `LanguageSwitcher`, or signed-in `ProfileChromeLeft` plus `SignedInChrome`). No `generateMetadata`.
+- **Used by:** Route `/messages/[id]/author`. `ForumBoard` (name click). `QuotedForumNote` (quoted name). `PublicMessageLoader` (`PublicThreadCard` name).
 
 ## Function: ExternalLinkWarning
 
@@ -2767,10 +2823,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed}/{begin,finish}` re-export the eight passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
+- **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/lightning-address` re-exports `proxyMeLightningAddressPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed}/{begin,finish}` re-export the eight passkey proxy POSTs; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/read-by-message` re-exports `proxyNotificationsReadByMessagePost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText, cached }` or 400/404/503/502 from the 21.gifts api.
-- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), renew report (`POST /me/passkey-renew/report`), renew acknowledgement (`POST /me/passkey-renew/ack`), passkey begin/finish (register, authenticate, replace, and seed), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), today's repayment (`POST /messages/[id]/repayment`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`) and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), and staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`).
+- **Used by:** Same-origin name save, location save (`POST /me/location`), forum laws dismiss, notification-level save (`POST /me/notification-level`), living-room rules agreement (`POST /me/rules-agreement`), address link, Web Push subscribe (`POST /me/push-subscriptions`), recovery-phrase backup-seen (`POST /me/wallet-backup-seen`), renew report (`POST /me/passkey-renew/report`), renew acknowledgement (`POST /me/passkey-renew/ack`), passkey begin/finish (register, authenticate, replace, and seed), forum message create (`POST /forum/messages`), payable-reply invoice (`POST /messages/[id]/invoice`), today's repayment (`POST /messages/[id]/repayment`), inbox open (`POST /conversations`) and reply (`POST /conversations/[id]`), inbox invoice (`POST /conversations/[id]/invoice`), mark-one conversation (`POST /conversations/[id]/read`), mark-all notifications (`POST /forum/notifications/read-all`), mark-by-message (`POST /forum/notifications/read-by-message`), and mark-one (`POST /forum/notifications/[id]/read`), in-app contact (`POST /contact/submit`), `translateNote` via `POST /translate`, `translateConversationMessage` via `POST /conversations/[id]/messages/[messageId]/translate`, staff Trust Chain actions (`POST /trust/verify`, `POST /trust/propose-moderator`, `POST /trust/confirm-moderator`, `POST /trust/reject-moderator`, `POST /trust/appoint-moderator`), grant apply (`POST /funding/apply`), and staff funding decisions (`POST /funding/trial`, `POST /funding/admit`, `POST /funding/reject`).
 
 ## Function: PUT
 
@@ -3086,6 +3142,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
 - **Used by:** Route GET `/public-messages/[id]/external-profile`.
+
+## Function: proxyExternalAuthorPostsGet
+
+- **Purpose:** Public proxy GET `/messages/:id/external-posts` to the 21.gifts api (no auth). App path is `/public-messages/[id]/external-posts`. Returns the upstream response via `proxyApiRequest`. Does not add a Bearer header.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
+- **Used by:** Route GET `/public-messages/[id]/external-posts`.
+
+## Function: proxyExternalAuthorRepliesGet
+
+- **Purpose:** Public proxy GET `/messages/:id/external-replies` to the 21.gifts api (no auth). App path is `/public-messages/[id]/external-replies`. Returns the upstream response via `proxyApiRequest`. Does not add a Bearer header.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
+- **Used by:** Route GET `/public-messages/[id]/external-replies`.
 
 ## Function: proxyPublicMessageGet
 
@@ -3729,7 +3799,7 @@ Visiting the inbox list acknowledges every unread non-moderator conversation thr
 
 - **Purpose:** Client loader for `/notifications`. Fetches `GET /forum/notifications` (posts, replies, payments, moderator appointment, and moderator proposal). After a successful list fetch, `bumpUnreadAppBadgeEpoch` then set the badge to remaining inbox unread plus staff-room unread messages (notifications treated as 0; visiting `/notifications` does not force badge 0 when inbox or staff-room unread remains). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Opening a `moderator_proposal` row goes to `/moderate/proposals` without `markNotificationRead`. Opening a `moderator_appointed` row waits for `markNotificationRead` then goes to `/welcome` (still navigates if that POST fails; skips navigation if the session changed). A `forum_reply` or `forum_mention` goes to `/messages/{replyId}` without waiting. A `forum_post` or `zap` goes to `/messages/{parentId}` without waiting. Ids are URI-encoded.
 - **Inputs:** None (session from the auth store).
-- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget, then `bumpUnreadAppBadgeEpoch` and sets the home-screen badge to remaining inbox unread plus staff-room unread messages (notifications treated as 0). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Does not clear remaining inbox or staff-room unread on error, cancel, or missing session.
+- **Returns / side effects:** React element or `null` without a session. No composer. After a non-cancelled successful list fetch, marks all read fire-and-forget, then `bumpUnreadAppBadgeEpoch` and sets the home-screen badge to remaining inbox unread plus staff-room unread messages (notifications treated as 0). Repeats after `markAllNotificationsRead` if the session is unchanged. Fetches conversations (`fetchConversations`) and, when `roleAtLeast(account?.role, 'moderator')`, the staff room (`fetchModeratorGroup`) for those counts; below moderator, remaining badge is inbox unread only (staff-room contributes 0, no request). A side that fails contributes 0. Does not clear remaining inbox or staff-room unread on error, cancel, or missing session. Every fetched row is rendered, including those with `readAt` set, in API order; read rows are not discarded.
 - **Used by:** `NotificationsPage`.
 
 ## Function: NotificationsScreen
@@ -3748,17 +3818,24 @@ Visiting the inbox list acknowledges every unread non-moderator conversation thr
 
 ## Function: markNotificationRead
 
-- **Purpose:** POST `/forum/notifications/:id/read` with Bearer and parse one notification.
+- **Purpose:** POST `/forum/notifications/:id/read` with Bearer and optional JSON `{ endpoint }` when this browser has a push subscription. `currentPushEndpoint()` is sent only when it is a non-empty string. Parses one notification.
 - **Inputs:** Session token and notification id (encoded in the path).
 - **Returns / side effects:** Updated notification, or throws visitor copy.
 - **Used by:** `NotificationsLoader` on row click; `ForumLoader` when the welcome appointment pill is clicked.
 
 ## Function: markAllNotificationsRead
 
-- **Purpose:** POST `/forum/notifications/read-all` with Bearer. Non-ok throws; success may ignore body.
+- **Purpose:** POST `/forum/notifications/read-all` with Bearer and optional JSON `{ endpoint }` when this browser has a push subscription. Non-ok throws. When the body has a `tags` array, those local notifications are closed. A body without `tags` closes nothing.
 - **Inputs:** Session token.
 - **Returns / side effects:** void.
 - **Used by:** `NotificationsLoader` fire-and-forget after a successful list fetch.
+
+## Function: markNotificationsReadForMessage
+
+- **Purpose:** POST `/forum/notifications/read-by-message` with Bearer and JSON `{ messageId, endpoint? }`. `endpoint` is sent only when the current push endpoint is a non-empty string. Non-ok throws visitor copy `Could not mark notification as read`. On success, closes local notifications for string `tags`; a missing `tags` field is `[]`.
+- **Inputs:** Session token and forum message id.
+- **Returns / side effects:** `{ ok: true, tags: string[] }`.
+- **Used by:** `ForumLoader` when a note becomes expanded, `NoteTranslate` when Translate is requested for a forum note while a session is present (not for a conversation message), `PublicMessageLoader` when a signed-in message page is ready, `MemberProfileScreen` when a profile note becomes expanded, and `PublicMessageThread` when a thread note becomes expanded.
 
 ## Function: activeMention
 
@@ -3809,6 +3886,13 @@ Visiting the inbox list acknowledges every unread non-moderator conversation thr
 - **Returns / side effects:** Forwards to the api.
 - **Used by:** `src/app/forum/notifications/read-all/route.ts`.
 
+## Function: proxyNotificationsReadByMessagePost
+
+- **Purpose:** Same-origin proxy for api POST `/notifications/read-by-message`. App route is POST `/forum/notifications/read-by-message`.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Forwards to the api.
+- **Used by:** `src/app/forum/notifications/read-by-message/route.ts`.
+
 ## Function: proxyNotificationReadPost
 
 - **Purpose:** Same-origin proxy for api POST `/notifications/:id/read`. App route is POST `/forum/notifications/[id]/read`.
@@ -3818,7 +3902,7 @@ Visiting the inbox list acknowledges every unread non-moderator conversation thr
 
 ## Function: StatisticsPage
 
-- **Purpose:** Next.js page for `/statistics` (signed-in staff chart of people paid the daily funding or the welcome gift). HTML `/statistics` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left, `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `StatisticsScreen`. No `route.ts` beside this page. Gift totals stay on public `/stats`.
+- **Purpose:** Next.js page for `/statistics` (public measured people and shop charts, not a funding goal). Top-right is **Log in** without a session and `SignedInChrome` with one. `OnboardingGate screen="welcome"` `allowGuest`. HTML `/statistics` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left and `OnboardingGate screen="welcome"` `allowGuest` around `StatisticsScreen`. No `route.ts` beside this page. Gift totals stay on public `/stats`.
 - **Inputs:** None.
 - **Returns / side effects:** The statistics screen inside fill AppShell.
 - **Used by:** Route `/statistics`.
@@ -3870,69 +3954,83 @@ Visiting the inbox list acknowledges every unread non-moderator conversation thr
 - **Purpose:** Person count on `yesterday` from `officialCount`. First matching day wins.
 - **Inputs:** `series` — `spendOverTime` oldest-first; `yesterday` — UTC day to look up.
 - **Returns / side effects:** That day's `officialCount`, `0` when the day is missing, or `null` when any point omits `officialCount`. Pure; no I/O.
-- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+- **Used by:** `StatisticsScreen`.
 
 ## Function: chartRows
 
 - **Purpose:** Last 30 UTC days ending on `today`, oldest first, with person counts from `officialCount`.
 - **Inputs:** `series` — `spendOverTime` oldest-first; `today` — UTC day of the clock.
 - **Returns / side effects:** Oldest-first `{ day, count }` rows. Last write wins when a day appears twice; a missing day is 0. Pure; no I/O.
-- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+- **Used by:** `StatisticsScreen`.
 
 ## Function: formatUtcDate
 
 - **Purpose:** Formats a UTC calendar day as numeric day plus long month in `locale` for the yesterday sentence.
 - **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
 - **Returns / side effects:** Locale date string in the UTC zone. Pure; no I/O.
-- **Used by:** `StatisticsScreen` and `ModerateScreen` in the yesterday sentence.
+- **Used by:** `StatisticsScreen` in the yesterday sentence.
 
 ## Function: chartDayLabel
 
 - **Purpose:** Axis tick label for a UTC day as numeric day and month in `locale`.
 - **Inputs:** `day` — UTC `YYYY-MM-DD`; `locale` — active UI locale.
 - **Returns / side effects:** Short numeric day-month label in the UTC zone. Pure; no I/O.
-- **Used by:** `PayoutGoalChart` and `ShopActivityChart` for the first, middle, and last axis labels.
-
-## Function: PayoutGoalChart
-
-- **Purpose:** Draws the 30-day SVG count chart (`role="img"`) with ticks 0/25/50/75/100, a goal line at 100, today's bar `fill-app-subtle`, other bars `fill-app-accent`, and `data-testid="payout-goal-chart-bar"`.
-- **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
-- **Returns / side effects:** SVG figure. No network.
-- **Used by:** `StatisticsScreen`, `ModerateScreen`.
+- **Used by:** `ShopActivityChart` and `PeopleCountChart` for the first, middle, and last axis labels.
 
 ## Function: fetchShopActivity
 
-- **Purpose:** Loads staff shop-use counts from same-origin `GET /shops/activity` with a Bearer session. The body must be 30 unique contiguous UTC days, oldest first; otherwise this throws and the shop panel shows its error state.
-- **Inputs:** `sessionToken` — Bearer session from the signed-in account.
+- **Purpose:** Loads public shop-use counts from same-origin `GET /shops/activity` with no Authorization. StatisticsScreen calls it with or without a session. The body must be 30 unique contiguous UTC days, oldest first; otherwise this throws and the shop panel shows its error state.
+- **Inputs:** None. `fetch('/shops/activity')` with no Authorization.
 - **Returns / side effects:** `ShopActivityDay[]` (`day`, `shopCount`). Network via `fetch`. Does not require the last day to be the browser's today.
 - **Used by:** `StatisticsScreen` shop panel.
 
 ## Function: proxyShopActivityGet
 
-- **Purpose:** Same-origin proxy for api `GET /shops/activity`. App route is `export const GET = proxyShopActivityGet` on `/shops/activity`. Forwards the Bearer session.
+- **Purpose:** Same-origin proxy for api `GET /shops/activity`. App route is `export const GET = proxyShopActivityGet` on `/shops/activity`. No bearer is required. Forwards the incoming request unchanged.
 - **Inputs:** App Router `Request`.
 - **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops/activity')`.
 - **Used by:** `src/app/shops/activity/route.ts`.
 
+## Function: fetchGrantContinuation
+
+- **Purpose:** Loads the signed-in grant goal from same-origin `GET /funding/goal` with `Authorization: Bearer`. GrantGoalsScreen calls it only when a session exists. The body must be 7 unique contiguous UTC days, oldest first, plus a nonnegative `qualifyingShops`; otherwise this throws and the goals page shows its error state. Does not call `fetchShopActivity`.
+- **Inputs:** `sessionToken` — bearer session. `fetch('/funding/goal')` sends that token and does not invent one.
+- **Returns / side effects:** `GrantContinuation` (`days`, `qualifyingShops`). Network via `fetch`. Does not require the last day to be the browser's today.
+- **Used by:** `GrantGoalsScreen`.
+
+## Function: proxyFundingGoalGet
+
+- **Purpose:** Same-origin proxy for api `GET /funding/goal`. App route is `export const GET = proxyFundingGoalGet` on `/funding/goal`. Forwards the incoming Authorization header and does not add one. This is not the public shop-activity proxy.
+- **Inputs:** App Router `Request`.
+- **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/funding/goal')`.
+- **Used by:** `src/app/funding/goal/route.ts`.
+
 ## Function: ShopActivityChart
 
-- **Purpose:** Draws the shop-count SVG (`role="img"`) for 30 UTC days. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="shop-activity-chart-bar"`. No goal line.
+- **Purpose:** Draws the shop-count SVG (`role="img"`) for the UTC days it is given. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="shop-activity-chart-bar"`. No goal line.
+- **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
+- **Returns / side effects:** SVG figure. No network.
+- **Used by:** `StatisticsScreen` (30 days) and `GrantGoalsScreen` (the last 7 days).
+
+## Function: PeopleCountChart
+
+- **Purpose:** Draws the people-count SVG (`role="img"`) for 30 UTC days. Scale is the max count (at least 1). Ticks are 0, that scale, and the rounded midpoint when it differs. Today's bar is `fill-app-subtle`; other bars are `fill-app-accent`. Bars only when count > 0. `data-testid="people-count-chart-bar"`. No goal line.
 - **Inputs:** `rows` (`{ day, count }[]`), `today` (UTC day drawn lighter), `locale`, and `ariaLabel`.
 - **Returns / side effects:** SVG figure. No network.
 - **Used by:** `StatisticsScreen`.
 
 ## Function: StatisticsScreen
 
-- **Purpose:** Client staff chart of people counted once per UTC day, with a shop-activity panel under the payout chart. Staff (`roleAtLeast(..., 'moderator')`) see yesterday versus 100, the three explanation paragraphs, the 30-UTC-day chart, and a secondary ButtonLink **Show payout per person** → `/moderate/payouts`, then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The summary is not a toggle and there is no **Tap to close**. Non-staff signed-in visitors see the heading **Statistics** plus forbidden copy and do not fetch. Renders `null` without a session.
-- **Inputs:** Session and account from `useAuthStore`; catalog and locale via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` and also call `fetchShopActivity`. Others do not fetch.
+- **Purpose:** Client chart of people counted once per UTC day, with a shop-activity panel under the people chart. A signed-out visitor fetches both feeds and sees both panels. Does not return `null`. Any visitor fetches both feeds and sees yesterday's person count, the measurement paragraph, and the 30-UTC-day people chart (no goal line), then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The people panel is always open and there is no **Tap to close**. No forbidden card. When `roleAtLeast(..., 'moderator')` and yesterday's person count is a number (including 0; not loading and not the people error panel, including omitted `officialCount`), closed `StaffFunctions` sits after the people chart and before the shop panel; its only child is the payout `ButtonLink` (`href` `/moderate/payouts`, `variant` `secondary`, `size` `lg`, label `moderate.payouts.link`). Basis and verified never render `StaffFunctions`. A signed-out visitor never renders `StaffFunctions`.
+- **Inputs:** Account from `useAuthStore`; catalog and locale via `useTranslations`.
+- **Returns / side effects:** A React element. No session still fetches. Fetches `GET /gifts/stats` and also calls `fetchShopActivity`. Does not return `null`.
 - **Used by:** `StatisticsPage`.
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see the daily payout-goal widget (yesterday versus 100 people, each person counted once, with the 100-a-day label and the yesterday count on one line; tap expands explanation plus a 30-UTC-day count chart), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, and a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, and a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for Open proposals `proposalCount` and Moderators chat group staff-room unread (network for those counts; does not write the home-screen badge).
-- **Returns / side effects:** React element or `null` without a session. Staff fetch `GET /gifts/stats` for the goal widget; others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, applications, or the group thread itself.
+- **Returns / side effects:** React element or `null` without a session. Does not fetch `GET /gifts/stats`. Others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, applications, or the group thread itself.
 - **Used by:** `ModeratePage`.
 
 ## Function: ModerateHandbookPage
@@ -4029,10 +4127,24 @@ Visiting the inbox list acknowledges every unread non-moderator conversation thr
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the link.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only for a founder or moderator. Other roles do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
 - **Used by:** `GrantsPage`.
+
+## Function: GrantGoalsPage
+
+- **Purpose:** Next.js page for `/grants/goals`. Fill `AppShell` with `ProfileChromeLeft`, `SignedInChrome`, and `OnboardingGate screen="profile"` around `GrantGoalsScreen`.
+- **Inputs:** None.
+- **Returns / side effects:** The goals screen inside fill AppShell.
+- **Used by:** Route `/grants/goals`.
+
+## Function: GrantGoalsScreen
+
+- **Purpose:** Signed-in grant goal. Heading **Goals**, the sentence that the program continues at 10 active shops, the sentence that a shop is active with at least one transaction on 5 of the last 7 days, and the sentence that defines a transaction as a till payment created at https://21.gifts/pos (creating it counts, including later expiry or cancel). When the load succeeds, shows how many shops meet that rule, the label **Shops per UTC day**, `ShopActivityChart` for those 7 days, and the note that the lighter bar is today still open. Loading and error (error sentence plus **Try again**) keep the heading and those sentences. Renders `null` without a session and does not fetch then.
+- **Inputs:** Session from `useAuthStore`; catalog and locale via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/goal` through `fetchGrantContinuation` only when a session exists. Does not call `fetchShopActivity`.
+- **Used by:** `GrantGoalsPage`.
 
 ## Function: FundingStatusCard
 
