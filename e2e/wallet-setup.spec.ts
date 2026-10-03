@@ -241,6 +241,15 @@ test.describe('wallet setup dialog', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
+  test('Function: settlePhraseDerivations — unset key asks for no second passkey', async ({
+    page,
+  }) => {
+    await signIn(page);
+    await openWallet(page);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByText('Setting up your wallet…')).toHaveCount(0);
+  });
+
   test('Function: needsWalletSetup — unset key shows no setup dialog', async ({ page }) => {
     await signIn(page);
     await openWallet(page);
