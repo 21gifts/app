@@ -71,7 +71,11 @@ vi.mock('@/lib/push', () => ({
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
 }));
-vi.mock('@/lib/config', () => ({ getAppVersion: vi.fn(() => '74') }));
+vi.mock('@/lib/config', () => ({
+  getAppVersion: vi.fn(() => '74'),
+  getBreezApiKey: vi.fn(() => null),
+  getE2eNow: vi.fn(() => null),
+}));
 const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,

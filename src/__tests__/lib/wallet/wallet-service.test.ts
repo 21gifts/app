@@ -3,8 +3,11 @@ import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/
 import {
   connectWallet,
   disconnectWallet,
+  ensureWalletConnected,
   listenForWalletPhrase,
+  listWalletPayments,
   refreshWallet,
+  registerWalletAddress,
   type WalletSdkLoader,
 } from '@/lib/wallet/wallet-service';
 import type { WalletConnection, WalletSdk } from '@/lib/wallet/wallet-sdk';
@@ -38,6 +41,8 @@ function createFakeSdk(overrides?: {
   connection: {
     getInfo: ReturnType<typeof vi.fn>;
     addEventListener: ReturnType<typeof vi.fn>;
+    registerAddress: ReturnType<typeof vi.fn>;
+    listPayments: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   };
   connect: ReturnType<typeof vi.fn>;
@@ -59,6 +64,8 @@ function createFakeSdk(overrides?: {
           return 'listener-1';
         }),
     ),
+    registerAddress: vi.fn(async () => undefined),
+    listPayments: vi.fn(async () => []),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
@@ -371,6 +378,25 @@ describe('connectWallet', () => {
       expect(useWalletStore.getState().balanceSats).toBe(84_000);
     });
     expect(second.connection.getInfo).toHaveBeenCalledTimes(2);
+  });
+
+  it('passes the app host as the address domain', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect } = createFakeSdk();
+    await connectWallet(loadSdk);
+    expect(connect).toHaveBeenCalledWith(MNEMONIC, API_KEY, window.location.host);
+  });
+
+  it('advances syncCount after connect and after each synced event', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, listeners } = createFakeSdk();
+    const before = useWalletStore.getState().syncCount;
+    await connectWallet(loadSdk);
+    expect(useWalletStore.getState().syncCount).toBe(before + 1);
+    listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().syncCount).toBe(before + 2);
+    });
   });
 
   it('refreshWallet without a connection does nothing', async () => {
@@ -823,7 +849,109 @@ describe('disabled wallet path', () => {
     expect(ssrImport).not.toHaveBeenCalled();
     expect(addSpy).not.toHaveBeenCalledWith('21gifts:wallet-phrase', expect.any(Function));
     expect(useWalletStore.getState().status).toBe('disabled');
+    await expect(ensureWalletConnected(loadSdk)).rejects.toThrow('wallet-connect');
+    expect(loadSdk).not.toHaveBeenCalled();
     unsub();
     addSpy.mockRestore();
+  });
+});
+
+describe('ensureWalletConnected', () => {
+  it('connects from the tab phrase and returns the identity key', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect } = createFakeSdk();
+    await expect(ensureWalletConnected(loadSdk)).resolves.toBe(IDENTITY);
+    expect(connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('reuses a ready connection without connecting again', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect } = createFakeSdk();
+    await connectWallet(loadSdk);
+    await expect(ensureWalletConnected(loadSdk)).resolves.toBe(IDENTITY);
+    expect(connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for an in-flight connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { loadSdk, connect, connection } = createFakeSdk({
+      connect: async () => {
+        await gate;
+        return connection as unknown as WalletConnection;
+      },
+    });
+    const first = connectWallet(loadSdk);
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('connecting');
+    });
+    const ensured = ensureWalletConnected(loadSdk);
+    release();
+    await first;
+    await expect(ensured).resolves.toBe(IDENTITY);
+    expect(connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects when the connection fails', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = createFakeSdk({
+      connect: async () => {
+        throw new Error('boom');
+      },
+    });
+    await expect(ensureWalletConnected(loadSdk)).rejects.toThrow('wallet-connect');
+    expect(useWalletStore.getState().status).toBe('error');
+  });
+
+  it('rejects without a tab phrase', async () => {
+    const { loadSdk } = createFakeSdk();
+    await expect(ensureWalletConnected(loadSdk)).rejects.toThrow('wallet-connect');
+    expect(loadSdk).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the store is ready but the connection was dropped', async () => {
+    useWalletStore.getState().setReady(1, IDENTITY);
+    const { loadSdk } = createFakeSdk();
+    await expect(ensureWalletConnected(loadSdk)).rejects.toThrow('wallet-connect');
+  });
+});
+
+describe('registerWalletAddress', () => {
+  it('rejects without a connection', async () => {
+    await expect(registerWalletAddress('ada')).rejects.toThrow('wallet-connect');
+  });
+
+  it('registers the username on the connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    await expect(registerWalletAddress('ada')).resolves.toBeUndefined();
+    expect(connection.registerAddress).toHaveBeenCalledWith('ada');
+  });
+});
+
+describe('listWalletPayments', () => {
+  it('rejects without a connection', async () => {
+    await expect(listWalletPayments({ offset: 0, limit: 20 })).rejects.toThrow('wallet-connect');
+  });
+
+  it('forwards the page to the connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    const row = {
+      id: 'p1',
+      direction: 'received',
+      amountSats: 1,
+      timestamp: 1,
+      status: 'completed',
+      senderComment: null,
+    };
+    connection.listPayments.mockResolvedValueOnce([row]);
+    await connectWallet(loadSdk);
+    await expect(listWalletPayments({ offset: 20, limit: 20 })).resolves.toEqual([row]);
+    expect(connection.listPayments).toHaveBeenCalledWith({ offset: 20, limit: 20 });
   });
 });

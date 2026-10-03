@@ -6,8 +6,9 @@ import { useWallet } from '@/hooks/useWallet';
 import { useWalletPhrase } from '@/hooks/useWalletPhrase';
 
 /**
- * Signed-in `/wallet`: wallet balance and receive address above the recovery entry.
- * The 12 words are not rendered here.
+ * Signed-in `/wallet`: wallet balance and receive address, then the payments
+ * list while the wallet is ready, above the recovery entry. The 12 words are
+ * not rendered here.
  *
  * @returns The wallet cards.
  */

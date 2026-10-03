@@ -99,6 +99,7 @@ import {
   setLocation,
   setName,
   setUsername,
+  putWallet,
   skipSetup,
   resolveLightningAddress,
   startPasskeyAuthentication,
@@ -654,6 +655,47 @@ describe('setUsername', () => {
   it('throws username-request on other failures', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setUsername('sess', 'ada')).rejects.toThrow('username-request');
+  });
+});
+
+describe('putWallet', () => {
+  const key = `02${'a'.repeat(64)}`;
+
+  it('puts the key and returns the validated account', async () => {
+    const claimed = { ...account, sparkPubkey: key, sparkWalletVerified: false };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: claimed });
+    await expect(putWallet('sess', key)).resolves.toEqual(claimed);
+    expect(fetchMock).toHaveBeenCalledWith('/me/wallet', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sparkPubkey: key }),
+    });
+  });
+
+  it('throws wallet-verified on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: {} });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-verified');
+  });
+
+  it('throws wallet-unavailable on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: {} });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-unavailable');
+  });
+
+  it('throws wallet-request on other failures and invalid bodies', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
+    stubFetch({ ok: true, status: 200, body: { id: 'x' } });
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      }),
+    );
+    await expect(putWallet('sess', key)).rejects.toThrow('wallet-request');
   });
 });
 

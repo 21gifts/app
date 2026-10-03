@@ -25,10 +25,16 @@ interface WalletState {
   balanceSats: number | null;
   /** Identity public key when ready, otherwise `null`. */
   identityPubkey: string | null;
+  /**
+   * Counts successful wallet reads (after connect and after each SDK sync).
+   * The payment list reloads when it changes.
+   */
+  syncCount: number;
   /** Marks the wallet as connecting and clears balance fields. */
   setConnecting(): void;
   /**
-   * Marks the wallet ready with a balance and identity key.
+   * Marks the wallet ready with a balance and identity key, and advances
+   * `syncCount`.
    *
    * @param balanceSats - Confirmed balance in satoshis.
    * @param identityPubkey - Wallet identity public key.
@@ -50,11 +56,17 @@ export const useWalletStore = create<WalletState>((set) => ({
   status: restingStatus(),
   balanceSats: null,
   identityPubkey: null,
+  syncCount: 0,
   setConnecting: () => {
     set({ status: 'connecting', balanceSats: null, identityPubkey: null });
   },
   setReady: (balanceSats, identityPubkey) => {
-    set({ status: 'ready', balanceSats, identityPubkey });
+    set((state) => ({
+      status: 'ready',
+      balanceSats,
+      identityPubkey,
+      syncCount: state.syncCount + 1,
+    }));
   },
   setError: () => {
     set({ status: 'error', balanceSats: null, identityPubkey: null });
