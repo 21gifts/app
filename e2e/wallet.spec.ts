@@ -1040,6 +1040,21 @@ test('wallet Receive shows the QR, the address, Copy, and Set an amount; Back re
   await expect(page).toHaveURL(/\/wallet\?visual=balance-locked$/);
 });
 
+test('wallet balance without a usable rate shows only bitcoin and cannot be tapped', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  const stats = page.waitForResponse('**/gifts/stats**');
+  await page.goto('/wallet?visual=balance-ready');
+  await stats;
+  const region = page.getByRole('region', { name: 'Balance' });
+  await expect(region.getByText("₿21'000")).toBeVisible();
+  await expect(region.getByRole('button')).toHaveCount(0);
+});
+
 test('wallet balance tap swaps the large figure between bitcoin and fiat', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);

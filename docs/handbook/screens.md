@@ -206,6 +206,12 @@ Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wal
 
 ![21.gifts wallet balance ready](images/wallet-balance-ready.png)
 
+### Variant: balance-ready-no-rate
+
+The same ready fixture while no usable rate is loaded (the rate request failed): only the large `₿21'000`, no fiat line, and nothing to tap.
+
+![21.gifts wallet balance ready no rate](images/wallet-balance-ready-no-rate.png)
+
 ### Variant: balance-fiat
 
 The same ready fixture after a tap on the balance: `$21.00` is the large figure and `₿21'000` is in small type under it. Another tap swaps them back.
@@ -223,6 +229,12 @@ The Receive view after **Receive** on the ready fixture: the label **Receive**, 
 The Receive view right after **Copy**: the button shows a check mark and **Copied**. After two seconds it says **Copy** again.
 
 ![21.gifts wallet receive copied](images/wallet-receive-copied.png)
+
+### Variant: receive-no-username
+
+The Receive view for an account without a username: no QR, no address, and no **Copy**; **Set a username first.** links to `/profile`, above **Set an amount**.
+
+![21.gifts wallet receive no username](images/wallet-receive-no-username.png)
 
 ### Variant: balance-error
 

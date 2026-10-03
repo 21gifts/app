@@ -304,6 +304,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'balance-ready-no-rate',
+    image: 'wallet-balance-ready-no-rate.png',
+    visual: 'state-wallet-balance-ready-no-rate',
+    needle: "shotScreen(page, 'state-wallet-balance-ready-no-rate')",
+  },
+  {
+    route: '/wallet',
     id: 'balance-fiat',
     image: 'wallet-balance-fiat.png',
     visual: 'state-wallet-balance-fiat',
@@ -322,6 +329,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-receive-copied.png',
     visual: 'state-wallet-receive-copied',
     needle: "shotScreen(page, 'state-wallet-receive-copied')",
+  },
+  {
+    route: '/wallet',
+    id: 'receive-no-username',
+    image: 'wallet-receive-no-username.png',
+    visual: 'state-wallet-receive-no-username',
+    needle: "shotScreen(page, 'state-wallet-receive-no-username')",
   },
   {
     route: '/wallet',

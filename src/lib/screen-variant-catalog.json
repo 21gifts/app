@@ -198,6 +198,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:balance-ready-no-rate",
+    "label": "/wallet balance-ready-no-rate",
+    "visual": "state-wallet-balance-ready-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:balance-fiat",
     "label": "/wallet balance-fiat",
     "visual": "state-wallet-balance-fiat",
@@ -213,6 +219,12 @@
     "id": "/wallet:receive-copied",
     "label": "/wallet receive-copied",
     "visual": "state-wallet-receive-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-no-username",
+    "label": "/wallet receive-no-username",
+    "visual": "state-wallet-receive-no-username",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

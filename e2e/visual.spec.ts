@@ -1653,6 +1653,21 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-ready');
   });
 
+  test('wallet balance-ready-no-rate', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    const stats = page.waitForResponse('**/gifts/stats**');
+    await page.goto('/wallet?visual=balance-ready');
+    await stats;
+    const balance = page.getByRole('region', { name: 'Balance' });
+    await expect(balance.getByText("₿21'000")).toBeVisible();
+    await expect(balance.getByRole('button')).toHaveCount(0);
+    await expect(balance.getByText('$21.00')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-balance-ready-no-rate');
+  });
+
   test('wallet balance-fiat', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=balance-ready');
@@ -1885,6 +1900,32 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('ada@21.gifts')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
     await shotScreen(page, 'state-wallet-receive');
+  });
+
+  test('wallet receive-no-username', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/wallet');
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByRole('link', { name: 'Set a username first.' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-receive-no-username');
   });
 
   test('wallet receive-copied', async ({ page, context }) => {

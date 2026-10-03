@@ -3867,7 +3867,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletHistory
 
-- **Purpose:** Payments card on `/wallet` under the address while the wallet is ready. Each row: received or sent icon and word (plus **Pending** or **Failed** when not settled), Bitcoin amount with the default fiat, date and time, and the payer's note when there is one. Empty: **No payments yet.** Error: one sentence and **Try again**; the error stays shown until the reload's result arrives. Nothing renders during the first load.
+- **Purpose:** Payments card on the `/wallet` home under the balance card while the wallet is ready. Each row: received or sent icon and word (plus **Pending** or **Failed** when not settled), Bitcoin amount with the default fiat, date and time, and the payer's note when there is one. Empty: **No payments yet.** Error: one sentence and **Try again**; the error stays shown until the reload's result arrives. Nothing renders during the first load.
 - **Inputs:** None (reads `useWalletHistory`, the latest rate day, fiat and number format).
 - **Returns / side effects:** The card, or `null`. The next page loads when the end of the list is in view (`IntersectionObserver`), checked again after every completed load and after an error and retry.
 - **Used by:** `WalletScreenView`.
