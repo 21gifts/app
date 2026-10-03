@@ -46,17 +46,47 @@ export function canUnlockWallet(
   );
 }
 
+/** Phrase derivations still running in this tab. */
+const pendingDerivations = new Set<Promise<boolean>>();
+
 /**
  * Derives the recovery phrase from PRF bytes and stores it in tab memory when
  * the Breez API key is set, the account is eligible, the credential matches,
  * the session is still current, and the tab phrase was not remembered or
  * cleared during derivation. Never rejects. Never sends the bytes or the
- * phrase and never stores them persistently (tab memory only).
+ * phrase and never stores them persistently (tab memory only). While it runs,
+ * {@link settlePhraseDerivations} waits for it.
  *
  * @param source - PRF bytes, credential id, account, and session token.
  * @returns `true` when the phrase was remembered; otherwise `false`.
  */
-export async function rememberPhraseFromPrf(source: PhraseSource): Promise<boolean> {
+export function rememberPhraseFromPrf(source: PhraseSource): Promise<boolean> {
+  const run = derivePhrase(source);
+  pendingDerivations.add(run);
+  void run.finally(() => {
+    pendingDerivations.delete(run);
+  });
+  return run;
+}
+
+/**
+ * Waits until every phrase derivation running in this tab has finished, so a
+ * caller that needs the phrase does not ask for the passkey again while the
+ * login is still deriving it. Never rejects.
+ *
+ * @returns Resolves once no derivation is running.
+ */
+export async function settlePhraseDerivations(): Promise<void> {
+  await Promise.all([...pendingDerivations]);
+}
+
+/**
+ * The work of {@link rememberPhraseFromPrf}.
+ *
+ * @param source - PRF bytes, credential id, account, and session token.
+ * @returns `true` when the phrase was remembered; otherwise `false`.
+ */
+async function derivePhrase(source: PhraseSource): Promise<boolean> {
   try {
     if (getBreezApiKey() === null) {
       return false;
