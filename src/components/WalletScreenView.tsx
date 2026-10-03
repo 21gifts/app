@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, type ReactElement } from 'react';
+import { useState, useEffect, type ReactElement } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Check, Copy, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { AppShellFooter, AppShellTopLeft } from '@/components/AppShell';
@@ -166,25 +166,26 @@ export function WalletScreenView({
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
   const walletReady = wallet?.status === 'ready';
+  const sendStep = send?.state.step;
+  // Leaving the Sent line (Done or Back) returns home, and a chosen Send view
+  // closes when the wallet stops being ready. Both adjust during render, so no
+  // commit shows the Send input (and its camera) in between.
+  const [seen, setSeen] = useState({ sendStep, walletReady });
+  if (seen.sendStep !== sendStep || seen.walletReady !== walletReady) {
+    setSeen({ sendStep, walletReady });
+    if (
+      (seen.sendStep === 'sent' && sendStep !== 'sent') ||
+      (!walletReady && homeView === 'send')
+    ) {
+      setHomeView('home');
+    }
+  }
   const shown =
     send !== undefined && isSendPinned(send)
       ? 'send'
       : homeView === 'send' && !walletReady
         ? 'home'
         : homeView;
-  const sendStep = send?.state.step;
-  const wasSent = useRef(false);
-  useEffect(() => {
-    if (!walletReady) {
-      setHomeView((current) => (current === 'send' ? 'home' : current));
-    }
-  }, [walletReady]);
-  useEffect(() => {
-    if (wasSent.current && sendStep !== 'sent') {
-      setHomeView('home');
-    }
-    wasSent.current = sendStep === 'sent';
-  }, [sendStep]);
   const stepBack = (): void => {
     if (surface === 'phrase') {
       if (showGrid) {
