@@ -46,23 +46,25 @@ function WalletReceive(): ReactElement {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const [showQr, setShowQr] = useState(false);
-  const [copied, setCopied] = useState(false);
+  /** Successful copies so far; each one restarts the two-second Copied label. */
+  const [copies, setCopies] = useState(0);
+  const copied = copies > 0;
   useEffect(() => {
     setShowQr(true);
   }, []);
   useEffect(() => {
-    if (!copied) {
+    if (copies === 0) {
       return;
     }
     const timer = window.setTimeout(() => {
-      setCopied(false);
+      setCopies(0);
     }, 2000);
     return () => window.clearTimeout(timer);
-  }, [copied]);
+  }, [copies]);
   const copyAddress = async (text: string): Promise<void> => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
+      setCopies((count) => count + 1);
     } catch {
       // No clipboard here (an insecure page, or a refused write): the address stays readable.
     }

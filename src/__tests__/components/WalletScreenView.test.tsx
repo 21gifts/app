@@ -816,6 +816,25 @@ describe('WalletScreenView Receive', () => {
         await vi.advanceTimersByTimeAsync(1);
       });
       expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+        await Promise.resolve();
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_500);
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Copied' }));
+        await Promise.resolve();
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_500);
+      });
+      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+      });
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     } finally {
       vi.useRealTimers();
       Reflect.deleteProperty(navigator, 'clipboard');
