@@ -1077,3 +1077,51 @@ describe('useWalletSend relay invoice', () => {
     expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 });
+
+describe('useWalletSend relay answers after the wallet left ready', () => {
+  /** Makes the store read `locked` while React has not yet run the reset effect. */
+  const lockedView = (): void => {
+    const state = useWalletStore.getState();
+    vi.spyOn(useWalletStore, 'getState').mockReturnValue({ ...state, status: 'locked' });
+  };
+
+  it.each([
+    ['a pay request', (finish: Settle<LnurlPayRequest>) => finish.resolve(PAY_REQUEST)],
+    ['a pay-request refusal', (finish: Settle<LnurlPayRequest>) => finish.reject(new Error('x'))],
+  ])('drops %s that settles before the reset ran', async (_label, settle) => {
+    const finish = pending(vi.mocked(postLnurlPayRequest));
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.setText('bob@example.com');
+    });
+    act(() => {
+      result.current.submitInput();
+    });
+    lockedView();
+    await act(async () => {
+      settle(finish);
+    });
+    vi.mocked(useWalletStore.getState).mockRestore();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(true);
+  });
+
+  it.each([
+    ['an invoice', (finish: Settle<{ pr: string }>) => finish.resolve({ pr: 'lnbc1relay' })],
+    ['an invoice refusal', (finish: Settle<{ pr: string }>) => finish.reject(new Error('x'))],
+  ])('drops %s that settles before the reset ran', async (_label, settle) => {
+    const result = await relayAmountStep();
+    const finish = pending(vi.mocked(postLnurlInvoice));
+    act(() => {
+      result.current.submitAmount(100);
+    });
+    lockedView();
+    await act(async () => {
+      settle(finish);
+    });
+    vi.mocked(useWalletStore.getState).mockRestore();
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state.step).toBe('amount');
+    expect(result.current.busy).toBe(true);
+  });
+});
