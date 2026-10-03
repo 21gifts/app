@@ -7,9 +7,9 @@ import { UsernameForm } from '@/components/UsernameForm';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Post-login screen: choose the unique \@21.gifts username. The hint that
- * Wallet of Satoshi still receives the Bitcoin is left out once the account's
- * own wallet is verified, since the address then pays that wallet.
+ * Post-login screen: choose the unique \@21.gifts username. The hint about the
+ * address is left out once the account's own wallet is verified, since the
+ * username is then fixed and the form says why.
  *
  * @returns The username setup screen.
  */

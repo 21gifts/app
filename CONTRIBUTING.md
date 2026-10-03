@@ -221,7 +221,7 @@ app/
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNotice.tsx # Blocking one-time wallet setup dialog (AppShell)
 │   │   ├── WalletSync.tsx       # Root-mounted listenForWalletPhrase effect (renders nothing)
-│   │   ├── WalletPay.tsx        # In-app wallet pay slot of the gift pay sheets (fallback: QR + Wallet of Satoshi)
+│   │   ├── WalletPay.tsx        # In-app wallet pay slot of the gift pay sheets (the only way to pay)
 │   │   ├── WalletSend.tsx       # /wallet send block (paste, amount, confirm, sent)
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body

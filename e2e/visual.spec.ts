@@ -4076,7 +4076,6 @@ test.describe('onboarding screens', () => {
   test('state /welcome reaction-wallet-pay-unlock', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-unlock');
     await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -4086,7 +4085,6 @@ test.describe('onboarding screens', () => {
   test('state /welcome reaction-wallet-pay-preparing', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-preparing');
     await expect(page.getByText('Checking your wallet…')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -4096,7 +4094,6 @@ test.describe('onboarding screens', () => {
   test('state /welcome reaction-wallet-pay-confirm', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-confirm');
     await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -4106,7 +4103,6 @@ test.describe('onboarding screens', () => {
   test('state /welcome reaction-wallet-pay-paying', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-paying');
     await expect(page.getByText('Paying from your wallet…')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -4118,7 +4114,6 @@ test.describe('onboarding screens', () => {
     await expect(
       page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -4130,7 +4125,6 @@ test.describe('onboarding screens', () => {
     await expect(
       page.getByText('This payment is not confirmed yet. Check your balance again later.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -14198,7 +14192,6 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: "Pay today's repayment" }).click();
     await expect(page.getByText('Pay ₿700')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
   }
 
   test('state /welcome repay-wallet-pay-unlock', async ({ page }) => {
@@ -15951,7 +15944,6 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText('Pay ₿1')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
   }
 
   const TINY_GIF = Buffer.from(
@@ -20129,7 +20121,6 @@ test.describe('inbox screens', () => {
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByText('Pay ₿21')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
   }
 
   test('messages thread-wallet-pay-unlock', async ({ page }) => {
