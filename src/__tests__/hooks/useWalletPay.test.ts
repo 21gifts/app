@@ -113,11 +113,11 @@ describe('useWalletPay path choice', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('is back while the account is in the one-time wallet setup', () => {
+  it('is unavailable while the account is in the one-time wallet setup', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
-    expect(result.current.view).toBe('fallback');
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    expect(result.current.view).toBe('unavailable');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
@@ -125,8 +125,8 @@ describe('useWalletPay path choice', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
-    expect(result.current.view).toBe('fallback');
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    expect(result.current.view).toBe('unavailable');
     await act(async () => {
       useAuthStore.setState({ account: { ...account, sparkWalletVerified: true } });
     });
@@ -153,7 +153,7 @@ describe('useWalletPay path choice', () => {
     vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(oldSend));
     let payDuringRender = false;
     const { result, unmount } = renderHook(() => {
-      const slot = useWalletPay(SPARK, 21);
+      const slot = useWalletPay(SPARK, PR, 21);
       if (payDuringRender) {
         slot.pay();
       }
@@ -167,7 +167,7 @@ describe('useWalletPay path choice', () => {
     });
     payDuringRender = false;
     expect(oldSend).not.toHaveBeenCalled();
-    expect(result.current.view).toBe('fallback');
+    expect(result.current.view).toBe('unavailable');
     unmount();
 
     useAuthStore.setState({ account });
@@ -177,17 +177,17 @@ describe('useWalletPay path choice', () => {
         finish = resolve;
       }),
     );
-    const second = renderHook(() => useWalletPay(SPARK, 21));
+    const second = renderHook(() => useWalletPay(SPARK, PR, 21));
     await act(async () => undefined);
     expect(second.result.current.view).toBe('preparing');
     await act(async () => {
       useAuthStore.setState({ account: { ...account, walletRequired: false } });
     });
-    expect(second.result.current.view).toBe('fallback');
+    expect(second.result.current.view).toBe('unavailable');
     await act(async () => {
       finish(confirmWith(oldSend));
     });
-    expect(second.result.current.view).toBe('fallback');
+    expect(second.result.current.view).toBe('unavailable');
   });
 
   it('offers unlock for a locked wallet and prepares once it is ready', async () => {
