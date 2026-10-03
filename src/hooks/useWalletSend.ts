@@ -200,11 +200,12 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
  * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
  * other `?visual=send-…` value there); under `send-input-busy` and `send-amount-busy`, **Continue**
- * only marks that step busy. When the wallet leaves `ready` or the account
- * leaves wallet mode, an open amount or confirm step and any read or prepare
- * in flight are dropped (a send in flight is kept), so a later reconnect
- * starts at the input; a read or prepare that settles once the wallet is no
- * longer ready is dropped too.
+ * only marks that step busy. While the one-time wallet setup is due, the
+ * actions stay idle. When the wallet leaves `ready` or the account leaves
+ * wallet mode, an open amount or confirm step and any read or prepare in
+ * flight are dropped (a send in flight is kept), so a later reconnect starts
+ * at the input; a read or prepare that settles once the wallet is no longer
+ * ready is dropped too.
  *
  * @returns The current step, drafts, and actions.
  */

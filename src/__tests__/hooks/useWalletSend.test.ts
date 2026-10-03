@@ -18,6 +18,7 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
 }));
 
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+const ORIGINAL_BREEZ_KEY = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
 const LNURL: WalletTarget = {
   type: 'lnurl',
@@ -63,6 +64,11 @@ afterEach(() => {
     delete process.env.NEXT_PUBLIC_E2E_NOW;
   } else {
     process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
+  if (ORIGINAL_BREEZ_KEY === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ_KEY;
   }
 });
 
@@ -675,7 +681,6 @@ describe('useWalletSend wallet status', () => {
   });
 
   it('does nothing while the account is in the one-time wallet setup', async () => {
-    const key = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     target(LNURL);
     const { result } = renderHook(() => useWalletSend());
@@ -693,11 +698,12 @@ describe('useWalletSend wallet status', () => {
     });
     expect(parseWalletInput).not.toHaveBeenCalled();
     expect(payFromWallet).not.toHaveBeenCalled();
-    if (key === undefined) {
-      delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
-    } else {
-      process.env.NEXT_PUBLIC_BREEZ_API_KEY = key;
-    }
+    act(() => {
+      useAuthStore.setState({ account: { ...eligible!, sparkWalletVerified: true } });
+    });
+    await typeAndSubmit(result, 'bob@pay.example');
+    expect(parseWalletInput).toHaveBeenCalledTimes(1);
+    expect(result.current.state.step).toBe('amount');
   });
 
   it('keeps a send in flight and the sent and idle input steps', async () => {
