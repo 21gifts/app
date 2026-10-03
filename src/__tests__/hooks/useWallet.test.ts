@@ -87,6 +87,9 @@ describe('useWallet', () => {
     ['history-empty', 'ready', WALLET_VISUAL_FIXTURE_SATS],
     ['history-rows', 'ready', WALLET_VISUAL_FIXTURE_SATS],
     ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+    ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+    ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+    ['send-alert-locked', 'locked', null],
   ] as const)('pins %s to %s', (visual, status, balanceSats) => {
     setPlaywrightBuild();
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
@@ -106,6 +109,13 @@ describe('useWallet', () => {
       await Promise.resolve();
     });
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a Playwright build without a visual value', () => {
+    setPlaywrightBuild();
+    setWallet('disabled');
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('disabled');
   });
 
   it('ignores an unrelated visual value', () => {

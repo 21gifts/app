@@ -18,6 +18,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
@@ -204,6 +205,8 @@ export interface InboxInvoice {
   pr: string;
   /** Whole satoshis on the invoice. */
   amountSats: number;
+  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  sparkInvoice?: string | null | undefined;
 }
 
 /** Props for {@link InboxScreen}. */
@@ -517,7 +520,9 @@ function ConversationListItem({
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
  * Wallet of Satoshi pay sheet. Desktop and iPad also show the invoice QR. A
- * smartphone does not (`isSmartphoneUserAgent`, not viewport). The
+ * smartphone does not (`isSmartphoneUserAgent`, not viewport). With a
+ * `sparkInvoice` and a usable in-app wallet, `WalletPay` pays from that wallet
+ * instead and shows neither the wallet button nor the invoice QR. The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
  * last-text (read inbound last-text stays muted). When the derived unread
@@ -1319,8 +1324,19 @@ export function InboxScreen({
               })}
               {preferredFiatSuffix(invoice.amountSats, rateDay, fiat, numberFormat)}
             </p>
-            {showPaymentQr ? <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} /> : null}
-            {walletButton}
+            <WalletPay
+              sparkInvoice={invoice.sparkInvoice}
+              amountSats={invoice.amountSats}
+              rateDay={rateDay}
+              fallback={
+                <>
+                  {showPaymentQr ? (
+                    <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} />
+                  ) : null}
+                  {walletButton}
+                </>
+              }
+            />
             {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
             {payWaiting ? (
               <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>

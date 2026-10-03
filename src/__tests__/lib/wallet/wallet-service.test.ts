@@ -6,8 +6,11 @@ import {
   ensureWalletConnected,
   listenForWalletPhrase,
   listWalletPayments,
+  parseWalletInput,
+  payFromWallet,
   refreshWallet,
   registerWalletAddress,
+  WALLET_SEND_TIMEOUT_MS,
   type WalletSdkLoader,
 } from '@/lib/wallet/wallet-service';
 import type { WalletConnection, WalletSdk } from '@/lib/wallet/wallet-sdk';
@@ -953,5 +956,354 @@ describe('listWalletPayments', () => {
     await connectWallet(loadSdk);
     await expect(listWalletPayments({ offset: 20, limit: 20 })).resolves.toEqual([row]);
     expect(connection.listPayments).toHaveBeenCalledWith({ offset: 20, limit: 20 });
+  });
+});
+
+/**
+ * Connects a fake wallet whose connection also parses and prepares payments.
+ */
+async function connectPaying(options: {
+  balanceSats?: number;
+  parse?: WalletConnection['parse'];
+  prepare?: WalletConnection['prepare'];
+}): Promise<{
+  getInfo: ReturnType<typeof vi.fn>;
+  parse: ReturnType<typeof vi.fn>;
+  prepare: ReturnType<typeof vi.fn>;
+}> {
+  const getInfo = vi.fn(async () => ({
+    balanceSats: options.balanceSats ?? 21_000,
+    identityPubkey: IDENTITY,
+  }));
+  const parse = vi.fn(options.parse ?? (async () => ({ type: 'unsupported' as const })));
+  const prepare = vi.fn(
+    options.prepare ??
+      (async () => ({ amountSats: 2_100, feeSats: 0, send: async () => undefined })),
+  );
+  const conn = {
+    getInfo,
+    addEventListener: vi.fn(async () => 'listener-1'),
+    disconnect: vi.fn(async () => undefined),
+    parse,
+    prepare,
+  };
+  rememberSessionPhrase(MNEMONIC);
+  const { loadSdk } = createFakeSdk({ connect: async () => conn as unknown as WalletConnection });
+  await connectWallet(loadSdk);
+  expect(useWalletStore.getState().status).toBe('ready');
+  return { getInfo, parse, prepare };
+}
+
+describe('payFromWallet', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('asks to unlock without a connection', async () => {
+    await expect(payFromWallet({ type: 'input', input: 'spark1x' })).resolves.toEqual({
+      kind: 'unlock',
+    });
+  });
+
+  it('returns amount and fee, then pays once and refreshes the balance', async () => {
+    const send = vi.fn(async () => undefined);
+    const { getInfo, prepare } = await connectPaying({
+      prepare: async () => ({ amountSats: 2_100, feeSats: 0, send }),
+    });
+    const result = await payFromWallet({ type: 'input', input: 'spark1x' });
+    expect(prepare).toHaveBeenCalledWith({ type: 'input', input: 'spark1x' });
+    expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    expect(result).toMatchObject({ kind: 'confirm', amountSats: 2_100, feeSats: 0 });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    const readsBefore = getInfo.mock.calls.length;
+    await expect(result.send()).resolves.toEqual({ kind: 'paid' });
+    await vi.waitFor(() => {
+      expect(getInfo.mock.calls.length).toBeGreaterThan(readsBefore);
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    await expect(result.send()).resolves.toEqual({ kind: 'failed' });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports insufficient balance when amount and fee exceed it', async () => {
+    await connectPaying({
+      balanceSats: 2_100,
+      prepare: async () => ({ amountSats: 2_100, feeSats: 1, send: async () => undefined }),
+    });
+    await expect(payFromWallet({ type: 'input', input: 'spark1x' })).resolves.toEqual({
+      kind: 'insufficient',
+    });
+  });
+
+  it('writes the synced balance read to the store', async () => {
+    const { getInfo } = await connectPaying({});
+    getInfo.mockResolvedValueOnce({ balanceSats: 50, identityPubkey: IDENTITY });
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
+      kind: 'insufficient',
+    });
+    expect(useWalletStore.getState().balanceSats).toBe(50);
+  });
+
+  it('checks an overtaken synced read against a newer written balance, not a pending one, and fails after a disconnect', async () => {
+    const { getInfo } = await connectPaying({});
+    let finish: (value: { balanceSats: number; identityPubkey: string }) => void = () => undefined;
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const overtaken = payFromWallet({ type: 'input', input: 'a' });
+    await vi.waitFor(() => {
+      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    });
+    getInfo.mockResolvedValueOnce({ balanceSats: 30_000, identityPubkey: IDENTITY });
+    await refreshWallet();
+    finish({ balanceSats: 50, identityPubkey: IDENTITY });
+    await expect(overtaken).resolves.toMatchObject({ kind: 'confirm', amountSats: 2_100 });
+    expect(useWalletStore.getState().balanceSats).toBe(30_000);
+
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const pending = payFromWallet({ type: 'input', input: 'a' });
+    await vi.waitFor(() => {
+      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    });
+    const payFinish = finish;
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const pendingRefresh = refreshWallet();
+    payFinish({ balanceSats: 50, identityPubkey: IDENTITY });
+    expect(useWalletStore.getState().balanceSats).toBe(30_000);
+    await expect(pending).resolves.toEqual({ kind: 'insufficient' });
+    finish({ balanceSats: 50, identityPubkey: IDENTITY });
+    await pendingRefresh;
+
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const dropped = payFromWallet({ type: 'input', input: 'a' });
+    await vi.waitFor(() => {
+      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    });
+    await disconnectWallet();
+    finish({ balanceSats: 50, identityPubkey: IDENTITY });
+    await expect(dropped).resolves.toEqual({ kind: 'failed' });
+    expect(useWalletStore.getState().balanceSats).toBeNull();
+  });
+
+  it('fails a prepare that rejects after the connection changed, even for low funds', async () => {
+    let reject: (err: Error) => void = () => undefined;
+    await connectPaying({
+      prepare: () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        }),
+    });
+    const pending = payFromWallet({ type: 'input', input: 'a' });
+    await disconnectWallet();
+    reject(new Error('Insufficient funds'));
+    await expect(pending).resolves.toEqual({ kind: 'failed' });
+  });
+
+  it('maps a prepare rejection to failed, or to insufficient when the SDK says so', async () => {
+    let calls = 0;
+    await connectPaying({
+      prepare: async () => {
+        calls += 1;
+        if (calls === 1) {
+          throw new Error('network');
+        }
+        if (calls === 2) {
+          throw new Error('Insufficient funds');
+        }
+        throw 'insufficientFunds';
+      },
+    });
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({ kind: 'failed' });
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
+      kind: 'insufficient',
+    });
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
+      kind: 'insufficient',
+    });
+  });
+
+  it('fails without reading the balance when the connection changed during prepare', async () => {
+    let finish: () => void = () => undefined;
+    const { getInfo } = await connectPaying({
+      prepare: () =>
+        new Promise((resolve) => {
+          finish = () => {
+            resolve({ amountSats: 1, feeSats: 0, send: async () => undefined });
+          };
+        }),
+    });
+    const reads = getInfo.mock.calls.length;
+    const pending = payFromWallet({ type: 'input', input: 'a' });
+    await disconnectWallet();
+    finish();
+    await expect(pending).resolves.toEqual({ kind: 'failed' });
+    expect(getInfo.mock.calls.length).toBe(reads);
+  });
+
+  it('fails when the balance cannot be read before confirmation', async () => {
+    const { getInfo } = await connectPaying({});
+    getInfo.mockRejectedValueOnce(new Error('offline'));
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({ kind: 'failed' });
+  });
+
+  it('does not refresh a newer connection after a send on a replaced one', async () => {
+    let finishSend: () => void = () => undefined;
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 1,
+        feeSats: 0,
+        send: () =>
+          new Promise<void>((resolve) => {
+            finishSend = resolve;
+          }),
+      }),
+    });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    const sending = result.send();
+    const next = createFakeSdk({
+      getInfo: () => new Promise(() => undefined),
+    });
+    void connectWallet(next.loadSdk);
+    await vi.waitFor(() => {
+      expect(next.connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+    });
+    finishSend();
+    await expect(sending).resolves.toEqual({ kind: 'paid' });
+    expect(next.connection.getInfo).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState().status).toBe('connecting');
+  });
+
+  it('maps a send rejection to failed or insufficient', async () => {
+    let calls = 0;
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 1,
+        feeSats: 0,
+        send: async () => {
+          calls += 1;
+          throw new Error(calls === 1 ? 'route not found' : 'insufficient funds');
+        },
+      }),
+    });
+    const first = await payFromWallet({ type: 'input', input: 'a' });
+    const second = await payFromWallet({ type: 'input', input: 'a' });
+    if (first.kind !== 'confirm' || second.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    await expect(first.send()).resolves.toEqual({ kind: 'failed' });
+    await expect(second.send()).resolves.toEqual({ kind: 'insufficient' });
+  });
+
+  it('stops waiting for a send after the time limit', async () => {
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 1,
+        feeSats: 0,
+        send: () => new Promise<void>(() => undefined),
+      }),
+    });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    vi.useFakeTimers();
+    const pending = result.send();
+    await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
+    await expect(pending).resolves.toEqual({ kind: 'failed' });
+  });
+
+  it('refuses to send after the wallet was disconnected', async () => {
+    const send = vi.fn(async () => undefined);
+    await connectPaying({ prepare: async () => ({ amountSats: 1, feeSats: 0, send }) });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    await disconnectWallet();
+    await expect(result.send()).resolves.toEqual({ kind: 'failed' });
+    expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe('parseWalletInput', () => {
+  it('treats blank text as invalid', async () => {
+    await expect(parseWalletInput('   ')).resolves.toEqual({ kind: 'invalid' });
+  });
+
+  it('asks to unlock without a connection', async () => {
+    await expect(parseWalletInput('lnbc1')).resolves.toEqual({ kind: 'unlock' });
+  });
+
+  it('returns the parsed target for trimmed text', async () => {
+    const { parse } = await connectPaying({ parse: async () => ({ type: 'onchain' }) });
+    await expect(parseWalletInput('  bc1q  ')).resolves.toEqual({
+      kind: 'target',
+      target: { type: 'onchain' },
+    });
+    expect(parse).toHaveBeenCalledWith('bc1q');
+  });
+
+  it('reports an address or LNURL that cannot be read as unreachable, other text as invalid', async () => {
+    await connectPaying({
+      parse: async () => {
+        throw new Error('fetch failed');
+      },
+    });
+    await expect(parseWalletInput('bob@pay.example')).resolves.toEqual({ kind: 'unreachable' });
+    await expect(parseWalletInput('lightning:LNURL1DP68GURN')).resolves.toEqual({
+      kind: 'unreachable',
+    });
+    await expect(parseWalletInput('hello world')).resolves.toEqual({ kind: 'invalid' });
+  });
+
+  it('asks to unlock when the connection changed while the text was read', async () => {
+    let settle: { resolve: (t: { type: 'onchain' }) => void; reject: (e: Error) => void } = {
+      resolve: () => undefined,
+      reject: () => undefined,
+    };
+    await connectPaying({
+      parse: () =>
+        new Promise((resolve, reject) => {
+          settle = { resolve, reject };
+        }),
+    });
+    const read = parseWalletInput('bc1q');
+    await disconnectWallet();
+    settle.resolve({ type: 'onchain' });
+    await expect(read).resolves.toEqual({ kind: 'unlock' });
+
+    await connectPaying({
+      parse: () =>
+        new Promise((resolve, reject) => {
+          settle = { resolve, reject };
+        }),
+    });
+    const failed = parseWalletInput('bob@pay.example');
+    await disconnectWallet();
+    settle.reject(new Error('fetch failed'));
+    await expect(failed).resolves.toEqual({ kind: 'unlock' });
   });
 });

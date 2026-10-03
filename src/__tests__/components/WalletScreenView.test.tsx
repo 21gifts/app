@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import type { UseWalletResult } from '@/hooks/useWallet';
+import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { resetViewHistory } from '@/lib/view-history';
@@ -576,5 +577,136 @@ describe('WalletScreenView', () => {
     expect(assign).toHaveBeenCalledWith('/welcome');
     expect(historyBack).not.toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+  });
+});
+
+describe('WalletScreenView send block', () => {
+  function sendResult(cancel: () => boolean): UseWalletSendResult {
+    return {
+      state: { step: 'confirm', recipient: 'bob@pay.example', amountSats: 2_100, feeSats: 0 },
+      busy: false,
+      text: '',
+      setText: vi.fn(),
+      comment: '',
+      setComment: vi.fn(),
+      submitInput: vi.fn(),
+      submitAmount: vi.fn(),
+      confirm: vi.fn(),
+      cancel: vi.fn(cancel),
+    };
+  }
+
+  function renderEntry(status: UseWalletResult['status'], send?: UseWalletSendResult): void {
+    setWalletAccount();
+    renderWithLocale(
+      <WalletScreenView
+        view="reveal"
+        status="idle"
+        error={null}
+        words={[]}
+        activate={vi.fn()}
+        showPhrase={vi.fn()}
+        hidePhrase={vi.fn()}
+        retry={vi.fn()}
+        wallet={walletResult(status)}
+        {...(send === undefined ? {} : { send })}
+      />,
+    );
+  }
+
+  it('shows the send block under the balance only while the wallet is ready', () => {
+    renderEntry(
+      'ready',
+      sendResult(() => true),
+    );
+    const balance = screen.getByRole('region', { name: 'Balance' });
+    const send = screen.getByRole('region', { name: 'Send Bitcoin' });
+    expect(balance.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    cleanup();
+    renderEntry(
+      'locked',
+      sendResult(() => true),
+    );
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    cleanup();
+    renderEntry('ready');
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
+  it('Back closes an open send step before anything else', () => {
+    const send = sendResult(() => true);
+    renderEntry('ready', send);
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(send.cancel).toHaveBeenCalledTimes(1);
+    expect(historyBack).not.toHaveBeenCalled();
+  });
+
+  it('Back does not ask the send flow while the wallet is not ready', () => {
+    const send = sendResult(() => true);
+    renderEntry('locked', send);
+    const details = screen.getByText('Advanced functions').closest('details');
+    if (details === null) {
+      throw new Error('missing details');
+    }
+    details.open = true;
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(send.cancel).not.toHaveBeenCalled();
+    expect(details.open).toBe(false);
+  });
+
+  it('keeps the send block and holds Back while a send runs or Sent shows, even when not ready', () => {
+    const busy: UseWalletSendResult = { ...sendResult(() => true), busy: true };
+    renderEntry('locked', busy);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(busy.cancel).toHaveBeenCalledTimes(1);
+    expect(historyBack).not.toHaveBeenCalled();
+    cleanup();
+    const sent: UseWalletSendResult = {
+      ...sendResult(() => true),
+      state: { step: 'sent', amountSats: 2_100 },
+    };
+    renderEntry('error', sent);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toContain("Sent ₿2'100");
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(sent.cancel).toHaveBeenCalledTimes(1);
+    expect(historyBack).not.toHaveBeenCalled();
+  });
+
+  it('keeps only the send alert while the wallet is not ready', () => {
+    const failed: UseWalletSendResult = {
+      ...sendResult(() => false),
+      state: { step: 'input', error: 'failed' },
+    };
+    renderEntry('locked', failed);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The payment could not be sent. Check your balance before you try again.',
+    );
+    expect(screen.queryByLabelText('Payment request or address')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    cleanup();
+    renderEntry('ready', failed);
+    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    cleanup();
+    renderEntry('locked', { ...sendResult(() => false), state: { step: 'input', error: null } });
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
+  it('Back continues to Advanced functions when no send step is open', () => {
+    const send = sendResult(() => false);
+    renderEntry('ready', send);
+    const details = screen.getByText('Advanced functions').closest('details');
+    if (details === null) {
+      throw new Error('missing details');
+    }
+    details.open = true;
+    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    expect(send.cancel).toHaveBeenCalledTimes(1);
+    expect(details.open).toBe(false);
   });
 });
