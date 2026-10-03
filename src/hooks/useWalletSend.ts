@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import { getE2eNow } from '@/lib/config';
+import { lnurlRelayTarget } from '@/lib/wallet/lnurl-relay';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
@@ -32,6 +34,9 @@ function walletCanSend(): boolean {
  *
  * - `invalid`: not a payment request or address.
  * - `unreachable`: the receiver's server did not answer this browser.
+ * - `notPayable`: the api does not read this address as one it can pay.
+ * - `notFound`: the receiver's server does not know this address.
+ * - `relayUnreachable`: the receiver's server did not answer the api.
  * - `onchain`: a base-chain Bitcoin address, not supported yet.
  * - `unsupported`: recognised but not payable from this wallet.
  * - `insufficient`: the balance does not cover amount and fee.
@@ -39,16 +44,45 @@ function walletCanSend(): boolean {
  *   text was read.
  */
 export type WalletSendError =
-  'invalid' | 'unreachable' | 'onchain' | 'unsupported' | 'insufficient' | 'failed';
+  | 'invalid'
+  | 'unreachable'
+  | 'notPayable'
+  | 'notFound'
+  | 'relayUnreachable'
+  | 'onchain'
+  | 'unsupported'
+  | 'insufficient'
+  | 'failed';
+
+/**
+ * Lightning address or LNURL on another host, read through the api. `target`
+ * is the api's normalised target for `POST /lnurl/invoice`.
+ */
+export interface WalletSendRelayTarget {
+  type: 'relay';
+  target: string;
+  minSats: number;
+  maxSats: number;
+  commentMaxLength: number;
+  recipient: string;
+}
 
 /** Receiver that still needs an amount. */
 export type WalletSendAmountTarget =
-  Extract<WalletTarget, { type: 'request' }> | Extract<WalletTarget, { type: 'lnurl' }>;
+  | Extract<WalletTarget, { type: 'request' }>
+  | Extract<WalletTarget, { type: 'lnurl' }>
+  | WalletSendRelayTarget;
 
 /** Step of the `/wallet` send flow. */
 export type WalletSendState =
   | { step: 'input'; error: WalletSendError | null }
-  | { step: 'amount'; target: WalletSendAmountTarget; amountError: boolean }
+  | {
+      step: 'amount';
+      target: WalletSendAmountTarget;
+      amountError: boolean;
+      /** Set when the receiver refused the comment as too long. */
+      commentError?: true;
+    }
   | { step: 'confirm'; recipient: string; amountSats: number; feeSats: number }
   | { step: 'sent'; amountSats: number };
 
@@ -150,6 +184,20 @@ function visualState(name: string | null): WalletSendState | null {
       return { step: 'amount', target: request, amountError: false };
     case 'send-amount-min':
       return { step: 'amount', target: request, amountError: true };
+    case 'send-comment-long':
+      return {
+        step: 'amount',
+        target: {
+          type: 'relay',
+          target: fixture.recipient,
+          minSats: fixture.minSats,
+          maxSats: fixture.maxSats,
+          commentMaxLength: fixture.commentMaxLength,
+          recipient: fixture.recipient,
+        },
+        amountError: false,
+        commentError: true,
+      };
     case 'send-confirm':
     case 'send-confirm-sending':
       return {
@@ -173,6 +221,12 @@ function visualState(name: string | null): WalletSendState | null {
       return { step: 'input', error: 'insufficient' };
     case 'send-error':
       return { step: 'input', error: 'unreachable' };
+    case 'send-not-payable':
+      return { step: 'input', error: 'notPayable' };
+    case 'send-not-found':
+      return { step: 'input', error: 'notFound' };
+    case 'send-relay-unreachable':
+      return { step: 'input', error: 'relayUnreachable' };
     default:
       return null;
   }
@@ -185,10 +239,29 @@ function visualState(name: string | null): WalletSendState | null {
  * @returns Smallest and largest whole sats.
  */
 export function walletSendBounds(target: WalletSendAmountTarget): { min: number; max: number } {
-  if (target.type === 'lnurl') {
+  if (target.type !== 'request') {
     return { min: target.minSats, max: target.maxSats };
   }
   return { min: 1, max: Number.MAX_SAFE_INTEGER };
+}
+
+/**
+ * Input alert for an api refusal of a `/lnurl/…` request.
+ *
+ * @param error - Rejection of `postLnurlPayRequest` or `postLnurlInvoice`.
+ * @returns The alert for the input step.
+ */
+function relayInputError(error: unknown): WalletSendError {
+  switch (error instanceof LnurlRelayError ? error.reason : 'failed') {
+    case 'notPayable':
+      return 'notPayable';
+    case 'notFound':
+      return 'notFound';
+    case 'unreachable':
+      return 'relayUnreachable';
+    default:
+      return 'failed';
+  }
 }
 
 /**
@@ -196,7 +269,11 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
  * amount (and optional comment) when the receiver asks for one, a confirm
  * step with amount, fee, and recipient, then one send. A base-chain address
  * shows that it is not supported yet. A receiver whose server this browser
- * cannot reach shows a plain error. Nothing is retried on its own. Visual
+ * cannot reach shows a plain error. A Lightning address or LNURL on another
+ * host (see `lnurlRelayTarget`) is read through the api instead: its pay
+ * request gives the bounds and comment length, the api returns the invoice
+ * for the chosen amount, and the wallet pays that invoice. Own-host addresses
+ * and Spark targets are read by the wallet. Nothing is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
  * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
  * other `?visual=send-…` value there); under `send-input-busy` and `send-amount-busy`, **Continue**
@@ -222,6 +299,7 @@ export function useWalletSend(): UseWalletSendResult {
   const inert = pinned !== null || (pin !== null && /^(balance|history|send)-/.test(pin));
   const status = useWalletStore((store) => store.status);
   const account = useAuthStore((store) => store.account);
+  const session = useAuthStore((store) => store.session);
   const ready = status === 'ready' && canUnlockWallet(account) && !needsWalletSetup(account);
 
   useEffect(
@@ -254,30 +332,36 @@ export function useWalletSend(): UseWalletSendResult {
     );
   }, []);
 
-  const prepare = useCallback((request: WalletPayRequest, recipient: string): void => {
-    const run = generation.current;
-    setBusy(true);
-    void payFromWallet(request).then((result) => {
-      if (run !== generation.current || !walletCanSend()) {
-        return;
-      }
-      setBusy(false);
-      if (result.kind === 'confirm') {
-        sendRef.current = result.send;
+  const prepare = useCallback(
+    (request: WalletPayRequest, recipient: string, expectedSats?: number): void => {
+      const run = generation.current;
+      setBusy(true);
+      void payFromWallet(request).then((result) => {
+        if (run !== generation.current || !walletCanSend()) {
+          return;
+        }
+        setBusy(false);
+        if (
+          result.kind === 'confirm' &&
+          (expectedSats === undefined || result.amountSats === expectedSats)
+        ) {
+          sendRef.current = result.send;
+          setState({
+            step: 'confirm',
+            recipient,
+            amountSats: result.amountSats,
+            feeSats: result.feeSats,
+          });
+          return;
+        }
         setState({
-          step: 'confirm',
-          recipient,
-          amountSats: result.amountSats,
-          feeSats: result.feeSats,
+          step: 'input',
+          error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
         });
-        return;
-      }
-      setState({
-        step: 'input',
-        error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
       });
-    });
-  }, []);
+    },
+    [],
+  );
 
   const submitInput = useCallback((): void => {
     if (inert) {
@@ -289,6 +373,48 @@ export function useWalletSend(): UseWalletSendResult {
     }
     const run = generation.current;
     setBusy(true);
+    const relay = lnurlRelayTarget(text, window.location.hostname);
+    if (relay !== null) {
+      const request =
+        session === null
+          ? Promise.reject(new LnurlRelayError('failed'))
+          : postLnurlPayRequest(session, relay);
+      void request.then(
+        (payRequest) => {
+          if (run !== generation.current || !walletCanSend()) {
+            return;
+          }
+          setBusy(false);
+          const minSats = Math.max(1, Math.ceil(payRequest.minSendableMsat / 1000));
+          const maxSats = Math.floor(payRequest.maxSendableMsat / 1000);
+          if (minSats > maxSats) {
+            setState({ step: 'input', error: 'unsupported' });
+            return;
+          }
+          setComment('');
+          setState({
+            step: 'amount',
+            target: {
+              type: 'relay',
+              target: payRequest.target,
+              minSats,
+              maxSats,
+              commentMaxLength: payRequest.commentAllowed,
+              recipient: payRequest.target.includes('@') ? payRequest.target : payRequest.domain,
+            },
+            amountError: false,
+          });
+        },
+        (error: unknown) => {
+          if (run !== generation.current || !walletCanSend()) {
+            return;
+          }
+          setBusy(false);
+          setState({ step: 'input', error: relayInputError(error) });
+        },
+      );
+      return;
+    }
     void parseWalletInput(text).then((parsed) => {
       if (run !== generation.current || !walletCanSend()) {
         return;
@@ -327,7 +453,7 @@ export function useWalletSend(): UseWalletSendResult {
       setComment('');
       setState({ step: 'amount', target, amountError: false });
     });
-  }, [pin, inert, ready, busy, state.step, text, prepare]);
+  }, [pin, inert, ready, busy, state.step, text, session, prepare]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {
@@ -342,6 +468,41 @@ export function useWalletSend(): UseWalletSendResult {
       const { min, max } = walletSendBounds(target);
       if (sats === null || sats < min || sats > max) {
         setState({ step: 'amount', target, amountError: true });
+        return;
+      }
+      if (target.type === 'relay') {
+        const trimmed = comment.trim().slice(0, target.commentMaxLength);
+        const run = generation.current;
+        setBusy(true);
+        const request =
+          session === null
+            ? Promise.reject(new LnurlRelayError('failed'))
+            : postLnurlInvoice(session, target.target, sats * 1000, trimmed);
+        void request.then(
+          (invoice) => {
+            if (run !== generation.current || !walletCanSend()) {
+              return;
+            }
+            prepare({ type: 'input', input: invoice.pr }, target.recipient, sats);
+          },
+          (error: unknown) => {
+            if (run !== generation.current || !walletCanSend()) {
+              return;
+            }
+            setBusy(false);
+            const reason = error instanceof LnurlRelayError ? error.reason : 'failed';
+            if (reason === 'amount' || reason === 'comment') {
+              setState({
+                step: 'amount',
+                target,
+                amountError: reason === 'amount',
+                ...(reason === 'comment' ? { commentError: true as const } : {}),
+              });
+              return;
+            }
+            setState({ step: 'input', error: relayInputError(error) });
+          },
+        );
         return;
       }
       if (target.type === 'lnurl') {
@@ -359,7 +520,7 @@ export function useWalletSend(): UseWalletSendResult {
       }
       prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
     },
-    [pin, inert, ready, busy, state, comment, prepare],
+    [pin, inert, ready, busy, state, comment, session, prepare],
   );
 
   const confirm = useCallback((): void => {
