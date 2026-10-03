@@ -11,6 +11,7 @@ import {
   markNotificationRead,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
+import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
 import { loadSession } from '@/lib/session-storage';
 import type { Notification } from '@/lib/api-types';
@@ -79,13 +80,15 @@ function notificationOpenPath(row: Notification): string {
  * to 0 when inbox or staff-room unread remains). Fetches the staff room only when
  * `roleAtLeast(account?.role, 'moderator')`; below moderator the remaining
  * badge is inbox unread only. Renders nothing when there is no
- * session. There is no composer; opening a `moderator_proposal` row goes to
- * `/moderate/proposals` and does not call `markNotificationRead`; opening a
- * `moderator_appointed` row waits for `markNotificationRead` (then still goes
- * to `/welcome` if that POST fails, and skips navigation if the session
- * changed). A `forum_reply` or `forum_mention` opens `/messages/{replyId}`
- * without waiting. A `forum_post` or `zap` opens `/messages/{parentId}`
- * without waiting. Ids are URI-encoded.
+ * session. The list keeps every fetched row, including those with `readAt` set. There is no
+ * composer; opening a `moderator_proposal` row goes to `/moderate/proposals`
+ * and does not call `markNotificationRead`; opening a `moderator_appointed`
+ * row waits for `markNotificationRead` (then still goes to `/welcome` if that
+ * POST fails, and skips navigation if the session changed). A `forum_reply`
+ * or `forum_mention` opens `/messages/{replyId}` without waiting. A
+ * `forum_post` or `zap` opens `/messages/{parentId}` without waiting. Ids are
+ * URI-encoded. Opening a non-proposal row also closes the matching local
+ * Web Push notification without waiting for the POST.
  *
  * @returns The notifications screen, or `null` without a session.
  */
@@ -156,6 +159,10 @@ export function NotificationsLoader(): ReactElement | null {
         if (row.type === 'moderator_proposal') {
           router.push(dest);
           return;
+        }
+        const tag = pushTagForNotification(row);
+        if (tag !== null) {
+          void closeLocalPushNotifications([tag]);
         }
         if (row.type !== 'moderator_appointed') {
           void markNotificationRead(session, row.id).catch(() => undefined);

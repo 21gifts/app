@@ -377,11 +377,14 @@ app/
 | Branch    | Purpose                            | Deploy target |
 | --------- | ---------------------------------- | ------------- |
 | `develop` | Default branch, active development | DEV           |
+| `staging` | Experimental testing               | staging       |
 | `main`    | Production releases                | PRD           |
 
 - Push to `develop` via **feature branch + PR**
 - `main` is protected — updates flow via an auto-generated Release PR (`develop → main`)
-- Never force-push, never amend published commits
+- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` first (`Release: staging -> develop`). `main` receives changes only from `develop` (`Release: develop -> main`). `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
+- Feature pull requests always target `develop`, not `staging` and not `main`. Developers rebase `staging` onto `develop` regularly, because those pull requests land on `develop` and do not update `staging`.
+- Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
 ### Commit messages
 
@@ -445,7 +448,7 @@ A photo row may scroll sideways on `[data-scroll-x]`. That row is
 `overflow-x: auto` and `overflow-y: clip`, so it is not a second page
 scroll. `scripts/check-scrollports.mjs` fails CI on scrolling utilities,
 arbitrary values, and assignments, and on any stylesheet scrolling overflow
-except `overflow: auto` on `[data-scrollport][data-scroll-active]` and that
+except `overflow-x: clip` and `overflow-y: auto` on `[data-scrollport][data-scroll-active]` and that
 one sideways row. It rejects its own detector if that check goes blind. The document lock is
 `!important`. AppShell `<main>` stays free of `overflow-hidden` so the
 menu hosts on the frame are not clipped. `--app-offset-top` is
@@ -453,6 +456,13 @@ menu hosts on the frame are not clipped. `--app-offset-top` is
 (`position: fixed; top: var(--app-offset-top); height: var(--app-height)`).
 The offset is never added into the height. The document lock stops the page from
 scrolling under the frame.
+
+A box stays inside the window. Only a slide inside `[data-scroll-x]` may extend past the left or
+right edge, and that row's own box stays inside. A box whose top or bottom leaves the window by more than one pixel fails the same check, except content inside `[data-scrollport]`, which may sit past the top or bottom unless it is position:fixed; a position:fixed box is still reported. Do not size a panel with `vw` or `w-screen`: that
+width is the phone, which is wider than the padded column, and that is what shifts a page.
+`scripts/check-scrollports.mjs` fails lint on those widths. Every visual screenshot runs
+`pageFrameProblems` first, and the Visual job fails when a box sticks out or the page can scroll
+sideways.
 
 ### Components
 
@@ -724,11 +734,11 @@ CI will fail on the same conditions; catching them locally is faster.
 ### A38
 
 This repository requires A38 according to the canonical A38 standard in
-[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/7dd1cc257f3820814e90e08575b3ce702ee26222/docs/a38.md)
-at commit `7dd1cc257f3820814e90e08575b3ce702ee26222`. Repo job selection:
+[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/d165602daf7b4a0c73aaac3774da9c8a1ff7e852/docs/a38.md)
+at commit `d165602daf7b4a0c73aaac3774da9c8a1ff7e852`. Repo job selection:
 `.github/a38.json`. Target-branch applicability and fork workflow approval:
 `.github/pr-guard.json`. `dfx pr guard` is
-[wired in](https://github.com/DFXswiss/agent/blob/7dd1cc257f3820814e90e08575b3ce702ee26222/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
+[wired in](https://github.com/DFXswiss/agent/blob/d165602daf7b4a0c73aaac3774da9c8a1ff7e852/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
 
 This is a **public** repository. GitHub-hosted runners execute the heavy suite
 (typecheck, handbook completeness, e2e completeness, screenshot baselines,
@@ -762,9 +772,9 @@ values into the bundles, so the image is built with literal placeholders
 values at container start. The container refuses to start if a referenced
 variable is unset or empty.
 
-| Variable              | DEV                        | PRD                    |
-| --------------------- | -------------------------- | ---------------------- |
-| `NEXT_PUBLIC_API_URL` | `https://dev-api.21.gifts` | `https://api.21.gifts` |
+| Variable              | DEV                        | STAGING                        | PRD                    |
+| --------------------- | -------------------------- | ------------------------------ | ---------------------- |
+| `NEXT_PUBLIC_API_URL` | `https://dev-api.21.gifts` | `https://staging-api.21.gifts` | `https://api.21.gifts` |
 
 `NEXT_PUBLIC_API_URL` is the **upstream api**. The browser calls same-origin
 paths (`/auth/passkey/…`, `/me`, …) which the App Router proxies to that URL.
@@ -781,8 +791,9 @@ placeholder. Local and Playwright builds without the arg show `dev`.
 | ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
 | `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                         |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build → push `21gifts/app:staging` → notify → wait for deploy                                                                                                                                                      |
 | `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                       |
-| `auto-release-pr.yaml` | push to `develop`                                                 | Auto-create Release PR (`develop → main`)                                                                                                                                                                                 |
+| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                    |
 | `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                |
 
 Images target `linux/arm64`.
@@ -799,8 +810,7 @@ Deploy workflows require these GitHub Actions secrets:
 If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, deploy fails loud (the image
 may already be on Hub). After `image-published`, the job waits for the
 infrastructure run whose title is `image-published 21gifts/app:<tag> <sha>`
-and fails if that run does not succeed. The wait is what makes a failed DEV
-deploy visible on the develop→main PR.
+and fails if that run does not succeed. The wait is what makes a failed DEV deploy visible on the develop→main PR. A failed staging deploy fails that staging workflow, not the release pull request.
 
 ## Breez SDK Spark
 

@@ -55,6 +55,7 @@ import {
   proxyNotificationsGet,
   proxyForumMentionsGet,
   proxyNotificationsReadAllPost,
+  proxyNotificationsReadByMessagePost,
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
   proxyMessagesComposeTargetGet,
@@ -69,6 +70,8 @@ import {
   proxyForumMessageGet,
   proxyPublicMessageGet,
   proxyExternalAuthorProfileGet,
+  proxyExternalAuthorPostsGet,
+  proxyExternalAuthorRepliesGet,
   proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
   proxyPushVapidPublicGet,
@@ -462,6 +465,24 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-profile');
   });
 
+  it('proxyExternalAuthorPostsGet hits /messages/:id/external-posts', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorPostsGet(
+      new Request('http://localhost/public-messages/m1/external-posts'),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-posts');
+  });
+
+  it('proxyExternalAuthorRepliesGet hits /messages/:id/external-replies', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorRepliesGet(
+      new Request('http://localhost/public-messages/m1/external-replies'),
+      'm1',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-replies');
+  });
+
   it('proxyShortLinkGet hits /links/:code without a bearer', async () => {
     const fetchMock = stubApi();
     await proxyShortLinkGet(new Request('http://localhost/links/d70c4763'), 'd70c4763');
@@ -587,6 +608,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/notifications/read-all');
+  });
+
+  it('proxyNotificationsReadByMessagePost hits POST /notifications/read-by-message', async () => {
+    const fetchMock = stubApi();
+    await proxyNotificationsReadByMessagePost(
+      new Request('http://localhost/forum/notifications/read-by-message', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/notifications/read-by-message');
   });
 
   it('proxyNotificationReadPost encodes the id', async () => {

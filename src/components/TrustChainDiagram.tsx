@@ -221,13 +221,13 @@ export function TrustChainDiagram({
   }
 
   return (
-    <div>
+    <div className="flex w-full min-w-0 max-w-full justify-center">
       <svg
-        width={width}
-        height={height}
         viewBox={`${minX} ${minY} ${width} ${height}`}
         role="group"
         aria-label={t('aria.trustChain')}
+        className="h-auto max-w-full"
+        width={width}
       >
         {edges.map((edge) => {
           const from = byId.get(edge.from);

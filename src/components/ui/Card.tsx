@@ -38,8 +38,8 @@ export function Card({
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const panel =
     surface === false
-      ? `flex w-full ${MAX_WIDTH[maxWidth]} flex-col items-center gap-6`
-      : `flex w-full ${MAX_WIDTH[maxWidth]} flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`;
+      ? `flex w-full min-w-0 ${MAX_WIDTH[maxWidth]} flex-col items-center gap-6`
+      : `flex w-full min-w-0 ${MAX_WIDTH[maxWidth]} flex-col items-center gap-6 rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`;
 
   return <section className={`${panel}${extra}`}>{children}</section>;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  BarChart3,
   Bell,
   HandCoins,
   Home,
@@ -33,7 +34,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, staff-only Moderation
+ * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, Statistics
+ * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
  * notifications with an
@@ -58,11 +60,13 @@ export function SignedInChrome(): ReactElement {
   const session = useAuthStore((state) => state.session);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [tight, setTight] = useState(false);
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const frameWidth = useContext(AppShellContext)?.frameWidth ?? null;
   const scroller = useAppShellScroller();
   const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
@@ -128,6 +132,40 @@ export function SignedInChrome(): ReactElement {
     };
   }, [narrow, open, scroller]);
 
+  useLayoutEffect(() => {
+    if (!open || narrow) {
+      if (tight) {
+        setTight(false);
+      }
+      return;
+    }
+    const measure = (): void => {
+      const limit = window.innerHeight + 1;
+      const bottom = menuRef.current!.getBoundingClientRect().bottom;
+      setTight((current) => {
+        if (bottom > limit) {
+          return true;
+        }
+        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
+        if (current && bottom <= limit - 48) {
+          return false;
+        }
+        return current;
+      });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    let observer: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(measure);
+      observer.observe(menuRef.current!);
+    }
+    return () => {
+      window.removeEventListener('resize', measure);
+      observer?.disconnect();
+    };
+  }, [open, narrow, tight, account?.role]);
+
   useEffect(() => {
     if (session === null) {
       return;
@@ -152,9 +190,12 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
+  // A tall wide menu drops its outer spacing so the last row stays inside the window. It does not scroll.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
-    : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
+    : tight
+      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
     <div ref={setRootEl} className="relative">
@@ -176,7 +217,7 @@ export function SignedInChrome(): ReactElement {
       {panelTarget === null
         ? null
         : createPortal(
-            <div id="signed-in-menu" className={panelClass}>
+            <div id="signed-in-menu" ref={menuRef} className={panelClass}>
               <Link
                 href="/welcome"
                 onClick={(event) => {
@@ -261,6 +302,18 @@ export function SignedInChrome(): ReactElement {
                 <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 {t('nav.trustChain')}
               </Link>
+              {account !== null ? (
+                <Link
+                  href="/statistics"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <BarChart3 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.statistics')}
+                </Link>
+              ) : null}
               {roleAtLeast(account?.role, 'moderator') ? (
                 <Link
                   href="/moderate"
@@ -353,7 +406,13 @@ export function SignedInChrome(): ReactElement {
                 }}
               />
               <LogoutButton />
-              <p className="px-3 py-2 text-xs text-app-muted tabular-nums lining-nums">
+              <p
+                className={
+                  tight
+                    ? 'px-3 py-0 text-xs text-app-muted tabular-nums lining-nums'
+                    : 'px-3 py-2 text-xs text-app-muted tabular-nums lining-nums'
+                }
+              >
                 {t('app.version', { version: getAppVersion() })}
               </p>
             </div>,

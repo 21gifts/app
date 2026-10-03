@@ -7,7 +7,7 @@ const source = readFileSync('public/sw.js', 'utf8');
 describe('service worker Sunday push', () => {
   it('drops a public push on the device Sunday and still shows a private message', () => {
     const guard = source.indexOf("payload.type !== 'conversation'");
-    const show = source.indexOf('showNotification');
+    const show = source.indexOf('showNotification', guard);
     expect(source).toContain('function isDeviceSunday()');
     expect(source).toContain("weekday: 'short'");
     expect(source).toContain("tag: 'sunday-quiet'");
@@ -41,6 +41,88 @@ type ClickListener = (event: {
   notification: { close: () => void; data?: { url?: string } };
   waitUntil: (pending: Promise<unknown>) => void;
 }) => void;
+
+type PushListener = (event: {
+  data: { json: () => unknown };
+  waitUntil: (pending: Promise<unknown>) => void;
+}) => void;
+
+interface PushNotification {
+  tag: string;
+  close: ReturnType<typeof vi.fn>;
+}
+
+interface PushNotificationOptions {
+  tag?: string;
+  [key: string]: unknown;
+}
+
+function bootPushWorker(day: 'Thu' | 'Sun'): {
+  push: PushListener;
+  showNotification: ReturnType<typeof vi.fn>;
+  getNotifications: ReturnType<typeof vi.fn>;
+  setAppBadge: ReturnType<typeof vi.fn>;
+  forumClose: ReturnType<typeof vi.fn>;
+  otherClose: ReturnType<typeof vi.fn>;
+} {
+  const listeners: Record<string, PushListener> = {};
+  const forumClose = vi.fn();
+  const otherClose = vi.fn();
+  const notifications: PushNotification[] = [
+    { tag: 'forum_post:m1', close: forumClose },
+    { tag: 'forum_post:m2', close: otherClose },
+  ];
+  const showNotification = vi.fn(async (_title: string, options: PushNotificationOptions) => {
+    notifications.push({ tag: options.tag ?? '', close: vi.fn() });
+  });
+  const getNotifications = vi.fn(async ({ tag }: { tag: string }) =>
+    notifications.filter((notification) => notification.tag === tag),
+  );
+  const setAppBadge = vi.fn(async (_count: number) => undefined);
+  const sandbox = {
+    self: {
+      location: { origin: 'https://21.gifts' },
+      addEventListener(type: string, fn: PushListener) {
+        listeners[type] = fn;
+      },
+      clients: { claim: async () => undefined },
+      navigator: { setAppBadge },
+      registration: { showNotification, getNotifications },
+      skipWaiting() {},
+    },
+    caches: { open: async () => ({ put: async () => undefined }) },
+    URL,
+    Response,
+    MessageChannel,
+    Promise,
+    setTimeout,
+    clearTimeout,
+    Date,
+    Intl: {
+      DateTimeFormat: function DateTimeFormat() {
+        return { format: () => day };
+      },
+    },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(readFileSync('public/sw.js', 'utf8'), sandbox);
+  const push = listeners['push'];
+  if (push === undefined) {
+    throw new Error('push was not registered');
+  }
+  return { push, showNotification, getNotifications, setAppBadge, forumClose, otherClose };
+}
+
+async function pushPayload(push: PushListener, payload: unknown): Promise<void> {
+  let pending: Promise<unknown> = Promise.resolve();
+  push({
+    data: { json: () => payload },
+    waitUntil(next) {
+      pending = next;
+    },
+  });
+  await pending;
+}
 
 function bootWorker(clients: unknown): { click: ClickListener; put: ReturnType<typeof vi.fn> } {
   const listeners: Record<string, ClickListener> = {};
@@ -84,6 +166,49 @@ async function clickNotification(click: ClickListener, url: string): Promise<voi
   });
   await pending;
 }
+
+describe('service worker dismiss push behavior', () => {
+  const payload = {
+    type: 'dismiss',
+    title: 'Ada replied',
+    tags: ['forum_post:m1'],
+    unreadCount: 0,
+  };
+
+  it('closes matching notifications and acknowledges a dismiss on Thursday', async () => {
+    const worker = bootPushWorker('Thu');
+    await pushPayload(worker.push, payload);
+
+    expect(worker.getNotifications).toHaveBeenCalledWith({ tag: 'forum_post:m1' });
+    expect(worker.forumClose).toHaveBeenCalledTimes(1);
+    expect(worker.otherClose).not.toHaveBeenCalled();
+    expect(worker.showNotification).toHaveBeenCalledWith(
+      '21.gifts',
+      expect.objectContaining({ tag: 'dismiss-ack' }),
+    );
+    expect(worker.showNotification.mock.calls.map(([title]) => title)).not.toContain('Ada replied');
+    expect(worker.setAppBadge).toHaveBeenCalledWith(0);
+    expect(worker.setAppBadge).not.toHaveBeenCalledWith(1);
+    expect(worker.showNotification.mock.calls.map(([, options]) => options.tag)).not.toContain(
+      'sunday-quiet',
+    );
+  });
+
+  it('handles a dismiss before the Sunday quiet branch', async () => {
+    const worker = bootPushWorker('Sun');
+    await pushPayload(worker.push, payload);
+
+    expect(worker.getNotifications).toHaveBeenCalledWith({ tag: 'forum_post:m1' });
+    expect(worker.forumClose).toHaveBeenCalledTimes(1);
+    expect(worker.showNotification.mock.calls.map(([, options]) => options.tag)).toContain(
+      'dismiss-ack',
+    );
+    expect(worker.showNotification.mock.calls.map(([, options]) => options.tag)).not.toContain(
+      'sunday-quiet',
+    );
+    expect(worker.showNotification.mock.calls.map(([title]) => title)).not.toContain('Ada replied');
+  });
+});
 
 describe('service worker notification click behavior', () => {
   it('posts the note to the focused window and navigates', async () => {

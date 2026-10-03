@@ -610,13 +610,13 @@ test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', 
   await expect(note.getByText('Cafe Luna')).toBeVisible();
   await note.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
-  await note.getByLabel('Place name').fill('Happyland');
+  await page.getByLabel('Place name').fill('Happyland');
   const patched = page.waitForRequest(
     (req) =>
       req.method() === 'PATCH' &&
       new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/place'),
   );
-  await note.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Use this place' }).click();
   const placeReq = await patched;
   expect(placeReq.postDataJSON()).toEqual({
     place: { lat: 14.5, lng: 120.9, label: 'Happyland' },
@@ -659,8 +659,8 @@ test('Function: setMessagePlace — moderator save shows the pin', async ({ page
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
-  await note.getByLabel('Place name').fill('Happyland');
-  await note.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByLabel('Place name').fill('Happyland');
+  await page.getByRole('button', { name: 'Use this place' }).click();
   await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
 });
 

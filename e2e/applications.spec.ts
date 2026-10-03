@@ -118,9 +118,51 @@ test('Function: GrantsScreen — moderator sees the applications link', async ({
   await seedAdaSession(page, 'moderator');
   await stubApplications(page, [APPLICATION]);
   await page.goto('/grants');
+  await expect(page.getByRole('link', { name: 'Goals', exact: true })).toHaveAttribute(
+    'href',
+    '/grants/goals',
+  );
   await expect(
     page.getByRole('link', { name: 'Open application (1)', exact: true }),
   ).toHaveAttribute('href', '/grants/applications');
+});
+
+test('Function: GrantGoalsPage — signed-in goals page explains the shop target', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'verified');
+  await page.goto('/grants/goals');
+  await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible();
+  await expect(
+    page.getByText('The grant program continues when we reach 10 active shops.'),
+  ).toBeVisible();
+});
+
+test('Function: GrantGoalsScreen — a shop is active on 5 of the last 7 days', async ({ page }) => {
+  await seedAdaSession(page, 'basis');
+  await page.goto('/grants/goals');
+  await expect(
+    page.getByText(
+      'A shop is active when it has at least one transaction on 5 of the last 7 days.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/https:\/\/21\.gifts\/pos/)).toBeVisible();
+});
+
+test('Function: fetchGrantContinuation — the goals page shows shops that meet the rule', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  await page.goto('/grants/goals');
+  await expect(page.getByText('0 shops meet this')).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Shops per UTC day' })).toBeVisible();
+});
+
+test('Function: proxyFundingGoalGet — GET /funding/goal without bearer is 401', async ({
+  request,
+}) => {
+  const res = await request.get('/funding/goal');
+  expect(res.status()).toBe(401);
 });
 
 test('Function: fetchFundingApplications — staff see an applicant row', async ({ page }) => {

@@ -64,6 +64,11 @@ describe('PlacesMapScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('min-w-0');
+    expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('max-w-full');
+    expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain(
+      'break-words',
+    );
     expect(screen.getByRole('link', { name: 'Ada · 1.00000, 2.00000' })).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('data-selected'),
@@ -88,6 +93,9 @@ describe('PlacesMapScreen', () => {
     expect(authors[0]?.getAttribute('href')).toBe('/members/acc-ada');
     expect(authors[0]?.textContent).toBe('Ada');
     expect(authors[0]?.parentElement?.getAttribute('data-selected')).toBe('true');
+    expect(authors[0]?.parentElement?.className).toContain('min-w-0');
+    expect(authors[0]?.parentElement?.className).toContain('max-w-full');
+    expect(authors[0]?.parentElement?.className).toContain('break-words');
     expect(authors[1]?.parentElement?.getAttribute('data-selected')).toBe('false');
     expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
       '/messages/m-pin',

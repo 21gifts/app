@@ -850,6 +850,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/notifications/read-by-message') {
+    const token = bearer(req);
+    if (token === null || !byToken.get(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { ok: true, tags: [] });
+    return;
+  }
+
   const notificationReadMatch = pathName.match(/^\/notifications\/([^/]+)\/read$/);
   if (method === 'POST' && notificationReadMatch) {
     const token = bearer(req);
@@ -2001,6 +2011,30 @@ const server = http.createServer(async (req, res) => {
         quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
       },
     });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/shops/activity') {
+    const endMs = Date.parse(`${new Date(Date.now()).toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const days = Array.from({ length: 30 }, (_, i) => ({
+      day: new Date(endMs - (29 - i) * 86_400_000).toISOString().slice(0, 10),
+      shopCount: 0,
+    }));
+    json(res, 200, { days });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/funding/goal') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const endMs = Date.parse(`${new Date(Date.now()).toISOString().slice(0, 10)}T00:00:00.000Z`);
+    const days = Array.from({ length: 7 }, (_, i) => ({
+      day: new Date(endMs - (6 - i) * 86_400_000).toISOString().slice(0, 10),
+      shopCount: 0,
+    }));
+    json(res, 200, { days, qualifyingShops: 0 });
     return;
   }
 

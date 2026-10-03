@@ -15,6 +15,7 @@ import {
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
+  markNotificationsReadForMessage,
   NoteDeletedError,
   postMessage,
   postMessageInvoice,
@@ -923,6 +924,7 @@ export function PublicMessageThread(props: {
       return;
     }
     /* v8 ignore stop */
+    void markNotificationsReadForMessage(session, messageId).catch(() => undefined);
     void (async () => {
       try {
         const next = await fetchReplies(session, messageId);

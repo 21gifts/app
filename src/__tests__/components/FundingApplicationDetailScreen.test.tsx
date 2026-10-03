@@ -32,6 +32,7 @@ vi.mock('@/lib/api', () => ({
   fetchFundingApplication: vi.fn(),
   postFundingAdmit: vi.fn(),
   postFundingReject: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 
 import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';

@@ -17,7 +17,15 @@ vi.mock('@/lib/api', () => ({
   fetchModeratorGroup: vi.fn(),
   markNotificationRead: vi.fn(),
   markAllNotificationsRead: vi.fn(),
+  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
+vi.mock('@/lib/push', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/push')>();
+  return {
+    ...actual,
+    closeLocalPushNotifications: vi.fn().mockResolvedValue(undefined),
+  };
+});
 vi.mock('@/lib/app-badge', () => ({
   setUnreadAppBadge: vi.fn(),
   bumpUnreadAppBadgeEpoch: vi.fn(),
@@ -32,6 +40,7 @@ import {
   markNotificationRead,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, setUnreadAppBadge, unreadAppBadgeEpoch } from '@/lib/app-badge';
+import { closeLocalPushNotifications } from '@/lib/push';
 import type { Conversation } from '@/lib/api-types';
 
 const listMock = vi.mocked(fetchNotifications);
@@ -39,6 +48,7 @@ const conversationsMock = vi.mocked(fetchConversations);
 const groupMock = vi.mocked(fetchModeratorGroup);
 const markReadMock = vi.mocked(markNotificationRead);
 const markAllMock = vi.mocked(markAllNotificationsRead);
+const closeLocalMock = vi.mocked(closeLocalPushNotifications);
 const setBadgeMock = vi.mocked(setUnreadAppBadge);
 
 const UNREAD_CONVERSATION: Conversation = {
@@ -289,6 +299,21 @@ describe('NotificationsLoader', () => {
     });
   });
 
+  it('keeps a read row beside unread rows', async () => {
+    const readRow: Notification = {
+      ...ROW,
+      id: 'n-read',
+      name: 'Carol',
+      text: 'Already seen',
+      readAt: '2026-08-28T13:00:00.000Z',
+    };
+    listMock.mockResolvedValue({ notifications: [readRow, ROW], unreadCount: 1 });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    expect(screen.getByText('Carol replied')).toBeTruthy();
+    expect(screen.getByText('Already seen')).toBeTruthy();
+  });
+
   it('opens a row even when markNotificationRead fails', async () => {
     listMock.mockResolvedValue(LIST);
     markReadMock.mockRejectedValue(new Error('boom'));
@@ -296,6 +321,7 @@ describe('NotificationsLoader', () => {
     expect(await screen.findByText('Bob replied')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Bob replied/ }));
     expect(markReadMock).toHaveBeenCalledWith('sess', 'n1');
+    expect(closeLocalMock).toHaveBeenCalledWith(['forum_reply:reply-1']);
     expect(push).toHaveBeenCalledWith('/messages/reply-1');
   });
 
@@ -334,6 +360,7 @@ describe('NotificationsLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: /Bob proposed a moderator/ }));
     expect(push).toHaveBeenCalledWith('/moderate/proposals');
     expect(markReadMock).not.toHaveBeenCalled();
+    expect(closeLocalMock).not.toHaveBeenCalled();
   });
 
   it('opens a moderator appointment row on /welcome after mark-read resolves', async () => {
