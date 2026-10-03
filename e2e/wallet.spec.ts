@@ -956,6 +956,25 @@ test('Function: QrScanner — Send opens the camera; a scanned QR is pasted and 
   expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
 });
 
+test('wallet Send reads a scanned QR once and keeps the camera off until the field changes', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'qr', text: 'lnbc21scanned' });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  const field = page
+    .getByRole('region', { name: 'Send Bitcoin' })
+    .getByLabel('Payment request or address');
+  await expect(field).toHaveValue('lnbc21scanned');
+  await page.waitForTimeout(1_000);
+  expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
+  await expect(page.locator('video')).toHaveCount(0);
+  await field.fill('');
+  await expect(page.locator('video')).toHaveCount(1);
+});
+
 test('wallet Send camera stops on Back and starts again on Send', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);

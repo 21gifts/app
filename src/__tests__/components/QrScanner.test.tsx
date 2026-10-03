@@ -379,6 +379,46 @@ describe('QrScanner', () => {
     expect(detect).toHaveBeenCalledTimes(1);
   });
 
+  it('stops the camera and says no camera was found when the decoder cannot load', async () => {
+    const Detector = vi.fn(() => {
+      throw new Error('no detector');
+    });
+    Object.assign(Detector, { getSupportedFormats: () => Promise.resolve(['qr_code']) });
+    setDetector(Detector);
+    const { stream, stop } = fakeStream();
+    setCamera(() => Promise.resolve(stream));
+    renderWithLocale(<QrScanner onResult={vi.fn()} />);
+    await flush();
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'No camera found. Paste the payment request instead.',
+    );
+  });
+
+  it('shows no alert when the decoder fails to load after unmount', async () => {
+    let formats: (value: string[]) => void = () => undefined;
+    const Detector = vi.fn(() => {
+      throw new Error('no detector');
+    });
+    Object.assign(Detector, {
+      getSupportedFormats: () =>
+        new Promise<string[]>((done) => {
+          formats = done;
+        }),
+    });
+    setDetector(Detector);
+    const { stream, stop } = fakeStream();
+    setCamera(() => Promise.resolve(stream));
+    const view = renderWithLocale(<QrScanner onResult={vi.fn()} />);
+    await flush();
+    view.unmount();
+    formats(['qr_code']);
+    await flush();
+    expect(Detector).toHaveBeenCalledTimes(1);
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('reads no frame when unmounted while the decoder loads', async () => {
     let formats: (value: string[]) => void = () => undefined;
     const { Detector, detect } = nativeDetector(
