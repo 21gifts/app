@@ -113,7 +113,8 @@ function visualView(): WalletPayView | null {
  * view is `fallback`. A ready wallet prepares at once so the fee is shown
  * before **Pay from wallet**; a prepared amount that differs from
  * `amountSats` falls back. A wallet that leaves `ready` before the send or
- * while `insufficient` shows starts over (unlock, opening, or the fallback).
+ * while `insufficient` shows, or an account that leaves wallet mode then,
+ * starts over (unlock, opening, or the fallback).
  * After `insufficient`, a balance above the one held when that prepare or send
  * started, or the lowest one seen since (or a first known balance), prepares
  * again; a send is never retried on its own. A new `sparkInvoice` or a new
@@ -204,7 +205,7 @@ export function useWalletPay(
 
   useEffect(() => {
     if (
-      status === 'ready' ||
+      (status === 'ready' && usable) ||
       (phase !== 'preparing' && phase !== 'confirm' && phase !== 'insufficient')
     ) {
       return;
@@ -214,7 +215,7 @@ export function useWalletPay(
     sendRef.current = null;
     setFeeSats(null);
     setPhase('idle');
-  }, [status, phase]);
+  }, [status, usable, phase]);
 
   const unlock = useCallback((): void => {
     if (pinned !== null || phase !== 'idle') {
@@ -232,7 +233,12 @@ export function useWalletPay(
 
   const pay = useCallback((): void => {
     const prepared = sendRef.current;
-    if (pinned !== null || phase !== 'confirm' || !preparedMatches(prepared, input, amountSats)) {
+    if (
+      pinned !== null ||
+      !usable ||
+      phase !== 'confirm' ||
+      !preparedMatches(prepared, input, amountSats)
+    ) {
       return;
     }
     const send = prepared.send;
@@ -256,7 +262,7 @@ export function useWalletPay(
         }
       }, WALLET_PAY_CONFIRM_WAIT_MS);
     });
-  }, [pinned, phase, input, amountSats]);
+  }, [pinned, usable, phase, input, amountSats]);
 
   if (pinned !== null) {
     return { view: pinned, feeSats: 0, unlock, pay };
