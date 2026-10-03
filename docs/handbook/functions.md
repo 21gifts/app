@@ -419,7 +419,7 @@
 
 ## Function: UsernameSetup
 
-- **Purpose:** Post-login screen to choose the unique `@21.gifts` username. Cannot skip. The Wallet of Satoshi hint is left out once the account's in-app wallet is verified (`sparkWalletVerified`).
+- **Purpose:** Post-login screen to choose the unique `@21.gifts` username. Cannot skip. The address hint is left out once the account's in-app wallet is verified (`sparkWalletVerified`).
 - **Inputs:** Auth store session; `UsernameForm`.
 - **Returns / side effects:** Heading **Your 21.gifts name**, hint (left out once the wallet is verified), field, **Continue**. Posts `POST /me/username`. Taken/invalid stay on the form.
 - **Used by:** Screen `/setup/username`.
@@ -3895,7 +3895,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletPay
 
-- **Purpose:** Pay slot of the forum pay sheet, the reaction pay page, and the inbox pay sheet. The member pays from the in-app wallet only; the slot never shows an invoice QR or hands the payment to another wallet. `unavailable`: a status line **Your 21.gifts wallet is not available here, so this cannot be paid.** `failed`: the alert **Your wallet could not prepare this payment. Please try again.** and a secondary **Try again** that calls `retry`. `unlock`: one line and labeled **Unlock wallet**. `preparing` and `paying`: spinner and a status line. `confirm`: **Fee {amount}** (the prepared fee) with the default fiat, then labeled **Pay from wallet**. `insufficient`: an alert that the wallet lacks Bitcoin, then the member's 21.gifts address and its Open CryptoPay QR (the same as `/wallet`, so it is shown on a smartphone too; it shrinks to fit a narrow card and never grows past its usual size) to add funds; when the member's username gives no address, the alert is followed by `fallback` instead. `unconfirmed`: the neutral not-confirmed-yet sentence.
+- **Purpose:** Pay slot of the forum pay sheet, the reaction pay page, and the inbox pay sheet. The member pays from the in-app wallet only; the slot never shows an invoice QR or hands the payment to another wallet. `unavailable`: a status line **Your 21.gifts wallet is not available here, so this cannot be paid.** `failed`: the alert **Your wallet could not prepare this payment. Please try again.** and a secondary **Try again** that calls `retry`. `unlock`: one line and labeled **Unlock wallet**. `preparing` and `paying`: spinner and a status line. `confirm`: **Fee {amount}** (the prepared fee) with the default fiat, then labeled **Pay from wallet**. `insufficient`: an alert that the wallet lacks Bitcoin, then the member's 21.gifts address and its Open CryptoPay QR (the same as `/wallet`, so it is shown on a smartphone too; it shrinks to fit a narrow card and never grows past its usual size) to add funds; when the member's username gives no address, the alert stands alone. `unconfirmed`: the neutral not-confirmed-yet sentence.
 - **Inputs:** `sparkInvoice`, `pr` (the payment request of the same invoice; the wallet pays it when there is no `sparkInvoice`), `amountSats` (the whole sats the sheet shows; the wallet pays only this amount), `rateDay`. There is no fallback prop.
 - **Returns / side effects:** The slot. Never mounts the invoice QR; the only QR it shows is the member's own address QR in `insufficient`.
 - **Used by:** `ForumBoard` (pay sheet, composer pay slot, repayment), `ForumReplyPayPage`, `InboxScreen`.

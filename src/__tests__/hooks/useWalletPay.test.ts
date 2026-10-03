@@ -327,7 +327,7 @@ describe('useWalletPay guards', () => {
       const seen: string[] = [];
       const { result, rerender } = renderHook(
         ({ input, sats }) => {
-          const slot = useWalletPay(input, sats);
+          const slot = useWalletPay(input, PR, sats);
           if (input !== SPARK || sats !== 21) {
             seen.push(slot.view);
             slot.pay();
@@ -354,7 +354,7 @@ describe('useWalletPay guards', () => {
         feeSats: 0,
         send: async () => ({ kind: 'paid' }),
       });
-    const { result, rerender } = renderHook(({ sats }) => useWalletPay(SPARK, sats), {
+    const { result, rerender } = renderHook(({ sats }) => useWalletPay(SPARK, PR, sats), {
       initialProps: { sats: 21 },
     });
     await act(async () => undefined);
@@ -432,7 +432,7 @@ describe('useWalletPay balance after insufficient', () => {
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce({ kind: 'insufficient' })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     await act(async () => {
@@ -452,13 +452,13 @@ describe('useWalletPay balance after insufficient', () => {
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce({ kind: 'insufficient' })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     await act(async () => {
       setWallet('error', null);
     });
-    expect(result.current.view).toBe('fallback');
+    expect(result.current.view).toBe('failed');
     await act(async () => {
       setWallet('ready', 10);
     });
@@ -476,7 +476,7 @@ describe('useWalletPay balance after insufficient', () => {
         }),
       )
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
     await act(async () => undefined);
     expect(result.current.view).toBe('preparing');
     await act(async () => {
@@ -492,7 +492,7 @@ describe('useWalletPay balance after insufficient', () => {
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient' })))
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -514,7 +514,7 @@ describe('useWalletPay balance after insufficient', () => {
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient' })))
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -531,7 +531,7 @@ describe('useWalletPay balance after insufficient', () => {
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce({ kind: 'insufficient' })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     await act(async () => {

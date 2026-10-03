@@ -4481,7 +4481,6 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
   });
 
   it('pays a paid reaction from the wallet when the api issues a sparkInvoice', async () => {
