@@ -541,6 +541,7 @@ describe('useWalletSend visual pins', () => {
       expect(result.current.cancel()).toBe(false);
       expect(parseWalletInput).not.toHaveBeenCalled();
       expect(payFromWallet).not.toHaveBeenCalled();
+      expect(postLnurlPayRequest).not.toHaveBeenCalled();
     },
   );
 
@@ -663,7 +664,7 @@ describe('useWalletSend wallet status', () => {
         finishPrepare = resolve;
       }),
     );
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     act(() => {
       result.current.submitAmount(100);
     });
@@ -705,7 +706,7 @@ describe('useWalletSend wallet status', () => {
         finish = resolve;
       }),
     );
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     act(() => {
       result.current.submitAmount(100);
     });
@@ -724,7 +725,7 @@ describe('useWalletSend wallet status', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     target(LNURL);
     const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     expect(result.current.state.step).toBe('amount');
     const eligible = useAuthStore.getState().account;
     act(() => {
@@ -732,7 +733,7 @@ describe('useWalletSend wallet status', () => {
     });
     expect(result.current.state).toEqual({ step: 'input', error: null });
     vi.mocked(parseWalletInput).mockClear();
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     act(() => {
       result.current.submitAmount(100);
     });
@@ -741,7 +742,7 @@ describe('useWalletSend wallet status', () => {
     act(() => {
       useAuthStore.setState({ account: { ...eligible!, sparkWalletVerified: true } });
     });
-    await typeAndSubmit(result, 'bob@pay.example');
+    await typeAndSubmit(result, 'bob@21.gifts');
     expect(parseWalletInput).toHaveBeenCalledTimes(1);
     expect(result.current.state.step).toBe('amount');
   });
