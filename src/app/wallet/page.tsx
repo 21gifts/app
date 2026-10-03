@@ -7,7 +7,7 @@ import { WalletScreen } from '@/components/WalletScreen';
 
 /**
  * `/wallet` shows Add recovery phrase when `passkeyCredentialId` is missing
- * or empty, otherwise Show recovery phrase under Advanced functions.
+ * or empty, otherwise Show recovery phrase, below Send and Receive.
  *
  * @returns The wallet screen.
  */

@@ -468,7 +468,7 @@
 
 ## Function: ProfileChromeLeft
 
-- **Purpose:** Shared top-left chrome: one icon-only arrow (44px, ArrowLeft) plus a wordmark. The arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. An ask-wizard or shop-wizard override replaces the history link with a button. Optional `onBackClick` runs on an unmodified click (wallet hides the words or closes Advanced functions before leaving). Optional `wordmark` replaces the default wordmark. Optional `wordmarkHref` defaults to `/welcome` and is ignored when `wordmark` is set. `tone="dark"` is the ink marketing header. `hideWithoutHistory` omits the arrow only when this tab has no earlier view and no wizard override.
+- **Purpose:** Shared top-left chrome: one icon-only arrow (44px, ArrowLeft) plus a wordmark. The arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. An ask-wizard or shop-wizard override replaces the history link with a button. Optional `onBackClick` runs on an unmodified click (wallet hides the words, closes a send step, or returns from Send or Receive to the wallet home before leaving). Optional `wordmark` replaces the default wordmark. Optional `wordmarkHref` defaults to `/welcome` and is ignored when `wordmark` is set. `tone="dark"` is the ink marketing header. `hideWithoutHistory` omits the arrow only when this tab has no earlier view and no wizard override.
 - **Inputs:** Optional `onBackClick`, `wordmark`, `wordmarkHref`, `tone`, and `hideWithoutHistory`; catalog via `useTranslations`; previous path via `previousViewPath`.
 - **Returns / side effects:** A link (`profile.back` when this tab has no earlier view, otherwise `nav.back`), the override button, or no arrow when `hideWithoutHistory` has neither history nor an override, plus the wordmark. The first client render matches SSR (`/welcome`, `profile.back`) unless `hideWithoutHistory` hides that arrow. An unmodified primary click calls `onBackClick` or `goToPreviousView` and does not follow the href. Modified clicks follow the href. No network.
 - **Used by:** `ProfilePage`, `WelcomePage`, `MarketingHeader`, `LoginPage`, `DonatePage`, `PayLinkScreen`, `ViewProfilePage`, `NameSetupPage`, `UsernameSetupPage`, `WalletChromeLeft`, `WalletScreenView` (the visible `/wallet` Back, via `AppShellTopLeft`), `ShopsPage`, `GrantsPage`, `FundingApplyPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` mounts `WalletChromeLeft` as page `topLeft`; the card's registration wins while Wallet is shown.
@@ -1711,7 +1711,14 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). Member pay sheets (`ForumBoard`, `ForumReplyPayPage`, `InboxScreen`) show no invoice QR at all. `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists, and `WalletPay` for the member's own-address QR when the wallet balance is too low (also on a smartphone).
+- **Used by:** `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). Member pay sheets (`ForumBoard`, `ForumReplyPayPage`, `InboxScreen`) show no invoice QR at all. `PosTill`, `MemberProfileScreen`, and `ViewProfileScreen` also on a smartphone when the value exists, and `WalletPay` for the member's own-address QR when the wallet balance is too low (also on a smartphone). `WalletScreenView` shows the member's own address QR in the `/wallet` Receive view, on every device.
+
+## Function: QrScanner
+
+- **Purpose:** Live camera QR reader for the `/wallet` Send view. Asks once per mount for the camera, rear camera preferred (`facingMode: { ideal: 'environment' }`, no audio), and shows the preview with **Point the camera at a Bitcoin QR code** under it. Reads about eight frames a second: with the browser's `BarcodeDetector` when it lists `qr_code` among its formats, otherwise with `jsqr` on a canvas copy at most 640 pixels on its long edge. The first non-blank text stops every camera track and is reported. A blocked camera (`NotAllowedError`, `SecurityError`) shows **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in the preview's place; no camera, any other failure, a page without a secure context, or a browser without media devices shows **No camera found. Paste the payment request instead.** Both are `role="alert"`, and the hint line is hidden then. Unmounting stops the tracks and the frame loop, and a stream or frame result that arrives after unmount is stopped or dropped.
+- **Inputs:** `onResult(text)`, called once with the first QR text, after the camera has stopped. The latest callback is used.
+- **Returns / side effects:** A region named by the hint, holding the preview or the alert. Requests camera access; never stores or sends a frame.
+- **Used by:** `WalletSend` (input step).
 
 ## Function: RootLayout
 
@@ -1904,7 +1911,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: StaffFunctions
 
-- **Purpose:** Closed disclosure for moderator and founder actions. On a member card the children are the verify, propose, confirm, and appoint controls. On `/statistics` the only child is the payout link, and `StatisticsScreen` mounts the disclosure only for a moderator when yesterday's person count is a number. The summary is `staff.functions`. Same `details` / `summary` as wallet **Advanced functions**. Children mount only while it is open.
+- **Purpose:** Closed disclosure for moderator and founder actions. On a member card the children are the verify, propose, confirm, and appoint controls. On `/statistics` the only child is the payout link, and `StatisticsScreen` mounts the disclosure only for a moderator when yesterday's person count is a number. The summary is `staff.functions`, a closed `details` / `summary` row. Children mount only while it is open.
 - **Inputs:** `children`.
 - **Returns / side effects:** `data-testid="staff-functions"`. `open` while expanded. Clicking the summary toggles. Clicks do not propagate.
 - **Used by:** `MemberTrustActions`, `StatisticsScreen`.
@@ -3636,14 +3643,14 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletScreenView
 
-- **Purpose:** Wallet cards, and the header Back. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`. `surface="entry"` is `/wallet`. `surface="phrase"` is `/wallet/phrase`.
-- **Inputs:** `UseWalletPhraseResult` plus optional `surface` (`entry` default, or `phrase`), optional `wallet` prop for the balance block, and optional `send` prop for the send block.
-- **Returns / side effects:** On `entry`, heading **Wallet** is first, then the optional balance block from `WalletBalance` when the wallet prop is present, then `WalletSend` while the send prop is present and the wallet is `ready` (or a send is in flight, its Sent line shows, or a send alert is up; `walletReady` tells it whether the wallet is `ready`), then the centered address, Open CryptoPay QR, and content-width **Set an amount** to `/pos`, then the `WalletHistory` payments card while the wallet is `ready`, then **Add recovery phrase** or **Show recovery phrase** under **Advanced functions**. Both recovery actions link to `/wallet/phrase`. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR and no balance block. Header Back on `entry` first closes an open send step (`send.cancel()`, only while the block is shown: the wallet is ready, or a send is in flight, its Sent line shows, or a send alert is up; while a confirm send is in flight it keeps that step and does nothing else), then closes **Advanced functions**, then returns to the previous in-app view in this tab, or opens `/welcome` when this tab has none. On `phrase` it hides the words, then does the same. It does not leave the site, and it does not open `/wallet` as a parent.
+- **Purpose:** Wallet views, and the header Back. The visible Back is this `ProfileChromeLeft` via `AppShellTopLeft`, not the page `WalletChromeLeft`. `surface="entry"` is `/wallet` with its home, Send, and Receive views. `surface="phrase"` is `/wallet/phrase`.
+- **Inputs:** `UseWalletPhraseResult` plus optional `surface` (`entry` default, or `phrase`), optional `wallet` prop for the balance block, and optional `send` prop for the send flow.
+- **Returns / side effects:** On `entry`, one of three views; the heading **Wallet** is screen-reader only in each. **Home:** the balance block from `WalletBalance` large in the centre (when the wallet prop is present and not `disabled`), then the `WalletHistory` payments card while the wallet is `ready`, and in `AppShellFooter` two equal labeled buttons **Send** (`wallet.sendButton`, disabled until the wallet is `ready` and a send prop is present) and **Receive** (`wallet.receive`, always enabled), with a small **Show recovery phrase** link, or the add hint and **Add recovery phrase**, under them; both link to `/wallet/phrase`. **Receive:** the label **Receive**, the Open CryptoPay QR, the 21.gifts address, a **Copy** button that writes the address to the clipboard and says **Copied** with a check mark for two seconds (a missing or refusing clipboard leaves **Copy**), and **Set an amount** to `/pos`; without a username, **Set a username first.** links to `/profile`. **Send:** `WalletSend` with `walletReady`. The Send view is shown after **Send** while the wallet is `ready`, and is kept regardless of the chosen view while a send is in flight, its Sent line shows, or an input alert is up. When the wallet stops being `ready` the chosen Send view falls back to home (and stays there when it is ready again); when the Sent line closes (**Done** or Back), the view returns home. No word grid and no recovery error. On `phrase`, only the ceremony: **Add recovery phrase**, **Show recovery phrase**, the 12-word grid and only-backup line (no Continue), or an error with **Try again**. No QR and no balance block. Header Back on `entry`: in the Send view it first asks `send.cancel()` to close an open step; when nothing closed and nothing is being read or sent, it clears the field (`send.setText('')`, which also clears an input alert) and returns home. In the Receive view it returns home. On home it returns to the previous in-app view in this tab, or opens `/welcome` when this tab has none. On `phrase` it hides the words, then does the same. It does not leave the site, and it does not open `/wallet` as a parent.
 - **Used by:** `WalletScreen`, `WalletPhraseScreen`.
 
 ## Function: WalletScreen
 
-- **Purpose:** Signed-in `/wallet` body. Receive address, then the payments list (`WalletHistory`) while the wallet is ready, above the recovery entry, with the optional balance and send blocks under the heading.
+- **Purpose:** Signed-in `/wallet` body: the balance and, while the wallet is ready, the payments list (`WalletHistory`), with **Send** and **Receive** and the recovery entry below.
 - **Inputs:** None.
 - **Returns / side effects:** Renders `WalletScreenView` with `useWalletPhrase()`, the `wallet` prop from `useWallet()`, and the `send` prop from `useWalletSend()`. Does not render the 12 words.
 - **Used by:** `WalletPage`.
@@ -3867,9 +3874,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletBalance
 
-- **Purpose:** The balance block on `/wallet` (locked, connecting, ready, error). Renders nothing when disabled. Requests the gift-day rate only in `ready`.
+- **Purpose:** The balance block on the `/wallet` home (locked, connecting, ready, error). Renders nothing when disabled. Requests the gift-day rate only in `ready`. The ready balance is a large Bitcoin figure. When the default fiat has a usable rate, the block is a button with the fiat amount in small type under the large figure; each tap swaps which of the two is large. Without a usable rate it is only the large Bitcoin figure, and nothing can be tapped.
 - **Inputs:** `status`, `balanceSats`, `onUnlock`, `onRetry`.
-- **Returns / side effects:** A region named **Balance**, or `null` when disabled.
+- **Returns / side effects:** A region named **Balance**, or `null` when disabled. Keeps which figure is large in component state (Bitcoin first on every mount).
 - **Used by:** `WalletScreenView`.
 
 ## Function: payFromWallet
@@ -3944,9 +3951,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletSend
 
-- **Purpose:** Send block on `/wallet` under the balance, while the wallet is ready (and while a send is in flight, its Sent line shows, or a send alert is up). A region named **Send Bitcoin** with the paste field **Payment request or address** and **Continue**; while the wallet is not ready, an input step kept for its alert shows only the alert. The amount step uses `AmountEntry`; for a Lightning address or LNURL receiver (read by the wallet or, on another host, through the api) it adds the receiver's bounds and, when the receiver takes one, an optional **Message (optional)** field; when the receiver refused the message as too long, an alert says so. An amount outside the bounds, or none, shows an alert with them; without receiver bounds the alert asks for at least ₿1 with the default fiat. The confirm step shows **To …**, **Send ₿…** and **Fee ₿…**, each with the default fiat, and labeled **Send**. After sending: **Sent ₿…** and **Done**. The amount and confirm steps have a Close (`X`, **Cancel**) that stays on this view; while a confirm send is in flight, Cancel keeps the confirm step. The sent step closes with **Done**.
+- **Purpose:** The Send view on `/wallet`, opened with **Send** (and kept while a send is in flight, its Sent line shows, or a send alert is up). A region named **Send Bitcoin**. The input step starts with `QrScanner` (the live camera) above the paste field **Payment request or address** and **Continue**. The first text the camera reads goes into the field through `send.setText`, exactly as a paste, and once the field holds it `send.submitInput` runs, as **Continue** would. The camera is mounted only while the input step is idle and shows no alert, so it stops on a scan, while the text is read, on the later steps, and while an alert is up (so a refused code is not read again at once); editing the field clears the alert and starts it again. While the wallet is not ready, an input step kept for its alert shows only the alert. The amount step uses `AmountEntry`; for a Lightning address or LNURL receiver (read by the wallet or, on another host, through the api) it adds the receiver's bounds and, when the receiver takes one, an optional **Message (optional)** field; when the receiver refused the message as too long, an alert says so. An amount outside the bounds, or none, shows an alert with them; without receiver bounds the alert asks for at least ₿1 with the default fiat. The confirm step shows **To …**, **Send ₿…** and **Fee ₿…**, each with the default fiat, and labeled **Send**. After sending: **Sent ₿…** and **Done**. The amount and confirm steps have a Close (`X`, **Cancel**) that stays on this view; while a confirm send is in flight, Cancel keeps the confirm step. The sent step closes with **Done**.
 - **Inputs:** `send` (`UseWalletSendResult`) and optional `walletReady` (default `true`). Reads the gift-day rate itself.
-- **Returns / side effects:** The region.
+- **Returns / side effects:** The region. A scan clears the amount draft before it submits.
 - **Used by:** `WalletScreenView`.
 
 ## Function: WalletSync
@@ -3974,7 +3981,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Next.js page for `/wallet`.
 - **Inputs:** None.
-- **Returns / side effects:** AppShell + OnboardingGate + WalletScreen.
+- **Returns / side effects:** AppShell + OnboardingGate + WalletScreen: the wallet home with **Send** and **Receive**, and **Add recovery phrase** when `passkeyCredentialId` is missing or empty, otherwise **Show recovery phrase**, below them.
 - **Used by:** Route `/wallet`.
 
 ## Function: startPasskeyRegistration

@@ -8610,7 +8610,8 @@ test('Function: PosTill — wallet links to the till instead of mounting it', as
     });
   });
   await page.goto('/wallet');
-  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeAttached();
+  await page.getByRole('button', { name: 'Receive' }).click();
   await expect(page.getByText('ada@21.gifts')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveAttribute('href', '/pos');
   await expect(page.getByRole('heading', { name: 'Point of sale' })).toHaveCount(0);

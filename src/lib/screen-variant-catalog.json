@@ -180,12 +180,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:reveal-open",
-    "label": "/wallet reveal-open",
-    "visual": "state-wallet-reveal-open",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/wallet:balance-locked",
     "label": "/wallet balance-locked",
     "visual": "state-wallet-balance-locked",
@@ -201,6 +195,24 @@
     "id": "/wallet:balance-ready",
     "label": "/wallet balance-ready",
     "visual": "state-wallet-balance-ready",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-fiat",
+    "label": "/wallet balance-fiat",
+    "visual": "state-wallet-balance-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive",
+    "label": "/wallet receive",
+    "visual": "state-wallet-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-copied",
+    "label": "/wallet receive-copied",
+    "visual": "state-wallet-receive-copied",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -255,6 +267,18 @@
     "id": "/wallet:send-input",
     "label": "/wallet send-input",
     "visual": "state-wallet-send-input",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-camera-denied",
+    "label": "/wallet send-camera-denied",
+    "visual": "state-wallet-send-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-camera-unavailable",
+    "label": "/wallet send-camera-unavailable",
+    "visual": "state-wallet-send-camera-unavailable",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

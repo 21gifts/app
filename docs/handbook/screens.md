@@ -171,32 +171,26 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 ## Screen: /wallet
 
-- **URL:** `/wallet` — signed-in receive address. The recovery phrase is a separate page. When the in-app wallet is enabled by configuration and the account can produce a phrase (`walletRequired` with a `passkeyCredentialId`), a balance block sits under the heading, and while the wallet is ready a **Send Bitcoin** block follows it, both above the address.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet** is first. With the wallet configured for an eligible account, the balance region is next: locked shows one line and **Unlock wallet**; connecting shows the pending line; ready shows the Bitcoin balance, with the default fiat beside it once a usable rate is loaded; error shows a sentence and **Try again**. A reload locks the wallet again because the phrase is kept in tab memory only. Without configuration the screen is as before and there is no balance region. While the wallet is ready (and while a send is in flight, its Sent line shows, or a send alert is up), a **Send Bitcoin** region follows the balance: a **Payment request or address** field and **Continue** (while the wallet is not ready, only the alert). A request or address without an amount then asks for an amount (the amount field with the ₿ / fiat switch and **Continue**); a Lightning address or LNURL receiver also shows its bounds and, when it takes one, an optional message within its limit. The confirm step shows **To …**, **Send ₿…** and **Fee ₿…** with the default fiat, and **Send**. After sending: **Sent ₿…** and **Done**. A base-chain Bitcoin address shows that it is not supported yet; text that is not a payment request, a payment request this wallet cannot pay yet, a receiver whose server this browser cannot reach, a failed send, and too little balance each show one plain alert under the field. A Lightning address or LNURL on another host is read through the 21.gifts api instead of this browser (`POST /lnurl/pay-request`, then `POST /lnurl/invoice` for the chosen amount); the wallet then pays the returned invoice, and the steps look the same. An address the api cannot pay, an address its server does not know, and a server that did not answer the api each show one plain alert under the field; a message longer than the receiver accepts shows an alert in the amount step. Addresses on this app's own host and Spark targets are read by the wallet as before. Then the centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. While the wallet is ready, a **Payments** card under the address card lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list is in view, checked again after every completed load, and the list reloads after every wallet sync. Below the address card (and below the **Payments** card while the wallet is ready), the phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge. With the wallet configured, a signed-in member whose account requires a wallet but whose wallet is not verified sees the blocking **Set up your wallet** dialog on every app screen until the setup succeeds or they log out.
-- **Actions:** **Unlock wallet** asks the device for the passkey and opens the wallet. **Try again** retries opening, and reloads the page when the wallet's initialisation failed. **Set up wallet** in the setup dialog asks the device for the passkey once and runs the setup; **Try again** there runs it again (reloading the page when the wallet's initialisation failed); **Log out** in the dialog ends the session and opens `/login`. **Try again** on the **Payments** card loads the list again. **Set an amount** opens `/pos`. **Add recovery phrase** opens `/wallet/phrase`. **Show recovery phrase** opens `/wallet/phrase` and is only inside **Advanced functions**. Open **Menu** (Home, Shops, Point of sale, Profile, Grants, Wallet, …). Back first closes an open send step (while a confirm send is in flight it keeps the confirm step instead), then **Advanced functions** when that row is open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Paste a payment request or address and **Continue**; enter an amount and **Continue**; **Send**; **Done**. The step Close (`X`, **Cancel**) closes an open send step, back to the field, except while a confirm send is in flight, when it keeps the confirm step.
-- **Calls:** `AppShell`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `WalletHistory`, `useWalletHistory`, `WalletSetupNotice`, `useWalletSetup`, `useWalletPhrase`, `useWalletSend`, `WalletSend`, `parseWalletInput`, `payFromWallet`, `AmountEntry`, `lnurlRelayTarget`, `postLnurlPayRequest`, `postLnurlInvoice`.
+- **URL:** `/wallet` — signed-in wallet home, with a **Send** view and a **Receive** view on the same page. The recovery phrase is a separate page. When the in-app wallet is enabled by configuration and the account can produce a phrase (`walletRequired` with a `passkeyCredentialId`), the balance block sits in the centre of the home view.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The heading **Wallet** is for screen readers only. **Home:** with the wallet configured for an eligible account, the balance region **Balance** sits large in the centre: locked shows one line and **Unlock wallet**; connecting shows the pending line; ready shows the Bitcoin balance as a large figure with the default fiat in small type under it once a usable rate is loaded (without a usable rate, only the Bitcoin figure); error shows a sentence and **Try again**. A reload locks the wallet again because the phrase is kept in tab memory only. Without configuration there is no balance region. While the wallet is ready, a **Payments** card under the balance lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list is in view, checked again after every completed load, and the list reloads after every wallet sync. Fixed at the bottom of the screen are two large, equal buttons side by side, **Send** and **Receive**, and under them a small link: **Show recovery phrase**, or, when `passkeyCredentialId` is missing or empty, a hint that the phrase is created on this device and the existing login passkey stays, followed by **Add recovery phrase**. Both links open `/wallet/phrase`. **Send** is disabled until the wallet is ready; **Receive** always works. **Receive view:** the label **Receive**, the Open CryptoPay QR of the member's 21.gifts address, the address itself, a **Copy** button that says **Copied** for two seconds after a copy, and **Set an amount** to `/pos`. Without a username it says **Set a username first.** with a link to `/profile`. **Send view:** region **Send Bitcoin** opens with the camera already live (rear camera preferred) and the line **Point the camera at a Bitcoin QR code** under it, then the **Payment request or address** field and **Continue**. The first QR code the camera reads goes into the field exactly as if it had been pasted, and **Continue** runs on it. A blocked camera shows **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in the camera box's place; a device without a camera, or a page that cannot use one, shows **No camera found. Paste the payment request instead.** The field and **Continue** stay in both cases. The camera runs only while the input step shows no alert and nothing is being read; it stops on a scan, on **Continue**, on the next step, on Back, and when the view closes, and it starts again when the input step comes back without an alert. A request or address without an amount then asks for an amount (the amount field with the ₿ / fiat switch and **Continue**); a Lightning address or LNURL receiver also shows its bounds and, when it takes one, an optional message within its limit. The confirm step shows **To …**, **Send ₿…** and **Fee ₿…** with the default fiat, and **Send**. After sending: **Sent ₿…** and **Done**, which returns home. A base-chain Bitcoin address shows that it is not supported yet; text that is not a payment request, a payment request this wallet cannot pay yet, a receiver whose server this browser cannot reach, a failed send, and too little balance each show one plain alert under the field. A Lightning address or LNURL on another host is read through the 21.gifts api instead of this browser (`POST /lnurl/pay-request`, then `POST /lnurl/invoice` for the chosen amount); the wallet then pays the returned invoice, and the steps look the same. An address the api cannot pay, an address its server does not know, and a server that did not answer the api each show one plain alert under the field; a message longer than the receiver accepts shows an alert in the amount step. Addresses on this app's own host and Spark targets are read by the wallet as before. The Send view stays on screen while a send is in flight, while its Sent line shows, and while an input alert is up, even when the wallet stops being ready (then only the alert shows, without the field). When the wallet stops being ready otherwise, the Send view closes to home. This page never shows the 12 words, a recovery error, a keypad, or an open charge. With the wallet configured, a signed-in member whose account requires a wallet but whose wallet is not verified sees the blocking **Set up your wallet** dialog on every app screen until the setup succeeds or they log out.
+- **Actions:** **Send** opens the Send view (and the camera); **Receive** opens the Receive view. Tapping the ready balance swaps which of Bitcoin and fiat is the large figure; it does nothing without a usable rate. **Unlock wallet** asks the device for the passkey and opens the wallet. **Try again** retries opening, and reloads the page when the wallet's initialisation failed. **Set up wallet** in the setup dialog asks the device for the passkey once and runs the setup; **Try again** there runs it again (reloading the page when the wallet's initialisation failed); **Log out** in the dialog ends the session and opens `/login`. **Try again** on the **Payments** card loads the list again. **Copy** puts the 21.gifts address on the clipboard. **Set an amount** opens `/pos`. **Add recovery phrase** and **Show recovery phrase** open `/wallet/phrase`. Open **Menu** (Home, Shops, Point of sale, Profile, Grants, Wallet, …). Paste a payment request or address, or show a QR code to the camera, and **Continue**; enter an amount and **Continue**; **Send**; **Done**. The step Close (`X`, **Cancel**) closes an open send step, back to the field, except while a confirm send is in flight, when it keeps the confirm step. Back, in the Send view, first closes an open send step (while a confirm send is in flight, or while the pasted text is read, it does nothing); on the input step it clears the field and its alert and returns home. In the Receive view, Back returns home. On home, the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `AppShellFooter`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `useLatestRateDay`, `WalletHistory`, `useWalletHistory`, `WalletSetupNotice`, `useWalletSetup`, `useWalletPhrase`, `useWalletSend`, `WalletSend`, `QrScanner`, `parseWalletInput`, `payFromWallet`, `AmountEntry`, `lnurlRelayTarget`, `postLnurlPayRequest`, `postLnurlInvoice`, `QrCode`, `giftsLightningAddress`, `openCryptoPayQrValue`.
 
 ### Variant: default
 
-Existing member, no phrase yet. Receive address and QR above **Add recovery phrase**.
+Existing member, no phrase yet, with the wallet not configured (Playwright builds). The home view has no balance region; **Send** (disabled) and **Receive** sit at the bottom, with the hint and **Add recovery phrase** under them.
 
 ![21.gifts wallet add recovery phrase](images/wallet.png)
 
 ### Variant: reveal
 
-Account that can already show a phrase. Receive address above closed **Advanced functions**.
+Account that can already show a phrase, with the wallet not configured. The home view with **Send** (disabled) and **Receive** at the bottom and the small link **Show recovery phrase** under them.
 
 ![21.gifts wallet reveal](images/wallet-reveal.png)
 
-### Variant: reveal-open
-
-Account that can already show a phrase. Open **Advanced functions** shows **Show recovery phrase**, which links to `/wallet/phrase`.
-
-![21.gifts wallet reveal open](images/wallet-reveal-open.png)
-
 ### Variant: balance-locked
 
-Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. Region **Balance** with the unlock line and labeled **Unlock wallet** above the address.
+Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. The home view: region **Balance** in the centre with the unlock line and labeled **Unlock wallet**; **Send** is disabled and **Receive** is enabled at the bottom.
 
 ![21.gifts wallet balance locked](images/wallet-balance-locked.png)
 
@@ -208,9 +202,27 @@ Pinned fixture (`?visual=balance-connecting`, Playwright builds only), not a liv
 
 ### Variant: balance-ready
 
-Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wallet. Region **Balance** shows the ready fixture `₿21'000` with the default fiat beside it. The **Send Bitcoin** region with the empty paste field follows it, as on every ready wallet.
+Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wallet. The home view: region **Balance** shows the ready fixture `₿21'000` as the large figure with the default fiat (`$21.00`) in small type under it; **Send** and **Receive** are both enabled at the bottom.
 
 ![21.gifts wallet balance ready](images/wallet-balance-ready.png)
+
+### Variant: balance-fiat
+
+The same ready fixture after a tap on the balance: `$21.00` is the large figure and `₿21'000` is in small type under it. Another tap swaps them back.
+
+![21.gifts wallet balance fiat](images/wallet-balance-fiat.png)
+
+### Variant: receive
+
+The Receive view after **Receive** on the ready fixture: the label **Receive**, the Open CryptoPay QR, the address `ada@21.gifts`, **Copy**, and **Set an amount**. No balance and no **Send** / **Receive** buttons.
+
+![21.gifts wallet receive](images/wallet-receive.png)
+
+### Variant: receive-copied
+
+The Receive view right after **Copy**: the button shows a check mark and **Copied**. After two seconds it says **Copy** again.
+
+![21.gifts wallet receive copied](images/wallet-receive-copied.png)
 
 ### Variant: balance-error
 
@@ -244,7 +256,7 @@ Pinned fixture (`?visual=setup-no-prf`). Title **This passkey cannot hold a wall
 
 ### Variant: history-empty
 
-Pinned fixture (`?visual=history-empty`). Ready balance, then the address card, then the **Payments** card with **No payments yet.**
+Pinned fixture (`?visual=history-empty`). Ready balance, then the **Payments** card with **No payments yet.**, above **Send** and **Receive**.
 
 ![21.gifts wallet history empty](images/wallet-history-empty.png)
 
@@ -262,9 +274,21 @@ Pinned fixture (`?visual=history-error`). **Payments** shows **Your payments cou
 
 ### Variant: send-input
 
-Pinned fixture (`?visual=send-input`, Playwright builds only), not a live wallet. Under the ready balance, region **Send Bitcoin** shows `bob@example.com` pasted into the **Payment request or address** field and **Continue** enabled.
+Pinned fixture (`?visual=send-input`, Playwright builds only), not a live wallet, after **Send**. Region **Send Bitcoin** shows the live camera box (a stubbed black stream, since the test browser has no camera) with **Point the camera at a Bitcoin QR code** under it, then `bob@example.com` pasted into the **Payment request or address** field and **Continue** enabled. The send variants below are this Send view too: the amount and confirm steps after **Send**, the alerts, the Sent line, and the sending confirm step without it, because those keep the Send view on screen.
 
 ![21.gifts wallet send input](images/wallet-send-input.png)
+
+### Variant: send-camera-denied
+
+The Send view when the camera is blocked: **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in the camera box's place, then the field and **Continue**.
+
+![21.gifts wallet send camera denied](images/wallet-send-camera-denied.png)
+
+### Variant: send-camera-unavailable
+
+The Send view on a device without a camera: **No camera found. Paste the payment request instead.** in the camera box's place, then the field and **Continue**.
+
+![21.gifts wallet send camera unavailable](images/wallet-send-camera-unavailable.png)
 
 ### Variant: send-amount
 
@@ -322,7 +346,7 @@ Pinned fixture (`?visual=send-failed`, Playwright builds only). After a prepare 
 
 ### Variant: send-alert-locked
 
-Pinned fixture (`?visual=send-alert-locked`, Playwright builds only). The same failed send after the wallet locked: the balance block shows **Unlock wallet**, and region **Send Bitcoin** keeps only the alert **The payment could not be sent. Check your balance before you try again.**, without the field and **Continue**.
+Pinned fixture (`?visual=send-alert-locked`, Playwright builds only). The same failed send after the wallet locked: the Send view stays, and region **Send Bitcoin** keeps only the alert **The payment could not be sent. Check your balance before you try again.**, without the field and **Continue**. Back clears the alert and returns home, where **Unlock wallet** is.
 
 ![21.gifts wallet send alert locked](images/wallet-send-alert-locked.png)
 
@@ -402,7 +426,7 @@ Pinned fixture (`?visual=send-comment-long`, Playwright builds only). The amount
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
 - **What the user sees:** Same signed-in chrome as `/wallet`. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** runs PRF get of that id, without `credentials.create` and without seed/begin. The 12 words and the only-backup line replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**.
-- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. **Show recovery phrase** is the only way to see an existing phrase, and only after **Advanced functions** on `/wallet`. **Try again** clears the error. Back hides the 12 words, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. **Show recovery phrase** is the only way to see an existing phrase, reached from the small **Show recovery phrase** link under **Send** and **Receive** on `/wallet`. **Try again** clears the error. Back hides the 12 words, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `WalletScreenView` `surface="phrase"`, `WalletPhraseScreen`, `WalletPhrasePage`, `useWalletPhrase`, `OnboardingGate`.
 
 ### Variant: default
@@ -3067,7 +3091,7 @@ Same German About me after POST /translate fails. Alert **Could not translate th
 
 ### Variant: staff-verify
 
-Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure, the same `details` / `summary` as wallet **Advanced functions** (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
+Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure, a `details` / `summary` row (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
 
 ![21.gifts member staff verify](images/members-staff-verify.png)
 

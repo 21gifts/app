@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
@@ -12,6 +12,10 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useLatestRateDay', () => ({
   useLatestRateDay: vi.fn(),
+}));
+
+vi.mock('@/components/QrScanner', () => ({
+  QrScanner: () => <p>Camera stub</p>,
 }));
 
 vi.mock('@/components/WalletHistory', () => ({
@@ -74,6 +78,35 @@ function setWalletAccount(): void {
   });
 }
 
+const ENTRY_PROPS = {
+  view: 'reveal' as const,
+  status: 'idle' as const,
+  error: null,
+  words: [],
+  activate: vi.fn(),
+  showPhrase: vi.fn(),
+  hidePhrase: vi.fn(),
+  retry: vi.fn(),
+};
+
+/**
+ * Whether `later` comes after `earlier` in document order.
+ *
+ * @param earlier - First node.
+ * @param later - Second node.
+ * @returns `true` when `later` follows `earlier`.
+ */
+function follows(earlier: Node, later: Node): boolean {
+  return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
+/**
+ * Presses the top-left Back arrow.
+ */
+function pressBack(): void {
+  fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+}
+
 describe('WalletScreenView', () => {
   it('renders the wallet heading', () => {
     renderWithLocale(
@@ -94,34 +127,25 @@ describe('WalletScreenView', () => {
   it.each([
     ['locked', 'Unlock your wallet to see your Bitcoin balance.'],
     ['connecting', 'Opening your wallet…'],
-    ['ready', "₿21'000 · $21.00"],
+    ['ready', "₿21'000$21.00"],
     ['error', 'Your wallet could not be opened. Please try again.'],
-  ] as const)('renders the %s balance under the heading and above the address', (status, text) => {
-    setWalletAccount();
-    renderWithLocale(
-      <WalletScreenView
-        view="reveal"
-        status="idle"
-        error={null}
-        words={[]}
-        activate={vi.fn()}
-        showPhrase={vi.fn()}
-        hidePhrase={vi.fn()}
-        retry={vi.fn()}
-        wallet={walletResult(status)}
-      />,
-    );
-    const heading = screen.getByRole('heading', { name: 'Wallet' });
-    const balance = screen.getByRole('region', { name: 'Balance' });
-    const address = screen.getByText('ada@21.gifts');
-    expect(balance.textContent).toContain(text);
-    expect(heading.compareDocumentPosition(balance) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
-    expect(balance.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
-  });
+  ] as const)(
+    'renders the %s balance in the central spot above Send and Receive',
+    (status, text) => {
+      setWalletAccount();
+      renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult(status)} />);
+      const heading = screen.getByRole('heading', { name: 'Wallet' });
+      expect(heading.className).toContain('sr-only');
+      const balance = screen.getByRole('region', { name: 'Balance' });
+      expect(balance.textContent).toContain(text);
+      expect(balance.parentElement?.className).toContain('min-h-48');
+      expect(follows(heading, balance)).toBe(true);
+      expect(follows(balance, screen.getByRole('button', { name: 'Send' }))).toBe(true);
+      expect(follows(balance, screen.getByRole('button', { name: 'Receive' }))).toBe(true);
+      expect(screen.queryByText('ada@21.gifts')).toBeNull();
+      expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    },
+  );
 
   it("keeps today's entry markup when the wallet is disabled or omitted", () => {
     const props = {
@@ -143,29 +167,72 @@ describe('WalletScreenView', () => {
     expect(disabled.container.innerHTML).toBe(originalMarkup);
   });
 
-  it('shows the payment list only while the wallet is ready, between address and recovery', () => {
-    const props = {
-      view: 'reveal' as const,
-      status: 'idle' as const,
-      error: null,
-      words: [],
-      activate: vi.fn(),
-      showPhrase: vi.fn(),
-      hidePhrase: vi.fn(),
-      retry: vi.fn(),
-    };
+  it('shows the payment list only while the wallet is ready, between balance and Send', () => {
     setWalletAccount();
     for (const status of ['disabled', 'locked', 'connecting', 'error'] as const) {
-      const view = renderWithLocale(<WalletScreenView {...props} wallet={walletResult(status)} />);
+      const view = renderWithLocale(
+        <WalletScreenView {...ENTRY_PROPS} wallet={walletResult(status)} />,
+      );
       expect(screen.queryByRole('region', { name: 'Payments history stub' })).toBeNull();
       view.unmount();
     }
-    const ready = renderWithLocale(<WalletScreenView {...props} wallet={walletResult('ready')} />);
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
     const history = screen.getByRole('region', { name: 'Payments history stub' });
-    const html = ready.container.innerHTML;
-    expect(html.indexOf('Payments history stub')).toBeGreaterThan(html.indexOf('ada@'));
-    expect(html.indexOf('Payments history stub')).toBeLessThan(html.indexOf('Advanced functions'));
-    expect(history).toBeTruthy();
+    expect(follows(screen.getByRole('region', { name: 'Balance' }), history)).toBe(true);
+    expect(follows(history, screen.getByRole('button', { name: 'Send' }))).toBe(true);
+    expect(follows(history, screen.getByRole('link', { name: 'Show recovery phrase' }))).toBe(true);
+  });
+
+  it('shows Send and Receive side by side above the recovery link', () => {
+    setWalletAccount();
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
+    const sendButton = screen.getByRole('button', { name: 'Send' });
+    const receiveButton = screen.getByRole('button', { name: 'Receive' });
+    expect(sendButton.parentElement).toBe(receiveButton.parentElement);
+    expect(sendButton.parentElement?.className).toContain('grid-cols-2');
+    expect(follows(sendButton, receiveButton)).toBe(true);
+    const recovery = screen.getByRole('link', { name: 'Show recovery phrase' });
+    expect(recovery.getAttribute('href')).toBe('/wallet/phrase');
+    expect(follows(receiveButton, recovery)).toBe(true);
+    expect(screen.queryByText('Advanced functions')).toBeNull();
+  });
+
+  it('offers Add recovery phrase with its hint below Send and Receive', () => {
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} view="activate" />);
+    const add = screen.getByRole('link', { name: 'Add recovery phrase' });
+    expect(add.getAttribute('href')).toBe('/wallet/phrase');
+    expect(add.parentElement?.textContent).toContain(
+      'This creates a recovery phrase on this device. Your existing login passkey stays.',
+    );
+    expect(follows(screen.getByRole('button', { name: 'Receive' }), add)).toBe(true);
+    expect(screen.queryByRole('link', { name: 'Show recovery phrase' })).toBeNull();
+  });
+
+  it('enables Send only while the wallet is ready and a send flow exists; Receive always works', () => {
+    setWalletAccount();
+    const cases = [
+      ['ready', true, true],
+      ['ready', false, false],
+      ['locked', true, false],
+      ['connecting', true, false],
+      ['error', true, false],
+    ] as const;
+    for (const [status, withSend, enabled] of cases) {
+      const view = renderWithLocale(
+        <WalletScreenView
+          {...ENTRY_PROPS}
+          wallet={walletResult(status)}
+          {...(withSend ? { send: idleSend() } : {})}
+        />,
+      );
+      expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+        !enabled,
+      );
+      expect((screen.getByRole('button', { name: 'Receive' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+      view.unmount();
+    }
   });
 
   it('ignores balance state on the phrase surface', () => {
@@ -246,31 +313,6 @@ describe('WalletScreenView', () => {
     historyBack.mockRestore();
   });
 
-  it('closes Advanced functions before leaving the page', () => {
-    renderWithLocale(
-      <WalletScreenView
-        view="reveal"
-        status="idle"
-        error={null}
-        words={[]}
-        activate={vi.fn()}
-        showPhrase={vi.fn()}
-        hidePhrase={vi.fn()}
-        retry={vi.fn()}
-      />,
-    );
-    const details = screen.getByText('Advanced functions').closest('details');
-    if (details === null) {
-      throw new Error('missing details');
-    }
-    details.open = true;
-    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(details.open).toBe(false);
-    expect(historyBack).not.toHaveBeenCalled();
-    historyBack.mockRestore();
-  });
-
   it('opens the forum when nothing on the page is open even if history is longer', () => {
     Object.defineProperty(window.history, 'length', { configurable: true, value: 2 });
     const assign = vi.fn();
@@ -329,7 +371,7 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.queryByRole('list')).toBeNull();
-    expect(screen.getByText('Advanced functions')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Show recovery phrase' })).toBeTruthy();
   });
 
   it('starts the recovery ceremony on the phrase page', () => {
@@ -404,25 +446,6 @@ describe('WalletScreenView', () => {
     expect(screen.getByRole('button', { name: 'Try again' }).querySelector('svg')).not.toBeNull();
   });
 
-  it('opens Advanced functions to Show recovery phrase', () => {
-    renderWithLocale(
-      <WalletScreenView
-        view="reveal"
-        status="idle"
-        error={null}
-        words={[]}
-        activate={vi.fn()}
-        showPhrase={vi.fn()}
-        hidePhrase={vi.fn()}
-        retry={vi.fn()}
-      />,
-    );
-    fireEvent.click(screen.getByText('Advanced functions'));
-    expect(screen.getByRole('link', { name: 'Show recovery phrase' }).getAttribute('href')).toBe(
-      '/wallet/phrase',
-    );
-  });
-
   it('shows a spinner on reveal while busy', () => {
     renderWithLocale(
       <WalletScreenView
@@ -476,6 +499,7 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
     expect(screen.getByRole('link', { name: 'Set a username first.' }).getAttribute('href')).toBe(
       '/profile',
     );
@@ -515,16 +539,18 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(screen.getByText('ada@21.gifts')).toBeTruthy();
-    const heading = screen.getByRole('heading', { name: 'Wallet' });
+    expect(screen.queryByText('ada@21.gifts')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
+    const label = screen.getByText('Receive');
+    const qr = screen.getByRole('img', { name: 'Open CryptoPay QR code' });
     const address = screen.getByText('ada@21.gifts');
-    expect(heading.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
-    const recovery = screen.getByText('Advanced functions');
-    expect(address.compareDocumentPosition(recovery) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+    const copy = screen.getByRole('button', { name: 'Copy' });
+    expect(follows(label, qr)).toBe(true);
+    expect(follows(qr, address)).toBe(true);
+    expect(follows(address, copy)).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show recovery phrase' })).toBeNull();
     const setAmount = screen.getByRole('link', { name: 'Set an amount' });
     expect(setAmount.getAttribute('href')).toBe('/pos');
     expect(setAmount.className).not.toContain('w-full');
@@ -580,133 +606,250 @@ describe('WalletScreenView', () => {
   });
 });
 
-describe('WalletScreenView send block', () => {
-  function sendResult(cancel: () => boolean): UseWalletSendResult {
-    return {
-      state: { step: 'confirm', recipient: 'bob@pay.example', amountSats: 2_100, feeSats: 0 },
-      busy: false,
-      text: '',
-      setText: vi.fn(),
-      comment: '',
-      setComment: vi.fn(),
-      submitInput: vi.fn(),
-      submitAmount: vi.fn(),
-      confirm: vi.fn(),
-      cancel: vi.fn(cancel),
-    };
-  }
+function idleSend(extra: Partial<UseWalletSendResult> = {}): UseWalletSendResult {
+  return {
+    state: { step: 'input', error: null },
+    busy: false,
+    text: '',
+    setText: vi.fn(),
+    comment: '',
+    setComment: vi.fn(),
+    submitInput: vi.fn(),
+    submitAmount: vi.fn(),
+    confirm: vi.fn(),
+    cancel: vi.fn(() => false),
+    ...extra,
+  };
+}
 
-  function renderEntry(status: UseWalletResult['status'], send?: UseWalletSendResult): void {
-    setWalletAccount();
-    renderWithLocale(
-      <WalletScreenView
-        view="reveal"
-        status="idle"
-        error={null}
-        words={[]}
-        activate={vi.fn()}
-        showPhrase={vi.fn()}
-        hidePhrase={vi.fn()}
-        retry={vi.fn()}
-        wallet={walletResult(status)}
-        {...(send === undefined ? {} : { send })}
-      />,
-    );
-  }
+const CONFIRM_STATE = {
+  step: 'confirm',
+  recipient: 'bob@pay.example',
+  amountSats: 2_100,
+  feeSats: 0,
+} as const;
 
-  it('shows the send block under the balance only while the wallet is ready', () => {
-    renderEntry(
-      'ready',
-      sendResult(() => true),
-    );
-    const balance = screen.getByRole('region', { name: 'Balance' });
-    const send = screen.getByRole('region', { name: 'Send Bitcoin' });
-    expect(balance.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    cleanup();
-    renderEntry(
-      'locked',
-      sendResult(() => true),
-    );
-    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
-    cleanup();
-    renderEntry('ready');
-    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+/**
+ * Entry surface for the signed-in wallet account.
+ *
+ * @param status - Wallet status.
+ * @param send - Send flow, or `undefined`.
+ * @returns The render result.
+ */
+function renderEntry(
+  status: UseWalletResult['status'],
+  send?: UseWalletSendResult,
+): ReturnType<typeof renderWithLocale> {
+  setWalletAccount();
+  return renderWithLocale(
+    <WalletScreenView
+      {...ENTRY_PROPS}
+      wallet={walletResult(status)}
+      {...(send === undefined ? {} : { send })}
+    />,
+  );
+}
+
+/**
+ * Same entry surface, re-rendered with new wallet and send state.
+ *
+ * @param view - Earlier render.
+ * @param status - Wallet status.
+ * @param send - Send flow.
+ */
+function rerenderEntry(
+  view: ReturnType<typeof renderWithLocale>,
+  status: UseWalletResult['status'],
+  send: UseWalletSendResult,
+): void {
+  view.rerender(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult(status)} send={send} />);
+}
+
+describe('WalletScreenView Send', () => {
+  it('opens the Send view with the camera live in place of the home view', () => {
+    renderEntry('ready', idleSend());
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    const region = screen.getByRole('region', { name: 'Send Bitcoin' });
+    expect(region.textContent).toContain('Camera stub');
+    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Wallet' }).className).toContain('sr-only');
+    expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Receive' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Payments history stub' })).toBeNull();
   });
 
-  it('Back closes an open send step before anything else', () => {
-    const send = sendResult(() => true);
+  it('Back from the idle input step clears the field and returns home', () => {
+    const send = idleSend({ text: 'lnbc1' });
     renderEntry('ready', send);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    pressBack();
     expect(send.cancel).toHaveBeenCalledTimes(1);
+    expect(send.setText).toHaveBeenCalledWith('');
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Balance' })).toBeTruthy();
     expect(historyBack).not.toHaveBeenCalled();
   });
 
-  it('Back does not ask the send flow while the wallet is not ready', () => {
-    const send = sendResult(() => true);
-    renderEntry('locked', send);
-    const details = screen.getByText('Advanced functions').closest('details');
-    if (details === null) {
-      throw new Error('missing details');
-    }
-    details.open = true;
-    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(send.cancel).not.toHaveBeenCalled();
-    expect(details.open).toBe(false);
+  it('Back first closes an open send step and stays on Send', () => {
+    const send = idleSend({ state: CONFIRM_STATE, cancel: vi.fn(() => true) });
+    renderEntry('ready', send);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    pressBack();
+    expect(send.cancel).toHaveBeenCalledTimes(1);
+    expect(send.setText).not.toHaveBeenCalled();
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
   });
 
-  it('keeps the send block and holds Back while a send runs or Sent shows, even when not ready', () => {
-    const busy: UseWalletSendResult = { ...sendResult(() => true), busy: true };
+  it('holds Back while the input is read', () => {
+    const send = idleSend({ busy: true, text: 'lnbc1' });
+    renderEntry('ready', send);
+    pressBack();
+    expect(send.cancel).toHaveBeenCalledTimes(1);
+    expect(send.setText).not.toHaveBeenCalled();
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+  });
+
+  it('pins the Send view while a send runs, Sent shows, or an alert is up, even when not ready', () => {
+    const busy = idleSend({ state: CONFIRM_STATE, busy: true, cancel: vi.fn(() => true) });
     renderEntry('locked', busy);
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
+    pressBack();
     expect(busy.cancel).toHaveBeenCalledTimes(1);
-    expect(historyBack).not.toHaveBeenCalled();
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
     cleanup();
-    const sent: UseWalletSendResult = {
-      ...sendResult(() => true),
-      state: { step: 'sent', amountSats: 2_100 },
-    };
-    renderEntry('error', sent);
-    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    renderEntry('error', idleSend({ state: { step: 'sent', amountSats: 2_100 } }));
     expect(screen.getByRole('status').textContent).toContain("Sent ₿2'100");
-    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(sent.cancel).toHaveBeenCalledTimes(1);
-    expect(historyBack).not.toHaveBeenCalled();
-  });
-
-  it('keeps only the send alert while the wallet is not ready', () => {
-    const failed: UseWalletSendResult = {
-      ...sendResult(() => false),
-      state: { step: 'input', error: 'failed' },
-    };
-    renderEntry('locked', failed);
-    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    cleanup();
+    renderEntry('locked', idleSend({ state: { step: 'input', error: 'failed' } }));
     expect(screen.getByRole('alert').textContent).toBe(
       'The payment could not be sent. Check your balance before you try again.',
     );
     expect(screen.queryByLabelText('Payment request or address')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
     cleanup();
-    renderEntry('ready', failed);
+    renderEntry('ready', idleSend({ state: { step: 'input', error: 'failed' } }));
     expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
-    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('Camera stub')).toBeNull();
     cleanup();
-    renderEntry('locked', { ...sendResult(() => false), state: { step: 'input', error: null } });
+    renderEntry('locked', idleSend());
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    expect(historyBack).not.toHaveBeenCalled();
+  });
+
+  it('Back on an input alert clears it and returns home', () => {
+    const failed = idleSend({ state: { step: 'input', error: 'failed' } });
+    const view = renderEntry('ready', failed);
+    pressBack();
+    expect(failed.setText).toHaveBeenCalledWith('');
+    rerenderEntry(view, 'ready', idleSend());
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Balance' })).toBeTruthy();
+  });
+
+  it('returns home after Done on the Sent line', () => {
+    const view = renderEntry('ready', idleSend());
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    rerenderEntry(view, 'ready', idleSend({ state: CONFIRM_STATE }));
+    rerenderEntry(view, 'ready', idleSend({ state: { step: 'sent', amountSats: 2_100 } }));
+    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy();
+    rerenderEntry(view, 'ready', idleSend());
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
+  });
+
+  it('returns home when the wallet stops being ready and stays there when it is ready again', () => {
+    const view = renderEntry('ready', idleSend());
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    rerenderEntry(view, 'locked', idleSend());
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
+    rerenderEntry(view, 'ready', idleSend());
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
   });
 
-  it('Back continues to Advanced functions when no send step is open', () => {
-    const send = sendResult(() => false);
+  it('leaves the page with Back from home without asking the send flow', () => {
+    Object.defineProperty(window.history, 'length', { configurable: true, value: 1 });
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign, hostname: '21.gifts' });
+    const send = idleSend();
     renderEntry('ready', send);
-    const details = screen.getByText('Advanced functions').closest('details');
-    if (details === null) {
-      throw new Error('missing details');
+    pressBack();
+    expect(send.cancel).not.toHaveBeenCalled();
+    expect(assign).toHaveBeenCalledWith('/welcome');
+  });
+});
+
+describe('WalletScreenView Receive', () => {
+  it('opens Receive from home even while the wallet is locked, and Back returns home', () => {
+    renderEntry('locked', idleSend());
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
+    expect(screen.getByText('ada@21.gifts')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
+    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    pressBack();
+    expect(historyBack).not.toHaveBeenCalled();
+    expect(screen.queryByText('ada@21.gifts')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
+  });
+
+  it('copies the address and says Copied for two seconds', async () => {
+    vi.useFakeTimers();
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    try {
+      renderEntry('ready');
+      fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+        await Promise.resolve();
+      });
+      expect(writeText).toHaveBeenCalledWith('ada@21.gifts');
+      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_999);
+      });
+      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+      Reflect.deleteProperty(navigator, 'clipboard');
     }
-    details.open = true;
-    fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(send.cancel).toHaveBeenCalledTimes(1);
-    expect(details.open).toBe(false);
+  });
+
+  it('keeps Copy when the clipboard refuses the write or is missing', async () => {
+    const writeText = vi.fn(() => Promise.reject(new Error('denied')));
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    try {
+      renderEntry('ready');
+      fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+        await Promise.resolve();
+      });
+      expect(writeText).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+      Reflect.deleteProperty(navigator, 'clipboard');
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    } finally {
+      Reflect.deleteProperty(navigator, 'clipboard');
+    }
+  });
+
+  it('shows only Set an amount when signed out', () => {
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
+    expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Set a username first.' })).toBeNull();
   });
 });

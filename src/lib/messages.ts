@@ -560,7 +560,6 @@ const en = {
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
-  'wallet.advanced': 'Advanced functions',
   'wallet.setAmount': 'Set an amount',
   'wallet.prfUnsupported':
     'This browser cannot create a recovery phrase. Try another browser or device.',
@@ -615,6 +614,13 @@ const en = {
   'wallet.sendTo': 'To {recipient}',
   'wallet.sendConfirm': 'Send {amount}',
   'wallet.sendButton': 'Send',
+  'wallet.receive': 'Receive',
+  'wallet.copy': 'Copy',
+  'wallet.copied': 'Copied',
+  'wallet.scanHint': 'Point the camera at a Bitcoin QR code',
+  'wallet.cameraDenied':
+    'Camera access was blocked. Allow it in your browser settings, or paste the payment request.',
+  'wallet.cameraUnavailable': 'No camera found. Paste the payment request instead.',
   'wallet.sendCancel': 'Cancel',
   'wallet.sendSent': 'Sent {amount}',
   'wallet.sendDone': 'Done',
@@ -1712,7 +1718,6 @@ const de = {
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
-  'wallet.advanced': 'Erweiterte Funktionen',
   'wallet.setAmount': 'Betrag festlegen',
   'wallet.prfUnsupported':
     'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
@@ -1773,6 +1778,14 @@ const de = {
   'wallet.sendTo': 'An {recipient}',
   'wallet.sendConfirm': '{amount} senden',
   'wallet.sendButton': 'Senden',
+  'wallet.receive': 'Empfangen',
+  'wallet.copy': 'Kopieren',
+  'wallet.copied': 'Kopiert',
+  'wallet.scanHint': 'Richten Sie die Kamera auf einen Bitcoin-QR-Code',
+  'wallet.cameraDenied':
+    'Der Kamerazugriff wurde blockiert. Erlauben Sie ihn in den Browsereinstellungen oder fügen Sie die Zahlungsanforderung ein.',
+  'wallet.cameraUnavailable':
+    'Keine Kamera gefunden. Fügen Sie stattdessen die Zahlungsanforderung ein.',
   'wallet.sendCancel': 'Abbrechen',
   'wallet.sendSent': '{amount} gesendet',
   'wallet.sendDone': 'Fertig',
@@ -2885,7 +2898,6 @@ const es = {
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
-  'wallet.advanced': 'Funciones avanzadas',
   'wallet.setAmount': 'Fijar un importe',
   'wallet.prfUnsupported':
     'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
@@ -2942,6 +2954,13 @@ const es = {
   'wallet.sendTo': 'Para {recipient}',
   'wallet.sendConfirm': 'Enviar {amount}',
   'wallet.sendButton': 'Enviar',
+  'wallet.receive': 'Recibir',
+  'wallet.copy': 'Copiar',
+  'wallet.copied': 'Copiado',
+  'wallet.scanHint': 'Apunta la cámara a un código QR de Bitcoin',
+  'wallet.cameraDenied':
+    'Se bloqueó el acceso a la cámara. Permítelo en los ajustes del navegador o pega la solicitud de pago.',
+  'wallet.cameraUnavailable': 'No se encontró ninguna cámara. Pega la solicitud de pago.',
   'wallet.sendCancel': 'Cancelar',
   'wallet.sendSent': '{amount} enviado',
   'wallet.sendDone': 'Listo',
@@ -4038,7 +4057,6 @@ const fil = {
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
-  'wallet.advanced': 'Mga advanced na function',
   'wallet.setAmount': 'Magtakda ng halaga',
   'wallet.prfUnsupported':
     'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
@@ -4095,6 +4113,13 @@ const fil = {
   'wallet.sendTo': 'Para kay {recipient}',
   'wallet.sendConfirm': 'Ipadala ang {amount}',
   'wallet.sendButton': 'Ipadala',
+  'wallet.receive': 'Tanggapin',
+  'wallet.copy': 'Kopyahin',
+  'wallet.copied': 'Nakopya',
+  'wallet.scanHint': 'Itutok ang camera sa isang Bitcoin QR code',
+  'wallet.cameraDenied':
+    'Na-block ang access sa camera. Payagan ito sa settings ng browser, o i-paste ang payment request.',
+  'wallet.cameraUnavailable': 'Walang nakitang camera. I-paste na lang ang payment request.',
   'wallet.sendCancel': 'Kanselahin',
   'wallet.sendSent': 'Naipadala ang {amount}',
   'wallet.sendDone': 'Tapos na',

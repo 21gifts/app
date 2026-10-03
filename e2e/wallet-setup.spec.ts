@@ -298,17 +298,19 @@ test.describe('wallet history', () => {
     ).toBeVisible();
   });
 
-  test('Function: WalletHistory — the list sits between address and recovery', async ({ page }) => {
+  test('Function: WalletHistory — the list sits between the balance and Send', async ({ page }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');
     const payments = await page.getByRole('region', { name: 'Payments' }).boundingBox();
-    const address = await page.getByText('ada@', { exact: false }).first().boundingBox();
-    const recovery = await page.getByText('Advanced functions').boundingBox();
+    const balance = await page.getByRole('region', { name: 'Balance' }).boundingBox();
+    const send = await page.getByRole('button', { name: 'Send', exact: true }).boundingBox();
     expect(payments).not.toBeNull();
-    expect(address).not.toBeNull();
-    expect(recovery).not.toBeNull();
-    expect(payments?.y ?? 0).toBeGreaterThan(address?.y ?? 0);
-    expect((payments?.y ?? 0) + (payments?.height ?? 0)).toBeLessThanOrEqual(recovery?.y ?? 0);
+    expect(balance).not.toBeNull();
+    expect(send).not.toBeNull();
+    // The list scrolls in the page scrollport; Send stays fixed in the footer below its start.
+    expect(payments?.y ?? 0).toBeGreaterThanOrEqual((balance?.y ?? 0) + (balance?.height ?? 0));
+    expect(payments?.y ?? 0).toBeLessThan(send?.y ?? 0);
+    await expect(page.locator('[data-scrollport] button', { hasText: 'Receive' })).toHaveCount(0);
   });
 
   test('Function: useWalletHistory — pinned rows stay four after scrolling', async ({ page }) => {

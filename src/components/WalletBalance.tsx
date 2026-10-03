@@ -1,14 +1,13 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import { formatBitcoin } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import type { WalletStatus } from '@/stores/wallet-store';
 
 /** Props for {@link WalletBalance}. */
@@ -24,7 +23,9 @@ export interface WalletBalanceProps {
 }
 
 /**
- * Wallet balance block for locked, connecting, ready, and error states.
+ * Wallet balance block for locked, connecting, ready, and error states. The
+ * ready balance is a large ₿ figure; when the default fiat has a usable rate,
+ * tapping it swaps which of ₿ and fiat is the large figure.
  *
  * @param props - Wallet state and labeled control callbacks.
  * @returns The balance region, or `null` while the wallet feature is disabled.
@@ -39,6 +40,7 @@ export function WalletBalance({
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const rateDay = useLatestRateDay(status === 'ready');
+  const [fiatFirst, setFiatFirst] = useState(false);
 
   if (status === 'disabled') {
     return null;
@@ -63,14 +65,32 @@ export function WalletBalance({
         </p>
       </>
     );
-  } else if (status === 'ready') {
-    body =
-      balanceSats === null ? null : (
-        <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
-          <span>{formatBitcoin(balanceSats, numberFormat)}</span>
-          {preferredFiatSuffix(balanceSats, rateDay, fiat, numberFormat)}
-        </p>
+  } else if (status === 'ready' && balanceSats === null) {
+    body = null;
+  } else if (status === 'ready' && balanceSats !== null) {
+    const fiatAmount = satsToFiatAmount(balanceSats, rateDay, fiat);
+    const bitcoinText = formatBitcoin(balanceSats, numberFormat);
+    const largeClass =
+      'text-center text-5xl font-semibold tracking-tight tabular-nums lining-nums text-app-fg sm:text-6xl';
+    if (fiatAmount === null) {
+      body = <p className={largeClass}>{bitcoinText}</p>;
+    } else {
+      const fiatText = formatFiatDisplay(fiatAmount, fiat, numberFormat);
+      body = (
+        <button
+          type="button"
+          onClick={() => {
+            setFiatFirst((value) => !value);
+          }}
+          className="flex flex-col items-center gap-2 rounded-3xl px-4 py-2 transition hover:bg-app-hover"
+        >
+          <span className={largeClass}>{fiatFirst ? fiatText : bitcoinText}</span>
+          <span className="text-center text-base tabular-nums lining-nums text-app-muted">
+            {fiatFirst ? bitcoinText : fiatText}
+          </span>
+        </button>
       );
+    }
   } else {
     body = (
       <>

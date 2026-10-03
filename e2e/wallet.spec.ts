@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { cameraStats, stubCamera } from './camera';
 
 const WALLET_RATE_DAY_STATS = {
   totalSats: 100_000_000,
@@ -520,9 +521,12 @@ test('wallet key unset shows no balance region', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  await expect(page.getByText('Advanced functions')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toBeVisible();
+  await expect(page.getByText('Advanced functions')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
 });
 
 test('wallet balance-locked pin shows unlock control', async ({ page }) => {
@@ -532,7 +536,8 @@ test('wallet balance-locked pin shows unlock control', async ({ page }) => {
   await expect(region).toBeVisible();
   await expect(region.getByText('Unlock your wallet to see your Bitcoin balance.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
   await page.getByRole('button', { name: 'Unlock wallet' }).click();
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
 });
@@ -747,6 +752,12 @@ async function stubWalletRate(page: Page): Promise<void> {
   });
 }
 
+/** Opens the Send view from the wallet home. */
+async function openSend(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toBeVisible();
+}
+
 test('wallet key unset shows no send region', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet');
@@ -761,27 +772,36 @@ test('wallet balance pins other than ready show no send region', async ({ page }
   await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
 });
 
-test('wallet send-input pin shows the paste field under the balance', async ({ page }) => {
+test('wallet send-input pin: Send replaces home with the camera and the paste field', async ({
+  page,
+}) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
   await page.goto('/wallet?visual=send-input');
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
+  await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
-  await expect(region).toBeVisible();
+  await expect(region.locator('video')).toBeVisible();
+  await expect(region.getByText('Point the camera at a Bitcoin QR code')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Receive' })).toHaveCount(0);
   const field = region.getByLabel('Payment request or address');
   await expect(field).toHaveAttribute('placeholder', 'Paste a Bitcoin payment request or address');
   await expect(region.getByRole('button', { name: 'Continue' })).toBeDisabled();
   await field.fill('lnbc1');
   await expect(region.getByRole('button', { name: 'Continue' })).toBeEnabled();
-  await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible();
 });
 
 test('wallet send-amount pin asks for an amount, bounds, and a comment', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-amount');
+  await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByText('To bob@example.com')).toBeVisible();
   await expect(region.getByLabel('Amount')).toBeVisible();
+  await expect(region.locator('video')).toHaveCount(0);
   await expect(
     region.getByText(/^Between ₿1 · \$0\.00 and ₿1'000'000 · \$1.000\.00$/),
   ).toBeVisible();
@@ -793,6 +813,7 @@ test('wallet send-confirm pin shows recipient, amount, and fee with fiat', async
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-confirm');
+  await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByText('To bob@example.com')).toBeVisible();
   await expect(region.getByText("Send ₿2'100")).toBeVisible();
@@ -865,6 +886,7 @@ test('Function: lnurlRelayTarget — send-comment-long pin shows an outside addr
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-comment-long');
+  await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByText('To bob@example.com')).toBeVisible();
   await expect(region.getByLabel('Message (optional)')).toBeVisible();
@@ -875,6 +897,7 @@ test('wallet send pin: Cancel is inert while a step is pinned', async ({ page })
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-confirm');
+  await openSend(page);
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
@@ -884,14 +907,16 @@ test('wallet send pin: Cancel is inert while a step is pinned', async ({ page })
 test('Function: WalletSend — send-input pin shows the Send Bitcoin region', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
   await page.goto('/wallet?visual=send-input');
-  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toBeVisible();
+  await openSend(page);
 });
 
 test('Function: useWalletSend — send-confirm pin shows the confirm step', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-confirm');
+  await openSend(page);
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
 });
 
@@ -899,6 +924,7 @@ test('Function: walletSendBounds — send-amount pin shows the receiver bounds',
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-amount');
+  await openSend(page);
   await expect(page.getByText(/^Between ₿1 · \$0\.00 and ₿1'000'000 · \$1.000\.00$/)).toBeVisible();
 });
 
@@ -913,4 +939,98 @@ test('Function: parseWalletInput — unset key loads no wasm and shows no send r
   await page.goto('/wallet');
   await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
   expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
+});
+
+test('Function: QrScanner — Send opens the camera; a scanned QR is pasted and submitted', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'qr', text: 'lnbc21scanned' });
+  await page.goto('/wallet?visual=send-input-busy');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByLabel('Payment request or address')).toHaveValue('lnbc21scanned');
+  await expect(region.getByRole('button', { name: 'Continue' })).toBeDisabled();
+  await expect(region.locator('video')).toHaveCount(0);
+  expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
+});
+
+test('wallet Send camera stops on Back and starts again on Send', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' }).locator('video')).toBeVisible();
+  await expect.poll(async () => (await cameraStats(page)).live).toBe(1);
+  await page.getByRole('link', { name: 'Back to the forum' }).click();
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Balance' })).toBeVisible();
+  await expect(page).toHaveURL(/\/wallet\?visual=send-input$/);
+  expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
+  await openSend(page);
+  await expect.poll(async () => cameraStats(page)).toEqual({ requests: 2, live: 1 });
+});
+
+test('wallet Send says the camera was blocked and keeps the paste field', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'denied' });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByRole('alert')).toHaveText(
+    'Camera access was blocked. Allow it in your browser settings, or paste the payment request.',
+  );
+  await expect(region.locator('video')).toHaveCount(0);
+  await expect(region.getByLabel('Payment request or address')).toBeVisible();
+});
+
+test('wallet Send says no camera was found and keeps the paste field', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'none' });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByRole('alert')).toHaveText(
+    'No camera found. Paste the payment request instead.',
+  );
+  await expect(region.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('wallet Receive shows the QR, the address, Copy, and Set an amount; Back returns home', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await page.getByRole('button', { name: 'Receive' }).click();
+  await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+  await expect(page.getByText('ada@21.gifts')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveAttribute('href', '/pos');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Copy' }).click();
+  await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('ada@21.gifts');
+  await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible({ timeout: 5_000 });
+  await page.getByRole('link', { name: 'Back to the forum' }).click();
+  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+  await expect(page).toHaveURL(/\/wallet\?visual=balance-locked$/);
+});
+
+test('wallet balance tap swaps the large figure between bitcoin and fiat', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=balance-ready');
+  const region = page.getByRole('region', { name: 'Balance' });
+  const toggle = region.getByRole('button');
+  await expect(toggle.locator('span').first()).toHaveText("₿21'000");
+  await toggle.click();
+  await expect(toggle.locator('span').first()).toHaveText('$21.00');
+  await expect(toggle.locator('span').last()).toHaveText("₿21'000");
+  await toggle.click();
+  await expect(toggle.locator('span').first()).toHaveText("₿21'000");
 });

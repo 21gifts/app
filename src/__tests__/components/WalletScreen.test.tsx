@@ -87,7 +87,7 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(screen.getByText('Advanced functions')).toBeTruthy();
+    expect(screen.queryByText('Advanced functions')).toBeNull();
     expect(screen.getByRole('link', { name: 'Show recovery phrase' }).getAttribute('href')).toBe(
       '/wallet/phrase',
     );
@@ -163,10 +163,12 @@ describe('WalletScreen', () => {
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
   });
 
-  it('shows the send block while the wallet is ready', () => {
+  it('opens the send flow from Send while the wallet is ready', () => {
     walletState.status = 'ready';
     walletState.balanceSats = 21_000;
     renderWithLocale(<WalletScreen />);
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
     expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
   });
@@ -181,10 +183,12 @@ describe('WalletScreen', () => {
     expect(useWalletMock).not.toHaveBeenCalled();
   });
 
-  it('does not show the recovery words on the receive page', () => {
+  it('does not show the recovery words on the wallet page or in Receive', () => {
     phraseState.view = 'phrase';
     phraseState.words = words;
     renderWithLocale(<WalletScreen />);
+    expect(screen.queryByText('abandon')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
     expect(screen.queryByText('abandon')).toBeNull();
     expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
   });
