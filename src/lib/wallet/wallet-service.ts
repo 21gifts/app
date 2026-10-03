@@ -416,8 +416,8 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
  * That read also updates the store while it is the latest read; when a newer
  * read already wrote the store, the check uses that newer balance, so the
  * check matches the balance shown. While a newer read is still pending, the
- * check uses this read. The returned `send` pays it once and
- * refreshes the balance. Never rejects.
+ * check uses this read. The returned `send` pays it once and then refreshes
+ * the balance while its connection is still the current one. Never rejects.
  *
  * @param request - Request text to pay, or a receiver that takes an amount.
  * @returns Confirmation with `send`, or why the payment cannot be made.
@@ -477,7 +477,9 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     } catch (err: unknown) {
       result = isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
     }
-    void refreshWallet();
+    if (connection === conn) {
+      void refreshWallet();
+    }
     return result;
   };
   return { kind: 'confirm', amountSats, feeSats, send };
