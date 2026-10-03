@@ -195,8 +195,8 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
  * shows that it is not supported yet. A receiver whose server this browser
  * cannot reach shows a plain error. Nothing is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
- * actions inert (so does any other `?visual=balance-…` or `?visual=send-…`
- * value there); under `send-input-busy` and `send-amount-busy`, **Continue**
+ * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
+ * other `?visual=send-…` value there); under `send-input-busy` and `send-amount-busy`, **Continue**
  * only marks that step busy. When the wallet leaves `ready` or the account
  * leaves wallet mode, an open amount or confirm step and any read or prepare
  * in flight are dropped (a send in flight is kept), so a later reconnect
@@ -215,7 +215,7 @@ export function useWalletSend(): UseWalletSendResult {
   const generation = useRef(0);
   const pin = visualName();
   const pinned = visualState(pin);
-  const inert = pinned !== null || (pin !== null && /^(balance|send)-/.test(pin));
+  const inert = pinned !== null || (pin !== null && /^(balance|history|send)-/.test(pin));
   const status = useWalletStore((store) => store.status);
   const account = useAuthStore((store) => store.account);
   const ready = status === 'ready' && canUnlockWallet(account);
