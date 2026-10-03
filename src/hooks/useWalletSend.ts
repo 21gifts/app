@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
+import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 import type { WalletPayRequest, WalletTarget } from '@/lib/wallet/wallet-sdk';
@@ -14,13 +15,15 @@ import {
 
 /**
  * Whether the wallet can send right now: connected and ready, for an account
- * that is in wallet mode.
+ * that is in wallet mode and not in the one-time wallet setup.
  *
  * @returns `true` while the store is `ready` and the account can use the wallet.
  */
 function walletCanSend(): boolean {
   return (
-    useWalletStore.getState().status === 'ready' && canUnlockWallet(useAuthStore.getState().account)
+    useWalletStore.getState().status === 'ready' &&
+    canUnlockWallet(useAuthStore.getState().account) &&
+    !needsWalletSetup(useAuthStore.getState().account)
   );
 }
 
@@ -218,7 +221,7 @@ export function useWalletSend(): UseWalletSendResult {
   const inert = pinned !== null || (pin !== null && /^(balance|history|send)-/.test(pin));
   const status = useWalletStore((store) => store.status);
   const account = useAuthStore((store) => store.account);
-  const ready = status === 'ready' && canUnlockWallet(account);
+  const ready = status === 'ready' && canUnlockWallet(account) && !needsWalletSetup(account);
 
   useEffect(
     () => () => {
@@ -280,7 +283,7 @@ export function useWalletSend(): UseWalletSendResult {
       setPinBusy(pin === 'send-input-busy');
       return;
     }
-    if (busy || state.step !== 'input') {
+    if (!ready || busy || state.step !== 'input') {
       return;
     }
     const run = generation.current;
@@ -323,7 +326,7 @@ export function useWalletSend(): UseWalletSendResult {
       setComment('');
       setState({ step: 'amount', target, amountError: false });
     });
-  }, [pin, inert, busy, state.step, text, prepare]);
+  }, [pin, inert, ready, busy, state.step, text, prepare]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {
@@ -331,7 +334,7 @@ export function useWalletSend(): UseWalletSendResult {
         setPinBusy(pin === 'send-amount-busy');
         return;
       }
-      if (busy || state.step !== 'amount') {
+      if (!ready || busy || state.step !== 'amount') {
         return;
       }
       const target = state.target;
@@ -355,7 +358,7 @@ export function useWalletSend(): UseWalletSendResult {
       }
       prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
     },
-    [pin, inert, busy, state, comment, prepare],
+    [pin, inert, ready, busy, state, comment, prepare],
   );
 
   const confirm = useCallback((): void => {

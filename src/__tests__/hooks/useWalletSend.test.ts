@@ -674,6 +674,32 @@ describe('useWalletSend wallet status', () => {
     expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
+  it('does nothing while the account is in the one-time wallet setup', async () => {
+    const key = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    target(LNURL);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@pay.example');
+    expect(result.current.state.step).toBe('amount');
+    const eligible = useAuthStore.getState().account;
+    act(() => {
+      useAuthStore.setState({ account: { ...eligible!, sparkWalletVerified: false } });
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    vi.mocked(parseWalletInput).mockClear();
+    await typeAndSubmit(result, 'bob@pay.example');
+    act(() => {
+      result.current.submitAmount(100);
+    });
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(payFromWallet).not.toHaveBeenCalled();
+    if (key === undefined) {
+      delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    } else {
+      process.env.NEXT_PUBLIC_BREEZ_API_KEY = key;
+    }
+  });
+
   it('keeps a send in flight and the sent and idle input steps', async () => {
     target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
     let finish: (value: WalletSendResult) => void = () => undefined;
