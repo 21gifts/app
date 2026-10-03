@@ -1,7 +1,14 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import { useEffect, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -89,7 +96,9 @@ function StepBox({
  * scanner above the field; a decoded text goes into the field as if pasted and
  * Continue runs on it. The camera runs only while the input step is idle and
  * shows no alert, so a code that was just refused is not read again at once;
- * editing the field clears the alert and starts the camera again. While the
+ * editing the field clears the alert and starts the camera again. After a scan
+ * the camera stays off until the submit moves on (busy, another step, or an
+ * alert) or the field is edited, so the same code is never submitted twice. While the
  * wallet is not ready, an input step with an alert shows only that alert.
  *
  * @param props - Send flow and whether the wallet is ready.
@@ -104,6 +113,9 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
   const [amountDraft, setAmountDraft] = useState('');
   const [amountUnit, setAmountUnit] = useState<AmountUnit>(accountUnit);
   const [scanned, setScanned] = useState<string | null>(null);
+  const scanSubmitted = useRef(false);
+  /** The input alert, or `'step'` once the flow has left the input step. */
+  const inputError = send.state.step === 'input' ? send.state.error : 'step';
   const { state, busy, text, submitInput } = send;
   const spinner = busy ? (
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
@@ -113,13 +125,20 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
   };
 
   useEffect(() => {
-    if (scanned === null || text !== scanned) {
+    if (scanned === null) {
       return;
     }
-    setScanned(null);
-    setAmountDraft('');
-    submitInput();
-  }, [scanned, text, submitInput]);
+    const moved = busy || inputError !== null;
+    if (moved || (scanSubmitted.current && text !== scanned)) {
+      setScanned(null);
+      return;
+    }
+    if (!scanSubmitted.current && text === scanned) {
+      scanSubmitted.current = true;
+      setAmountDraft('');
+      submitInput();
+    }
+  }, [scanned, text, busy, inputError, submitInput]);
 
   const fiatOf = (sats: number): ReactElement | null =>
     preferredFiatSuffix(sats, rateDay, fiat, numberFormat);
@@ -147,6 +166,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
         {busy || scanned !== null || state.error !== null ? null : (
           <QrScanner
             onResult={(value) => {
+              scanSubmitted.current = false;
               send.setText(value);
               setScanned(value);
             }}

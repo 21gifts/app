@@ -63,8 +63,8 @@ async function frameDecoder(): Promise<FrameDecoder> {
  * Camera QR scanner with the rear camera preferred. The camera is requested
  * once per mount. Reads frames about eight times a second until the first
  * non-empty QR text, then stops every camera track and reports it. A blocked
- * camera, no camera, or a page without a secure context shows a short alert
- * instead of the preview. Tracks also stop on unmount.
+ * camera, no camera, a page without a secure context, or a decoder that cannot
+ * load shows a short alert instead of the preview. Tracks also stop on unmount.
  *
  * @param props - Result callback.
  * @returns The scanner region.
@@ -124,7 +124,16 @@ export function QrScanner({ onResult }: QrScannerProps): ReactElement {
       }
       video.srcObject = media;
       await video.play().catch(() => undefined);
-      const decode = await frameDecoder();
+      let decode: FrameDecoder;
+      try {
+        decode = await frameDecoder();
+      } catch {
+        if (!stopped) {
+          stop();
+          setError('unavailable');
+        }
+        return;
+      }
       const tick = async (): Promise<void> => {
         if (stopped) {
           return;
