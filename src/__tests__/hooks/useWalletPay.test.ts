@@ -94,6 +94,48 @@ describe('useWalletPay path choice', () => {
     expect(result.current.view).toBe('fallback');
   });
 
+  it('drops an open confirm or prepare when the account leaves wallet mode', async () => {
+    const oldSend = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(oldSend));
+    let payDuringRender = false;
+    const { result, unmount } = renderHook(() => {
+      const slot = useWalletPay(SPARK, 21);
+      if (payDuringRender) {
+        slot.pay();
+      }
+      return slot;
+    });
+    await act(async () => undefined);
+    expect(result.current.view).toBe('confirm');
+    payDuringRender = true;
+    await act(async () => {
+      useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
+    });
+    payDuringRender = false;
+    expect(oldSend).not.toHaveBeenCalled();
+    expect(result.current.view).toBe('fallback');
+    unmount();
+
+    useAuthStore.setState({ account });
+    let finish: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const second = renderHook(() => useWalletPay(SPARK, 21));
+    await act(async () => undefined);
+    expect(second.result.current.view).toBe('preparing');
+    await act(async () => {
+      useAuthStore.setState({ account: { ...account, walletRequired: false } });
+    });
+    expect(second.result.current.view).toBe('fallback');
+    await act(async () => {
+      finish(confirmWith(oldSend));
+    });
+    expect(second.result.current.view).toBe('fallback');
+  });
+
   it('offers unlock for a locked wallet and prepares once it is ready', async () => {
     setWallet('locked');
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' }), 3));
