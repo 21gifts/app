@@ -1,8 +1,9 @@
-import type { ForumMessage } from '@/lib/api-types';
+import { FORUM_GOAL_AMOUNT_RE, type ForumMessage } from '@/lib/api-types';
+import { forumFiatGoalPercent } from '@/lib/forum-goal';
 import { roleAtLeast } from '@/lib/roles';
 
 /** Client-side forum list filter / sort mode. */
-export type ForumFeedMode = 'active' | 'unpaid' | 'all' | 'popular';
+export type ForumFeedMode = 'active' | 'unpaid' | 'donations' | 'all' | 'popular';
 
 /** Default feed mode on the welcome forum (paid notes plus unpaid moderator notes, newest-first). */
 export const DEFAULT_FORUM_FEED_MODE: ForumFeedMode = 'active';
@@ -57,8 +58,14 @@ export function consumeSkipIntroduceOverlay(): boolean {
 /** Visible-tab poll interval for GET /forum/messages (ms). */
 export const FORUM_LIST_POLL_MS = 30_000;
 
-/** Selector button order: Active, No gifts yet, All, Most popular. */
-export const FORUM_FEED_MODES: readonly ForumFeedMode[] = ['active', 'unpaid', 'all', 'popular'];
+/** Selector button order: Active, No gifts yet, Donations and loans, All, Most popular. */
+export const FORUM_FEED_MODES: readonly ForumFeedMode[] = [
+  'active',
+  'unpaid',
+  'donations',
+  'all',
+  'popular',
+];
 
 /**
  * Checks whether a fetched forum list contains a message not present in the loaded list.
@@ -86,19 +93,56 @@ function isActiveForumMessage(message: ForumMessage): boolean {
   return typeof message.goalSats === 'number' && message.goalSats > 0;
 }
 
+function goalComplete(message: ForumMessage): boolean {
+  const fields = {
+    USD: 'amountUsd',
+    CHF: 'amountChf',
+    EUR: 'amountEur',
+    PHP: 'amountPhp',
+  } as const;
+  const currency = message.goalCurrency;
+  if (
+    currency !== undefined &&
+    currency !== 'BTC' &&
+    typeof message.goalAmount === 'string' &&
+    FORUM_GOAL_AMOUNT_RE.test(message.goalAmount)
+  ) {
+    return forumFiatGoalPercent(message[fields[currency]], message.goalAmount) >= 100;
+  }
+  return message.sats >= message.goalSats!;
+}
+
 /**
  * Filters and sorts a loaded forum thread for the selected feed mode.
  *
  * Ranking is among the already-loaded messages only. Does not mutate `messages`.
  *
  * @param messages - Newest-first list from the api / loader merge.
- * @param mode - Active (paid, unpaid moderator, or a positive `goalSats` ask, newest-first), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
+ * @param mode - Active (paid, unpaid moderator, or a positive `goalSats` ask, newest-first), No gifts yet (zero sats), Donations and loans (goals, unfinished first, goal sats descending), All (unchanged), or Most popular (paid, sats desc).
  * @returns A new array of visible messages for the mode.
  */
 export function visibleForumMessages(
   messages: readonly ForumMessage[],
   mode: ForumFeedMode,
 ): ForumMessage[] {
+  if (mode === 'donations') {
+    return messages
+      .filter(
+        (message) =>
+          message.parentId === undefined &&
+          typeof message.goalSats === 'number' &&
+          Number.isFinite(message.goalSats) &&
+          message.goalSats > 0,
+      )
+      .sort((a, b) => {
+        const byDone = Number(goalComplete(a)) - Number(goalComplete(b));
+        if (byDone !== 0) return byDone;
+        const byGoal = b.goalSats! - a.goalSats!;
+        if (byGoal !== 0) return byGoal;
+        const byTime = b.createdAt.localeCompare(a.createdAt);
+        return byTime !== 0 ? byTime : b.id.localeCompare(a.id);
+      });
+  }
   if (mode === 'all') {
     return [...messages];
   }

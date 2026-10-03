@@ -375,6 +375,8 @@
 
 ## Endpoint: GET /forum/messages
 
+The signed-in `mode=donations` feed selects posts with a positive goal (the progress bar), including donation and credit asks. Unfinished goals precede goals at or above 100%, then frozen `goalSats` descending, creation time descending, and id descending. Fiat completion uses the stored payment total in the goal currency, matching the progress bar; completion here means funded, not a repaid credit ledger. Filtering and ordering happen before pagination. Its exclusive cursor is `{ k: "g", d: <completed boolean>, g: <goal sats>, c: <ISO time>, i: <id> }`; other modes reject it.
+
 - **Purpose:** Same-origin Bearer proxy of api GET `/messages` (public forum list, newest-first), forwarding optional `mode`, `limit`, and `cursor` query parameters. App path is `/forum/messages` so `/messages/[id]` can serve HTML. The welcome client always sends `limit=20`; the JSON body may include opaque `nextCursor` (omitted at end of feed).
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
 - **Used by:** `fetchMessages`.

@@ -574,10 +574,15 @@ function ForumPaySheet({
 
 const MODE_LABEL_KEY: Record<
   ForumFeedMode,
-  'forum.modeActive' | 'forum.modeUnpaid' | 'forum.modeAll' | 'forum.modePopular'
+  | 'forum.modeActive'
+  | 'forum.modeUnpaid'
+  | 'forum.modeDonations'
+  | 'forum.modeAll'
+  | 'forum.modePopular'
 > = {
   active: 'forum.modeActive',
   unpaid: 'forum.modeUnpaid',
+  donations: 'forum.modeDonations',
   all: 'forum.modeAll',
   popular: 'forum.modePopular',
 };
