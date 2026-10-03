@@ -476,24 +476,27 @@ describe('useWalletSend visual pins', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('keeps the send actions inert under any other balance or send pin', () => {
-    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
-    window.history.replaceState({}, '', '/wallet?visual=balance-ready');
-    const { result } = renderHook(() => useWalletSend());
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-    act(() => {
-      result.current.setText('bob@example.com');
-    });
-    act(() => {
-      result.current.submitInput();
-      result.current.submitAmount(21);
-      result.current.confirm();
-    });
-    expect(result.current.busy).toBe(false);
-    expect(result.current.cancel()).toBe(false);
-    expect(parseWalletInput).not.toHaveBeenCalled();
-    expect(payFromWallet).not.toHaveBeenCalled();
-  });
+  it.each(['balance-ready', 'history-rows'])(
+    'keeps the send actions inert under the %s pin',
+    (visual) => {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', `/wallet?visual=${visual}`);
+      const { result } = renderHook(() => useWalletSend());
+      expect(result.current.state).toEqual({ step: 'input', error: null });
+      act(() => {
+        result.current.setText('bob@example.com');
+      });
+      act(() => {
+        result.current.submitInput();
+        result.current.submitAmount(21);
+        result.current.confirm();
+      });
+      expect(result.current.busy).toBe(false);
+      expect(result.current.cancel()).toBe(false);
+      expect(parseWalletInput).not.toHaveBeenCalled();
+      expect(payFromWallet).not.toHaveBeenCalled();
+    },
+  );
 
   it('ignores pins outside a Playwright build and unknown values', () => {
     window.history.replaceState({}, '', '/wallet?visual=send-confirm');
