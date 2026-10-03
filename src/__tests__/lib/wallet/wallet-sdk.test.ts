@@ -224,7 +224,7 @@ describe('payments', () => {
     Awaited<ReturnType<Awaited<ReturnType<typeof loadWalletSdk>>['connect']>>
   > {
     const sdk = await loadWalletSdk();
-    return sdk.connect(MNEMONIC, API_KEY);
+    return sdk.connect(MNEMONIC, API_KEY, HOST);
   }
 
   it('parse maps a BOLT11 request with amount and shows the request, not its description', async () => {
