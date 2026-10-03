@@ -869,7 +869,7 @@
 - **Purpose:** Every typed amount. Gift `SegmentedControl` (₿ and the member's fiat code) plus the other unit under the field. `keypad` (the `/pos/amount` page only) replaces the input with a non-focusable amount and an always-visible 3-column keypad. The page heading is already **Amount**, so the keypad does not repeat it; the amount keeps that name for assistive tech. Bitcoin offers no decimal key and ignores a typed decimal. Fiat shows the number-format decimal and keeps two fraction digits. A key scales down and darkens while it is held. When the amount changes and the device can vibrate, and reduced motion is off, it vibrates for 10 ms. Other screens keep the input. Switching the keypad to fiat rewrites the draft with the number-format decimal. Bitcoin shows the preferred fiat. Fiat shows `formatBitcoin`. The input box, its placeholder, and where the digits start do not change when the unit changes. A numeric placeholder is not rewritten. The switch and the counter do change. A signed-in toggle POSTs `/me/amount-unit` and writes `account.amountUnit`. No session keeps the choice on the control and starts at ₿. A locked invoice shows the sat amount and disables the switch. `layout="composer"` (inbox) puts the switch beside the input. `layout="inline"` (forum reply) puts the amount before the switch on one line. Both keep the label for assistive tech only and put the counter under the input.
 - **Inputs:** `label`, `value`, `onValueChange`, `rateDay`, optional `id`, `disabled`, `placeholder`, `className`, `lockedSats`, `onUnitChange`, `layout` (`field` default, `composer`, or `inline`), optional `keypad` (default false; the `/pos/amount` page only).
 - **Returns / side effects:** A labeled input, or with `keypad` a non-focusable amount plus the keypad and no input. The keypad does not show the label again. The switch and a counter line when an amount is defined. Signed-in toggle calls `setAmountUnit`. No other network.
-- **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosAmount`.
+- **Used by:** `ForumAskWizard`, `ForumBoard` pay sheet and reply, `InboxScreen`, `PayLinkScreen`, `PosAmount`, `HabitCommentDonation`.
 
 ## Function: Field
 
@@ -1325,10 +1325,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ForumReplyPayPage
 
-- **Purpose:** Replaces the reply composer after a paid reaction is sent: it is a component in that same slot, not a new URL, and shows only a read-only preview of the submitted reply, the **Pay ₿…** amount line with the preferred-fiat suffix, the pay control (desktop QR plus Wallet of Satoshi button; smartphone: button only), and **Waiting for payment…** while polling.
+- **Purpose:** Replaces the reply composer after a paid reaction is sent: it is a component in that same slot, not a new URL, and shows only a read-only preview of the submitted reply, the **Pay ₿…** amount line with the preferred-fiat suffix, the pay control (desktop QR plus Wallet of Satoshi button; smartphone: button only), and **Waiting for payment…** while polling. `HabitCommentDonation` also renders it for the tracker comment invoice (same component in that slot, not a new URL; the preview is the recipient name).
 - **Inputs:** `preview` (raw submitted text; a trimmed-empty string omits the paragraph), `amountSats`, `pr`, `payWaiting`, `payBusy`, `showPaymentQr`, `rateDay`, `onCancel`.
 - **Returns / side effects:** React element with `data-reply-pay-page` and `data-pay-sheet`. Close (`X`) calls `onCancel` and stays on this view. It is not the top-left back arrow. The wallet button sets `window.location.href` to the Android Intent or `walletofsatoshi:` href. An empty trimmed preview omits the paragraph.
-- **Used by:** `ForumBoard`.
+- **Used by:** `ForumBoard`, `HabitCommentDonation`.
 
 ## Function: ContactLoader
 
@@ -2327,6 +2327,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
 - **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
+
+## Function: useLatestRateDayState
+
+- **Purpose:** Latest gift-day totals and whether that request has finished. Fetches `GET /gifts/stats` once on mount via `fetchGiftStats` and returns `latestRateDay` of `spendOverTime` together with a settled flag. A failed fetch, or a response with no usable rate, settles with `rateDay` null. Drops the response after unmount.
+- **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the result stays unsettled.
+- **Returns / side effects:** `{ rateDay: FiatRateDay | null, settled: boolean }`. While `enabled` is false this is `{ rateDay: null, settled: false }` and `fetchGiftStats` is not called. While enabled, one fetch per mount.
+- **Used by:** `useLatestRateDay`, `HabitCommentDonation`.
 
 ## Function: shownFiatForSats
 
@@ -4623,3 +4630,26 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with JSON `{ fiat, onlyIfUnset }`.
 - **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored fiat value.
 - **Used by:** Route POST `/me/fiat`.
+
+## Function: HabitTracker
+
+- **Purpose:** Public weekly resolution board. Founder resolutions stay above initiator resolutions. Add is shown on the founder board at founder rank, and on the initiator board at initiator rank but not founder rank. Edit, retire, and rate are shown on the latest published week only for a habit the signed-in account authored, and only at initiator rank. Retire is shown only while that habit is not archived. The comment composer is only on the latest review week, and only while `commentsAllowed` is not false. A current week outside that window shows the Monday 16:00 to Saturday 20:00 sentence. An older week shows the archived sentence.
+- **Inputs:** Hydrated auth store and localized catalog. No props.
+- **Returns / side effects:** The tracker element. Loads `GET /habits/data` and posts add, edit, retire, rate, comment, and deleteComment to `POST /habits/data`. A failed save keeps the unsent draft.
+- **Used by:** `HabitTrackerPage` at `/habit-tracker`.
+
+- **Control grammar:** Add, save and post actions inside tracker cards are icon-only with localized accessible names. Text fields use the shared `Field` primitive. The donation amount form advances with labeled Continue.
+
+## Function: HabitTrackerPage
+
+- **Purpose:** Public `/habit-tracker` page. Session-aware public chrome wraps the tracker. Anonymous visitors can read; a hydrated session enables owner and comment controls.
+- **Inputs:** None.
+- **Returns / side effects:** The page element inside the existing public page chrome. No direct I/O.
+- **Used by:** Route `/habit-tracker`.
+
+## Function: HabitCommentDonation
+
+- **Purpose:** Authenticated direct Lightning donation to a tracker comment author. No forum post is created. Reuses `AmountEntry` and `ForumReplyPayPage` for amount, QR, and wallet opening.
+- **Inputs:** Comment id, recipient name, authenticated session, and close callback.
+- **Returns / side effects:** Amount form and exact-amount Lightning invoice with QR and wallet link. POST `/habits/data` requests the invoice; payment requires the user to confirm in their wallet. Invalid amounts and duplicate submissions are rejected; failures preserve the draft.
+- **Used by:** `HabitTracker`.

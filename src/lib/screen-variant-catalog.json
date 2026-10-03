@@ -1,5 +1,83 @@
 [
   {
+    "id": "/habit-tracker:default",
+    "label": "/habit-tracker default",
+    "visual": "screen-habit-tracker",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:empty",
+    "label": "/habit-tracker empty",
+    "visual": "state-habit-tracker-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:loading",
+    "label": "/habit-tracker loading",
+    "visual": "state-habit-tracker-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:error",
+    "label": "/habit-tracker error",
+    "visual": "state-habit-tracker-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:comment",
+    "label": "/habit-tracker comment",
+    "visual": "state-habit-tracker-comment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:editing",
+    "label": "/habit-tracker editing",
+    "visual": "state-habit-tracker-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donation",
+    "label": "/habit-tracker donation",
+    "visual": "state-habit-tracker-donation",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donation-fiat",
+    "label": "/habit-tracker donation-fiat",
+    "visual": "state-habit-tracker-donation-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:invoice",
+    "label": "/habit-tracker invoice",
+    "visual": "state-habit-tracker-invoice",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:invoice-phone",
+    "label": "/habit-tracker invoice-phone",
+    "visual": "state-habit-tracker-invoice-phone",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:archived",
+    "label": "/habit-tracker archived",
+    "visual": "state-habit-tracker-archived",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:comments-closed",
+    "label": "/habit-tracker comments-closed",
+    "visual": "state-habit-tracker-comments-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donation-error",
+    "label": "/habit-tracker donation-error",
+    "visual": "state-habit-tracker-donation-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:default",
     "label": "/ default",
     "visual": "screen-root",

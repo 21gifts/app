@@ -556,6 +556,19 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
+  it('places Habit-Tracker between rules and Trust Chain and closes on click', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    const links = Array.from(menuPanel().querySelectorAll('a'));
+    const habit = screen.getByRole('link', { name: 'Habit-Tracker' });
+    const index = links.indexOf(habit as HTMLAnchorElement);
+    expect(links[index - 1]?.getAttribute('href')).toBe('/rules');
+    expect(habit.getAttribute('href')).toBe('/habit-tracker');
+    expect(links[index + 1]?.getAttribute('href')).toBe('/trust-chain');
+    fireEvent.click(habit);
+    expectMenuClosed();
+  });
+
   it('closes the menu when Trust Chain is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -1016,10 +1029,18 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
       expect(panel.className).toContain('w-72');
-      expect(panel.className).toContain('absolute');
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('overflow-auto');
       expect(panel.className).not.toContain('max-h-');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(721);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       bottom = 700;
@@ -1027,6 +1048,14 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('mt-2');
       expect(panel.className).toContain('p-2');
       expect(panel.className).not.toContain('mt-0');
+      expect(panel.hasAttribute('data-scrollport')).toBe(false);
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1063,6 +1092,14 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('mt-2');
       expect(panel.className).toContain('p-2');
       expect(panel.className).not.toContain('mt-0');
+      expect(panel.hasAttribute('data-scrollport')).toBe(false);
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1109,6 +1146,13 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('py-0');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('max-h-');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(601);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
     } finally {
       if (previousInnerHeight === undefined) {
@@ -1152,12 +1196,28 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('mt-2');
       expect(panel.className).toContain('p-2');
       expect(panel.className).not.toContain('mt-0');
+      expect(panel.hasAttribute('data-scrollport')).toBe(false);
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
       expect(panel.className).toContain('mt-2');
       expect(panel.className).toContain('p-2');
       expect(panel.className).not.toContain('mt-0');
+      expect(panel.hasAttribute('data-scrollport')).toBe(false);
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1199,6 +1259,14 @@ describe('SignedInChrome', () => {
       });
       expect(panel.className).toContain('mt-0');
       expect(panel.className).not.toContain('mt-2');
+      expect(panel.hasAttribute('data-scrollport')).toBe(false);
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.top).toBe('');
+      expect(panel.style.bottom).toBe('');
+      expect(panel.style.left).toBe('');
+      expect(panel.style.width).toBe('');
+      expect(panel.className).toContain('absolute');
+      expect(panel.className).not.toContain('fixed');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1264,6 +1332,15 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('mt-0');
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
+      expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.className).not.toContain('max-h-');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(721);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
       cleanup();
       expect(disconnected).toBe(true);
     } finally {
@@ -1305,6 +1382,15 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('mt-0');
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
+      expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.className).not.toContain('max-h-');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.style.maxHeight).toBe('');
+      expect(
+        window.innerHeight - parseFloat(panel.style.bottom) - parseFloat(panel.style.top),
+      ).toBe(721);
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1313,6 +1399,293 @@ describe('SignedInChrome', () => {
       }
       HTMLElement.prototype.getBoundingClientRect = previousRect;
       globalThis.ResizeObserver = previousObserver;
+    }
+  });
+
+  it('keeps the wide menu in scroll mode when the capped box sits in the window', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    const previousScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 670;
+      },
+    });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const capped = this.id === 'signed-in-menu' && this.style.bottom !== '';
+      return {
+        x: 0,
+        y: 85,
+        top: 85,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: capped ? 720 : 755,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.style.bottom).not.toBe('');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).toContain('mt-0');
+      expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.className).not.toContain('max-h-');
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.style.bottom).not.toBe('');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).toContain('mt-0');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      if (previousScrollHeight === undefined) {
+        delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', previousScrollHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('shrinks the wide menu cap by the border when the capped box still crosses the viewport', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    const previousScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    const previousComputedStyle = globalThis.getComputedStyle;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 800;
+      },
+    });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      if (this.id !== 'signed-in-menu') {
+        return previousRect.call(this);
+      }
+      return {
+        x: 10,
+        y: 85,
+        top: 85,
+        left: 10,
+        right: 210,
+        width: 200,
+        height: 0,
+        bottom: this.style.bottom === '' ? 900 : 750,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    const stubComputedStyle = (elt: Element, pseudoElt?: string | null): CSSStyleDeclaration => {
+      const style = previousComputedStyle.call(globalThis, elt, pseudoElt);
+      if (elt.id !== 'signed-in-menu') {
+        return style;
+      }
+      return Object.create(style, {
+        borderTopWidth: { configurable: true, enumerable: true, value: '2px' },
+        borderBottomWidth: { configurable: true, enumerable: true, value: '3px' },
+      }) as CSSStyleDeclaration;
+    };
+    globalThis.getComputedStyle = stubComputedStyle;
+    const previousWindowComputedStyle =
+      window.getComputedStyle === stubComputedStyle ? undefined : window.getComputedStyle;
+    if (previousWindowComputedStyle !== undefined) {
+      window.getComputedStyle = stubComputedStyle;
+    }
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.style.bottom).toBe('4px');
+      expect(panel.style.top).toBe('85px');
+      expect(panel.style.left).toBe('10px');
+      expect(panel.style.width).toBe('200px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).not.toContain('max-h-');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      if (previousScrollHeight === undefined) {
+        delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', previousScrollHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+      globalThis.getComputedStyle = previousComputedStyle;
+      if (previousWindowComputedStyle !== undefined) {
+        window.getComputedStyle = previousWindowComputedStyle;
+      }
+    }
+  });
+
+  it('keeps the unadjusted menu bottom when the border widths are zero', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    const previousScrollHeight = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollHeight',
+    );
+    const previousComputedStyle = globalThis.getComputedStyle;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get() {
+        return 800;
+      },
+    });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      if (this.id !== 'signed-in-menu') {
+        return previousRect.call(this);
+      }
+      return {
+        x: 10,
+        y: 85,
+        top: 85,
+        left: 10,
+        right: 210,
+        width: 200,
+        height: 0,
+        bottom: this.style.bottom === '' ? 900 : 750,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    const stubComputedStyle = (elt: Element, pseudoElt?: string | null): CSSStyleDeclaration => {
+      const style = previousComputedStyle.call(globalThis, elt, pseudoElt);
+      if (elt.id !== 'signed-in-menu') {
+        return style;
+      }
+      return Object.create(style, {
+        borderTopWidth: { configurable: true, enumerable: true, value: '0px' },
+        borderBottomWidth: { configurable: true, enumerable: true, value: '0px' },
+      }) as CSSStyleDeclaration;
+    };
+    globalThis.getComputedStyle = stubComputedStyle;
+    const previousWindowComputedStyle =
+      window.getComputedStyle === stubComputedStyle ? undefined : window.getComputedStyle;
+    if (previousWindowComputedStyle !== undefined) {
+      window.getComputedStyle = stubComputedStyle;
+    }
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.style.bottom).toBe('-1px');
+      expect(panel.style.top).toBe('85px');
+      expect(panel.style.left).toBe('10px');
+      expect(panel.style.width).toBe('200px');
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.className).not.toContain('max-h-');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      if (previousScrollHeight === undefined) {
+        delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+      } else {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', previousScrollHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+      globalThis.getComputedStyle = previousComputedStyle;
+      if (previousWindowComputedStyle !== undefined) {
+        window.getComputedStyle = previousWindowComputedStyle;
+      }
+    }
+  });
+
+  it('returns from a resize that starts during the menu measurement', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    const previousComputedStyle = globalThis.getComputedStyle;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    let dispatchNestedResize = false;
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      if (this.id !== 'signed-in-menu') {
+        return previousRect.call(this);
+      }
+      if (dispatchNestedResize) {
+        dispatchNestedResize = false;
+        window.dispatchEvent(new Event('resize'));
+      }
+      return {
+        x: 10,
+        y: 85,
+        top: 85,
+        left: 10,
+        right: 210,
+        width: 200,
+        height: 0,
+        bottom: this.style.bottom === '' ? 900 : 750,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    const stubComputedStyle = (elt: Element, pseudoElt?: string | null): CSSStyleDeclaration => {
+      const style = previousComputedStyle.call(globalThis, elt, pseudoElt);
+      if (elt.id !== 'signed-in-menu') {
+        return style;
+      }
+      return Object.create(style, {
+        borderTopWidth: { configurable: true, enumerable: true, value: '2px' },
+        borderBottomWidth: { configurable: true, enumerable: true, value: '3px' },
+      }) as CSSStyleDeclaration;
+    };
+    globalThis.getComputedStyle = stubComputedStyle;
+    const previousWindowComputedStyle =
+      window.getComputedStyle === stubComputedStyle ? undefined : window.getComputedStyle;
+    if (previousWindowComputedStyle !== undefined) {
+      window.getComputedStyle = stubComputedStyle;
+    }
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      dispatchNestedResize = true;
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.style.bottom).toBe('4px');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+      globalThis.getComputedStyle = previousComputedStyle;
+      if (previousWindowComputedStyle !== undefined) {
+        window.getComputedStyle = previousWindowComputedStyle;
+      }
     }
   });
 });

@@ -30,6 +30,7 @@ import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
+import { bindScrollport, releaseScrollport } from '@/lib/scroll-surface';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -61,12 +62,19 @@ export function SignedInChrome(): ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
+  const [panelStyle, setPanelStyle] = useState<{
+    top: string;
+    left: string;
+    width: string;
+    bottom: string;
+  }>();
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
   const [rootEl, setRootEl] = useState<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const suppressMeasureRef = useRef(false);
   const frameWidth = useContext(AppShellContext)?.frameWidth ?? null;
   const scroller = useAppShellScroller();
   const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
@@ -137,34 +145,182 @@ export function SignedInChrome(): ReactElement {
       if (tight) {
         setTight(false);
       }
+      const menuToClear = menuRef.current;
+      if (menuToClear !== null) {
+        menuToClear.style.top = '';
+        menuToClear.style.bottom = '';
+        menuToClear.style.left = '';
+        menuToClear.style.width = '';
+      }
+      setPanelStyle((current) => (current === undefined ? current : undefined));
       return;
     }
+    const menu = menuRef.current!;
+    const readNaturalBottom = (): number => {
+      const appliedTop = menu.style.top;
+      const appliedLeft = menu.style.left;
+      const appliedWidth = menu.style.width;
+      const appliedBottom = menu.style.bottom;
+      const wasFixed = menu.classList.contains('fixed');
+      if (wasFixed) {
+        menu.classList.remove('fixed');
+        menu.classList.add('absolute');
+      }
+      menu.style.top = '';
+      menu.style.left = '';
+      menu.style.width = '';
+      menu.style.bottom = '';
+      const bottom = menu.getBoundingClientRect().bottom;
+      menu.style.top = appliedTop;
+      menu.style.left = appliedLeft;
+      menu.style.width = appliedWidth;
+      menu.style.bottom = appliedBottom;
+      if (wasFixed) {
+        menu.classList.add('fixed');
+        menu.classList.remove('absolute');
+      }
+      return bottom;
+    };
     const measure = (): void => {
-      const limit = window.innerHeight + 1;
-      const bottom = menuRef.current!.getBoundingClientRect().bottom;
-      setTight((current) => {
-        if (bottom > limit) {
-          return true;
-        }
+      if (suppressMeasureRef.current) {
+        return;
+      }
+      suppressMeasureRef.current = true;
+      try {
+        const limit = window.innerHeight + 1;
+        // Decide from the uncapped bottom. Using the capped box would drop the cap and flutter.
+        const natural = readNaturalBottom();
         // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
-        if (current && bottom <= limit - 48) {
-          return false;
+        const nextTight = natural > limit ? true : tight && natural <= limit - 48 ? false : tight;
+        const appliedTop = menu.style.top;
+        const appliedLeft = menu.style.left;
+        const appliedWidth = menu.style.width;
+        const appliedBottom = menu.style.bottom;
+        let nextTop = '';
+        let nextLeft = '';
+        let nextWidth = '';
+        let nextBottom = '';
+        if (nextTight && natural > limit) {
+          const wasFixed = menu.classList.contains('fixed');
+          if (wasFixed) {
+            menu.classList.remove('fixed');
+            menu.classList.add('absolute');
+          }
+          menu.style.top = '';
+          menu.style.left = '';
+          menu.style.width = '';
+          menu.style.bottom = '';
+          const rect = menu.getBoundingClientRect();
+          if (wasFixed) {
+            menu.classList.add('fixed');
+            menu.classList.remove('absolute');
+          }
+          const top = rect.top;
+          const left = rect.left;
+          const width = rect.width;
+          let cap = Math.max(0, limit - top);
+          nextTop = `${top}px`;
+          nextLeft = `${left}px`;
+          nextWidth = `${width}px`;
+          nextBottom = `${window.innerHeight - (top + cap)}px`;
+          if (
+            appliedTop !== nextTop ||
+            appliedLeft !== nextLeft ||
+            appliedWidth !== nextWidth ||
+            appliedBottom !== nextBottom
+          ) {
+            menu.style.top = nextTop;
+            menu.style.left = nextLeft;
+            menu.style.width = nextWidth;
+            menu.style.bottom = nextBottom;
+          } else {
+            menu.style.top = appliedTop;
+            menu.style.left = appliedLeft;
+            menu.style.width = appliedWidth;
+            menu.style.bottom = appliedBottom;
+          }
+          const boxed = menu.getBoundingClientRect().bottom;
+          if (boxed > limit && boxed < natural) {
+            const style = getComputedStyle(menu);
+            const border =
+              (Number.parseFloat(style.borderTopWidth) || 0) +
+              (Number.parseFloat(style.borderBottomWidth) || 0);
+            cap = Math.max(0, cap - border);
+            nextBottom = `${window.innerHeight - (top + cap)}px`;
+            if (menu.style.bottom !== nextBottom) {
+              menu.style.bottom = nextBottom;
+            }
+          }
+        } else if (
+          appliedTop !== '' ||
+          appliedLeft !== '' ||
+          appliedWidth !== '' ||
+          appliedBottom !== ''
+        ) {
+          menu.style.top = '';
+          menu.style.bottom = '';
+          menu.style.left = '';
+          menu.style.width = '';
         }
-        return current;
-      });
+        if (
+          nextTight === tight &&
+          nextTop === appliedTop &&
+          nextLeft === appliedLeft &&
+          nextWidth === appliedWidth &&
+          nextBottom === appliedBottom
+        ) {
+          return;
+        }
+        setTight(nextTight);
+        const nextStyle =
+          nextBottom === ''
+            ? undefined
+            : { top: nextTop, left: nextLeft, width: nextWidth, bottom: nextBottom };
+        setPanelStyle(nextStyle);
+      } finally {
+        suppressMeasureRef.current = false;
+      }
     };
     measure();
-    window.addEventListener('resize', measure);
+    const onResize = (): void => {
+      measure();
+    };
+    window.addEventListener('resize', onResize);
     let observer: ResizeObserver | undefined;
     if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(measure);
-      observer.observe(menuRef.current!);
+      observer = new ResizeObserver(() => {
+        measure();
+      });
+      observer.observe(menu);
     }
     return () => {
-      window.removeEventListener('resize', measure);
+      window.removeEventListener('resize', onResize);
       observer?.disconnect();
     };
   }, [open, narrow, tight, account?.role]);
+
+  const menuScrolls = open && !narrow && panelStyle !== undefined;
+
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (menu === null || !menuScrolls) {
+      if (menu !== null) {
+        releaseScrollport(menu);
+        menu.removeAttribute('data-scrollport');
+        menu.removeAttribute('data-scroll-active');
+        menu.removeAttribute('data-scroll-locked');
+      }
+      return;
+    }
+    menu.setAttribute('data-scrollport', '');
+    bindScrollport(menu);
+    return () => {
+      releaseScrollport(menu);
+      menu.removeAttribute('data-scrollport');
+      menu.removeAttribute('data-scroll-active');
+      menu.removeAttribute('data-scroll-locked');
+    };
+  }, [menuScrolls]);
 
   useEffect(() => {
     if (session === null) {
@@ -190,11 +346,11 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  // A tall wide menu drops its outer spacing so the last row stays inside the window. It does not scroll.
+  // A tall wide menu drops its outer spacing first. If the last row still sticks out, the panel box stays inside the window and the rows scroll.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      ? `${menuScrolls ? 'fixed' : 'absolute'} right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
       : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
@@ -217,7 +373,13 @@ export function SignedInChrome(): ReactElement {
       {panelTarget === null
         ? null
         : createPortal(
-            <div id="signed-in-menu" ref={menuRef} className={panelClass}>
+            <div
+              id="signed-in-menu"
+              ref={menuRef}
+              className={panelClass}
+              style={menuScrolls ? panelStyle : undefined}
+              {...(menuScrolls ? { 'data-scrollport': '' } : {})}
+            >
               <Link
                 href="/welcome"
                 onClick={(event) => {
@@ -291,6 +453,14 @@ export function SignedInChrome(): ReactElement {
               >
                 <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 {t('nav.rules')}
+              </Link>
+              <Link
+                href="/habit-tracker"
+                onClick={() => setOpen(false)}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.habitTracker')}
               </Link>
               <Link
                 href="/trust-chain"
