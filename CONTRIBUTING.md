@@ -371,7 +371,7 @@ app/
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, and send Function titles
-│   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, fallback)
+│   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
 │   ├── wallet-setup.spec.ts     # Wallet setup dialog, payments list, username freeze, address proxies
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
