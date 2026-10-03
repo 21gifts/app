@@ -90,9 +90,9 @@ function StepBox({
 }
 
 /**
- * Send block on `/wallet` under the balance: paste a Bitcoin payment request
- * or address, enter an amount when the receiver asks for one, confirm amount,
- * fee, and recipient, then send. The input step opens with the camera QR
+ * Send view on `/wallet`, opened from the wallet home with Send: paste a
+ * Bitcoin payment request or address, enter an amount when the receiver asks
+ * for one, confirm amount, fee, and recipient, then send. The input step opens with the camera QR
  * scanner above the field; a decoded text goes into the field as if pasted and
  * Continue runs on it. The camera runs only while the input step is idle and
  * shows no alert, so a code that was just refused is not read again at once;
