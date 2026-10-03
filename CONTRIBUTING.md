@@ -882,8 +882,8 @@ It is inlined at `next build`. Unset or empty disables the in-app wallet. It
 is the only wallet, so members then cannot pay from the app: the pay sheets say
 that the wallet is not available here. Local use:
 `NEXT_PUBLIC_BREEZ_API_KEY=<key> npm run dev`. Playwright and CI builds leave
-it unset. No deploy workflow passes it yet, so neither deployment has the
-wallet enabled.
+it unset. Only the staging deploy passes it (see below), so the DEV and PRD
+deployments do not have the wallet enabled.
 
 This repository stores three GitHub Actions secrets for the Breez SDK (Spark).
 `deploy-staging.yaml` passes `BREEZ_API_KEY_STAGING` as the Docker build-arg
