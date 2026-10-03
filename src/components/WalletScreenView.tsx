@@ -1,9 +1,9 @@
 'use client';
 
 import { useRef, useState, useEffect, type ReactElement } from 'react';
-import { Loader2 } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Check, Copy, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { AppShellTopLeft } from '@/components/AppShell';
+import { AppShellFooter, AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -20,18 +20,16 @@ import { goToPreviousView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Whether the send block is on screen: while the wallet is ready, and also
- * while a send is in flight, its Sent line shows, or an alert is up, so a
- * wallet that stops being ready does not hide a payment that may already
- * have left or the alert of one that failed.
+ * Whether the Send view must stay on screen: while a send is in flight, its
+ * Sent line shows, or an alert is up, so neither Back nor a wallet that stops
+ * being ready hides a payment that may already have left or the alert of one
+ * that failed.
  *
- * @param wallet - Balance state, or `undefined`.
  * @param send - Send flow state.
- * @returns Whether `WalletSend` renders and Back may ask it to close a step.
+ * @returns Whether the Send view is pinned.
  */
-function isSendBlockShown(wallet: UseWalletResult | undefined, send: UseWalletSendResult): boolean {
+function isSendPinned(send: UseWalletSendResult): boolean {
   return (
-    wallet?.status === 'ready' ||
     send.busy ||
     send.state.step === 'sent' ||
     (send.state.step === 'input' && send.state.error !== null)
@@ -39,58 +37,72 @@ function isSendBlockShown(wallet: UseWalletResult | undefined, send: UseWalletSe
 }
 
 /**
- * Receive handle: the 21.gifts address and Open CryptoPay QR, plus a link
- * to `/pos`. No keypad and no charge. The button is content width, like the
- * other centered actions, not a full-width bar.
+ * Receive view: the 21.gifts address with a Copy control, its Open CryptoPay
+ * QR, and a link to `/pos` to set an amount.
  *
- * @param props - Optional balance and send state for the wallet entry surface.
  * @returns The receive block.
  */
-function WalletReceive({
-  wallet,
-  send,
-}: {
-  wallet: UseWalletResult | undefined;
-  send: UseWalletSendResult | undefined;
-}): ReactElement {
+function WalletReceive(): ReactElement {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const [showQr, setShowQr] = useState(false);
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     setShowQr(true);
   }, []);
+  useEffect(() => {
+    if (!copied) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+  const copyAddress = async (text: string): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+    } catch {
+      // No clipboard here (an insecure page, or a refused write): the address stays readable.
+    }
+  };
   /* v8 ignore next -- this client screen always runs in a browser */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const username = account?.username ?? null;
   const address = giftsLightningAddress(username, host);
   const qr = openCryptoPayQrValue(username, host);
   return (
-    <Card surface={false}>
-      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-        {t('wallet.title')}
-      </h1>
-      {wallet === undefined ? null : (
-        <WalletBalance
-          status={wallet.status}
-          balanceSats={wallet.balanceSats}
-          onUnlock={wallet.unlock}
-          onRetry={wallet.retry}
-        />
-      )}
-      {send !== undefined && isSendBlockShown(wallet, send) ? (
-        <WalletSend send={send} walletReady={wallet?.status === 'ready'} />
-      ) : null}
+    <>
+      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+        {t('wallet.receive')}
+      </p>
       {address !== null ? (
-        <div className="flex flex-col items-stretch gap-3">
+        <div className="flex w-full flex-col items-center gap-4">
+          {showQr && qr !== null ? (
+            <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+          ) : null}
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
             {t('profile.giftsHeading')}
           </p>
-          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
-          {showQr && qr !== null ? (
-            <div className="flex justify-center">
-              <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
-            </div>
-          ) : null}
+          <p className="w-full min-w-0 truncate text-center font-mono text-sm text-app-fg">
+            {address}
+          </p>
+          <Button
+            variant="secondary"
+            icon={
+              copied ? (
+                <Check aria-hidden="true" className="h-4 w-4" />
+              ) : (
+                <Copy aria-hidden="true" className="h-4 w-4" />
+              )
+            }
+            onClick={() => {
+              void copyAddress(address);
+            }}
+          >
+            {copied ? t('wallet.copied') : t('wallet.copy')}
+          </Button>
         </div>
       ) : account !== null ? (
         <p className="text-center text-sm text-app-fg">
@@ -100,7 +112,7 @@ function WalletReceive({
         </p>
       ) : null}
       <ButtonLink href="/pos">{t('wallet.setAmount')}</ButtonLink>
-    </Card>
+    </>
   );
 }
 
@@ -109,24 +121,27 @@ export type WalletSurface = 'entry' | 'phrase';
 
 /** Props for {@link WalletScreenView}. */
 export type WalletScreenViewProps = UseWalletPhraseResult & {
-  /** Receive page or the recovery subpage. Default `entry`. */
+  /** Wallet home or the recovery subpage. Default `entry`. */
   surface?: WalletSurface;
   /** Balance block state. Entry surface only. */
   wallet?: UseWalletResult;
   /**
-   * Send block state, shown while the wallet is ready, a send is in flight, its
-   * Sent line shows, or a send alert is up. Entry surface only.
+   * Send flow state. Its view opens from Send while the wallet is ready and
+   * stays while a send is in flight, its Sent line shows, or a send alert is
+   * up. Entry surface only.
    */
   send?: UseWalletSendResult;
 };
 
 /**
- * `/wallet` shows the wallet balance, the send block (while the wallet is
- * ready, a send is in flight, its Sent line shows, or a send alert is up), and
- * the receive address, then the payment list while the wallet is ready, above
- * the recovery entry. While the send block shows, Back first closes an open
- * send step (or is held while a confirm send is in flight). The 12 words and
- * recovery errors render only on `/wallet/phrase`.
+ * `/wallet` home shows the large balance and, while the wallet is ready, the
+ * payment list, with Send and Receive side by side in the shell footer and the
+ * recovery entry below them. Send opens the send flow while the wallet is
+ * ready; Receive opens the address, QR, and Set an amount. The Send view stays
+ * while a send is in flight, its Sent line shows, or a send alert is up, and
+ * Done returns home. Back first closes an open send step (or is held while a
+ * send is in flight), then returns from Send or Receive to home. The 12 words
+ * and recovery errors render only on `/wallet/phrase`.
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -145,24 +160,48 @@ export function WalletScreenView({
   send,
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
-  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [homeView, setHomeView] = useState<'home' | 'send' | 'receive'>('home');
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
+  const walletReady = wallet?.status === 'ready';
+  const shown =
+    send !== undefined && isSendPinned(send)
+      ? 'send'
+      : homeView === 'send' && !walletReady
+        ? 'home'
+        : homeView;
+  const sendStep = send?.state.step;
+  const wasSent = useRef(false);
+  useEffect(() => {
+    if (!walletReady) {
+      setHomeView((current) => (current === 'send' ? 'home' : current));
+    }
+  }, [walletReady]);
+  useEffect(() => {
+    if (wasSent.current && sendStep !== 'sent') {
+      setHomeView('home');
+    }
+    wasSent.current = sendStep === 'sent';
+  }, [sendStep]);
   const stepBack = (): void => {
-    if (surface === 'phrase' && showGrid) {
-      hidePhrase();
+    if (surface === 'phrase') {
+      if (showGrid) {
+        hidePhrase();
+        return;
+      }
+      goToPreviousView();
       return;
     }
-    if (
-      surface !== 'phrase' &&
-      send !== undefined &&
-      isSendBlockShown(wallet, send) &&
-      send.cancel() === true
-    ) {
+    if (shown === 'send' && send !== undefined) {
+      if (send.cancel() || send.busy) {
+        return;
+      }
+      send.setText('');
+      setHomeView('home');
       return;
     }
-    if (surface !== 'phrase' && detailsRef.current?.open === true) {
-      detailsRef.current.open = false;
+    if (shown === 'receive') {
+      setHomeView('home');
       return;
     }
     goToPreviousView();
@@ -228,46 +267,102 @@ export function WalletScreenView({
       {t('wallet.showPhrase')}
     </Button>
   );
-  const entryBody =
-    view === 'activate' ? (
-      <>
-        <p className="text-center text-sm text-app-muted">{t('wallet.addPhraseHint')}</p>
-        <ButtonLink href="/wallet/phrase">{t('wallet.addPhrase')}</ButtonLink>
-      </>
-    ) : (
-      <details
-        ref={detailsRef}
-        className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2"
-      >
-        <summary className="cursor-pointer text-sm text-app-muted">{t('wallet.advanced')}</summary>
-        <div className="mt-3 flex justify-center">
-          <ButtonLink href="/wallet/phrase" variant="secondary">
-            {t('wallet.showPhrase')}
-          </ButtonLink>
-        </div>
-      </details>
-    );
-  const card = (
-    <Card surface={false}>
-      <AppShellTopLeft>
-        <ProfileChromeLeft onBackClick={stepBack} />
-      </AppShellTopLeft>
-      {surface === 'phrase' ? (
-        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          {t('wallet.title')}
-        </h1>
-      ) : null}
-      {surface === 'phrase' ? phraseBody : entryBody}
-    </Card>
+  const chrome = (
+    <AppShellTopLeft>
+      <ProfileChromeLeft onBackClick={stepBack} />
+    </AppShellTopLeft>
   );
   if (surface === 'phrase') {
-    return <div className="flex w-full flex-col items-center gap-6">{card}</div>;
+    return (
+      <div className="flex w-full flex-col items-center gap-6">
+        <Card surface={false}>
+          {chrome}
+          <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+            {t('wallet.title')}
+          </h1>
+          {phraseBody}
+        </Card>
+      </div>
+    );
   }
+  if (shown === 'send' && send !== undefined) {
+    return (
+      <Card surface={false}>
+        {chrome}
+        <h1 className="sr-only">{t('wallet.title')}</h1>
+        <WalletSend send={send} walletReady={walletReady} />
+      </Card>
+    );
+  }
+  if (shown === 'receive') {
+    return (
+      <Card surface={false}>
+        {chrome}
+        <h1 className="sr-only">{t('wallet.title')}</h1>
+        <WalletReceive />
+      </Card>
+    );
+  }
+  const actionIconClass = 'h-5 w-5';
   return (
     <div className="flex w-full flex-col items-center gap-6">
-      <WalletReceive wallet={wallet} send={send} />
-      {wallet?.status === 'ready' ? <WalletHistory /> : null}
-      {card}
+      <Card surface={false}>
+        {chrome}
+        <h1 className="sr-only">{t('wallet.title')}</h1>
+        {wallet === undefined || wallet.status === 'disabled' ? null : (
+          <div className="flex min-h-48 w-full flex-col items-center justify-center py-6">
+            <WalletBalance
+              status={wallet.status}
+              balanceSats={wallet.balanceSats}
+              onUnlock={wallet.unlock}
+              onRetry={wallet.retry}
+            />
+          </div>
+        )}
+      </Card>
+      {walletReady ? <WalletHistory /> : null}
+      <AppShellFooter>
+        <div className="mx-auto flex w-full max-w-sm flex-col items-stretch gap-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              size="lg"
+              className="min-h-14 text-base"
+              icon={<ArrowUpRight aria-hidden="true" className={actionIconClass} />}
+              disabled={send === undefined || !walletReady}
+              onClick={() => {
+                setHomeView('send');
+              }}
+            >
+              {t('wallet.sendButton')}
+            </Button>
+            <Button
+              size="lg"
+              className="min-h-14 text-base"
+              icon={<ArrowDownLeft aria-hidden="true" className={actionIconClass} />}
+              onClick={() => {
+                setHomeView('receive');
+              }}
+            >
+              {t('wallet.receive')}
+            </Button>
+          </div>
+          {view === 'activate' ? (
+            <p className="text-center text-xs text-app-muted">
+              {t('wallet.addPhraseHint')}{' '}
+              <Link href="/wallet/phrase" className="text-app-fg underline">
+                {t('wallet.addPhrase')}
+              </Link>
+            </p>
+          ) : (
+            <Link
+              href="/wallet/phrase"
+              className="self-center text-xs text-app-muted underline hover:text-app-fg"
+            >
+              {t('wallet.showPhrase')}
+            </Link>
+          )}
+        </div>
+      </AppShellFooter>
     </div>
   );
 }

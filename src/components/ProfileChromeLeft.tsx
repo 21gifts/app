@@ -14,8 +14,9 @@ const BACK_CLASS = 'inline-flex h-11 w-11 items-center justify-center rounded-fu
 export interface ProfileChromeLeftProps {
   /**
    * Unmodified primary click. The link does not follow its href. Modified
-   * clicks still do. Wallet uses this for one in-page step: hide the words or
-   * close Advanced functions before {@link goToPreviousView}.
+   * clicks still do. Wallet uses this for one in-page step: hide the words,
+   * close a send step, or return from Send or Receive to the wallet home
+   * before {@link goToPreviousView}.
    */
   onBackClick?: () => void;
   /** Wordmark destination. Default `/welcome`. Ignored when `wordmark` is set. */

@@ -5,7 +5,6 @@ import { useTranslations } from '@/components/LocaleProvider';
 
 /**
  * Closed disclosure for moderator and founder actions on a member card.
- * Same `details` / `summary` as wallet Advanced functions.
  *
  * @param props - Children that mount only while the disclosure is open.
  * @returns The closed summary, and the children while open.
