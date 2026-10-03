@@ -1166,6 +1166,36 @@ describe('payFromWallet', () => {
     await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({ kind: 'failed' });
   });
 
+  it('does not refresh a newer connection after a send on a replaced one', async () => {
+    let finishSend: () => void = () => undefined;
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 1,
+        feeSats: 0,
+        send: () =>
+          new Promise<void>((resolve) => {
+            finishSend = resolve;
+          }),
+      }),
+    });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    const sending = result.send();
+    const next = createFakeSdk({
+      getInfo: () => new Promise(() => undefined),
+    });
+    void connectWallet(next.loadSdk);
+    await vi.waitFor(() => {
+      expect(next.connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+    });
+    finishSend();
+    await expect(sending).resolves.toEqual({ kind: 'paid' });
+    expect(next.connection.getInfo).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState().status).toBe('connecting');
+  });
+
   it('maps a send rejection to failed or insufficient', async () => {
     let calls = 0;
     await connectPaying({
