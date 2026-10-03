@@ -116,7 +116,7 @@ export function HabitCommentDonation({
           type="submit"
           disabled={!settled || busy || parsed.kind !== 'sats' || parsed.sats < 1}
         >
-          {t('habit.donate')}
+          {t('forum.payContinue')}
         </Button>
         <IconButton
           type="button"

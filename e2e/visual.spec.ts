@@ -21694,8 +21694,8 @@ test.describe('habit-tracker screens', () => {
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('21');
-    await expect(page.getByRole('button', { name: 'Donate Bitcoin' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Could not start the Bitcoin payment')).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-donation-error');
   });
@@ -21732,8 +21732,8 @@ test.describe('habit-tracker screens', () => {
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('21');
-    await expect(page.getByRole('button', { name: 'Donate Bitcoin' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
@@ -21754,8 +21754,8 @@ test.describe('habit-tracker screens', () => {
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByLabel('Amount').fill('21');
-    await expect(page.getByRole('button', { name: 'Donate Bitcoin' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
     await shotScreen(page, 'state-habit-tracker-invoice-phone');

@@ -495,3 +495,14 @@ it('displays an achieved outcome and cancels text editing without a mutation', a
   expect(screen.getByRole('button', { name: 'Edit resolution' })).toBeTruthy();
   expect(fetcher.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
 });
+
+it('uses accessible icon-only controls for actions inside tracker cards', async () => {
+  signIn();
+  renderWithLocale(<HabitTracker />);
+  await loaded();
+  for (const name of ['Add resolution', 'Post']) {
+    expect(screen.getByRole('button', { name }).textContent).toBe('');
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'Edit resolution' }));
+  expect(screen.getByRole('button', { name: 'Save' }).textContent).toBe('');
+});

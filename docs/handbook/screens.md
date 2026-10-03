@@ -4565,3 +4565,5 @@ Comments are allowed only from Monday at 16:00 until Saturday at 20:00. The comp
 Could not start the Bitcoin payment. The amount form stays open after Donate fails.
 
 ![Habit-Tracker donation error](images/habit-tracker-donation-error.png)
+
+- **Control grammar:** Add, save and post actions inside tracker cards are icon-only with localized accessible names. Text fields use the shared `Field` primitive. The donation amount form advances with labeled Continue.

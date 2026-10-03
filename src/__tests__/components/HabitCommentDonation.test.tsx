@@ -45,7 +45,7 @@ it('requests an invoice for the selected comment with the entered amount and bea
   );
   const input = screen.getByRole('textbox');
   fireEvent.change(input, { target: { value: '100' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Donate Bitcoin' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
   expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   expect(fetcher).toHaveBeenCalledWith(
     '/habits/data',
@@ -65,12 +65,12 @@ it('keeps the amount editable after a failed request', async () => {
     <HabitCommentDonation id="comment-1" name="Recipient" session="token" onClose={close} />,
   );
   fireEvent.change(screen.getByRole('textbox'), { target: { value: '100' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Donate Bitcoin' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
   await screen.findByRole('alert');
   await waitFor(() =>
-    expect(
-      (screen.getByRole('button', { name: 'Donate Bitcoin' }) as HTMLButtonElement).disabled,
-    ).toBe(false),
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    ),
   );
   expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('100');
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
@@ -108,9 +108,9 @@ it('keeps the submit disabled and shows no invoice before the rate settles', () 
   rateState.settled = false;
   renderDonation();
   fireEvent.change(screen.getByRole('textbox'), { target: { value: '100' } });
-  expect(
-    (screen.getByRole('button', { name: 'Donate Bitcoin' }) as HTMLButtonElement).disabled,
-  ).toBe(true);
+  expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
   expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
   expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
 });
@@ -124,9 +124,9 @@ it('shows the invoice when the rate settled without a usable day', async () => {
   );
   renderDonation();
   fireEvent.change(screen.getByRole('textbox'), { target: { value: '100' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Donate Bitcoin' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
   expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: 'Donate Bitcoin' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
 });
 
 it('omits the payment QR on a smartphone user agent', async () => {
@@ -137,7 +137,7 @@ it('omits the payment QR on a smartphone user agent', async () => {
   );
   renderDonation();
   fireEvent.change(screen.getByRole('textbox'), { target: { value: '100' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Donate Bitcoin' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
   expect(await screen.findByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
   expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
 });
@@ -150,7 +150,7 @@ it('shows the payment QR on a desktop user agent', async () => {
   );
   renderDonation();
   fireEvent.change(screen.getByRole('textbox'), { target: { value: '100' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Donate Bitcoin' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
   expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 });

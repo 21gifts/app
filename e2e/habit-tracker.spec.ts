@@ -112,7 +112,7 @@ test('Function: HabitCommentDonation — signed-in visitors can request a commen
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin', exact: true }).click();
   await page.getByRole('textbox', { name: 'Amount' }).fill('100');
-  await page.getByRole('button', { name: 'Donate Bitcoin', exact: true }).last().click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).last().click();
   await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
   expect(invoiceRequest).toEqual({ action: 'invoice', id: 'comment-1', amountSats: 100 });
   await page.getByRole('button', { name: 'Close', exact: true }).click();
@@ -178,7 +178,7 @@ test('Function: useLatestRateDayState — the donation invoice waits until the g
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin', exact: true }).click();
   await page.getByRole('textbox', { name: 'Amount' }).fill('100');
-  const donate = page.getByRole('button', { name: 'Donate Bitcoin', exact: true }).last();
+  const donate = page.getByRole('button', { name: 'Continue', exact: true }).last();
   await expect(donate).toBeDisabled();
   releaseStats();
   await expect(donate).toBeEnabled();

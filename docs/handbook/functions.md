@@ -4638,6 +4638,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The tracker element. Loads `GET /habits/data` and posts add, edit, retire, rate, comment, and deleteComment to `POST /habits/data`. A failed save keeps the unsent draft.
 - **Used by:** `HabitTrackerPage` at `/habit-tracker`.
 
+- **Control grammar:** Add, save and post actions inside tracker cards are icon-only with localized accessible names. Text fields use the shared `Field` primitive. The donation amount form advances with labeled Continue.
+
 ## Function: HabitTrackerPage
 
 - **Purpose:** Public `/habit-tracker` page. Session-aware public chrome wraps the tracker. Anonymous visitors can read; a hydrated session enables owner and comment controls.

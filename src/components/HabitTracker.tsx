@@ -1,11 +1,11 @@
 'use client';
 
-import { Gift, Pencil, Trash2, X } from 'lucide-react';
+import { Gift, Pencil, Plus, Save, Send, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { HabitCommentDonation } from '@/components/HabitCommentDonation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, IconButton } from '@/components/ui';
+import { Button, Field, IconButton } from '@/components/ui';
 import { habitTrackerSchema, type HabitTrackerData } from '@/lib/habit-tracker';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -250,21 +250,22 @@ export function HabitTracker(): ReactElement {
                             void submit({ action: 'edit', id: habit.id, text: editText });
                           }}
                         >
-                          <label htmlFor={`edit-${habit.id}`} className="block text-sm">
-                            {t('habit.edit')}
-                          </label>
-                          <input
+                          <Field
+                            label={t('habit.edit')}
                             id={`edit-${habit.id}`}
                             value={editText}
                             onChange={(event) => setEditText(event.target.value)}
                             maxLength={200}
                             required
-                            className="w-full rounded-lg border border-app-border bg-app-bg p-3"
                           />
-                          <div className="flex gap-2">
-                            <Button type="submit" disabled={disabled || editText.trim() === ''}>
-                              {t('habit.save')}
-                            </Button>
+                          <div className="flex gap-5">
+                            <IconButton
+                              type="submit"
+                              aria-label={t('habit.save')}
+                              disabled={disabled || editText.trim() === ''}
+                            >
+                              <Save aria-hidden="true" className="h-4 w-4" />
+                            </IconButton>
                             <IconButton
                               size="sm"
                               variant="ghost"
@@ -318,10 +319,8 @@ export function HabitTracker(): ReactElement {
                       void submit({ action: 'add', text });
                     }}
                   >
-                    <label className="block text-sm" htmlFor={`new-${role}`}>
-                      {t('habit.new')}
-                    </label>
-                    <input
+                    <Field
+                      label={t('habit.new')}
                       id={`new-${role}`}
                       value={text}
                       onChange={(event) => setText(event.target.value)}
@@ -329,11 +328,14 @@ export function HabitTracker(): ReactElement {
                       required
                       disabled={disabled}
                       placeholder={t('habit.placeholder')}
-                      className="min-h-11 w-full rounded-lg border border-app-border bg-app-bg px-3"
                     />
-                    <Button type="submit" disabled={disabled || text.trim() === ''}>
-                      {t('habit.add')}
-                    </Button>
+                    <IconButton
+                      type="submit"
+                      aria-label={t('habit.add')}
+                      disabled={disabled || text.trim() === ''}
+                    >
+                      <Plus aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
                   </form>
                 )}
             </section>
@@ -357,7 +359,7 @@ export function HabitTracker(): ReactElement {
                   </time>
                 </div>
                 <p className="whitespace-pre-wrap break-words text-sm">{post.text}</p>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-5">
                   {session !== null &&
                     post.accountId !== account?.id &&
                     post.canReceiveDonation && (
@@ -415,10 +417,9 @@ export function HabitTracker(): ReactElement {
                   void submit({ action: 'comment', week: data.week.start, text: comment });
                 }}
               >
-                <label htmlFor="habit-comment" className="block text-sm">
-                  {t('habit.writeComment')}
-                </label>
-                <textarea
+                <Field
+                  multiline
+                  label={t('habit.writeComment')}
                   id="habit-comment"
                   value={comment}
                   onChange={(event) => setComment(event.target.value)}
@@ -426,11 +427,14 @@ export function HabitTracker(): ReactElement {
                   rows={3}
                   required
                   disabled={disabled}
-                  className="w-full rounded-lg border border-app-border bg-app-bg p-3"
                 />
-                <Button type="submit" disabled={disabled || comment.trim() === ''}>
-                  {t('habit.post')}
-                </Button>
+                <IconButton
+                  type="submit"
+                  aria-label={t('habit.post')}
+                  disabled={disabled || comment.trim() === ''}
+                >
+                  <Send aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
               </form>
             )}
           </section>
