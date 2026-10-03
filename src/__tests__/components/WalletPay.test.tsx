@@ -108,20 +108,23 @@ describe('WalletPay', () => {
     expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
   });
 
-  it('shows the alert and the fallback when the member has no username', () => {
+  it('shows the alert alone when the member has no username', () => {
     useAuthStore.setState({ account: { username: null } as never });
     hookWith('insufficient');
     renderPay();
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('shows the fallback when a blank username gives no address', () => {
+  it('shows the alert alone when a blank username gives no address', () => {
     useAuthStore.setState({ account: { username: '  ' } as never });
     hookWith('insufficient');
     renderPay();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('shows the neutral not-confirmed sentence', () => {

@@ -26,7 +26,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
 import {
   SPARK_INVOICE,
   confirmResult,
