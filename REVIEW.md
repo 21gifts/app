@@ -72,7 +72,8 @@ user-agent, when its **Pay** names or targets a particular wallet app
 instead of a generic `lightning:` link, or when a profile, member, public
 view, or point of sale QR is hidden on a smartphone. Detection is
 `isSmartphoneUserAgent`, not viewport width. The member's own address QR
-shown when the balance is too low follows the profile rule. That is not a
+shown when the balance is too low, and the one in the `/wallet` Receive view,
+follow the profile rule. That is not a
 reason to reject. Reject a screen or string that names another wallet or
 lets a member link an external address.
 See CONTRIBUTING.md “Payment QR vs wallet links”.
