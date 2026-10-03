@@ -437,25 +437,25 @@ flowchart TB
 
 **Signed-in Menu** (`SignedInChrome`). Labeled Menu trigger (lucide `Menu` 14px + catalog `aria.menu`). Rows icon+label, in this order:
 
-| Row                  | Icon                          | Href / control                                                            |
-| -------------------- | ----------------------------- | ------------------------------------------------------------------------- |
-| Home                 | `Home`                        | `/welcome`                                                                |
-| Shops                | `Store`                       | `/shops`                                                                  |
-| Point of sale        | `Banknote`                    | `/pos`                                                                    |
-| Profile              | `User`                        | `/profile`                                                                |
-| Grants               | `HandCoins`                   | `/grants` — grant status, apply, and the staff queue                      |
-| Wallet               | `Wallet`                      | `/wallet` — receive QR, then Add recovery phrase or Advanced functions    |
-| Living room rules    | `ScrollText`                  | `/rules`                                                                  |
-| Habit-Tracker        | `ListChecks`                  | `/habit-tracker`                                                          |
-| Trust Chain          | `Share2`                      | `/trust-chain`                                                            |
-| Statistics           | `BarChart3`                   | `/statistics` — every signed-in account                                   |
-| Moderation           | `Shield`                      | `/moderate` — moderator only                                              |
-| Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero     |
-| Messages             | `Inbox`                       | `/messages` — unread count `ml-auto` only when greater than zero          |
-| Contact              | `MessageCircle`               | `/contact`                                                                |
-| optional Install app | `PwaInstall placement="menu"` | labeled row                                                               |
-| Log out              | `LogoutButton`                | labeled                                                                   |
-| Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control |
+| Row                  | Icon                          | Href / control                                                                                        |
+| -------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Home                 | `Home`                        | `/welcome`                                                                                            |
+| Shops                | `Store`                       | `/shops`                                                                                              |
+| Point of sale        | `Banknote`                    | `/pos`                                                                                                |
+| Profile              | `User`                        | `/profile`                                                                                            |
+| Grants               | `HandCoins`                   | `/grants` — grant status, apply, and the staff queue                                                  |
+| Wallet               | `Wallet`                      | `/wallet` — balance and send when enabled, receive QR, then Add recovery phrase or Advanced functions |
+| Living room rules    | `ScrollText`                  | `/rules`                                                                                              |
+| Habit-Tracker        | `ListChecks`                  | `/habit-tracker`                                                                                      |
+| Trust Chain          | `Share2`                      | `/trust-chain`                                                                                        |
+| Statistics           | `BarChart3`                   | `/statistics` — every signed-in account                                                               |
+| Moderation           | `Shield`                      | `/moderate` — moderator only                                                                          |
+| Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero                                 |
+| Messages             | `Inbox`                       | `/messages` — unread count `ml-auto` only when greater than zero                                      |
+| Contact              | `MessageCircle`               | `/contact`                                                                                            |
+| optional Install app | `PwaInstall placement="menu"` | labeled row                                                                                           |
+| Log out              | `LogoutButton`                | labeled                                                                                               |
+| Version              | —                             | quiet `text-xs text-app-muted` `app.version` after Log out; not a control                             |
 
 Trigger: `inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted` in `[data-app-chrome]` (`z-40`). While the fixed overlay is up, the trigger is also `relative z-[60]`, so Menu stays above that panel and still closes it. Otherwise a dialog in the same header still covers Menu. The panel stays mounted (`hidden` when closed) so install state is not remounted. Wide (frame content box ≥ 576px; until measured, `matchMedia('(max-width: 36rem)')`, and missing `matchMedia` counts as wide): portal the panel to the trigger parent, `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg`. The trigger is only as wide as the button, so a percentage width would collapse the panel; `w-72` (18rem) hangs left from that right edge. No `100vw`. A scrim button `#signed-in-menu-scrim` (`absolute inset-0 z-40 rounded-3xl bg-app-overlay`, `aria.menuDismiss`, not in tab order) is portaled to `[data-menu-scrim-host]` inside `[data-app-frame]`. The radius matches the frame, because the scrim host is `display: contents` and `inherit` would be 0. Narrow (content box < 576px): portal the panel to `[data-menu-sheet-host]` (`px-8`, the same horizontal inset as the page) inside the one scrollport, `w-full`, not absolute, and leave it there while closed (`hidden`) so the portal container does not change. While open, set `html[data-menu-sheet='1']` and hide `[data-scroll-page]`. Read the scrollport `scrollTop` before hiding the page, set it to 0 while open, and write it back after the page is shown again. Escape closes and focuses the trigger. Outside `mousedown` closes only when the target is outside the trigger root and outside `#signed-in-menu`. AppShell `<main>` has no `overflow-hidden`. The document is `overflow: clip`; the page scrollport is `[data-scrollport]`. Rows: `flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium`. A short window drops only the wide panel's outer spacing (`mt-0`, `px-2 py-0`, version line `py-0`) and returns to `mt-2` and `p-2` once that compact box has 48px of room. If the compact panel still passes the window and a non-negative lift keeps the bottom inside, that panel is a `fixed` overlay. Its `style` sets the measured `top`, `left`, and `width` so the bottom sits on the window and the top is never less than 0. That `left` is the trigger parent's right edge minus the panel width, so a horizontal move of the frame does not keep the last inline left. It does not scroll. A row is not shortened below `min-h-11`. When that lift would still leave the bottom outside, the wide menu uses the same sheet as a narrow frame (`w-full`, `html[data-menu-sheet='1']`, no scroll) and does not use a negative top.
 
