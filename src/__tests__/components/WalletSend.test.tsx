@@ -9,6 +9,19 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
 
+vi.mock('@/components/QrScanner', () => ({
+  QrScanner: ({ onResult }: { onResult: (text: string) => void }) => (
+    <button
+      type="button"
+      onClick={() => {
+        onResult('lnbc1scanned');
+      }}
+    >
+      Camera stub
+    </button>
+  ),
+}));
+
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
   usd: '100000.00',
@@ -104,6 +117,61 @@ describe('WalletSend input', () => {
   ] as const)('shows the %s alert', (error, text) => {
     renderSend(sendWith({ step: 'input', error }));
     expect(screen.getByRole('alert').textContent).toBe(text);
+  });
+});
+
+describe('WalletSend camera', () => {
+  it('shows the camera above the paste field while the input step is idle', () => {
+    renderSend(sendWith({ step: 'input', error: null }));
+    const camera = screen.getByRole('button', { name: 'Camera stub' });
+    const field = screen.getByLabelText('Payment request or address');
+    expect(camera.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('puts the scanned text into the field as a paste and submits it once', () => {
+    const send = sendWith({ step: 'input', error: null });
+    const view = renderWithLocale(<WalletSend send={send} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
+    expect(send.setText).toHaveBeenCalledWith('lnbc1scanned');
+    expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    expect(send.submitInput).not.toHaveBeenCalled();
+    const pasted = { ...send, text: 'lnbc1scanned' };
+    view.rerender(<WalletSend send={pasted} />);
+    expect(send.submitInput).toHaveBeenCalledTimes(1);
+    view.rerender(<WalletSend send={{ ...pasted, busy: true }} />);
+    expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    view.rerender(<WalletSend send={pasted} />);
+    expect(send.submitInput).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
+  });
+
+  it('waits for the field to hold the scanned text before submitting', () => {
+    const send = sendWith({ step: 'input', error: null }, { text: 'typed' });
+    const view = renderWithLocale(<WalletSend send={send} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
+    view.rerender(<WalletSend send={{ ...send, text: 'other' }} />);
+    expect(send.submitInput).not.toHaveBeenCalled();
+  });
+
+  it('stops the camera while busy, while an alert shows, and outside the input step', () => {
+    const view = renderWithLocale(
+      <WalletSend send={sendWith({ step: 'input', error: null }, { busy: true })} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    view.rerender(<WalletSend send={sendWith({ step: 'input', error: 'invalid' })} />);
+    expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    for (const state of [
+      LNURL_STATE,
+      { step: 'confirm', recipient: 'bob@pay.example', amountSats: 21, feeSats: 0 },
+      { step: 'sent', amountSats: 21 },
+    ] as const) {
+      view.rerender(<WalletSend send={sendWith(state)} />);
+      expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    }
+    view.rerender(<WalletSend send={sendWith({ step: 'input', error: null })} />);
+    expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
   });
 });
 

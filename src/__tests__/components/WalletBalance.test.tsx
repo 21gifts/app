@@ -59,20 +59,38 @@ describe('WalletBalance', () => {
     renderWithLocale(
       <WalletBalance status="ready" balanceSats={21_000} onUnlock={vi.fn()} onRetry={vi.fn()} />,
     );
-    expect(screen.getByText("₿21'000")).toBeTruthy();
-    expect(screen.getByText('$21.00')).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Balance' }).textContent).toContain(
-      "₿21'000 · $21.00",
-    );
+    const toggle = screen.getByRole('button', { name: "₿21'000 $21.00" });
+    const [large, small] = Array.from(toggle.children);
+    expect(large?.textContent).toBe("₿21'000");
+    expect(large?.className).toContain('text-5xl');
+    expect(small?.textContent).toBe('$21.00');
+    expect(small?.className).toContain('text-app-muted');
     expect(useLatestRateDay).toHaveBeenCalledWith(true);
+  });
+
+  it('swaps the large figure between bitcoin and fiat on each tap', () => {
+    vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
+    renderWithLocale(
+      <WalletBalance status="ready" balanceSats={21_000} onUnlock={vi.fn()} onRetry={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: "₿21'000 $21.00" }));
+    const swapped = screen.getByRole('button', { name: "$21.00 ₿21'000" });
+    expect(swapped.children[0]?.textContent).toBe('$21.00');
+    expect(swapped.children[0]?.className).toContain('text-5xl');
+    expect(swapped.children[1]?.textContent).toBe("₿21'000");
+    fireEvent.click(swapped);
+    expect(screen.getByRole('button', { name: "₿21'000 $21.00" }).children[0]?.textContent).toBe(
+      "₿21'000",
+    );
   });
 
   it('renders only bitcoin without a usable rate', () => {
     renderWithLocale(
       <WalletBalance status="ready" balanceSats={21_000} onUnlock={vi.fn()} onRetry={vi.fn()} />,
     );
-    expect(screen.getByText("₿21'000")).toBeTruthy();
+    expect(screen.getByText("₿21'000").className).toContain('text-5xl');
     expect(screen.queryByText('$21.00')).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('keeps the ready region and label when the balance is unavailable', () => {
