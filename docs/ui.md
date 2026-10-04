@@ -102,7 +102,7 @@ Live tokens from `src/app/globals.css` `@theme` and `html.dark`.
 | `app-accent-fg`      | `#0a090c`            | `#0a090c`                | Text on accent fill (always ink)                         |
 | `app-focus`          | `#171717`            | `#ffffff`                | `:focus-visible` ring (2px)                              |
 | `app-danger`         | `#b91c1c`            | `#f87171`                | Alert text/border                                        |
-| `app-success`        | `#15803d`            | `#4ade80`                | Goal-bar overflow fill past 100%                         |
+| `app-success`        | `#15803d`            | `#4ade80`                | Goal-bar overflow fill past 100%; `/pos` **Paid ✓**      |
 | `app-overlay`        | `rgb(10 9 12 / 0.4)` | `rgb(10 9 12 / 0.6)`     | Modal / overlay scrim                                    |
 | `app-chart-given`    | `#525252`            | `#a3a3a3`                | Given series                                             |
 | `app-chart-received` | `#f7931a`            | `#f7931a`                | Received / spend series                                  |
@@ -1085,7 +1085,7 @@ Handbook states: default (home without a configured wallet, then Add recovery ph
 
 ### `/pos`
 
-Signed-in till. `AppShell` fill, same chrome as `/profile`. `OnboardingGate screen="profile"`. `Card` `surface={false}`: **h1** `pos.title`, the public `username@21.gifts` row, and the same Open CryptoPay QR as the member card (`profileQrLogo` centered), including on a smartphone. **Set an amount** opens `/pos/amount` when nothing is open. That page is only the keypad and **Create payment**. While a charge is open, `/pos` shows remaining `m:ss`, the amount in ₿ and fiat, and **Cancel**. There is no paid state. A missing username links to `/profile`; a username without a verified wallet shows **Set up your wallet first.** linking to `/wallet`.
+Signed-in till. `AppShell` fill, same chrome as `/profile`. `OnboardingGate screen="profile"`. `Card` `surface={false}`: **h1** `pos.title`, the public `username@21.gifts` row, and the same Open CryptoPay QR as the member card (`profileQrLogo` centered), including on a smartphone. **Set an amount** opens `/pos/amount` when nothing is open. That page is only the keypad and **Create payment**. While a charge is open, `/pos` shows remaining `m:ss`, the amount in ₿ and fiat, and **Cancel**, and asks `GET /pos/charge` every three seconds whether it is paid. A paid charge replaces that block with **Paid ✓** (`pos.paid`, `role="status"`, `text-lg font-semibold text-app-success`), the amount in ₿ and fiat, and a labeled **New payment** (`pos.newPayment`, `ButtonLink` to `/pos/amount`); there is no **Cancel** and no **Set an amount** then. A paid charge does not block `/pos/amount`. A missing username links to `/profile`; a username without a verified wallet shows **Set up your wallet first.** linking to `/wallet`.
 
 ### `/profile`
 

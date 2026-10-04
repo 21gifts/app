@@ -396,6 +396,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-confirm-shop",
+    "label": "/wallet send-confirm-shop",
+    "visual": "state-wallet-send-confirm-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-input-busy",
     "label": "/wallet send-input-busy",
     "visual": "state-wallet-send-input-busy",
@@ -1917,6 +1923,12 @@
     "id": "/pos:open",
     "label": "/pos open",
     "visual": "state-pos-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid",
+    "label": "/pos paid",
+    "visual": "state-pos-paid",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

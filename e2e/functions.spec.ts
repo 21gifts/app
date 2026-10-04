@@ -9090,6 +9090,82 @@ test('Function: PosAmountPage — amount heading is visible', async ({ page }) =
   await expect(page).toHaveURL(/\/(pos\/amount|login)/);
 });
 
+test('Function: fetchShopChargeInvoice — GET /pay/shop shows the open charge and POST /pay/shop/invoice its Spark invoice', async ({
+  request,
+}) => {
+  const profile = await request.get('/pay/shop');
+  expect(profile.status()).toBe(200);
+  const body = (await profile.json()) as { charge: { amountSats: number; status: string } };
+  expect(body.charge).toMatchObject({ amountSats: 7_000, status: 'pending' });
+  const charge = await request.post('/pay/shop/invoice', { data: { amountSats: 7_000 } });
+  expect(charge.status()).toBe(200);
+  expect(await charge.json()).toEqual({
+    pr: 'lnbc70u1shopcharge',
+    amountSats: 7_000,
+    sparkInvoice: 'sparkrt1shopcharge',
+  });
+  const other = await request.post('/pay/shop/invoice', { data: { amountSats: 21 } });
+  expect(await other.json()).toMatchObject({ amountSats: 21, sparkInvoice: null });
+});
+
+test('Function: PosTill — an open charge turns into Paid ✓ and New payment opens the keypad', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  };
+  let loads = 0;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    loads += 1;
+    const charge =
+      loads === 1 ? open : { ...open, status: 'paid', paidAt: new Date().toISOString() };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [charge] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'New payment' }).click();
+  await expect(page).toHaveURL(/\/pos\/amount$/);
+  await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+});
+
 test('Function: proxyPosGet — GET /pos/charge without bearer is 401', async ({ request }) => {
   expect((await request.get('/pos/charge')).status()).toBe(401);
 });

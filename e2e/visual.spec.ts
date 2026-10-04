@@ -2117,6 +2117,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-confirm-fixed');
   });
 
+  test('wallet send-confirm-shop', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-shop');
+    await openWalletSend(page);
+    await expect(page.getByText('To shop@21.gifts')).toBeVisible();
+    await expect(page.getByText("Send ₿7'000")).toBeVisible();
+    await expect(page.getByText(/Fee ₿0/)).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-shop');
+  });
+
   test('wallet send-input-busy', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-input-busy');
@@ -6142,6 +6152,60 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
     await shotScreen(page, 'state-pos-open');
+  });
+
+  test('pos paid', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:01:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const paid = {
+      id: 'pos-e2e',
+      amountSats: 21,
+      status: 'paid',
+      createdAt: '2026-09-20T12:00:00.000Z',
+      expiresAt: '2026-09-20T12:05:00.000Z',
+      paidAt: '2026-09-20T12:00:40.000Z',
+    };
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: paid, history: [paid] }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
+      'href',
+      '/pos/amount',
+    );
+    await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
+    await shotScreen(page, 'state-pos-paid');
   });
 
   test('pos loading', async ({ page }) => {

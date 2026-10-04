@@ -16,16 +16,16 @@
 
 ## Endpoint: GET /pay/[username]
 
-- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`) from the api.
+- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`, and `charge`, the shop's pending charge or `null`) from the api.
 - **Errors:** Upstream 404 when the person cannot be paid, 502 when the payee's wallet cannot be resolved.
-- **Used by:** `PayLinkScreen`.
+- **Used by:** `PayLinkScreen`, `fetchShopChargeInvoice`.
 - **Auth:** none.
 
 ## Endpoint: POST /pay/[username]/invoice
 
-- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats }`.
+- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats, sparkInvoice }`. `sparkInvoice` is a Spark invoice for the shop's pending charge when `amountSats` is that charge's amount and the api issues Spark invoices, otherwise `null`.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue**.
+- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` for the in-app wallet.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]

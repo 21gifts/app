@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { encodeLnurl } from '@/lib/lnurl';
-import { lnurlRelayTarget } from '@/lib/wallet/lnurl-relay';
+import { lnurlRelayTarget, ownShop } from '@/lib/wallet/lnurl-relay';
 
 const OUTSIDE = encodeLnurl('https://pay.example.com/lnurlp/bob');
 
@@ -44,5 +44,43 @@ describe('lnurlRelayTarget', () => {
     ['empty text', '   ', '21.gifts'],
   ])('leaves %s to the wallet', (_label, text, hostname) => {
     expect(lnurlRelayTarget(text, hostname)).toBeNull();
+  });
+});
+
+const SHOP_LNURL = encodeLnurl('https://21.gifts/.well-known/lnurlp/Shop');
+
+describe('ownShop', () => {
+  it.each([
+    ['an own-host address', ' Shop@21.gifts ', '21.gifts'],
+    ['a lightning: own-host address', 'lightning:shop@WWW.21.gifts.', '21.gifts'],
+    ['an own-host LNURL', SHOP_LNURL, '21.gifts'],
+    ['a lightning: own-host LNURL', `lightning:${SHOP_LNURL.toLowerCase()}`, 'www.21.gifts'],
+    ['a point-of-sale link', `https://21.gifts/pl/?lightning=${SHOP_LNURL}`, '21.gifts'],
+    ['an own-host address on a local boot', 'shop@21.gifts', 'localhost'],
+  ])('names the shop of %s', (_label, text, hostname) => {
+    expect(ownShop(text, hostname)).toEqual({ name: 'shop', address: 'shop@21.gifts' });
+  });
+
+  it('names the shop on the own deployment host', () => {
+    expect(ownShop('shop@dev.21.gifts', 'dev.21.gifts')).toEqual({
+      name: 'shop',
+      address: 'shop@dev.21.gifts',
+    });
+  });
+
+  it.each([
+    ['an address on another host', 'shop@example.com', '21.gifts'],
+    ['the production host seen from another deployment', 'shop@21.gifts', 'dev.21.gifts'],
+    ['an LNURL on another host', OUTSIDE, '21.gifts'],
+    [
+      'an own-host LNURL with another path',
+      encodeLnurl('https://21.gifts/lnurlp/shop'),
+      '21.gifts',
+    ],
+    ['a DNS payment address', '₿shop@21.gifts', '21.gifts'],
+    ['a payment request', 'lnbc210n1example', '21.gifts'],
+    ['empty text', '  ', '21.gifts'],
+  ])('gives null for %s', (_label, text, hostname) => {
+    expect(ownShop(text, hostname)).toBeNull();
   });
 });

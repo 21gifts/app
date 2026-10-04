@@ -1142,4 +1142,136 @@ describe('PosScreen', () => {
     });
     expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
   });
+
+  describe('paid charge', () => {
+    const GIFT_DAY = {
+      spendOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        },
+      ],
+    };
+    const OPEN = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 120_000).toISOString(),
+      paidAt: null,
+    };
+    const PAID = { ...OPEN, status: 'paid', paidAt: new Date().toISOString() };
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function poll(): Promise<void> {
+      await act(async () => {
+        vi.advanceTimersByTime(3_000);
+      });
+    }
+
+    it('shows Paid, bitcoin, fiat, and New payment for a paid charge', async () => {
+      vi.mocked(fetchGiftStats).mockResolvedValueOnce(GIFT_DAY as never);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
+      expect(screen.getByText('₿21')).toBeTruthy();
+      expect(await screen.findByText('$0.02')).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
+        '/pos/amount',
+      );
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+      expect(screen.queryByText(/left$/)).toBeNull();
+    });
+
+    it('shows a paid charge without fiat when no gift day exists', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'New payment' })).toBeTruthy();
+      expect(screen.queryByText(/\$/)).toBeNull();
+    });
+
+    it('asks every three seconds while a charge is open and stops once it is paid', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('keeps the open charge when a poll fails', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockResolvedValueOnce(jsonResponse({ error: 'down' }, 502));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('drops a poll answer that arrives after the till unmounts', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      let answer: (response: Response) => void = () => undefined;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockReturnValueOnce(
+          new Promise<Response>((resolve) => {
+            answer = resolve;
+          }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      const { unmount } = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      unmount();
+      await act(async () => {
+        answer(jsonResponse({ charge: PAID, history: [PAID] }));
+      });
+      expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('lets the amount page open a new payment after a paid charge', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
+      );
+      renderWithLocale(<PosAmount />);
+      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+      expect(replace).not.toHaveBeenCalled();
+    });
+  });
 });

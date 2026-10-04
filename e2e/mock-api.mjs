@@ -802,6 +802,45 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Public pay link of the shop `shop`: a pending charge of 7'000 sats, and a
+  // Spark invoice only for exactly that amount.
+  if (method === 'GET' && pathName === '/pay/shop') {
+    json(res, 200, {
+      name: 'Shop',
+      username: 'shop',
+      minSats: 7_000,
+      maxSats: 7_000,
+      charge: {
+        id: 'pos-shop',
+        amountSats: 7_000,
+        status: 'pending',
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        expiresAt: new Date(Date.now() + 240_000).toISOString(),
+        paidAt: null,
+      },
+    });
+    return;
+  }
+  if (method === 'POST' && pathName === '/pay/shop/invoice') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const amountSats = parsed?.amountSats;
+    if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
+      json(res, 400, { error: 'Invalid amount' });
+      return;
+    }
+    json(res, 200, {
+      pr: 'lnbc70u1shopcharge',
+      amountSats,
+      sparkInvoice: amountSats === 7_000 ? 'sparkrt1shopcharge' : null,
+    });
+    return;
+  }
+
   if (method === 'POST' && (pathName === '/lnurl/pay-request' || pathName === '/lnurl/invoice')) {
     const token = bearer(req);
     if (token === null || !byToken.has(token)) {

@@ -536,6 +536,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-confirm-shop',
+    image: 'wallet-send-confirm-shop.png',
+    visual: 'state-wallet-send-confirm-shop',
+    needle: "shotScreen(page, 'state-wallet-send-confirm-shop')",
+  },
+  {
+    route: '/wallet',
     id: 'send-input-busy',
     image: 'wallet-send-input-busy.png',
     visual: 'state-wallet-send-input-busy',
@@ -2311,6 +2318,13 @@ export const SCREEN_VARIANTS = [
     image: 'pos-open.png',
     visual: 'state-pos-open',
     needle: "getByRole('button', { name: 'Cancel' })",
+  },
+  {
+    route: '/pos',
+    id: 'paid',
+    image: 'pos-paid.png',
+    visual: 'state-pos-paid',
+    needle: "getByRole('link', { name: 'New payment' })",
   },
   {
     route: '/pos',

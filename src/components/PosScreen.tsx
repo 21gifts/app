@@ -40,6 +40,9 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
   }
 }
 
+/** How often the till asks whether an open charge is paid. */
+const POS_POLL_MS = 3_000;
+
 /** Create or cancel that is still talking to the server, across page changes. */
 let tillWrite: Promise<void> | null = null;
 
@@ -69,8 +72,10 @@ type PosTillState = {
   state: PosState | null;
   error: string | null;
   charge: PosState['charge'];
+  paid: PosState['charge'];
   remaining: number;
   chargeFiat: string | null;
+  paidFiat: string | null;
   amount: string;
   setAmount: (value: string) => void;
   shownUnit: AmountUnit;
@@ -153,8 +158,24 @@ function usePosTillState(): PosTillState {
     };
   }, [reload, session, t]);
 
+  const username = account?.username ?? null;
+  /* v8 ignore next -- this client screen always runs in a browser */
+  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
+  const address = giftsLightningAddress(username, host);
+  const qr = openCryptoPayQrValue(username, host);
+  const shown = state?.charge ?? null;
+  const charge = shown !== null && shown.status === 'pending' ? shown : null;
+  const paid = shown !== null && shown.status === 'paid' ? shown : null;
+  const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
+  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
+  const paidFiat = paid === null ? null : satsToFiatAmount(paid.amountSats, rateDay, fiat);
+  const needsUsername = account !== null && (account.username ?? '') === '';
+  const needsWallet =
+    account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;
+  const canCharge = (account?.username ?? '') !== '' && account?.sparkWalletVerified === true;
+
   useEffect(() => {
-    if (state?.charge === null || state?.charge === undefined) {
+    if (charge === null) {
       return;
     }
     const timer = setInterval(() => {
@@ -163,20 +184,35 @@ function usePosTillState(): PosTillState {
     return () => {
       clearInterval(timer);
     };
-  }, [state?.charge]);
+  }, [charge]);
 
-  const username = account?.username ?? null;
-  /* v8 ignore next -- this client screen always runs in a browser */
-  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const address = giftsLightningAddress(username, host);
-  const qr = openCryptoPayQrValue(username, host);
-  const charge = state?.charge ?? null;
-  const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
-  const needsUsername = account !== null && (account.username ?? '') === '';
-  const needsWallet =
-    account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;
-  const canCharge = (account?.username ?? '') !== '' && account?.sparkWalletVerified === true;
+  const live = charge !== null && remaining > 0;
+  useEffect(() => {
+    // While a charge is open, ask the api every few seconds whether it is paid.
+    if (session === null || busy || !live) {
+      return;
+    }
+    let alive = true;
+    const timer = setInterval(() => {
+      const mine = generation.current;
+      fetchPosState(session).then(
+        (next) => {
+          if (alive) {
+            whenCurrent(generation, mine, () => {
+              setState(next);
+            });
+          }
+        },
+        () => {
+          // The next poll, or the refresh at expiry, tries again.
+        },
+      );
+    }, POS_POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [busy, live, session]);
 
   useEffect(() => {
     if (
@@ -317,8 +353,10 @@ function usePosTillState(): PosTillState {
     state,
     error,
     charge,
+    paid,
     remaining,
     chargeFiat,
+    paidFiat,
     amount,
     setAmount,
     shownUnit,
@@ -339,7 +377,9 @@ function usePosTillState(): PosTillState {
 
 /**
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
- * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel.
+ * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel,
+ * and asks every few seconds whether it is paid. A paid charge shows
+ * **Paid ✓**, bitcoin, fiat, and **New payment** (to `/pos/amount`).
  *
  * @returns The point-of-sale card.
  */
@@ -409,7 +449,23 @@ export function PosTill(): ReactElement {
           </Button>
         </div>
       ) : null}
-      {till.state !== null && till.charge === null && till.canCharge ? (
+      {till.paid !== null ? (
+        <div className="flex flex-col items-center gap-3">
+          <p role="status" className="text-center text-lg font-semibold text-app-success">
+            {t('pos.paid')}
+          </p>
+          <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+            {formatBitcoin(till.paid.amountSats, numberFormat)}
+          </p>
+          {till.paidFiat === null ? null : (
+            <p className="text-center text-sm text-app-subtle">
+              {formatFiatDisplay(till.paidFiat, fiat, numberFormat)}
+            </p>
+          )}
+          <ButtonLink href="/pos/amount">{t('pos.newPayment')}</ButtonLink>
+        </div>
+      ) : null}
+      {till.state !== null && till.charge === null && till.paid === null && till.canCharge ? (
         <ButtonLink href="/pos/amount">{t('wallet.setAmount')}</ButtonLink>
       ) : null}
       {till.error !== null ? (
@@ -423,7 +479,8 @@ export function PosTill(): ReactElement {
 
 /**
  * Amount-only page. No QR and no other till actions. Confirming returns to
- * `/pos`, which then shows Cancel, the countdown, and the amount.
+ * `/pos`, which then shows Cancel, the countdown, and the amount. A charge
+ * that is already paid does not block a new one.
  *
  * @returns The amount card.
  */

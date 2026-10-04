@@ -4,6 +4,7 @@ import { WALLET_SEND_VISUAL_FIXTURE, useWalletSend, walletSendBounds } from '@/h
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import type { LnurlPayRequest } from '@/lib/api-types';
 import { encodeLnurl } from '@/lib/lnurl';
+import { fetchShopChargeInvoice } from '@/lib/pos';
 import type { WalletTarget } from '@/lib/wallet/wallet-sdk';
 import {
   parseWalletInput,
@@ -18,6 +19,10 @@ import { useWalletStore } from '@/stores/wallet-store';
 vi.mock('@/lib/wallet/wallet-service', () => ({
   parseWalletInput: vi.fn(),
   payFromWallet: vi.fn(),
+}));
+
+vi.mock('@/lib/pos', () => ({
+  fetchShopChargeInvoice: vi.fn(),
 }));
 
 vi.mock('@/lib/api', async (importOriginal) => ({
@@ -67,6 +72,8 @@ beforeEach(() => {
   vi.mocked(payFromWallet).mockReset();
   vi.mocked(postLnurlPayRequest).mockReset();
   vi.mocked(postLnurlInvoice).mockReset();
+  vi.mocked(fetchShopChargeInvoice).mockReset();
+  vi.mocked(fetchShopChargeInvoice).mockResolvedValue(null);
   useAuthStore.setState({ session: 'sess' });
 });
 
@@ -240,7 +247,7 @@ describe('useWalletSend amount', () => {
     });
     expect(payFromWallet).toHaveBeenCalledWith({
       type: 'lnurl',
-      request: LNURL.type === 'lnurl' ? LNURL.request : null,
+      request: (LNURL as Extract<WalletTarget, { type: 'lnurl' }>).request,
       amountSats: 100,
       comment: 'Thank',
     });
@@ -257,7 +264,7 @@ describe('useWalletSend amount', () => {
     });
     expect(payFromWallet).toHaveBeenCalledWith({
       type: 'lnurl',
-      request: LNURL.type === 'lnurl' ? LNURL.request : null,
+      request: (LNURL as Extract<WalletTarget, { type: 'lnurl' }>).request,
       amountSats: 100,
     });
   });
@@ -440,7 +447,16 @@ describe('useWalletSend visual pins', () => {
         step: 'confirm',
         recipient: 'shop@21.gifts',
         amountSats: fixture.fixedAmountSats,
-        feeSats: fixture.feeSats,
+        feeSats: fixture.fixedFeeSats,
+      },
+    ],
+    [
+      'send-confirm-shop',
+      {
+        step: 'confirm',
+        recipient: 'shop@21.gifts',
+        amountSats: fixture.fixedAmountSats,
+        feeSats: 0,
       },
     ],
     ['send-sent', { step: 'sent', amountSats: fixture.amountSats }],
@@ -1381,5 +1397,94 @@ describe('useWalletSend fixed amount', () => {
       step: 'amount',
       target: { type: 'relay', minSats: 2, maxSats: 1_000, recipient: 'shop@example.com' },
     });
+  });
+});
+
+describe('useWalletSend shop charge', () => {
+  const SHOP_QR = WALLET_SEND_VISUAL_FIXTURE.fixedLink;
+  const CHARGE = { amountSats: 7_000, sparkInvoice: 'spark1shop' };
+
+  function confirmShop(amountSats = 7_000): WalletPayResult {
+    return { kind: 'confirm', amountSats, feeSats: 0, send: async () => ({ kind: 'paid' }) };
+  }
+
+  it('pays the open charge of a shop QR with its Spark invoice and no fee', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(CHARGE);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmShop());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(fetchShopChargeInvoice).toHaveBeenCalledWith('shop');
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'spark1shop' });
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'shop@21.gifts',
+      amountSats: 7_000,
+      feeSats: 0,
+    });
+    expect(result.current.busy).toBe(false);
+  });
+
+  it('asks a pasted own-host address for its charge', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(CHARGE);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmShop());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'Shop@21.gifts');
+    expect(fetchShopChargeInvoice).toHaveBeenCalledWith('shop');
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'shop@21.gifts' });
+  });
+
+  it('reads the text with the wallet when the shop has no charge or Spark invoice', async () => {
+    target(LNURL);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(fetchShopChargeInvoice).toHaveBeenCalledWith('shop');
+    expect(parseWalletInput).toHaveBeenCalledWith(SHOP_QR);
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toMatchObject({ step: 'amount' });
+  });
+
+  it.each([
+    ['a failed prepare', { kind: 'failed' } as WalletPayResult],
+    ['a closed wallet', { kind: 'unlock' } as WalletPayResult],
+    ['another amount', confirmShop(21)],
+  ])('falls back to the wallet read after %s', async (_label, prepared) => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(CHARGE);
+    vi.mocked(payFromWallet).mockResolvedValue(prepared);
+    target({ ...LNURL, minSats: 7_000, maxSats: 7_000 } as WalletTarget);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(parseWalletInput).toHaveBeenCalledWith(SHOP_QR);
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(payFromWallet).toHaveBeenLastCalledWith({
+      type: 'lnurl',
+      request: (LNURL as Extract<WalletTarget, { type: 'lnurl' }>).request,
+      amountSats: 7_000,
+    });
+  });
+
+  it('shows the low balance of a Spark payment instead of falling back', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(CHARGE);
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: 'insufficient' });
+    expect(result.current.busy).toBe(false);
+  });
+
+  it('drops a charge answer that arrives after the wallet left ready', async () => {
+    const finish = pending(vi.mocked(fetchShopChargeInvoice));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    await act(async () => {
+      finish.resolve(CHARGE);
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 });

@@ -1,16 +1,23 @@
 import { z } from 'zod';
 import { throwIfWalletAnswer } from '@/lib/api';
 
-/** One point-of-sale charge. There is no paid status. */
+/**
+ * One point-of-sale charge. `paid` once the api saw the payment; `paidAt` is
+ * then its ISO time, otherwise `null` (also when the api does not send it).
+ */
 const posChargeSchema = z.object({
   id: z.string(),
   amountSats: z.number().int(),
-  status: z.enum(['pending', 'cancelled', 'expired']),
+  status: z.enum(['pending', 'paid', 'cancelled', 'expired']),
   createdAt: z.string(),
   expiresAt: z.string(),
+  paidAt: z.string().nullable().default(null),
 });
 
-/** `GET /pos/charge` body. */
+/**
+ * `GET /pos/charge` body. `charge` is the pending charge, or one paid within
+ * the last minute.
+ */
 const posStateSchema = z.object({
   charge: posChargeSchema.nullable(),
   history: z.array(posChargeSchema),
@@ -88,5 +95,76 @@ export async function cancelPosCharge(sessionToken: string): Promise<void> {
   });
   if (!response.ok) {
     throw new Error(`Failed to cancel payment: ${response.status}`);
+  }
+}
+
+/** Open charge of a shop, as `GET /pay/:username` shows it. */
+const payChargeSchema = z.object({
+  amountSats: z.number().int().positive(),
+  status: z.string().optional(),
+  expiresAt: z.string(),
+});
+
+/** Invoice body of `POST /pay/:username/invoice`. */
+const payInvoiceSchema = z.object({
+  amountSats: z.number().int().optional(),
+  sparkInvoice: z.string().min(1).nullable().optional(),
+});
+
+/** A shop's open charge and the Spark invoice that pays it without a fee. */
+export interface ShopChargeInvoice {
+  /** Whole sats of the charge. */
+  amountSats: number;
+  /** Spark invoice the api issued for that charge. */
+  sparkInvoice: string;
+}
+
+/**
+ * Spark invoice for the open charge of a 21.gifts shop, so the in-app wallet
+ * pays that charge without a fee. Reads `GET /pay/:username`; when its
+ * `charge` is pending and not expired, asks `POST /pay/:username/invoice` for
+ * exactly that amount. Never rejects.
+ *
+ * @param username - Shop's 21.gifts username.
+ * @returns The amount and Spark invoice, or `null` when there is no open
+ *   charge, the api issued no Spark invoice, or a request failed.
+ */
+export async function fetchShopChargeInvoice(username: string): Promise<ShopChargeInvoice | null> {
+  const path = `/pay/${encodeURIComponent(username)}`;
+  try {
+    const profile = await fetch(path);
+    if (!profile.ok) {
+      return null;
+    }
+    const body = z
+      .object({ charge: payChargeSchema.nullable().optional() })
+      .parse(await profile.json());
+    const charge = body.charge ?? null;
+    if (
+      charge === null ||
+      (charge.status !== undefined && charge.status !== 'pending') ||
+      !(Date.parse(charge.expiresAt) > Date.now())
+    ) {
+      return null;
+    }
+    const response = await fetch(`${path}/invoice`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ amountSats: charge.amountSats }),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const invoice = payInvoiceSchema.parse(await response.json());
+    if (
+      invoice.sparkInvoice === null ||
+      invoice.sparkInvoice === undefined ||
+      (invoice.amountSats !== undefined && invoice.amountSats !== charge.amountSats)
+    ) {
+      return null;
+    }
+    return { amountSats: charge.amountSats, sparkInvoice: invoice.sparkInvoice };
+  } catch {
+    return null;
   }
 }
