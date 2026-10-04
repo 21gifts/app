@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import { getE2eNow } from '@/lib/config';
+import { encodeLnurl } from '@/lib/lnurl';
+import { lnurlPayAddress } from '@/lib/pay-link';
 import { lnurlRelayTarget } from '@/lib/wallet/lnurl-relay';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
@@ -120,7 +122,10 @@ export interface UseWalletSendResult {
   cancel: () => boolean;
 }
 
-/** Recipient, amount, and fee shown by the visual fixtures. */
+/**
+ * Recipient, amount, and fee shown by the visual fixtures. `fixedLink` is the
+ * point-of-sale QR of `shop@21.gifts`, and `fixedAmountSats` its open charge.
+ */
 export const WALLET_SEND_VISUAL_FIXTURE = {
   recipient: 'bob@example.com',
   amountSats: 2_100,
@@ -129,7 +134,22 @@ export const WALLET_SEND_VISUAL_FIXTURE = {
   maxSats: 1_000_000,
   commentMaxLength: 140,
   requestRecipient: 'sp1qexample…a9f2',
+  fixedLink: `https://21.gifts/pl/?lightning=${encodeLnurl('https://21.gifts/.well-known/lnurlp/shop')}`,
+  fixedAmountSats: 7_000,
 } as const;
+
+/**
+ * Recipient shown for a receiver read from `text`: the Lightning address
+ * behind an LNURL for `/.well-known/lnurlp/<name>` (see `lnurlPayAddress`),
+ * otherwise `fallback`.
+ *
+ * @param text - Text as pasted or scanned.
+ * @param fallback - Recipient of the receiver (an address or a domain).
+ * @returns The recipient to show.
+ */
+function recipientOf(text: string, fallback: string): string {
+  return lnurlPayAddress(text) ?? fallback;
+}
 
 /**
  * Name of the `?visual=` pin, honoured only in a Playwright build.
@@ -204,6 +224,13 @@ function visualState(name: string | null): WalletSendState | null {
         step: 'confirm',
         recipient: fixture.recipient,
         amountSats: fixture.amountSats,
+        feeSats: fixture.feeSats,
+      };
+    case 'send-confirm-fixed':
+      return {
+        step: 'confirm',
+        recipient: recipientOf(fixture.fixedLink, fixture.recipient),
+        amountSats: fixture.fixedAmountSats,
         feeSats: fixture.feeSats,
       };
     case 'send-sent':
@@ -363,6 +390,84 @@ export function useWalletSend(): UseWalletSendResult {
     [],
   );
 
+  /**
+   * Pays `sats` to `target` the way **Continue** in the amount step does: the
+   * relay asks the api for an invoice, an LNURL receiver is asked by the
+   * wallet, and a request is prepared with that amount. The bounds are
+   * already checked.
+   */
+  const payAmount = useCallback(
+    (target: WalletSendAmountTarget, sats: number, note: string): void => {
+      if (target.type === 'relay') {
+        const trimmed = note.trim().slice(0, target.commentMaxLength);
+        const run = generation.current;
+        setBusy(true);
+        const request =
+          session === null
+            ? Promise.reject(new LnurlRelayError('failed'))
+            : postLnurlInvoice(session, target.target, sats * 1000, trimmed);
+        void request.then(
+          (invoice) => {
+            if (run !== generation.current || !walletCanSend()) {
+              return;
+            }
+            prepare({ type: 'input', input: invoice.pr }, target.recipient, sats);
+          },
+          (error: unknown) => {
+            if (run !== generation.current || !walletCanSend()) {
+              return;
+            }
+            setBusy(false);
+            const reason = error instanceof LnurlRelayError ? error.reason : 'failed';
+            if (reason === 'amount' || reason === 'comment') {
+              setState({
+                step: 'amount',
+                target,
+                amountError: reason === 'amount',
+                ...(reason === 'comment' ? { commentError: true as const } : {}),
+              });
+              return;
+            }
+            setState({ step: 'input', error: relayInputError(error) });
+          },
+        );
+        return;
+      }
+      if (target.type === 'lnurl') {
+        const trimmed = note.trim().slice(0, target.commentMaxLength);
+        prepare(
+          {
+            type: 'lnurl',
+            request: target.request,
+            amountSats: sats,
+            ...(trimmed === '' ? {} : { comment: trimmed }),
+          },
+          target.recipient,
+        );
+        return;
+      }
+      prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
+    },
+    [session, prepare],
+  );
+
+  /**
+   * Opens the amount step for `target`, or pays at once when its whole-sat
+   * bounds are one amount (a point-of-sale charge): then no message is sent.
+   */
+  const askAmount = useCallback(
+    (target: Exclude<WalletSendAmountTarget, { type: 'request' }>): void => {
+      setComment('');
+      if (target.minSats === target.maxSats) {
+        payAmount(target, target.minSats, '');
+        return;
+      }
+      setBusy(false);
+      setState({ step: 'amount', target, amountError: false });
+    },
+    [payAmount],
+  );
+
   const submitInput = useCallback((): void => {
     if (inert) {
       setPinBusy(pin === 'send-input-busy');
@@ -384,25 +489,22 @@ export function useWalletSend(): UseWalletSendResult {
           if (run !== generation.current || !walletCanSend()) {
             return;
           }
-          setBusy(false);
           const minSats = Math.max(1, Math.ceil(payRequest.minSendableMsat / 1000));
           const maxSats = Math.floor(payRequest.maxSendableMsat / 1000);
           if (minSats > maxSats) {
+            setBusy(false);
             setState({ step: 'input', error: 'unsupported' });
             return;
           }
-          setComment('');
-          setState({
-            step: 'amount',
-            target: {
-              type: 'relay',
-              target: payRequest.target,
-              minSats,
-              maxSats,
-              commentMaxLength: payRequest.commentAllowed,
-              recipient: payRequest.target.includes('@') ? payRequest.target : payRequest.domain,
-            },
-            amountError: false,
+          askAmount({
+            type: 'relay',
+            target: payRequest.target,
+            minSats,
+            maxSats,
+            commentMaxLength: payRequest.commentAllowed,
+            recipient: payRequest.target.includes('@')
+              ? payRequest.target
+              : recipientOf(text, payRequest.domain),
           });
         },
         (error: unknown) => {
@@ -438,7 +540,11 @@ export function useWalletSend(): UseWalletSendResult {
         setState({ step: 'input', error: target.type });
         return;
       }
-      if (target.type === 'request' && target.amountSats !== null && target.amountSats > 0) {
+      if (target.type === 'lnurl') {
+        askAmount({ ...target, recipient: recipientOf(text, target.recipient) });
+        return;
+      }
+      if (target.amountSats !== null && target.amountSats > 0) {
         prepare(
           {
             type: 'input',
@@ -453,7 +559,7 @@ export function useWalletSend(): UseWalletSendResult {
       setComment('');
       setState({ step: 'amount', target, amountError: false });
     });
-  }, [pin, inert, ready, busy, state.step, text, session, prepare]);
+  }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {
@@ -470,57 +576,9 @@ export function useWalletSend(): UseWalletSendResult {
         setState({ step: 'amount', target, amountError: true });
         return;
       }
-      if (target.type === 'relay') {
-        const trimmed = comment.trim().slice(0, target.commentMaxLength);
-        const run = generation.current;
-        setBusy(true);
-        const request =
-          session === null
-            ? Promise.reject(new LnurlRelayError('failed'))
-            : postLnurlInvoice(session, target.target, sats * 1000, trimmed);
-        void request.then(
-          (invoice) => {
-            if (run !== generation.current || !walletCanSend()) {
-              return;
-            }
-            prepare({ type: 'input', input: invoice.pr }, target.recipient, sats);
-          },
-          (error: unknown) => {
-            if (run !== generation.current || !walletCanSend()) {
-              return;
-            }
-            setBusy(false);
-            const reason = error instanceof LnurlRelayError ? error.reason : 'failed';
-            if (reason === 'amount' || reason === 'comment') {
-              setState({
-                step: 'amount',
-                target,
-                amountError: reason === 'amount',
-                ...(reason === 'comment' ? { commentError: true as const } : {}),
-              });
-              return;
-            }
-            setState({ step: 'input', error: relayInputError(error) });
-          },
-        );
-        return;
-      }
-      if (target.type === 'lnurl') {
-        const trimmed = comment.trim().slice(0, target.commentMaxLength);
-        prepare(
-          {
-            type: 'lnurl',
-            request: target.request,
-            amountSats: sats,
-            ...(trimmed === '' ? {} : { comment: trimmed }),
-          },
-          target.recipient,
-        );
-        return;
-      }
-      prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
+      payAmount(target, sats, comment);
     },
-    [pin, inert, ready, busy, state, comment, session, prepare],
+    [pin, inert, ready, busy, state, comment, payAmount],
   );
 
   const confirm = useCallback((): void => {

@@ -434,6 +434,15 @@ describe('useWalletSend visual pins', () => {
         feeSats: fixture.feeSats,
       },
     ],
+    [
+      'send-confirm-fixed',
+      {
+        step: 'confirm',
+        recipient: 'shop@21.gifts',
+        amountSats: fixture.fixedAmountSats,
+        feeSats: fixture.feeSats,
+      },
+    ],
     ['send-sent', { step: 'sent', amountSats: fixture.amountSats }],
     ['send-onchain', { step: 'input', error: 'onchain' }],
     ['send-unsupported', { step: 'input', error: 'unsupported' }],
@@ -1123,5 +1132,211 @@ describe('useWalletSend relay answers after the wallet left ready', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(result.current.state.step).toBe('amount');
     expect(result.current.busy).toBe(true);
+  });
+});
+
+describe('useWalletSend fixed amount', () => {
+  const SHOP_URL = 'https://21.gifts/.well-known/lnurlp/shop';
+  const SHOP_LNURL = encodeLnurl(SHOP_URL);
+  const SHOP_LINK = `https://21.gifts/pl/?lightning=${SHOP_LNURL}`;
+  const OUTSIDE_SHOP = encodeLnurl('https://example.com/.well-known/lnurlp/shop');
+  const FIXED: WalletTarget = {
+    type: 'lnurl',
+    request: { details: { callback: 'shop' } },
+    minSats: 7,
+    maxSats: 7,
+    commentMaxLength: 140,
+    recipient: '21.gifts',
+  };
+
+  function confirmFixed(amountSats = 7): WalletPayResult {
+    return { kind: 'confirm', amountSats, feeSats: 1, send: async () => ({ kind: 'paid' }) };
+  }
+
+  it.each([
+    ['the /pl/?lightning= link', SHOP_LINK],
+    ['the bech32 LNURL', SHOP_LNURL],
+    ['the lightning: LNURL', `lightning:${SHOP_LNURL}`],
+  ])(
+    'goes from %s on the own host straight to confirm without a message, naming the address',
+    async (_label, text) => {
+      target(FIXED);
+      vi.mocked(payFromWallet).mockResolvedValue(confirmFixed());
+      const { result } = renderHook(() => useWalletSend());
+      act(() => {
+        result.current.setComment('left over');
+      });
+      await typeAndSubmit(result, text);
+      expect(parseWalletInput).toHaveBeenCalledWith(text);
+      expect(postLnurlPayRequest).not.toHaveBeenCalled();
+      expect(payFromWallet).toHaveBeenCalledTimes(1);
+      expect(payFromWallet).toHaveBeenCalledWith({
+        type: 'lnurl',
+        request: FIXED.type === 'lnurl' ? FIXED.request : null,
+        amountSats: 7,
+      });
+      expect(result.current.comment).toBe('');
+      expect(result.current.busy).toBe(false);
+      expect(result.current.state).toEqual({
+        step: 'confirm',
+        recipient: 'shop@21.gifts',
+        amountSats: 7,
+        feeSats: 1,
+      });
+    },
+  );
+
+  it('stays busy from the read until the prepared payment of a fixed amount', async () => {
+    target(FIXED);
+    const finish = pending(vi.mocked(payFromWallet));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_LINK);
+    expect(result.current.busy).toBe(true);
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    await act(async () => {
+      finish.resolve(confirmFixed());
+    });
+    expect(result.current.state).toMatchObject({ step: 'confirm', amountSats: 7 });
+  });
+
+  it('closes the confirm step of a fixed amount back to the input, not to an amount step', async () => {
+    target(FIXED);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmFixed());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_LINK);
+    expect(result.current.state.step).toBe('confirm');
+    let closed = false;
+    act(() => {
+      closed = result.current.cancel();
+    });
+    expect(closed).toBe(true);
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.text).toBe(SHOP_LINK);
+  });
+
+  it('maps a failed prepare of a fixed amount to the input alert', async () => {
+    target(FIXED);
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_LINK);
+    expect(result.current.state).toEqual({ step: 'input', error: 'insufficient' });
+  });
+
+  it('keeps the amount step for an own-host receiver whose bounds differ, naming the address', async () => {
+    target({ ...FIXED, maxSats: 8 });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_LINK);
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toMatchObject({
+      step: 'amount',
+      amountError: false,
+      target: { type: 'lnurl', minSats: 7, maxSats: 8, recipient: 'shop@21.gifts' },
+    });
+  });
+
+  it('keeps the domain for an own-host LNURL that is not an address', async () => {
+    target(FIXED);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmFixed());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, encodeLnurl('https://21.gifts/pay/shop'));
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: '21.gifts' });
+  });
+
+  it('keeps the recipient the wallet read for a pasted Lightning address', async () => {
+    target({ ...FIXED, recipient: 'shop@21.gifts' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmFixed());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'Shop@21.gifts');
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'shop@21.gifts' });
+  });
+
+  it.each([
+    ['equal bounds', 7_000, 7_000],
+    ['bounds that round to one whole sat', 6_001, 7_999],
+  ])(
+    'asks the api for the invoice of an outside receiver with %s and confirms it',
+    async (_label, minSendableMsat, maxSendableMsat) => {
+      vi.mocked(postLnurlPayRequest).mockResolvedValue({
+        ...PAY_REQUEST,
+        target: OUTSIDE_SHOP,
+        minSendableMsat,
+        maxSendableMsat,
+      });
+      vi.mocked(postLnurlInvoice).mockResolvedValue({ pr: 'lnbc70n1shop' });
+      vi.mocked(payFromWallet).mockResolvedValue(confirmFixed());
+      const { result } = renderHook(() => useWalletSend());
+      act(() => {
+        result.current.setComment('left over');
+      });
+      await typeAndSubmit(result, OUTSIDE_SHOP);
+      expect(postLnurlPayRequest).toHaveBeenCalledWith('sess', OUTSIDE_SHOP);
+      expect(postLnurlInvoice).toHaveBeenCalledWith('sess', OUTSIDE_SHOP, 7_000, '');
+      expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc70n1shop' });
+      expect(result.current.comment).toBe('');
+      expect(result.current.state).toEqual({
+        step: 'confirm',
+        recipient: 'shop@example.com',
+        amountSats: 7,
+        feeSats: 1,
+      });
+    },
+  );
+
+  it('names the address of an outside fixed receiver read from an address', async () => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue({
+      ...PAY_REQUEST,
+      minSendableMsat: 7_000,
+      maxSendableMsat: 7_000,
+    });
+    vi.mocked(postLnurlInvoice).mockResolvedValue({ pr: 'lnbc70n1shop' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmFixed());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@example.com');
+    expect(postLnurlInvoice).toHaveBeenCalledWith('sess', 'bob@example.com', 7_000, '');
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'bob@example.com' });
+  });
+
+  it('refuses an outside fixed invoice whose amount differs', async () => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue({
+      ...PAY_REQUEST,
+      target: OUTSIDE_SHOP,
+      minSendableMsat: 7_000,
+      maxSendableMsat: 7_000,
+    });
+    vi.mocked(postLnurlInvoice).mockResolvedValue({ pr: 'lnbc70n1shop' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmFixed(8));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, OUTSIDE_SHOP);
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+  });
+
+  it('shows the amount step with its alert when the api refuses the fixed amount', async () => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue({
+      ...PAY_REQUEST,
+      target: OUTSIDE_SHOP,
+      minSendableMsat: 7_000,
+      maxSendableMsat: 7_000,
+    });
+    vi.mocked(postLnurlInvoice).mockRejectedValue(new LnurlRelayError('amount'));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, OUTSIDE_SHOP);
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toMatchObject({
+      step: 'amount',
+      amountError: true,
+      target: { type: 'relay', minSats: 7, maxSats: 7, recipient: 'shop@example.com' },
+    });
+  });
+
+  it('keeps the amount step and the address for an outside LNURL whose bounds differ', async () => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue({ ...PAY_REQUEST, target: OUTSIDE_SHOP });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, OUTSIDE_SHOP);
+    expect(postLnurlInvoice).not.toHaveBeenCalled();
+    expect(result.current.state).toMatchObject({
+      step: 'amount',
+      target: { type: 'relay', minSats: 2, maxSats: 1_000, recipient: 'shop@example.com' },
+    });
   });
 });
