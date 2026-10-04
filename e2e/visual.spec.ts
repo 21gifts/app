@@ -1800,9 +1800,10 @@ test.describe('screen baselines', () => {
    * waits for the rate the Send view loads for its fiat amounts.
    */
   async function openWalletSend(page: Page): Promise<void> {
-    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
-      timeout: 15_000,
-    });
+    const balance = page.getByRole('region', { name: 'Balance' });
+    await expect(balance.getByText("₿21'000")).toBeVisible({ timeout: 15_000 });
+    // The balance has its own rate; once its fiat shows, the next rate response is Send's.
+    await expect(balance.getByText('$21.00')).toBeVisible();
     const rate = page.waitForResponse('**/gifts/stats**');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     await rate;
@@ -1982,6 +1983,9 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet?visual=send-sent');
     await expectPinnedSend(page);
     await expect(page.getByText("Sent ₿2'100")).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('status'),
+    ).toContainText('$2.10');
     await shotScreen(page, 'state-wallet-send-sent');
   });
 
@@ -2092,6 +2096,7 @@ test.describe('screen baselines', () => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-confirm-sending');
     await expectPinnedSend(page);
+    await expect(page.getByText('$2.10')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
     await shotScreen(page, 'state-wallet-send-confirm-sending');
