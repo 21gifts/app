@@ -394,7 +394,8 @@ export function useWalletSend(): UseWalletSendResult {
    * Pays `sats` to `target` the way **Continue** in the amount step does: the
    * relay asks the api for an invoice, an LNURL receiver is asked by the
    * wallet, and a request is prepared with that amount. The bounds are
-   * already checked.
+   * already checked. A relay receiver that takes one amount never showed an
+   * amount step, so its refusals return to the input.
    */
   const payAmount = useCallback(
     (target: WalletSendAmountTarget, sats: number, note: string): void => {
@@ -419,6 +420,10 @@ export function useWalletSend(): UseWalletSendResult {
             }
             setBusy(false);
             const reason = error instanceof LnurlRelayError ? error.reason : 'failed';
+            if (target.minSats === target.maxSats) {
+              setState({ step: 'input', error: relayInputError(error) });
+              return;
+            }
             if (reason === 'amount' || reason === 'comment') {
               setState({
                 step: 'amount',

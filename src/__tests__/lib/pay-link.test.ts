@@ -36,14 +36,20 @@ describe('payLinkUsername', () => {
 });
 
 describe('lnurlPayAddress', () => {
-  const shop = encodeLnurl('https://pay.example/.well-known/lnurlp/Shop');
+  const shop = encodeLnurl('https://pay.example/.well-known/lnurlp/shop');
 
   it('names the address behind a bech32 LNURL and behind a /pl/?lightning= link', () => {
     expect(lnurlPayAddress(shop)).toBe('shop@pay.example');
     expect(lnurlPayAddress(` lightning:${shop.toLowerCase()} `)).toBe('shop@pay.example');
     expect(lnurlPayAddress(`https://pay.example/pl/?lightning=${shop}`)).toBe('shop@pay.example');
-    expect(lnurlPayAddress(`HTTP://other.example/pl/?lightning=${shop}`)).toBe('shop@pay.example');
+    expect(lnurlPayAddress(`HTTPS://other.example/pl?lightning=${shop}`)).toBe('shop@pay.example');
     expect(lnurlPayAddress(ADA)).toBe('ada@21.gifts');
+  });
+
+  it('keeps the name as it stands in the URL', () => {
+    expect(lnurlPayAddress(encodeLnurl('https://pay.example/.well-known/lnurlp/Shop'))).toBe(
+      'Shop@pay.example',
+    );
   });
 
   it('returns null for other text and for an LNURL that is not an address', () => {
@@ -51,6 +57,8 @@ describe('lnurlPayAddress', () => {
     expect(lnurlPayAddress('lnbc1')).toBeNull();
     expect(lnurlPayAddress('https://')).toBeNull();
     expect(lnurlPayAddress('https://pay.example/pl/')).toBeNull();
+    expect(lnurlPayAddress(`http://pay.example/pl/?lightning=${shop}`)).toBeNull();
+    expect(lnurlPayAddress(`https://pay.example/pay/?lightning=${shop}`)).toBeNull();
     expect(lnurlPayAddress(encodeLnurl('not a url'))).toBeNull();
     expect(lnurlPayAddress(encodeLnurl('https://pay.example/lnurlp/shop'))).toBeNull();
     expect(lnurlPayAddress(encodeLnurl('http://pay.example/.well-known/lnurlp/shop'))).toBeNull();
@@ -59,6 +67,12 @@ describe('lnurlPayAddress', () => {
     ).toBeNull();
     expect(
       lnurlPayAddress(encodeLnurl('https://pay.example/.well-known/lnurlp/shop?x=1')),
+    ).toBeNull();
+    expect(
+      lnurlPayAddress(encodeLnurl('https://user@pay.example/.well-known/lnurlp/shop')),
+    ).toBeNull();
+    expect(
+      lnurlPayAddress(encodeLnurl('https://:pw@pay.example/.well-known/lnurlp/shop')),
     ).toBeNull();
     expect(lnurlPayAddress(encodeLnurl('https://pay.example/.well-known/lnurlp/a%40b'))).toBeNull();
     expect(lnurlPayAddress(encodeLnurl('https://pay.example/.well-known/lnurlp/%'))).toBeNull();
