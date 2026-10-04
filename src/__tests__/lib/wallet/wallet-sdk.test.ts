@@ -368,6 +368,17 @@ describe('payments', () => {
     await expect(conn.parse('lnurl1')).resolves.toMatchObject({ minSats: 1, maxSats: 5 });
   });
 
+  it('parse keeps millisat bounds that round to one whole sat as equal bounds', async () => {
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'lnurlPay',
+      ...LNURL,
+      minSendable: 6_500,
+      maxSendable: 7_999,
+    });
+    const conn = await connection();
+    await expect(conn.parse('lnurl1')).resolves.toMatchObject({ minSats: 7, maxSats: 7 });
+  });
+
   it('parse maps a base-chain address to onchain and other inputs to unsupported', async () => {
     sdkPay.parse.mockResolvedValueOnce({ type: 'bitcoinAddress', address: 'bc1q' });
     sdkPay.parse.mockResolvedValueOnce({ type: 'lnurlWithdraw' });
