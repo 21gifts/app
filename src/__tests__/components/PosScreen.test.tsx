@@ -1285,6 +1285,32 @@ describe('PosScreen', () => {
       expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
+    it('keeps Paid when an older till read answers after it', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let answerRefresh: (response: Response) => void = () => undefined;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: ended, history: [ended] }))
+        .mockReturnValueOnce(
+          new Promise<Response>((resolve) => {
+            answerRefresh = resolve;
+          }),
+        )
+        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByText('0:00 left')).toBeTruthy();
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
+      await act(async () => {
+        answerRefresh(jsonResponse({ charge: null, history: [ended] }));
+      });
+      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
+      expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+    });
+
     it('stops asking a minute after the charge ran out', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
       const old = { ...OPEN, expiresAt: new Date(Date.now() - 61_000).toISOString() };

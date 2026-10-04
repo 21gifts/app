@@ -50,6 +50,27 @@ const POS_POLL_MS = 3_000;
  */
 const POS_LATE_PAID_MS = 60_000;
 
+/** Till reads started and the newest one whose answer is on screen. */
+type TillReads = { started: number; applied: number };
+
+/** Number the next till read. */
+function startRead(reads: { current: TillReads }): number {
+  reads.current.started += 1;
+  return reads.current.started;
+}
+
+/**
+ * Apply the answer of read `seq` only when no newer read is already on
+ * screen, so a slow refresh cannot replace a newer answer (such as a paid
+ * charge) with an older one.
+ */
+function applyRead(reads: { current: TillReads }, seq: number, apply: () => void): void {
+  if (seq > reads.current.applied) {
+    reads.current.applied = seq;
+    apply();
+  }
+}
+
 /** Create or cancel that is still talking to the server, across page changes. */
 let tillWrite: Promise<void> | null = null;
 
@@ -103,6 +124,7 @@ function usePosTillState(): PosTillState {
   const { fiat } = useFiatPreference();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
+  const reads = useRef<TillReads>({ started: 0, applied: 0 });
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const { rateDay, settled: rateSettled } = useLatestRateDayState(session !== null);
@@ -145,12 +167,15 @@ function usePosTillState(): PosTillState {
         return;
       }
       try {
+        const seq = startRead(reads);
         const next = await fetchPosState(session);
         if (!alive) {
           return;
         }
         whenCurrent(generation, mine, () => {
-          setState(next);
+          applyRead(reads, seq, () => {
+            setState(next);
+          });
         });
       } catch {
         if (!alive) {
@@ -221,11 +246,14 @@ function usePosTillState(): PosTillState {
         return;
       }
       const mine = generation.current;
+      const seq = startRead(reads);
       fetchPosState(session).then(
         (next) => {
           if (alive) {
             whenCurrent(generation, mine, () => {
-              setState(next);
+              applyRead(reads, seq, () => {
+                setState(next);
+              });
             });
           }
         },
@@ -252,10 +280,13 @@ function usePosTillState(): PosTillState {
     }
     refreshed.current = charge.id;
     const mine = generation.current;
+    const seq = startRead(reads);
     fetchPosState(session)
       .then((next) => {
         whenCurrent(generation, mine, () => {
-          setState(next);
+          applyRead(reads, seq, () => {
+            setState(next);
+          });
         });
       })
       .catch(() => {
@@ -353,10 +384,13 @@ function usePosTillState(): PosTillState {
     const work = (async (): Promise<void> => {
       try {
         await cancelPosCharge(session);
+        const seq = startRead(reads);
         const next = await fetchPosState(session);
         whenCurrent(generation, mine, () => {
           setWatchUntil(null);
-          setState(next);
+          applyRead(reads, seq, () => {
+            setState(next);
+          });
         });
       } catch {
         whenCurrent(generation, mine, () => {
