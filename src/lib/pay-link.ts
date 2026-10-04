@@ -66,7 +66,8 @@ export function payLinkUsername(lightning: string, pageHost: string): string | n
  *
  * @param text - Text as pasted or scanned.
  * @returns The address, or `null` for any other text or LNURL (another path,
- *   a port, a query, user info, not https, or a name an address cannot carry).
+ *   a port other than 443, a query, user info, not https, or a name an
+ *   address cannot carry).
  */
 export function lnurlPayAddress(text: string): string | null {
   const bare = text.trim().replace(/^lightning:/i, '');
