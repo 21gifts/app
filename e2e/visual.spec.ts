@@ -1796,18 +1796,23 @@ test.describe('screen baselines', () => {
   });
 
   /**
-   * Waits for the wallet home with the fixture balance, then opens Send and
-   * waits for the rate the Send view loads for its fiat amounts.
+   * Waits for the wallet home with the fixture balance, then opens Send. The
+   * Send view loads its own rate, so a step that shows fiat passes the fiat
+   * text it must show before the screenshot.
+   *
+   * @param page - Wallet page.
+   * @param fiat - Fiat text the Send view shows once its rate is loaded.
    */
-  async function openWalletSend(page: Page): Promise<void> {
-    const balance = page.getByRole('region', { name: 'Balance' });
-    await expect(balance.getByText("₿21'000")).toBeVisible({ timeout: 15_000 });
-    // The balance has its own rate; once its fiat shows, the next rate response is Send's.
-    await expect(balance.getByText('$21.00')).toBeVisible();
-    const rate = page.waitForResponse('**/gifts/stats**');
+  async function openWalletSend(page: Page, fiat?: string): Promise<void> {
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
+      timeout: 15_000,
+    });
     await page.getByRole('button', { name: 'Send', exact: true }).click();
-    await rate;
-    await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toBeVisible();
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(send).toBeVisible();
+    if (fiat !== undefined) {
+      await expect(send).toContainText(fiat);
+    }
   }
 
   /** Waits for a Send view that a pinned send step keeps on screen. */
@@ -1951,7 +1956,7 @@ test.describe('screen baselines', () => {
   test('wallet send-amount', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount');
-    await openWalletSend(page);
+    await openWalletSend(page, '$0.00');
     await expect(page.getByLabel('Message (optional)')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-amount');
   });
@@ -2056,7 +2061,7 @@ test.describe('screen baselines', () => {
   test('wallet send-amount-error', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount-error');
-    await openWalletSend(page);
+    await openWalletSend(page, '$0.00');
     await expect(
       page.getByRole('alert').filter({ hasText: /^Enter an amount between/ }),
     ).toBeVisible();
@@ -2075,7 +2080,7 @@ test.describe('screen baselines', () => {
   test('wallet send-amount-no-comment', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount-no-comment');
-    await openWalletSend(page);
+    await openWalletSend(page, '$0.00');
     await expect(page.getByText('To bob@example.com')).toBeVisible();
     await expect(page.getByText(/^Between/)).toBeVisible();
     await expect(page.getByLabel('Message (optional)')).toHaveCount(0);
@@ -2085,7 +2090,7 @@ test.describe('screen baselines', () => {
   test('wallet send-amount-min', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount-min');
-    await openWalletSend(page);
+    await openWalletSend(page, '$0.00');
     await expect(
       page.getByRole('alert').filter({ hasText: /^Enter an amount of at least/ }),
     ).toBeVisible();
@@ -2121,7 +2126,7 @@ test.describe('screen baselines', () => {
   test('wallet send-amount-busy', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount-busy');
-    await openWalletSend(page);
+    await openWalletSend(page, '$0.00');
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
     await send.getByLabel('Amount').fill('2100');
     await send.getByRole('button', { name: 'Continue' }).click();
@@ -2171,7 +2176,7 @@ test.describe('screen baselines', () => {
   test('wallet send-comment-long', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-comment-long');
-    await openWalletSend(page);
+    await openWalletSend(page, '$0.00');
     await expect(page.getByText('This message is too long for the receiver.')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-comment-long');
   });
