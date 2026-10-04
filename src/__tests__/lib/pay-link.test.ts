@@ -44,6 +44,9 @@ describe('lnurlPayAddress', () => {
     expect(lnurlPayAddress(`https://pay.example/pl/?lightning=${shop}`)).toBe('shop@pay.example');
     expect(lnurlPayAddress(`HTTPS://other.example/pl?lightning=${shop}`)).toBe('shop@pay.example');
     expect(lnurlPayAddress(ADA)).toBe('ada@21.gifts');
+    expect(lnurlPayAddress(encodeLnurl('https://pay.example:443/.well-known/lnurlp/shop'))).toBe(
+      'shop@pay.example',
+    );
   });
 
   it('keeps the name as it stands in the URL', () => {
