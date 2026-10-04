@@ -2123,6 +2123,7 @@ test.describe('screen baselines', () => {
     await openWalletSend(page);
     await expect(page.getByText('To shop@21.gifts')).toBeVisible();
     await expect(page.getByText("Send ₿7'000")).toBeVisible();
+    await expect(page.getByText('$7.00')).toBeVisible();
     await expect(page.getByText(/Fee ₿0/)).toBeVisible();
     await shotScreen(page, 'state-wallet-send-confirm-shop');
   });

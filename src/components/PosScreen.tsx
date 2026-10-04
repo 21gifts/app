@@ -43,6 +43,13 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
 /** How often the till asks whether an open charge is paid. */
 const POS_POLL_MS = 3_000;
 
+/**
+ * How long past its end the till keeps asking about a charge. The api still
+ * marks a charge paid when the payment is confirmed after it ran out, and
+ * shows a paid charge for one minute.
+ */
+const POS_LATE_PAID_MS = 60_000;
+
 /** Create or cancel that is still talking to the server, across page changes. */
 let tillWrite: Promise<void> | null = null;
 
@@ -110,6 +117,7 @@ function usePosTillState(): PosTillState {
   const [now, setNow] = useState(() => Date.now());
   const [showQr, setShowQr] = useState(false);
   const [reload, setReload] = useState(0);
+  const [watchUntil, setWatchUntil] = useState<number | null>(null);
 
   function setError(message: string | null, loading?: boolean): void {
     setLoadingAlert(loading === true);
@@ -186,14 +194,32 @@ function usePosTillState(): PosTillState {
     };
   }, [charge]);
 
-  const live = charge !== null && remaining > 0;
+  const chargeEnd = charge === null ? null : Date.parse(charge.expiresAt);
   useEffect(() => {
-    // While a charge is open, ask the api every few seconds whether it is paid.
-    if (session === null || busy || !live) {
+    if (chargeEnd !== null) {
+      setWatchUntil(chargeEnd + POS_LATE_PAID_MS);
+    }
+  }, [chargeEnd]);
+
+  useEffect(() => {
+    if (paid !== null) {
+      setWatchUntil(null);
+    }
+  }, [paid]);
+
+  useEffect(() => {
+    // While a charge is open, and for a minute after it ran out, ask the api
+    // every few seconds whether it is paid.
+    if (session === null || busy || watchUntil === null) {
       return;
     }
     let alive = true;
     const timer = setInterval(() => {
+      if (Date.now() > watchUntil) {
+        clearInterval(timer);
+        setWatchUntil(null);
+        return;
+      }
       const mine = generation.current;
       fetchPosState(session).then(
         (next) => {
@@ -212,7 +238,7 @@ function usePosTillState(): PosTillState {
       alive = false;
       clearInterval(timer);
     };
-  }, [busy, live, session]);
+  }, [busy, session, watchUntil]);
 
   useEffect(() => {
     if (
@@ -329,6 +355,7 @@ function usePosTillState(): PosTillState {
         await cancelPosCharge(session);
         const next = await fetchPosState(session);
         whenCurrent(generation, mine, () => {
+          setWatchUntil(null);
           setState(next);
         });
       } catch {

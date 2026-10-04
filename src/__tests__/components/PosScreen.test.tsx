@@ -1170,7 +1170,9 @@ describe('PosScreen', () => {
       vi.useRealTimers();
     });
 
+    /** Lets pending effects start the poll, then moves the clock one poll ahead. */
     async function poll(): Promise<void> {
+      await act(async () => undefined);
       await act(async () => {
         vi.advanceTimersByTime(3_000);
       });
@@ -1262,6 +1264,60 @@ describe('PosScreen', () => {
         answer(jsonResponse({ charge: PAID, history: [PAID] }));
       });
       expect(screen.queryByRole('status')).toBeNull();
+    });
+
+    it('still shows Paid when the payment is confirmed after the charge ran out', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: ended, history: [ended] }))
+        .mockResolvedValueOnce(jsonResponse({ charge: null, history: [ended] }))
+        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('stops asking a minute after the charge ran out', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      const old = { ...OPEN, expiresAt: new Date(Date.now() - 61_000).toISOString() };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: old, history: [old] }))
+        .mockResolvedValue(jsonResponse({ charge: null, history: [old] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      await poll();
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('stops asking once the charge is cancelled', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+      const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'DELETE') {
+          return jsonResponse({ charge: null });
+        }
+        return fetchMock.mock.calls.length === 1
+          ? jsonResponse({ charge: OPEN, history: [OPEN] })
+          : jsonResponse({ charge: null, history: [] });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      const calls = fetchMock.mock.calls.length;
+      await poll();
+      expect(fetchMock).toHaveBeenCalledTimes(calls);
     });
 
     it('lets the amount page open a new payment after a paid charge', async () => {

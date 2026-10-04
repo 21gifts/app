@@ -948,6 +948,7 @@ test('Function: ownShop — send-confirm-shop pin pays the shop charge of a poin
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByText('To shop@21.gifts')).toBeVisible();
   await expect(region.getByText("Send ₿7'000")).toBeVisible();
+  await expect(region.getByText('$7.00')).toBeVisible();
   await expect(region.getByText(/Fee ₿0/)).toBeVisible();
   await expect(region.getByLabel('Amount')).toHaveCount(0);
   await expect(region.getByLabel('Message (optional)')).toHaveCount(0);
