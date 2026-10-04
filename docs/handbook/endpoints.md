@@ -16,16 +16,16 @@
 
 ## Endpoint: GET /pay/[username]
 
-- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`) from the api.
+- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`, and `charge`, the shop's pending charge or `null`) from the api.
 - **Errors:** Upstream 404 when the person cannot be paid, 502 when the payee's wallet cannot be resolved.
-- **Used by:** `PayLinkScreen`.
+- **Used by:** `PayLinkScreen`, `fetchShopChargeInvoice`.
 - **Auth:** none.
 
 ## Endpoint: POST /pay/[username]/invoice
 
-- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats }`.
+- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats, sparkInvoice }`. `sparkInvoice` is a Spark invoice for the shop's pending charge when `amountSats` is that charge's amount and the api issues Spark invoices, otherwise `null`.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue**.
+- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` for the in-app wallet.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]
@@ -354,9 +354,9 @@
 
 ## Endpoint: GET /pos/charge
 
-- **Purpose:** Same-origin proxy of api `GET /pos`. Returns the open charge or null, plus history.
+- **Purpose:** Same-origin proxy of api `GET /pos`. Returns `charge` (the pending charge, or one paid within the last minute, else `null`) and `history` (including paid rows). Each charge has `status` `pending`, `paid`, `cancelled`, or `expired`, and `paidAt` (ISO string or `null`). The till asks it every three seconds while a charge is open and for one minute after it ran out.
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
-- **Used by:** `fetchPosState`.
+- **Used by:** `fetchPosState` (`PosTill`, `PosAmount`).
 - **Auth:** Bearer.
 
 ## Endpoint: POST /pos/charge
