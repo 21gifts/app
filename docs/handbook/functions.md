@@ -2783,7 +2783,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: lnurlPayAddress
 
 - **Purpose:** Name the receiver of an LNURL the way a pasted Lightning address is named. An LNURL whose URL is `https://<host>/.well-known/lnurlp/<name>` is the address `<name>@<host>` on any host.
-- **Inputs:** `text` as pasted or scanned: a bech32 LNURL (an optional `lightning:` prefix is removed, surrounding space is trimmed) or the `https://<host>/pl/?lightning=` link of a profile or point-of-sale QR. A link with another scheme or path gives `null`.
+- **Inputs:** `text` as pasted or scanned: a bech32 LNURL (an optional `lightning:` prefix is removed, surrounding space is trimmed) or an `https` `/pl/` link that carries one in its `lightning` query, as in a profile or point-of-sale QR. Only that LNURL names the address; the link's own host, port, and other query keys are not read. A link with another scheme or path gives `null`.
 - **Returns / side effects:** `<name>@<host>` with the name as it stands in the URL, or `null` for other text and for an LNURL that is not https, has a port, a query, or user info, has another path, or has a name an address cannot carry (only letters, digits, `.`, `_`, `+`, `-`). Pure; does not call the network.
 - **Used by:** `useWalletSend` (recipient of the amount and confirm steps, and the `send-confirm-fixed` pin).
 

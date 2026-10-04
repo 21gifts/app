@@ -59,8 +59,10 @@ export function payLinkUsername(lightning: string, pageHost: string): string | n
  * Lightning address (`<name>@<host>`) behind an LNURL that points at
  * `https://<host>/.well-known/lnurlp/<name>`, so a send can name the receiver
  * the way a pasted address does. Reads a bech32 LNURL (with or without
- * `lightning:`) and the `https://<host>/pl/?lightning=` link of a profile or
- * point-of-sale QR. Any host.
+ * `lightning:`) and an `https` `/pl/` link that carries one in its
+ * `lightning` query, as in a profile or point-of-sale QR. Only that LNURL
+ * names the address; the link's own host, port, and other query keys are not
+ * read. Any host.
  *
  * @param text - Text as pasted or scanned.
  * @returns The address, or `null` for any other text or LNURL (another path,
