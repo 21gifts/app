@@ -1,12 +1,20 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import { useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { QrScanner } from '@/components/QrScanner';
 import { Button, Field, IconButton } from '@/components/ui';
 import {
   walletSendBounds,
@@ -82,10 +90,16 @@ function StepBox({
 }
 
 /**
- * Send block on `/wallet` under the balance: paste a Bitcoin payment request
- * or address, enter an amount when the receiver asks for one, confirm amount,
- * fee, and recipient, then send. While the wallet is not ready, an input step
- * with an alert shows only that alert.
+ * Send view on `/wallet`, opened from the wallet home with Send: paste a
+ * Bitcoin payment request or address, enter an amount when the receiver asks
+ * for one, confirm amount, fee, and recipient, then send. The input step opens with the camera QR
+ * scanner above the field; a decoded text goes into the field as if pasted and
+ * Continue runs on it. The camera runs only while the input step is idle and
+ * shows no alert, so a code that was just refused is not read again at once;
+ * editing the field clears the alert and starts the camera again. After a scan
+ * the camera stays off until the submit moves on (busy, another step, or an
+ * alert) or the field is edited, so the same code is never submitted twice. While the
+ * wallet is not ready, an input step with an alert shows only that alert.
  *
  * @param props - Send flow and whether the wallet is ready.
  * @returns The send region.
@@ -98,13 +112,33 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
   const accountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const [amountDraft, setAmountDraft] = useState('');
   const [amountUnit, setAmountUnit] = useState<AmountUnit>(accountUnit);
-  const { state, busy } = send;
+  const [scanned, setScanned] = useState<string | null>(null);
+  const scanSubmitted = useRef(false);
+  /** The input alert, or `'step'` once the flow has left the input step. */
+  const inputError = send.state.step === 'input' ? send.state.error : 'step';
+  const { state, busy, text, submitInput } = send;
   const spinner = busy ? (
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
   ) : undefined;
   const close = (): void => {
     send.cancel();
   };
+
+  useEffect(() => {
+    if (scanned === null) {
+      return;
+    }
+    const moved = busy || inputError !== null;
+    if (moved || (scanSubmitted.current && text !== scanned)) {
+      setScanned(null);
+      return;
+    }
+    if (!scanSubmitted.current && text === scanned) {
+      scanSubmitted.current = true;
+      setAmountDraft('');
+      submitInput();
+    }
+  }, [scanned, text, busy, inputError, submitInput]);
 
   const fiatOf = (sats: number): ReactElement | null =>
     preferredFiatSuffix(sats, rateDay, fiat, numberFormat);
@@ -129,6 +163,15 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
     };
     body = (
       <form onSubmit={onSubmit} className="flex w-full flex-col items-stretch gap-3">
+        {busy || scanned !== null || state.error !== null ? null : (
+          <QrScanner
+            onResult={(value) => {
+              scanSubmitted.current = false;
+              send.setText(value);
+              setScanned(value);
+            }}
+          />
+        )}
         <Field
           label={t('wallet.sendLabel')}
           placeholder={t('wallet.sendPlaceholder')}
