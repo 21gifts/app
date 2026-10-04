@@ -138,7 +138,13 @@ export function QrScanner({ onResult }: QrScannerProps): ReactElement {
         if (stopped) {
           return;
         }
-        const text = await decode(video).catch(() => null);
+        let text: string | null;
+        try {
+          text = await decode(video);
+        } catch {
+          // A frame that cannot be read (also a synchronous canvas or jsqr error) is skipped.
+          text = null;
+        }
         if (stopped) {
           return;
         }

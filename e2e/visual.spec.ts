@@ -1795,12 +1795,17 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-setup-username-frozen');
   });
 
-  /** Waits for the wallet home with the fixture balance, then opens Send. */
+  /**
+   * Waits for the wallet home with the fixture balance, then opens Send and
+   * waits for the rate the Send view loads for its fiat amounts.
+   */
   async function openWalletSend(page: Page): Promise<void> {
     await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible({
       timeout: 15_000,
     });
+    const rate = page.waitForResponse('**/gifts/stats**');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
+    await rate;
     await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toBeVisible();
   }
 
