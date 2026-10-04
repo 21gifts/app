@@ -375,9 +375,9 @@
 
 ## Endpoint: GET /pos/charge
 
-- **Purpose:** Same-origin proxy of api `GET /pos`. Returns the open charge or null, plus history.
+- **Purpose:** Same-origin proxy of api `GET /pos`. Returns `charge` (the pending charge, or one paid within the last minute, else `null`) and `history` (including paid rows). Each charge has `status` `pending`, `paid`, `cancelled`, or `expired`, and `paidAt` (ISO string or `null`). The till asks it every three seconds while a charge is open and for one minute after it ran out.
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
-- **Used by:** `fetchPosState`.
+- **Used by:** `fetchPosState` (`PosTill`, `PosAmount`).
 - **Auth:** Bearer.
 
 ## Endpoint: POST /pos/charge
