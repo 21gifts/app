@@ -5,7 +5,8 @@ import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/ap
 import { getE2eNow } from '@/lib/config';
 import { encodeLnurl } from '@/lib/lnurl';
 import { lnurlPayAddress } from '@/lib/pay-link';
-import { lnurlRelayTarget } from '@/lib/wallet/lnurl-relay';
+import { fetchShopChargeInvoice } from '@/lib/pos';
+import { lnurlRelayTarget, ownShop } from '@/lib/wallet/lnurl-relay';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
@@ -124,7 +125,9 @@ export interface UseWalletSendResult {
 
 /**
  * Recipient, amount, and fee shown by the visual fixtures. `fixedLink` is the
- * point-of-sale QR of `shop@21.gifts`, and `fixedAmountSats` its open charge.
+ * point-of-sale QR of `shop@21.gifts`, `fixedAmountSats` its open charge, and
+ * `fixedFeeSats` the Lightning fee when that charge is paid over Lightning
+ * (paid with the shop's Spark invoice, the fee is `feeSats`).
  */
 export const WALLET_SEND_VISUAL_FIXTURE = {
   recipient: 'bob@example.com',
@@ -136,6 +139,7 @@ export const WALLET_SEND_VISUAL_FIXTURE = {
   requestRecipient: 'sp1qexample…a9f2',
   fixedLink: `https://21.gifts/pl/?lightning=${encodeLnurl('https://21.gifts/.well-known/lnurlp/shop')}`,
   fixedAmountSats: 7_000,
+  fixedFeeSats: 3,
 } as const;
 
 /**
@@ -227,11 +231,12 @@ function visualState(name: string | null): WalletSendState | null {
         feeSats: fixture.feeSats,
       };
     case 'send-confirm-fixed':
+    case 'send-confirm-shop':
       return {
         step: 'confirm',
         recipient: recipientOf(fixture.fixedLink, fixture.recipient),
         amountSats: fixture.fixedAmountSats,
-        feeSats: fixture.feeSats,
+        feeSats: name === 'send-confirm-shop' ? fixture.feeSats : fixture.fixedFeeSats,
       };
     case 'send-sent':
       return { step: 'sent', amountSats: fixture.amountSats };
@@ -299,8 +304,13 @@ function relayInputError(error: unknown): WalletSendError {
  * cannot reach shows a plain error. A Lightning address or LNURL on another
  * host (see `lnurlRelayTarget`) is read through the api instead: its pay
  * request gives the bounds and comment length, the api returns the invoice
- * for the chosen amount, and the wallet pays that invoice. Own-host addresses
- * and Spark targets are read by the wallet. Nothing is retried on its own. Visual
+ * for the chosen amount, and the wallet pays that invoice. A 21.gifts shop on
+ * this host (`ownShop`) is asked for an open charge first
+ * (`fetchShopChargeInvoice`): with one, the wallet pays its Spark invoice for
+ * exactly that amount, without a fee; with none, no Spark invoice, or a
+ * prepare that fails or gives another amount, the text is read as below.
+ * Other own-host addresses and Spark targets are read by the wallet. Nothing
+ * is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
  * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
  * other `?visual=send-…` value there); under `send-input-busy` and `send-amount-busy`, **Continue**
@@ -359,19 +369,30 @@ export function useWalletSend(): UseWalletSendResult {
     );
   }, []);
 
+  /**
+   * Prepares `request` and opens the confirm step. A result that is not the
+   * expected amount, or that fails, runs `fallback` when given (a balance
+   * that is too low still shows that alert), otherwise returns to the input
+   * with an alert.
+   */
   const prepare = useCallback(
-    (request: WalletPayRequest, recipient: string, expectedSats?: number): void => {
+    (
+      request: WalletPayRequest,
+      recipient: string,
+      expectedSats?: number,
+      fallback?: () => void,
+    ): void => {
       const run = generation.current;
       setBusy(true);
       void payFromWallet(request).then((result) => {
         if (run !== generation.current || !walletCanSend()) {
           return;
         }
-        setBusy(false);
         if (
           result.kind === 'confirm' &&
           (expectedSats === undefined || result.amountSats === expectedSats)
         ) {
+          setBusy(false);
           sendRef.current = result.send;
           setState({
             step: 'confirm',
@@ -381,6 +402,11 @@ export function useWalletSend(): UseWalletSendResult {
           });
           return;
         }
+        if (fallback !== undefined && result.kind !== 'insufficient') {
+          fallback();
+          return;
+        }
+        setBusy(false);
         setState({
           step: 'input',
           error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
@@ -522,47 +548,69 @@ export function useWalletSend(): UseWalletSendResult {
       );
       return;
     }
-    void parseWalletInput(text).then((parsed) => {
+    const readWithWallet = (): void => {
+      void parseWalletInput(text).then((parsed) => {
+        if (run !== generation.current || !walletCanSend()) {
+          return;
+        }
+        if (parsed.kind !== 'target') {
+          setBusy(false);
+          setState({
+            step: 'input',
+            error:
+              parsed.kind === 'unreachable'
+                ? 'unreachable'
+                : parsed.kind === 'unlock'
+                  ? 'failed'
+                  : 'invalid',
+          });
+          return;
+        }
+        const target = parsed.target;
+        if (target.type === 'onchain' || target.type === 'unsupported') {
+          setBusy(false);
+          setState({ step: 'input', error: target.type });
+          return;
+        }
+        if (target.type === 'lnurl') {
+          askAmount({ ...target, recipient: recipientOf(text, target.recipient) });
+          return;
+        }
+        if (target.amountSats !== null && target.amountSats > 0) {
+          prepare(
+            {
+              type: 'input',
+              input: target.input,
+              ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
+            },
+            target.recipient,
+          );
+          return;
+        }
+        setBusy(false);
+        setComment('');
+        setState({ step: 'amount', target, amountError: false });
+      });
+    };
+    const shop = ownShop(text, window.location.hostname);
+    if (shop === null) {
+      readWithWallet();
+      return;
+    }
+    void fetchShopChargeInvoice(shop.name).then((charge) => {
       if (run !== generation.current || !walletCanSend()) {
         return;
       }
-      if (parsed.kind !== 'target') {
-        setBusy(false);
-        setState({
-          step: 'input',
-          error:
-            parsed.kind === 'unreachable'
-              ? 'unreachable'
-              : parsed.kind === 'unlock'
-                ? 'failed'
-                : 'invalid',
-        });
+      if (charge === null) {
+        readWithWallet();
         return;
       }
-      const target = parsed.target;
-      if (target.type === 'onchain' || target.type === 'unsupported') {
-        setBusy(false);
-        setState({ step: 'input', error: target.type });
-        return;
-      }
-      if (target.type === 'lnurl') {
-        askAmount({ ...target, recipient: recipientOf(text, target.recipient) });
-        return;
-      }
-      if (target.amountSats !== null && target.amountSats > 0) {
-        prepare(
-          {
-            type: 'input',
-            input: target.input,
-            ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
-          },
-          target.recipient,
-        );
-        return;
-      }
-      setBusy(false);
-      setComment('');
-      setState({ step: 'amount', target, amountError: false });
+      prepare(
+        { type: 'input', input: charge.sparkInvoice },
+        shop.address,
+        charge.amountSats,
+        readWithWallet,
+      );
     });
   }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount]);
 
