@@ -1310,23 +1310,66 @@ describe('useWalletSend fixed amount', () => {
     expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
   });
 
-  it('shows the amount step with its alert when the api refuses the fixed amount', async () => {
+  it.each([
+    [new LnurlRelayError('amount'), 'failed'],
+    [new LnurlRelayError('comment'), 'failed'],
+    [new LnurlRelayError('notFound'), 'notFound'],
+  ])(
+    'returns to the input, never to an amount step, when the api refuses a fixed amount with %o',
+    async (error, alert) => {
+      vi.mocked(postLnurlPayRequest).mockResolvedValue({
+        ...PAY_REQUEST,
+        target: OUTSIDE_SHOP,
+        minSendableMsat: 7_000,
+        maxSendableMsat: 7_000,
+      });
+      vi.mocked(postLnurlInvoice).mockRejectedValue(error);
+      const { result } = renderHook(() => useWalletSend());
+      await typeAndSubmit(result, OUTSIDE_SHOP);
+      expect(payFromWallet).not.toHaveBeenCalled();
+      expect(result.current.busy).toBe(false);
+      expect(result.current.state).toEqual({ step: 'input', error: alert });
+    },
+  );
+
+  it('drops a fixed-amount prepare that settles after the wallet left ready and came back', async () => {
+    target(FIXED);
+    const finish = pending(vi.mocked(payFromWallet));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_LINK);
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    expect(result.current.busy).toBe(false);
+    act(() => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    await act(async () => {
+      finish.resolve(confirmFixed());
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('drops a fixed-amount invoice that arrives after the wallet left ready', async () => {
     vi.mocked(postLnurlPayRequest).mockResolvedValue({
       ...PAY_REQUEST,
       target: OUTSIDE_SHOP,
       minSendableMsat: 7_000,
       maxSendableMsat: 7_000,
     });
-    vi.mocked(postLnurlInvoice).mockRejectedValue(new LnurlRelayError('amount'));
+    const finish = pending(vi.mocked(postLnurlInvoice));
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, OUTSIDE_SHOP);
-    expect(payFromWallet).not.toHaveBeenCalled();
-    expect(result.current.busy).toBe(false);
-    expect(result.current.state).toMatchObject({
-      step: 'amount',
-      amountError: true,
-      target: { type: 'relay', minSats: 7, maxSats: 7, recipient: 'shop@example.com' },
+    expect(postLnurlInvoice).toHaveBeenCalled();
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
     });
+    await act(async () => {
+      finish.resolve({ pr: 'lnbc70n1shop' });
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
   it('keeps the amount step and the address for an outside LNURL whose bounds differ', async () => {
