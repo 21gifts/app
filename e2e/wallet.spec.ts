@@ -920,6 +920,23 @@ test('Function: useWalletSend — send-confirm pin shows the confirm step', asyn
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
 });
 
+test('Function: lnurlPayAddress — send-confirm-fixed pin names the shop of a point-of-sale QR and its charge', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm-fixed');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText('To shop@21.gifts')).toBeVisible();
+  await expect(region.getByText("Send ₿7'000")).toBeVisible();
+  await expect(region.getByText('$7.00')).toBeVisible();
+  await expect(region.getByLabel('Amount')).toHaveCount(0);
+  await expect(region.getByLabel('Message (optional)')).toHaveCount(0);
+  await expect(region.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(region.getByRole('button', { name: 'Cancel' })).toBeVisible();
+});
+
 test('Function: walletSendBounds — send-amount pin shows the receiver bounds', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);

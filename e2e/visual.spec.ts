@@ -2107,6 +2107,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-confirm-sending');
   });
 
+  test('wallet send-confirm-fixed', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-fixed');
+    await openWalletSend(page);
+    await expect(page.getByText('To shop@21.gifts')).toBeVisible();
+    await expect(page.getByText("Send ₿7'000")).toBeVisible();
+    await expect(page.getByText('$7.00')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-fixed');
+  });
+
   test('wallet send-input-busy', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-input-busy');

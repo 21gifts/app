@@ -529,6 +529,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-confirm-fixed',
+    image: 'wallet-send-confirm-fixed.png',
+    visual: 'state-wallet-send-confirm-fixed',
+    needle: "shotScreen(page, 'state-wallet-send-confirm-fixed')",
+  },
+  {
+    route: '/wallet',
     id: 'send-input-busy',
     image: 'wallet-send-input-busy.png',
     visual: 'state-wallet-send-input-busy',

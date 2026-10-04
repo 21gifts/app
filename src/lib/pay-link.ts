@@ -54,3 +54,39 @@ export function payLinkUsername(lightning: string, pageHost: string): string | n
     return null;
   }
 }
+
+/**
+ * Lightning address (`<name>@<host>`) behind an LNURL that points at
+ * `https://<host>/.well-known/lnurlp/<name>`, so a send can name the receiver
+ * the way a pasted address does. Reads a bech32 LNURL (with or without
+ * `lightning:`) and a link that carries one in its `lightning` query, such as
+ * the `/pl/?lightning=` link of a profile or point-of-sale QR. Any host.
+ *
+ * @param text - Text as pasted or scanned.
+ * @returns The address, or `null` for any other text or LNURL (another path,
+ *   a port, a query, not https, or a name an address cannot carry).
+ */
+export function lnurlPayAddress(text: string): string | null {
+  const bare = text.trim().replace(/^lightning:/i, '');
+  try {
+    const lnurl = /^https?:\/\//i.test(bare)
+      ? (new URL(bare).searchParams.get('lightning') ?? '')
+      : bare;
+    const decoded = decodeLnurl(lnurl);
+    if (decoded === null) {
+      return null;
+    }
+    const target = new URL(decoded);
+    if (target.protocol !== 'https:' || target.port !== '' || target.search !== '') {
+      return null;
+    }
+    const segment = /^\/\.well-known\/lnurlp\/([^/]+)$/.exec(target.pathname)?.[1];
+    if (segment === undefined) {
+      return null;
+    }
+    const name = decodeURIComponent(segment).toLowerCase();
+    return /^[a-z0-9._+-]+$/.test(name) ? `${name}@${target.hostname}` : null;
+  } catch {
+    return null;
+  }
+}

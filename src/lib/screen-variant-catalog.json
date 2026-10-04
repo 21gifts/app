@@ -390,6 +390,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-confirm-fixed",
+    "label": "/wallet send-confirm-fixed",
+    "visual": "state-wallet-send-confirm-fixed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-input-busy",
     "label": "/wallet send-input-busy",
     "visual": "state-wallet-send-input-busy",
