@@ -265,13 +265,6 @@ export const SCREEN_VARIANTS = [
     id: 'reveal',
     image: 'wallet-reveal.png',
     visual: 'state-wallet-reveal',
-    needle: 'Advanced functions',
-  },
-  {
-    route: '/wallet',
-    id: 'reveal-open',
-    image: 'wallet-reveal-open.png',
-    visual: 'state-wallet-reveal-open',
     needle: 'Show recovery phrase',
   },
   {
@@ -294,6 +287,41 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-balance-ready.png',
     visual: 'state-wallet-balance-ready',
     needle: "₿21'000",
+  },
+  {
+    route: '/wallet',
+    id: 'balance-ready-no-rate',
+    image: 'wallet-balance-ready-no-rate.png',
+    visual: 'state-wallet-balance-ready-no-rate',
+    needle: "shotScreen(page, 'state-wallet-balance-ready-no-rate')",
+  },
+  {
+    route: '/wallet',
+    id: 'balance-fiat',
+    image: 'wallet-balance-fiat.png',
+    visual: 'state-wallet-balance-fiat',
+    needle: "shotScreen(page, 'state-wallet-balance-fiat')",
+  },
+  {
+    route: '/wallet',
+    id: 'receive',
+    image: 'wallet-receive.png',
+    visual: 'state-wallet-receive',
+    needle: "shotScreen(page, 'state-wallet-receive')",
+  },
+  {
+    route: '/wallet',
+    id: 'receive-copied',
+    image: 'wallet-receive-copied.png',
+    visual: 'state-wallet-receive-copied',
+    needle: "shotScreen(page, 'state-wallet-receive-copied')",
+  },
+  {
+    route: '/wallet',
+    id: 'receive-no-username',
+    image: 'wallet-receive-no-username.png',
+    visual: 'state-wallet-receive-no-username',
+    needle: "shotScreen(page, 'state-wallet-receive-no-username')",
   },
   {
     route: '/wallet',
@@ -357,6 +385,21 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-send-input.png',
     visual: 'state-wallet-send-input',
     needle: 'Paste a Bitcoin payment request or address',
+  },
+  {
+    route: '/wallet',
+    id: 'send-camera-denied',
+    image: 'wallet-send-camera-denied.png',
+    visual: 'state-wallet-send-camera-denied',
+    needle:
+      'Camera access was blocked. Allow it in your browser settings, or paste the payment request.',
+  },
+  {
+    route: '/wallet',
+    id: 'send-camera-unavailable',
+    image: 'wallet-send-camera-unavailable.png',
+    visual: 'state-wallet-send-camera-unavailable',
+    needle: 'No camera found. Paste the payment request instead.',
   },
   {
     route: '/wallet',
