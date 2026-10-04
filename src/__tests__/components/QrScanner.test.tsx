@@ -331,6 +331,30 @@ describe('QrScanner', () => {
     expect(drawImage).not.toHaveBeenCalled();
   });
 
+  it('keeps scanning after a frame the canvas cannot read', async () => {
+    const drawImage = vi
+      .fn()
+      .mockImplementationOnce(() => {
+        throw new DOMException('not ready', 'InvalidStateError');
+      })
+      .mockImplementation(() => undefined);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage,
+      getImageData: () => ({ data: new Uint8ClampedArray(4) }),
+    } as unknown as CanvasRenderingContext2D);
+    vi.mocked(jsQR).mockReturnValue({ data: 'lnbc1after' } as ReturnType<typeof jsQR>);
+    setCamera(() => Promise.resolve(fakeStream().stream));
+    const onResult = vi.fn();
+    renderWithLocale(<QrScanner onResult={onResult} />);
+    await flush();
+    setFrame(320, 240);
+    await flush(120);
+    expect(drawImage).toHaveBeenCalledTimes(1);
+    expect(onResult).not.toHaveBeenCalled();
+    await flush(120);
+    expect(onResult).toHaveBeenCalledWith('lnbc1after');
+  });
+
   it('never reads a frame when the canvas has no 2D context', async () => {
     setCamera(() => Promise.resolve(fakeStream().stream));
     const onResult = vi.fn();
