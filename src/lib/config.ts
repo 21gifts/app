@@ -136,8 +136,8 @@ export function getSentryDsn(): string | null {
 
 /**
  * Optional error-reporting environment name (`NEXT_PUBLIC_SENTRY_ENVIRONMENT`),
- * e.g. `staging`. Unset, empty, or blank means the reports carry no
- * environment name. Does not throw. Delivered like {@link getSentryDsn}.
+ * e.g. `staging`. Unset, empty, or blank leaves the SDK default
+ * (`production`). Does not throw. Delivered like {@link getSentryDsn}.
  *
  * @returns The trimmed name, or `null` when unset or blank.
  */

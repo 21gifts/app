@@ -29,7 +29,7 @@ const DROPPED_INTEGRATIONS = new Set([
   'BrowserSession',
   'BrowserTracing',
   'ProcessSession',
-  'LocalVariables',
+  'LocalVariablesAsync',
   'Console',
   'CaptureConsole',
   'ConsoleLogs',
@@ -404,6 +404,41 @@ function envelopeDsn(envelope: Uint8Array): SentryDsn | null {
 }
 
 /**
+ * Read a request body, stopping as soon as it grows past the size limit.
+ *
+ * @param request - Incoming request.
+ * @returns The body bytes, or `null` when it is larger than
+ * {@link MAX_ENVELOPE_BYTES}.
+ */
+async function readCappedBody(request: Request): Promise<Uint8Array<ArrayBuffer> | null> {
+  if (request.body === null) {
+    return new Uint8Array();
+  }
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    size += value.byteLength;
+    if (size > MAX_ENVELOPE_BYTES) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const body = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+}
+
+/**
  * `POST /monitoring`: forward one browser envelope to the configured Sentry
  * project, so reports are not lost to content blockers.
  *
@@ -412,7 +447,8 @@ function envelopeDsn(envelope: Uint8Array): SentryDsn | null {
  * headers are not passed on.
  *
  * @param request - Incoming envelope POST.
- * @returns 404 when error reporting is off, 413 when too large, 400 when the
+ * @returns 404 when error reporting is off, 413 when larger than 1 MiB (by
+ * `Content-Length`, or while reading, before the whole body is buffered), 400 when the
  * envelope names another DSN, 502 when the Sentry server cannot be reached,
  * otherwise the upstream status with an empty body.
  */
@@ -421,8 +457,11 @@ export async function forwardSentryEnvelope(request: Request): Promise<Response>
   if (target === null) {
     return new Response(null, { status: 404 });
   }
-  const body = new Uint8Array(await request.arrayBuffer());
-  if (body.byteLength > MAX_ENVELOPE_BYTES) {
+  if (Number(request.headers.get('content-length')) > MAX_ENVELOPE_BYTES) {
+    return new Response(null, { status: 413 });
+  }
+  const body = await readCappedBody(request);
+  if (body === null) {
     return new Response(null, { status: 413 });
   }
   const named = envelopeDsn(body);
