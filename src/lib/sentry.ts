@@ -36,13 +36,14 @@ const DROPPED_INTEGRATIONS = new Set([
 ]);
 
 /** Keys whose value is always removed, compared lower-case and exactly. */
-const SENSITIVE_KEYS = new Set(['pr', 'prf', 'words', '21gifts.session']);
+const SENSITIVE_KEYS = new Set(['pr', 'words', '21gifts.session']);
 
 /** Key fragments whose value is always removed, compared lower-case. */
 const SENSITIVE_KEY_PARTS = [
   'mnemonic',
   'phrase',
   'seed',
+  'prf',
   'token',
   'secret',
   'invoice',
@@ -60,13 +61,13 @@ const REQUEST_CATEGORIES = new Set(['fetch', 'xhr', 'http']);
 /** Valid BIP-39 phrase lengths. */
 const PHRASE_LENGTHS = new Set([12, 15, 18, 21, 24]);
 
-/** One lower-case word of 3 to 8 letters (the BIP-39 English word shape). */
-const WORD = /^[a-z]{3,8}$/;
+/** One word of 3 to 8 letters (the BIP-39 English word shape, any case). */
+const WORD = /^[a-z]{3,8}$/i;
 
 /** Value patterns, in order. Each match is replaced as given. */
 const REDACTIONS: ReadonlyArray<readonly [RegExp, string]> = [
   // 12 or more BIP-39-shaped words in a row (space, comma, or quote separated).
-  [/\b[a-z]{3,8}(?:[\s,"']+[a-z]{3,8}){11,}\b/g, FILTERED],
+  [/\b[a-z]{3,8}(?:[\s,"']+[a-z]{3,8}){11,}\b/gi, FILTERED],
   // BOLT11 invoices and LNURL strings.
   [/\b(?:lnbc|lntb|lnurl)[0-9a-z]{10,}/gi, FILTERED],
   // Spark addresses.
@@ -180,7 +181,7 @@ function redactString(value: string): string {
  * Whether an array looks like a recovery phrase split into words.
  *
  * @param items - Array to test.
- * @returns `true` for 12 to 24 lower-case words.
+ * @returns `true` for 12 to 24 words.
  */
 function isWordList(items: unknown[]): boolean {
   return (
@@ -203,7 +204,8 @@ function scrubValue(value: unknown, depth: number): unknown {
   if (typeof value !== 'object' || value === null) {
     return value;
   }
-  if (depth >= MAX_DEPTH) {
+  // Raw bytes (keys, PRF output) are never readable data: drop them whole.
+  if (depth >= MAX_DEPTH || ArrayBuffer.isView(value)) {
     return FILTERED;
   }
   if (Array.isArray(value)) {
