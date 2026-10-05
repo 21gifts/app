@@ -212,6 +212,56 @@ describe('HabitTracker', () => {
     expect(screen.getByText('<script>hello</script>')).toBeTruthy();
     expect(screen.getByText('Mitglied')).toBeTruthy();
   });
+  it('lets an owner rate an earlier published week and not a future week', async () => {
+    signIn();
+    renderWithLocale(<HabitTracker />);
+    await loaded();
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('group', { name: 'Read daily' }).hasAttribute('disabled')).toBe(false);
+    payload.week = { ...payload.week, start: '2026-09-21', label: '2026-W39' };
+    fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
+    await screen.findByText('Week 2026-W39');
+    const founderBoard = screen
+      .getByRole('heading', { name: 'Founder Cyrill’s resolutions' })
+      .closest('section');
+    const initiatorBoard = screen
+      .getByRole('heading', { name: 'Initiator Pater Severin’s resolutions' })
+      .closest('section');
+    expect(founderBoard).toBeTruthy();
+    expect(initiatorBoard).toBeTruthy();
+    expect(
+      within(founderBoard as HTMLElement).queryByRole('button', { name: 'Edit resolution' }),
+    ).toBeNull();
+    expect(
+      within(founderBoard as HTMLElement).queryByRole('button', { name: 'Delete resolution' }),
+    ).toBeNull();
+    expect(screen.getByRole('group', { name: 'Read daily' }).hasAttribute('disabled')).toBe(false);
+    expect(
+      within(initiatorBoard as HTMLElement)
+        .getByRole('group', { name: 'Walk daily' })
+        .hasAttribute('disabled'),
+    ).toBe(true);
+    const posted = () =>
+      fetcher.mock.calls
+        .filter((call) => call[1]?.method === 'POST')
+        .map((call) => JSON.parse(String(call[1]?.body)));
+    fireEvent.click(within(founderBoard as HTMLElement).getByRole('radio', { name: /^Achieved$/ }));
+    await waitFor(() =>
+      expect(posted()[0]).toEqual({
+        action: 'rate',
+        id: 'f1',
+        week: '2026-09-21',
+        status: 'achieved',
+      }),
+    );
+  });
+  it('does not let an owner rate a week after the published review week', async () => {
+    signIn();
+    payload.week = { ...payload.week, start: '2026-10-05', label: '2026-W41' };
+    renderWithLocale(<HabitTracker />);
+    await loaded();
+    expect(screen.getByRole('group', { name: 'Read daily' }).hasAttribute('disabled')).toBe(true);
+  });
 });
 
 it('refreshes the current block at its Monday boundary', async () => {

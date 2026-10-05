@@ -103,7 +103,7 @@ export function HabitTracker(): ReactElement {
     }
   }
   const current = data !== null && data.week.start === data.currentWeek;
-  const canRate = current;
+  const canRate = data !== null && data.week.start <= data.currentWeek;
   const disabled = busy || loading;
   return (
     <section
