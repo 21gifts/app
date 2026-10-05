@@ -367,6 +367,7 @@ export function resetViewHistory(): void {
   const g = globalThis as ViewHistoryGlobal;
   delete g[SLOT];
   pendingBack = null;
+  takeBackTarget();
   writeStoredMemory(null);
 }
 

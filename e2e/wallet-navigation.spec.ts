@@ -226,6 +226,16 @@ test('forum place, shops post and table place, and operator links keep the docum
   await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 
+  // The same place from the table differs only in the hash; Back returns to the table.
+  await page.getByRole('button', { name: 'Table' }).click();
+  await page.getByRole('link', { name: 'Happyland' }).click();
+  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
+  await expect(page).toHaveURL(`${origin}/shops?pin=m-pin#map`);
+  await page.goBack();
+  await expect(page).toHaveURL(`${origin}/shops?pin=m-pin#table`);
+  await expect(page.getByRole('button', { name: 'Table', pressed: true })).toBeVisible();
+  expect(await sameDocument(page)).toBe('same');
+
   // A place in the table opens the map; browser Back returns to the table.
   await page.getByRole('button', { name: 'Table' }).click();
   await page.getByRole('link', { name: 'Bakery' }).click();

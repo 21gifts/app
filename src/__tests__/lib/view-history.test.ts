@@ -661,6 +661,7 @@ describe('goToPreviousView', () => {
     pushView('/notifications');
     goToPreviousView(vi.fn());
     resetViewHistory();
+    expect(sessionStorage.getItem(BACK_KEY)).toBeNull();
     pushView('/notifications');
     pushView('/shops');
     expect(stored()?.stack).toEqual(['/notifications', '/shops']);

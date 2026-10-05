@@ -174,14 +174,16 @@ describe('ShopsScreen', () => {
     expect(screen.getByRole('button', { name: 'Table', pressed: true })).toBeTruthy();
   });
 
-  it('rewrites this entry for a link that differs only in the hash', () => {
+  it('leaves the entry of a link that differs only in the hash to the router push', () => {
     window.history.replaceState(null, '', '/shops#table');
     renderWithLocale(<ShopsScreen />);
     const before = window.history.length;
     clickLink(screen.getByText('same entry'));
     expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
     expect(window.location.hash).toBe('#map');
-    expect(window.history.length).toBe(before);
+    expect(window.history.length).toBe(before + 1);
+    popTo('/shops#table');
+    expect(screen.getByRole('button', { name: 'Table', pressed: true })).toBeTruthy();
   });
 
   it('shows the posts for a link to this page without a known hash', () => {
