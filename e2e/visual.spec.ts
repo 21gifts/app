@@ -22536,7 +22536,7 @@ test.describe('habit tracker baselines', () => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ pr: 'lnbc1' }),
+          body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
         });
         return;
       }

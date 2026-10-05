@@ -479,7 +479,13 @@ describe('MemberHabits', () => {
             return json({});
           }
           if (body.amountSats === 23) {
-            return json({ pr: 'lnbc23' });
+            return json({ pr: 'lnbc23', amountSats: 23 });
+          }
+          if (body.amountSats === 24) {
+            return json({ pr: 'lnbc24', amountSats: 99 });
+          }
+          if (body.amountSats === 25) {
+            return json({ pr: 'lnbc25' });
           }
           if (body.amountSats === 50) {
             return new Promise<Response>((resolve) => {
@@ -529,6 +535,14 @@ describe('MemberHabits', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByText('Could not start the Bitcoin payment')).toBeTruthy();
 
+    fireEvent.change(amount, { target: { value: '24' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Could not start the Bitcoin payment')).toBeTruthy();
+
+    fireEvent.change(amount, { target: { value: '25' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Could not start the Bitcoin payment')).toBeTruthy();
+
     fireEvent.change(amount, { target: { value: '23' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByText('Pay ₿23')).toBeTruthy();
@@ -566,7 +580,7 @@ describe('MemberHabits', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByText('Pay ₿23')).toBeTruthy();
     await act(async () => {
-      releaseStale(json({ pr: 'lnbc-stale' }));
+      releaseStale(json({ pr: 'lnbc-stale', amountSats: 50 }));
       rejectStale(new Error('late'));
     });
     expect(screen.queryByText('Pay ₿50')).toBeNull();

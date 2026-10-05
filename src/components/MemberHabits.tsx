@@ -1,6 +1,6 @@
 'use client';
 
-import { Archive, Gift, Pencil, X } from 'lucide-react';
+import { Archive, Gift, Pencil, Send, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -13,7 +13,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
-import type { Account, AmountUnit } from '@/lib/api-types';
+import { messageInvoiceSchema, type Account, type AmountUnit } from '@/lib/api-types';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
 import { roleAtLeast } from '@/lib/roles';
 import { paySatsFromDraft, type FiatRateDay } from '@/lib/stats-money';
@@ -192,7 +192,11 @@ export function MemberHabits(): ReactElement {
         if (generation !== payGeneration.current) {
           return;
         }
-        setPayInvoice({ messageId: commentId, pr: lightningInvoicePr(body), amountSats: sats });
+        setPayInvoice({
+          messageId: commentId,
+          pr: lightningInvoicePr(body, sats),
+          amountSats: sats,
+        });
       })
       .catch((caught: unknown) => {
         if (generation !== payGeneration.current) {
@@ -301,7 +305,7 @@ export function MemberHabits(): ReactElement {
                       </div>
                     </div>
                     {openHabit ? (
-                      <div className="flex shrink-0 items-center gap-1">
+                      <div className="flex shrink-0 items-center gap-5">
                         {editing ? null : (
                           <IconButton
                             type="button"
@@ -608,11 +612,12 @@ function statusCopy(
   return t('habit.unrated');
 }
 
-function lightningInvoicePr(body: unknown): string {
-  if (body === null || typeof body !== 'object' || !('pr' in body) || typeof body.pr !== 'string') {
-    throw new Error(SAVE_ERROR);
+function lightningInvoicePr(body: unknown, amountSats: number): string {
+  const parsed = messageInvoiceSchema.safeParse(body);
+  if (!parsed.success || parsed.data.amountSats !== amountSats) {
+    throw new Error('Could not start the Bitcoin payment');
   }
-  return body.pr;
+  return parsed.data.pr;
 }
 
 function CommentsBlock(props: {
@@ -679,19 +684,20 @@ function CommentsBlock(props: {
                   <span>{comment.text}</span>
                 </p>
                 {canDelete || showGift ? (
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-5">
                     {canDelete ? (
                       <SundayWritingGate>
-                        <Button
+                        <IconButton
                           type="button"
-                          variant="secondary"
                           size="sm"
+                          variant="ghost"
+                          aria-label={t('habit.deleteComment')}
                           onClick={() => {
                             onDeleteComment(comment.id);
                           }}
                         >
-                          {t('habit.deleteComment')}
-                        </Button>
+                          <Trash2 aria-hidden="true" className="h-4 w-4 text-app-danger" />
+                        </IconButton>
                       </SundayWritingGate>
                     ) : null}
                     {showGift ? (
@@ -738,19 +744,27 @@ function CommentsBlock(props: {
       )}
       {account !== null ? (
         <SundayWritingGate>
-          <div className="flex flex-col gap-2">
-            <Field
-              id={`habit-${habit.id}-comment`}
-              label={t('habit.writeComment')}
-              multiline
-              value={commentText}
-              onChange={(event) => {
-                onCommentText(event.target.value);
-              }}
-            />
-            <Button type="button" onClick={onPostComment}>
-              {t('habit.post')}
-            </Button>
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
+              <Field
+                id={`habit-${habit.id}-comment`}
+                label={t('habit.writeComment')}
+                multiline
+                value={commentText}
+                onChange={(event) => {
+                  onCommentText(event.target.value);
+                }}
+              />
+            </div>
+            <IconButton
+              type="button"
+              size="lg"
+              variant="primary"
+              aria-label={t('habit.post')}
+              onClick={onPostComment}
+            >
+              <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+            </IconButton>
           </div>
         </SundayWritingGate>
       ) : null}

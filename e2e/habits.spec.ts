@@ -153,7 +153,7 @@ test('screen /habit-tracker donate-invoice', async ({ page }) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc1' }),
+        body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
       });
       return;
     }
@@ -176,7 +176,7 @@ test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', asy
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc1' }),
+        body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
       });
       return;
     }
