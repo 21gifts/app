@@ -898,13 +898,15 @@ Privacy rules (this app holds wallets):
   username.
 - One scrubber (`beforeSend` / `beforeBreadcrumb` in `src/lib/sentry.ts`) runs
   in the browser and on the server. It replaces 12–24-word recovery-phrase
-  runs; `lnbc…`/`lntb…`/`lnurl…` strings; `spark1…`/`sparkrt1…` addresses;
-  hex strings of 64+ digits; bearer tokens and `Authorization` headers; the
-  stored session token (`21gifts.session`); URL query strings and fragments
-  (the path stays); and every value under keys such as `mnemonic`, `phrase`,
-  `words`, `seed`, `token`, `secret`, `prf`, `invoice`, or `pr`. Of the
-  request it keeps method, path, User-Agent, and Referer. Console breadcrumbs
-  are dropped; `fetch`/`xhr` breadcrumbs keep method, path, and status only.
+  runs in any letter case; `lnbc…`/`lntb…`/`lnurl…` strings;
+  `spark1…`/`sparkrt1…` addresses; hex strings of 64+ digits; raw byte arrays
+  (typed arrays such as `Uint8Array`); bearer tokens and `Authorization`
+  headers; the stored session token (`21gifts.session`); URL query strings and
+  fragments (the path stays); and every value under keys such as `mnemonic`,
+  `phrase`, `words`, `seed`, `token`, `secret`, `prf`, `invoice`, or `pr`. Of
+  the request it keeps method, path, User-Agent, and Referer. Console
+  breadcrumbs are dropped; `fetch`/`xhr` breadcrumbs keep method, path, and
+  status only.
 - Browser reports go to the app's own origin, `POST /monitoring`, which
   forwards them only to the configured DSN's host and project and does not
   pass on the visitor's IP address, cookies, or headers. The SDK's
