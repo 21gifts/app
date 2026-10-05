@@ -11478,7 +11478,9 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     // The cropper measures its frame asynchronously before sizing the SVG image.
-    await expect(page.locator('svg image')).toHaveAttribute('width', /\d/u);
+    await expect(
+      page.getByRole('group', { name: 'Drag the photo to choose the wide image' }).locator('image'),
+    ).toHaveAttribute('width', /\d/u);
     await shotScreen(page, 'state-profile-banner-not-wide');
   });
 
