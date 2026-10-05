@@ -1381,7 +1381,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
+- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. From local Sunday 00:00 until Monday 08:00 neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
 - **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
 - **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
 - **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
@@ -2102,7 +2102,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: isLocalSunday
 
-- **Purpose:** True when `nowMs` falls on Sunday in an IANA zone, or in the runtime zone when `timeZone` is omitted. An invalid zone returns false. Does not use one fixed zone for every visitor.
+- **Purpose:** True when `nowMs` falls from Sunday 00:00 through Monday before 08:00 in an IANA zone, or in the runtime zone when `timeZone` is omitted. An invalid zone returns false. Does not use one fixed zone for every visitor.
 - **Inputs:** `nowMs` epoch milliseconds and optional `timeZone`.
 - **Returns / side effects:** boolean. No I/O.
 - **Used by:** tests. The painted Sunday flag comes from `SUNDAY_BOOTSTRAP_SCRIPT`.
@@ -2116,7 +2116,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: SundayWritingGate
 
-- **Purpose:** On the device's local Sunday, replaces public write controls or a forum zap control with a sentence. Otherwise renders the children. The rules in `globals.css` hide the field before paint once `data-local-sunday="1"` is set. Weekday wrappers use `display: contents`.
+- **Purpose:** From local Sunday 00:00 until Monday 08:00, replaces public write controls or a forum zap control with a sentence. Otherwise renders the children. The rules in `globals.css` hide the field before paint once `data-local-sunday="1"` is set. Weekday wrappers use `display: contents`.
 - **Inputs:** `children`, and optional `notice` (`write` or `zap`).
 - **Returns / side effects:** The sentence or the children. No network.
 - **Used by:** forum composers, profile editors, grant and trust actions, and forum pay controls.

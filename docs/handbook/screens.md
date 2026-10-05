@@ -544,7 +544,7 @@ The renewal did not work because this passkey cannot create a recovery phrase. T
 
 ### Variant: sunday
 
-Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.
+Device-local Sunday. The public composer is gone. The sentence **Writing is paused until Monday at 08:00, your local time.** stands in its place. Notes stay readable.
 
 ![21.gifts welcome sunday](images/welcome-sunday.png)
 
@@ -1725,7 +1725,7 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 
 ### Variant: sunday
 
-Device-local Sunday. The **Post** / **Map** / **Table** pill stays. **Add a shop** is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
+Device-local Sunday. The **Post** / **Map** / **Table** pill stays. **Add a shop** is gone. **Writing is paused until Monday at 08:00, your local time.** The note **Cafe Luna** stays.
 
 ![21.gifts shops sunday](images/shops-sunday.png)
 
@@ -2439,7 +2439,7 @@ Same moderator and basis member after pressing **Moderator functions**. The disc
 
 ### Variant: sunday
 
-Device-local Sunday. **Moderator functions** is open. **Verify** is gone. **Writing is paused on Sunday.**
+Device-local Sunday. **Moderator functions** is open. **Verify** is gone. **Writing is paused until Monday at 08:00, your local time.**
 
 ![21.gifts member sunday](images/members-accountId-sunday.png)
 
@@ -2641,7 +2641,7 @@ Above the heading, **Add a wide image** and **Add a profile photo** when those p
 
 ### Variant: sunday
 
-Device-local Sunday. The name, the empty About me sentence, the address, and the add-picture buttons stay. The pencils and **Write your About me** are gone. **Writing is paused on Sunday.**
+Device-local Sunday. The name, the empty About me sentence, the address, and the add-picture buttons stay. The pencils and **Write your About me** are gone. **Writing is paused until Monday at 08:00, your local time.**
 
 ![21.gifts profile sunday](images/profile-sunday.png)
 
@@ -3010,7 +3010,7 @@ Verified none/rejected with empty About me. Copy **First, write a short About me
 
 ### Variant: sunday
 
-Device-local Sunday. The step sentence stays. The About me editor is gone. **Writing is paused on Sunday.**
+Device-local Sunday. The step sentence stays. The About me editor is gone. **Writing is paused until Monday at 08:00, your local time.**
 
 ![21.gifts apply sunday](images/grants-apply-sunday.png)
 
@@ -3571,7 +3571,7 @@ Staff (moderator) loaded queue with at least one open proposal (subject **Rose**
 
 ### Variant: sunday
 
-Device-local Sunday. **Rose** stays. **Confirm as moderator** and **Reject** are gone. **Writing is paused on Sunday.**
+Device-local Sunday. **Rose** stays. **Confirm as moderator** and **Reject** are gone. **Writing is paused until Monday at 08:00, your local time.**
 
 ![21.gifts open proposals sunday](images/moderate-proposals-sunday.png)
 
@@ -3721,7 +3721,7 @@ Staff (founder) loaded application for **Rose**. Question **Do their profile pos
 
 ### Variant: sunday
 
-Device-local Sunday. The application stays readable. **Yes** and **No** are gone. **Writing is paused on Sunday.**
+Device-local Sunday. The application stays readable. **Yes** and **No** are gone. **Writing is paused until Monday at 08:00, your local time.**
 
 ![21.gifts grant application sunday](images/grants-applications-accountId-sunday.png)
 
@@ -3813,7 +3813,7 @@ Moderator. Loaded group thread with message **Hello mods**. Composer visible. No
 
 ### Variant: sunday
 
-Device-local Sunday. The moderator thread is not loaded and the composer is gone. The sentence **The moderator chat is paused on Sunday.** stands in their place.
+Device-local Sunday. The moderator thread is not loaded and the composer is gone. The sentence **The moderator chat is paused until Monday at 08:00, your local time.** stands in their place.
 
 ![21.gifts moderator group sunday](images/moderate-group-sunday.png)
 
@@ -4102,7 +4102,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: sunday
 
-Device-local Sunday. **Hello from Ada** stays. **Write a reaction** is gone. **Writing is paused on Sunday.**
+Device-local Sunday. **Hello from Ada** stays. **Write a reaction** is gone. **Writing is paused until Monday at 08:00, your local time.**
 
 ![21.gifts public message sunday](images/messages-id-sunday.png)
 
