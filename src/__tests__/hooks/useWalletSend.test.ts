@@ -359,7 +359,7 @@ describe('useWalletSend confirm', () => {
     await act(async () => {
       result.current.confirm();
     });
-    expect(result.current.state).toEqual({ step: 'sent', amountSats: 2_100 });
+    expect(result.current.state).toEqual({ step: 'sent', amountSats: 2_100, recipient: 'r' });
     expect(result.current.text).toBe('');
     act(() => {
       result.current.confirm();
@@ -459,7 +459,7 @@ describe('useWalletSend visual pins', () => {
         feeSats: 0,
       },
     ],
-    ['send-sent', { step: 'sent', amountSats: fixture.amountSats }],
+    ['send-sent', { step: 'sent', amountSats: fixture.amountSats, recipient: fixture.recipient }],
     ['send-onchain', { step: 'input', error: 'onchain' }],
     ['send-unsupported', { step: 'input', error: 'unsupported' }],
     ['send-invalid', { step: 'input', error: 'invalid' }],

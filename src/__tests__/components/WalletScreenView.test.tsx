@@ -725,7 +725,10 @@ describe('WalletScreenView Send', () => {
     expect(busy.cancel).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
     cleanup();
-    renderEntry('error', idleSend({ state: { step: 'sent', amountSats: 2_100 } }));
+    renderEntry(
+      'error',
+      idleSend({ state: { step: 'sent', amountSats: 2_100, recipient: 'bob@example.com' } }),
+    );
     expect(screen.getByRole('status').textContent).toContain("Sent ₿2'100");
     cleanup();
     renderEntry('locked', idleSend({ state: { step: 'input', error: 'failed' } }));
@@ -757,7 +760,11 @@ describe('WalletScreenView Send', () => {
     const view = renderEntry('ready', idleSend());
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     rerenderEntry(view, 'ready', idleSend({ state: CONFIRM_STATE }));
-    rerenderEntry(view, 'ready', idleSend({ state: { step: 'sent', amountSats: 2_100 } }));
+    rerenderEntry(
+      view,
+      'ready',
+      idleSend({ state: { step: 'sent', amountSats: 2_100, recipient: 'bob@example.com' } }),
+    );
     expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy();
     const before = cameraRenders.count;
     rerenderEntry(view, 'ready', idleSend());
