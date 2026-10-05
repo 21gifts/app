@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,4 +66,24 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Error reporting build step. Nothing Sentry-specific is configured here: the
+ * DSN and environment come from the container at start (see `src/lib/sentry.ts`).
+ * No source maps are uploaded and no release is created, so the build needs no
+ * token and makes no network calls. Tracing code is tree-shaken and the
+ * server-side auto-wrapping is off; `onRequestError` in `src/instrumentation.ts`
+ * reports request errors. The SDK's `tunnelRoute` is not used because it only
+ * rewrites to sentry.io hosts; `/monitoring` is the app's own tunnel.
+ */
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  telemetry: false,
+  sourcemaps: { disable: true },
+  release: { create: false, finalize: false },
+  webpack: {
+    autoInstrumentServerFunctions: false,
+    autoInstrumentMiddleware: false,
+    autoInstrumentAppDirectory: false,
+    treeshake: { removeDebugLogging: true, removeTracing: true },
+  },
+});

@@ -52,6 +52,8 @@ npm run dev    # → http://localhost:3000
 app/
 ├── src/
 │   ├── middleware.ts            # /map redirects to /shops#map and keeps the query string
+│   ├── instrumentation.ts       # Server/edge error reporting start (off without a DSN) + onRequestError
+│   ├── instrumentation-client.ts # Browser error reporting start (off without a DSN)
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
@@ -194,6 +196,9 @@ app/
 │   │   │       ├── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
 │   │   │       └── about/photo/route.ts  # GET /view-key/:viewKey/about/photo → api GET /view/:viewKey/about/photo
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
+│   │   ├── global-error.tsx     # Last-resort error boundary: reports the error, shows the Next.js error page
+│   │   ├── monitoring/
+│   │   │   └── route.ts         # POST /monitoring — same-origin error-report tunnel (404 without a DSN)
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
@@ -297,6 +302,7 @@ app/
 │   │   └── useWalletSend.ts     # /wallet send flow steps
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
+│   │   ├── sentry.ts            # Error reporting: init options, privacy scrubber, tunnel forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
@@ -389,7 +395,7 @@ app/
 ├── public/                      # Static assets served from /
 │   ├── sw.js                    # Push-only service worker (no asset/offline cache; short-lived push-open path)
 │   └── handbook-images/         # Built from visual baselines (gitignored *.png; keep .gitkeep)
-├── next.config.ts               # output: 'standalone'
+├── next.config.ts               # output: 'standalone'; withSentryConfig (no upload, no token)
 ├── vitest.config.ts             # 100% coverage threshold
 ├── playwright.config.ts         # chromium; mock api :3001 + standalone :3000
 ├── eslint.config.mjs            # Flat config (next/core-web-vitals + next/typescript)
@@ -447,7 +453,8 @@ update stuff
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
   `process.env` directly in components. Required accessors throw on missing
   values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
-  `getPlatformUsername`) return `null`. No silent fallbacks.
+  `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`) return
+  `null`. No silent fallbacks.
 - **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
 
 ### Styling
@@ -825,8 +832,17 @@ docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://dev-api.21.gifts 21gifts/
 **One image, multiple environments**: `next build` inlines `NEXT_PUBLIC_*`
 values into the bundles, so the image is built with literal placeholders
 (`__NEXT_PUBLIC_API_URL__`) and `entrypoint.sh` substitutes the runtime
-values at container start. The container refuses to start if a referenced
-variable is unset or empty.
+values at container start. The container refuses to start if a required
+variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
+`entrypoint.sh`) are substituted with an empty string instead, which the app
+reads as off. Each deployment sets them in its container environment.
+
+| Variable                         | Required | Unset or empty                     |
+| -------------------------------- | -------- | ---------------------------------- |
+| `NEXT_PUBLIC_API_URL`            | yes      | container refuses to start         |
+| `NEXT_PUBLIC_PLATFORM_USERNAME`  | no       | landing page shows no donation     |
+| `NEXT_PUBLIC_SENTRY_DSN`         | no       | error reporting off                |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | no       | error reports carry no environment |
 
 | Variable              | DEV                        | STAGING                        | PRD                    |
 | --------------------- | -------------------------- | ------------------------------ | ---------------------- |
@@ -846,12 +862,56 @@ passed only by the staging deploy (see [Breez SDK Spark](#breez-sdk-spark)).
 It is inlined at `next build`, is not an `entrypoint.sh` placeholder, and an
 unset or empty value still builds.
 
-`PLATFORM_USERNAME` is a Docker **build-arg** (default empty), inlined at
-`next build` as `NEXT_PUBLIC_PLATFORM_USERNAME` and read through
-`getPlatformUsername()`. It is the username of the 21.gifts platform account;
-the landing page shows that account's wallet address `<username>@<host>` for
-donations to the project. Empty hides the donation section. Playwright builds
-set it to `21gifts`. No deploy workflow passes it yet.
+`NEXT_PUBLIC_PLATFORM_USERNAME` is an optional `entrypoint.sh` placeholder,
+set per deployment and read through `getPlatformUsername()`. It is the
+username of the 21.gifts platform account; the landing page shows that
+account's wallet address `<username>@<host>` for donations to the project.
+Unset or empty hides the donation section. Playwright builds set it to
+`21gifts` at build time.
+
+### Error reporting (Sentry)
+
+Browser and server errors go to the team's Sentry project through
+`@sentry/nextjs` (`src/instrumentation.ts`, `src/instrumentation-client.ts`,
+`src/app/global-error.tsx`, `src/lib/sentry.ts`). Nothing Sentry-specific is
+in the repository; each deployment sets two optional variables:
+
+| Variable                         | Meaning                                                |
+| -------------------------------- | ------------------------------------------------------ |
+| `NEXT_PUBLIC_SENTRY_DSN`         | Project DSN. **Empty or unset = error reporting off.** |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | Environment name on each report, e.g. `staging`.       |
+
+Both are optional `entrypoint.sh` placeholders, read by the browser and by the
+server through `src/lib/config.ts`. The release is `NEXT_PUBLIC_APP_VERSION`.
+Without a DSN nothing starts: no SDK init, no network traffic, and
+`POST /monitoring` answers 404. Local development, unit tests, and Playwright
+(which sets both empty) run with error reporting off. Source maps are not
+uploaded and the build needs no token.
+
+Privacy rules (this app holds wallets):
+
+- Errors only: `tracesSampleRate: 0`, no trace headers, no sessions, no
+  Session Replay, no profiling, no feedback widget.
+- No personal data: no user, IP address, cookies, request bodies, query
+  strings, or stack-frame local variables (`dataCollection`, the SDK 11
+  successor of `sendDefaultPii: false`). Never call `setUser` with a name or
+  username.
+- One scrubber (`beforeSend` / `beforeBreadcrumb` in `src/lib/sentry.ts`) runs
+  in the browser and on the server. It replaces 12–24-word recovery-phrase
+  runs; `lnbc…`/`lntb…`/`lnurl…` strings; `spark1…`/`sparkrt1…` addresses;
+  hex strings of 64+ digits; bearer tokens and `Authorization` headers; the
+  stored session token (`21gifts.session`); URL query strings and fragments
+  (the path stays); and every value under keys such as `mnemonic`, `phrase`,
+  `words`, `seed`, `token`, `secret`, `prf`, `invoice`, or `pr`. Of the
+  request it keeps method, path, User-Agent, and Referer. Console breadcrumbs
+  are dropped; `fetch`/`xhr` breadcrumbs keep method, path, and status only.
+- Browser reports go to the app's own origin, `POST /monitoring`, which
+  forwards them only to the configured DSN's host and project and does not
+  pass on the visitor's IP address, cookies, or headers. The SDK's
+  `tunnelRoute` option is not used: it only rewrites to sentry.io hosts.
+
+Any new code that sends data to the error reporter must go through this
+scrubber.
 
 ## CI / CD
 
