@@ -175,7 +175,9 @@ test('Function: goToPreviousView opens the forum from the first rules chapter wi
   expect(await sameDocument(page)).toBe('same');
 });
 
-test('forum place, shops table place, and operator links keep the document', async ({ page }) => {
+test('forum place, shops post and table place, and operator links keep the document', async ({
+  page,
+}) => {
   await signInWithPasskey(page);
   const shop = {
     id: 'm-pin',
@@ -216,6 +218,12 @@ test('forum place, shops table place, and operator links keep the document', asy
 
   await page.getByRole('button', { name: 'Table' }).click();
   await page.getByRole('link', { name: 'Happyland' }).click();
+  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
+  await expect(page).toHaveURL(`${origin}/shops?pin=m-pin#map`);
+  expect(await sameDocument(page)).toBe('same');
+
+  await page.getByRole('button', { name: 'Post' }).click();
+  await page.getByRole('link', { name: 'Happyland' }).first().click();
   await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
   await expect(page).toHaveURL(`${origin}/shops?pin=m-pin#map`);
   expect(await sameDocument(page)).toBe('same');

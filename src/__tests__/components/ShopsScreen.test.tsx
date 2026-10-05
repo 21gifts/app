@@ -8,19 +8,40 @@ const forumLoader = vi.hoisted(() => vi.fn());
 vi.mock('@/components/ForumLoader', () => ({
   ForumLoader: ({ feed }: { feed: string }) => {
     forumLoader();
-    return <div data-testid="forum-loader" data-feed={feed} />;
+    return (
+      <div data-testid="forum-loader" data-feed={feed}>
+        <a href="/shops?pin=p2#map">feed place</a>
+      </div>
+    );
   },
 }));
+
+/** Click like next/link: the capture listener runs, then the default is prevented. */
+function clickLink(element: Element, init: MouseEventInit = {}): void {
+  element.addEventListener(
+    'click',
+    (event) => {
+      event.preventDefault();
+    },
+    { once: true },
+  );
+  fireEvent.click(element, init);
+}
 
 vi.mock('@/components/PlacesMapScreen', () => ({
   PlacesMapScreen: () => <div data-testid="places-map-screen" />,
 }));
 
 vi.mock('@/components/ShopTable', () => ({
-  ShopTable: ({ onShowMap }: { onShowMap?: () => void }) => (
-    <button type="button" data-testid="shop-table" onClick={onShowMap}>
-      place
-    </button>
+  ShopTable: () => (
+    <div data-testid="shop-table">
+      <a href="/shops?pin=p1#map">
+        <span>place</span>
+      </a>
+      <a href="/shops#nope">unknown</a>
+      <a href="/elsewhere#map">other path</a>
+      <a href="https://example.com/shops#map">elsewhere</a>
+    </div>
   ),
 }));
 
@@ -82,12 +103,35 @@ describe('ShopsScreen', () => {
     expect(screen.getByTestId('shop-table')).toBeTruthy();
   });
 
-  it('shows the map when the table opens a place on this page', () => {
-    window.location.hash = '#table';
+  it('shows the map when a post opens a place on this page', () => {
+    window.history.replaceState(null, '', '/shops');
     renderWithLocale(<ShopsScreen />);
-    fireEvent.click(screen.getByTestId('shop-table'));
+    clickLink(screen.getByText('feed place'));
     expect(screen.getByTestId('places-map-screen')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
+    expect(window.location.hash).toBe('#map');
+  });
+
+  it('shows the map when the table opens a place, and ignores other clicks', () => {
+    window.history.replaceState(null, '', '/shops#table');
+    renderWithLocale(<ShopsScreen />);
+    const table = screen.getByTestId('shop-table');
+    for (const name of ['unknown', 'other path', 'elsewhere']) {
+      clickLink(screen.getByText(name));
+    }
+    clickLink(screen.getByText('place'), { metaKey: true });
+    clickLink(screen.getByText('place'), { ctrlKey: true });
+    clickLink(screen.getByText('place'), { shiftKey: true });
+    clickLink(screen.getByText('place'), { altKey: true });
+    clickLink(screen.getByText('place'), { button: 1 });
+    fireEvent.click(table);
+    const prevented = new MouseEvent('click', { bubbles: true, cancelable: true });
+    prevented.preventDefault();
+    screen.getByText('place').dispatchEvent(prevented);
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(screen.getByRole('button', { name: 'Table', pressed: true })).toBeTruthy();
+    clickLink(screen.getByText('place'));
+    expect(screen.getByTestId('places-map-screen')).toBeTruthy();
     expect(window.location.hash).toBe('#map');
   });
 });
