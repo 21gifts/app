@@ -17,7 +17,11 @@ vi.mock('@/components/PlacesMapScreen', () => ({
 }));
 
 vi.mock('@/components/ShopTable', () => ({
-  ShopTable: () => <div data-testid="shop-table" />,
+  ShopTable: ({ onShowMap }: { onShowMap?: () => void }) => (
+    <button type="button" data-testid="shop-table" onClick={onShowMap}>
+      place
+    </button>
+  ),
 }));
 
 afterEach(() => {
@@ -76,5 +80,14 @@ describe('ShopsScreen', () => {
       expect(screen.getByRole('button', { name: 'Table', pressed: true })).toBeTruthy();
     });
     expect(screen.getByTestId('shop-table')).toBeTruthy();
+  });
+
+  it('shows the map when the table opens a place on this page', () => {
+    window.location.hash = '#table';
+    renderWithLocale(<ShopsScreen />);
+    fireEvent.click(screen.getByTestId('shop-table'));
+    expect(screen.getByTestId('places-map-screen')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
+    expect(window.location.hash).toBe('#map');
   });
 });

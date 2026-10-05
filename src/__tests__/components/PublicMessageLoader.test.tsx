@@ -279,7 +279,7 @@ describe('PublicMessageLoader', () => {
     });
     const view = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     const named = await screen.findByRole('link', { name: 'Happyland' });
-    expect(named.getAttribute('href')).toBe(`/map?pin=${MESSAGE_ID}`);
+    expect(named.getAttribute('href')).toBe(`/shops?pin=${MESSAGE_ID}#map`);
     view.unmount();
     fetchMessage.mockResolvedValue({
       ...sample,

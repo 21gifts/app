@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
@@ -368,12 +369,12 @@ function OpenGrantApply(): ReactElement | null {
           {reviewStep === 'truth' ? t('funding.review.truth') : t('funding.review.question.self')}
         </p>
         {reviewStep === 'principles' ? (
-          <a
-            href="https://21.gifts/about"
+          <Link
+            href="/about"
             className="text-center text-sm text-app-fg underline underline-offset-2"
           >
             {t('nav.about')}
-          </a>
+          </Link>
         ) : null}
         {posts.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>

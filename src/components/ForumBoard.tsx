@@ -1137,7 +1137,7 @@ export function ForumBoard({
                 ) : null}
                 {message.parentId === undefined && message.place !== undefined ? (
                   <Link
-                    href={`/map?pin=${encodeURIComponent(message.id)}`}
+                    href={`/shops?pin=${encodeURIComponent(message.id)}#map`}
                     className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
                     onClick={stopCardToggle}
                   >

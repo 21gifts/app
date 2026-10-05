@@ -396,10 +396,10 @@ describe('ForumBoard', () => {
       />,
     );
     const labeled = screen.getByRole('link', { name: 'Happyland' });
-    expect(labeled.getAttribute('href')).toBe('/map?pin=m1');
+    expect(labeled.getAttribute('href')).toBe('/shops?pin=m1#map');
     fireEvent.click(labeled);
     expect(screen.getByRole('link', { name: '1.00000, 2.00000' }).getAttribute('href')).toBe(
-      '/map?pin=m-coords',
+      '/shops?pin=m-coords#map',
     );
     expect(screen.queryByRole('link', { name: 'Stall' })).toBeNull();
     expect(screen.queryByRole('link', { name: '5.00000, 6.00000' })).toBeNull();

@@ -184,7 +184,7 @@ function PublicThreadCard({
       ) : null}
       {note.parentId === undefined && note.place !== undefined ? (
         <Link
-          href={`/map?pin=${encodeURIComponent(note.id)}`}
+          href={`/shops?pin=${encodeURIComponent(note.id)}#map`}
           className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
         >
           <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
