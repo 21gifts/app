@@ -255,17 +255,59 @@ test('forum place, shops post and table place, and operator links keep the docum
   await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 
-  // The top-left arrow from the map returns to the posts without a page load.
-  await page.getByRole('link', { name: 'Bakery' }).first().click();
-  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Back', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
-  expect(new URL(page.url()).hash).toBe('');
-  expect(await sameDocument(page)).toBe('same');
-
   await page.getByRole('button', { name: 'Table' }).click();
   await page.getByRole('link', { name: '@luna' }).first().click();
   await expect(page).toHaveURL(`${origin}/members/acc-luna`);
   expect(await sameDocument(page)).toBe('same');
   expect(await passkeyPrompts(page)).toBe(0);
+});
+
+test('the top-left arrow from a place on the shops map returns to the posts', async ({ page }) => {
+  await signInWithPasskey(page);
+  const shop = {
+    id: 'm-pin',
+    accountId: 'acc_bo',
+    name: 'Bo',
+    text: 'Cafe Luna\n\n#21GiftsShop',
+    createdAt: '2026-01-06T12:00:00.000Z',
+    sats: 5000,
+    payable: true,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+    place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+  };
+  for (const list of [/\/forum\/messages(?:\?|$)/, /\/messages(?:\?|$)/]) {
+    await page.route(list, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            shop,
+            {
+              ...shop,
+              id: 'm-two',
+              text: 'Bakery\n\n#21GiftsShop',
+              place: { lat: 14.7, lng: 121, label: 'Bakery' },
+            },
+          ],
+        }),
+      });
+    });
+  }
+  await page.goto('/shops');
+  await markDocument(page);
+  const origin = new URL(page.url()).origin;
+  await page.getByRole('link', { name: 'Bakery' }).first().click();
+  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
+  await expect(page).toHaveURL(`${origin}/shops?pin=m-two#map`);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
+  expect(await sameDocument(page)).toBe('same');
 });
