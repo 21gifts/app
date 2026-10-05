@@ -249,7 +249,8 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
-    expect(await screen.findByText(/Internal notes: secret/)).toBeTruthy();
+    expect(await screen.findByText(/Internal notes:/)).toBeTruthy();
+    expect(screen.getByText('secret')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Delete comment' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'Send Bitcoin' })).toHaveLength(1);
     expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
@@ -265,12 +266,26 @@ describe('MemberHabits', () => {
       ]);
     });
 
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const opened = screen.getAllByLabelText('Name')[0];
+    if (!(opened instanceof HTMLInputElement)) {
+      throw new Error('missing edit fields');
+    }
+    fireEvent.change(opened, { target: { value: 'Nope' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
     const name = screen.getAllByLabelText('Name')[0];
     const description = screen.getAllByLabelText('Description')[0];
     const notes = screen.getAllByLabelText('Internal notes')[0];
-    if (name === undefined || description === undefined || notes === undefined) {
+    if (
+      !(name instanceof HTMLInputElement) ||
+      !(description instanceof HTMLInputElement) ||
+      !(notes instanceof HTMLInputElement)
+    ) {
       throw new Error('missing edit fields');
     }
+    expect(name.value).toBe('Walk');
     fireEvent.change(name, { target: { value: 'Run' } });
     fireEvent.change(description, { target: { value: 'Far' } });
     fireEvent.change(notes, { target: { value: 'shh' } });
@@ -325,18 +340,23 @@ describe('MemberHabits', () => {
       expect(bodies[7]).toEqual({ action: 'archive', id: 'h-blank' });
     });
 
-    const addName = screen.getAllByLabelText('Name')[2];
-    const addDescription = screen.getAllByLabelText('Description')[2];
-    const addNotes = screen.getAllByLabelText('Internal notes')[2];
-    if (addName === undefined || addDescription === undefined || addNotes === undefined) {
-      throw new Error('missing add fields');
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1] as HTMLButtonElement);
+    const quietNotes = screen.getAllByLabelText('Internal notes')[0];
+    if (!(quietNotes instanceof HTMLInputElement)) {
+      throw new Error('missing blank notes');
     }
+    expect(quietNotes.value).toBe('');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    const addName = screen.getByLabelText('Name');
+    const addDescription = screen.getByLabelText('Description');
+    const addNotes = screen.getByLabelText('Internal notes');
     fireEvent.change(addName, { target: { value: 'Vorsatz' } });
     fireEvent.change(addDescription, { target: { value: 'public' } });
     fireEvent.change(addNotes, { target: { value: 'private' } });
-    fireEvent.click(screen.getByRole('radio', { name: 'Weekly' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Daily' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Weekly' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Weekly' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Daily' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Weekly' }));
     const addForm = formsNamed('Add habit')[0];
     if (addForm === undefined) {
       throw new Error('missing add form');
@@ -443,7 +463,12 @@ describe('MemberHabits', () => {
         if (init?.method === 'POST') {
           const body = JSON.parse(String(init.body)) as { amountSats?: number };
           const headers = new Headers(init.headers);
-          posts.push({ amountSats: body.amountSats, zone: headers.get('Time-Zone') ?? '' });
+          const zone = headers.get('Time-Zone') ?? '';
+          if (body.amountSats === undefined) {
+            posts.push({ zone });
+          } else {
+            posts.push({ amountSats: body.amountSats, zone });
+          }
           if (body.amountSats === 21) {
             return json({ error: 'No wallet' }, 409);
           }
@@ -549,17 +574,31 @@ describe('MemberHabits', () => {
     expect(screen.queryByText('lnbc-stale')).toBeNull();
   });
 
+  it('leaves the rating pill unpressed when the open period is not logged', async () => {
+    const list = payload();
+    const habit = list.habits[0];
+    if (habit === undefined) {
+      throw new Error('missing habit');
+    }
+    habit.periods = [period('2026-10-04', null)];
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(list)));
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    const achieved = await screen.findByRole('button', { name: 'Achieved' });
+    expect(achieved.getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('hides Send Bitcoin when the session is missing or blank', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     useAuthStore.setState({ session: null, account: viewer });
     const first = renderWithLocale(<MemberHabits />);
-    expect(await screen.findByText('Bea: hello')).toBeTruthy();
+    expect(await screen.findByText('hello')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     first.unmount();
 
     useAuthStore.setState({ session: '', account: viewer });
     renderWithLocale(<MemberHabits />);
-    expect(await screen.findByText('Bea: hello')).toBeTruthy();
+    expect(await screen.findByText('hello')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
   });

@@ -131,7 +131,8 @@ test('screen /habit-tracker signed-in', async ({ page }) => {
   });
   await page.goto('/habit-tracker');
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(page.getByText('Internal notes: secret')).toBeVisible();
+  await expect(page.getByText('Internal notes:')).toBeVisible();
+  await expect(page.getByText('secret')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add habit' })).toBeVisible();
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { Gift } from 'lucide-react';
+import { Archive, Gift, Pencil, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -11,7 +11,7 @@ import {
 } from '@/components/ForumPaySheet';
 import { useTranslations } from '@/components/LocaleProvider';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
-import { Button, Card, Field, IconButton } from '@/components/ui';
+import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import type { Account, AmountUnit } from '@/lib/api-types';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
@@ -52,6 +52,7 @@ export function MemberHabits(): ReactElement {
   const [addDescription, setAddDescription] = useState('');
   const [addNotes, setAddNotes] = useState('');
   const [addCadence, setAddCadence] = useState<'daily' | 'weekly'>('daily');
+  const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [editByHabitId, setEditByHabitId] = useState<
     Record<string, { name: string; description: string; notes: string }>
   >({});
@@ -103,6 +104,7 @@ export function MemberHabits(): ReactElement {
       const next = await fetchMemberHabits(session);
       setData(next);
       setEditByHabitId({});
+      setEditingHabitId(null);
       setError(false);
     } catch {
       setError(true);
@@ -121,6 +123,27 @@ export function MemberHabits(): ReactElement {
       setError(true);
       return false;
     }
+  }
+
+  function startEdit(habit: MemberHabit): void {
+    setEditingHabitId(habit.id);
+    setEditByHabitId((current) => ({
+      ...current,
+      [habit.id]: {
+        name: habit.name,
+        description: habit.description,
+        notes: habit.notes === undefined ? '' : habit.notes,
+      },
+    }));
+  }
+
+  function cancelEdit(habitId: string): void {
+    setEditingHabitId(null);
+    setEditByHabitId((current) => {
+      const next = { ...current };
+      delete next[habitId];
+      return next;
+    });
   }
 
   async function onLog(habit: MemberHabit, status: HabitStatus): Promise<void> {
@@ -244,74 +267,119 @@ export function MemberHabits(): ReactElement {
             <h2 className="text-xl font-semibold text-app-fg">{group.ownerName}</h2>
             {group.habits.map((habit) => {
               const owns = account !== null && account.id === habit.accountId;
+              const editing = editingHabitId === habit.id;
               const storedDraft = editByHabitId[habit.id];
               const draft = storedDraft ?? {
                 name: habit.name,
                 description: habit.description,
                 notes: habit.notes === undefined ? '' : habit.notes,
               };
+              const openHabit = owns && habit.lastPeriod === null;
+              const openPeriod =
+                openHabit && habit.periods.length > 0
+                  ? habit.periods[habit.periods.length - 1]
+                  : undefined;
               return (
                 <article
                   key={habit.id}
-                  className="flex w-full flex-col gap-3 rounded-3xl border border-app-border-strong bg-app-card-muted p-4"
+                  className="flex w-full flex-col gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
                 >
-                  <h3 className="text-lg font-semibold text-app-fg">{habit.name}</h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-semibold text-app-fg">{habit.name}</h3>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                          {habit.cadence === 'daily'
+                            ? t('habit.cadenceDaily')
+                            : t('habit.cadenceWeekly')}
+                        </span>
+                        {habit.lastPeriod !== null ? (
+                          <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                            {t('habit.archived')}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    {openHabit ? (
+                      <div className="flex shrink-0 items-center gap-1">
+                        {editing ? null : (
+                          <IconButton
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            aria-label={t('habit.edit')}
+                            onClick={() => {
+                              startEdit(habit);
+                            }}
+                          >
+                            <Pencil aria-hidden="true" className="h-4 w-4" />
+                          </IconButton>
+                        )}
+                        <IconButton
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={t('habit.archive')}
+                          onClick={() => {
+                            if (!window.confirm(t('habit.archiveConfirm'))) {
+                              return;
+                            }
+                            void submit({ action: 'archive', id: habit.id }, false);
+                          }}
+                        >
+                          <Archive aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
+                      </div>
+                    ) : null}
+                  </div>
                   {habit.description !== '' ? (
                     <p className="text-sm text-app-fg">{habit.description}</p>
                   ) : null}
-                  <p className="text-sm text-app-muted">
-                    {habit.cadence === 'daily' ? t('habit.cadenceDaily') : t('habit.cadenceWeekly')}
-                  </p>
-                  {habit.lastPeriod !== null ? (
-                    <p className="text-sm text-app-muted">{t('habit.archived')}</p>
-                  ) : null}
-                  {owns && habit.notes !== undefined ? (
+                  {owns && habit.notes !== undefined && !editing ? (
                     <p className="text-sm text-app-fg">
-                      {t('habit.notes')}: {habit.notes}
+                      <span className="text-app-muted">{t('habit.notes')}: </span>
+                      <span>{habit.notes}</span>
                     </p>
                   ) : null}
-                  <ul className="flex flex-col gap-1">
-                    {habit.periods.map((period) => (
-                      <li key={period.period} className="text-sm text-app-fg">
-                        {period.period} {statusCopy(period.status, t)}
-                      </li>
-                    ))}
-                  </ul>
-                  {owns && habit.lastPeriod === null && habit.periods.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void onLog(habit, 'achieved');
-                        }}
-                      >
-                        {t('habit.achieved')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void onLog(habit, 'partial');
-                        }}
-                      >
-                        {t('habit.partial')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          void onLog(habit, 'missed');
-                        }}
-                      >
-                        {t('habit.missed')}
-                      </Button>
-                    </div>
+                  {habit.periods.length > 0 ? (
+                    <ul className="flex flex-col gap-2">
+                      {habit.periods.map((period) => {
+                        const isOpen =
+                          openPeriod !== undefined && period.period === openPeriod.period;
+                        return (
+                          <li key={period.period} className="flex flex-col gap-2">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <time dateTime={period.period} className="text-xs text-app-subtle">
+                                {period.period}
+                              </time>
+                              {isOpen ? null : (
+                                <span className="text-sm text-app-fg">
+                                  {statusCopy(period.status, t)}
+                                </span>
+                              )}
+                            </div>
+                            {isOpen ? (
+                              <SegmentedControl<HabitStatus>
+                                tone="neutral"
+                                ariaLabel={t('habit.rate')}
+                                className="[&>button]:!flex [&>button]:!min-w-0 [&>button]:!items-center [&>button]:!justify-center [&>button]:!px-1.5 [&>button]:!text-center [&>button]:!text-xs [&>button]:!leading-tight sm:[&>button]:!px-3 sm:[&>button]:!text-sm sm:[&>button]:!leading-5"
+                                value={(period.status ?? 'unrated') as HabitStatus}
+                                options={[
+                                  { value: 'achieved', label: t('habit.achieved') },
+                                  { value: 'partial', label: t('habit.partial') },
+                                  { value: 'missed', label: t('habit.missed') },
+                                ]}
+                                onChange={(status) => {
+                                  void onLog(habit, status);
+                                }}
+                              />
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   ) : null}
-                  {owns && habit.lastPeriod === null ? (
+                  {editing ? (
                     <form
                       className="flex flex-col gap-3"
                       onSubmit={(event) => {
@@ -361,22 +429,21 @@ export function MemberHabits(): ReactElement {
                           }));
                         }}
                       />
-                      <Button type="submit">{t('habit.save')}</Button>
+                      <div className="flex items-center gap-2">
+                        <Button type="submit">{t('habit.save')}</Button>
+                        <IconButton
+                          type="button"
+                          variant="secondary"
+                          size="md"
+                          aria-label={t('habit.cancel')}
+                          onClick={() => {
+                            cancelEdit(habit.id);
+                          }}
+                        >
+                          <X aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
+                      </div>
                     </form>
-                  ) : null}
-                  {owns && habit.lastPeriod === null ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => {
-                        if (!window.confirm(t('habit.archiveConfirm'))) {
-                          return;
-                        }
-                        void submit({ action: 'archive', id: habit.id }, false);
-                      }}
-                    >
-                      {t('habit.archive')}
-                    </Button>
                   ) : null}
                   <CommentsBlock
                     habit={habit}
@@ -484,32 +551,16 @@ export function MemberHabits(): ReactElement {
               setAddNotes(event.target.value);
             }}
           />
-          <fieldset className="flex flex-col gap-2 text-sm text-app-fg">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="habit-cadence"
-                value="daily"
-                checked={addCadence === 'daily'}
-                onChange={() => {
-                  setAddCadence('daily');
-                }}
-              />
-              {t('habit.cadenceDaily')}
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="habit-cadence"
-                value="weekly"
-                checked={addCadence === 'weekly'}
-                onChange={() => {
-                  setAddCadence('weekly');
-                }}
-              />
-              {t('habit.cadenceWeekly')}
-            </label>
-          </fieldset>
+          <SegmentedControl
+            tone="neutral"
+            ariaLabel={t('habit.cadence')}
+            value={addCadence}
+            options={[
+              { value: 'daily', label: t('habit.cadenceDaily') },
+              { value: 'weekly', label: t('habit.cadenceWeekly') },
+            ]}
+            onChange={setAddCadence}
+          />
           <Button type="submit">{t('habit.add')}</Button>
         </form>
       ) : null}
@@ -611,7 +662,7 @@ function CommentsBlock(props: {
   const canPay = session !== null && session !== '' && account !== null;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 border-t border-app-border pt-3">
       <h4 className="text-sm font-semibold text-app-fg">{t('habit.comments')}</h4>
       <p className="text-sm text-app-muted">{t('habit.commentHint')}</p>
       {habit.comments.length === 0 ? (
@@ -623,37 +674,43 @@ function CommentsBlock(props: {
             return (
               <li key={comment.id} className="flex flex-col gap-2 text-sm text-app-fg">
                 <p>
-                  {comment.name}: {comment.text}
+                  <span className="font-medium">{comment.name}</span>
+                  {': '}
+                  <span>{comment.text}</span>
                 </p>
-                {canDelete ? (
-                  <SundayWritingGate>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        onDeleteComment(comment.id);
-                      }}
-                    >
-                      {t('habit.deleteComment')}
-                    </Button>
-                  </SundayWritingGate>
-                ) : null}
-                {showGift ? (
-                  <SundayWritingGate notice="zap">
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.pay')}
-                      disabled={payBusy}
-                      onClick={() => {
-                        onPayOpen(comment.id);
-                      }}
-                    >
-                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                    </IconButton>
-                  </SundayWritingGate>
+                {canDelete || showGift ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {canDelete ? (
+                      <SundayWritingGate>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            onDeleteComment(comment.id);
+                          }}
+                        >
+                          {t('habit.deleteComment')}
+                        </Button>
+                      </SundayWritingGate>
+                    ) : null}
+                    {showGift ? (
+                      <SundayWritingGate notice="zap">
+                        <IconButton
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={t('forum.pay')}
+                          disabled={payBusy}
+                          onClick={() => {
+                            onPayOpen(comment.id);
+                          }}
+                        >
+                          <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                        </IconButton>
+                      </SundayWritingGate>
+                    ) : null}
+                  </div>
                 ) : null}
                 {showGift && payCommentId === comment.id ? (
                   <SundayWritingGate notice="zap">

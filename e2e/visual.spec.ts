@@ -22514,7 +22514,8 @@ test.describe('habit tracker baselines', () => {
       habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
     });
     await page.goto('/habit-tracker');
-    await expect(page.getByText('Internal notes: secret')).toBeVisible();
+    await expect(page.getByText('Internal notes:')).toBeVisible();
+    await expect(page.getByText('secret')).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-signed-in');
   });
 
