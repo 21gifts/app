@@ -16,7 +16,6 @@ import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
-import { goToPreviousView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -186,28 +185,26 @@ export function WalletScreenView({
       : homeView === 'send' && !walletReady
         ? 'home'
         : homeView;
-  const stepBack = (): void => {
+  const stepBack = (): boolean => {
     if (surface === 'phrase') {
       if (showGrid) {
         hidePhrase();
-        return;
+        return true;
       }
-      goToPreviousView();
-      return;
+      return false;
     }
     if (shown === 'send' && send !== undefined) {
-      if (send.cancel() || send.busy) {
-        return;
+      if (!send.cancel() && !send.busy) {
+        send.setText('');
+        setHomeView('home');
       }
-      send.setText('');
-      setHomeView('home');
-      return;
+      return true;
     }
     if (shown === 'receive') {
       setHomeView('home');
-      return;
+      return true;
     }
-    goToPreviousView();
+    return false;
   };
   const hasError = error === 'prfUnsupported' || error === 'timeout' || error === 'generic';
   const errorCopy =
