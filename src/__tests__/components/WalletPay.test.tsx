@@ -67,13 +67,24 @@ describe('WalletPay', () => {
     expect(hook.pay).not.toHaveBeenCalled();
   });
 
-  it('offers Unlock wallet as the only button', () => {
+  it('offers Unlock and pay with the amount and its fiat as the only button', () => {
     const hook = hookWith('unlock');
     renderPay();
-    expect(screen.getByText('Unlock your wallet to pay from your Bitcoin balance.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Unlock wallet' }));
+    const button = screen.getByRole('button', { name: /^Unlock and pay ₿21/ });
+    expect(button.textContent).toBe('Unlock and pay ₿21 · $0.02');
+    fireEvent.click(button);
     expect(hook.unlock).toHaveBeenCalledTimes(1);
+    expect(hook.pay).not.toHaveBeenCalled();
     expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByText('Unlock wallet')).toBeNull();
+  });
+
+  it('shows Unlock and pay without fiat while no rate is known', () => {
+    hookWith('unlock');
+    renderWithLocale(
+      <WalletPay sparkInvoice="spark1x" pr="lnbc210n1x" amountSats={21} rateDay={null} />,
+    );
+    expect(screen.getByRole('button').textContent).toBe('Unlock and pay ₿21');
   });
 
   it('shows checking and paying as status lines without buttons', () => {
