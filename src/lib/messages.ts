@@ -314,9 +314,10 @@ const en = {
   'forum.emptyUnpaid': 'Every loaded message has already received Bitcoin.',
   'forum.modeAll': 'All',
   'forum.modePopular': 'Most popular',
-  'sunday.writingPaused': 'Writing is paused on Sunday.',
-  'sunday.zappingPaused': 'Zapping is paused on Sunday.',
-  'sunday.moderatorChatPaused': 'The moderator chat is paused on Sunday.',
+  'sunday.writingPaused': 'Writing is paused until Monday at 08:00, your local time.',
+  'sunday.zappingPaused': 'Zapping is paused until Monday at 08:00, your local time.',
+  'sunday.moderatorChatPaused':
+    'The moderator chat is paused until Monday at 08:00, your local time.',
   'forum.composerLabel': 'Your message',
   'forum.mentionSuggest': 'People',
   'forum.placeholder': 'Write a message',
@@ -1323,9 +1324,10 @@ const de = {
   'forum.emptyUnpaid': 'Alle geladenen Beiträge haben bereits Bitcoin erhalten.',
   'forum.modeAll': 'Alle',
   'forum.modePopular': 'Beliebteste',
-  'sunday.writingPaused': 'Am Sonntag ist das Schreiben pausiert.',
-  'sunday.zappingPaused': 'Am Sonntag ist das Zappen pausiert.',
-  'sunday.moderatorChatPaused': 'Am Sonntag ist der Moderatorenchat pausiert.',
+  'sunday.writingPaused': 'Das Schreiben pausiert bis Montag um 08:00 Uhr in Ihrer Zeitzone.',
+  'sunday.zappingPaused': 'Das Zappen pausiert bis Montag um 08:00 Uhr in Ihrer Zeitzone.',
+  'sunday.moderatorChatPaused':
+    'Der Moderatorenchat pausiert bis Montag um 08:00 Uhr in Ihrer Zeitzone.',
   'forum.composerLabel': 'Ihre Nachricht',
   'forum.mentionSuggest': 'Personen',
   'forum.placeholder': 'Nachricht schreiben',
@@ -2355,9 +2357,11 @@ const es = {
   'forum.emptyUnpaid': 'Todos los mensajes cargados ya han recibido Bitcoin.',
   'forum.modeAll': 'Todos',
   'forum.modePopular': 'Más populares',
-  'sunday.writingPaused': 'El domingo no se puede escribir.',
-  'sunday.zappingPaused': 'El domingo no se puede zapear.',
-  'sunday.moderatorChatPaused': 'El domingo el chat de moderadores está en pausa.',
+  'sunday.writingPaused':
+    'La escritura está en pausa hasta el lunes a las 08:00, en tu hora local.',
+  'sunday.zappingPaused': 'Los zaps están en pausa hasta el lunes a las 08:00, en tu hora local.',
+  'sunday.moderatorChatPaused':
+    'El chat de moderadores está en pausa hasta el lunes a las 08:00, en tu hora local.',
   'forum.composerLabel': 'Tu mensaje',
   'forum.mentionSuggest': 'Personas',
   'forum.placeholder': 'Escribe un mensaje',
@@ -3372,9 +3376,12 @@ const fil = {
   'forum.emptyUnpaid': 'Lahat ng na-load na mensahe ay nakatanggap na ng Bitcoin.',
   'forum.modeAll': 'Lahat',
   'forum.modePopular': 'Pinakasikat',
-  'sunday.writingPaused': 'Linggo, hindi puwedeng magsulat.',
-  'sunday.zappingPaused': 'Linggo, hindi puwedeng mag-zap.',
-  'sunday.moderatorChatPaused': 'Linggo, naka-pause ang chat ng mga moderator.',
+  'sunday.writingPaused':
+    'Pansamantalang hindi puwedeng magsulat hanggang Lunes, 08:00 sa iyong lokal na oras.',
+  'sunday.zappingPaused':
+    'Pansamantalang hindi puwedeng mag-zap hanggang Lunes, 08:00 sa iyong lokal na oras.',
+  'sunday.moderatorChatPaused':
+    'Naka-pause ang chat ng mga moderator hanggang Lunes, 08:00 sa iyong lokal na oras.',
   'forum.composerLabel': 'Iyong mensahe',
   'forum.mentionSuggest': 'Mga tao',
   'forum.placeholder': 'Sumulat ng mensahe',

@@ -152,7 +152,9 @@ describe('ModeratorGroupScreen', () => {
     document.documentElement.dataset['localSunday'] = '1';
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     renderWithLocale(<ModeratorGroupScreen />);
-    expect(screen.getByText('The moderator chat is paused on Sunday.')).toBeTruthy();
+    expect(
+      screen.getByText('The moderator chat is paused until Monday at 08:00, your local time.'),
+    ).toBeTruthy();
     expect(screen.queryByLabelText('Your message')).toBeNull();
     expect(groupMock).not.toHaveBeenCalled();
     document.documentElement.dataset['localSunday'] = '0';

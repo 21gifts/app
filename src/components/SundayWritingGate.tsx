@@ -18,13 +18,13 @@ function localSundaySnapshot(): boolean {
   return document.documentElement.dataset['localSunday'] === '1';
 }
 
-/** Device-local Sunday, false during server render and until the head script runs. */
+/** Device-local rest through Monday 08:00, false during server render and until the head script runs. */
 export function useLocalSunday(): boolean {
   return useSyncExternalStore(subscribe, localSundaySnapshot, () => false);
 }
 
 /**
- * Public write slot. On the device's local Sunday the field is removed and a
+ * Public write slot. From local Sunday until Monday 08:00 the field is removed and a
  * sentence is shown instead. The head script sets the flag before paint.
  */
 export function SundayWritingGate({

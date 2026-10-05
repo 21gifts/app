@@ -2581,7 +2581,9 @@ test.describe('onboarding screens', () => {
     });
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Your message' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-sunday');
   });
@@ -4487,7 +4489,9 @@ test.describe('onboarding screens', () => {
     await stubOwnMember(page);
     await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Write your About me' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
@@ -7712,7 +7716,9 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}`);
     await page.getByText('Moderator functions').click();
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
     await shotScreen(page, 'state-members-accountId-sunday', false);
   });
@@ -9561,7 +9567,9 @@ test.describe('onboarding screens', () => {
     );
     await page.goto(`/messages/${id}`);
     await expect(page.getByText('Hello from Ada')).toBeVisible();
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await expect(page.getByPlaceholder('Write a reaction')).toBeHidden();
     await shotScreen(page, 'state-messages-id-sunday');
   });
@@ -11469,6 +11477,10 @@ test.describe('profile activity chart variants', () => {
     await expect(page.getByRole('button', { name: 'Use this crop' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+    // The cropper measures its frame asynchronously before sizing the SVG image.
+    await expect(
+      page.getByRole('group', { name: 'Drag the photo to choose the wide image' }).locator('image'),
+    ).toHaveAttribute('width', /\d/u);
     await shotScreen(page, 'state-profile-banner-not-wide');
   });
 
@@ -12199,7 +12211,9 @@ test.describe('profile apply screens', () => {
     });
     await seedApply(page);
     await page.goto('/grants/apply');
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeHidden();
     await shotScreen(page, 'state-grants-apply-sunday');
   });
@@ -16279,7 +16293,9 @@ test.describe('shops screens', () => {
     });
     await page.goto('/shops');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await shotScreen(page, 'state-shops-sunday');
   });
 
@@ -20198,7 +20214,9 @@ test.describe('moderate proposals screens', () => {
     await stubProposals(page, [PROPOSAL]);
     await page.goto('/moderate/proposals');
     await expect(page.getByText('Rose')).toBeVisible();
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Confirm as moderator' })).toHaveCount(0);
     await shotScreen(page, 'state-moderate-proposals-sunday');
   });
@@ -20519,7 +20537,9 @@ test.describe('moderate applications screens', () => {
     });
     await page.goto('/grants/applications/acc_rose');
     await expect(page.getByText('Living-room note.')).toBeVisible();
-    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(
+      page.getByText('Writing is paused until Monday at 08:00, your local time.').first(),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Yes' })).toHaveCount(0);
     await shotScreen(page, 'state-grants-applications-accountId-sunday');
   });
@@ -20957,7 +20977,9 @@ test.describe('moderate group screens', () => {
     });
     await seedAda(page, 'moderator');
     await page.goto('/moderate/group');
-    await expect(page.getByText('The moderator chat is paused on Sunday.')).toBeVisible();
+    await expect(
+      page.getByText('The moderator chat is paused until Monday at 08:00, your local time.'),
+    ).toBeVisible();
     await shotScreen(page, 'state-moderate-group-sunday');
   });
 
