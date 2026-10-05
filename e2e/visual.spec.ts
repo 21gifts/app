@@ -14160,7 +14160,7 @@ test.describe('welcome forum variants', () => {
     await page.goto(`/welcome?visual=${visual}`);
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    await expect(page.getByText('Pay ₿700')).toBeVisible();
+    await expect(page.getByText(/^Pay ₿700\b/)).toBeVisible();
   }
 
   test('state /welcome repay-wallet-pay-unlock', async ({ page }) => {
@@ -15911,7 +15911,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(page.getByText('Pay ₿1')).toBeVisible();
+    await expect(page.getByText(/^Pay ₿1\b/)).toBeVisible();
   }
 
   const TINY_GIF = Buffer.from(
@@ -20092,7 +20092,7 @@ test.describe('inbox screens', () => {
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
-    await expect(page.getByText('Pay ₿21')).toBeVisible();
+    await expect(page.getByText(/^Pay ₿21\b/)).toBeVisible();
   }
 
   test('messages thread-wallet-pay-unlock', async ({ page }) => {
