@@ -91,7 +91,8 @@ function PausedGrantApply(): ReactElement {
 
 /**
  * Signed-in grant apply screen. While applications are paused this is the
- * pause card except for usernames in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`.
+ * pause card unless the username is in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`
+ * or the status is pending, trial, or admitted.
  * A verified account with one of those names and status none or rejected still
  * sees the apply walk. Pending, trial, and admitted keep their copy for every
  * verified username. A basis account named joey-rosima, vincent, or jewel-bacolbas

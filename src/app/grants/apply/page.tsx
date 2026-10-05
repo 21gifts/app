@@ -8,8 +8,9 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/grants/apply` — grant application for a signed-in member.
  *
- * While applications are paused this is the paused card, except for
- * `joey-rosima`, `vincent`, and `jewel-bacolbas`. A verified account with one
+ * While applications are paused this is the paused card unless the username
+ * is `joey-rosima`, `vincent`, or `jewel-bacolbas`, or the status is pending,
+ * trial, or admitted. A verified account with one
  * of those names and status none or rejected still sees the apply walk.
  * Pending, trial, and admitted keep their copy for every verified username. A
  * basis account named joey-rosima, vincent, or jewel-bacolbas sees "You are not

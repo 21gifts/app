@@ -265,7 +265,7 @@
 - **Purpose:** Logged-in profile row to set, edit, or clear a free-text location. Icon-only actions (pencil / check / X / trash). Empty after trim is a valid save and clears. Not an onboarding step and has no Skip.
 - **Inputs:** Reads `useAuthStore`. Optional `startEditing` opens the field on mount. User input: location string. Visitor-facing copy via `useTranslations` (`location.*`). Request failures use `location.errorRequest`.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/location` on save or clear. Merges only `location` so a concurrent name or address write is not overwritten.
-- **Used by:** `ProfileScreen` on `/profile`. `FundingApplyScreen` renders it in the apply walk, which stays hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
+- **Used by:** `ProfileScreen` on `/profile`. `FundingApplyScreen` renders it in the apply walk, which is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
 
 ## Function: LightningAddressForm
 
@@ -604,7 +604,7 @@
 - **Purpose:** Profile-card About me block: heading plus filled text and/or photo (the note photo shows the whole picture (`object-contain`, `max-h-80`) and is not cropped, not the profile photo or the wide image), or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`. The editor has three separate attaches, each its own ImagePlus and remove: the About me photo (JPEG/PNG/WebP via `prepareForumPhoto`, no video), the round profile photo, and the wide image. Each previews on its own. Choosing a wide image opens a 5:2 cropper above its preview; **Use this crop** stores that JPEG and the X (**Cancel crop**) stores nothing. Closing the editor, or a successful save, drops an unsaved crop. A whole portrait is not stored as the wide image. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
 - **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `messageId` (stored About me note id; omitted or blank keeps `LinkedText`), optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets), optional `loadPicture` / `onSavePicture` for the round profile photo and optional `loadBanner` / `onSaveBanner` for the wide image (neither is the About me note photo; a non-image blob stays empty), optional `startEditing` to open the owner editor on mount.
 - **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save, `onSavePicture` when the profile photo changes, and `onSaveBanner` when the wide image changes. Loads a blob URL when `hasPhoto` and `loadPhoto` are set and revokes it on unmount. Loads and revokes the profile-photo and wide-image blob URLs the same way when `loadPicture` or `loadBanner` is set.
-- **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), and `FundingApplyScreen` (apply walk, hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`).
+- **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), and `FundingApplyScreen` (apply walk, shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`).
 
 ## Function: PushToggle
 
@@ -4179,28 +4179,28 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: grantApplicationStillOpen
 
-- **Purpose:** Whether this signed-in username skips the pause card while applications are paused. Exact, case-sensitive match against `joey-rosima`, `vincent`, and `jewel-bacolbas`. It does not by itself open the apply walk: a basis account still sees **You are not verified yet.** Null, omitted, empty, and every other username (including `Vincent`) do not skip the card.
+- **Purpose:** Whether this signed-in username skips the pause card while applications are paused. Exact, case-sensitive match against `joey-rosima`, `vincent`, and `jewel-bacolbas`. It does not by itself open the apply walk: a basis account on the open card still sees **You are not verified yet.** Null, omitted, empty, and every other username (including `Vincent`) do not skip the card.
 - **Inputs:** `username` string, null, or undefined.
 - **Returns / side effects:** `true` only for those three strings.
 - **Used by:** `FundingApplyScreen`, `FundingStatusCard`, `DailyPayoutStoppedNotice`.
 
 ## Function: aboutMeFilled
 
-- **Purpose:** True when About me is a real bio (not empty or the display-name auto note). Used by the apply walk. That walk stays hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
+- **Purpose:** True when About me is a real bio (not empty or the display-name auto note). Used by the apply walk. That walk is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
 - **Inputs:** `aboutMe`, `name`.
 - **Returns / side effects:** boolean.
 - **Used by:** `nextFillStep`, `FundingApplyScreen`.
 
 ## Function: locationFilled
 
-- **Purpose:** True when location is a non-empty trimmed string. Used by the apply walk. That walk stays hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
+- **Purpose:** True when location is a non-empty trimmed string. Used by the apply walk. That walk is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
 - **Inputs:** `location`.
 - **Returns / side effects:** boolean.
 - **Used by:** `nextFillStep`, `FundingApplyScreen`.
 
 ## Function: nextFillStep
 
-- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present. Used by the apply walk. That walk stays hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
+- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present. Used by the apply walk. That walk is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
 - **Inputs:** Owner `Account`.
 - **Returns / side effects:** `'about' | 'photo' | 'location' | null`.
 - **Used by:** `FundingApplyScreen`.
@@ -4547,7 +4547,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Exclusive original XOR translated body in the same React commit (not a parent `useEffect` after paint). Clicking **Translate** marks the note read-in-full so **Show more** is gone immediately (while loading, on error, and after **Show original**). A visible translation is the full text. Idle and error keep the original. **Show original** restores the original and hides the translation. Identity is `source + messageId + text + locale`. Holds `translatedText` and `showingTranslation`; a successful POST sets both so the original unmounts in that commit.
 - **Inputs:** Required `messageId` (stored forum or conversation message id) and `text`. Optional `source` (default forum message, or `{ kind: 'conversation', conversationId }`). Optional `plain`. Optional `truncate` (default true; applies only to the original body — `ForumNoteText` vs `LinkedText`). A visible translation is always the full text via `LinkedText` (no Show more), including past 280 characters. Clicking Translate sets an internal read-full flag so a truncated original expands on that click and stays expanded when Show original restores it. A new identity clears that flag. Optional `className` (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"`). Optional `formatTranslated` (applied only to the visible translation, not the original; not part of the identity key). Optional `controlSlotId` (when set, portals `NoteTranslate` with `placement="row"` into that element; if the node is missing, the control is omitted rather than stacked).
 - **Returns / side effects:** Original or translated paragraph plus the translate control, or `null` when `text` is empty. Mounts `NoteTranslate` under the body, or portals it into `controlSlotId` when that node exists. Visible body is original XOR translation in the same commit. Idle/error keep original; **Show original** restores original and hides translation.
-- **Used by:** `ForumBoard` (notes and replies, including `via === 'nostr'`), `PublicMessageLoader`, `ForumQuotedBody`, `QuotedForumNote` (any caption when `translate` is true; `plain` only when `via === 'nostr'`), `AboutMeSection`, `HiddenNotesScreen`, `FundingApplicationDetailScreen`, and `FundingApplyScreen` (apply walk, hidden while applications are paused except for usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`).
+- **Used by:** `ForumBoard` (notes and replies, including `via === 'nostr'`), `PublicMessageLoader`, `ForumQuotedBody`, `QuotedForumNote` (any caption when `translate` is true; `plain` only when `via === 'nostr'`), `AboutMeSection`, `HiddenNotesScreen`, `FundingApplicationDetailScreen`, and `FundingApplyScreen` (apply walk, shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`).
 
 ## Function: HappylandSection
 

@@ -11,7 +11,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * Non-dismissible info banner when the owner's funding JSON has
  * `dailyPayoutStoppedNotice === true`. While applications are paused, shows
  * paused copy except for usernames in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`,
- * who still see the Apply link. Otherwise links to `/grants/apply`.
+ * who still see the Apply link. That link is not the apply walk. Otherwise
+ * links to `/grants/apply`.
  *
  * @returns The banner, or `null` when the flag is not strictly true.
  */
