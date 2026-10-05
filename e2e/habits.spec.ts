@@ -52,6 +52,13 @@ async function seedAda(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -85,7 +92,7 @@ test('screen /habit-tracker default', async ({ page }) => {
   await expect(page.getByText('Outside')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Sign in to comment' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Achieved' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Donate Bitcoin' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
 });
 
 test('screen /habit-tracker empty', async ({ page }) => {
@@ -133,8 +140,56 @@ test('screen /habit-tracker donate', async ({ page }) => {
   await seedAda(page);
   await stubHabits(page, PUBLIC_LIST);
   await page.goto('/habit-tracker');
-  await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(page.getByLabel('Amount')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('screen /habit-tracker donate-invoice', async ({ page }) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc1' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PUBLIC_LIST),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+});
+
+test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', async ({ page }) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc1' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PUBLIC_LIST),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Pay ₿21')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 });
 
 test('Function: HabitTrackerPage — a signed-out visitor reads the public list', async ({

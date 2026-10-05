@@ -22447,6 +22447,13 @@ async function seedHabitAda(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -22515,8 +22522,33 @@ test.describe('habit tracker baselines', () => {
     await seedHabitAda(page);
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
-    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByLabel('Amount')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-donate');
+  });
+
+  test('screen /habit-tracker donate-invoice', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: 'lnbc1' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donate-invoice');
   });
 });

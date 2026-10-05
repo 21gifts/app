@@ -2214,14 +2214,14 @@ Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` wh
 ## Screen: /habit-tracker
 
 - **URL:** `/habit-tracker` — public habit tracker. Every member's habits, periods, and comments. Signed-out visitors can read it. `OnboardingGate screen="welcome"` with `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /habits` and `POST /habits`.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` and either **Log in** or Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Habit-Tracker**. The schedule line says each habit is daily or weekly in the time zone chosen when it was created, a week can be rated from Monday 08:00 in that zone. People are grouped under their `ownerName`. Each habit shows its name, public description when one is set, Daily or Weekly, Archived when it has a last period, and one line per period (`YYYY-MM-DD` plus Achieved, Partially achieved, Not achieved, or Not rated yet). Comments are public and are not forum posts. Internal notes render only for the owner (`Internal notes:` plus the text). A signed-out visitor sees **Sign in to comment** and no add form, no rating buttons, and no Donate Bitcoin. A session sees an add form (Name, Description, Internal notes, Daily or Weekly, **Add habit**), and on each of their open habits the three rating buttons, an edit form, and **Archive**. A signed-in account sees **Write a comment** and **Post** on each habit. On the device's local Sunday those controls and **Delete comment** are removed and **Writing is paused on Sunday.** stands in their place. **Donate Bitcoin** is on someone else's comment. Menu row **Habit-Tracker** (`nav.habitTracker`, lucide `ListChecks`, `/habit-tracker`) sits immediately after **Living room rules** for every signed-in account.
-- **Actions:** Read the list. Sign in. Add a habit. Edit name, description, and internal notes. Rate the open period Achieved, Partially achieved, or Not achieved. Archive after confirm. Post a comment. Delete a comment when the account is at least initiator, after confirm. On the device's local Sunday those two writes are paused. Open **Donate Bitcoin**, enter an amount, and request a **Bitcoin invoice**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `HabitTrackerPage`, `MemberHabits`, `SundayWritingGate`, `SignedInChrome`, `OnboardingGate`, `fetchMemberHabits`, `postMemberHabit`.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` and either **Log in** or Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Habit-Tracker**. The schedule line says each habit is daily or weekly in the time zone chosen when it was created, a week can be rated from Monday 08:00 in that zone. People are grouped under their `ownerName`. Each habit shows its name, public description when one is set, Daily or Weekly, Archived when it has a last period, and one line per period (`YYYY-MM-DD` plus Achieved, Partially achieved, Not achieved, or Not rated yet). Comments are public and are not forum posts. Internal notes render only for the owner (`Internal notes:` plus the text). A signed-out visitor sees **Sign in to comment** and no add form, no rating buttons, and no **Send Bitcoin**. A session sees an add form (Name, Description, Internal notes, Daily or Weekly, **Add habit**), and on each of their open habits the three rating buttons, an edit form, and **Archive**. A signed-in account sees **Write a comment** and **Post** on each habit. On the device's local Sunday those controls and **Delete comment** are removed and **Writing is paused on Sunday.** stands in their place. **Send Bitcoin** (the same Gift control as a forum reply) is on someone else's comment and opens the same amount sheet. On Sunday that gift shows **Zapping is paused on Sunday.** Menu row **Habit-Tracker** (`nav.habitTracker`, lucide `ListChecks`, `/habit-tracker`) sits immediately after **Living room rules** for every signed-in account.
+- **Actions:** Read the list. Sign in. Add a habit. Edit name, description, and internal notes. Rate the open period Achieved, Partially achieved, or Not achieved. Archive after confirm. Post a comment. Delete a comment when the account is at least initiator, after confirm. On the device's local Sunday those two writes and the gift are paused. Open **Send Bitcoin**, enter an amount, press **Continue**, and pay from the same invoice card as a forum reply. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `HabitTrackerPage`, `MemberHabits`, `ForumPaySheet`, `useLatestRateDay`, `SundayWritingGate`, `SignedInChrome`, `OnboardingGate`, `fetchMemberHabits`, `postMemberHabit`.
 - **Auth:** No bearer required to read the page or `GET /habits`. `POST /habits` needs a bearer. `OnboardingGate screen="welcome"` with `allowGuest`. The page does not pay an invoice.
 
 ### Variant: default
 
-Signed-out list. Heading **Habit-Tracker**, Ada's habit **Walk** with description **Outside**, and **Sign in to comment**. No rating buttons and no **Donate Bitcoin**.
+Signed-out list. Heading **Habit-Tracker**, Ada's habit **Walk** with description **Outside**, and **Sign in to comment**. No rating buttons and no **Send Bitcoin**.
 
 ![21.gifts habit tracker](images/habit-tracker.png)
 
@@ -2245,15 +2245,21 @@ Signed-out page. **Could not load or save the tracker. Please try again.** and *
 
 ### Variant: signed-in
 
-Ada's session. **Menu** is top-right. Her habit shows **Internal notes: secret**, **Achieved**, and **Add habit**.
+Ada's session. **Menu** is top-right. Her habit shows **Internal notes: secret**, **Achieved**, and **Add habit**. Bea's comment shows **Send Bitcoin**.
 
 ![21.gifts habit tracker signed in](images/habit-tracker-signed-in.png)
 
 ### Variant: donate
 
-Ada's session on someone else's comment. **Donate Bitcoin** is open and **Amount** is visible.
+Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** and **Continue** are visible.
 
 ![21.gifts habit tracker donate](images/habit-tracker-donate.png)
+
+### Variant: donate-invoice
+
+Ada's session after **Continue** on someone else's comment. The card shows **Pay ₿21**, the Bitcoin payment QR code on desktop, and **Pay with Wallet of Satoshi**. The raw invoice is not shown.
+
+![21.gifts habit tracker donate invoice](images/habit-tracker-donate-invoice.png)
 
 ## Screen: /contact
 

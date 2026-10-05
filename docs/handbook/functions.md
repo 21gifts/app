@@ -1330,6 +1330,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** React element, or null when both amounts are absent. No network. Bitcoin via `formatBitcoin`. Fiat via `preferredFiatSuffix` (stored string, otherwise the gift-day rate).
 - **Used by:** `ForumBoard` on every nested reply, and `PublicThreadCard` in `PublicMessageLoader` when the unsigned card is a reply with `receivedSats` greater than zero.
 
+## Function: ForumPaySheet
+
+- **Purpose:** The amount form and invoice card already used for a payable forum reply. A habit comment uses this same sheet: Amount, Continue, then the confirmation, the desktop QR, and Pay with Wallet of Satoshi. It does not show the raw invoice. Close stays on the page.
+- **Inputs:** `messageId`, the pay draft, busy, error, invoice, waiting flag, draft and unit callbacks, submit, cancel, the gift-day rate, whether to show the QR, and a click handler so the sheet does not toggle the card under it.
+- **Returns / side effects:** The in-card sheet (`data-pay-sheet`). Continue calls `onPaySubmit`. The wallet button sets `window.location.href` to the Android Intent or `walletofsatoshi:`. No network of its own.
+- **Used by:** `ForumBoard` and `MemberHabits`.
+
 ## Function: ForumReplyPayPage
 
 - **Purpose:** Replaces the reply composer after a paid reaction is sent: it is a component in that same slot, not a new URL, and shows only a read-only preview of the submitted reply, the **Pay ₿…** amount line with the preferred-fiat suffix, the pay control (desktop QR plus Wallet of Satoshi button; smartphone: button only), and **Waiting for payment…** while polling.
@@ -2375,7 +2382,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
   fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `MemberHabits`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
 
 ## Function: shownFiatForSats
 
@@ -4780,7 +4787,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MemberHabits
 
-- **Purpose:** Loads `GET /habits` and writes `POST /habits`. Renders every member's public habits, periods, and comments. Internal notes render only for the owner. The owner rates, edits, and archives their own open habits. Any signed-in account can comment. Comment and delete use `SundayWritingGate` and send `Time-Zone`. A Lightning invoice for someone else's comment stays available on Sunday. Does not log invoices, addresses, notes, or comment text.
+- **Purpose:** Loads `GET /habits` and writes `POST /habits`. Renders every member's public habits, periods, and comments. Internal notes render only for the owner. The owner rates, edits, and archives their own open habits. Any signed-in account can comment. Comment and delete use `SundayWritingGate` and send `Time-Zone`. A gift on someone else's comment uses the same Gift control, `ForumPaySheet`, amount rules, and Sunday zap pause as a forum reply, and sends `Time-Zone`. The sheet does not show the raw invoice. Does not log invoices, addresses, notes, or comment text.
 - **Inputs:** None. Reads the auth store session and account.
 - **Returns / side effects:** The habit-tracker body. Posts add, edit, archive, log, comment, deleteComment, and invoice actions.
 - **Used by:** `HabitTrackerPage`.

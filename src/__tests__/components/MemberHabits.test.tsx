@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberHabits } from '@/components/MemberHabits';
 import { useAuthStore } from '@/stores/auth-store';
@@ -120,6 +120,18 @@ function freshJson(body: unknown): () => Response {
   return () => json(body);
 }
 
+function isGiftStats(input: RequestInfo | URL): boolean {
+  let url = '';
+  if (typeof input === 'string') {
+    url = input;
+  } else if (input instanceof URL) {
+    url = input.href;
+  } else {
+    url = input.url;
+  }
+  return url.includes('/gifts/stats');
+}
+
 function formsNamed(buttonName: string): HTMLFormElement[] {
   return screen.getAllByRole('button', { name: buttonName }).map((button) => {
     const form = button.closest('form');
@@ -157,7 +169,7 @@ describe('MemberHabits', () => {
     expect(screen.getByText(/Not achieved/)).toBeTruthy();
     expect(screen.queryByText(/secret/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Achieved' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Donate Bitcoin' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     const signIn = screen.getAllByRole('link', { name: 'Sign in to comment' });
     expect(signIn).toHaveLength(3);
     expect(signIn[0]?.getAttribute('href')).toBe('/login');
@@ -239,7 +251,7 @@ describe('MemberHabits', () => {
     renderWithLocale(<MemberHabits />);
     expect(await screen.findByText(/Internal notes: secret/)).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Delete comment' })).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: 'Donate Bitcoin' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Send Bitcoin' })).toHaveLength(1);
     expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
@@ -350,7 +362,10 @@ describe('MemberHabits', () => {
     let gets = 0;
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (_url: string, init?: RequestInit) => {
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
         if (init?.method === 'POST') {
           posts += 1;
           if (posts === 1) {
@@ -406,6 +421,7 @@ describe('MemberHabits', () => {
     expect(await screen.findByRole('button', { name: 'Achieved' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     first.unmount();
 
     useAuthStore.setState({ session: '', account: owner });
@@ -414,24 +430,41 @@ describe('MemberHabits', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
   });
 
-  it('opens a donation, rejects a bad amount, and shows an invoice', async () => {
-    const posts: unknown[] = [];
+  it('uses the forum pay sheet for another members comment', async () => {
+    const posts: Array<{ amountSats?: number; zone: string }> = [];
+    let releaseStale: (value: Response) => void = () => undefined;
+    let rejectStale: (reason: unknown) => void = () => undefined;
     vi.stubGlobal(
       'fetch',
       vi.fn(async (_url: string, init?: RequestInit) => {
         if (init?.method === 'POST') {
           const body = JSON.parse(String(init.body)) as { amountSats?: number };
-          posts.push(body);
+          const headers = new Headers(init.headers);
+          posts.push({ amountSats: body.amountSats, zone: headers.get('Time-Zone') ?? '' });
           if (body.amountSats === 21) {
             return json({ error: 'No wallet' }, 409);
           }
           if (body.amountSats === 22) {
+            return json({ error: 'Too many invoices' }, 429);
+          }
+          if (body.amountSats === 99) {
             return json({});
           }
           if (body.amountSats === 23) {
-            return json({ pr: 'lnbc1' });
+            return json({ pr: 'lnbc23' });
+          }
+          if (body.amountSats === 50) {
+            return new Promise<Response>((resolve) => {
+              releaseStale = resolve;
+            });
+          }
+          if (body.amountSats === 51) {
+            return new Promise<Response>((_resolve, reject) => {
+              rejectStale = reject;
+            });
           }
           return json({ ok: true });
         }
@@ -440,59 +473,94 @@ describe('MemberHabits', () => {
     );
     useAuthStore.setState({ session: 'tok', account: viewer });
     renderWithLocale(<MemberHabits />);
-    const donate = (await screen.findAllByRole('button', { name: 'Donate Bitcoin' }))[0];
-    if (donate === undefined) {
-      throw new Error('missing donate button');
+    const gifts = await screen.findAllByRole('button', { name: 'Send Bitcoin' });
+    expect(gifts).toHaveLength(2);
+    const gift = gifts[0];
+    if (gift === undefined) {
+      throw new Error('missing gift button');
     }
     expect(screen.queryByLabelText('Amount')).toBeNull();
-    fireEvent.click(donate);
+    fireEvent.click(gift);
     const amount = screen.getByLabelText('Amount');
-    fireEvent.click(screen.getByRole('button', { name: 'Bitcoin invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
-      await screen.findByText('Could not save the habit tracker. Please try again.'),
+      await screen.findByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toBeTruthy();
-    fireEvent.change(amount, { target: { value: '99999999999999999999' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Bitcoin invoice' }));
-    fireEvent.change(amount, { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Bitcoin invoice' }));
-    expect(await screen.findByText('No Bitcoin wallet available for donations.')).toBeTruthy();
+    expect(posts[0]?.amountSats).toBe(21);
+    expect(posts[0]?.zone.length).toBeGreaterThan(0);
+
+    fireEvent.change(amount, { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Enter a whole number greater than zero')).toBeTruthy();
+    expect(posts).toHaveLength(1);
+
     fireEvent.change(amount, { target: { value: '22' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Bitcoin invoice' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
-      await screen.findByText('Could not save the habit tracker. Please try again.'),
+      await screen.findByText('Too many payments. Please wait a moment and try again.'),
     ).toBeTruthy();
+
+    fireEvent.change(amount, { target: { value: '99' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Could not start the Bitcoin payment')).toBeTruthy();
+
     fireEvent.change(amount, { target: { value: '23' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Bitcoin invoice' }));
-    expect(await screen.findByDisplayValue('lnbc1')).toBeTruthy();
-    expect(posts.map((row) => (row as { amountSats?: number }).amountSats)).toEqual([21, 22, 23]);
-    fireEvent.click(donate);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Pay ₿23')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(screen.queryByText('lnbc23')).toBeNull();
+    expect(screen.queryByDisplayValue('lnbc23')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(screen.queryByText('Pay ₿23')).toBeNull();
+
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts.some((row) => row.amountSats === 50)).toBe(true);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Send Bitcoin' })[1] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '51' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts.some((row) => row.amountSats === 51)).toBe(true);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '23' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Pay ₿23')).toBeTruthy();
+    await act(async () => {
+      releaseStale(json({ pr: 'lnbc-stale' }));
+      rejectStale(new Error('late'));
+    });
+    expect(screen.queryByText('Pay ₿50')).toBeNull();
+    expect(screen.queryByText('Could not start the Bitcoin payment')).toBeNull();
+    expect(screen.queryByText('lnbc-stale')).toBeNull();
   });
 
-  it('shows a save error when a donation is requested without a session', async () => {
+  it('hides Send Bitcoin when the session is missing or blank', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     useAuthStore.setState({ session: null, account: viewer });
     const first = renderWithLocale(<MemberHabits />);
-    fireEvent.click(
-      (await screen.findAllByRole('button', { name: 'Donate Bitcoin' }))[0] as HTMLButtonElement,
-    );
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Bitcoin invoice' }));
-    expect(
-      await screen.findByText('Could not save the habit tracker. Please try again.'),
-    ).toBeTruthy();
+    expect(await screen.findByText('Bea: hello')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     first.unmount();
 
     useAuthStore.setState({ session: '', account: viewer });
     renderWithLocale(<MemberHabits />);
-    fireEvent.click(
-      (await screen.findAllByRole('button', { name: 'Donate Bitcoin' }))[0] as HTMLButtonElement,
-    );
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Bitcoin invoice' }));
-    expect(
-      await screen.findByText('Could not save the habit tracker. Please try again.'),
-    ).toBeTruthy();
+    expect(await screen.findByText('Bea: hello')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
   });
 });

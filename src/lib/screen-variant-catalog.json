@@ -1320,6 +1320,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:donate-invoice",
+    "label": "/habit-tracker donate-invoice",
+    "visual": "state-habit-tracker-donate-invoice",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/contact:default",
     "label": "/contact default",
     "visual": "screen-contact",

@@ -1,17 +1,26 @@
 'use client';
 
+import { Gift } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import {
+  ForumPaySheet,
+  type ForumPayError,
+  type ForumPayInvoice,
+} from '@/components/ForumPaySheet';
 import { useTranslations } from '@/components/LocaleProvider';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
-import { Button, Card, Field } from '@/components/ui';
-import type { Account } from '@/lib/api-types';
+import { Button, Card, Field, IconButton } from '@/components/ui';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import type { Account, AmountUnit } from '@/lib/api-types';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
 import { roleAtLeast } from '@/lib/roles';
+import { paySatsFromDraft, type FiatRateDay } from '@/lib/stats-money';
+import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 import { useAuthStore } from '@/stores/auth-store';
 
 type MemberHabit = MemberHabitList['habits'][number];
-type MemberHabitComment = MemberHabit['comments'][number];
 type HabitStatus = 'achieved' | 'partial' | 'missed';
 
 type HabitGroup = {
@@ -47,12 +56,21 @@ export function MemberHabits(): ReactElement {
     Record<string, { name: string; description: string; notes: string }>
   >({});
   const [commentByHabitId, setCommentByHabitId] = useState<Record<string, string>>({});
-  const [amountByCommentId, setAmountByCommentId] = useState<Record<string, string>>({});
-  const [invoiceByCommentId, setInvoiceByCommentId] = useState<Record<string, string>>({});
-  const [invoiceErrorByCommentId, setInvoiceErrorByCommentId] = useState<Record<string, string>>(
-    {},
-  );
-  const [donateOpenByCommentId, setDonateOpenByCommentId] = useState<Record<string, boolean>>({});
+  const [payCommentId, setPayCommentId] = useState<string | null>(null);
+  const [payDraft, setPayDraft] = useState('');
+  const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
+  const [payBusy, setPayBusy] = useState(false);
+  const [payError, setPayError] = useState<ForumPayError>(null);
+  const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
+  const [showPaymentQr, setShowPaymentQr] = useState(false);
+  const payGeneration = useRef(0);
+  const { fiat } = useFiatPreference();
+  const signedIn = session !== null && session !== '';
+  const rateDay = useLatestRateDay(signedIn);
+
+  useEffect(() => {
+    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,6 +130,71 @@ export function MemberHabits(): ReactElement {
       throw new Error(SAVE_ERROR);
     }
     await submit({ action: 'log', id: habit.id, period: current.period, status }, false);
+  }
+
+  function openPay(commentId: string): void {
+    payGeneration.current += 1;
+    setPayCommentId(commentId);
+    setPayDraft('');
+    setPayBusy(false);
+    setPayError(null);
+    setPayInvoice(null);
+  }
+
+  function closePay(): void {
+    payGeneration.current += 1;
+    setPayCommentId(null);
+    setPayDraft('');
+    setPayBusy(false);
+    setPayError(null);
+    setPayInvoice(null);
+  }
+
+  function onPaySubmit(): void {
+    /* v8 ignore next 3 -- the sheet is not mounted without a session and comment, and Continue is disabled while busy */
+    if (session === null || session === '' || payCommentId === null || payBusy) {
+      return;
+    }
+    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    if (sats === 'invalid') {
+      setPayError('amount');
+      return;
+    }
+    const commentId = payCommentId;
+    const generation = payGeneration.current;
+    setPayBusy(true);
+    setPayError(null);
+    void postMemberHabit(session, { action: 'invoice', commentId, amountSats: sats }, true)
+      .then((body) => {
+        if (generation !== payGeneration.current) {
+          return;
+        }
+        setPayInvoice({ messageId: commentId, pr: lightningInvoicePr(body), amountSats: sats });
+      })
+      .catch((caught: unknown) => {
+        if (generation !== payGeneration.current) {
+          return;
+        }
+        /* v8 ignore next 4 -- postMemberHabit only throws Error */
+        if (!(caught instanceof Error)) {
+          setPayError('request');
+          return;
+        }
+        if (/too many invoices/i.test(caught.message)) {
+          setPayError('rateLimit');
+          return;
+        }
+        if (caught.message === 'No wallet') {
+          setPayError('authorWallet');
+          return;
+        }
+        setPayError('request');
+      })
+      .finally(() => {
+        if (generation === payGeneration.current) {
+          setPayBusy(false);
+        }
+      });
   }
 
   let body: ReactElement;
@@ -300,21 +383,23 @@ export function MemberHabits(): ReactElement {
                     account={account}
                     session={session}
                     commentText={commentByHabitId[habit.id] ?? ''}
-                    amountByCommentId={amountByCommentId}
-                    invoiceByCommentId={invoiceByCommentId}
-                    invoiceErrorByCommentId={invoiceErrorByCommentId}
-                    donateOpenByCommentId={donateOpenByCommentId}
-                    onToggleDonate={(commentId) => {
-                      setDonateOpenByCommentId((current) => ({
-                        ...current,
-                        [commentId]: current[commentId] !== true,
-                      }));
+                    payCommentId={payCommentId}
+                    payDraft={payDraft}
+                    payBusy={payBusy}
+                    payError={payError}
+                    payInvoice={payInvoice}
+                    rateDay={rateDay}
+                    showPaymentQr={showPaymentQr}
+                    onPayOpen={openPay}
+                    onPayDraftChange={(value) => {
+                      setPayDraft(value);
+                      setPayError(null);
                     }}
+                    onPayUnitChange={setPayShownUnit}
+                    onPaySubmit={onPaySubmit}
+                    onPayCancel={closePay}
                     onCommentText={(value) => {
                       setCommentByHabitId((current) => ({ ...current, [habit.id]: value }));
-                    }}
-                    onAmount={(commentId, value) => {
-                      setAmountByCommentId((current) => ({ ...current, [commentId]: value }));
                     }}
                     onPostComment={() => {
                       const text = commentByHabitId[habit.id] ?? '';
@@ -332,17 +417,6 @@ export function MemberHabits(): ReactElement {
                         return;
                       }
                       void submit({ action: 'deleteComment', id: commentId }, true);
-                    }}
-                    onInvoice={(comment) => {
-                      void requestInvoice({
-                        comment,
-                        session,
-                        amountByCommentId,
-                        setInvoiceByCommentId,
-                        setInvoiceErrorByCommentId,
-                        t,
-                        refresh,
-                      });
                     }}
                   />
                 </article>
@@ -490,84 +564,26 @@ function lightningInvoicePr(body: unknown): string {
   return body.pr;
 }
 
-function parseAmountSats(raw: string): number {
-  const trimmed = raw.trim();
-  if (!/^\d+$/.test(trimmed)) {
-    throw new Error(SAVE_ERROR);
-  }
-  const amountSats = Number.parseInt(trimmed, 10);
-  if (!Number.isSafeInteger(amountSats)) {
-    throw new Error(SAVE_ERROR);
-  }
-  return amountSats;
-}
-
-async function requestInvoice(args: {
-  comment: MemberHabitComment;
-  session: string | null;
-  amountByCommentId: Record<string, string>;
-  setInvoiceByCommentId: (
-    update: (current: Record<string, string>) => Record<string, string>,
-  ) => void;
-  setInvoiceErrorByCommentId: (
-    update: (current: Record<string, string>) => Record<string, string>,
-  ) => void;
-  t: (key: 'habit.noWallet') => string;
-  refresh: () => Promise<void>;
-}): Promise<void> {
-  const {
-    comment,
-    session,
-    amountByCommentId,
-    setInvoiceByCommentId,
-    setInvoiceErrorByCommentId,
-    t,
-    refresh,
-  } = args;
-  const raw = amountByCommentId[comment.id] ?? '';
-  try {
-    if (session === null || session === '') {
-      throw new Error(SAVE_ERROR);
-    }
-    const amountSats = parseAmountSats(raw);
-    const body = await postMemberHabit(
-      session,
-      { action: 'invoice', commentId: comment.id, amountSats },
-      false,
-    );
-    const pr = lightningInvoicePr(body);
-    setInvoiceByCommentId((current) => ({ ...current, [comment.id]: pr }));
-    setInvoiceErrorByCommentId((current) => {
-      const next = { ...current };
-      delete next[comment.id];
-      return next;
-    });
-    await refresh();
-  } catch (caught: unknown) {
-    /* v8 ignore next 3 -- postMemberHabit and parseAmountSats only throw Error */
-    if (!(caught instanceof Error)) {
-      throw caught;
-    }
-    const message = caught.message === 'No wallet' ? t('habit.noWallet') : caught.message;
-    setInvoiceErrorByCommentId((current) => ({ ...current, [comment.id]: message }));
-  }
-}
-
 function CommentsBlock(props: {
   habit: MemberHabit;
   account: Account | null;
   session: string | null;
   commentText: string;
-  amountByCommentId: Record<string, string>;
-  invoiceByCommentId: Record<string, string>;
-  invoiceErrorByCommentId: Record<string, string>;
-  donateOpenByCommentId: Record<string, boolean>;
-  onToggleDonate: (commentId: string) => void;
+  payCommentId: string | null;
+  payDraft: string;
+  payBusy: boolean;
+  payError: ForumPayError;
+  payInvoice: ForumPayInvoice | null;
+  rateDay: FiatRateDay | null;
+  showPaymentQr: boolean;
+  onPayOpen: (commentId: string) => void;
+  onPayDraftChange: (value: string) => void;
+  onPayUnitChange: (unit: AmountUnit) => void;
+  onPaySubmit: () => void;
+  onPayCancel: () => void;
   onCommentText: (value: string) => void;
-  onAmount: (commentId: string, value: string) => void;
   onPostComment: () => void;
   onDeleteComment: (commentId: string) => void;
-  onInvoice: (comment: MemberHabitComment) => void;
 }): ReactElement {
   const { t } = useTranslations();
   const {
@@ -575,18 +591,24 @@ function CommentsBlock(props: {
     account,
     session,
     commentText,
-    amountByCommentId,
-    invoiceByCommentId,
-    invoiceErrorByCommentId,
-    donateOpenByCommentId,
-    onToggleDonate,
+    payCommentId,
+    payDraft,
+    payBusy,
+    payError,
+    payInvoice,
+    rateDay,
+    showPaymentQr,
+    onPayOpen,
+    onPayDraftChange,
+    onPayUnitChange,
+    onPaySubmit,
+    onPayCancel,
     onCommentText,
-    onAmount,
     onPostComment,
     onDeleteComment,
-    onInvoice,
   } = props;
   const canDelete = account !== null && roleAtLeast(account.role, 'initiator');
+  const canPay = session !== null && session !== '' && account !== null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -597,11 +619,7 @@ function CommentsBlock(props: {
       ) : (
         <ul className="flex flex-col gap-3">
           {habit.comments.map((comment) => {
-            const invoice = invoiceByCommentId[comment.id];
-            const invoiceError = invoiceErrorByCommentId[comment.id];
-            const amount = amountByCommentId[comment.id] ?? '';
-            const showDonate = account !== null && comment.accountId !== account.id;
-            const donateOpen = donateOpenByCommentId[comment.id] === true;
+            const showGift = canPay && comment.accountId !== account.id;
             return (
               <li key={comment.id} className="flex flex-col gap-2 text-sm text-app-fg">
                 <p>
@@ -621,54 +639,40 @@ function CommentsBlock(props: {
                     </Button>
                   </SundayWritingGate>
                 ) : null}
-                {showDonate ? (
-                  <div className="flex flex-col gap-2">
-                    <Button
+                {showGift ? (
+                  <SundayWritingGate notice="zap">
+                    <IconButton
                       type="button"
-                      variant="secondary"
                       size="sm"
+                      variant="ghost"
+                      aria-label={t('forum.pay')}
+                      disabled={payBusy}
                       onClick={() => {
-                        onToggleDonate(comment.id);
+                        onPayOpen(comment.id);
                       }}
                     >
-                      {t('habit.donate')}
-                    </Button>
-                    {donateOpen ? (
-                      <>
-                        <Field
-                          id={`habit-amount-${comment.id}`}
-                          label={t('habit.amount')}
-                          type="number"
-                          inputMode="numeric"
-                          value={amount}
-                          onChange={(event) => {
-                            onAmount(comment.id, event.target.value);
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            onInvoice(comment);
-                          }}
-                        >
-                          {t('habit.invoice')}
-                        </Button>
-                        {invoice === undefined ? null : (
-                          <Field
-                            id={`habit-invoice-${comment.id}`}
-                            label={t('habit.invoice')}
-                            value={invoice}
-                            readOnly
-                          />
-                        )}
-                        {invoiceError === undefined ? null : (
-                          <p role="alert" className="text-sm text-app-danger">
-                            {invoiceError}
-                          </p>
-                        )}
-                      </>
-                    ) : null}
-                  </div>
+                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    </IconButton>
+                  </SundayWritingGate>
+                ) : null}
+                {showGift && payCommentId === comment.id ? (
+                  <SundayWritingGate notice="zap">
+                    <ForumPaySheet
+                      messageId={comment.id}
+                      payDraft={payDraft}
+                      payBusy={payBusy}
+                      payError={payError}
+                      payInvoice={payInvoice}
+                      payWaiting={false}
+                      onPayDraftChange={onPayDraftChange}
+                      onPayUnitChange={onPayUnitChange}
+                      onPaySubmit={onPaySubmit}
+                      onPayCancel={onPayCancel}
+                      rateDay={rateDay}
+                      showPaymentQr={showPaymentQr}
+                      onInteract={() => undefined}
+                    />
+                  </SundayWritingGate>
                 ) : null}
               </li>
             );
