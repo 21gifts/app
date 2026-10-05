@@ -108,7 +108,7 @@ test('Function: ShopTable — name, place, and operator', async ({ page }) => {
   await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('link', { name: 'Happyland' })).toHaveAttribute(
     'href',
-    '/map?pin=m-shop',
+    '/shops?pin=m-shop#map',
   );
   await expect(page.getByRole('link', { name: '@luna' })).toHaveAttribute(
     'href',
