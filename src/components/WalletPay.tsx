@@ -107,8 +107,10 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
     case 'unlock':
       return (
         <Button type="button" variant="primary" onClick={unlock}>
-          {t('wallet.payUnlockAndPay', { amount: formatBitcoin(amountSats, numberFormat) })}
-          {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
+          <span className="text-center">
+            {t('wallet.payUnlockAndPay', { amount: formatBitcoin(amountSats, numberFormat) })}
+            {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
+          </span>
         </Button>
       );
     case 'preparing':

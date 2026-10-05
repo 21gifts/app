@@ -72,6 +72,7 @@ describe('WalletPay', () => {
     renderPay();
     const button = screen.getByRole('button', { name: /^Unlock and pay ₿21/ });
     expect(button.textContent).toBe('Unlock and pay ₿21 · $0.02');
+    expect(button.children).toHaveLength(1);
     fireEvent.click(button);
     expect(hook.unlock).toHaveBeenCalledTimes(1);
     expect(hook.pay).not.toHaveBeenCalled();
