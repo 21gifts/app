@@ -135,7 +135,7 @@ function visualView(): WalletPayView | null {
  * opens it with one passkey prompt and prepares, then pays at once when the
  * fee is ₿0, or stops at `confirm` when the fee is higher. That tap pays at
  * most once, and never after the slot closed, the request or `amountSats`
- * changed, the wallet left `ready`, or the prompt was cancelled or failed. A
+ * changed, the wallet failed to open or left `ready`, or the prompt was cancelled or failed. A
  * ready wallet prepares at once so the fee is shown before **Pay from
  * wallet**. A prepared amount that differs from `amountSats`, a failed prepare
  * or unlock, and a wallet in `error` show `failed`. A wallet that leaves
@@ -257,6 +257,12 @@ export function useWalletPay(
     insufficientBalance.current = null;
     setPhase('idle');
   }, [phase, balanceSats]);
+
+  useEffect(() => {
+    if (status === 'error' || !usable) {
+      autoPayRun.current = null;
+    }
+  }, [status, usable]);
 
   useEffect(() => {
     if (
