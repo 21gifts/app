@@ -35,9 +35,8 @@ function writeShopsHash(view: ShopsView): void {
  * `/shops#map` and `/shops#table` open that view. A missing or unknown hash opens Post.
  * A plain click on a link to a view of this same page (a place opens `/shops?pin=…#map`)
  * shows that view (no or an unknown hash is Post, as on load), since the client-side push
- * fires no `hashchange`. The push keeps the
- * entry the link was clicked from for browser Back (`popstate`); only a link that differs
- * in nothing but the hash rewrites this entry. Links with `target` or `download` are ignored.
+ * fires no `hashchange`. The push keeps the entry the link was clicked from for browser
+ * Back (`popstate`). Links with `target` or `download` are ignored.
  * The view stays unset until the hash is read, so the post list, map, and table mount only after that.
  *
  * @returns The shops column (`Card` `surface={false}`).
@@ -85,11 +84,7 @@ export function ShopsScreen(): ReactElement {
       // Same rule as the hash on load: none or an unknown one is Post. The
       // top-left arrow back to `/shops` carries no hash.
       const next = shopsViewFromHash(url.hash) ?? 'post';
-      // The push carries the hash and keeps the entry being left for Back.
-      // Only a link that differs in nothing but the hash rewrites this entry.
-      if (url.search === window.location.search) {
-        writeShopsHash(next);
-      }
+      // The router push carries the hash and keeps the entry being left for Back.
       // Switch after this click is dispatched: unmounting the link first would
       // stop next/link from preventing the default document load.
       window.setTimeout(() => {
