@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   goToPreviousView,
+  markBackNavigation,
   previousViewPath,
   recordCurrentView,
   resetViewHistory,
 } from '@/lib/view-history';
 
 const HISTORY_KEY = '21gifts.viewHistory';
+const BACK_KEY = '21gifts.viewHistoryBack';
 const SLOT = '__giftsViewHistory';
 
 type ViewSlot = { stack: string[]; cursor: number; base?: number };
@@ -459,104 +461,113 @@ describe('stored memory', () => {
 });
 
 describe('goToPreviousView', () => {
-  it('assigns /welcome and does not call history.back when the stack is empty', () => {
+  it('pushes /welcome and does not call history.back when the stack is empty', () => {
+    const push = vi.fn();
     const assign = vi.fn();
     vi.stubGlobal('location', { assign });
     const restoreLength = setHistoryLength(5);
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    goToPreviousView(push);
+    expect(push).toHaveBeenCalledWith('/welcome');
+    expect(assign).not.toHaveBeenCalled();
     expect(historyBack).not.toHaveBeenCalled();
     restoreLength();
   });
 
-  it('assigns the previous path and does not call history.back when the entry is stamped', () => {
+  it('pushes the previous path and does not call history.back when the entry is stamped', () => {
     pushView('/shops');
     pushView('/notifications');
     setGiftsView(1);
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
+    const push = vi.fn();
     const restoreLength = setHistoryLength(2);
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    goToPreviousView();
-    goToPreviousView();
-    expect(assign).toHaveBeenNthCalledWith(1, '/shops');
-    expect(assign).toHaveBeenNthCalledWith(2, '/shops');
+    goToPreviousView(push);
+    goToPreviousView(push);
+    expect(push).toHaveBeenNthCalledWith(1, '/shops');
+    expect(push).toHaveBeenNthCalledWith(2, '/shops');
     expect(historyBack).not.toHaveBeenCalled();
     restoreLength();
   });
 
-  it('assigns the previous path when the stamp is missing', () => {
+  it('pushes the previous path when the stamp is missing', () => {
     pushView('/shops');
     pushView('/notifications');
     setGiftsView(undefined);
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
-    const restoreLength = setHistoryLength(5);
-    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/shops');
-    expect(historyBack).not.toHaveBeenCalled();
-    restoreLength();
+    const push = vi.fn();
+    goToPreviousView(push);
+    expect(push).toHaveBeenCalledWith('/shops');
   });
 
-  it('assigns the previous path when the stamp is 0', () => {
+  it('pushes the previous path when the stamp is 0', () => {
     pushView('/shops');
     pushView('/notifications');
     setGiftsView(0);
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
-    const restoreLength = setHistoryLength(5);
-    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/shops');
-    expect(historyBack).not.toHaveBeenCalled();
-    restoreLength();
+    const push = vi.fn();
+    goToPreviousView(push);
+    expect(push).toHaveBeenCalledWith('/shops');
   });
 
-  it('assigns the previous path when the stamp is set but history.length is 1', () => {
+  it('pushes the previous path when the stamp is set but history.length is 1', () => {
     pushView('/shops');
     pushView('/notifications');
     setGiftsView(1);
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
+    const push = vi.fn();
     const restoreLength = setHistoryLength(1);
-    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/shops');
-    expect(historyBack).not.toHaveBeenCalled();
+    goToPreviousView(push);
+    expect(push).toHaveBeenCalledWith('/shops');
     restoreLength();
   });
 
-  it('assigns /welcome when a replaced cold open has no earlier view', () => {
+  it('pushes /welcome when a replaced cold open has no earlier view', () => {
     recordCurrentView('/gated');
     replaceView('/login');
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
-    const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/welcome');
-    expect(historyBack).not.toHaveBeenCalled();
+    const push = vi.fn();
+    goToPreviousView(push);
+    expect(push).toHaveBeenCalledWith('/welcome');
   });
 
-  it('steps the cursor back when the next document records the assigned path', () => {
+  it('steps the cursor back when the client-side navigation records the pushed path', () => {
     pushView('/welcome');
     pushView('/shops');
     pushView('/notifications');
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign, pathname: '/notifications', search: '' });
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/shops');
+    const push = vi.fn((href: string) => {
+      window.history.pushState(window.history.state, '', href);
+    });
+    goToPreviousView(push);
+    expect(push).toHaveBeenCalledWith('/shops');
     expect(stored()).toEqual({ stack: ['/welcome', '/shops', '/notifications'], cursor: 2 });
+    recordCurrentView('/shops', false);
+    expect(stored()).toEqual({ stack: ['/welcome', '/shops'], cursor: 1 });
+    recordCurrentView('/shops');
+    expect(stored()).toEqual({ stack: ['/welcome', '/shops'], cursor: 1 });
+    expect(previousViewPath()).toBe('/welcome');
+    goToPreviousView(push);
+    recordCurrentView('/welcome');
+    expect(stored()).toEqual({ stack: ['/welcome'], cursor: 0 });
+    expect(previousViewPath()).toBeNull();
+    expect(sessionStorage.getItem(BACK_KEY)).toBeNull();
+  });
+
+  it('keeps the target while the view it leaves records again', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    goToPreviousView(vi.fn());
+    recordCurrentView('/notifications', false);
+    recordCurrentView('/notifications');
+    expect(sessionStorage.getItem(BACK_KEY)).toBe('/shops');
+    recordCurrentView('/shops');
+    expect(stored()).toEqual({ stack: ['/shops'], cursor: 0 });
+  });
+
+  it('steps the cursor back when the router falls back to a document load', () => {
+    pushView('/welcome');
+    pushView('/shops');
+    pushView('/notifications');
+    goToPreviousView(vi.fn());
     dropSlot();
     recordCurrentView('/shops');
     expect(stored()).toEqual({ stack: ['/welcome', '/shops'], cursor: 1 });
     expect(previousViewPath()).toBe('/welcome');
-    goToPreviousView();
-    dropSlot();
-    recordCurrentView('/welcome');
-    expect(stored()).toEqual({ stack: ['/welcome'], cursor: 0 });
-    expect(previousViewPath()).toBeNull();
   });
 
   it('does not step back when a forward visit reopens the previous path', () => {
@@ -568,49 +579,65 @@ describe('goToPreviousView', () => {
     expect(previousViewPath()).toBe('/notifications');
   });
 
-  it('drops a stale arrow marker on the same document', () => {
+  it('drops a stale arrow marker when another view records first', () => {
     pushView('/shops');
     pushView('/notifications');
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign, pathname: '/notifications', search: '' });
-    goToPreviousView();
+    goToPreviousView(vi.fn());
     recordCurrentView('/map');
     expect(stored()?.stack).toEqual(['/shops', '/notifications', '/map']);
+    expect(sessionStorage.getItem(BACK_KEY)).toBeNull();
+    recordCurrentView('/shops');
+    expect(stored()?.stack).toEqual(['/shops', '/notifications', '/map', '/shops']);
     dropSlot();
     recordCurrentView('/shops');
     expect(stored()?.stack).toEqual(['/shops', '/notifications', '/map', '/shops']);
   });
 
-  it('still assigns when the arrow marker cannot be stored', () => {
+  it('still pushes and steps back when the arrow marker cannot be stored', () => {
     pushView('/shops');
     pushView('/notifications');
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign, pathname: '/notifications', search: '' });
+    const push = vi.fn();
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('denied');
     });
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/shops');
+    goToPreviousView(push);
+    expect(push).toHaveBeenCalledWith('/shops');
+    recordCurrentView('/shops');
     setItem.mockRestore();
+    expect(previousViewPath()).toBeNull();
   });
 
   it('pushes when the arrow marker does not match the previous entry', () => {
     pushView('/shops');
     pushView('/notifications');
-    sessionStorage.setItem('21gifts.viewHistoryBack', '/map');
+    sessionStorage.setItem(BACK_KEY, '/map');
     dropSlot();
     recordCurrentView('/map');
     expect(stored()?.stack).toEqual(['/shops', '/notifications', '/map']);
     expect(previousViewPath()).toBe('/notifications');
   });
 
+  it('pushes when the marked path is not the previous entry of an anchored stack', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    markBackNavigation('/map');
+    recordCurrentView('/map');
+    expect(stored()?.stack).toEqual(['/shops', '/notifications', '/map']);
+  });
+
   it('opens the forum as the only view when the arrow had no earlier view', () => {
     recordCurrentView('/gated');
     replaceView('/login');
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign, pathname: '/login', search: '' });
-    goToPreviousView();
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    goToPreviousView(vi.fn());
+    recordCurrentView('/welcome');
+    expect(stored()).toEqual({ stack: ['/welcome'], cursor: 0 });
+    expect(previousViewPath()).toBeNull();
+  });
+
+  it('opens the forum as the only view after a document load', () => {
+    recordCurrentView('/gated');
+    replaceView('/login');
+    goToPreviousView(vi.fn());
     dropSlot();
     recordCurrentView('/welcome');
     expect(stored()).toEqual({ stack: ['/welcome'], cursor: 0 });
@@ -619,7 +646,7 @@ describe('goToPreviousView', () => {
 
   it('keeps recording when the arrow marker cannot be read', () => {
     pushView('/shops');
-    sessionStorage.setItem('21gifts.viewHistoryBack', '/shops');
+    sessionStorage.setItem(BACK_KEY, '/shops');
     dropSlot();
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('denied');
@@ -627,6 +654,28 @@ describe('goToPreviousView', () => {
     recordCurrentView('/notifications');
     expect(previousViewPath()).toBeNull();
     expect(readSlot()?.stack).toEqual(['/notifications']);
+  });
+
+  it('forgets a pending target on reset', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    goToPreviousView(vi.fn());
+    resetViewHistory();
+    pushView('/notifications');
+    pushView('/shops');
+    expect(stored()?.stack).toEqual(['/notifications', '/shops']);
+  });
+});
+
+describe('markBackNavigation', () => {
+  it('marks the path so its arrival steps back instead of pushing', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    markBackNavigation('/shops');
+    expect(sessionStorage.getItem(BACK_KEY)).toBe('/shops');
+    recordCurrentView('/shops');
+    expect(stored()).toEqual({ stack: ['/shops'], cursor: 0 });
+    expect(sessionStorage.getItem(BACK_KEY)).toBeNull();
   });
 });
 

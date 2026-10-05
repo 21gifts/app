@@ -10,6 +10,38 @@ import { resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const routerPush = vi.hoisted(() => vi.fn());
+
+// Like next/link: after the caller's onClick, an unprevented plain click is a
+// client-side router push, not a document load.
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+    [key: string]: unknown;
+  }) => (
+    <a
+      href={href}
+      {...rest}
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented) {
+          event.preventDefault();
+          routerPush(href);
+        }
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock('@/hooks/useLatestRateDay', () => ({
   useLatestRateDay: vi.fn(),
 }));
@@ -41,6 +73,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  routerPush.mockReset();
   resetViewHistory();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -336,7 +369,8 @@ describe('WalletScreenView', () => {
       />,
     );
     fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(routerPush).toHaveBeenCalledWith('/welcome');
+    expect(assign).not.toHaveBeenCalled();
     expect(historyBack).not.toHaveBeenCalled();
   });
 
@@ -358,7 +392,8 @@ describe('WalletScreenView', () => {
       />,
     );
     fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(routerPush).toHaveBeenCalledWith('/welcome');
+    expect(assign).not.toHaveBeenCalled();
     expect(historyBack).not.toHaveBeenCalled();
   });
 
@@ -582,7 +617,8 @@ describe('WalletScreenView', () => {
       />,
     );
     fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(routerPush).toHaveBeenCalledWith('/welcome');
+    expect(assign).not.toHaveBeenCalled();
     expect(historyBack).not.toHaveBeenCalled();
   });
 
@@ -605,7 +641,8 @@ describe('WalletScreenView', () => {
       />,
     );
     fireEvent.click(screen.getByRole('link', { name: 'Back to the forum' }));
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(routerPush).toHaveBeenCalledWith('/welcome');
+    expect(assign).not.toHaveBeenCalled();
     expect(historyBack).not.toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
   });
@@ -794,7 +831,8 @@ describe('WalletScreenView Send', () => {
     renderEntry('ready', send);
     pressBack();
     expect(send.cancel).not.toHaveBeenCalled();
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(routerPush).toHaveBeenCalledWith('/welcome');
+    expect(assign).not.toHaveBeenCalled();
   });
 });
 

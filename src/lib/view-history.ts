@@ -1,7 +1,7 @@
 /** Tab-scoped in-app view stack. Not `localStorage`. */
 const HISTORY_KEY = '21gifts.viewHistory';
 
-/** One-shot target of the top-left arrow. Consumed by the next document. */
+/** One-shot target of the top-left arrow, for a router that falls back to a document load. */
 const BACK_KEY = '21gifts.viewHistoryBack';
 
 const SLOT = '__giftsViewHistory';
@@ -35,6 +35,9 @@ type NavKind = 'push' | 'replace';
 let navKind: NavKind | null = null;
 let historyTapped = false;
 let rawReplaceState: History['replaceState'] | null = null;
+
+/** Target of the arrow's client-side navigation until a record arrives elsewhere. */
+let pendingBack: string | null = null;
 
 /**
  * Remember the last router `pushState` or URL-changing `replaceState`.
@@ -254,11 +257,14 @@ function stampGiftsView(absolute: number): void {
 }
 
 /**
- * Remember the path the arrow is opening, so the next document can step back.
+ * Remember the path the arrow is opening, so the record that arrives there
+ * steps back. The module copy serves the client-side navigation. The stored
+ * copy serves a router that falls back to a document load.
  *
- * @param path - In-app path passed to `location.assign`.
+ * @param path - In-app path the arrow navigates to.
  */
 function markBackTarget(path: string): void {
+  pendingBack = path;
   try {
     /* v8 ignore next 3 -- SSR has no sessionStorage */
     if (typeof sessionStorage === 'undefined') {
@@ -290,14 +296,39 @@ function takeBackTarget(): string | null {
 }
 
 /**
- * Step the hydrated stack onto the path the arrow just opened.
+ * The arrow's target if this record leaves the current view, then drop it.
  *
- * @param slot - Stack loaded for this new document. Not yet anchored.
- * @param path - Path this document recorded.
+ * A new document reads the stored copy. An anchored document reads the module
+ * copy, and keeps both while it records the view the arrow is leaving, so a
+ * re-render before the navigation does not lose the target.
+ *
+ * @param slot - Tab stack.
+ * @param path - Path being recorded.
+ * @returns The marked path, or `null` when there is none or it stays pending.
+ */
+function takeArrival(slot: ViewHistoryMemory, path: string): string | null {
+  if (!slot.anchored) {
+    pendingBack = null;
+    return takeBackTarget();
+  }
+  if (slot.stack[slot.cursor] === path) {
+    return null;
+  }
+  const target = pendingBack;
+  pendingBack = null;
+  takeBackTarget();
+  return target;
+}
+
+/**
+ * Step the stack onto the path the arrow just opened.
+ *
+ * @param slot - Tab stack.
+ * @param path - Path this record arrived at.
  * @returns Whether this record was the arrow's arrival.
  */
 function arriveFromBack(slot: ViewHistoryMemory, path: string): boolean {
-  if (takeBackTarget() !== path) {
+  if (takeArrival(slot, path) !== path) {
     return false;
   }
   if (slot.cursor >= 1 && slot.stack[slot.cursor - 1] === path) {
@@ -335,6 +366,7 @@ function stampedIndex(): number | null {
 export function resetViewHistory(): void {
   const g = globalThis as ViewHistoryGlobal;
   delete g[SLOT];
+  pendingBack = null;
   writeStoredMemory(null);
 }
 
@@ -381,15 +413,12 @@ export function recordCurrentView(path: string, stampHistory = true): void {
   const length = window.history.length;
   installHistoryTap();
   const kind = takeNavKind();
-  if (!slot.anchored && arriveFromBack(slot, path)) {
+  if (arriveFromBack(slot, path)) {
     slot.historyLength = length;
     slot.anchored = true;
     stampCommitted(stampHistory, slot.cursor + slot.base);
     writeStoredMemory(slot);
     return;
-  }
-  if (slot.anchored) {
-    takeBackTarget();
   }
   const stamped = stampedIndex();
   const index = stamped === null ? -1 : stamped - slot.base;
@@ -451,21 +480,37 @@ export function recordCurrentView(path: string, stampHistory = true): void {
 }
 
 /**
- * Return to the previous in-app view, or open the forum when this tab has none.
+ * Mark `path` as the view the top-left arrow is opening. The record that
+ * arrives there steps the cursor back instead of pushing. A record of any
+ * other view drops the mark. The caller navigates, client-side.
  *
- * Assigns that path and leaves the stack for the next document. A second click
- * before that load assigns the same path. A browser back step can leave the
- * site when the current entry replaced an external referrer.
- *
+ * @param path - In-app path the arrow opens: the previous view, or `/welcome`.
  * @returns void
  */
-export function goToPreviousView(): void {
-  /* v8 ignore next 3 -- SSR has no location */
+export function markBackNavigation(path: string): void {
+  markBackTarget(path);
+}
+
+/**
+ * Return to the previous in-app view, or open the forum when this tab has none.
+ *
+ * Opens that path with the client-side router `push`, so the document and
+ * its tab memory (the unlocked wallet) stay. Leaves the stack for the record
+ * that arrives there, which steps the cursor back. A second click before that
+ * record pushes the same path. It does not call `history.back()`: a browser
+ * back step can leave the site when the current entry replaced an external
+ * referrer.
+ *
+ * @param push - Client-side navigation, usually `useRouter().push`.
+ * @returns void
+ */
+export function goToPreviousView(push: (href: string) => void): void {
+  /* v8 ignore next 3 -- SSR has no history */
   if (typeof window === 'undefined') {
     return;
   }
   const prev = previousViewPath();
   const target = prev ?? '/welcome';
   markBackTarget(target);
-  window.location.assign(target);
+  push(target);
 }
