@@ -169,7 +169,7 @@ async function openPaySheet(page: Page, visual: string | null): Promise<void> {
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await replyCard.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Pay ₿21')).toBeVisible();
+  await expect(page.getByText(/^Pay ₿21\b/)).toBeVisible();
 }
 
 test('wallet pay: key unset shows only the unavailable wallet sentence', async ({ page }) => {
