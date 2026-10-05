@@ -93,8 +93,11 @@ function PausedGrantApply(): ReactElement {
  * pause card except for usernames in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`.
  * A verified account with one of those names and status none or rejected still
  * sees the apply walk. Pending, trial, and admitted keep their copy for every
- * verified username. A basis account sees "You are not verified yet." and does not
- * post. A missing account still shows the pause card. The walk stays
+ * verified username. A basis account named joey-rosima, vincent, or jewel-bacolbas
+ * sees "You are not verified yet." and does not post. Any other basis account
+ * whose status is not pending, trial, or admitted sees the pause card. A basis
+ * account with one of those statuses sees "You are not verified yet." and does
+ * not post. A missing account still shows the pause card. The walk stays
  * in the code: fill About me, photo, and location, then two yes/no questions.
  * The first asks whether the posts match the core principles and links to the
  * about page. The second asks whether the posts are true. Missing fields are

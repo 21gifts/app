@@ -534,4 +534,72 @@ describe('FundingApplyScreen', () => {
       screen.getByText('First, write a short About me so people can get to know you.'),
     ).toBeTruthy();
   });
+
+  it('shows the paused sentence for a basis account named ada', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        username: 'ada',
+        role: 'basis',
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      },
+    });
+    renderWithLocale(<FundingApplyScreen />);
+    expect(
+      screen.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('You are not verified yet.')).toBeNull();
+  });
+
+  it('shows not-verified copy for a basis account named joey-rosima', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, username: 'joey-rosima', role: 'basis' },
+    });
+    renderWithLocale(<FundingApplyScreen />);
+    expect(screen.getByText('You are not verified yet.')).toBeTruthy();
+    expect(
+      screen.queryByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeNull();
+  });
+
+  it('shows not-verified copy for a pending basis account that is not on the roster', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        username: 'ada',
+        role: 'basis',
+        funding: {
+          status: 'pending',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      },
+    });
+    renderWithLocale(<FundingApplyScreen />);
+    expect(screen.getByText('You are not verified yet.')).toBeTruthy();
+    expect(
+      screen.queryByText('Your application is open. A moderator will review your posts.'),
+    ).toBeNull();
+    expect(
+      screen.queryByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeNull();
+  });
 });
