@@ -108,7 +108,7 @@ describe('sentryOptions', () => {
       'BrowserSession',
       'BrowserTracing',
       'ProcessSession',
-      'LocalVariables',
+      'LocalVariablesAsync',
       'Console',
       'CaptureConsole',
       'ConsoleLogs',
@@ -458,6 +458,69 @@ describe('forwardSentryEnvelope', () => {
     });
     expect((await forwardSentryEnvelope(request)).status).toBe(413);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses a declared size above 1 MiB without reading the body', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const request = new Request('http://localhost/monitoring', {
+      method: 'POST',
+      headers: { 'Content-Length': String(1024 * 1024 + 1) },
+      body: new ReadableStream({}),
+      duplex: 'half',
+    } as RequestInit);
+    expect((await forwardSentryEnvelope(request)).status).toBe(413);
+    expect(request.bodyUsed).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('stops reading a streamed body once it passes 1 MiB', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    let sent = 0;
+    const chunk = new Uint8Array(256 * 1024);
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        sent += 1;
+        controller.enqueue(chunk);
+      },
+    });
+    const request = new Request('http://localhost/monitoring', {
+      method: 'POST',
+      body,
+      duplex: 'half',
+    } as RequestInit);
+    expect((await forwardSentryEnvelope(request)).status).toBe(413);
+    expect(sent).toBeLessThan(10);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses a POST without a body', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const request = new Request('http://localhost/monitoring', { method: 'POST' });
+    expect((await forwardSentryEnvelope(request)).status).toBe(400);
+  });
+
+  it('forwards an envelope that arrives in several chunks', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const text = `${JSON.stringify({ dsn: DSN })}\n{"type":"event"}\n{}`;
+    const bytes = new TextEncoder().encode(text);
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(bytes.subarray(0, 10));
+        controller.enqueue(bytes.subarray(10));
+        controller.close();
+      },
+    });
+    const request = new Request('http://localhost/monitoring', {
+      method: 'POST',
+      body,
+      duplex: 'half',
+    } as RequestInit);
+    expect((await forwardSentryEnvelope(request)).status).toBe(200);
+    const sentBody = fetchMock.mock.calls[0]?.[1]?.body as Uint8Array;
+    expect(new TextDecoder().decode(sentBody)).toBe(text);
   });
 
   it('answers 502 when the Sentry server cannot be reached', async () => {

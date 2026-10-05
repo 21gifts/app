@@ -2532,7 +2532,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Reads the optional error-reporting environment name `NEXT_PUBLIC_SENTRY_ENVIRONMENT` (for example `staging`), set per deployment. An optional `entrypoint.sh` placeholder.
 - **Inputs:** None. Literal `process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT` access; regular-expression blank check.
-- **Returns / side effects:** The trimmed name, or `null` when unset or blank (reports then carry no environment name). Never throws.
+- **Returns / side effects:** The trimmed name, or `null` when unset or blank (reports then use the SDK default, `production`). Never throws.
 - **Used by:** `sentryOptions`.
 
 ## Function: sentryOptions

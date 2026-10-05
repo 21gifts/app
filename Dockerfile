@@ -34,7 +34,7 @@
 #   NEXT_PUBLIC_SENTRY_DSN — error-reporting DSN. Optional placeholder: empty or unset
 #                         turns error reporting off.
 #   NEXT_PUBLIC_SENTRY_ENVIRONMENT — error-reporting environment name (e.g. staging).
-#                         Optional placeholder: empty or unset sends no name.
+#                         Optional placeholder: empty or unset uses the SDK default.
 #
 # entrypoint.sh refuses to start when a placeholder's variable is unset or
 # empty, except for the optional ones above, which it substitutes with an
