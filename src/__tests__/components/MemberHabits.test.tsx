@@ -34,9 +34,9 @@ function period(day: string, status: 'achieved' | 'partial' | 'missed' | null) {
   };
 }
 
-function payload(commentsOpen = true) {
+function payload() {
   return {
-    reviewWeek: { start: '2026-09-28', commentsOpen },
+    reviewWeek: { start: '2026-09-28' },
     habits: [
       {
         id: 'h-owner',
@@ -173,17 +173,17 @@ describe('MemberHabits', () => {
       vi.fn(async () => {
         calls += 1;
         if (calls === 1) {
-          return json({ reviewWeek: { start: '2026-09-28', commentsOpen: false }, habits: [] });
+          return json({ reviewWeek: { start: '2026-09-28' }, habits: [] });
         }
         if (calls === 2) {
           return json({ error: 'down' }, 500);
         }
-        return json(payload(false));
+        return json(payload());
       }),
     );
     const first = renderWithLocale(<MemberHabits />);
     expect(await screen.findByText('No habits yet.')).toBeTruthy();
-    expect(screen.getByText(/Comments open Monday 16:00/)).toBeTruthy();
+    expect(screen.getByText(/A week can be rated from Monday 08:00/)).toBeTruthy();
     expect(screen.queryByText(/Monday at 16:00/)).toBeNull();
     first.unmount();
 

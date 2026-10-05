@@ -5,7 +5,7 @@ const LOAD_ERROR = 'Could not load the habit tracker. Please try again.';
 const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
 
 const list = {
-  reviewWeek: { start: '2026-09-28', commentsOpen: true },
+  reviewWeek: { start: '2026-09-28' },
   habits: [
     {
       id: 'h1',

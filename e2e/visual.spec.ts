@@ -22429,7 +22429,7 @@ const HABIT_ROW = {
 };
 
 const HABIT_PUBLIC = {
-  reviewWeek: { start: '2026-09-28', commentsOpen: true },
+  reviewWeek: { start: '2026-09-28' },
   habits: [HABIT_ROW],
 };
 
@@ -22478,7 +22478,7 @@ test.describe('habit tracker baselines', () => {
 
   test('screen /habit-tracker empty', async ({ page }) => {
     await stubHabitList(page, {
-      reviewWeek: { start: '2026-09-28', commentsOpen: false },
+      reviewWeek: { start: '2026-09-28' },
       habits: [],
     });
     await page.goto('/habit-tracker');

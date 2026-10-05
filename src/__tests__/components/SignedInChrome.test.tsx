@@ -1126,7 +1126,7 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('restores the wide menu outer spacing when a resize leaves 48px of room and does not flutter', () => {
+  it('restores the wide menu outer spacing when a resize leaves 248px of room and does not flutter', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
     const bottom = 751;
@@ -1151,7 +1151,7 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(panel.className).toContain('mt-0');
-      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1100 });
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
@@ -1174,7 +1174,7 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('keeps the compact wide menu when a resize leaves less than 48px of room', () => {
+  it('keeps the compact wide menu when a resize leaves less than 248px of room', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
     const bottom = 751;

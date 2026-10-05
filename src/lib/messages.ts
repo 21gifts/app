@@ -55,7 +55,7 @@ const en = {
   'nav.rules': 'Living room rules',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
-    'Each habit is daily or weekly in the time zone chosen when it was created. A week can be rated from Monday 08:00 in that zone. Comments open Monday 16:00 and close Saturday 20:00, Manila time.',
+    'Each habit is daily or weekly in the time zone chosen when it was created. A week can be rated from Monday 08:00 in that zone.',
   'habit.loading': 'Loading…',
   'habit.error': 'Could not load or save the tracker. Please try again.',
   'habit.retry': 'Try again',
@@ -66,11 +66,8 @@ const en = {
   'habit.missed': 'Not achieved',
   'habit.unrated': 'Not rated yet',
   'habit.comments': 'Comments',
-  'habit.commentHint':
-    'Comments are public on this page. They are not forum posts. Times for the comment window are Manila time.',
+  'habit.commentHint': 'Comments are public on this page. They are not forum posts.',
   'habit.noComments': 'No comments yet.',
-  'habit.commentsClosed':
-    'Comments are allowed only from Monday at 16:00 until Saturday at 20:00, Manila time.',
   'habit.login': 'Sign in to comment',
   'habit.writeComment': 'Write a comment',
   'habit.post': 'Post',
@@ -1147,7 +1144,7 @@ const de = {
   'nav.rules': 'Wohnzimmerregeln',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
-    'Jede Gewohnheit ist täglich oder wöchentlich, in der Zeitzone, die beim Anlegen gewählt wurde. Eine Woche kann ab Montag 08:00 Uhr in dieser Zone bewertet werden. Kommentare sind von Montag 16:00 Uhr bis Samstag 20:00 Uhr, Manila-Zeit, offen.',
+    'Jede Gewohnheit ist täglich oder wöchentlich, in der Zeitzone, die beim Anlegen gewählt wurde. Eine Woche kann ab Montag 08:00 Uhr in dieser Zone bewertet werden.',
   'habit.loading': 'Wird geladen…',
   'habit.error':
     'Der Habit-Tracker konnte nicht geladen oder gespeichert werden. Bitte erneut versuchen.',
@@ -1160,10 +1157,8 @@ const de = {
   'habit.unrated': 'Noch nicht bewertet',
   'habit.comments': 'Kommentare',
   'habit.commentHint':
-    'Kommentare sind auf dieser Seite öffentlich. Sie sind keine Forumsbeiträge. Das Kommentarfenster gilt in Manila-Zeit.',
+    'Kommentare sind auf dieser Seite öffentlich. Sie sind keine Forumsbeiträge.',
   'habit.noComments': 'Noch keine Kommentare.',
-  'habit.commentsClosed':
-    'Kommentare sind nur von Montag 16:00 Uhr bis Samstag 20:00 Uhr, Manila-Zeit, zugelassen.',
   'habit.login': 'Zum Kommentieren anmelden',
   'habit.writeComment': 'Kommentar schreiben',
   'habit.post': 'Posten',
@@ -2253,7 +2248,7 @@ const es = {
   'nav.rules': 'Reglas del salón',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
-    'Cada hábito es diario o semanal, en la zona horaria elegida al crearlo. Una semana se puede valorar desde el lunes a las 08:00 en esa zona. Los comentarios se abren el lunes a las 16:00 y se cierran el sábado a las 20:00, hora de Manila.',
+    'Cada hábito es diario o semanal, en la zona horaria elegida al crearlo. Una semana se puede valorar desde el lunes a las 08:00 en esa zona.',
   'habit.loading': 'Cargando…',
   'habit.error': 'No se pudo cargar o guardar el seguimiento. Inténtalo de nuevo.',
   'habit.retry': 'Reintentar',
@@ -2264,11 +2259,8 @@ const es = {
   'habit.missed': 'No logrado',
   'habit.unrated': 'Sin valoración',
   'habit.comments': 'Comentarios',
-  'habit.commentHint':
-    'Los comentarios son públicos en esta página. No son notas del foro. El horario de comentarios es la hora de Manila.',
+  'habit.commentHint': 'Los comentarios son públicos en esta página. No son notas del foro.',
   'habit.noComments': 'Todavía no hay comentarios.',
-  'habit.commentsClosed':
-    'Los comentarios se permiten solo del lunes a las 16:00 al sábado a las 20:00, hora de Manila.',
   'habit.login': 'Inicia sesión para comentar',
   'habit.writeComment': 'Escribe un comentario',
   'habit.post': 'Publicar',
@@ -3338,7 +3330,7 @@ const fil = {
   'nav.rules': 'Mga patakaran sa living room',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
-    'Araw-araw o lingguhan ang bawat gawi, sa time zone na pinili noong ginawa ito. Maaaring markahan ang isang linggo mula Lunes 08:00 sa zone na iyon. Bumubukas ang mga komento Lunes 16:00 at nagsasara Sabado 20:00, oras ng Maynila.',
+    'Araw-araw o lingguhan ang bawat gawi, sa time zone na pinili noong ginawa ito. Maaaring markahan ang isang linggo mula Lunes 08:00 sa zone na iyon.',
   'habit.loading': 'Naglo-load…',
   'habit.error': 'Hindi ma-load o ma-save ang tracker. Pakisubukan muli.',
   'habit.retry': 'Subukan muli',
@@ -3349,11 +3341,8 @@ const fil = {
   'habit.missed': 'Hindi nakamit',
   'habit.unrated': 'Wala pang marka',
   'habit.comments': 'Mga komento',
-  'habit.commentHint':
-    'Pampubliko ang mga komento sa pahinang ito. Hindi ito mga post sa forum. Oras ng Maynila ang bintana ng komento.',
+  'habit.commentHint': 'Pampubliko ang mga komento sa pahinang ito. Hindi ito mga post sa forum.',
   'habit.noComments': 'Wala pang komento.',
-  'habit.commentsClosed':
-    'Pinapayagan lang ang mga komento mula Lunes 16:00 hanggang Sabado 20:00, oras ng Maynila.',
   'habit.login': 'Mag-sign in upang magkomento',
   'habit.writeComment': 'Sumulat ng komento',
   'habit.post': 'I-post',

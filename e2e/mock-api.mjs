@@ -357,7 +357,7 @@ const server = http.createServer(async (req, res) => {
 
   if (pathName === '/habits' && method === 'GET') {
     json(res, 200, {
-      reviewWeek: { start: '2026-09-28', commentsOpen: true },
+      reviewWeek: { start: '2026-09-28' },
       habits: [
         {
           id: 'h-ada',

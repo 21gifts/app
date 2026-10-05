@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
+import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { Button, Card, Field } from '@/components/ui';
 import type { Account } from '@/lib/api-types';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
@@ -298,7 +299,6 @@ export function MemberHabits(): ReactElement {
                     habit={habit}
                     account={account}
                     session={session}
-                    commentsOpen={data.reviewWeek.commentsOpen}
                     commentText={commentByHabitId[habit.id] ?? ''}
                     amountByCommentId={amountByCommentId}
                     invoiceByCommentId={invoiceByCommentId}
@@ -318,7 +318,7 @@ export function MemberHabits(): ReactElement {
                     }}
                     onPostComment={() => {
                       const text = commentByHabitId[habit.id] ?? '';
-                      void submit({ action: 'comment', habitId: habit.id, text }, false).then(
+                      void submit({ action: 'comment', habitId: habit.id, text }, true).then(
                         (saved) => {
                           if (!saved) {
                             return;
@@ -331,7 +331,7 @@ export function MemberHabits(): ReactElement {
                       if (!window.confirm(t('habit.deleteCommentConfirm'))) {
                         return;
                       }
-                      void submit({ action: 'deleteComment', id: commentId }, false);
+                      void submit({ action: 'deleteComment', id: commentId }, true);
                     }}
                     onInvoice={(comment) => {
                       void requestInvoice({
@@ -557,7 +557,6 @@ function CommentsBlock(props: {
   habit: MemberHabit;
   account: Account | null;
   session: string | null;
-  commentsOpen: boolean;
   commentText: string;
   amountByCommentId: Record<string, string>;
   invoiceByCommentId: Record<string, string>;
@@ -575,7 +574,6 @@ function CommentsBlock(props: {
     habit,
     account,
     session,
-    commentsOpen,
     commentText,
     amountByCommentId,
     invoiceByCommentId,
@@ -610,16 +608,18 @@ function CommentsBlock(props: {
                   {comment.name}: {comment.text}
                 </p>
                 {canDelete ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      onDeleteComment(comment.id);
-                    }}
-                  >
-                    {t('habit.deleteComment')}
-                  </Button>
+                  <SundayWritingGate>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        onDeleteComment(comment.id);
+                      }}
+                    >
+                      {t('habit.deleteComment')}
+                    </Button>
+                  </SundayWritingGate>
                 ) : null}
                 {showDonate ? (
                   <div className="flex flex-col gap-2">
@@ -675,23 +675,24 @@ function CommentsBlock(props: {
           })}
         </ul>
       )}
-      {commentsOpen && account !== null ? (
-        <div className="flex flex-col gap-2">
-          <Field
-            id={`habit-${habit.id}-comment`}
-            label={t('habit.writeComment')}
-            multiline
-            value={commentText}
-            onChange={(event) => {
-              onCommentText(event.target.value);
-            }}
-          />
-          <Button type="button" onClick={onPostComment}>
-            {t('habit.post')}
-          </Button>
-        </div>
+      {account !== null ? (
+        <SundayWritingGate>
+          <div className="flex flex-col gap-2">
+            <Field
+              id={`habit-${habit.id}-comment`}
+              label={t('habit.writeComment')}
+              multiline
+              value={commentText}
+              onChange={(event) => {
+                onCommentText(event.target.value);
+              }}
+            />
+            <Button type="button" onClick={onPostComment}>
+              {t('habit.post')}
+            </Button>
+          </div>
+        </SundayWritingGate>
       ) : null}
-      {commentsOpen ? null : <p className="text-sm text-app-muted">{t('habit.commentsClosed')}</p>}
       {session === null ? (
         <Link
           href="/login"

@@ -43,7 +43,6 @@ const memberHabitSchema = z.object({
 const memberHabitListSchema = z.object({
   reviewWeek: z.object({
     start: z.string(),
-    commentsOpen: z.boolean(),
   }),
   habits: z.array(memberHabitSchema),
 });

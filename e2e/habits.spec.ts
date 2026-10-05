@@ -34,7 +34,7 @@ const PUBLIC_HABIT = {
 };
 
 const PUBLIC_LIST = {
-  reviewWeek: { start: '2026-09-28', commentsOpen: true },
+  reviewWeek: { start: '2026-09-28' },
   habits: [PUBLIC_HABIT],
 };
 
@@ -90,11 +90,12 @@ test('screen /habit-tracker default', async ({ page }) => {
 
 test('screen /habit-tracker empty', async ({ page }) => {
   await stubHabits(page, {
-    reviewWeek: { start: '2026-09-28', commentsOpen: false },
+    reviewWeek: { start: '2026-09-28' },
     habits: [],
   });
   await page.goto('/habit-tracker');
   await expect(page.getByText('No habits yet.')).toBeVisible();
+  await expect(page.getByText(/A week can be rated from Monday 08:00/)).toBeVisible();
   await expect(page.getByText(/Monday at 16:00/)).toHaveCount(0);
 });
 
@@ -124,7 +125,7 @@ test('screen /habit-tracker signed-in', async ({ page }) => {
   await page.goto('/habit-tracker');
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   await expect(page.getByText('Internal notes: secret')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Achieved' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add habit' })).toBeVisible();
 });
 
@@ -168,7 +169,7 @@ test('Function: MemberHabits — the owner logs the open period', async ({ page 
     });
   });
   await page.goto('/habit-tracker');
-  await page.getByRole('button', { name: 'Achieved' }).click();
+  await page.getByRole('button', { name: 'Achieved', exact: true }).click();
   await expect.poll(() => posted).toContain('"status":"achieved"');
 });
 

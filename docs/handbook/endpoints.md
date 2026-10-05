@@ -145,7 +145,7 @@
 ## Endpoint: POST /habits
 
 - **Purpose:** Same-origin proxy of api `POST /habits` (add, edit, archive, log, comment, delete a comment, or request a Lightning invoice). Forwards `Authorization` and `Time-Zone`. Does not pay the invoice.
-- **Errors:** The proxy forwards the upstream status. Expected upstream errors include 401 without a bearer, 400 for a bad body, 409 when the period is closed or no wallet can be invoiced, or 502 if the api is unreachable.
+- **Errors:** The proxy forwards the upstream status. Expected upstream errors include 401 without a bearer, 400 for a bad body, 403 `{ error: 'SUNDAY_REST' }` when a comment or comment deletion falls on the device's local Sunday, 409 when the period is closed or no wallet can be invoiced, or 502 if the api is unreachable.
 - **Used by:** `postMemberHabit` on `/habit-tracker`.
 - **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
 

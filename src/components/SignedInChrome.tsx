@@ -147,8 +147,10 @@ export function SignedInChrome(): ReactElement {
         if (bottom > limit) {
           return true;
         }
-        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
-        if (current && bottom <= limit - 48) {
+        // Compact drops about 40px of outer spacing and shortens each row from
+        // 44px to 32px. 248px of room covers that savings so the two layouts
+        // do not alternate.
+        if (current && bottom <= limit - 248) {
           return false;
         }
         return current;
@@ -191,11 +193,11 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  // A tall wide menu drops its outer spacing so the last row stays inside the window. It does not scroll.
+  // A tall wide menu drops its outer spacing and shortens each row so the last row stays inside the window. It does not scroll.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg [&_a]:min-h-8 [&_a]:py-1 [&_button]:min-h-8 [&_button]:py-1${open ? '' : ' hidden'}`
       : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
