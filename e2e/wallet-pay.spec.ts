@@ -323,3 +323,108 @@ test('Function: payFromWallet — not called while the wallet is not configured'
   await expect(page.locator('[data-pay-sheet]').getByRole('status')).toHaveText(UNAVAILABLE);
   expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
 });
+
+test('Function: ForumLoader — paying the posting fee from the wallet shows the post and closes the card', async ({
+  page,
+}) => {
+  // Playwright builds have no wallet key, so the slot is pinned to its paying
+  // state; the stubbed api then settles the fee and creates the post, as the
+  // api does when the wallet's Spark payment arrives.
+  await signInAda(page);
+  const text = 'Hello from my wallet';
+  let invoiced = false;
+  let paid = false;
+  let failedOwnCount = false;
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    const request = route.request();
+    if (request.method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    const mode = new URL(request.url()).searchParams.get('mode');
+    if (mode === 'all' && invoiced && !failedOwnCount) {
+      failedOwnCount = true;
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Messages are unavailable' }),
+      });
+      return;
+    }
+    const messages =
+      mode === 'all' && paid
+        ? [
+            {
+              id: 'm-new',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text,
+              createdAt: '2026-10-05T13:25:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ]
+        : [];
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages }),
+    });
+  });
+  await page.route('**/messages/compose-target', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messageId: 'fee-note', sats: 0 }),
+    });
+  });
+  await page.route('**/messages/fee-note/invoice', async (route) => {
+    expect((route.request().postDataJSON() as { text?: string }).text).toBe(text);
+    invoiced = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        pr: 'lnbc10n1postingfee',
+        amountSats: 1,
+        sparkInvoice: SPARK_INVOICE,
+      }),
+    });
+  });
+  await page.route('**/public-messages/fee-note**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'fee-note',
+        accountId: 'acc_platform',
+        name: '21.gifts',
+        text: 'Posting fees go here.',
+        createdAt: '2026-10-05T13:22:00.000Z',
+        sats: paid ? 1 : 0,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.goto('/welcome?visual=wallet-pay-paying');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await page.getByLabel('Your message').fill(text);
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  const sheet = page.locator('[data-pay-sheet]');
+  await expect(sheet.getByText('Pay ₿1')).toBeVisible();
+  await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+  await expect(sheet.getByText('Waiting for payment…')).toBeVisible();
+  await expect.poll(() => failedOwnCount).toBe(true);
+  paid = true;
+  await expect(page.getByText(text)).toBeVisible();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
+  await expect(page.getByLabel('Your message')).toHaveValue('');
+  await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('All');
+});
