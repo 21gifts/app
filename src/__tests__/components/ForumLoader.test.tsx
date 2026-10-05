@@ -10531,6 +10531,57 @@ describe('ForumLoader in-app wallet pay', () => {
     expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
   });
 
+  it('closes the posting-fee card and shows the post after a wallet payment when the first own-post count failed', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: false },
+    });
+    setWalletUsable('ready');
+    let settle: () => void = () => undefined;
+    const settled = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
+    const send = vi.fn(async () => {
+      settle();
+      return { kind: 'paid' as const };
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send, 1));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
+    const post = { ...SAMPLE, id: 'new-post', text: 'Hello gifts', sats: 0, payable: false };
+    let paid = false;
+    let allCalls = 0;
+    fetchMock.mockImplementation(async (_session, args) => {
+      if (args?.mode !== 'all') {
+        return forumPage([]);
+      }
+      allCalls += 1;
+      if (allCalls === 1) {
+        throw new Error('Could not load messages. Please try again.');
+      }
+      return forumPage(paid ? [post] : []);
+    });
+    publicFetchMock.mockImplementation(async () => {
+      await settled;
+      paid = true;
+      return { ...SAMPLE, id: 'fee-note', accountId: 'acc_platform', text: 'Fees', sats: 1 };
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    fireEvent.click(await screen.findByRole('button', { name: 'Pay from wallet' }));
+    expect(send).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    });
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+    expect(await screen.findByText('Hello gifts')).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+  });
+
   it("pays today's repayment from the wallet when the api issues a sparkInvoice", async () => {
     setWalletUsable('ready');
     repayMock.mockResolvedValueOnce({

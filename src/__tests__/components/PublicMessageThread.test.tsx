@@ -1004,6 +1004,41 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('closes the compose-pay sheet and shows the reply when the first own-reply count failed', async () => {
+    const paidReply: ForumMessage = {
+      ...root,
+      id: '99999999-9999-4999-8999-999999999999',
+      parentId: MESSAGE_ID,
+      name: 'Ada',
+      accountId: account.id,
+      text: 'thanks',
+      sats: 0,
+      payable: false,
+      replyCount: 0,
+    };
+    vi.mocked(fetchReplies)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockResolvedValue([paidReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...root,
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      sats: 1,
+    });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('thanks')).toBeTruthy();
+      expect(screen.getByText('1 reaction')).toBeTruthy();
+    });
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+  });
+
   it('tries an unpaid reply when the public note omits accountId', async () => {
     signIn();
     renderThread({ root: { ...root, accountId: undefined } });

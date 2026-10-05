@@ -2680,6 +2680,47 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('closes the compose-pay sheet and shows the reply when the first own-reply count failed', async () => {
+    const paidReply = {
+      ...note,
+      id: 'r-new',
+      parentId: note.id,
+      name: 'Ada',
+      accountId: account.id,
+      text: 'reply',
+      sats: 0,
+      payable: false,
+      replyCount: 0,
+    };
+    vi.mocked(fetchReplies)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockResolvedValue([paidReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...note,
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      sats: 1,
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('reply')).toBeTruthy();
+      expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+  });
+
   it('tries an unpaid reply when someone else’s note omits accountId', async () => {
     const noteWithoutAccount = { ...note, accountId: undefined };
     renderWithLocale(
