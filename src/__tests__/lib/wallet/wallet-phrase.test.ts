@@ -348,6 +348,46 @@ describe('unlockWalletPhrase', () => {
     expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(1);
   });
 
+  it('does not prompt when the phrase is already in tab memory', async () => {
+    rememberSessionPhrase('abandon ability able');
+    await expect(unlockWalletPhrase()).resolves.toBe('unlocked');
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBe('abandon ability able');
+  });
+
+  it('waits for the login derivation and does not prompt again', async () => {
+    let resolveDerive!: (mnemonic: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    void rememberPhraseFromPrf({
+      prfFirst: PRF,
+      credentialId: CREDENTIAL_ID,
+      account: baseAccount,
+      sessionToken: 'tok',
+    });
+    const unlocking = unlockWalletPhrase();
+    resolveDerive('abandon ability able about');
+    await expect(unlocking).resolves.toBe('unlocked');
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBe('abandon ability able about');
+  });
+
+  it('prompts once a login derivation stored nothing', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('derive'));
+    void rememberPhraseFromPrf({
+      prfFirst: PRF,
+      credentialId: CREDENTIAL_ID,
+      account: baseAccount,
+      sessionToken: 'tok',
+    });
+    await expect(unlockWalletPhrase()).resolves.toBe('unlocked');
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(1);
+  });
+
   it('opens a new ceremony after the previous one settled', async () => {
     vi.mocked(obtainPrfFirstFromGet).mockRejectedValueOnce(
       Object.assign(new Error('denied'), { name: 'NotAllowedError' }),

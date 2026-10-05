@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -46,7 +47,9 @@ function placeText(message: ForumMessage): string | null {
 }
 
 /**
- * Table of loaded shop notes: name, place, and operator.
+ * Table of loaded shop notes: name, place, and operator. Place and operator
+ * are client-side links: the place opens `/shops?pin=…#map`, the operator
+ * `/members/:id`.
  *
  * @returns The table, empty copy, or an error with retry. Null without a session.
  */
@@ -179,18 +182,21 @@ export function ShopTable(): ReactElement | null {
                     {place === null ? (
                       t('shops.missing')
                     ) : (
-                      <a href={`/map?pin=${row.id}`} className="underline">
+                      <Link
+                        href={`/shops?pin=${encodeURIComponent(row.id)}#map`}
+                        className="underline"
+                      >
                         {place}
-                      </a>
+                      </Link>
                     )}
                   </td>
                   <td className="min-w-0 break-words align-top py-2">
                     {operator === undefined ? (
                       t('shops.missing')
                     ) : (
-                      <a href={`/members/${operator.id}`} className="underline">
+                      <Link href={`/members/${operator.id}`} className="underline">
                         @{operator.username}
-                      </a>
+                      </Link>
                     )}
                   </td>
                 </tr>

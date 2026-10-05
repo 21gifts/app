@@ -15,6 +15,36 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+const linkPush = vi.hoisted(() => vi.fn());
+
+// Like next/link: after the caller's onClick, an unprevented plain click is a
+// client-side router push, not a document load.
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+    [key: string]: unknown;
+  }) => (
+    <a
+      href={href}
+      {...rest}
+      onClick={(event) => {
+        onClick?.(event);
+        event.preventDefault();
+        linkPush(href);
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
   fetchShopNoteEdits: vi.fn(),
@@ -50,6 +80,7 @@ const SHOP: ForumMessage = {
 afterEach(() => {
   cleanup();
   replace.mockClear();
+  linkPush.mockReset();
   fetchMessagesMock.mockReset();
   useAuthStore.setState({ session: null, account: null });
 });
@@ -63,6 +94,16 @@ describe('ShopTable', () => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('opens a place and an operator with client-side links', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
+    renderWithLocale(<ShopTable />);
+    fireEvent.click(await screen.findByRole('link', { name: 'Happyland' }));
+    expect(linkPush).toHaveBeenLastCalledWith('/shops?pin=m-shop#map');
+    fireEvent.click(screen.getByRole('link', { name: '@luna' }));
+    expect(linkPush).toHaveBeenLastCalledWith('/members/acc-luna');
   });
 
   it('returns nothing without a session', () => {
@@ -85,7 +126,7 @@ describe('ShopTable', () => {
     renderWithLocale(<ShopTable />);
     expect(await screen.findByRole('link', { name: 'Happyland' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
-      '/map?pin=m-shop',
+      '/shops?pin=m-shop#map',
     );
     expect(screen.getAllByRole('link', { name: '@luna' })[0]?.getAttribute('href')).toBe(
       '/members/acc-luna',

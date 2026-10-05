@@ -33,6 +33,10 @@ function writeShopsHash(view: ShopsView): void {
  * Shops page body: heading, lead, and a Post / Map / Table pill.
  *
  * `/shops#map` and `/shops#table` open that view. A missing or unknown hash opens Post.
+ * A plain click on a link to a view of this same page (a place opens `/shops?pin=…#map`)
+ * shows that view (no or an unknown hash is Post, as on load), since the client-side push
+ * fires no `hashchange`. The push keeps the entry the link was clicked from for browser
+ * Back (`popstate`). Links with `target` or `download` are ignored.
  * The view stays unset until the hash is read, so the post list, map, and table mount only after that.
  *
  * @returns The shops column (`Card` `surface={false}`).
@@ -47,8 +51,51 @@ export function ShopsScreen(): ReactElement {
     };
     apply();
     window.addEventListener('hashchange', apply);
+    // Browser back and forward between entries of this page that differ in
+    // more than the hash fire popstate, not hashchange.
+    window.addEventListener('popstate', apply);
+    // A link to a view of this page (a place in the post list or the table
+    // opens `/shops?pin=…#map`) is a client-side push, which fires no
+    // hashchange. Capture runs before next/link prevents the default.
+    const onLinkClick = (event: MouseEvent): void => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+      const anchor = event.target.closest('a[href]');
+      if (
+        !(anchor instanceof HTMLAnchorElement) ||
+        (anchor.target !== '' && anchor.target !== '_self') ||
+        anchor.hasAttribute('download')
+      ) {
+        return;
+      }
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
+        return;
+      }
+      // Same rule as the hash on load: none or an unknown one is Post. The
+      // top-left arrow back to `/shops` carries no hash.
+      const next = shopsViewFromHash(url.hash) ?? 'post';
+      // The router push carries the hash and keeps the entry being left for Back.
+      // Switch after this click is dispatched: unmounting the link first would
+      // stop next/link from preventing the default document load.
+      window.setTimeout(() => {
+        setView(next);
+      }, 0);
+    };
+    document.addEventListener('click', onLinkClick, true);
     return () => {
       window.removeEventListener('hashchange', apply);
+      window.removeEventListener('popstate', apply);
+      document.removeEventListener('click', onLinkClick, true);
     };
   }, []);
 

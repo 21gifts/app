@@ -6,19 +6,21 @@ import { useLayoutEffect, useState, type ReactElement, type ReactNode } from 're
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Wordmark } from '@/components/ui';
-import { goToPreviousView, previousViewPath } from '@/lib/view-history';
+import { markBackNavigation, previousViewPath } from '@/lib/view-history';
 
 const BACK_CLASS = 'inline-flex h-11 w-11 items-center justify-center rounded-full transition';
 
 /** Props for {@link ProfileChromeLeft}. */
 export interface ProfileChromeLeftProps {
   /**
-   * Unmodified primary click. The link does not follow its href. Modified
-   * clicks still do. Wallet uses this for one in-page step: hide the words,
-   * close a send step, or return from Send or Receive to the wallet home
-   * before {@link goToPreviousView}.
+   * Unmodified primary click, before the link leaves. Return `true` when it
+   * took an in-page step: the link then does not follow its href. Return
+   * `false` to let the arrow leave for the previous view. Modified clicks
+   * always follow the href. Wallet uses this for one in-page step: hide the
+   * words, close a send step, or return from Send or Receive to the wallet
+   * home.
    */
-  onBackClick?: () => void;
+  onBackClick?: () => boolean;
   /** Wordmark destination. Default `/welcome`. Ignored when `wordmark` is set. */
   wordmarkHref?: string;
   /** Replaces the default wordmark. The wordmark is not the back control. */
@@ -37,7 +39,9 @@ export interface ProfileChromeLeftProps {
  * Shared top-left chrome: one icon-only back plus wordmark.
  *
  * Back is a link to the previous in-app view, or `/welcome` when this tab has
- * none. The first client render matches SSR (`/welcome`, `profile.back`). An
+ * none. A plain click marks that path with {@link markBackNavigation} and the
+ * link opens it client-side, so the document and the unlocked wallet in tab
+ * memory stay. The first client render matches SSR (`/welcome`, `profile.back`). An
  * ask or shop wizard override replaces the history link with a button. The wordmark is
  * not the back control. `hideWithoutHistory` omits the arrow only when there
  * is no earlier view and no wizard override.
@@ -104,12 +108,11 @@ export function ProfileChromeLeft({
             ) {
               return;
             }
-            event.preventDefault();
-            if (onBackClick !== undefined) {
-              onBackClick();
+            if (onBackClick !== undefined && onBackClick()) {
+              event.preventDefault();
               return;
             }
-            goToPreviousView();
+            markBackNavigation(target.href);
           }}
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />
