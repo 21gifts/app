@@ -837,12 +837,12 @@ variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
 `entrypoint.sh`) are substituted with an empty string instead, which the app
 reads as off. Each deployment sets them in its container environment.
 
-| Variable                         | Required | Unset or empty                     |
-| -------------------------------- | -------- | ---------------------------------- |
-| `NEXT_PUBLIC_API_URL`            | yes      | container refuses to start         |
-| `NEXT_PUBLIC_PLATFORM_USERNAME`  | no       | landing page shows no donation     |
-| `NEXT_PUBLIC_SENTRY_DSN`         | no       | error reporting off                |
-| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | no       | error reports carry no environment |
+| Variable                         | Required | Unset or empty                             |
+| -------------------------------- | -------- | ------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`            | yes      | container refuses to start                 |
+| `NEXT_PUBLIC_PLATFORM_USERNAME`  | no       | landing page shows no donation             |
+| `NEXT_PUBLIC_SENTRY_DSN`         | no       | error reporting off                        |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | no       | reports use the SDK default (`production`) |
 
 | Variable              | DEV                        | STAGING                        | PRD                    |
 | --------------------- | -------------------------- | ------------------------------ | ---------------------- |
@@ -890,8 +890,12 @@ uploaded and the build needs no token.
 
 Privacy rules (this app holds wallets):
 
-- Errors only: `tracesSampleRate: 0`, no trace headers, no sessions, no
-  Session Replay, no profiling, no feedback widget.
+- Errors only: `tracesSampleRate: 0`, no trace headers on outgoing requests,
+  no sessions, no Session Replay, no profiling, no feedback widget.
+- With a DSN set, `withSentryConfig` makes each server-rendered page carry
+  `sentry-trace` and `baggage` meta tags: a random trace id, the release, the
+  environment, and the DSN's public key, so a browser error links to its
+  server request. They hold no personal data and are absent without a DSN.
 - No personal data: no user, IP address, cookies, request bodies, query
   strings, or stack-frame local variables (`dataCollection`, the SDK 11
   successor of `sendDefaultPii: false`). Never call `setUser` with a name or
