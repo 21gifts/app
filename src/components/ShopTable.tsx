@@ -46,25 +46,14 @@ function placeText(message: ForumMessage): string | null {
   return `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
 }
 
-/** Props for {@link ShopTable}. */
-export interface ShopTableProps {
-  /**
-   * Called on a plain click of a place link, before the client-side router
-   * opens `/shops?pin=…#map` on this same page, so the shops screen can show
-   * its map.
-   */
-  onShowMap?: () => void;
-}
-
 /**
  * Table of loaded shop notes: name, place, and operator. Place and operator
  * are client-side links: the place opens `/shops?pin=…#map`, the operator
  * `/members/:id`.
  *
- * @param props - Optional `onShowMap` for a place click.
  * @returns The table, empty copy, or an error with retry. Null without a session.
  */
-export function ShopTable({ onShowMap }: ShopTableProps = {}): ReactElement | null {
+export function ShopTable(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const router = useRouter();
   const replaceRef = useRef(router.replace);
@@ -196,18 +185,6 @@ export function ShopTable({ onShowMap }: ShopTableProps = {}): ReactElement | nu
                       <Link
                         href={`/shops?pin=${encodeURIComponent(row.id)}#map`}
                         className="underline"
-                        onClick={(event) => {
-                          if (
-                            event.metaKey ||
-                            event.ctrlKey ||
-                            event.shiftKey ||
-                            event.altKey ||
-                            event.button !== 0
-                          ) {
-                            return;
-                          }
-                          onShowMap?.();
-                        }}
                       >
                         {place}
                       </Link>

@@ -37,9 +37,7 @@ vi.mock('next/link', () => ({
       onClick={(event) => {
         onClick?.(event);
         event.preventDefault();
-        if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
-          linkPush(href);
-        }
+        linkPush(href);
       }}
     >
       {children}
@@ -98,31 +96,14 @@ describe('ShopTable', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('shows the map client-side for a plain click on a place, not for a modified one', async () => {
-    useAuthStore.setState({ session: 'tok' });
-    fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
-    const onShowMap = vi.fn();
-    renderWithLocale(<ShopTable onShowMap={onShowMap} />);
-    const place = await screen.findByRole('link', { name: 'Happyland' });
-    fireEvent.click(place, { metaKey: true });
-    fireEvent.click(place, { ctrlKey: true });
-    fireEvent.click(place, { shiftKey: true });
-    fireEvent.click(place, { altKey: true });
-    fireEvent.click(place, { button: 1 });
-    expect(onShowMap).not.toHaveBeenCalled();
-    fireEvent.click(place);
-    expect(onShowMap).toHaveBeenCalledTimes(1);
-    expect(linkPush).toHaveBeenLastCalledWith('/shops?pin=m-shop#map');
-    fireEvent.click(screen.getByRole('link', { name: '@luna' }));
-    expect(linkPush).toHaveBeenLastCalledWith('/members/acc-luna');
-  });
-
-  it('opens a place without onShowMap', async () => {
+  it('opens a place and an operator with client-side links', async () => {
     useAuthStore.setState({ session: 'tok' });
     fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
     renderWithLocale(<ShopTable />);
     fireEvent.click(await screen.findByRole('link', { name: 'Happyland' }));
-    expect(linkPush).toHaveBeenCalledWith('/shops?pin=m-shop#map');
+    expect(linkPush).toHaveBeenLastCalledWith('/shops?pin=m-shop#map');
+    fireEvent.click(screen.getByRole('link', { name: '@luna' }));
+    expect(linkPush).toHaveBeenLastCalledWith('/members/acc-luna');
   });
 
   it('returns nothing without a session', () => {
