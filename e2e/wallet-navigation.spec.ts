@@ -201,7 +201,17 @@ test('forum place, shops post and table place, and operator links keep the docum
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ messages: [shop] }),
+        body: JSON.stringify({
+          messages: [
+            shop,
+            {
+              ...shop,
+              id: 'm-two',
+              text: 'Bakery\n\n#21GiftsShop',
+              place: { lat: 14.7, lng: 121, label: 'Bakery' },
+            },
+          ],
+        }),
       });
     });
   }
@@ -216,20 +226,27 @@ test('forum place, shops post and table place, and operator links keep the docum
   await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 
+  // A place in the table opens the map; browser Back returns to the table.
   await page.getByRole('button', { name: 'Table' }).click();
-  await page.getByRole('link', { name: 'Happyland' }).click();
+  await page.getByRole('link', { name: 'Bakery' }).click();
   await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
-  await expect(page).toHaveURL(`${origin}/shops?pin=m-pin#map`);
+  await expect(page).toHaveURL(`${origin}/shops?pin=m-two#map`);
+  await page.goBack();
+  await expect(page).toHaveURL(`${origin}/shops?pin=m-pin#table`);
+  await expect(page.getByRole('button', { name: 'Table', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 
+  // A place in the post list opens the map; browser Back returns to the posts.
   await page.getByRole('button', { name: 'Post' }).click();
-  await page.getByRole('link', { name: 'Happyland' }).first().click();
+  await page.getByRole('link', { name: 'Bakery' }).first().click();
   await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
-  await expect(page).toHaveURL(`${origin}/shops?pin=m-pin#map`);
+  await expect(page).toHaveURL(`${origin}/shops?pin=m-two#map`);
+  await page.goBack();
+  await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 
   await page.getByRole('button', { name: 'Table' }).click();
-  await page.getByRole('link', { name: '@luna' }).click();
+  await page.getByRole('link', { name: '@luna' }).first().click();
   await expect(page).toHaveURL(`${origin}/members/acc-luna`);
   expect(await sameDocument(page)).toBe('same');
   expect(await passkeyPrompts(page)).toBe(0);

@@ -49,6 +49,9 @@ export function ShopsScreen(): ReactElement {
     };
     apply();
     window.addEventListener('hashchange', apply);
+    // Browser back and forward between entries of this page that differ in
+    // more than the hash fire popstate, not hashchange.
+    window.addEventListener('popstate', apply);
     // A link to a view of this page (a place in the post list or the table
     // opens `/shops?pin=…#map`) is a client-side push, which fires no
     // hashchange. Capture runs before next/link prevents the default.
@@ -65,7 +68,11 @@ export function ShopsScreen(): ReactElement {
         return;
       }
       const anchor = event.target.closest('a[href]');
-      if (!(anchor instanceof HTMLAnchorElement)) {
+      if (
+        !(anchor instanceof HTMLAnchorElement) ||
+        (anchor.target !== '' && anchor.target !== '_self') ||
+        anchor.hasAttribute('download')
+      ) {
         return;
       }
       const url = new URL(anchor.href, window.location.href);
@@ -73,14 +80,24 @@ export function ShopsScreen(): ReactElement {
         return;
       }
       const next = shopsViewFromHash(url.hash);
-      if (next !== null) {
-        setView(next);
+      if (next === null) {
+        return;
+      }
+      // The push carries the hash and keeps the entry being left for Back.
+      // Only a link that differs in nothing but the hash rewrites this entry.
+      if (url.search === window.location.search) {
         writeShopsHash(next);
       }
+      // Switch after this click is dispatched: unmounting the link first would
+      // stop next/link from preventing the default document load.
+      window.setTimeout(() => {
+        setView(next);
+      }, 0);
     };
     document.addEventListener('click', onLinkClick, true);
     return () => {
       window.removeEventListener('hashchange', apply);
+      window.removeEventListener('popstate', apply);
       document.removeEventListener('click', onLinkClick, true);
     };
   }, []);

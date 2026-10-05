@@ -16,16 +16,40 @@ vi.mock('@/components/ForumLoader', () => ({
   },
 }));
 
-/** Click like next/link: the capture listener runs, then the default is prevented. */
+/**
+ * Click like next/link: the capture listener runs, then the default is
+ * prevented and a plain click pushes the href unless it is the current URL.
+ */
 function clickLink(element: Element, init: MouseEventInit = {}): void {
   element.addEventListener(
     'click',
     (event) => {
       event.preventDefault();
+      const anchor = element.closest('a');
+      const plain = init.button === undefined && !init.metaKey && !init.ctrlKey;
+      if (anchor !== null && plain && !init.shiftKey && !init.altKey) {
+        const next = new URL(anchor.href);
+        if (next.href !== window.location.href) {
+          window.history.pushState(null, '', `${next.pathname}${next.search}${next.hash}`);
+        }
+      }
     },
     { once: true },
   );
+  vi.useFakeTimers();
   fireEvent.click(element, init);
+  act(() => {
+    vi.runOnlyPendingTimers();
+  });
+  vi.useRealTimers();
+}
+
+/** Browser back or forward to `path`. */
+function popTo(path: string): void {
+  act(() => {
+    window.history.replaceState(null, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  });
 }
 
 vi.mock('@/components/PlacesMapScreen', () => ({
@@ -40,6 +64,13 @@ vi.mock('@/components/ShopTable', () => ({
       </a>
       <a href="/shops#nope">unknown</a>
       <a href="/elsewhere#map">other path</a>
+      <a href="/shops#map">same entry</a>
+      <a href="/shops?pin=p1#map" target="_blank">
+        new tab
+      </a>
+      <a href="/shops?pin=p1#map" download>
+        download
+      </a>
       <a href="https://example.com/shops#map">elsewhere</a>
     </div>
   ),
@@ -103,21 +134,26 @@ describe('ShopsScreen', () => {
     expect(screen.getByTestId('shop-table')).toBeTruthy();
   });
 
-  it('shows the map when a post opens a place on this page', () => {
+  it('shows the map when a post opens a place, and Back returns to the posts', () => {
     window.history.replaceState(null, '', '/shops');
     renderWithLocale(<ShopsScreen />);
     clickLink(screen.getByText('feed place'));
     expect(screen.getByTestId('places-map-screen')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
-    expect(window.location.hash).toBe('#map');
+    expect(`${window.location.pathname}${window.location.search}${window.location.hash}`).toBe(
+      '/shops?pin=p2#map',
+    );
+    popTo('/shops');
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
   });
 
   it('shows the map when the table opens a place, and ignores other clicks', () => {
     window.history.replaceState(null, '', '/shops#table');
     renderWithLocale(<ShopsScreen />);
     const table = screen.getByTestId('shop-table');
-    for (const name of ['unknown', 'other path', 'elsewhere']) {
+    for (const name of ['unknown', 'other path', 'elsewhere', 'new tab', 'download']) {
       clickLink(screen.getByText(name));
+      window.history.replaceState(null, '', '/shops#table');
     }
     clickLink(screen.getByText('place'), { metaKey: true });
     clickLink(screen.getByText('place'), { ctrlKey: true });
@@ -132,6 +168,18 @@ describe('ShopsScreen', () => {
     expect(screen.getByRole('button', { name: 'Table', pressed: true })).toBeTruthy();
     clickLink(screen.getByText('place'));
     expect(screen.getByTestId('places-map-screen')).toBeTruthy();
+    expect(window.location.search).toBe('?pin=p1');
+    popTo('/shops#table');
+    expect(screen.getByRole('button', { name: 'Table', pressed: true })).toBeTruthy();
+  });
+
+  it('rewrites this entry for a link that differs only in the hash', () => {
+    window.history.replaceState(null, '', '/shops#table');
+    renderWithLocale(<ShopsScreen />);
+    const before = window.history.length;
+    clickLink(screen.getByText('same entry'));
+    expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
     expect(window.location.hash).toBe('#map');
+    expect(window.history.length).toBe(before);
   });
 });
