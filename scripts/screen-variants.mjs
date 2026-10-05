@@ -468,7 +468,7 @@ export const SCREEN_VARIANTS = [
     id: 'sunday',
     image: 'welcome-sunday.png',
     visual: 'state-welcome-sunday',
-    needle: 'Writing is paused on Sunday.',
+    needle: 'Writing is paused until Monday at 08:00, your local time.',
   },
   {
     route: '/welcome',
@@ -3478,7 +3478,7 @@ export const SCREEN_VARIANTS = [
     id: 'sunday',
     image: 'moderate-group-sunday.png',
     visual: 'state-moderate-group-sunday',
-    needle: 'The moderator chat is paused on Sunday.',
+    needle: 'The moderator chat is paused until Monday at 08:00, your local time.',
   },
   {
     route: '/moderate/group',

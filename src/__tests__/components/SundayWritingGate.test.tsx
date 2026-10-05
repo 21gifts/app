@@ -18,7 +18,9 @@ describe('SundayWritingGate', () => {
       </SundayWritingGate>,
     );
     expect(screen.getByLabelText('Your message')).toBeTruthy();
-    expect(screen.queryByText('Writing is paused until Monday at 08:00, your local time.')).toBeNull();
+    expect(
+      screen.queryByText('Writing is paused until Monday at 08:00, your local time.'),
+    ).toBeNull();
   });
 
   it('replaces the field with the Sunday sentence', () => {
@@ -28,14 +30,18 @@ describe('SundayWritingGate', () => {
         <textarea aria-label="Your message" />
       </SundayWritingGate>,
     );
-    expect(screen.getByText('Writing is paused until Monday at 08:00, your local time.')).toBeTruthy();
+    expect(
+      screen.getByText('Writing is paused until Monday at 08:00, your local time.'),
+    ).toBeTruthy();
     cleanup();
     renderWithLocale(
       <SundayWritingGate notice="zap">
         <button type="button">Send Bitcoin</button>
       </SundayWritingGate>,
     );
-    expect(screen.getByText('Zapping is paused until Monday at 08:00, your local time.')).toBeTruthy();
+    expect(
+      screen.getByText('Zapping is paused until Monday at 08:00, your local time.'),
+    ).toBeTruthy();
     expect(document.querySelector('[data-sunday-writing="paused"]')).not.toBeNull();
   });
 });
