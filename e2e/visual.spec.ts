@@ -5,6 +5,12 @@ import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { stubCamera, type CameraStub } from './camera';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
+/**
+ * Locked pay slot button once its fiat has loaded: the shown amount is not
+ * ready for a baseline before its fiat line.
+ */
+const UNLOCK_AND_PAY = /^Unlock and pay ₿\S+ · .*\d$/;
+
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
   await page.getByRole('option', { name, exact: true }).click();
@@ -4609,7 +4615,9 @@ test.describe('onboarding screens', () => {
 
   test('state /welcome reaction-wallet-pay-unlock', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -15947,8 +15955,8 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome repay-wallet-pay-unlock', async ({ page }) => {
     await openRepayWalletPay(page, 'wallet-pay-unlock');
-    const slot = page.getByRole('button', { name: 'Unlock wallet' });
-    await expect(slot).toBeVisible();
+    const slot = page.getByRole('button', { name: /^Unlock and pay ₿/ });
+    await expect(slot).toHaveText(UNLOCK_AND_PAY);
     await slot.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-wallet-pay-unlock');
   });
@@ -18091,7 +18099,9 @@ test.describe('welcome forum variants', () => {
 
   test('welcome composer-wallet-pay-unlock', async ({ page }) => {
     await openComposerWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await shotScreen(page, 'state-welcome-composer-wallet-pay-unlock');
   });
 
@@ -18512,7 +18522,9 @@ test.describe('welcome forum variants', () => {
 
   test('welcome wallet-pay-unlock', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await shotScreen(page, 'state-welcome-wallet-pay-unlock');
   });
 
@@ -21868,7 +21880,9 @@ test.describe('inbox screens', () => {
 
   test('messages thread-wallet-pay-unlock', async ({ page }) => {
     await openInboxWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await shotScreen(page, 'state-messages-thread-wallet-pay-unlock');
   });
 

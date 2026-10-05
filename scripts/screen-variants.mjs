@@ -1911,7 +1911,7 @@ export const SCREEN_VARIANTS = [
     id: 'wallet-pay-unlock',
     image: 'welcome-wallet-pay-unlock.png',
     visual: 'state-welcome-wallet-pay-unlock',
-    needle: 'Unlock your wallet to pay from your Bitcoin balance.',
+    needle: 'Unlock and pay ₿21 · $0.02',
   },
   {
     route: '/welcome',
