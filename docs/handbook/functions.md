@@ -1890,7 +1890,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: TrustChainDiagram
 
-- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, unlabeled arrow). One next person sits to the right; several hanging off one person stack top to bottom. Drag a person to move them. A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link.
+- **Purpose:** SVG diagram of the laid-out Trust Chain (name, role, unlabeled arrow). One next person sits to the right; several hanging off one person stack top to bottom. Drag a person to move them. A plain click loads one hop around that person; modifier-click keeps the `/members/{id}` link. Each person is a client-side `next/link` (no prefetch), so without `onExpand` a plain click opens the member without a page load.
 - **Inputs:** `chain: TrustChain`, optional `expandingId`, optional `onExpand`.
 - **Returns / side effects:** SVG with `data-testid="trust-node-{id}"`. Empty chain is not rendered by the parent screen.
 - **Used by:** `TrustChainScreen`.
