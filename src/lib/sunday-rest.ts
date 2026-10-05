@@ -1,6 +1,7 @@
 /**
  * Whether `nowMs` falls from Sunday 00:00 through Monday before 08:00 in a zone.
- * Omit `timeZone` to use the runtime zone. Invalid zones return false.
+ * Monday 08:00 is writable. Omit `timeZone` to use the runtime zone.
+ * Invalid zones return false.
  *
  * @param nowMs - Epoch milliseconds.
  * @param timeZone - IANA zone. Omitted means the runtime zone.
