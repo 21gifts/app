@@ -1,9 +1,15 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { obtainPrfFirst, prfEvalFirstSalt, readPrfFirst } from '@/lib/prf-mnemonic';
+import {
+  mnemonicFromPrfFirst,
+  obtainPrfFirst,
+  prfEvalFirstSalt,
+  readPrfFirst,
+} from '@/lib/prf-mnemonic';
 import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { bytesToBase64Url, requestOptionsFromJSON } from '@/lib/webauthn-browser';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import {
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
@@ -2918,6 +2924,61 @@ describe('usePasskeyLogin', () => {
           challengeId: WALLET_CHALLENGE,
         },
       ]);
+      fetchMock.mockRestore();
+      vi.unstubAllGlobals();
+    });
+
+    it('starts the phrase derivation before the new session is visible', async () => {
+      process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+      const fetchMock = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(new Response(null, { status: 204 }));
+      vi.mocked(startPasskeyAuthentication).mockResolvedValue({
+        challengeId: WALLET_CHALLENGE,
+        options: { challenge: 'aa' },
+      });
+      vi.mocked(finishPasskeyAuthentication).mockResolvedValue({
+        token: 'tok',
+        account: walletAccount,
+      });
+      vi.mocked(readPrfFirst).mockReturnValue(new Uint8Array(32).fill(7));
+      const get = vi.fn().mockResolvedValue({ id: 'cred', type: 'public-key' });
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        credentials: { create: vi.fn(), get },
+      });
+      let releaseDerive!: (value: string) => void;
+      vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+        () =>
+          new Promise<string>((resolve) => {
+            releaseDerive = resolve;
+          }),
+      );
+      // A wallet unlock reacting to the session waits for running derivations.
+      // It must find the login's derivation, so it reuses the phrase.
+      let rememberedWhenSettled: number | null = null;
+      let settled: Promise<void> = Promise.resolve();
+      const unsubscribe = useAuthStore.subscribe((state, previous) => {
+        if (state.session === 'tok' && previous.session !== 'tok') {
+          settled = settlePhraseDerivations().then(() => {
+            rememberedWhenSettled = vi.mocked(rememberSessionPhrase).mock.calls.length;
+          });
+        }
+      });
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.login();
+      });
+      await vi.waitFor(() => {
+        expect(useAuthStore.getState().session).toBe('tok');
+      });
+      await Promise.resolve();
+      expect(rememberedWhenSettled).toBeNull();
+      releaseDerive(FIXTURE_MNEMONIC);
+      await settled;
+      unsubscribe();
+      expect(rememberSessionPhrase).toHaveBeenCalledWith(FIXTURE_MNEMONIC);
+      expect(rememberedWhenSettled).toBe(1);
       fetchMock.mockRestore();
       vi.unstubAllGlobals();
     });
