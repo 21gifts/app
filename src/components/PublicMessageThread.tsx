@@ -407,11 +407,10 @@ export function PublicMessageThread(props: {
       if (composePay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
+          // Without a baseline, any own row with this text after the sats rise is the new one.
           baselineOwn = null;
         }
-        /* v8 ignore stop */
       }
       for (;;) {
         try {
@@ -435,9 +434,7 @@ export function PublicMessageThread(props: {
             let ownContent = !composePay;
             if (composePay) {
               try {
-                if (baselineOwn !== null) {
-                  ownContent = (await countOwn()) > baselineOwn;
-                }
+                ownContent = (await countOwn()) > (baselineOwn ?? 0);
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
