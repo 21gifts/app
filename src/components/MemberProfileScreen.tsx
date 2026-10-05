@@ -508,6 +508,7 @@ export function MemberProfileScreen({
     messageId: string,
     baselineSats: number,
     replyParentId: string | null = null,
+    baselineReceivedSats?: number,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -542,14 +543,21 @@ export function MemberProfileScreen({
       }
       for (;;) {
         try {
-          const next = await fetchPublicMessage(messageId, {
-            sinceSats: baselineSats,
-            signal,
-          });
+          const next = await fetchPublicMessage(
+            messageId,
+            typeof baselineReceivedSats === 'number'
+              ? { sinceReceivedSats: baselineReceivedSats, signal }
+              : { sinceSats: baselineSats, signal },
+          );
           if (generation !== payPollGeneration.current || signal.aborted) {
             return;
           }
-          if (next !== null && next.sats > baselineSats) {
+          if (
+            next !== null &&
+            (typeof baselineReceivedSats === 'number'
+              ? (next.receivedSats ?? 0) > baselineReceivedSats
+              : next.sats > baselineSats)
+          ) {
             let ownContent = !composePay;
             if (composePay) {
               try {
@@ -1017,7 +1025,11 @@ export function MemberProfileScreen({
           };
           setPayInvoice(minted);
           setPayBusy(false);
-          startPayPoll(messageId, baselineSats);
+          if (listed.parentId) {
+            startPayPoll(messageId, baselineSats, null, listed.receivedSats ?? 0);
+          } else {
+            startPayPoll(messageId, baselineSats);
+          }
         } catch (err) {
           if (generation !== payPollGeneration.current) {
             return null;

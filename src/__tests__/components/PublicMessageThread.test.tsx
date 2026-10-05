@@ -421,7 +421,39 @@ describe('PublicMessageThread', () => {
       payable: false,
     };
     vi.mocked(fetchReplies).mockResolvedValue([payableNested, otherReply]);
-    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...payableNested, sats: 21 });
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...payableNested,
+      sats: 0,
+      receivedSats: 21,
+    });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        REPLY_ID,
+        expect.objectContaining({ sinceReceivedSats: 0 }),
+      );
+    });
+    expect(fetchPublicMessage).not.toHaveBeenCalledWith(
+      REPLY_ID,
+      expect.objectContaining({ sinceSats: expect.anything() }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    });
+    const replyCard = document.querySelector(`[data-reply-id="${REPLY_ID}"]`) as HTMLElement;
+    expect(within(replyCard).getByText('received ₿21')).toBeTruthy();
+    expect(within(replyCard).queryByText('₿21')).toBeNull();
+    expect(screen.getByText('Hello from Carol')).toBeTruthy();
+  });
+
+  it('polls nested Gift sats when the listed row has no parentId', async () => {
+    const orphan: ForumMessage = { ...payableNested, parentId: undefined };
+    vi.mocked(fetchReplies).mockResolvedValue([orphan]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...orphan, sats: 21 });
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
@@ -436,9 +468,31 @@ describe('PublicMessageThread', () => {
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
     });
-    const replyCard = document.querySelector(`[data-reply-id="${REPLY_ID}"]`) as HTMLElement;
-    expect(within(replyCard).getByText('₿21')).toBeTruthy();
-    expect(screen.getByText('Hello from Carol')).toBeTruthy();
+  });
+
+  it('keeps the nested Gift sheet until receivedSats rises', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    vi.mocked(fetchPublicMessage).mockResolvedValueOnce({ ...payableNested, sats: 0 });
+    vi.mocked(fetchPublicMessage).mockResolvedValueOnce({
+      ...payableNested,
+      sats: 0,
+      receivedSats: 21,
+    });
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
   });
 
   it('maps a pay missing-requirements miss onto the pay error', async () => {

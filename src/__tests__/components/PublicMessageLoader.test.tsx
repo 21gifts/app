@@ -311,6 +311,49 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('link', { name: 'Hidden' })).toBeNull();
   });
 
+  it('shows sent and received as separate lines on a public reply', async () => {
+    const parentId = '22222222-2222-4222-8222-222222222222';
+    const reply: ForumMessage = {
+      ...sample,
+      parentId,
+      text: 'Thanks',
+      sats: 21000,
+      amountUsd: '18.14',
+      receivedSats: 100,
+      receivedAmountUsd: '0.09',
+    };
+    fetchMessage.mockImplementation(async (id: string) => {
+      if (id === parentId) {
+        return { ...sample, id: parentId, text: 'Parent note', sats: 21000, amountUsd: '18.14' };
+      }
+      return reply;
+    });
+    fetchRepliesPublic.mockResolvedValue([reply]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(await screen.findByText('Thanks')).toBeTruthy();
+    const sent = screen.getAllByText("sent ₿21'000");
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.closest('div')?.className).toContain('border-l-2');
+    expect(screen.getByText('received ₿100')).toBeTruthy();
+    expect(screen.getAllByText('$18.14').length).toBeGreaterThan(0);
+    expect(screen.getByText('$0.09')).toBeTruthy();
+    expect(screen.queryByText("₿21'100")).toBeNull();
+  });
+
+  it('keeps a top-level public note as one collected amount', async () => {
+    fetchMessage.mockResolvedValue({
+      ...sample,
+      sats: 21000,
+      amountUsd: '18.14',
+      receivedSats: 100,
+      receivedAmountUsd: '0.09',
+    });
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(await screen.findByText("₿21'000")).toBeTruthy();
+    expect(screen.queryByText(/sent /)).toBeNull();
+    expect(screen.queryByText(/received /)).toBeNull();
+  });
+
   it('shows the goal bar on a top-level note past 100%', async () => {
     fetchMessage.mockResolvedValue({ ...sample, sats: 23100, goalSats: 21000 });
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);

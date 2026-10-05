@@ -1354,6 +1354,7 @@ export function ForumLoader({
     replyParentId: string | null = null,
     postAfterPay = false,
     clearReplyDraft = false,
+    baselineReceivedSats?: number,
   ): void => {
     /* v8 ignore next -- pay polling starts only after a signed-in invoice */
     if (session === null) return;
@@ -1394,14 +1395,21 @@ export function ForumLoader({
       }
       for (;;) {
         try {
-          const next = await fetchPublicMessage(messageId, {
-            sinceSats: baselineSats,
-            signal,
-          });
+          const next = await fetchPublicMessage(
+            messageId,
+            typeof baselineReceivedSats === 'number'
+              ? { sinceReceivedSats: baselineReceivedSats, signal }
+              : { sinceSats: baselineSats, signal },
+          );
           if (generation !== payPollGeneration.current || signal.aborted) {
             return;
           }
-          if (next !== null && next.sats > baselineSats) {
+          if (
+            next !== null &&
+            (typeof baselineReceivedSats === 'number'
+              ? (next.receivedSats ?? 0) > baselineReceivedSats
+              : next.sats > baselineSats)
+          ) {
             let ownContent = !composePay;
             if (composePay && postAfterPay) {
               ownContent = true;
@@ -1992,7 +2000,11 @@ export function ForumLoader({
           };
           setPayInvoice(minted);
           setPayBusy(false);
-          startPayPoll(messageId, baseline);
+          if (listed.parentId) {
+            startPayPoll(messageId, baseline, false, null, false, false, listed.receivedSats ?? 0);
+          } else {
+            startPayPoll(messageId, baseline);
+          }
         } catch (err) {
           if (generation !== payPollGeneration.current) {
             return null;
