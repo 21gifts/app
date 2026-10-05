@@ -272,7 +272,7 @@ function markBackTarget(path: string): void {
     }
     sessionStorage.setItem(BACK_KEY, path);
   } catch {
-    /* A missing marker still assigns; the next document pushes that path. */
+    /* The module mark still steps back client-side; a document load then pushes that path. */
   }
 }
 

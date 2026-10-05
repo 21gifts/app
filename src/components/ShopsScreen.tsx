@@ -33,6 +33,8 @@ function writeShopsHash(view: ShopsView): void {
  * Shops page body: heading, lead, and a Post / Map / Table pill.
  *
  * `/shops#map` and `/shops#table` open that view. A missing or unknown hash opens Post.
+ * A plain click on a link to a view of this same page (a place opens `/shops?pin=…#map`)
+ * shows that view, since the client-side push fires no `hashchange`.
  * The view stays unset until the hash is read, so the post list, map, and table mount only after that.
  *
  * @returns The shops column (`Card` `surface={false}`).
@@ -47,8 +49,39 @@ export function ShopsScreen(): ReactElement {
     };
     apply();
     window.addEventListener('hashchange', apply);
+    // A link to a view of this page (a place in the post list or the table
+    // opens `/shops?pin=…#map`) is a client-side push, which fires no
+    // hashchange. Capture runs before next/link prevents the default.
+    const onLinkClick = (event: MouseEvent): void => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+      const anchor = event.target.closest('a[href]');
+      if (!(anchor instanceof HTMLAnchorElement)) {
+        return;
+      }
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
+        return;
+      }
+      const next = shopsViewFromHash(url.hash);
+      if (next !== null) {
+        setView(next);
+        writeShopsHash(next);
+      }
+    };
+    document.addEventListener('click', onLinkClick, true);
     return () => {
       window.removeEventListener('hashchange', apply);
+      document.removeEventListener('click', onLinkClick, true);
     };
   }, []);
 
@@ -70,13 +103,7 @@ export function ShopsScreen(): ReactElement {
           <PlacesMapScreen embedded />
         </Suspense>
       ) : null}
-      {view === 'table' ? (
-        <ShopTable
-          onShowMap={() => {
-            selectView('map');
-          }}
-        />
-      ) : null}
+      {view === 'table' ? <ShopTable /> : null}
     </Card>
   );
 }

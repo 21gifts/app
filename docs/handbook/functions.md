@@ -1428,7 +1428,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: ShopsScreen
 
-- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **Post** / **Map** / **Table** pill, then the selected body. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`; its `onShowMap` selects **Map** (and writes `#map`) when a place link opens `/shops?pin=…#map` on this same page.
+- **Purpose:** Presentational shops card: heading **Shops**, lead `shops.lead`, a **Post** / **Map** / **Table** pill, then the selected body. **Post** is `ForumLoader` `feed="shops"`. **Map** is `PlacesMapScreen` `embedded`. **Table** is `ShopTable`. A plain click on a link to a view of this same page (a place in the post list or the table opens `/shops?pin=…#map`) selects that view and writes its hash, because the client-side push fires no `hashchange`.
 - **Inputs:** Catalog via `useTranslations`. The view stays unset until the hash is read. `/shops#map` and `/shops#table` open that view; `/shops#post`, a missing hash, or an unknown hash open Post. Choosing an option writes the same hash. Post clears it.
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`. The post list, map, and table mount only after the hash is read. The map and table fetch only after their option is selected.
 - **Used by:** `ShopsPage`.
@@ -1443,8 +1443,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: ShopTable
 
 - **Purpose:** Table of shop notes with name, place, and operator. A moderator sees the same shop pencil on each row. Place and operator are client-side links (`next/link`), so opening them keeps the document.
-- **Inputs:** Optional `onShowMap`, called on a plain click of a place. Session from `useAuthStore`. Catalog via `useTranslations`.
-- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/shops?pin={id}#map` (label, or coordinates; a plain click also calls `onShowMap`, so `ShopsScreen` shows its map on the same page). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash (shops.missing). **Show more** loads the next page. If a page has no shop rows and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the table with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session.
+- **Inputs:** Session from `useAuthStore`. Catalog via `useTranslations`.
+- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/shops?pin={id}#map` (label, or coordinates; `ShopsScreen` then shows its map on the same page). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash (shops.missing). **Show more** loads the next page. If a page has no shop rows and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the table with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session.
 - **Used by:** `ShopsScreen`.
 
 ## Function: MessageKindTags
@@ -3681,7 +3681,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Drop tab-RAM mnemonic.
 - **Inputs:** None.
 - **Returns / side effects:** Clears the module variable. Dispatches `SESSION_PHRASE_EVENT`, which disconnects the wallet.
-- **Used by:** `useWalletPhrase.hidePhrase`, `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
+- **Used by:** `clearAuth`, `login`, `authenticate`. Implemented in `tab-phrase`.
 
 ## Function: sessionPhraseGeneration
 
