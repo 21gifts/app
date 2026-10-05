@@ -18,7 +18,7 @@ import {
 /**
  * In-place paid-reaction pay page that replaces the reply composer.
  *
- * Close stays on this view. It is not the top-left back arrow.
+ * Close stays on this view. It is not the top-left back arrow. The preview paragraph is left-inset (`pl-12`) so its glyphs clear that control, including the icon button's hit slop.
  *
  * @param props - Preview, invoice, waiting flag, and cancel handler.
  * @returns The pay page element.
@@ -92,7 +92,9 @@ export function ForumReplyPayPage({
         </IconButton>
       </div>
       {preview.trim() !== '' ? (
-        <p className="w-full whitespace-pre-wrap text-left text-base text-app-fg">{preview}</p>
+        <p className="w-full whitespace-pre-wrap pl-12 text-left text-base text-app-fg">
+          {preview}
+        </p>
       ) : null}
       <p className="px-10 text-center text-sm text-app-muted">
         {t('forum.payConfirm', {

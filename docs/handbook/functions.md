@@ -1327,7 +1327,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Replaces the reply composer after a paid reaction is sent: it is a component in that same slot, not a new URL, and shows only a read-only preview of the submitted reply, the **Pay ₿…** amount line with the preferred-fiat suffix, the pay control (desktop QR plus Wallet of Satoshi button; smartphone: button only), and **Waiting for payment…** while polling.
 - **Inputs:** `preview` (raw submitted text; a trimmed-empty string omits the paragraph), `amountSats`, `pr`, `payWaiting`, `payBusy`, `showPaymentQr`, `rateDay`, `onCancel`.
-- **Returns / side effects:** React element with `data-reply-pay-page` and `data-pay-sheet`. Close (`X`) calls `onCancel` and stays on this view. It is not the top-left back arrow. The wallet button sets `window.location.href` to the Android Intent or `walletofsatoshi:` href. An empty trimmed preview omits the paragraph.
+- **Returns / side effects:** React element with `data-reply-pay-page` and `data-pay-sheet`. Close (`X`) calls `onCancel` and stays on this view. It is not the top-left back arrow. The wallet button sets `window.location.href` to the Android Intent or `walletofsatoshi:` href. An empty trimmed preview omits the paragraph. The preview paragraph uses `pl-12` so the close control, including its hit slop, does not cover the first glyphs.
 - **Used by:** `ForumBoard`.
 
 ## Function: ContactLoader
