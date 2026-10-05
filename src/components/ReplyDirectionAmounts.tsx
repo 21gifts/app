@@ -14,6 +14,7 @@ type StoredFiat = {
   amountPhp?: string | null | undefined;
 };
 
+/** Props for {@link ReplyDirectionAmounts}. */
 export type ReplyDirectionAmountsProps = {
   /** Reply body. Empty text with sats is a gift-only row. */
   text: string;
