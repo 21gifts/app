@@ -744,9 +744,9 @@ async function fetchMemberForumList(
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The message list.
+ * @returns The message list; rows that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 export async function fetchMemberPosts(
   sessionToken: string,
@@ -760,9 +760,10 @@ export async function fetchMemberPosts(
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The message list (reply rows may be payable; optional `parentId`).
+ * @returns The message list (reply rows may be payable; optional `parentId`); rows
+ * that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 export async function fetchMemberReplies(
   sessionToken: string,
