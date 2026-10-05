@@ -13,6 +13,12 @@ vi.mock('@/lib/api', () => ({
   agreeToRules: vi.fn(),
 }));
 
+const routerPush = vi.hoisted(() => vi.fn());
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: routerPush }),
+}));
+
 const baseAccount: Account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
@@ -94,8 +100,9 @@ describe('RulesSetup', () => {
     });
     recordCurrentView('/setup/rules');
     renderWithLocale(<RulesSetup chapters={oneChapter} />);
-    expect(screen.getByRole('button', { name: 'Back' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Back to the forum' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(routerPush).toHaveBeenCalledWith('/shops');
   });
 
   it('advances chapters without posting until the last agree', () => {
@@ -146,7 +153,7 @@ describe('RulesSetup', () => {
 
   it('opens the forum from chapter 0 when this tab has no earlier view', () => {
     const assign = vi.fn();
-    vi.stubGlobal('location', { assign });
+    vi.stubGlobal('location', { ...window.location, assign });
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     renderWithLocale(
       <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
@@ -154,7 +161,8 @@ describe('RulesSetup', () => {
     expect(screen.getAllByRole('button', { name: 'Back to the forum' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back to the forum' }));
-    expect(assign).toHaveBeenCalledWith('/welcome');
+    expect(routerPush).toHaveBeenCalledWith('/welcome');
+    expect(assign).not.toHaveBeenCalled();
     expect(historyBack).not.toHaveBeenCalled();
     expect(screen.getByText('chapter-one')).toBeTruthy();
   });

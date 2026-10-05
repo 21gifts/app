@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import {
   useEffect,
   useLayoutEffect,
@@ -30,6 +31,7 @@ import { useAuthStore } from '@/stores/auth-store';
  */
 export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactElement | null {
   const { t } = useTranslations();
+  const router = useRouter();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -129,7 +131,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
               size="md"
               aria-label={chapter0Label}
               onClick={() => {
-                goToPreviousView();
+                goToPreviousView(router.push);
               }}
             >
               <ArrowLeft aria-hidden="true" className="h-5 w-5" />
