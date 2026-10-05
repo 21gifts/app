@@ -1,6 +1,7 @@
 'use client';
 
 import { Pencil } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -318,26 +319,26 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                     data-selected={selected ? 'true' : 'false'}
                     className={`min-w-0 max-w-full break-words text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
-                    <a
+                    <Link
                       href={`/members/${place.accountId}`}
                       aria-label={t('forum.authorProfile')}
                       className="underline underline-offset-2"
                     >
                       {place.name}
-                    </a>
+                    </Link>
                     {' · '}
-                    <a href={`/messages/${place.id}`} className="underline">
+                    <Link href={`/messages/${place.id}`} className="underline">
                       {label}
-                    </a>
+                    </Link>
                   </span>
                 ) : (
-                  <a
+                  <Link
                     href={`/messages/${place.id}`}
                     data-selected={selected ? 'true' : 'false'}
                     className={`min-w-0 max-w-full break-words text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
                     {place.name} · {label}
-                  </a>
+                  </Link>
                 )}
                 {place.shop === true ? (
                   <ShopPinEdit
