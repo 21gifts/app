@@ -449,6 +449,43 @@ describe('useWalletPay one tap unlock and pay', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('never pays on its own when the wallet fails after the unlock and opens later', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    lockedWith(send);
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => {
+      result.current.unlock();
+    });
+    act(() => {
+      setWallet('error');
+    });
+    expect(result.current.view).toBe('failed');
+    await act(async () => {
+      setWallet('ready', 5_000);
+    });
+    expect(result.current.view).toBe('confirm');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('never pays on its own when the account leaves wallet mode after the unlock', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    lockedWith(send);
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => {
+      result.current.unlock();
+    });
+    act(() => {
+      useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
+    });
+    expect(result.current.view).toBe('unavailable');
+    await act(async () => {
+      useAuthStore.setState({ account });
+      setWallet('ready', 5_000);
+    });
+    expect(result.current.view).toBe('confirm');
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it('pays nothing when the slot closes while the prompt is open', async () => {
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     lockedWith(send);
