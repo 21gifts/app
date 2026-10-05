@@ -1,6 +1,6 @@
 # Contributing to 21.gifts app
 
-[REVIEW.md](REVIEW.md) is binding. A new endpoint, function, user-interface control, error text, clock, or permission check is allowed only when nothing in this repository already does that job. The review reads this file and `REVIEW.md` and does not change files.
+[REVIEW.md](REVIEW.md) is binding for every change and for every review of a change. Read it and this file at the base revision of the pull request. A pull request that changes either file does not replace that base text for the rest of its diff. The review does not change files.
 
 This repository carries only frontend-specific code and docs. Protocol-level
 documentation (concept, architecture, decisions) lives in
