@@ -359,7 +359,9 @@ function stampedIndex(): number | null {
 }
 
 /**
- * Clear the in-app view stack used by the top-left back arrow.
+ * Clear the in-app view stack used by the top-left back arrow, its stored
+ * copy in `sessionStorage`, and a pending arrow target (module copy and the
+ * stored one-shot mark).
  *
  * @returns void
  */
@@ -498,7 +500,7 @@ export function markBackNavigation(path: string): void {
  * Opens that path with the client-side router `push`, so the document and
  * its tab memory (the unlocked wallet) stay. Leaves the stack for the record
  * that arrives there, which steps the cursor back. A second click before that
- * record pushes the same path. It does not call `history.back()`: a browser
+ * record pushes the same path. It does not step back in the browser history: a
  * back step can leave the site when the current entry replaced an external
  * referrer.
  *

@@ -4,6 +4,40 @@ import { TrustChainDiagram } from '@/components/TrustChainDiagram';
 import type { TrustChain } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const linkPush = vi.hoisted(() => vi.fn());
+
+// Like next/link: after the caller's onClick, an unprevented plain click is a
+// client-side router push, not a document load.
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    onClick,
+    prefetch: _prefetch,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+    prefetch?: boolean;
+    [key: string]: unknown;
+  }) => (
+    <a
+      href={href}
+      {...rest}
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented) {
+          event.preventDefault();
+          linkPush(href);
+        }
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 if (typeof globalThis.PointerEvent === 'undefined') {
   class PointerEventPolyfill extends MouseEvent {
     pointerId: number;
@@ -236,5 +270,18 @@ describe('TrustChainDiagram', () => {
     } finally {
       hypot.mockRestore();
     }
+  });
+
+  it('opens the member client-side without onExpand, and expands instead of leaving with it', () => {
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} />);
+    fireEvent.click(screen.getByTestId('trust-node-ada'));
+    expect(linkPush).toHaveBeenCalledWith('/members/ada');
+    cleanup();
+    linkPush.mockReset();
+    const onExpand = vi.fn();
+    renderWithLocale(<TrustChainDiagram chain={CHAIN} onExpand={onExpand} />);
+    fireEvent.click(screen.getByTestId('trust-node-ada'));
+    expect(onExpand).toHaveBeenCalledWith('ada');
+    expect(linkPush).not.toHaveBeenCalled();
   });
 });
