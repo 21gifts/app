@@ -4,12 +4,14 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
+import { FundingPausedCopy } from '@/components/FundingPausedCopy';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { LocationForm } from '@/components/LocationForm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
 import { fetchMemberPosts, postFundingApply, putAboutMe } from '@/lib/api';
+import { grantApplicationStillOpen, grantApplicationsPaused } from '@/lib/grant-applications';
 import type { Account, ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -65,16 +67,71 @@ export function nextFillStep(account: Account): FillStep | null {
 }
 
 /**
- * Signed-in grant apply walk: fill About me, photo, and location, then two
- * yes/no questions. The first asks whether the posts match the core principles
- * and links to the about page. The second asks whether the posts are true.
- * Missing fields are next steps, not errors. Yes on the truth question posts
- * apply. No does not apply. Renders nothing without a session. The page chrome
- * owns the back; this screen renders none.
+ * Paused grant-applications card. Shown while `grantApplicationsPaused` is
+ * true, the signed-in username is not in
+ * `GRANT_APPLICATION_STILL_OPEN_USERNAMES`, and funding status is not
+ * pending, trial, or admitted.
  *
- * @returns The apply card, or `null` without a session.
+ * @returns The paused applications card.
+ */
+function PausedGrantApply(): ReactElement {
+  const { t } = useTranslations();
+
+  return (
+    <Card maxWidth="xl" surface={false}>
+      <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+        {t('funding.heading')}
+      </h1>
+      <div className="flex w-full flex-col items-center gap-3 text-center">
+        <FundingPausedCopy />
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Signed-in grant apply screen. While applications are paused this is the
+ * pause card unless the username is in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`
+ * or the status is pending, trial, or admitted.
+ * A verified account with one of those names and status none or rejected still
+ * sees the apply walk. Pending, trial, and admitted keep their copy for every
+ * verified username. A basis account named joey-rosima, vincent, or jewel-bacolbas
+ * sees "You are not verified yet." and does not post. Any other basis account
+ * whose status is not pending, trial, or admitted sees the pause card. A basis
+ * account with one of those statuses sees "You are not verified yet." and does
+ * not post. A missing account still shows the pause card. The walk stays
+ * in the code: fill About me, photo, and location, then two yes/no questions.
+ * The first asks whether the posts match the core principles and links to the
+ * about page. The second asks whether the posts are true. Missing fields are
+ * next steps, not errors. Yes on the truth question posts apply. No does not
+ * apply. The page chrome owns the back; this screen renders none.
+ *
+ * @returns The pause card, the apply card, the not-verified card for a basis
+ * account on the named roster, or `null` without a session when the walk is open.
  */
 export function FundingApplyScreen(): ReactElement | null {
+  const account = useAuthStore((state) => state.account);
+  const status = account?.funding?.status;
+  const keepsExistingStatus = status === 'pending' || status === 'trial' || status === 'admitted';
+  if (
+    grantApplicationsPaused() &&
+    !grantApplicationStillOpen(account?.username) &&
+    !keepsExistingStatus
+  ) {
+    return <PausedGrantApply />;
+  }
+  return <OpenGrantApply />;
+}
+
+/**
+ * The apply card used when `grantApplicationsPaused` is false, when
+ * `grantApplicationStillOpen` is true, or when funding status is pending,
+ * trial, or admitted. A basis account stops at "You are not verified yet."
+ * and does not post.
+ *
+ * @returns The apply card, the not-verified card, or `null` without a session.
+ */
+function OpenGrantApply(): ReactElement | null {
   const { t, locale } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);

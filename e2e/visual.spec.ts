@@ -2382,11 +2382,65 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'https://21.gifts/statistics' })).toHaveAttribute(
+      'href',
+      'https://21.gifts/statistics',
+    );
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toHaveCount(0);
     await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
     await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
     await shotScreen(page, 'state-welcome-daily-payout-stopped');
+  });
+
+  test('state /welcome daily-payout-stopped-apply', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'joey-rosima',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          funding: {
+            status: 'none',
+            trialUtcDate: null,
+            admittedAt: null,
+            reviewedByName: null,
+            dailyPayoutStoppedNotice: true,
+          },
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await expect(
+      page.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toHaveCount(0);
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await shotScreen(page, 'state-welcome-daily-payout-stopped-apply');
   });
 
   test('state /welcome renew', async ({ page }) => {
@@ -11819,6 +11873,7 @@ test.describe('profile funding states', () => {
     extras: {
       role?: 'basis' | 'verified' | 'moderator';
       funding?: unknown;
+      username?: string;
     } = {},
   ): Promise<void> {
     await page.addInitScript(() => {
@@ -11832,6 +11887,7 @@ test.describe('profile funding states', () => {
           ...E2E_ACCOUNT,
           role: extras.role ?? 'verified',
           name: 'Ada',
+          ...(extras.username !== undefined ? { username: extras.username } : {}),
           location: null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
@@ -11870,13 +11926,34 @@ test.describe('profile funding states', () => {
   test('profile funding none', async ({ page }) => {
     await seedFundingProfile(page);
     await page.goto('/grants');
+    await expect(
+      page.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'https://21.gifts/statistics' })).toHaveAttribute(
+      'href',
+      'https://21.gifts/statistics',
+    );
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toHaveCount(0);
+    await shotScreen(page, 'screen-grants');
+  });
+
+  test('state /grants funding-apply', async ({ page }) => {
+    await seedFundingProfile(page, { username: 'joey-rosima' });
+    await page.goto('/grants');
     await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await expect(
       page.getByText(
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeVisible();
-    await shotScreen(page, 'screen-grants');
+    await expect(
+      page.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toHaveCount(0);
+    await shotScreen(page, 'state-grants-funding-apply');
   });
 
   test('profile funding pending', async ({ page }) => {
@@ -12118,6 +12195,7 @@ test.describe('profile apply screens', () => {
       aboutMeHasPhoto?: boolean;
       location?: string | null;
       funding?: unknown;
+      username?: string | null;
     } = {},
   ): Promise<void> {
     await page.addInitScript(() => {
@@ -12131,6 +12209,7 @@ test.describe('profile apply screens', () => {
           ...E2E_ACCOUNT,
           role: extras.role ?? 'verified',
           name: 'Ada',
+          username: extras.username ?? null,
           location: extras.location ?? null,
           lightningAddress: 'alice@walletofsatoshi.com',
           rulesAgreedAt: 1_700_000_001,
@@ -12188,16 +12267,38 @@ test.describe('profile apply screens', () => {
     await seedApply(page);
     await page.goto('/grants/apply');
     await expect(
-      page.getByText('First, write a short About me so people can get to know you.'),
+      page.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
     ).toBeVisible();
     await shotScreen(page, 'screen-grants-apply');
+  });
+
+  test('screen /profile/apply redirects', async ({ page }) => {
+    await seedApply(page);
+    await page.goto('/profile/apply');
+    await expect(
+      page.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-profile-apply');
+  });
+
+  test('state /grants/apply about', async ({ page }) => {
+    await seedApply(page, { username: 'joey-rosima' });
+    await page.goto('/grants/apply');
+    await expect(
+      page.getByText('First, write a short About me so people can get to know you.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-grants-apply-about');
   });
 
   test('state /grants/apply sunday', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
     });
-    await seedApply(page);
+    await seedApply(page, { username: 'joey-rosima' });
     await page.goto('/grants/apply');
     await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeHidden();
@@ -12205,14 +12306,21 @@ test.describe('profile apply screens', () => {
   });
 
   test('profile apply photo', async ({ page }) => {
-    await seedApply(page, { aboutMe: 'I build on Bitcoin' });
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+    });
     await page.goto('/grants/apply');
     await expect(page.getByText('Next, add a photo to your About me.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-photo');
   });
 
   test('profile apply location', async ({ page }) => {
-    await seedApply(page, { aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true });
+    await seedApply(page, {
+      username: 'joey-rosima',
+      aboutMe: 'I build on Bitcoin',
+      aboutMeHasPhoto: true,
+    });
     await page.goto('/grants/apply');
     await expect(page.getByText('Next, add the place you live.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-location');
@@ -12220,6 +12328,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply question', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12238,6 +12347,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply truth', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12253,7 +12363,7 @@ test.describe('profile apply screens', () => {
   });
 
   test('profile apply forbidden', async ({ page }) => {
-    await seedApply(page, { role: 'basis', funding: null });
+    await seedApply(page, { username: 'joey-rosima', role: 'basis', funding: null });
     await page.goto('/grants/apply');
     await expect(page.getByText('You are not verified yet.')).toBeVisible();
     await shotScreen(page, 'state-profile-apply-forbidden');
@@ -12261,6 +12371,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply pending', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       funding: {
         status: 'pending',
         trialUtcDate: null,
@@ -12277,6 +12388,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply trial', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       funding: {
         status: 'trial',
         trialUtcDate: '2026-09-20',
@@ -12293,6 +12405,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply admitted', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       funding: {
         status: 'admitted',
         trialUtcDate: null,
@@ -12307,6 +12420,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply empty-posts', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12319,6 +12433,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply loading', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12331,6 +12446,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply error', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12345,6 +12461,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply applying', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12365,6 +12482,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply apply-failed', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12391,6 +12509,7 @@ test.describe('profile apply screens', () => {
 
   test('profile apply unmet', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12404,6 +12523,7 @@ test.describe('profile apply screens', () => {
 
   test('state /grants/apply translate', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12418,6 +12538,7 @@ test.describe('profile apply screens', () => {
 
   test('state /grants/apply translate-loading', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12436,6 +12557,7 @@ test.describe('profile apply screens', () => {
 
   test('state /grants/apply translate-done', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12453,6 +12575,7 @@ test.describe('profile apply screens', () => {
 
   test('state /grants/apply translate-hidden', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12471,6 +12594,7 @@ test.describe('profile apply screens', () => {
 
   test('state /grants/apply translate-error', async ({ page }) => {
     await seedApply(page, {
+      username: 'joey-rosima',
       aboutMe: 'I build on Bitcoin',
       aboutMeHasPhoto: true,
       location: 'Zurich',
@@ -12485,15 +12609,6 @@ test.describe('profile apply screens', () => {
       .getByText('Could not translate this note. Please try again.')
       .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-apply-translate-error');
-  });
-
-  test('screen /profile/apply redirects', async ({ page }) => {
-    await seedApply(page);
-    await page.goto('/profile/apply');
-    await expect(
-      page.getByText('First, write a short About me so people can get to know you.'),
-    ).toBeVisible();
-    await shotScreen(page, 'screen-profile-apply');
   });
 });
 
@@ -13924,7 +14039,8 @@ test.describe('welcome forum variants', () => {
       });
     });
     await page.goto('/welcome');
-    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('All');
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByText("₿1'000")).toBeVisible();

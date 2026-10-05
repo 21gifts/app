@@ -430,6 +430,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'daily-payout-stopped-apply',
+    image: 'welcome-daily-payout-stopped-apply.png',
+    visual: 'state-welcome-daily-payout-stopped-apply',
+    needle: 'Apply for the 21 gifts grant',
+  },
+  {
+    route: '/welcome',
     id: 'renew',
     image: 'welcome-renew.png',
     visual: 'state-welcome-renew',
@@ -2351,6 +2358,14 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'grants.png',
     visual: 'screen-grants',
+    needle:
+      'Applications are currently paused. You can apply again when shop transactions have increased.',
+  },
+  {
+    route: '/grants',
+    id: 'funding-apply',
+    image: 'grants-funding-apply.png',
+    visual: 'state-grants-funding-apply',
     needle: 'Apply for the 21 gifts grant',
   },
   {
@@ -2449,6 +2464,14 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'profile-apply.png',
     visual: 'screen-grants-apply',
+    needle:
+      'Applications are currently paused. You can apply again when shop transactions have increased.',
+  },
+  {
+    route: '/grants/apply',
+    id: 'about',
+    image: 'grants-apply-about.png',
+    visual: 'state-grants-apply-about',
     needle: 'First, write a short About me so people can get to know you.',
   },
   {

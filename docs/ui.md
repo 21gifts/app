@@ -1046,7 +1046,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 
 ### `/welcome` (forum)
 
-`PageChrome` `topLeft={<ProfileChromeLeft hideWithoutHistory wordmark={<ForumHomeWordmark />} />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card surface={false}` `max-w-xl` (page column inside the AppShell frame; the frame is the only page-level `rounded-3xl`) → decorative gift-and-Bitcoin SVG 48px → **one** `h1` “Welcome, {name}” → `ForumLoader` / `ForumBoard`:
+`PageChrome` `topLeft={<ProfileChromeLeft hideWithoutHistory wordmark={<ForumHomeWordmark />} />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card surface={false}` `max-w-xl` (page column inside the AppShell frame; the frame is the only page-level `rounded-3xl`) → decorative gift-and-Bitcoin SVG 48px → **one** `h1` “Welcome, {name}” → `DailyPayoutStoppedNotice` shows usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` the Apply link, and every other account the paused sentence → `ForumLoader` / `ForumBoard`:
 
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
@@ -1077,7 +1077,7 @@ Fill `AppShell` (page frame); `topLeft={<ProfileChromeLeft />}` `topRight={<Sign
 
 ### `/grants`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline) and Apply as a `ButtonLink` to `/grants/apply`, a secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). Apply is not a ButtonLink except for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status none or rejected, who still see Apply and can open the walk. A basis account sees You are not verified yet and no Apply. Pending, trial, and admitted keep their status copy for every verified username. Every other verified account with status none or rejected shows the paused sentence and `https://21.gifts/statistics`. A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null, plus, for a moderator or founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Wallet for every signed-in account.
 
 Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications.
 
@@ -1089,9 +1089,9 @@ Handbook states: default, loading, error.
 
 ### `/grants/apply`
 
-Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **Apply for the 21 gifts grant**. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Missing About me, photo, or location are the next calm steps (not alerts). Then two questions: whether the profile posts match the core principles of 21.gifts, with a link to `https://21.gifts/about` (Languages **Translate** on living-room post text), then whether the posts are true. **Yes** on the truth question applies and returns to `/grants`; **No** shows the unmet line. `/profile/apply` redirects here.
+Fill `AppShell` `align="center"`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}`. The paused card **h1** is **21 gifts grant** (`funding.heading`). The apply walk **h1** is **Apply for the 21 gifts grant** (`funding.apply.heading`). A basis account named `joey-rosima`, `vincent`, or `jewel-bacolbas` sees that walk heading and then You are not verified yet, and does not post. Any other basis account whose status is not pending, trial, or admitted sees the paused card. A basis account with status pending, trial, or admitted sees You are not verified yet and does not post. Verified usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` with status none or rejected still see and complete the apply walk (About me, photo, location, questions, POST). Pending, trial, and admitted keep their copy for every verified username. A missing account, and a verified account with status none or rejected whose username is not one of those three, sees the paused sentence and `https://21.gifts/statistics` and does not start the walk. There is no in-card back. The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. `/profile/apply` redirects here.
 
-Handbook states: default, photo, location, question, truth, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
+Handbook states: default, about, sunday, photo, location, question, truth, translate, translate-loading, translate-done, translate-hidden, translate-error, forbidden, pending, trial, admitted, empty-posts, loading, error, applying, apply-failed, unmet.
 
 ### `/profile/apply`
 

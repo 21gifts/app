@@ -704,9 +704,9 @@
 
 ## Endpoint: POST /funding/apply
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Role `basis` is 403. About me, About me photo, and location are required (400). Effective `none` or `rejected` becomes pending.
-- **Errors:** Upstream 400/401/403/409/503, or 502 if the api is unreachable.
-- **Used by:** `postFundingApply` via `FundingApplyScreen` on `/grants/apply`.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. While applications are paused the api returns 403 `{ error: 'Applications are paused' }` for a caller whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`. Role `basis` is 403 Forbidden, including those three usernames, and does not write a grant. The paused screen does not call this route. The apply walk calls it when `grantApplicationsPaused` is false, and, while paused, only for a verified account named one of those three with status `none` or `rejected`.
+- **Errors:** While applications are paused for everyone else: upstream 401/403, or 502 if the api is unreachable. When the apply walk is open: also upstream 400, 409, and 503, matching `postFundingApply`.
+- **Used by:** `postFundingApply`. `FundingApplyScreen` calls it when the apply walk is open: a verified account with status `none` or `rejected`, and while paused only when that account is named `joey-rosima`, `vincent`, or `jewel-bacolbas`. A basis account does not call it.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
 ## Endpoint: GET /funding/payout-days

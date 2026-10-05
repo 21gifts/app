@@ -350,6 +350,7 @@ test('Function: postFundingApply — Yes posts apply', async ({ page }) => {
         linkingKey: null,
         role: 'verified',
         name: 'Ada',
+        username: 'joey-rosima',
         location: 'Zurich',
         lightningAddress: 'alice@walletofsatoshi.com',
         lightningAddressVerified: false,
@@ -423,6 +424,12 @@ test('Function: postFundingApply — Yes posts apply', async ({ page }) => {
   ).toBeVisible();
   await page.getByRole('button', { name: 'Yes' }).click();
   expect((await posted).method()).toBe('POST');
+});
+
+test('Function: postFundingApply — POST /funding/apply without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/funding/apply')).status()).toBe(401);
 });
 
 test('Function: proxyFundingApplicationsGet — GET /funding/applications without bearer is 401', async ({

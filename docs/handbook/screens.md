@@ -496,7 +496,7 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 ## Screen: /welcome
 
 - **URL:** `/welcome` — when `account.setup` is null (name and address may be saved or skipped; username is required; living-room rules agreement is required). New passkey accounts reach this after name, username, address, and rules. The phrase is not on that path.
-- **What the user sees:** Chrome is the page-frame header. The top-left arrow is omitted only when this tab has no earlier in-app view; otherwise it returns to that view. An ask step uses that same slot. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". A signed-out visit keeps the wordmark, shows **Log in**, and does not show the member menu. Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes plus unpaid moderator notes plus top-level notes with `goalSats` > 0, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
+- **What the user sees:** Chrome is the page-frame header. The top-left arrow is omitted only when this tab has no earlier in-app view; otherwise it returns to that view. An ask step uses that same slot. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". A signed-out visit keeps the wordmark, shows **Log in**, and does not show the member menu. Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes (`sats` > 0) plus unpaid moderator notes; a top-level ask with `goalSats` > 0 and zero sats is not included, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
 - **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, edit a shop note when the session is a moderator, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, Wallet of Satoshi address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
 - **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `ShopNoteEditControl`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `fetchGiftStats`, `latestRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`.
 
@@ -508,9 +508,15 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ### Variant: daily-payout-stopped
 
-Signed in, no grant application. The notice **Daily payout stopped** sits in the frame under the page-frame header, with **Apply for the 21 gifts grant**. The living room underneath is the default welcome.
+Signed in, no grant application. The notice title is **Daily payout stopped**, then **Applications are currently paused. You can apply again when shop transactions have increased.**, then the link `https://21.gifts/statistics`. No apply control. The living room underneath is the default welcome.
 
 ![21.gifts welcome daily payout stopped](images/welcome-daily-payout-stopped.png)
+
+### Variant: daily-payout-stopped-apply
+
+Username joey-rosima, of any role, sees the Apply link under Daily payout stopped, not the paused sentence. That link is not the apply walk.
+
+![21.gifts welcome daily payout stopped apply](images/welcome-daily-payout-stopped-apply.png)
 
 ### Variant: renew
 
@@ -1101,7 +1107,7 @@ Ask step 4 of 4, **Daily** pressed, after the post fails.
 
 ### Variant: ask-open
 
-Active feed (default). Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000 · $1.00** (viewer USD from the gift-day rate; this fixture stores no snapshot), photo + caption, `ForumGoalBar` at 0%. Asks are not hidden on Active.
+**All**, not Active. Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000 · $1.00** (viewer USD from the gift-day rate; this fixture stores no snapshot), photo + caption, `ForumGoalBar` at 0%. A zero-sat ask is absent from Active, so this shot opens **All**.
 
 ![21.gifts welcome ask open](images/welcome-ask-open.png)
 
@@ -2895,14 +2901,20 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 - **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A moderator or founder with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. Verified members with no grant open **Apply for the 21 gifts grant** (`/grants/apply`). Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, for every username. A verified account with status none or rejected named `joey-rosima`, `vincent`, or `jewel-bacolbas` opens Apply. Every other verified account with status none or rejected reads the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). Moderators open **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, copy that admitted members receive the daily gift, an **About** link, **Apply for the 21 gifts grant**, and **Goals**.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, the paused sentence **Applications are currently paused. You can apply again when shop transactions have increased.**, the link `https://21.gifts/statistics`, and **Goals**. No About link and no Apply button. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 
 ![21.gifts grants](images/grants.png)
+
+### Variant: funding-apply
+
+Verified username joey-rosima with status none or rejected sees Apply for the 21 gifts grant instead of the paused sentence.
+
+![21.gifts grants funding apply](images/grants-funding-apply.png)
 
 ### Variant: funding-not-verified
 
@@ -2984,147 +2996,153 @@ Signed-in page when `GET /funding/goal` fails. Heading and the three sentences s
 
 ## Screen: /profile/apply
 
-- **Purpose:** Permanent redirect to `/grants/apply`. This path renders no grant UI.
+- **Purpose:** Permanent redirect to `/grants/apply`. That page shows the pause sentence and `https://21.gifts/statistics` for a verified account with status `none` or `rejected` whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`. A verified account with one of those names and status `none` or `rejected` sees the apply walk. Pending, trial, and admitted keep their copy for every verified username. A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.** and does not post. This path renders no grant UI of its own.
 - **Inputs:** None. The browser lands on `/grants/apply`.
 - **Actions:** `redirect('/grants/apply')`.
 - **Used by:** Old links to `/profile/apply`.
 
 ### Variant: redirect
 
-Opening `/profile/apply` lands on the grants apply walk.
+Opening `/profile/apply` lands on the paused applications screen. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 
 ![21.gifts apply](images/profile-apply.png)
 
 ## Screen: /grants/apply
 
-- **Purpose:** Guided 21 gifts grant apply. Missing About me, photo, or location are the next calm steps, not errors. Then two yes/no questions against the applicant’s living-room posts (post text is translatable; location and the composer are not): whether the posts match the core principles, with a link to `https://21.gifts/about`, then whether the posts are true. Yes on the truth question submits `POST /funding/apply` and returns to `/grants`. No does not submit.
-- **Inputs:** Session account; `GET /forum/members/:id/posts`; `PUT /me/about`; `POST /me/location`; `POST /funding/apply`.
-- **Actions:** Fill About me, add a photo, set location, answer both questions. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. No second arrow in the card. The wordmark is not that control (wordmark → `/welcome`).
+- **Purpose:** Signed-in applications screen. While applications are paused, a verified account with status `none` or `rejected` whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas` sees the pause sentence and the link `https://21.gifts/statistics`, with no About-me steps, no questions, and no POST. Pending, trial, and admitted keep their copy for every verified username. A verified account with one of those three names and status `none` or `rejected` sees the apply walk. A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.** and does not post. The apply walk stays in the code. While the switch is on it is shown only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`. When the switch is off, a verified account with status `none` or `rejected` sees it. Pending, trial, and admitted stay status copy. A basis account on that card sees **You are not verified yet.**
+- **Inputs:** Account username and funding status from the auth store. Public paused fixtures do not fetch posts and do not POST apply.
+- **Actions:** Read the paused sentence and open `https://21.gifts/statistics`, unless the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`, or the funding status is pending, trial, or admitted. A verified account with one of those names and status `none` or `rejected` fills the apply walk. Pending, trial, and admitted read their status. A basis account named joey-rosima, vincent, or jewel-bacolbas reads **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted reads the pause card. A basis account with one of those statuses reads **You are not verified yet.** and does not post. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).
 
 ### Variant: default
 
-Verified none/rejected with empty About me. Copy **First, write a short About me so people can get to know you.** No `role="alert"`.
+Verified member, funding none. Heading **21 gifts grant**. The paused sentence. Link `https://21.gifts/statistics`. No Apply control. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 
 ![21.gifts apply](images/profile-apply.png)
 
+### Variant: about
+
+Verified username joey-rosima with status none or rejected sees the first apply step, First, write a short About me so people can get to know you.
+
+![21.gifts apply about](images/grants-apply-about.png)
+
 ### Variant: sunday
 
-Device-local Sunday. The step sentence stays. The About me editor is gone. **Writing is paused on Sunday.**
+On Sunday the About-me step shows Writing is paused on Sunday and hides Save.
 
 ![21.gifts apply sunday](images/grants-apply-sunday.png)
 
 ### Variant: photo
 
-About me filled, no photo. Copy **Next, add a photo to your About me.**
+After a real About me, the next step asks for a photo.
 
 ![21.gifts apply photo](images/profile-apply-photo.png)
 
 ### Variant: location
 
-About me and photo set, location empty. Copy **Next, add the place you live.**
+After About me and a photo, the next step asks for the place you live.
 
 ![21.gifts apply location](images/profile-apply-location.png)
 
 ### Variant: question
 
-Profile complete. Copy **Do your profile posts match the core principles of 21.gifts?** An **About** link goes to `https://21.gifts/about`. **Yes** and **No** are both visible. No conviction titles.
+Filled profile asks whether the posts match the core principles of 21.gifts.
 
 ![21.gifts apply question](images/grants-apply-question.png)
 
 ### Variant: truth
 
-**Yes** on the principles question. Copy **Do these posts, to your knowledge, correspond to the truth?** The About link is gone. **Yes** submits. **No** does not.
+After Yes, the walk asks whether the posts correspond to the truth.
 
 ![21.gifts apply truth](images/grants-apply-truth.png)
 
 ### Variant: translate
 
-Signed-in `/grants/apply` on the principles question with a German living-room post. **Translate** is visible under the post body.
+A German living-room post on the walk offers Translate.
 
 ![21.gifts apply translate](images/profile-apply-translate.png)
 
 ### Variant: translate-loading
 
-Same German post after clicking **Translate** while POST `/translate` hangs. The control is busy (`aria-busy`) with a spinner.
+Translate is busy and stays on the walk.
 
 ![21.gifts apply translate loading](images/profile-apply-translate-loading.png)
 
 ### Variant: translate-done
 
-Same German post after a successful translation. Translated body plus **Show original**; the German original is not shown.
+The walk shows the English note and Show original.
 
 ![21.gifts apply translate done](images/profile-apply-translate-done.png)
 
 ### Variant: translate-hidden
 
-After **Show original**: translated body hidden, the Languages icon is named **Show translation** and has no visible text.
+Show original returns the German note and offers Show translation.
 
 ![21.gifts apply translate hidden](images/profile-apply-translate-hidden.png)
 
 ### Variant: translate-error
 
-Same German post after POST /translate fails. Alert **Could not translate this note. Please try again.** and the Translate control remains.
+A failed translate shows Could not translate this note. Please try again.
 
 ![21.gifts apply translate error](images/profile-apply-translate-error.png)
 
 ### Variant: forbidden
 
-Basis visitor. Copy **You are not verified yet.**
+A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.**
 
 ![21.gifts apply forbidden](images/profile-apply-forbidden.png)
 
 ### Variant: pending
 
-Already pending. Copy **Your application is open. A moderator will review your posts.**
+An open application says a moderator will review the posts.
 
 ![21.gifts apply pending](images/profile-apply-pending.png)
 
 ### Variant: trial
 
-Already on a one-day trial. Copy **You are on a one-day trial. Review repeats tomorrow.**
+A one-day trial says review repeats tomorrow.
 
 ![21.gifts apply trial](images/profile-apply-trial.png)
 
 ### Variant: admitted
 
-Already admitted. Copy **You are admitted to daily 21.gifts grant payouts.**
+An admitted member sees the daily 21.gifts grant payout sentence.
 
 ![21.gifts apply admitted](images/profile-apply-admitted.png)
 
 ### Variant: empty-posts
 
-Profile complete, no living-room posts. Copy **No living-room posts.**
+A filled profile with no living-room posts says No living-room posts.
 
 ![21.gifts apply empty posts](images/profile-apply-empty-posts.png)
 
 ### Variant: loading
 
-Posts fetch hanging. Copy **Loading…**
+Posts have not loaded yet, so the walk shows Loading….
 
 ![21.gifts apply loading](images/profile-apply-loading.png)
 
 ### Variant: error
 
-Posts fetch failed. `role="alert"` **Could not load this application. Please try again.**
+A failed post load says Could not load this application. Please try again.
 
 ![21.gifts apply error](images/profile-apply-error.png)
 
 ### Variant: applying
 
-Yes on the truth question is in flight. Yes button disabled. The truth question stays visible.
+Both Yes answers are in flight and the Yes button is disabled.
 
 ![21.gifts apply applying](images/profile-apply-applying.png)
 
 ### Variant: apply-failed
 
-Yes on the truth question failed. The truth question stays visible. `role="alert"` **Could not submit your application. Please try again.**
+A failed POST says Could not submit your application. Please try again.
 
 ![21.gifts apply failed](images/profile-apply-apply-failed.png)
 
 ### Variant: unmet
 
-Requirement not met. Copy **When your posts match, you can apply again.** No alert.
+No on the first question says When your posts match, you can apply again.
 
 ![21.gifts apply unmet](images/profile-apply-unmet.png)
 
