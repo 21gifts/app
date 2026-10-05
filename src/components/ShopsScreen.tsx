@@ -70,7 +70,13 @@ export function ShopsScreen(): ReactElement {
           <PlacesMapScreen embedded />
         </Suspense>
       ) : null}
-      {view === 'table' ? <ShopTable /> : null}
+      {view === 'table' ? (
+        <ShopTable
+          onShowMap={() => {
+            selectView('map');
+          }}
+        />
+      ) : null}
     </Card>
   );
 }

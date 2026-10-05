@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -45,12 +46,25 @@ function placeText(message: ForumMessage): string | null {
   return `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
 }
 
+/** Props for {@link ShopTable}. */
+export interface ShopTableProps {
+  /**
+   * Called on a plain click of a place link, before the client-side router
+   * opens `/shops?pin=…#map` on this same page, so the shops screen can show
+   * its map.
+   */
+  onShowMap?: () => void;
+}
+
 /**
- * Table of loaded shop notes: name, place, and operator.
+ * Table of loaded shop notes: name, place, and operator. Place and operator
+ * are client-side links: the place opens `/shops?pin=…#map`, the operator
+ * `/members/:id`.
  *
+ * @param props - Optional `onShowMap` for a place click.
  * @returns The table, empty copy, or an error with retry. Null without a session.
  */
-export function ShopTable(): ReactElement | null {
+export function ShopTable({ onShowMap }: ShopTableProps = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const router = useRouter();
   const replaceRef = useRef(router.replace);
@@ -179,18 +193,33 @@ export function ShopTable(): ReactElement | null {
                     {place === null ? (
                       t('shops.missing')
                     ) : (
-                      <a href={`/map?pin=${row.id}`} className="underline">
+                      <Link
+                        href={`/shops?pin=${encodeURIComponent(row.id)}#map`}
+                        className="underline"
+                        onClick={(event) => {
+                          if (
+                            event.metaKey ||
+                            event.ctrlKey ||
+                            event.shiftKey ||
+                            event.altKey ||
+                            event.button !== 0
+                          ) {
+                            return;
+                          }
+                          onShowMap?.();
+                        }}
+                      >
                         {place}
-                      </a>
+                      </Link>
                     )}
                   </td>
                   <td className="min-w-0 break-words align-top py-2">
                     {operator === undefined ? (
                       t('shops.missing')
                     ) : (
-                      <a href={`/members/${operator.id}`} className="underline">
+                      <Link href={`/members/${operator.id}`} className="underline">
                         @{operator.username}
-                      </a>
+                      </Link>
                     )}
                   </td>
                 </tr>

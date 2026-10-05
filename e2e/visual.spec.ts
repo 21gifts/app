@@ -13093,10 +13093,7 @@ test.describe('profile apply screens', () => {
     await expect(
       page.getByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
-      'href',
-      'https://21.gifts/about',
-    );
+    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about');
     await shotScreen(page, 'state-grants-apply-question');
   });
 
@@ -21848,10 +21845,7 @@ test.describe('moderate applications screens', () => {
     await expect(
       page.getByText('Do their profile posts match the core principles of 21.gifts?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
-      'href',
-      'https://21.gifts/about',
-    );
+    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about');
     await expect(page.getByRole('button', { name: 'Yes' })).toBeVisible();
     await shotScreen(page, 'screen-grants-applications-accountId');
   });

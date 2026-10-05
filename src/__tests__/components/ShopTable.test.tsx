@@ -15,6 +15,38 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+const linkPush = vi.hoisted(() => vi.fn());
+
+// Like next/link: after the caller's onClick, an unprevented plain click is a
+// client-side router push, not a document load.
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+    [key: string]: unknown;
+  }) => (
+    <a
+      href={href}
+      {...rest}
+      onClick={(event) => {
+        onClick?.(event);
+        event.preventDefault();
+        if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+          linkPush(href);
+        }
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
   fetchShopNoteEdits: vi.fn(),
@@ -50,6 +82,7 @@ const SHOP: ForumMessage = {
 afterEach(() => {
   cleanup();
   replace.mockClear();
+  linkPush.mockReset();
   fetchMessagesMock.mockReset();
   useAuthStore.setState({ session: null, account: null });
 });
@@ -63,6 +96,33 @@ describe('ShopTable', () => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows the map client-side for a plain click on a place, not for a modified one', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
+    const onShowMap = vi.fn();
+    renderWithLocale(<ShopTable onShowMap={onShowMap} />);
+    const place = await screen.findByRole('link', { name: 'Happyland' });
+    fireEvent.click(place, { metaKey: true });
+    fireEvent.click(place, { ctrlKey: true });
+    fireEvent.click(place, { shiftKey: true });
+    fireEvent.click(place, { altKey: true });
+    fireEvent.click(place, { button: 1 });
+    expect(onShowMap).not.toHaveBeenCalled();
+    fireEvent.click(place);
+    expect(onShowMap).toHaveBeenCalledTimes(1);
+    expect(linkPush).toHaveBeenLastCalledWith('/shops?pin=m-shop#map');
+    fireEvent.click(screen.getByRole('link', { name: '@luna' }));
+    expect(linkPush).toHaveBeenLastCalledWith('/members/acc-luna');
+  });
+
+  it('opens a place without onShowMap', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
+    renderWithLocale(<ShopTable />);
+    fireEvent.click(await screen.findByRole('link', { name: 'Happyland' }));
+    expect(linkPush).toHaveBeenCalledWith('/shops?pin=m-shop#map');
   });
 
   it('returns nothing without a session', () => {
@@ -85,7 +145,7 @@ describe('ShopTable', () => {
     renderWithLocale(<ShopTable />);
     expect(await screen.findByRole('link', { name: 'Happyland' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
-      '/map?pin=m-shop',
+      '/shops?pin=m-shop#map',
     );
     expect(screen.getAllByRole('link', { name: '@luna' })[0]?.getAttribute('href')).toBe(
       '/members/acc-luna',
