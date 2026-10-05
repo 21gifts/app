@@ -1,6 +1,6 @@
 'use client';
 
-import { Archive, Gift, Pencil, Send, Trash2, X } from 'lucide-react';
+import { Archive, Check, Gift, Pencil, Send, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -14,6 +14,7 @@ import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { messageInvoiceSchema, type Account, type AmountUnit } from '@/lib/api-types';
+import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
 import { roleAtLeast } from '@/lib/roles';
 import { paySatsFromDraft, type FiatRateDay } from '@/lib/stats-money';
@@ -65,6 +66,9 @@ export function MemberHabits(): ReactElement {
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [showPaymentQr, setShowPaymentQr] = useState(false);
   const payGeneration = useRef(0);
+  const listGeneration = useRef(0);
+  const listSettled = useRef(false);
+  const listAlive = useRef(true);
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
   const rateDay = useLatestRateDay(signedIn);
@@ -74,44 +78,68 @@ export function MemberHabits(): ReactElement {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    listAlive.current = true;
+    return () => {
+      listAlive.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const generation = listGeneration.current + 1;
+    listGeneration.current = generation;
+    listSettled.current = false;
     setLoading(true);
     setError(false);
     void fetchMemberHabits(session).then(
       (next) => {
-        if (cancelled) {
+        if (!listAlive.current || generation !== listGeneration.current) {
           return;
         }
         setData(next);
         setLoading(false);
+        listSettled.current = true;
       },
       () => {
-        if (cancelled) {
+        if (!listAlive.current || generation !== listGeneration.current) {
           return;
         }
         setData(null);
         setLoading(false);
         setError(true);
+        listSettled.current = true;
       },
     );
     return () => {
-      cancelled = true;
+      if (listGeneration.current === generation) {
+        listGeneration.current = generation + 1;
+      }
     };
   }, [session, attempt]);
 
   async function refresh(): Promise<void> {
+    const generation = listGeneration.current + 1;
+    listGeneration.current = generation;
     try {
       const next = await fetchMemberHabits(session);
+      if (!listAlive.current || generation !== listGeneration.current) {
+        return;
+      }
       setData(next);
       setEditByHabitId({});
       setEditingHabitId(null);
       setError(false);
     } catch {
+      if (!listAlive.current || generation !== listGeneration.current) {
+        return;
+      }
       setError(true);
     }
   }
 
   async function submit(body: Record<string, unknown>, timeZone: boolean): Promise<boolean> {
+    if (!listSettled.current) {
+      return false;
+    }
     try {
       if (session === null || session === '') {
         throw new Error(SAVE_ERROR);
@@ -179,8 +207,8 @@ export function MemberHabits(): ReactElement {
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
-    if (sats === 'invalid') {
-      setPayError('amount');
+    if (sats === 'invalid' || sats > FORUM_GOAL_SATS_MAX) {
+      setPayError('habitAmount');
       return;
     }
     const commentId = payCommentId;
@@ -207,11 +235,15 @@ export function MemberHabits(): ReactElement {
           setPayError('request');
           return;
         }
+        if (caught.message === t('habit.payErrorAmount')) {
+          setPayError('habitAmount');
+          return;
+        }
         if (/too many payments/i.test(caught.message)) {
           setPayError('rateLimit');
           return;
         }
-        if (caught.message === 'No wallet') {
+        if (/author's wallet cannot receive this Bitcoin payment/i.test(caught.message)) {
           setPayError('authorWallet');
           return;
         }
@@ -434,7 +466,14 @@ export function MemberHabits(): ReactElement {
                         }}
                       />
                       <div className="flex items-center gap-2">
-                        <Button type="submit">{t('habit.save')}</Button>
+                        <IconButton
+                          type="submit"
+                          variant="secondary"
+                          size="md"
+                          aria-label={t('habit.save')}
+                        >
+                          <Check aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
                         <IconButton
                           type="button"
                           variant="secondary"
@@ -614,7 +653,9 @@ function statusCopy(
 
 function lightningInvoicePr(body: unknown, amountSats: number): string {
   const parsed = messageInvoiceSchema.safeParse(body);
-  if (!parsed.success || parsed.data.amountSats !== amountSats) {
+  const inRange =
+    Number.isInteger(amountSats) && amountSats >= 1 && amountSats <= FORUM_GOAL_SATS_MAX;
+  if (!parsed.success || !inRange || parsed.data.amountSats !== amountSats) {
     throw new Error('Could not start the Bitcoin payment');
   }
   return parsed.data.pr;

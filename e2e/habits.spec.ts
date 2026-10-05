@@ -169,6 +169,35 @@ test('screen /habit-tracker donate-invoice', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
 });
 
+test('screen /habit-tracker sunday', async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+  });
+  await seedAda(page);
+  await stubHabits(page, {
+    reviewWeek: PUBLIC_LIST.reviewWeek,
+    habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+  await expect(page.getByText('Zapping is paused on Sunday.').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+});
+
+test('screen /habit-tracker editing', async ({ page }) => {
+  await seedAda(page);
+  await stubHabits(page, {
+    reviewWeek: PUBLIC_LIST.reviewWeek,
+    habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Edit' }).click();
+  await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+  await expect(page.getByText('Save', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+});
+
 test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', async ({ page }) => {
   await seedAda(page);
   await page.route('**/habits', async (route) => {

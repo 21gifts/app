@@ -1619,6 +1619,20 @@ export const SCREEN_VARIANTS = [
     needle: 'screen /habit-tracker donate-invoice',
   },
   {
+    route: '/habit-tracker',
+    id: 'sunday',
+    image: 'habit-tracker-sunday.png',
+    visual: 'state-habit-tracker-sunday',
+    needle: 'screen /habit-tracker sunday',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'editing',
+    image: 'habit-tracker-editing.png',
+    visual: 'state-habit-tracker-editing',
+    needle: 'screen /habit-tracker editing',
+  },
+  {
     route: '/contact',
     id: 'default',
     image: 'contact.png',

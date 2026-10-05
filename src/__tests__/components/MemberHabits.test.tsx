@@ -253,6 +253,11 @@ describe('MemberHabits', () => {
     expect(screen.getByText('secret')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Delete comment' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'Send Bitcoin' })).toHaveLength(1);
+    expect(screen.queryByText('Delete comment')).toBeNull();
+    expect(screen.queryByText('Send Bitcoin')).toBeNull();
+    expect(screen.queryByText('Edit')).toBeNull();
+    expect(screen.queryByText('Post')).toBeNull();
+    expect(screen.queryByText('Archive')).toBeNull();
     expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
@@ -286,6 +291,7 @@ describe('MemberHabits', () => {
       throw new Error('missing edit fields');
     }
     expect(name.value).toBe('Walk');
+    expect(screen.queryByText('Save')).toBeNull();
     fireEvent.change(name, { target: { value: 'Run' } });
     fireEvent.change(description, { target: { value: 'Far' } });
     fireEvent.change(notes, { target: { value: 'shh' } });
@@ -470,7 +476,7 @@ describe('MemberHabits', () => {
             posts.push({ amountSats: body.amountSats, zone });
           }
           if (body.amountSats === 21) {
-            return json({ error: 'No wallet' }, 409);
+            return json({ error: "The author's wallet cannot receive this Bitcoin payment" }, 409);
           }
           if (body.amountSats === 22) {
             return json({ error: 'Too many payments' }, 429);
@@ -486,6 +492,9 @@ describe('MemberHabits', () => {
           }
           if (body.amountSats === 25) {
             return json({ pr: 'lnbc25' });
+          }
+          if (body.amountSats === 26) {
+            return json({ error: 'Expected a JSON body with an integer "amountSats"' }, 400);
           }
           if (body.amountSats === 50) {
             return new Promise<Response>((resolve) => {
@@ -522,7 +531,16 @@ describe('MemberHabits', () => {
 
     fireEvent.change(amount, { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByText('Enter a whole number greater than zero')).toBeTruthy();
+    expect(
+      await screen.findByText('Expected a JSON body with an integer "amountSats"'),
+    ).toBeTruthy();
+    expect(posts).toHaveLength(1);
+
+    fireEvent.change(amount, { target: { value: '10000001' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByText('Expected a JSON body with an integer "amountSats"'),
+    ).toBeTruthy();
     expect(posts).toHaveLength(1);
 
     fireEvent.change(amount, { target: { value: '22' } });
@@ -542,6 +560,12 @@ describe('MemberHabits', () => {
     fireEvent.change(amount, { target: { value: '25' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByText('Could not start the Bitcoin payment')).toBeTruthy();
+
+    fireEvent.change(amount, { target: { value: '26' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(
+      await screen.findByText('Expected a JSON body with an integer "amountSats"'),
+    ).toBeTruthy();
 
     fireEvent.change(amount, { target: { value: '23' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
@@ -615,5 +639,79 @@ describe('MemberHabits', () => {
     expect(await screen.findByText('hello')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
+  });
+
+  it('does not post while the first list is still in flight', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if (url.includes('/habits')) {
+          return new Promise<Response>(() => undefined);
+        }
+        return json({ spendOverTime: [] });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Walk' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add habit' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const posted = vi.mocked(fetch).mock.calls.some((call) => {
+      const init = call[1] as RequestInit | undefined;
+      return init?.method === 'POST';
+    });
+    expect(posted).toBe(false);
+  });
+
+  it('ignores a habit list that arrives after a newer load', async () => {
+    const pending: Array<(value: Response) => void> = [];
+    const newer = payload();
+    const older = payload();
+    const newerHabit = newer.habits[0];
+    const olderHabit = older.habits[0];
+    if (newerHabit === undefined || olderHabit === undefined) {
+      throw new Error('missing habit');
+    }
+    newerHabit.name = 'Newer';
+    olderHabit.name = 'Older';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if (!url.includes('/habits')) {
+          return json({ spendOverTime: [] });
+        }
+        return new Promise<Response>((resolve) => {
+          pending.push(resolve);
+        });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    await waitFor(() => {
+      expect(pending.length).toBeGreaterThan(0);
+    });
+    const beforeSwitch = pending.length;
+    useAuthStore.setState({ session: 'tok-2', account: owner });
+    await waitFor(() => {
+      expect(pending.length).toBeGreaterThan(beforeSwitch);
+    });
+    const latest = pending.length - 1;
+    await act(async () => {
+      pending[latest]?.(json(newer));
+    });
+    expect(await screen.findByText('Newer')).toBeTruthy();
+    await act(async () => {
+      for (let index = 0; index < latest; index += 1) {
+        pending[index]?.(json(older));
+      }
+    });
+    expect(screen.queryByText('Older')).toBeNull();
+    expect(screen.getByText('Newer')).toBeTruthy();
   });
 });

@@ -18,7 +18,8 @@ import {
 } from '@/lib/wos-deep-link';
 
 /** Pay-sheet validation or request failure. */
-export type ForumPayError = 'amount' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
+export type ForumPayError =
+  'amount' | 'habitAmount' | 'request' | 'rateLimit' | 'authorWallet' | 'deleted' | null;
 
 /** Active pay invoice shown under a forum card or a habit comment. */
 export interface ForumPayInvoice {
@@ -141,6 +142,11 @@ export function ForumPaySheet({
         {payError === 'amount' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('forum.payErrorAmount')}
+          </p>
+        ) : null}
+        {payError === 'habitAmount' ? (
+          <p role="alert" className="text-sm text-app-danger">
+            {t('habit.payErrorAmount')}
           </p>
         ) : null}
         {payError === 'request' ? (

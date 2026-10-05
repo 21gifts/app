@@ -69,7 +69,9 @@ describe('postMemberHabit', () => {
       .mockResolvedValueOnce(json({ ok: true }))
       .mockResolvedValueOnce(new Response('nope', { status: 200 }))
       .mockResolvedValueOnce(new Response('nope', { status: 400 }))
-      .mockResolvedValueOnce(json({ error: 'No wallet' }, 409))
+      .mockResolvedValueOnce(
+        json({ error: "The author's wallet cannot receive this Bitcoin payment" }, 409),
+      )
       .mockResolvedValueOnce(json({ error: 1 }, 400))
       .mockResolvedValueOnce(json(null, 400))
       .mockResolvedValueOnce(json({}, 400));
@@ -88,7 +90,9 @@ describe('postMemberHabit', () => {
     });
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
-    await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow('No wallet');
+    await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
     await expect(postMemberHabit('tok', { action: 'add' }, false)).rejects.toThrow(SAVE_ERROR);
