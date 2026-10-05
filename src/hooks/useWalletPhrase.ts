@@ -9,7 +9,8 @@ import {
   obtainPrfFirstFromGet,
 } from '@/lib/prf-mnemonic';
 import { base64UrlToBytes } from '@/lib/webauthn-browser';
-import { clearSessionPhrase } from '@/lib/tab-phrase';
+import { peekSessionPhrase } from '@/lib/tab-phrase';
+import { rememberPhraseFromPrf, settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 export { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
@@ -95,7 +96,10 @@ function hasSeedPasskey(credentialId: string | null | undefined): boolean {
 
 /**
  * Owns recovery-phrase add / show state for the signed-in `/wallet`
- * screen. Derives the 12 words from WebAuthn PRF in component state only.
+ * screen. Shows the 12 words in component state. When the unlocked wallet
+ * already holds them in tab memory, shows those without a passkey prompt.
+ * Otherwise derives them from WebAuthn PRF, and the same prompt unlocks the
+ * wallet. Hiding the words does not lock the wallet.
  *
  * @returns View, status, words, and actions.
  */
@@ -236,8 +240,21 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setStatus('busy');
     setError(null);
     try {
-      const credentialId = useAuthStore.getState().account?.passkeyCredentialId;
-      if (credentialId === undefined || credentialId === null || credentialId === '') {
+      // An unlocked wallet already holds the words in tab memory, also while
+      // the login is still deriving them: show those without a second prompt.
+      await settlePhraseDerivations();
+      if (abandonStaleSession(token, setError, setStatus)) {
+        return;
+      }
+      const inMemory = peekSessionPhrase();
+      if (inMemory !== null) {
+        setMnemonic(inMemory);
+        setStatus('idle');
+        return;
+      }
+      const owner = useAuthStore.getState().account;
+      const credentialId = owner?.passkeyCredentialId;
+      if (owner === null || typeof credentialId !== 'string' || credentialId === '') {
         setError('generic');
         setStatus('error');
         return;
@@ -265,6 +282,13 @@ export function useWalletPhrase(): UseWalletPhraseResult {
       if (abandonStaleSession(token, setError, setStatus)) {
         return;
       }
+      // The same prompt opens the wallet, so the next payment does not ask again.
+      void rememberPhraseFromPrf({
+        prfFirst,
+        credentialId,
+        account: owner,
+        sessionToken: token,
+      });
       setMnemonic(nextMnemonic);
       setStatus('idle');
     } catch (err) {
@@ -284,7 +308,6 @@ export function useWalletPhrase(): UseWalletPhraseResult {
   }, [fail, session]);
 
   const hidePhrase = useCallback(() => {
-    clearSessionPhrase();
     setMnemonic(null);
     setError(null);
     setStatus('idle');

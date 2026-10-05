@@ -10,6 +10,7 @@ import {
 import { fetchMe, finishPasskeySeed, postWalletBackupSeen, startPasskeySeed } from '@/lib/api';
 import { obtainPrfFirst, obtainPrfFirstFromGet, mnemonicFromPrfFirst } from '@/lib/prf-mnemonic';
 import { creationOptionsFromJSON } from '@/lib/webauthn-browser';
+import { rememberPhraseFromPrf, settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', () => ({
@@ -662,15 +663,116 @@ describe('useWalletPhrase', () => {
     expect(result.current.error).toBe('prfUnsupported');
   });
 
-  it('hidePhrase and retry clear error state', async () => {
+  it('hidePhrase and retry clear error state and keep the wallet unlocked', async () => {
     rememberSessionPhrase(mnemonic);
     const { result } = renderHook(() => useWalletPhrase());
     act(() => {
       result.current.hidePhrase();
       result.current.retry();
     });
-    expect(peekSessionPhrase()).toBeNull();
+    expect(peekSessionPhrase()).toBe(mnemonic);
     expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+  });
+
+  it('showPhrase shows the words of the unlocked wallet without a passkey prompt', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
+    rememberSessionPhrase(mnemonic);
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toEqual(mnemonic.split(' '));
+    expect(result.current.view).toBe('phrase');
+    act(() => {
+      result.current.hidePhrase();
+    });
+    expect(result.current.words).toEqual([]);
+    expect(peekSessionPhrase()).toBe(mnemonic);
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toHaveLength(12);
+  });
+
+  it('showPhrase waits for the login derivation instead of prompting again', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    const walletAccount = { ...seededAccount, walletRequired: true };
+    useAuthStore.setState({ session: 'tok', account: walletAccount });
+    let resolveDerive!: (value: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    void rememberPhraseFromPrf({
+      prfFirst: new Uint8Array(32).fill(7),
+      credentialId: 'cred-owner',
+      account: walletAccount,
+      sessionToken: 'tok',
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    let showing!: Promise<void>;
+    act(() => {
+      showing = result.current.showPhrase();
+    });
+    await act(async () => {
+      resolveDerive(mnemonic);
+      await showing;
+    });
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toHaveLength(12);
+  });
+
+  it('showPhrase unlocks the wallet with the same prompt', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...seededAccount, walletRequired: true },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    await settlePhraseDerivations();
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(1);
+    expect(peekSessionPhrase()).toBe(mnemonic);
+  });
+
+  it('showPhrase stops when the session ends while the login derivation runs', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
+    let resolveDerive!: (value: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    void rememberPhraseFromPrf({
+      prfFirst: new Uint8Array(32).fill(7),
+      credentialId: 'cred-owner',
+      account: { ...seededAccount, walletRequired: true },
+      sessionToken: 'tok',
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    let showing!: Promise<void>;
+    act(() => {
+      showing = result.current.showPhrase();
+    });
+    await act(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      resolveDerive(mnemonic);
+      await showing;
+    });
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toEqual([]);
     expect(result.current.status).toBe('idle');
   });
 
