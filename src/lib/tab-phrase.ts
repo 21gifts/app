@@ -26,8 +26,8 @@ export function sessionPhraseGeneration(): number {
 }
 
 /**
- * Store a derived recovery phrase in tab memory. Wallet does not read this
- * to show the words; hide may still clear it.
+ * Store a derived recovery phrase in tab memory. The phrase view shows it
+ * without a second passkey prompt; hiding the words keeps it.
  *
  * @param mnemonic - Space-separated BIP-39 words.
  */

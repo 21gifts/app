@@ -732,13 +732,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       guard(runId);
-      setAuth(session.token, session.account);
+      // Start the derivation before the session is visible, so a wallet unlock
+      // that reacts to the new session waits for it instead of prompting again.
       void rememberPhraseFromPrf({
         prfFirst,
         credentialId: publicKeyCredential.id,
         account: session.account,
         sessionToken: session.token,
       });
+      setAuth(session.token, session.account);
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);
@@ -830,13 +832,15 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       guard(runId);
-      setAuth(session.token, session.account);
+      // Start the derivation before the session is visible, so a wallet unlock
+      // that reacts to the new session waits for it instead of prompting again.
       void rememberPhraseFromPrf({
         prfFirst,
         credentialId: publicKeyCredential.id,
         account: session.account,
         sessionToken: session.token,
       });
+      setAuth(session.token, session.account);
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);

@@ -5,7 +5,11 @@ import {
   mnemonicFromPrfFirst,
   obtainPrfFirstFromGet,
 } from '@/lib/prf-mnemonic';
-import { rememberSessionPhrase, sessionPhraseGeneration } from '@/lib/tab-phrase';
+import {
+  peekSessionPhrase,
+  rememberSessionPhrase,
+  sessionPhraseGeneration,
+} from '@/lib/tab-phrase';
 import { base64UrlToBytes } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -127,7 +131,9 @@ let unlockInFlight: Promise<WalletUnlockResult> | null = null;
 /**
  * Prompts for the seed passkey, derives the recovery phrase, and remembers it
  * in tab memory. Never rejects. While a ceremony is in progress in this tab,
- * further calls join it instead of opening a second prompt.
+ * further calls join it instead of opening a second prompt. Does not prompt
+ * when the phrase is already in tab memory, including after a derivation the
+ * login started from its own prompt has finished.
  *
  * @returns `'unlocked'` on success, `'cancelled'` when the visitor dismisses
  * the ceremony, otherwise `'failed'`.
@@ -143,6 +149,12 @@ export function unlockWalletPhrase(): Promise<WalletUnlockResult> {
 
 async function runUnlockCeremony(): Promise<WalletUnlockResult> {
   try {
+    if (pendingDerivations.size > 0) {
+      await settlePhraseDerivations();
+    }
+    if (peekSessionPhrase() !== null) {
+      return 'unlocked';
+    }
     const { session, account } = useAuthStore.getState();
     if (session === null || !canUnlockWallet(account)) {
       return 'failed';
