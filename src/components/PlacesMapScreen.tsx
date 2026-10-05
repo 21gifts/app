@@ -12,8 +12,15 @@ import { isShopNote } from '@/lib/forum-shop';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
+type GoogleLatLngBounds = {
+  extend: (point: { lat: number; lng: number }) => void;
+};
+
 type GoogleMap = {
   setCenter: (center: { lat: number; lng: number }) => void;
+  fitBounds: (bounds: GoogleLatLngBounds, padding?: number) => void;
+  getZoom: () => number | undefined;
+  setZoom: (zoom: number) => void;
 };
 
 type GoogleMapsNamespace = {
@@ -22,6 +29,10 @@ type GoogleMapsNamespace = {
     opts: { center: { lat: number; lng: number }; zoom: number },
   ) => GoogleMap;
   Marker: new (opts: { position: { lat: number; lng: number }; map: GoogleMap }) => unknown;
+  LatLngBounds: new () => GoogleLatLngBounds;
+  event?: {
+    addListenerOnce: (instance: GoogleMap, eventName: string, handler: () => void) => void;
+  };
 };
 
 function ShopPinEdit({
@@ -215,14 +226,16 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
         if (maps === undefined) {
           return;
         }
-        const focus = places.find((row) => row.id === pinId) ?? places[0];
+        const matched = pinId === null ? undefined : places.find((row) => row.id === pinId);
+        const anchor = matched ?? places[0];
         /* v8 ignore next 3 -- noUncheckedIndexedAccess; a non-empty list has a row */
-        if (focus === undefined) {
+        if (anchor === undefined) {
           return;
         }
+        const frameAll = matched === undefined && places.length > 1;
         const map = new maps.Map(frame, {
-          center: { lat: focus.lat, lng: focus.lng },
-          zoom: 14,
+          center: { lat: anchor.lat, lng: anchor.lng },
+          zoom: frameAll ? 2 : 14,
         });
         if (authFailedRef.current) {
           frame.replaceChildren();
@@ -231,7 +244,24 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
         for (const row of places) {
           new maps.Marker({ position: { lat: row.lat, lng: row.lng }, map });
         }
-        map.setCenter({ lat: focus.lat, lng: focus.lng });
+        if (!frameAll) {
+          map.setCenter({ lat: anchor.lat, lng: anchor.lng });
+          return;
+        }
+        const bounds = new maps.LatLngBounds();
+        for (const row of places) {
+          bounds.extend({ lat: row.lat, lng: row.lng });
+        }
+        map.fitBounds(bounds, 32);
+        maps.event?.addListenerOnce(map, 'idle', () => {
+          if (cancelled) {
+            return;
+          }
+          const zoom = map.getZoom();
+          if (typeof zoom === 'number' && zoom > 14) {
+            map.setZoom(14);
+          }
+        });
       } catch {
         /* List stays usable when the script fails. */
       }
