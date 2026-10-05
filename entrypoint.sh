@@ -13,10 +13,10 @@
 # An empty value counts as missing — a silently empty API URL would only
 # surface as broken requests much later.
 #
-# Optional placeholders are the exception: the variables in OPTIONAL_VARS
-# switch a feature off when they are unset or empty, so their placeholder is
-# substituted with an empty string and the container starts. The app reads that
-# empty string as off (no donation address, no error reporting).
+# Optional placeholders are the exception: the variables in OPTIONAL_VARS may
+# be unset or empty, so their placeholder is substituted with an empty string
+# and the container starts. The app reads that empty string as unset: no
+# donation address, no error reporting, or the default environment name.
 #
 # Substitution happens in place, so it applies once per container lifetime;
 # recreate the container (do not restart it with different env) to change
