@@ -430,7 +430,7 @@ export function ForumLoader({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const nextCursorRef = useRef(nextCursor);
   nextCursorRef.current = nextCursor;
-  const [nearEndElement, setNearEndElement] = useState<HTMLLIElement | null>(null);
+  const [nearEndElement, setNearEndElement] = useState<HTMLElement | null>(null);
   const loadingMoreRef = useRef(false);
   const paginationGeneration = useRef(0);
   const optimisticMessages = useRef(new Map<string, ForumMessage>());
@@ -861,7 +861,7 @@ export function ForumLoader({
     };
   }, []);
 
-  const nearEndRef = useCallback((node: HTMLLIElement | null): void => {
+  const nearEndRef = useCallback((node: HTMLElement | null): void => {
     setNearEndElement(node);
   }, []);
 

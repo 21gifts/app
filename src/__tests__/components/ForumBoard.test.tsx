@@ -1211,7 +1211,7 @@ describe('ForumBoard', () => {
       id: `m${index + 1}`,
       text: `Message ${index + 1}`,
     }));
-    const nearEndRef = vi.fn((node: HTMLLIElement | null): void => {
+    const nearEndRef = vi.fn((node: HTMLElement | null): void => {
       void node;
     });
     renderWithLocale(
@@ -1234,8 +1234,34 @@ describe('ForumBoard', () => {
     expect(nearEndRef).toHaveBeenCalledWith(document.querySelector('[data-message-id="m3"]'));
   });
 
+  it('attaches nearEndRef to the empty-feed line when no row is loaded', () => {
+    const nearEndRef = vi.fn((node: HTMLElement | null): void => {
+      void node;
+    });
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+        nearEndRef={nearEndRef}
+      />,
+    );
+
+    expect(nearEndRef).toHaveBeenCalledWith(
+      screen.getByText('No messages yet — be the first to write one.'),
+    );
+  });
+
   it('attaches nearEndRef to the first visible note when fewer than eight render', () => {
-    const nearEndRef = vi.fn((node: HTMLLIElement | null): void => {
+    const nearEndRef = vi.fn((node: HTMLElement | null): void => {
       void node;
     });
     renderWithLocale(

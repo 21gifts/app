@@ -282,8 +282,11 @@ export interface ForumBoardProps {
   onModeChange: (mode: ForumFeedMode) => void;
   /** When false, omit the Active / No gifts yet / All / Most popular control and show every loaded row (same as mode all). Default true. */
   modeSelector?: boolean;
-  /** Optional ref attached near the end of the visible feed for loader pagination. */
-  nearEndRef?: (node: HTMLLIElement | null) => void;
+  /**
+   * Optional ref attached near the end of the visible feed for loader pagination,
+   * or to the empty-feed line when the loaded page kept no row.
+   */
+  nearEndRef?: (node: HTMLElement | null) => void;
   /**
    * Unseen zero-sat notes since the last No gifts yet visit. Chip is shown
    * only when this is \> 0 and unpaid is not selected. Default 0.
@@ -502,7 +505,9 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * language marks it read; pills are sticky in the AppShell scroller under the
  * frame header (`top-2`, or `top-14` for New posts when both show).
  * Optional `permalinkTargetId` rings the matching nested reply only; optional
- * `nearEndRef` attaches to the note about eight rows from the visible end.
+ * `nearEndRef` attaches to the note about eight rows from the visible end, or
+ * to the empty-feed line when no row is loaded, so a page whose notes were all
+ * dropped still leads on to the next page.
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
  *
  * @param props - Messages payload plus loading/error/composer (including
@@ -889,7 +894,14 @@ export function ForumBoard({
   } else if (error && messages === null) {
     middle = errorBlock;
   } else if (messages !== null && messages.length === 0) {
-    middle = <p className="text-center text-sm text-app-muted">{t(emptyKey)}</p>;
+    middle = (
+      <p
+        {...(nearEndRef !== undefined ? { ref: nearEndRef } : {})}
+        className="text-center text-sm text-app-muted"
+      >
+        {t(emptyKey)}
+      </p>
+    );
   } else if (messages !== null && visible !== null && visible.length === 0) {
     middle = (
       <p className="text-center text-sm text-app-muted">

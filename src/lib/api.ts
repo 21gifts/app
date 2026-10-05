@@ -1762,34 +1762,7 @@ export async function fetchViewActivity(viewKey: string): Promise<AccountActivit
 export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | null };
 
 /**
- * Follows `nextCursor` past pages that kept no showable row.
- *
- * A page whose rows were all dropped renders no list row, so the scroll
- * sentinel that loads the next page would never mount. Stops at the first page
- * with a row, at the end of the feed, or when a cursor repeats.
- *
- * @param first - The page already fetched.
- * @param fetchPage - Fetches the page at a cursor.
- * @returns The first page with a row, or the last page reached.
- */
-async function skipEmptyFeedPages(
-  first: ForumFeedPage,
-  fetchPage: (cursor: string) => Promise<ForumFeedPage>,
-): Promise<ForumFeedPage> {
-  let page = first;
-  const followed = new Set<string>();
-  while (page.messages.length === 0 && page.nextCursor !== null) {
-    if (followed.has(page.nextCursor)) {
-      return { messages: [], nextCursor: null };
-    }
-    followed.add(page.nextCursor);
-    page = await fetchPage(page.nextCursor);
-  }
-  return page;
-}
-
-/**
- * Fetches one raw page of public top-level forum messages (newest first).
+ * Fetches one page of public top-level forum messages (newest first).
  *
  * Sends `GET /forum/messages` with an optional mode, optional hashtag (the
  * name without a leading `#`), and cursor and an always present limit (20 by
@@ -1803,7 +1776,7 @@ async function skipEmptyFeedPages(
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * envelope fails {@link forumListSchema}.
  */
-async function fetchMessagesPage(
+export async function fetchMessages(
   sessionToken: string,
   args: {
     mode?: 'active' | 'unpaid' | 'all' | 'popular';
@@ -1853,37 +1826,6 @@ async function fetchMessagesPage(
   }
 }
 
-/**
- * Fetches one page of public top-level forum messages (newest first).
- *
- * Sends `GET /forum/messages` like {@link fetchMessagesPage}. A page that kept
- * no showable row but has a `nextCursor` is followed to the next page, so the
- * visitor never sees an empty list while the feed goes on.
- *
- * @param sessionToken - A bearer token from a completed challenge.
- * @param args - Optional feed mode, hashtag name without `#`, page size, and
- * non-empty page cursor.
- * @returns The first page with a showable row, or the last page reached;
- * `nextCursor` is `null` at the end of the feed.
- * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy when the api is unavailable or the
- * envelope fails {@link forumListSchema}.
- */
-export async function fetchMessages(
-  sessionToken: string,
-  args: {
-    mode?: 'active' | 'unpaid' | 'all' | 'popular';
-    limit?: number;
-    cursor?: string | null;
-    hashtag?: string;
-  } = {},
-): Promise<ForumFeedPage> {
-  const first = await fetchMessagesPage(sessionToken, args);
-  return skipEmptyFeedPages(first, (cursor) =>
-    fetchMessagesPage(sessionToken, { ...args, cursor }),
-  );
-}
-
 /** 401 from the public active page. A later page sends the visitor to log in. */
 export class PublicForumUnauthorizedError extends Error {
   constructor() {
@@ -1893,14 +1835,14 @@ export class PublicForumUnauthorizedError extends Error {
 }
 
 /**
- * One raw active living-room page with no Authorization header.
+ * Active living-room page with no Authorization header.
  *
  * @param args - Page size (default 20) and optional cursor.
  * @returns The validated page; rows that fail the note schema are dropped.
  * @throws PublicForumUnauthorizedError on HTTP 401.
  * @throws Error when the api is unavailable or the envelope fails {@link forumListSchema}.
  */
-async function fetchPublicForumMessagesPage(
+export async function fetchPublicForumMessages(
   args: { limit?: number; cursor?: string | null } = {},
 ): Promise<ForumFeedPage> {
   const query = new URLSearchParams();
@@ -1927,24 +1869,6 @@ async function fetchPublicForumMessagesPage(
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
-}
-
-/**
- * Active living-room page with no Authorization header.
- *
- * A page that kept no showable row but has a `nextCursor` is followed to the
- * next page, as in {@link fetchMessages}.
- *
- * @param args - Page size (default 20) and optional cursor.
- * @returns The first page with a showable row, or the last page reached.
- * @throws PublicForumUnauthorizedError on HTTP 401.
- * @throws Error when the api is unavailable or the envelope fails {@link forumListSchema}.
- */
-export async function fetchPublicForumMessages(
-  args: { limit?: number; cursor?: string | null } = {},
-): Promise<ForumFeedPage> {
-  const first = await fetchPublicForumMessagesPage(args);
-  return skipEmptyFeedPages(first, (cursor) => fetchPublicForumMessagesPage({ ...args, cursor }));
 }
 
 const HIDDEN_NOTES_ERROR = 'Could not load hidden notes. Please try again.';

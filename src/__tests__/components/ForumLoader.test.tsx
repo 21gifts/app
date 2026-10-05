@@ -8,6 +8,7 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
+  forumListSchema,
   type Account,
   type ForumMessage,
   type GiftStats,
@@ -1503,6 +1504,14 @@ describe('ForumLoader', () => {
   });
 
   it('feed="shops" shows empty immediately when the API page is empty with a next cursor', async () => {
+    // The empty-feed line is the scroll sentinel; the next page waits until it scrolls into view.
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
     fetchMock.mockResolvedValue(forumPage([], 'cur_2'));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
@@ -10049,6 +10058,28 @@ describe('forum feed pages', () => {
     await screen.findByText('Second page');
   });
 
+  it('loads the next cursor page when every note of the first page was dropped', async () => {
+    const second = paidMessage('page-2', 'After the dropped page', '2026-08-28T14:00:00.000Z');
+    // The list schema dropped every row of page 1 (an empty About me), but the feed goes on.
+    fetchMock.mockResolvedValueOnce(forumPage([], 'cur_2')).mockResolvedValue(forumPage([second]));
+    renderWithLocale(<ForumLoader />);
+    const empty = await screen.findByText('No messages yet — be the first to write one.');
+    await waitFor(() => {
+      expect(FakeIntersectionObserver.instances[0]?.observed).toEqual([empty]);
+    });
+
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+
+    expect(await screen.findByText('After the dropped page')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith('sess', {
+      mode: 'active',
+      limit: 20,
+      cursor: 'cur_2',
+    });
+  });
+
   it('prefetches and appends the next cursor page while deduplicating ids', async () => {
     const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
     const second = paidMessage('page-2', 'Second page', '2026-08-28T14:00:00.000Z');
@@ -10580,6 +10611,56 @@ describe('ForumLoader in-app wallet pay', () => {
     expect(await screen.findByText('Hello gifts')).toBeTruthy();
     expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('closes the posting-fee card after a wallet payment when the All page also holds an empty About me note', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: false },
+    });
+    setWalletUsable('ready');
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let settle: () => void = () => undefined;
+    const settled = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
+    const send = vi.fn(async () => {
+      settle();
+      return { kind: 'paid' as const };
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send, 1));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
+    const post = { ...SAMPLE, id: 'new-post', text: 'Hello gifts', sats: 0, payable: false };
+    // An About me saved empty: no text, no media, 0 sats. The real list schema parses the page.
+    const emptyAboutMe = { ...SAMPLE, id: 'about-empty', accountId: 'acc_dana', text: '' };
+    let paid = false;
+    fetchMock.mockImplementation(async (_session, args) => {
+      if (args?.mode !== 'all') {
+        return forumPage([]);
+      }
+      const page = forumListSchema.parse({
+        messages: paid ? [post, emptyAboutMe] : [emptyAboutMe],
+      });
+      return forumPage(page.messages, page.nextCursor ?? null);
+    });
+    publicFetchMock.mockImplementation(async () => {
+      await settled;
+      paid = true;
+      return { ...SAMPLE, id: 'fee-note', accountId: 'acc_platform', text: 'Fees', sats: 1 };
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    fireEvent.click(await screen.findByRole('button', { name: 'Pay from wallet' }));
+    expect(send).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    });
+    expect(await screen.findByText('Hello gifts')).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
   });
 
   it("pays today's repayment from the wallet when the api issues a sparkInvoice", async () => {
