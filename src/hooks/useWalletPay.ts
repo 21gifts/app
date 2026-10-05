@@ -24,7 +24,8 @@ export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
  * - `unavailable`: this account has no wallet it can pay from here (the wallet
  *   is not configured, the account cannot unlock one, or its one-time setup is
  *   still due).
- * - `unlock`: one passkey prompt opens the wallet.
+ * - `unlock`: one tap opens the wallet with one passkey prompt and pays when
+ *   the fee is ₿0; a fee above ₿0 stops at `confirm`.
  * - `preparing`: the wallet opens or reads amount and fee.
  * - `confirm`: fee shown, **Pay from wallet** pays.
  * - `paying`: the payment is sent or was sent; the sheet's long-poll waits.
@@ -50,7 +51,10 @@ export interface UseWalletPayResult {
   view: WalletPayView;
   /** Fee in whole sats from the prepare response, or `null` before it is known. */
   feeSats: number | null;
-  /** Opens the wallet with the member's passkey. */
+  /**
+   * Opens the wallet with the member's passkey, then pays at once when the
+   * prepared fee is ₿0, or stops at `confirm` when it is higher.
+   */
   unlock: () => void;
   /** Sends the prepared payment once. */
   pay: () => void;
@@ -127,7 +131,11 @@ function visualView(): WalletPayView | null {
  * Runs the in-app wallet payment of one invoice. The wallet pays
  * `sparkInvoice` when the api issued one, otherwise the payment request `pr`.
  * The view is `unavailable` when the wallet is not configured, the member
- * cannot unlock it, or the one-time wallet setup is still due. A locked wallet shows `unlock` (one passkey prompt); a
+ * cannot unlock it, or the one-time wallet setup is still due. A locked wallet shows `unlock`: one tap
+ * opens it with one passkey prompt and prepares, then pays at once when the
+ * fee is ₿0, or stops at `confirm` when the fee is higher. That tap pays at
+ * most once, and never after the slot closed, the request or `amountSats`
+ * changed, the wallet left `ready`, or the prompt was cancelled or failed. A
  * ready wallet prepares at once so the fee is shown before **Pay from
  * wallet**. A prepared amount that differs from `amountSats`, a failed prepare
  * or unlock, and a wallet in `error` show `failed`. A wallet that leaves
@@ -160,6 +168,7 @@ export function useWalletPay(
   const generation = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insufficientBalance = useRef<number | null>(null);
+  const autoPayRun = useRef<number | null>(null);
   const input = typeof sparkInvoice === 'string' && sparkInvoice !== '' ? sparkInvoice : pr;
   const pinned = visualView();
   const usable =
@@ -182,6 +191,27 @@ export function useWalletPay(
     };
   }, [input, amountSats]);
 
+  const sendPrepared = useCallback((send: () => Promise<WalletSendResult>, run: number): void => {
+    const balanceBefore = useWalletStore.getState().balanceSats;
+    setPhase('paying');
+    void send().then((result) => {
+      if (run !== generation.current) {
+        return;
+      }
+      if (result.kind === 'insufficient') {
+        insufficientBalance.current = balanceBefore;
+        setPhase('insufficient');
+        return;
+      }
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        if (run === generation.current) {
+          setPhase('unconfirmed');
+        }
+      }, WALLET_PAY_CONFIRM_WAIT_MS);
+    });
+  }, []);
+
   useEffect(() => {
     if (!usable || status !== 'ready' || phase !== 'idle') {
       return;
@@ -193,8 +223,13 @@ export function useWalletPay(
       if (run !== generation.current) {
         return;
       }
+      const autoPay = autoPayRun.current === run;
+      autoPayRun.current = null;
       if (result.kind === 'confirm' && result.amountSats !== amountSats) {
         setPhase('failed');
+      } else if (result.kind === 'confirm' && autoPay && result.feeSats === 0) {
+        setFeeSats(result.feeSats);
+        sendPrepared(result.send, run);
       } else if (result.kind === 'confirm') {
         sendRef.current = { send: result.send, input, amountSats };
         setPreparedFor({ input, amountSats });
@@ -207,7 +242,7 @@ export function useWalletPay(
         setPhase('failed');
       }
     });
-  }, [usable, status, phase, input, amountSats]);
+  }, [usable, status, phase, input, amountSats, sendPrepared]);
 
   useEffect(() => {
     if (phase !== 'insufficient' || balanceSats === null) {
@@ -242,10 +277,14 @@ export function useWalletPay(
       return;
     }
     const run = generation.current;
+    autoPayRun.current = run;
     setPhase('unlocking');
     void unlockWalletPhrase().then((result) => {
       if (run !== generation.current) {
         return;
+      }
+      if (result !== 'unlocked') {
+        autoPayRun.current = null;
       }
       setPhase(result === 'failed' ? 'failed' : 'idle');
     });
@@ -261,28 +300,9 @@ export function useWalletPay(
     ) {
       return;
     }
-    const send = prepared.send;
     sendRef.current = null;
-    const run = generation.current;
-    const balanceBefore = useWalletStore.getState().balanceSats;
-    setPhase('paying');
-    void send().then((result) => {
-      if (run !== generation.current) {
-        return;
-      }
-      if (result.kind === 'insufficient') {
-        insufficientBalance.current = balanceBefore;
-        setPhase('insufficient');
-        return;
-      }
-      timer.current = setTimeout(() => {
-        timer.current = null;
-        if (run === generation.current) {
-          setPhase('unconfirmed');
-        }
-      }, WALLET_PAY_CONFIRM_WAIT_MS);
-    });
-  }, [pinned, usable, phase, input, amountSats]);
+    sendPrepared(prepared.send, generation.current);
+  }, [pinned, usable, phase, input, amountSats, sendPrepared]);
 
   const retry = useCallback((): void => {
     if (pinned !== null) {
