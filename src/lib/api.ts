@@ -12,6 +12,7 @@ import {
   notificationListSchema,
   notificationSchema,
   forumListSchema,
+  forumMessageRowsSchema,
   forumMessageSchema,
   externalAuthorProfileSchema,
   forumPlacesResponseSchema,
@@ -656,7 +657,8 @@ export async function skipSetup(sessionToken: string, step: 'name'): Promise<Acc
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The {@link MemberProfile}, or `null` on 401/404.
+ * @returns The {@link MemberProfile}, or `null` on 401/404. A profile note that
+ * fails the note schema (an empty About me) is `profileMessage: null`.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
  * @throws Error on other non-2xx or a body that fails {@link memberProfileSchema}.
  */
@@ -695,9 +697,9 @@ export async function fetchMember(
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
  * @param suffix - `posts` or `replies`.
- * @returns The message list.
+ * @returns The message list; rows that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 async function fetchMemberForumList(
   sessionToken: string,
@@ -738,9 +740,9 @@ async function fetchMemberForumList(
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The message list.
+ * @returns The message list; rows that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 export async function fetchMemberPosts(
   sessionToken: string,
@@ -754,9 +756,10 @@ export async function fetchMemberPosts(
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @returns The message list (reply rows may be payable; optional `parentId`).
+ * @returns The message list (reply rows may be payable; optional `parentId`); rows
+ * that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
- * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ * @throws Error with visitor-facing copy on other failures or an invalid envelope.
  */
 export async function fetchMemberReplies(
   sessionToken: string,
@@ -1338,9 +1341,10 @@ export async function fetchFundingPayoutDays(sessionToken: string): Promise<Fund
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param accountId - Subject account id.
- * @returns Account, grant, and living-room posts.
+ * @returns Account, grant, and living-room posts; posts that fail the note
+ * schema are dropped and counted in one `console.warn`.
  * @throws Error with visitor-facing copy on 401/403/404/503, other non-2xx, a
- * network failure, or a body that fails {@link fundingApplicationDetailSchema}.
+ * network failure, or an envelope that fails {@link fundingApplicationDetailSchema}.
  */
 export async function fetchFundingApplication(
   sessionToken: string,
@@ -1528,9 +1532,10 @@ export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | nul
  * @param sessionToken - A bearer token from a completed challenge.
  * @param args - Optional feed mode, hashtag name without `#`, page size, and
  * non-empty page cursor.
- * @returns The validated page; `nextCursor` is `null` when the response omits it.
+ * @returns The validated page; rows that fail the note schema are dropped and
+ * `nextCursor` is kept (`null` when the response omits it).
  * @throws Error with visitor-facing copy when the api is unavailable or the
- * body fails {@link forumListSchema}.
+ * envelope fails {@link forumListSchema}.
  */
 export async function fetchMessages(
   sessionToken: string,
@@ -1594,9 +1599,9 @@ export class PublicForumUnauthorizedError extends Error {
  * Active living-room page with no Authorization header.
  *
  * @param args - Page size (default 20) and optional cursor.
- * @returns The validated page.
+ * @returns The validated page; rows that fail the note schema are dropped.
  * @throws PublicForumUnauthorizedError on HTTP 401.
- * @throws Error when the api is unavailable or the body fails {@link forumListSchema}.
+ * @throws Error when the api is unavailable or the envelope fails {@link forumListSchema}.
  */
 export async function fetchPublicForumMessages(
   args: { limit?: number; cursor?: string | null } = {},
@@ -1818,14 +1823,7 @@ async function fetchExternalAuthorFeed(
     ) {
       throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
     }
-    const kept: ForumMessage[] = [];
-    for (const item of body.messages) {
-      const parsed = forumMessageSchema.safeParse(item);
-      if (parsed.success) {
-        kept.push(parsed.data);
-      }
-    }
-    return kept;
+    return forumMessageRowsSchema.parse(body.messages);
   } catch {
     throw new Error(EXTERNAL_AUTHOR_FEED_ERROR);
   }
@@ -1927,14 +1925,7 @@ export async function fetchPublicReplies(id: string): Promise<ForumMessage[]> {
     ) {
       throw new Error('Could not load messages. Please try again.');
     }
-    const kept: ForumMessage[] = [];
-    for (const item of body.messages) {
-      const parsed = forumMessageSchema.safeParse(item);
-      if (parsed.success) {
-        kept.push(parsed.data);
-      }
-    }
-    return kept;
+    return forumMessageRowsSchema.parse(body.messages);
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
@@ -1968,14 +1959,7 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
     ) {
       throw new Error('Could not load messages. Please try again.');
     }
-    const kept: ForumMessage[] = [];
-    for (const item of body.messages) {
-      const parsed = forumMessageSchema.safeParse(item);
-      if (parsed.success) {
-        kept.push(parsed.data);
-      }
-    }
-    return kept;
+    return forumMessageRowsSchema.parse(body.messages);
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
