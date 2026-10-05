@@ -153,6 +153,20 @@ function stubFetch(response: FakeResponse): Mock {
   return fetchMock;
 }
 
+/** Installs a `fetch` mock that answers with one OK body per call, in order. */
+function stubFetchPages(bodies: unknown[]): Mock {
+  const fetchMock = vi.fn();
+  for (const body of bodies) {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(body),
+    } as unknown as Response);
+  }
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
 /** Installs a test navigator and returns an exact descriptor restore. */
 function installNavigator(value: unknown): () => void {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
@@ -1592,6 +1606,23 @@ describe('fetchPublicForumMessages', () => {
       nextCursor: null,
     });
   });
+
+  it('follows the cursor past a page whose rows all fail validation', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetchMock = stubFetchPages([
+      { messages: [emptyForumNote], nextCursor: 'c2' },
+      { messages: [forumMessage] },
+    ]);
+    await expect(fetchPublicForumMessages()).resolves.toEqual({
+      messages: [forumMessage],
+      nextCursor: null,
+    });
+    expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
+      '/forum/messages?mode=active&limit=20&cursor=c2',
+    );
+    const init = fetchMock.mock.calls[1]?.[1] as RequestInit | undefined;
+    expect(init?.headers).toBeUndefined();
+  });
 });
 
 describe('fetchMessages', () => {
@@ -1746,17 +1777,52 @@ describe('fetchMessages', () => {
     expect(warn).toHaveBeenCalledWith('Skipped 2 forum note(s) that failed the note schema');
   });
 
-  it('returns an empty page with its cursor when every row fails validation', async () => {
+  it('follows the cursor past a page whose rows all fail validation', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    stubFetch({
-      ok: true,
-      status: 200,
-      body: { messages: [emptyForumNote], nextCursor: 'next' },
+    const fetchMock = stubFetchPages([
+      { messages: [emptyForumNote], nextCursor: 'c2' },
+      { messages: [], nextCursor: 'c3' },
+      { messages: [forumMessage], nextCursor: 'c4' },
+    ]);
+    await expect(fetchMessages('sess', { mode: 'all', hashtag: 'tag' })).resolves.toEqual({
+      messages: [forumMessage],
+      nextCursor: 'c4',
     });
+    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
+      '/forum/messages?mode=all&hashtag=tag&limit=20',
+      '/forum/messages?mode=all&hashtag=tag&limit=20&cursor=c2',
+      '/forum/messages?mode=all&hashtag=tag&limit=20&cursor=c3',
+    ]);
+  });
+
+  it('returns an empty last page when every row of the feed fails validation', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetchPages([
+      { messages: [emptyForumNote], nextCursor: 'c2' },
+      { messages: [emptyForumNote] },
+    ]);
     await expect(fetchMessages('sess', { mode: 'all' })).resolves.toEqual({
       messages: [],
-      nextCursor: 'next',
+      nextCursor: null,
     });
+  });
+
+  it('stops following when a cursor repeats', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetchMock = stubFetchPages([
+      { messages: [emptyForumNote], nextCursor: 'loop' },
+      { messages: [emptyForumNote], nextCursor: 'loop' },
+    ]);
+    await expect(fetchMessages('sess')).resolves.toEqual({ messages: [], nextCursor: null });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws visitor copy when a followed page fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetchPages([{ messages: [emptyForumNote], nextCursor: 'c2' }, { messages: 'nope' }]);
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
   });
 
   it('throws visitor copy when the envelope fails validation', async () => {

@@ -2365,16 +2365,22 @@ test('Function: fetchMessages — one empty note on the All page leaves the othe
   request,
 }) => {
   await reachWelcome(page, request);
-  let served: string[] = [];
+  const served: string[][] = [];
   await page.route(/\/forum\/messages\?/, async (route) => {
+    const requested = new URL(route.request().url());
     const url = new URL(
       '/forum/members/77777777-7777-4777-8777-777777777777/posts',
       route.request().url(),
     );
     const response = await route.fetch({ url: url.toString() });
     const body = (await response.json()) as { messages: { text: string }[] };
-    served = body.messages.map((row) => row.text);
-    await route.fulfill({ response, json: { ...body, nextCursor: 'next' } });
+    // Page 1 holds only the empty About me note; its cursor leads to the fixture page.
+    const json =
+      requested.searchParams.get('cursor') === 'after-empty'
+        ? { messages: body.messages }
+        : { messages: body.messages.filter((row) => row.text === ''), nextCursor: 'after-empty' };
+    served.push(json.messages.map((row) => row.text));
+    await route.fulfill({ response, json });
   });
   await page.reload();
   const view = page.getByRole('combobox', { name: 'Forum view' });
@@ -2383,7 +2389,8 @@ test('Function: fetchMessages — one empty note on the All page leaves the othe
   await expect(view).toContainText('All');
   await expect(page.getByText('A post from Dana.')).toBeVisible();
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
-  expect(served).toEqual(['A post from Dana.', '']);
+  expect(served).toContainEqual(['']);
+  expect(served).toContainEqual(['A post from Dana.', '']);
 });
 
 test('Function: fetchMemberReplies — member replies open from the count', async ({
