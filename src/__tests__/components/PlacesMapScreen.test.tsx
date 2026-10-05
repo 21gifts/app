@@ -34,6 +34,14 @@ const ROW = {
   label: 'Happyland' as string | null,
 };
 
+const SECOND_ROW = {
+  ...ROW,
+  id: 'm-2',
+  lat: -1.95,
+  lng: 37.84,
+  label: 'Machakos',
+};
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -48,6 +56,42 @@ afterEach(() => {
 
 function jsonResponse(body: unknown): Response {
   return { json: () => Promise.resolve(body) } as Response;
+}
+
+function installGoogleMaps(zoom: number | undefined, withEvent = true) {
+  const points: Array<{ lat: number; lng: number }> = [];
+  const bounds = {
+    extend: vi.fn((point: { lat: number; lng: number }) => {
+      points.push({ ...point });
+    }),
+  };
+  const map = {
+    setCenter: vi.fn(),
+    fitBounds: vi.fn(),
+    getZoom: vi.fn(() => zoom),
+    setZoom: vi.fn(),
+  };
+  const Map = vi.fn(() => map);
+  const Marker = vi.fn();
+  const LatLngBounds = vi.fn(() => bounds);
+  let idleHandler: (() => void) | undefined;
+  const addListenerOnce = vi.fn((_instance: unknown, _eventName: string, handler: () => void) => {
+    idleHandler = handler;
+  });
+  const maps = { Map, Marker, LatLngBounds };
+  (window as { google?: unknown }).google = {
+    maps: withEvent ? { ...maps, event: { addListenerOnce } } : maps,
+  };
+  return {
+    points,
+    bounds,
+    map,
+    Map,
+    Marker,
+    LatLngBounds,
+    addListenerOnce,
+    getIdleHandler: (): (() => void) | undefined => idleHandler,
+  };
 }
 
 describe('PlacesMapScreen', () => {
@@ -144,6 +188,112 @@ describe('PlacesMapScreen', () => {
       expect(Marker).toHaveBeenCalled();
     });
     expect(map.setCenter).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98 });
+  });
+
+  it('frames every pin when several places have no matching query', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
+    const maps = installGoogleMaps(4);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(maps.map.fitBounds).toHaveBeenCalledWith(maps.bounds, 32);
+    });
+    expect(maps.points).toEqual([
+      { lat: 14.6, lng: 120.98 },
+      { lat: -1.95, lng: 37.84 },
+    ]);
+    expect(maps.map.setCenter).not.toHaveBeenCalled();
+    expect(maps.Marker).toHaveBeenCalledTimes(2);
+    expect(maps.Map).toHaveBeenCalledWith(expect.any(HTMLElement), {
+      center: { lat: 14.6, lng: 120.98 },
+      zoom: 2,
+    });
+    expect(maps.addListenerOnce).toHaveBeenCalledWith(maps.map, 'idle', expect.any(Function));
+    maps.getIdleHandler()?.();
+    expect(maps.map.getZoom).toHaveBeenCalledOnce();
+    expect(maps.map.setZoom).not.toHaveBeenCalled();
+  });
+
+  it('caps a tight fit at zoom 14', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
+    const maps = installGoogleMaps(21);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(maps.map.fitBounds).toHaveBeenCalledWith(maps.bounds, 32);
+    });
+    maps.getIdleHandler()?.();
+    expect(maps.map.setZoom).toHaveBeenCalledOnce();
+    expect(maps.map.setZoom).toHaveBeenCalledWith(14);
+  });
+
+  it('ignores a non-numeric zoom after fitting', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
+    const maps = installGoogleMaps(undefined);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(maps.map.fitBounds).toHaveBeenCalledWith(maps.bounds, 32);
+    });
+    maps.getIdleHandler()?.();
+    expect(maps.map.getZoom).toHaveBeenCalledOnce();
+    expect(maps.map.setZoom).not.toHaveBeenCalled();
+  });
+
+  it('does not fit after unmount', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
+    const maps = installGoogleMaps(21);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    const view = renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(maps.addListenerOnce).toHaveBeenCalledWith(maps.map, 'idle', expect.any(Function));
+    });
+    view.unmount();
+    maps.getIdleHandler()?.();
+    expect(maps.map.getZoom).not.toHaveBeenCalled();
+    expect(maps.map.setZoom).not.toHaveBeenCalled();
+  });
+
+  it('keeps a matching pin centered when other pins exist', async () => {
+    window.history.replaceState(null, '', '/map?pin=m-pin');
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
+    const maps = installGoogleMaps(4);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(maps.map.setCenter).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98 });
+    });
+    expect(maps.LatLngBounds).not.toHaveBeenCalled();
+    expect(maps.map.fitBounds).not.toHaveBeenCalled();
+    expect(maps.Map).toHaveBeenCalledWith(expect.any(HTMLElement), {
+      center: { lat: 14.6, lng: 120.98 },
+      zoom: 14,
+    });
+  });
+
+  it('fits every pin when the query does not match', async () => {
+    window.history.replaceState(null, '', '/map?pin=missing');
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
+    const maps = installGoogleMaps(4, false);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    renderWithLocale(<PlacesMapScreen />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    await waitFor(() => {
+      expect(maps.map.fitBounds).toHaveBeenCalledWith(maps.bounds, 32);
+    });
+    expect(maps.map.setCenter).not.toHaveBeenCalled();
+    expect(maps.addListenerOnce).not.toHaveBeenCalled();
   });
 
   it('keeps the list when the map script fails', async () => {
