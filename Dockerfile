@@ -28,9 +28,17 @@
 #   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
 #   NEXT_PUBLIC_BREEZ_API_KEY — Breez SDK key, a build-arg baked at `next build`
 #                               (staging deploy only); empty when unset
-#   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account (from ARG
-#                         PLATFORM_USERNAME); the landing page shows its wallet address for
-#                         donations to the project. Empty hides that address.
+#   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account; the landing
+#                         page shows its wallet address for donations to the project.
+#                         Optional placeholder: empty or unset hides that address.
+#   NEXT_PUBLIC_SENTRY_DSN — error-reporting DSN. Optional placeholder: empty or unset
+#                         turns error reporting off.
+#   NEXT_PUBLIC_SENTRY_ENVIRONMENT — error-reporting environment name (e.g. staging).
+#                         Optional placeholder: empty or unset sends no name.
+#
+# entrypoint.sh refuses to start when a placeholder's variable is unset or
+# empty, except for the optional ones above, which it substitutes with an
+# empty string.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -47,8 +55,9 @@ ARG APP_VERSION=dev
 ENV NEXT_PUBLIC_APP_VERSION=$APP_VERSION
 ARG NEXT_PUBLIC_BREEZ_API_KEY
 ENV NEXT_PUBLIC_BREEZ_API_KEY=$NEXT_PUBLIC_BREEZ_API_KEY
-ARG PLATFORM_USERNAME=
-ENV NEXT_PUBLIC_PLATFORM_USERNAME=$PLATFORM_USERNAME
+ENV NEXT_PUBLIC_PLATFORM_USERNAME=__NEXT_PUBLIC_PLATFORM_USERNAME__
+ENV NEXT_PUBLIC_SENTRY_DSN=__NEXT_PUBLIC_SENTRY_DSN__
+ENV NEXT_PUBLIC_SENTRY_ENVIRONMENT=__NEXT_PUBLIC_SENTRY_ENVIRONMENT__
 RUN npm run build
 
 FROM node:22-alpine AS runtime
