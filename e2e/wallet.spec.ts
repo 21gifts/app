@@ -1036,6 +1036,98 @@ test('wallet Send camera stops on Back and starts again on Send', async ({ page 
   await expect.poll(async () => cameraStats(page)).toEqual({ requests: 2, live: 1 });
 });
 
+/** Box of the camera area (the parent of the preview or of the camera alert). */
+async function cameraBox(
+  page: Page,
+  child: string,
+): Promise<{
+  box: { x: number; y: number; width: number; height: number };
+  frame: { x: number; width: number };
+}> {
+  return page.evaluate((selector) => {
+    const area = document.querySelector(`section[aria-label="Send Bitcoin"] ${selector}`);
+    const port = document.querySelector('[data-scrollport]');
+    if (area === null || area.parentElement === null || port === null) {
+      throw new Error('missing camera area');
+    }
+    const rect = area.parentElement.getBoundingClientRect();
+    const frame = port.getBoundingClientRect();
+    return {
+      box: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      frame: { x: frame.x, width: frame.width },
+    };
+  }, child);
+}
+
+test('wallet Send camera is large on a phone, keeps the field reachable, and stays inside on desktop', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.locator('video')).toBeVisible();
+  const phone = await cameraBox(page, 'video');
+  // Edge to edge of the app frame, about 70% of the visible height.
+  expect(Math.abs(phone.box.x - phone.frame.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(phone.box.width - phone.frame.width)).toBeLessThanOrEqual(1);
+  expect(phone.box.height).toBeGreaterThanOrEqual(812 * 0.7 - 1);
+  expect(phone.box.height).toBeLessThanOrEqual(812 * 0.7 + 1);
+  await expect(region.locator('video')).toHaveCSS('object-fit', 'cover');
+  const hint = region.getByText('Point the camera at a Bitcoin QR code');
+  await expect(hint).toHaveCSS('font-size', '18px');
+  // The viewfinder is a centred square of 68% of the smaller side and lets taps through.
+  const finder = await region.locator('video ~ div[aria-hidden="true"]').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      pointer: getComputedStyle(element).pointerEvents,
+    };
+  });
+  expect(Math.abs(finder.width - finder.height)).toBeLessThanOrEqual(1);
+  expect(finder.width).toBeCloseTo(Math.min(phone.box.width, phone.box.height) * 0.68, 0);
+  expect(finder.pointer).toBe('none');
+  // No sideways page scroll; the field and Continue are reached by normal scrolling.
+  expect(
+    await page.evaluate(() => {
+      const port = document.querySelector('[data-scrollport]') as HTMLElement;
+      return port.scrollWidth - port.clientWidth;
+    }),
+  ).toBeLessThanOrEqual(0);
+  const field = region.getByLabel('Payment request or address');
+  await field.scrollIntoViewIfNeeded();
+  await field.fill('lnbc1');
+  await expect(region.getByRole('button', { name: 'Continue' })).toBeInViewport();
+  expect(await cameraStats(page)).toEqual({ requests: 1, live: 1 });
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect
+    .poll(async () => (await cameraBox(page, 'video')).box.height)
+    .toBeLessThanOrEqual(448);
+  const desktop = await cameraBox(page, 'video');
+  expect(desktop.box.width).toBeLessThanOrEqual(384);
+  expect(desktop.box.x).toBeGreaterThan(desktop.frame.x);
+});
+
+test('wallet Send camera alert keeps the large camera area', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'denied' });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByRole('alert').first()).toBeVisible();
+  const blocked = await cameraBox(page, '[role="alert"]');
+  expect(Math.abs(blocked.box.width - blocked.frame.width)).toBeLessThanOrEqual(1);
+  expect(blocked.box.height).toBeGreaterThanOrEqual(812 * 0.7 - 1);
+  await expect(region.getByRole('alert').first()).toHaveCSS('font-size', '18px');
+});
+
 test('wallet Send says the camera was blocked and keeps the paste field', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);

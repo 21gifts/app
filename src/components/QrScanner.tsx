@@ -22,6 +22,15 @@ const SCAN_INTERVAL_MS = 120;
 const JSQR_MAX_EDGE = 640;
 
 /**
+ * The camera box, the same size with or without the preview: edge to edge of
+ * the frame on a phone, 70% of the visible height (at least 18rem), capped on
+ * wider screens. `container-type: size` lets the viewfinder take 68% of the
+ * smaller side.
+ */
+const PREVIEW_CLASS =
+  'relative h-[calc(var(--app-height)*0.7)] min-h-72 w-full overflow-hidden bg-app-card-muted [container-type:size] sm:max-h-[28rem] sm:rounded-2xl sm:border sm:border-app-border';
+
+/**
  * QR decoder for video frames: the native `BarcodeDetector` when the browser
  * lists `qr_code` among its formats, otherwise `jsqr` on a downscaled canvas
  * copy.
@@ -64,7 +73,9 @@ async function frameDecoder(): Promise<FrameDecoder> {
  * once per mount. Reads frames about eight times a second until the first
  * non-empty QR text, then stops every camera track and reports it. A blocked
  * camera, no camera, a page without a secure context, or a decoder that cannot
- * load shows a short alert instead of the preview. Tracks also stop on unmount.
+ * load shows a short alert instead of the preview, in the same box. Tracks
+ * also stop on unmount. The preview fills the box (`object-cover`) under a
+ * viewfinder square that only shows where to aim; the whole frame is read.
  *
  * @param props - Result callback.
  * @returns The scanner region.
@@ -164,25 +175,39 @@ export function QrScanner({ onResult }: QrScannerProps): ReactElement {
   }, []);
 
   return (
-    <section aria-label={t('wallet.scanHint')} className="flex w-full flex-col items-stretch gap-3">
-      <div className="w-full overflow-hidden rounded-2xl border border-app-border bg-app-card-muted">
+    <section aria-label={t('wallet.scanHint')} className="flex flex-col items-stretch max-sm:-mx-8">
+      <div className={PREVIEW_CLASS}>
         {error === null ? (
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            autoPlay
-            className="aspect-square w-full bg-black object-cover"
-          />
+          <>
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              autoPlay
+              className="absolute inset-0 h-full w-full bg-black object-cover"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 size-[68cqmin] -translate-x-1/2 -translate-y-1/2 rounded-3xl border-2 border-white/80 shadow-[0_0_0_200rem_rgb(0_0_0/0.35)]"
+            >
+              <span className="absolute -left-1 -top-1 h-10 w-10 rounded-tl-3xl border-l-[6px] border-t-[6px] border-white" />
+              <span className="absolute -right-1 -top-1 h-10 w-10 rounded-tr-3xl border-r-[6px] border-t-[6px] border-white" />
+              <span className="absolute -bottom-1 -left-1 h-10 w-10 rounded-bl-3xl border-b-[6px] border-l-[6px] border-white" />
+              <span className="absolute -bottom-1 -right-1 h-10 w-10 rounded-br-3xl border-b-[6px] border-r-[6px] border-white" />
+            </div>
+            <p className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-6 pb-5 pt-12 text-center text-lg font-medium text-white sm:text-xl">
+              {t('wallet.scanHint')}
+            </p>
+          </>
         ) : (
-          <p role="alert" className="px-6 py-6 text-center text-sm text-app-danger">
+          <p
+            role="alert"
+            className="flex h-full items-center justify-center px-8 text-center text-lg font-medium text-app-danger sm:text-xl"
+          >
             {error === 'denied' ? t('wallet.cameraDenied') : t('wallet.cameraUnavailable')}
           </p>
         )}
       </div>
-      {error === null ? (
-        <p className="text-center text-sm text-app-muted">{t('wallet.scanHint')}</p>
-      ) : null}
     </section>
   );
 }
