@@ -245,6 +245,14 @@ test('forum place, shops post and table place, and operator links keep the docum
   await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 
+  // The top-left arrow from the map returns to the posts without a page load.
+  await page.getByRole('link', { name: 'Bakery' }).first().click();
+  await expect(page.getByRole('button', { name: 'Map', pressed: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
+  expect(new URL(page.url()).hash).toBe('');
+  expect(await sameDocument(page)).toBe('same');
+
   await page.getByRole('button', { name: 'Table' }).click();
   await page.getByRole('link', { name: '@luna' }).first().click();
   await expect(page).toHaveURL(`${origin}/members/acc-luna`);

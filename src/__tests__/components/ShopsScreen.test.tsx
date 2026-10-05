@@ -63,6 +63,7 @@ vi.mock('@/components/ShopTable', () => ({
         <span>place</span>
       </a>
       <a href="/shops#nope">unknown</a>
+      <a href="/shops">no hash</a>
       <a href="/elsewhere#map">other path</a>
       <a href="/shops#map">same entry</a>
       <a href="/shops?pin=p1#map" target="_blank">
@@ -151,7 +152,7 @@ describe('ShopsScreen', () => {
     window.history.replaceState(null, '', '/shops#table');
     renderWithLocale(<ShopsScreen />);
     const table = screen.getByTestId('shop-table');
-    for (const name of ['unknown', 'other path', 'elsewhere', 'new tab', 'download']) {
+    for (const name of ['other path', 'elsewhere', 'new tab', 'download']) {
       clickLink(screen.getByText(name));
       window.history.replaceState(null, '', '/shops#table');
     }
@@ -181,5 +182,20 @@ describe('ShopsScreen', () => {
     expect(screen.getByRole('button', { name: 'Map', pressed: true })).toBeTruthy();
     expect(window.location.hash).toBe('#map');
     expect(window.history.length).toBe(before);
+  });
+
+  it('shows the posts for a link to this page without a known hash', () => {
+    window.history.replaceState(null, '', '/shops?pin=p1#map');
+    renderWithLocale(<ShopsScreen />);
+    act(() => {
+      window.history.replaceState(null, '', '/shops?pin=p1#table');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+    clickLink(screen.getByText('no hash'));
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+    expect(`${window.location.pathname}${window.location.search}`).toBe('/shops');
+    clickLink(screen.getByRole('button', { name: 'Table' }));
+    clickLink(screen.getByText('unknown'));
+    expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
   });
 });
