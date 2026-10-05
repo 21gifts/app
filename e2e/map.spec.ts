@@ -17,7 +17,7 @@ const E2E_ACCOUNT = {
   missing: [],
 };
 
-async function seedSignedIn(page: Page): Promise<void> {
+async function seedSignedIn(page: Page, mapsKey: string | null = null): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -32,7 +32,7 @@ async function seedSignedIn(page: Page): Promise<void> {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ key: null }),
+      body: JSON.stringify({ key: mapsKey }),
     });
   });
 }
@@ -110,6 +110,111 @@ test('Function: PlacesMapScreen — lists a pin', async ({ page }) => {
   await page.goto('/shops#map');
   await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Map' })).toHaveCount(0);
+});
+
+test('Function: PlacesMapScreen — frames every pin', async ({ page }) => {
+  await seedSignedIn(page, 'e2e');
+  await page.route(/\/forum\/messages\/places$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        places: [
+          {
+            id: 'm-pin',
+            name: 'Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+          },
+          {
+            id: 'm-2',
+            name: 'Ada',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            lat: -1.95,
+            lng: 37.84,
+            label: 'Machakos',
+          },
+        ],
+      }),
+    });
+  });
+  await page.addInitScript(() => {
+    type Point = { lat: number; lng: number };
+    type Fit = { points: Point[]; padding: number | undefined };
+    const host = window as Window & {
+      google?: unknown;
+      placesMapFits?: Fit[];
+      placesMapIdleHandler?: () => void;
+    };
+    const fits: Fit[] = [];
+    host.placesMapFits = fits;
+    class LatLngBounds {
+      points: Point[] = [];
+
+      extend(point: Point): void {
+        this.points.push({ ...point });
+      }
+    }
+    class MapStub {
+      setCenter(_center: Point): void {}
+
+      fitBounds(bounds: LatLngBounds, padding?: number): void {
+        fits.push({
+          points: bounds.points.map((point) => ({ ...point })),
+          padding,
+        });
+      }
+
+      getZoom(): number | undefined {
+        return 2;
+      }
+
+      setZoom(_zoom: number): void {}
+    }
+    class MarkerStub {
+      constructor(_opts: { position: Point; map: MapStub }) {}
+    }
+    host.google = {
+      maps: {
+        Map: MapStub,
+        Marker: MarkerStub,
+        LatLngBounds,
+        event: {
+          addListenerOnce(_instance: MapStub, _eventName: string, handler: () => void): void {
+            host.placesMapIdleHandler = handler;
+          },
+        },
+      },
+    };
+  });
+  await page.goto('/shops#map');
+  await expect(page.getByRole('link', { name: 'Ada · Happyland' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ada · Machakos' })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window & {
+              placesMapFits?: Array<{
+                points: Array<{ lat: number; lng: number }>;
+                padding: number | undefined;
+              }>;
+            }
+          ).placesMapFits ?? [],
+      ),
+    )
+    .toEqual([
+      {
+        points: [
+          { lat: 14.6, lng: 120.98 },
+          { lat: -1.95, lng: 37.84 },
+        ],
+        padding: 32,
+      },
+    ]);
 });
 
 test('Function: PlaceField — add a place is on the shop composer', async ({ page }) => {
