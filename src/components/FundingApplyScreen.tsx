@@ -67,9 +67,10 @@ export function nextFillStep(account: Account): FillStep | null {
 }
 
 /**
- * Paused grant-applications card. Shown instead of the apply walk while
- * `grantApplicationsPaused` is true and the signed-in username is not in
- * `GRANT_APPLICATION_STILL_OPEN_USERNAMES`.
+ * Paused grant-applications card. Shown while `grantApplicationsPaused` is
+ * true, the signed-in username is not in
+ * `GRANT_APPLICATION_STILL_OPEN_USERNAMES`, and funding status is not
+ * pending, trial, or admitted.
  *
  * @returns The paused applications card.
  */

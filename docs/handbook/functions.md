@@ -1776,7 +1776,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403. 400 `About me is required` / `About me photo is required` / `Location is required` are rethrown; other failures use visitor copy `Could not submit your application. Please try again.`
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** `FundingApplyScreen`. Usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` still see the walk and call `postFundingApply` while applications are paused. Every other account sees the paused sentence and does not call it. When `grantApplicationsPaused` is false, the walk also calls it.
+- **Used by:** `FundingApplyScreen`. While applications are paused, a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected` sees the walk and calls `postFundingApply`. The pause card, which does not call it, is only for a username outside those three whose status is not pending, trial, or admitted. A basis account on the open card sees **You are not verified yet.** and does not call it, including when the status is pending, trial, or admitted. A verified account with one of those statuses sees that copy and does not call it. When `grantApplicationsPaused` is false, the walk also calls it.
 
 ## Function: fetchFundingPayoutDays
 
@@ -4179,7 +4179,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: grantApplicationStillOpen
 
-- **Purpose:** Whether this signed-in username still gets the apply walk while applications are paused. Exact, case-sensitive match against `joey-rosima`, `vincent`, and `jewel-bacolbas`. Null, omitted, empty, and every other username (including `Vincent`) do not.
+- **Purpose:** Whether this signed-in username skips the pause card while applications are paused. Exact, case-sensitive match against `joey-rosima`, `vincent`, and `jewel-bacolbas`. It does not by itself open the apply walk: a basis account still sees **You are not verified yet.** Null, omitted, empty, and every other username (including `Vincent`) do not skip the card.
 - **Inputs:** `username` string, null, or undefined.
 - **Returns / side effects:** `true` only for those three strings.
 - **Used by:** `FundingApplyScreen`, `FundingStatusCard`, `DailyPayoutStoppedNotice`.
