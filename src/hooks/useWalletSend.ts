@@ -87,7 +87,7 @@ export type WalletSendState =
       commentError?: true;
     }
   | { step: 'confirm'; recipient: string; amountSats: number; feeSats: number }
-  | { step: 'sent'; amountSats: number };
+  | { step: 'sent'; amountSats: number; recipient: string };
 
 /** State and actions of the `/wallet` send flow. */
 export interface UseWalletSendResult {
@@ -239,7 +239,7 @@ function visualState(name: string | null): WalletSendState | null {
         feeSats: name === 'send-confirm-shop' ? fixture.feeSats : fixture.fixedFeeSats,
       };
     case 'send-sent':
-      return { step: 'sent', amountSats: fixture.amountSats };
+      return { step: 'sent', amountSats: fixture.amountSats, recipient: fixture.recipient };
     case 'send-onchain':
       return { step: 'input', error: 'onchain' };
     case 'send-unsupported':
@@ -640,7 +640,7 @@ export function useWalletSend(): UseWalletSendResult {
       return;
     }
     sendRef.current = null;
-    const amountSats = state.amountSats;
+    const { amountSats, recipient } = state;
     const run = generation.current;
     setBusy(true);
     void send().then((result) => {
@@ -651,7 +651,7 @@ export function useWalletSend(): UseWalletSendResult {
       if (result.kind === 'paid') {
         setTextState('');
         setComment('');
-        setState({ step: 'sent', amountSats });
+        setState({ step: 'sent', amountSats, recipient });
         return;
       }
       setState({

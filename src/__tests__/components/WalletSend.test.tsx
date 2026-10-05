@@ -190,7 +190,7 @@ describe('WalletSend camera', () => {
     for (const state of [
       LNURL_STATE,
       { step: 'confirm', recipient: 'bob@pay.example', amountSats: 21, feeSats: 0 },
-      { step: 'sent', amountSats: 21 },
+      { step: 'sent', amountSats: 21, recipient: 'bob@pay.example' },
     ] as const) {
       view.rerender(<WalletSend send={sendWith(state)} />);
       expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
@@ -306,7 +306,7 @@ describe('WalletSend amount', () => {
 });
 
 describe('WalletSend confirm and sent', () => {
-  it('shows recipient, amount and fee with fiat, and sends', () => {
+  it('shows the large amount with fiat, recipient, and a fee of zero without fiat, and sends', () => {
     const send = sendWith({
       step: 'confirm',
       recipient: 'bob@pay.example',
@@ -314,34 +314,57 @@ describe('WalletSend confirm and sent', () => {
       feeSats: 0,
     });
     renderSend(send);
-    expect(screen.getByText('To bob@pay.example')).toBeTruthy();
-    expect(screen.getByText(/Send ₿2'100/)).toBeTruthy();
-    expect(screen.getByText(/\$2\.10/)).toBeTruthy();
-    expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
+    expect(screen.getByText("₿2'100").className).toContain('text-5xl');
+    expect(screen.getByText('$2.10')).toBeTruthy();
+    expect(screen.queryByText(/Send ₿/)).toBeNull();
+    expect(screen.getByText('To bob@pay.example').className).toContain('truncate');
+    expect(screen.getByText('Fee ₿0').textContent).toBe('Fee ₿0');
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(send.confirm).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(send.cancel).toHaveBeenCalledTimes(1);
   });
 
-  it('disables Send with a spinner while sending', () => {
-    const { container } = renderWithLocale(
-      <WalletSend
-        send={sendWith(
-          { step: 'confirm', recipient: 'r', amountSats: 1, feeSats: 0 },
-          { busy: true },
-        )}
-      />,
+  it('shows the fiat of a fee above zero', () => {
+    renderSend(
+      sendWith({ step: 'confirm', recipient: 'shop@21.gifts', amountSats: 7_000, feeSats: 3_000 }),
     );
-    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
-    expect(container.querySelector('.animate-spin')).not.toBeNull();
+    expect(screen.getByText(/Fee ₿3'000/).textContent).toContain('$3.00');
   });
 
-  it('shows the sent amount and Done returns to input', () => {
-    const send = sendWith({ step: 'sent', amountSats: 2_100 });
-    renderSend(send);
-    expect(screen.getByRole('status').textContent).toContain("Sent ₿2'100");
+  it('shows only the bitcoin figures without a usable rate', () => {
+    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    renderSend(
+      sendWith({ step: 'confirm', recipient: 'bob@pay.example', amountSats: 2_100, feeSats: 3 }),
+    );
+    expect(screen.getByText("₿2'100")).toBeTruthy();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('has no step Close, and disables Send with a spinner and Cancel while sending', () => {
+    const send = sendWith(
+      { step: 'confirm', recipient: 'r', amountSats: 1, feeSats: 0 },
+      { busy: true },
+    );
+    const { container } = renderWithLocale(<WalletSend send={send} />);
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(container.querySelector('.animate-spin')).not.toBeNull();
+    const cancel = screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement;
+    expect(cancel.textContent).toBe('Cancel');
+    expect(cancel.disabled).toBe(true);
+    fireEvent.click(cancel);
+    expect(send.cancel).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('shows the check, the sent amount with fiat and recipient, and Done returns to input', () => {
+    const send = sendWith({ step: 'sent', amountSats: 2_100, recipient: 'bob@pay.example' });
+    const { container } = renderWithLocale(<WalletSend send={send} />);
+    expect(container.querySelector('svg.text-app-success')).not.toBeNull();
+    const status = screen.getByRole('status');
+    expect(within(status).getByText("Sent ₿2'100").className).toContain('text-5xl');
+    expect(within(status).getByText('$2.10')).toBeTruthy();
+    expect(screen.getByText('To bob@pay.example')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(send.cancel).toHaveBeenCalledTimes(1);
   });
