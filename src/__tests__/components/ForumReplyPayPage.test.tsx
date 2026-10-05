@@ -141,7 +141,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
     expect(screen.queryByRole('img')).toBeNull();
   });
 
-  it('opens a locked wallet with one passkey prompt, then offers Pay from wallet', async () => {
+  function unlockSetsReady(): void {
     setWalletUsable('locked');
     vi.mocked(unlockWalletPhrase)
       .mockReset()
@@ -149,12 +149,38 @@ describe('ForumReplyPayPage in-app wallet', () => {
         setWalletUsable('ready');
         return 'unlocked';
       });
+  }
+
+  it('unlocks and pays with one tap and one passkey prompt when the fee is ₿0', async () => {
+    unlockSetsReady();
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderPage(SPARK_INVOICE);
     expect(payFromWallet).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Unlock wallet' }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
+    expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+  });
+
+  it('unlocks with one tap and stops at the fee and Pay from wallet when the fee is above ₿0', async () => {
+    unlockSetsReady();
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 21,
+      feeSats: 3,
+      send,
+    });
+    renderPage(SPARK_INVOICE);
+    fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(screen.getByText(/Fee ₿3/)).toBeTruthy();
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('says the wallet is not available when it is not configured, and offers nothing else', () => {

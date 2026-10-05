@@ -65,8 +65,10 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
 
 /**
  * Pay slot of an invoice pay sheet. The member pays from the in-app wallet
- * only: unlock when needed (one passkey prompt), the fee from the prepare
- * response, then **Pay from wallet**. While and after sending it says so; the
+ * only. A locked wallet shows one button, **Unlock and pay** with the amount:
+ * one passkey prompt, then it pays at once when the fee is ₿0, or shows the
+ * fee and **Pay from wallet** when it is higher. An open wallet shows the fee
+ * from the prepare response, then **Pay from wallet**. While and after sending it says so; the
  * sheet's own long-poll closes it on confirmation. Too little balance shows an
  * alert with the member's own address and QR when their username gives one.
  * Without a wallet the member can open here it says so, and a failed prepare
@@ -104,12 +106,10 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
       );
     case 'unlock':
       return (
-        <>
-          <p className="px-6 text-center text-sm text-app-muted">{t('wallet.payUnlockHint')}</p>
-          <Button type="button" variant="primary" onClick={unlock}>
-            {t('wallet.unlock')}
-          </Button>
-        </>
+        <Button type="button" variant="primary" onClick={unlock}>
+          {t('wallet.payUnlockAndPay', { amount: formatBitcoin(amountSats, numberFormat) })}
+          {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
+        </Button>
       );
     case 'preparing':
     case 'paying':
