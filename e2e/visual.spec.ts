@@ -5,6 +5,12 @@ import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { stubCamera, type CameraStub } from './camera';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
+/**
+ * Locked pay slot button once its fiat has loaded: the shown amount is not
+ * ready for a baseline before its fiat line.
+ */
+const UNLOCK_AND_PAY = /^Unlock and pay ₿\S+ · .*\d$/;
+
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
   await page.getByRole('option', { name, exact: true }).click();
@@ -4108,7 +4114,9 @@ test.describe('onboarding screens', () => {
 
   test('state /welcome reaction-wallet-pay-unlock', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -14152,13 +14160,13 @@ test.describe('welcome forum variants', () => {
     await page.goto(`/welcome?visual=${visual}`);
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    await expect(page.getByText('Pay ₿700')).toBeVisible();
+    await expect(page.getByText(/^Pay ₿700\b/)).toBeVisible();
   }
 
   test('state /welcome repay-wallet-pay-unlock', async ({ page }) => {
     await openRepayWalletPay(page, 'wallet-pay-unlock');
-    const slot = page.getByRole('button', { name: 'Unlock wallet' });
-    await expect(slot).toBeVisible();
+    const slot = page.getByRole('button', { name: /^Unlock and pay ₿/ });
+    await expect(slot).toHaveText(UNLOCK_AND_PAY);
     await slot.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-wallet-pay-unlock');
   });
@@ -15903,7 +15911,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(page.getByText('Pay ₿1')).toBeVisible();
+    await expect(page.getByText(/^Pay ₿1\b/)).toBeVisible();
   }
 
   const TINY_GIF = Buffer.from(
@@ -16383,7 +16391,9 @@ test.describe('welcome forum variants', () => {
 
   test('welcome composer-wallet-pay-unlock', async ({ page }) => {
     await openComposerWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await shotScreen(page, 'state-welcome-composer-wallet-pay-unlock');
   });
 
@@ -16729,7 +16739,9 @@ test.describe('welcome forum variants', () => {
 
   test('welcome wallet-pay-unlock', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await shotScreen(page, 'state-welcome-wallet-pay-unlock');
   });
 
@@ -20080,12 +20092,14 @@ test.describe('inbox screens', () => {
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
-    await expect(page.getByText('Pay ₿21')).toBeVisible();
+    await expect(page.getByText(/^Pay ₿21\b/)).toBeVisible();
   }
 
   test('messages thread-wallet-pay-unlock', async ({ page }) => {
     await openInboxWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
+      UNLOCK_AND_PAY,
+    );
     await shotScreen(page, 'state-messages-thread-wallet-pay-unlock');
   });
 
