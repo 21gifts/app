@@ -4770,3 +4770,31 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with JSON `{ fiat, onlyIfUnset }`.
 - **Returns / side effects:** Returns the owner-account upstream response; `onlyIfUnset=true` preserves a stored fiat value.
 - **Used by:** Route POST `/me/fiat`.
+
+## Function: HabitTrackerPage
+
+- **Purpose:** Next.js page for `/habit-tracker` (public habit tracker). Top-right is **Log in** without a session and `SignedInChrome` with one. `OnboardingGate screen="welcome"` `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left around `MemberHabits`.
+- **Inputs:** None.
+- **Returns / side effects:** The habit-tracker screen inside fill AppShell.
+- **Used by:** Route `/habit-tracker`.
+
+## Function: MemberHabits
+
+- **Purpose:** Loads `GET /habits` and writes `POST /habits`. Renders every member's public habits, periods, and comments. Internal notes render only for the owner. The owner rates, edits, and archives their own open habits. Any signed-in account can comment while the review week is open and can request a Lightning invoice for someone else's comment. Does not log invoices, addresses, notes, or comment text.
+- **Inputs:** None. Reads the auth store session and account.
+- **Returns / side effects:** The habit-tracker body. Posts add, edit, archive, log, comment, deleteComment, and invoice actions.
+- **Used by:** `HabitTrackerPage`.
+
+## Function: fetchMemberHabits
+
+- **Purpose:** Load the public habit tracker from same-origin `GET /habits`.
+- **Inputs:** `sessionToken` — bearer token, or `null` when signed out. A blank string sends no `Authorization` header.
+- **Returns / side effects:** The parsed habit list. Throws `'Could not load the habit tracker. Please try again.'` when the response is not OK or the body fails the schema.
+- **Used by:** `MemberHabits`.
+
+## Function: postMemberHabit
+
+- **Purpose:** Post a habit-tracker action to same-origin `POST /habits`.
+- **Inputs:** `sessionToken` — bearer token; `body` — JSON action; `timeZone` — when true, also sends the device `Time-Zone` header.
+- **Returns / side effects:** The JSON body when the response is OK. Throws the api `error` string when that field is a string, otherwise `'Could not save the habit tracker. Please try again.'`.
+- **Used by:** `MemberHabits`.

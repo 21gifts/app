@@ -2211,6 +2211,50 @@ Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` wh
 
 ![21.gifts living room rules signed in](images/rules-signed-in.png)
 
+## Screen: /habit-tracker
+
+- **URL:** `/habit-tracker` — public habit tracker. Every member's habits, periods, and comments. Signed-out visitors can read it. `OnboardingGate screen="welcome"` with `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /habits` and `POST /habits`.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` and either **Log in** or Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Habit-Tracker**. The schedule line says each habit is daily or weekly in the time zone chosen when it was created, a week can be rated from Monday 08:00 in that zone, and comments open Monday 16:00 and close Saturday 20:00, Manila time. People are grouped under their `ownerName`. Each habit shows its name, public description when one is set, Daily or Weekly, Archived when it has a last period, and one line per period (`YYYY-MM-DD` plus Achieved, Partially achieved, Not achieved, or Not rated yet). Comments are public and are not forum posts. Internal notes render only for the owner (`Internal notes:` plus the text). A signed-out visitor sees **Sign in to comment** and no add form, no rating buttons, and no Donate Bitcoin. A session sees an add form (Name, Description, Internal notes, Daily or Weekly, **Add habit**), and on each of their open habits the three rating buttons, an edit form, and **Archive**. Comments that are open show **Write a comment** and **Post**. When comments are closed, each habit says comments are allowed only from Monday at 16:00 until Saturday at 20:00, Manila time. **Donate Bitcoin** is on someone else's comment. Menu row **Habit-Tracker** (`nav.habitTracker`, lucide `ListChecks`, `/habit-tracker`) sits immediately after **Living room rules** for every signed-in account.
+- **Actions:** Read the list. Sign in. Add a habit. Edit name, description, and internal notes. Rate the open period Achieved, Partially achieved, or Not achieved. Archive after confirm. Post a comment while the window is open. Delete a comment when the account is at least initiator, after confirm. Open **Donate Bitcoin**, enter an amount, and request a **Bitcoin invoice**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `HabitTrackerPage`, `MemberHabits`, `SignedInChrome`, `OnboardingGate`, `fetchMemberHabits`, `postMemberHabit`.
+- **Auth:** No bearer required to read the page or `GET /habits`. `POST /habits` needs a bearer. `OnboardingGate screen="welcome"` with `allowGuest`. The page does not pay an invoice.
+
+### Variant: default
+
+Signed-out list. Heading **Habit-Tracker**, Ada's habit **Walk** with description **Outside**, and **Sign in to comment**. No rating buttons and no **Donate Bitcoin**.
+
+![21.gifts habit tracker](images/habit-tracker.png)
+
+### Variant: empty
+
+Signed-out page with **No habits yet.** The closed-window sentence is not shown, because there is no habit to comment on. The schedule line still names Monday 16:00.
+
+![21.gifts habit tracker empty](images/habit-tracker-empty.png)
+
+### Variant: loading
+
+Signed-out page. **Loading…** while `GET /habits` is in flight.
+
+![21.gifts habit tracker loading](images/habit-tracker-loading.png)
+
+### Variant: error
+
+Signed-out page. **Could not load or save the tracker. Please try again.** and **Try again**.
+
+![21.gifts habit tracker error](images/habit-tracker-error.png)
+
+### Variant: signed-in
+
+Ada's session. **Menu** is top-right. Her habit shows **Internal notes: secret**, **Achieved**, and **Add habit**.
+
+![21.gifts habit tracker signed in](images/habit-tracker-signed-in.png)
+
+### Variant: donate
+
+Ada's session on someone else's comment. **Donate Bitcoin** is open and **Amount** is visible.
+
+![21.gifts habit tracker donate](images/habit-tracker-donate.png)
+
 ## Screen: /contact
 
 - **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (`account.setup` null; name and address may be skipped; living-room rules agreement required).

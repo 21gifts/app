@@ -267,6 +267,12 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
+    const habitTracker = screen.getByRole('link', { name: 'Habit-Tracker' });
+    expect(habitTracker.getAttribute('href')).toBe('/habit-tracker');
+    fireEvent.click(habitTracker);
+    expect(screen.getByRole('link', { name: 'Living room rules' }).nextElementSibling).toBe(
+      habitTracker,
+    );
     expect(screen.getByRole('link', { name: 'Trust Chain' }).getAttribute('href')).toBe(
       '/trust-chain',
     );

@@ -22394,3 +22394,129 @@ test.describe('daily payments', () => {
     await shotScreen(page, 'state-grants-payments-amounts-editing');
   });
 });
+
+const HABIT_ROW = {
+  id: 'h-ada',
+  accountId: 'acc-ada',
+  ownerName: 'Ada',
+  role: 'initiator',
+  name: 'Walk',
+  description: 'Outside',
+  cadence: 'daily',
+  timeZone: 'Asia/Manila',
+  firstPeriod: '2026-10-01',
+  lastPeriod: null,
+  periods: [
+    {
+      period: '2026-10-04',
+      name: 'Walk',
+      description: 'Outside',
+      logged: false,
+      status: null,
+    },
+  ],
+  comments: [
+    {
+      id: 'c-bea',
+      habitId: 'h-ada',
+      accountId: 'acc-bea',
+      name: 'Bea',
+      text: 'hello',
+      week: '2026-09-28',
+      createdAt: 1,
+    },
+  ],
+};
+
+const HABIT_PUBLIC = {
+  reviewWeek: { start: '2026-09-28', commentsOpen: true },
+  habits: [HABIT_ROW],
+};
+
+async function stubHabitList(page: Page, body: unknown, status = 200): Promise<void> {
+  await page.route('**/habits', async (route) => {
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
+async function seedHabitAda(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+}
+
+test.describe('habit tracker baselines', () => {
+  test('screen /habit-tracker default', async ({ page }) => {
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await expect(page.getByRole('heading', { name: 'Habit-Tracker' })).toBeVisible();
+    await expect(page.getByText('Outside')).toBeVisible();
+    await shotScreen(page, 'screen-habit-tracker');
+  });
+
+  test('screen /habit-tracker empty', async ({ page }) => {
+    await stubHabitList(page, {
+      reviewWeek: { start: '2026-09-28', commentsOpen: false },
+      habits: [],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No habits yet.')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-empty');
+  });
+
+  test('screen /habit-tracker loading', async ({ page }) => {
+    await page.route('**/habits', () => new Promise(() => undefined));
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-loading');
+  });
+
+  test('screen /habit-tracker error', async ({ page }) => {
+    await stubHabitList(page, {}, 500);
+    await page.goto('/habit-tracker');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-error');
+  });
+
+  test('screen /habit-tracker signed-in', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Internal notes: secret')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-signed-in');
+  });
+
+  test('screen /habit-tracker donate', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Donate Bitcoin' }).click();
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donate');
+  });
+});

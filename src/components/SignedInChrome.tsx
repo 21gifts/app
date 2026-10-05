@@ -8,6 +8,7 @@ import {
   Inbox,
   Menu,
   MessageCircle,
+  ListChecks,
   ScrollText,
   Share2,
   Shield,
@@ -291,6 +292,16 @@ export function SignedInChrome(): ReactElement {
               >
                 <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 {t('nav.rules')}
+              </Link>
+              <Link
+                href="/habit-tracker"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <ListChecks aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.habitTracker')}
               </Link>
               <Link
                 href="/trust-chain"
