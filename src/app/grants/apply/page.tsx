@@ -10,15 +10,16 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  *
  * While applications are paused this is the paused card, except for
  * `joey-rosima`, `vincent`, and `jewel-bacolbas`. A verified account with one
- * of those names still sees the apply walk. A basis account with one of those
- * names sees "You are not verified yet." and does not post. The chrome back
- * returns to the previous in-app view (the card has no back control). Requires
- * name + address + living-room rules agreement via {@link OnboardingGate}
- * `screen="profile"`.
+ * of those names and status none or rejected still sees the apply walk.
+ * Pending, trial, and admitted keep their copy for every verified username. A
+ * basis account sees "You are not verified yet." and does not post. The chrome
+ * back returns to the previous in-app view (the card has no back control).
+ * Requires name + address + living-room rules agreement via
+ * {@link OnboardingGate} `screen="profile"`.
  *
- * @returns The paused card, the apply walk for a verified account with one of
- * those three usernames, or the not-verified card for a basis account with
- * one of those names.
+ * @returns The paused card, the apply walk for a verified roster account with
+ * status none or rejected, the pending, trial, or admitted card, or the
+ * not-verified card for a basis account.
  */
 export default function FundingApplyPage(): ReactElement {
   return (

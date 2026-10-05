@@ -91,9 +91,10 @@ function PausedGrantApply(): ReactElement {
 /**
  * Signed-in grant apply screen. While applications are paused this is the
  * pause card except for usernames in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`.
- * A verified account with one of those names still sees the apply walk. A
- * basis account with one of those names sees "You are not verified yet." and
- * does not post. A missing account still shows the pause card. The walk stays
+ * A verified account with one of those names and status none or rejected still
+ * sees the apply walk. Pending, trial, and admitted keep their copy for every
+ * verified username. A basis account sees "You are not verified yet." and does not
+ * post. A missing account still shows the pause card. The walk stays
  * in the code: fill About me, photo, and location, then two yes/no questions.
  * The first asks whether the posts match the core principles and links to the
  * about page. The second asks whether the posts are true. Missing fields are
@@ -105,16 +106,23 @@ function PausedGrantApply(): ReactElement {
  */
 export function FundingApplyScreen(): ReactElement | null {
   const account = useAuthStore((state) => state.account);
-  if (grantApplicationsPaused() && !grantApplicationStillOpen(account?.username)) {
+  const status = account?.funding?.status;
+  const keepsExistingStatus = status === 'pending' || status === 'trial' || status === 'admitted';
+  if (
+    grantApplicationsPaused() &&
+    !grantApplicationStillOpen(account?.username) &&
+    !keepsExistingStatus
+  ) {
     return <PausedGrantApply />;
   }
   return <OpenGrantApply />;
 }
 
 /**
- * The apply card used when `grantApplicationsPaused` is false, or when
- * `grantApplicationStillOpen` is true for the signed-in username. A basis
- * account stops at "You are not verified yet." and does not post.
+ * The apply card used when `grantApplicationsPaused` is false, when
+ * `grantApplicationStillOpen` is true, or when funding status is pending,
+ * trial, or admitted. A basis account stops at "You are not verified yet."
+ * and does not post.
  *
  * @returns The apply card, the not-verified card, or `null` without a session.
  */

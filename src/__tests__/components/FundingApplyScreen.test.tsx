@@ -446,6 +446,64 @@ describe('FundingApplyScreen', () => {
     expect(screen.queryByText('You are admitted to daily 21.gifts grant payouts.')).toBeNull();
   });
 
+  it('keeps pending, trial, and admitted copy while applications are paused', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+    const cases = [
+      ['pending', 'Your application is open. A moderator will review your posts.'],
+      ['trial', 'You are on a one-day trial. Review repeats tomorrow.'],
+      ['admitted', 'You are admitted to daily 21.gifts grant payouts.'],
+    ] as const;
+    for (const [status, copy] of cases) {
+      cleanup();
+      useAuthStore.setState({
+        session: 'sess',
+        account: {
+          ...complete,
+          username: 'ada',
+          funding: {
+            status,
+            trialUtcDate: status === 'trial' ? '2026-09-20' : null,
+            admittedAt: status === 'admitted' ? 1 : null,
+            reviewedByName: status === 'admitted' ? 'Ada' : null,
+          },
+        },
+      });
+      renderWithLocale(<FundingApplyScreen />);
+      expect(screen.getByText(copy)).toBeTruthy();
+      expect(
+        screen.queryByText(
+          'Applications are currently paused. You can apply again when shop transactions have increased.',
+        ),
+      ).toBeNull();
+    }
+  });
+
+  it('shows the paused sentence for a rejected account that is not on the roster', () => {
+    vi.mocked(grantApplicationsPaused).mockReturnValue(true);
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...complete,
+        username: 'ada',
+        funding: {
+          status: 'rejected',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      },
+    });
+    renderWithLocale(<FundingApplyScreen />);
+    expect(
+      screen.getByText(
+        'Applications are currently paused. You can apply again when shop transactions have increased.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.queryByText('Do your profile posts match the core principles of 21.gifts?'),
+    ).toBeNull();
+  });
+
   it('shows the paused sentence instead of the apply walk', () => {
     vi.mocked(grantApplicationsPaused).mockReturnValue(true);
     useAuthStore.setState({ session: 'sess', account: null });
