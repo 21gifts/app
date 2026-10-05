@@ -722,13 +722,47 @@ export const forumMessageSchema = z
   }));
 
 /**
+ * Parses each row with {@link forumMessageSchema} and keeps the rows that pass.
+ *
+ * One note that cannot be shown (for example an empty About me note) must not
+ * hide the rest of a page. Dropped rows are counted in one `console.warn`
+ * without their content.
+ *
+ * @param rows - Raw rows from a list payload.
+ * @returns The rows that pass, in their original order.
+ */
+function keepForumMessageRows(rows: readonly unknown[]): z.infer<typeof forumMessageSchema>[] {
+  const kept: z.infer<typeof forumMessageSchema>[] = [];
+  for (const row of rows) {
+    const parsed = forumMessageSchema.safeParse(row);
+    if (parsed.success) {
+      kept.push(parsed.data);
+    }
+  }
+  const dropped = rows.length - kept.length;
+  if (dropped > 0) {
+    console.warn(`Skipped ${dropped} forum note(s) that failed the note schema`);
+  }
+  return kept;
+}
+
+/**
+ * Runtime schema for a list of forum notes, parsed row by row.
+ *
+ * The list must be an array; a row that fails {@link forumMessageSchema} is
+ * dropped instead of failing the whole list.
+ */
+export const forumMessageRowsSchema = z.array(z.unknown()).transform(keepForumMessageRows);
+
+/**
  * Runtime schema for `GET /messages` and member posts/replies payloads.
  *
  * The forum feed may include a cursor for the next page; member activity
- * endpoints may omit it.
+ * endpoints may omit it. Rows are parsed with {@link forumMessageRowsSchema},
+ * so only an invalid envelope fails the page.
  */
 export const forumListSchema = z.object({
-  messages: z.array(forumMessageSchema),
+  messages: forumMessageRowsSchema,
   nextCursor: z.string().min(1).optional(),
 });
 
@@ -784,9 +818,11 @@ export type HiddenMessage = z.infer<typeof hiddenMessageSchema>;
 
 /**
  * Runtime schema for `GET /messages/:id/replies` (oldest-first).
+ *
+ * Rows are parsed with {@link forumMessageRowsSchema}.
  */
 export const forumRepliesSchema = z.object({
-  messages: z.array(forumMessageSchema),
+  messages: forumMessageRowsSchema,
 });
 
 /**
@@ -1153,7 +1189,11 @@ export const memberProfileSchema = z.object({
   role: z.enum(ROLE_ORDER),
   lightningAddress: z.string().nullable(),
   createdAt: z.string(),
-  profileMessage: forumMessageSchema.nullable(),
+  /** A note that fails {@link forumMessageSchema} (an empty About me) reads as `null`. */
+  profileMessage: z
+    .record(z.unknown())
+    .nullable()
+    .transform((note) => (note === null ? null : (keepForumMessageRows([note])[0] ?? null))),
   postCount: z.number().int().nonnegative(),
   replyCount: z.number().int().nonnegative(),
   /** About me note, or `null` when unfilled. */
@@ -1354,7 +1394,7 @@ export const fundingApplicationDetailSchema = z.object({
     lightningAddress: z.string().nullable(),
   }),
   grant: fundingGrantSchema,
-  messages: z.array(forumMessageSchema),
+  messages: forumMessageRowsSchema,
 });
 
 /**

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   accountNotificationLevel,
   accountActivitySchema,
@@ -18,7 +18,10 @@ import {
   notificationListSchema,
   notificationSchema,
   FORUM_MESSAGE_MAX_LENGTH,
+  forumListSchema,
+  forumMessageRowsSchema,
   forumMessageSchema,
+  forumRepliesSchema,
   hiddenMessageSchema,
   giftStatsSchema,
   shopActivitySchema,
@@ -1026,6 +1029,95 @@ describe('pushSubscriptionResponseSchema', () => {
     expect(() =>
       pushSubscriptionResponseSchema.parse({ createdAt: '2026-08-30T00:00:00.000Z' }),
     ).toThrow();
+  });
+});
+
+describe('forumMessageRowsSchema', () => {
+  const good = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+  };
+  const emptyAboutMe = { ...good, id: 'm2', text: '' };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('keeps the valid rows in order and warns with the dropped count only', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const rows = forumMessageRowsSchema.parse([good, emptyAboutMe, { ...good, id: 'm3' }]);
+    expect(rows.map((row) => row.id)).toEqual(['m1', 'm3']);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('Skipped 1 forum note(s) that failed the note schema');
+  });
+
+  it('returns no rows when every row fails, without failing the list', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(forumMessageRowsSchema.parse([emptyAboutMe, null, 'x'])).toEqual([]);
+  });
+
+  it('does not warn when every row passes', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(forumMessageRowsSchema.parse([good])).toHaveLength(1);
+    expect(forumMessageRowsSchema.parse([])).toEqual([]);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('rejects a list that is not an array', () => {
+    expect(() => forumMessageRowsSchema.parse({ 0: good })).toThrow();
+  });
+
+  it('parses forum list and reply pages row by row and keeps the cursor', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const page = forumListSchema.parse({ messages: [emptyAboutMe, good], nextCursor: 'next' });
+    expect(page.messages.map((row) => row.id)).toEqual(['m1']);
+    expect(page.nextCursor).toBe('next');
+    expect(forumRepliesSchema.parse({ messages: [good, emptyAboutMe] }).messages).toHaveLength(1);
+    expect(() => forumListSchema.parse({ messages: 'nope' })).toThrow();
+    expect(() => forumListSchema.parse({ messages: [], nextCursor: '' })).toThrow();
+  });
+
+  it('reads an empty About me profile note as null and keeps a valid one', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: null,
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: '',
+      profileMessage: emptyAboutMe,
+      postCount: 1,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).profileMessage).toBeNull();
+    expect(memberProfileSchema.parse({ ...profile, profileMessage: good }).profileMessage?.id).toBe(
+      'm1',
+    );
+    expect(() => memberProfileSchema.parse({ ...profile, profileMessage: 'nope' })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, profileMessage: undefined })).toThrow();
+  });
+
+  it('keeps the valid posts of a grant application', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const detail = fundingApplicationDetailSchema.parse({
+      account: { id: 'acc_rose', name: 'Rose', role: 'verified', lightningAddress: null },
+      grant: {
+        status: 'pending',
+        appliedAt: 1,
+        trialUtcDate: null,
+        admittedAt: null,
+        decidedAt: null,
+      },
+      messages: [emptyAboutMe, good],
+    });
+    expect(detail.messages.map((row) => row.id)).toEqual(['m1']);
   });
 });
 

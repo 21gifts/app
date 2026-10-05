@@ -2346,6 +2346,46 @@ test('Function: fetchMemberPosts — member posts open from the count', async ({
   await expect(page.getByText('Second post from Carol.')).toBeVisible();
 });
 
+test('Function: fetchMember — an empty About me note leaves the profile and its other posts', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/77777777-7777-4777-8777-777777777777');
+  await expect(page.getByText('dana@21.gifts')).toBeVisible();
+  await expect(page.getByText('Could not load this profile. Please try again.')).toHaveCount(0);
+  await expect(page.getByText('About me')).toHaveCount(0);
+  await page.getByRole('button', { name: '2 posts' }).click();
+  await expect(page.getByText('A post from Dana.')).toBeVisible();
+  await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
+});
+
+test('Function: fetchMessages — one empty note on the All page leaves the other notes', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  let served: string[] = [];
+  await page.route(/\/forum\/messages\?/, async (route) => {
+    const url = new URL(
+      '/forum/members/77777777-7777-4777-8777-777777777777/posts',
+      route.request().url(),
+    );
+    const response = await route.fetch({ url: url.toString() });
+    const body = (await response.json()) as { messages: { text: string }[] };
+    served = body.messages.map((row) => row.text);
+    await route.fulfill({ response, json: { ...body, nextCursor: 'next' } });
+  });
+  await page.reload();
+  const view = page.getByRole('combobox', { name: 'Forum view' });
+  await view.click();
+  await page.getByRole('option', { name: 'All', exact: true }).click();
+  await expect(view).toContainText('All');
+  await expect(page.getByText('A post from Dana.')).toBeVisible();
+  await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
+  expect(served).toEqual(['A post from Dana.', '']);
+});
+
 test('Function: fetchMemberReplies — member replies open from the count', async ({
   page,
   request,

@@ -1535,21 +1535,21 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Loads a signed-in member profile by account id.
 - **Inputs:** Bearer session and `accountId`.
-- **Returns / side effects:** Validated `MemberProfile`, including `postCount` and `replyCount`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`.
+- **Returns / side effects:** Validated `MemberProfile`, including `postCount` and `replyCount`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`. A `profileMessage` that fails `forumMessageSchema` (an About me saved empty: no text, no media, 0 sats) reads as `null`, so the profile renders with the About me empty state instead of failing; the drop is counted in one `console.warn` without content.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: fetchMemberPosts
 
 - **Purpose:** Loads a member's top-level forum posts with `GET /forum/members/:id/posts`.
 - **Inputs:** Bearer session and `accountId`.
-- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
+- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200. Rows are parsed one by one (`forumMessageRowsSchema`): a note that fails `forumMessageSchema`, such as an empty About me note (no text, no media, 0 sats), is dropped and counted in one `console.warn` without its content, and the other rows still render; only an invalid envelope fails the list. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
 - **Used by:** `MemberProfileScreen`.
 
 ## Function: fetchMemberReplies
 
 - **Purpose:** Loads a member's forum replies with `GET /forum/members/:id/replies`.
 - **Inputs:** Bearer session and `accountId`.
-- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200; reply messages may be payable when the author has a published event and can receive, and may include `parentId`. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
+- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200; reply messages may be payable when the author has a published event and can receive, and may include `parentId`. Rows are parsed one by one (`forumMessageRowsSchema`): a note that fails `forumMessageSchema`, such as an empty About me note (no text, no media, 0 sats), is dropped and counted in one `console.warn` without its content, and the other rows still render; only an invalid envelope fails the list. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
 - **Used by:** `MemberProfileScreen`.
 
 ## Function: parseMissingRequirements
@@ -1808,7 +1808,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** GET `/funding/applications/:accountId` (Bearer) and parse `fundingApplicationDetailSchema`.
 - **Inputs:** Bearer `sessionToken`, subject `accountId`.
-- **Returns / side effects:** Account, grant, and living-room posts. Throws visitor copy `Could not load this application. Please try again.` on 401/403/404/503, other non-2xx, network failure, or a body that fails the schema.
+- **Returns / side effects:** Account, grant, and living-room posts. Rows are parsed one by one (`forumMessageRowsSchema`): a note that fails `forumMessageSchema`, such as an empty About me note (no text, no media, 0 sats), is dropped and counted in one `console.warn` without its content, and the other rows still render; only an invalid envelope fails the detail. Throws visitor copy `Could not load this application. Please try again.` on 401/403/404/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingApplicationDetailScreen`.
 
 ## Function: fetchDailyRoster
@@ -1983,7 +1983,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** `GET /forum/messages?mode=active` with no Authorization header. Same page size (20) and cursor as the signed-in feed. HTTP 401 throws `PublicForumUnauthorizedError`.
 - **Inputs:** Optional `limit` and `cursor`.
-- **Returns / side effects:** `{ messages, nextCursor }`.
+- **Returns / side effects:** `{ messages, nextCursor }`. Rows are parsed one by one (`forumMessageRowsSchema`): a note that fails `forumMessageSchema`, such as an empty About me note (no text, no media, 0 sats), is dropped and counted in one `console.warn` without its content, and the other rows still render; only an invalid envelope fails the list. `nextCursor` is kept, so the next page still loads when every row of a page was dropped.
 - **Used by:** `ForumLoader` when the living room has no session.
 
 ## Function: PublicForumUnauthorizedError
@@ -1997,7 +1997,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** GET `/forum/messages` with the bearer session, parse `forumListSchema`, and return the newest-first feed page as `{ messages, nextCursor }` (including defaulted `replyCount`).
 - **Inputs:** `sessionToken`; optional `{ mode, limit, cursor, hashtag }`. Always sends `limit` (default 20), sends `mode` when supplied, sends `hashtag` when non-empty, and omits a null or empty cursor and an empty/`''` hashtag.
-- **Returns / side effects:** `ForumFeedPage` with `nextCursor: null` when the response omits it. Throws visitor copy (`Could not load messages. Please try again.`) on failure.
+- **Returns / side effects:** `ForumFeedPage` with `nextCursor: null` when the response omits it. In every mode (Active, No gifts yet, All, Most popular, and the shops hashtag) rows are parsed one by one (`forumMessageRowsSchema`): a note that fails `forumMessageSchema`, such as an empty About me note (no text, no media, 0 sats), is dropped and counted in one `console.warn` without its content, and the other rows still render; only an invalid envelope fails the list. `nextCursor` is kept, so pagination continues when every row of a page was dropped. Throws visitor copy (`Could not load messages. Please try again.`) on a non-ok response, a network failure, or an invalid envelope (`messages` not an array, or an empty `nextCursor`).
 - **Used by:** `ForumLoader`.
 
 ## Function: fetchExternalAuthorProfile
@@ -2009,14 +2009,14 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: fetchExternalAuthorPosts
 
-- **Purpose:** GET `/public-messages/:id/external-posts` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
+- **Purpose:** GET `/public-messages/:id/external-posts` with no Authorization. After HTTP OK, require `{ messages: array }`, parse the items with `forumMessageRowsSchema` (each item through `forumMessageSchema`; invalid items are skipped and counted in one `console.warn` without content).
 - **Inputs:** Forum message `id`.
 - **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
 - **Used by:** `ExternalAuthorProfile`.
 
 ## Function: fetchExternalAuthorReplies
 
-- **Purpose:** GET `/public-messages/:id/external-replies` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
+- **Purpose:** GET `/public-messages/:id/external-replies` with no Authorization. After HTTP OK, require `{ messages: array }`, parse the items with `forumMessageRowsSchema` (each item through `forumMessageSchema`; invalid items are skipped and counted in one `console.warn` without content).
 - **Inputs:** Forum message `id`.
 - **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
 - **Used by:** `ExternalAuthorProfile`.
@@ -2044,7 +2044,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: fetchPublicReplies
 
-- **Purpose:** GET `/public-messages/:id/replies` without a session. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items, and return the survivors oldest-first.
+- **Purpose:** GET `/public-messages/:id/replies` without a session. After HTTP OK, require `{ messages: array }`, parse the items with `forumMessageRowsSchema` (each item through `forumMessageSchema`; invalid items are skipped and counted in one `console.warn` without content), and return the survivors oldest-first.
 - **Inputs:** Parent forum message `id`.
 - **Returns / side effects:** `ForumMessage[]` (empty if none survive or HTTP 200 `{ messages: [] }`). Throws visitor copy (`Could not load messages. Please try again.`) on HTTP 404 (not empty), other non-ok, network, non-JSON, or a body that is not `{ messages: array }`.
 - **Used by:** `PublicMessageLoader`.
@@ -2058,7 +2058,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: fetchReplies
 
-- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items, and return the survivors oldest-first.
+- **Purpose:** GET `/forum/messages/:id/replies` with the bearer session. After HTTP OK, require `{ messages: array }`, parse the items with `forumMessageRowsSchema` (each item through `forumMessageSchema`; invalid items are skipped and counted in one `console.warn` without content), and return the survivors oldest-first.
 - **Inputs:** `sessionToken`, parent message `id`.
 - **Returns / side effects:** `ForumMessage[]` (empty if none survive). Throws visitor copy (`Could not load messages. Please try again.`) when the api is unavailable, the body is not JSON, or the body is not `{ messages: array }`. Damus authors may omit `role` (schema defaults to `basis`). An optional `via: 'nostr'` field is accepted (present only on replies from a Nostr user with no 21.gifts account).
 - **Used by:** `ForumLoader`.

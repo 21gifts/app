@@ -295,6 +295,61 @@ const E2E_MEMBER_REPLIES = [
   },
 ];
 
+/**
+ * Canned member whose About me was saved empty: the profile note has no text,
+ * no photo, no video, and 0 sats, so the app's note schema cannot show it.
+ */
+const E2E_EMPTY_ABOUT_MEMBER_ID = '77777777-7777-4777-8777-777777777777';
+const E2E_EMPTY_ABOUT_NOTE = {
+  id: '88888888-8888-4888-8888-888888888888',
+  accountId: E2E_EMPTY_ABOUT_MEMBER_ID,
+  name: 'Dana',
+  text: '',
+  createdAt: '2026-10-05T09:00:00.000Z',
+  sats: 0,
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+  payable: true,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'basis',
+  replyCount: 0,
+};
+const E2E_EMPTY_ABOUT_PROFILE = {
+  id: E2E_EMPTY_ABOUT_MEMBER_ID,
+  name: 'Dana',
+  username: 'dana',
+  location: null,
+  role: 'basis',
+  lightningAddress: null,
+  createdAt: '2026-02-01T12:00:00.000Z',
+  aboutMe: '',
+  aboutMeHasPhoto: false,
+  profileMessage: E2E_EMPTY_ABOUT_NOTE,
+  postCount: 2,
+  replyCount: 0,
+};
+const E2E_EMPTY_ABOUT_POSTS = [
+  {
+    id: '99999999-9999-4999-8999-999999999999',
+    accountId: E2E_EMPTY_ABOUT_MEMBER_ID,
+    name: 'Dana',
+    text: 'A post from Dana.',
+    createdAt: '2026-10-05T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  },
+  E2E_EMPTY_ABOUT_NOTE,
+];
+
 /** True when a forum POST needs name, username, rules, or lightning-address. */
 function missingForumPostRequirements(account) {
   return (
@@ -1592,6 +1647,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, { messages: E2E_MEMBER_POSTS });
       return;
     }
+    if (id === E2E_EMPTY_ABOUT_MEMBER_ID) {
+      json(res, 200, { messages: E2E_EMPTY_ABOUT_POSTS });
+      return;
+    }
     if (id === account.id) {
       json(res, 200, { messages: [] });
       return;
@@ -1640,6 +1699,10 @@ const server = http.createServer(async (req, res) => {
     const id = decodeURIComponent(membersMatch[1]);
     if (id === E2E_MEMBER_ID) {
       json(res, 200, E2E_MEMBER_PROFILE);
+      return;
+    }
+    if (id === E2E_EMPTY_ABOUT_MEMBER_ID) {
+      json(res, 200, E2E_EMPTY_ABOUT_PROFILE);
       return;
     }
     if (id === account.id) {

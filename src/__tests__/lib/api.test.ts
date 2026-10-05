@@ -168,6 +168,7 @@ function installNavigator(value: unknown): () => void {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('fetchMe', () => {
@@ -302,6 +303,32 @@ describe('fetchMember', () => {
     });
   });
 
+  it('reads an empty About me note as no profile note', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...member, aboutMe: '', profileMessage: { ...emptyForumNote, accountId: member.id } },
+    });
+    await expect(fetchMember('sess', member.id)).resolves.toMatchObject({
+      aboutMe: '',
+      profileMessage: null,
+    });
+    expect(warn).toHaveBeenCalledWith('Skipped 1 forum note(s) that failed the note schema');
+  });
+
+  it('keeps a valid profile note', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...member, profileMessage: forumMessage } });
+    await expect(fetchMember('sess', member.id)).resolves.toMatchObject({
+      profileMessage: forumMessage,
+    });
+  });
+
+  it('throws visitor copy when the profile note is not an object', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...member, profileMessage: 'nope' } });
+    await expect(fetchMember('sess', member.id)).rejects.toThrow();
+  });
+
   it('returns null on 401 and 404', async () => {
     stubFetch({ ok: false, status: 401, body: {} });
     await expect(fetchMember('sess', member.id)).resolves.toBeNull();
@@ -412,6 +439,30 @@ describe('fetchMemberPosts', () => {
       'Could not load messages. Please try again.',
     );
   });
+
+  it('drops an empty About me note and keeps the other posts', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [post, { ...emptyForumNote, accountId }] },
+    });
+    await expect(fetchMemberPosts('sess', accountId)).resolves.toEqual([post]);
+    expect(warn).toHaveBeenCalledWith('Skipped 1 forum note(s) that failed the note schema');
+  });
+
+  it('returns an empty list when every post fails validation', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({ ok: true, status: 200, body: { messages: [emptyForumNote] } });
+    await expect(fetchMemberPosts('sess', accountId)).resolves.toEqual([]);
+  });
+
+  it('throws visitor copy when the envelope fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: null } });
+    await expect(fetchMemberPosts('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
 });
 
 describe('fetchMemberReplies', () => {
@@ -458,6 +509,18 @@ describe('fetchMemberReplies', () => {
     await expect(fetchMemberReplies('sess', accountId)).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
+  });
+
+  it('drops a reply that fails validation and keeps the other replies', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [{ ...reply, text: '' }, reply] },
+    });
+    await expect(fetchMemberReplies('sess', accountId)).resolves.toEqual([reply]);
+    stubFetch({ ok: true, status: 200, body: { messages: [{ ...reply, text: '' }] } });
+    await expect(fetchMemberReplies('sess', accountId)).resolves.toEqual([]);
   });
 });
 
@@ -1417,6 +1480,9 @@ const forumMessage = {
   replyCount: 0,
 };
 
+/** An empty About me note: no text, no media, no sats. */
+const emptyForumNote = { ...forumMessage, id: 'm-empty', text: '' };
+
 describe('fetchPlaces', () => {
   const placeRow = {
     id: 'msg_1',
@@ -1507,6 +1573,24 @@ describe('fetchPublicForumMessages', () => {
     await expect(fetchPublicForumMessages()).rejects.toThrow('Could not load messages');
     stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
     await expect(fetchPublicForumMessages()).rejects.toThrow('Could not load messages');
+  });
+
+  it('drops a row that fails validation and keeps the other rows and the cursor', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [emptyForumNote, forumMessage], nextCursor: 'next' },
+    });
+    await expect(fetchPublicForumMessages()).resolves.toEqual({
+      messages: [forumMessage],
+      nextCursor: 'next',
+    });
+    stubFetch({ ok: true, status: 200, body: { messages: [emptyForumNote] } });
+    await expect(fetchPublicForumMessages()).resolves.toEqual({
+      messages: [],
+      nextCursor: null,
+    });
   });
 });
 
@@ -1648,8 +1732,39 @@ describe('fetchMessages', () => {
     );
   });
 
-  it('throws visitor copy when the body fails validation', async () => {
-    stubFetch({ ok: true, status: 200, body: { messages: [{ id: 'm1' }] } });
+  it('drops a row that fails validation and keeps the other rows and the cursor', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, emptyForumNote, { id: 'm3' }], nextCursor: 'next' },
+    });
+    await expect(fetchMessages('sess', { mode: 'all' })).resolves.toEqual({
+      messages: [forumMessage],
+      nextCursor: 'next',
+    });
+    expect(warn).toHaveBeenCalledWith('Skipped 2 forum note(s) that failed the note schema');
+  });
+
+  it('returns an empty page with its cursor when every row fails validation', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [emptyForumNote], nextCursor: 'next' },
+    });
+    await expect(fetchMessages('sess', { mode: 'all' })).resolves.toEqual({
+      messages: [],
+      nextCursor: 'next',
+    });
+  });
+
+  it('throws visitor copy when the envelope fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: 'nope' } });
+    await expect(fetchMessages('sess')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { messages: [], nextCursor: '' } });
     await expect(fetchMessages('sess')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
@@ -5523,6 +5638,19 @@ describe('fetchFundingApplication', () => {
     await expect(fetchFundingApplication('sess', 'acc/1')).resolves.toEqual(detail);
     expect(fetchMock).toHaveBeenCalledWith('/funding/applications/acc%2F1', {
       headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('drops a post that fails validation and keeps the other posts', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...detail, messages: [emptyForumNote, forumMessage] },
+    });
+    await expect(fetchFundingApplication('sess', 'acc_rose')).resolves.toEqual({
+      ...detail,
+      messages: [forumMessage],
     });
   });
 

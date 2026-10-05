@@ -1455,7 +1455,7 @@ Loading copy **Loading…** while the messages fetch is in flight.
 
 ### Variant: error
 
-Load error **Could not load messages. Please try again.** plus **Try again**.
+Load error **Could not load messages. Please try again.** plus **Try again**. Shown only when the page itself cannot be read (a failed request or an invalid envelope). One note that cannot be shown, such as an empty About me note, is left out of the list and does not cause this error in any mode.
 
 ![21.gifts welcome error](images/welcome-error.png)
 
@@ -2995,7 +2995,7 @@ Identity card; replies count pressed; feed shows Loading…; no pinned profile-n
 
 ### Variant: posts-error
 
-Identity card; posts count pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card.
+Identity card; posts count pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card. Shown only when the list itself cannot be read; one note that cannot be shown (an empty About me note) is left out and the other posts render.
 
 ![21.gifts member posts error](images/members-posts-error.png)
 
@@ -3019,7 +3019,7 @@ Identity card; replies count 3 pressed; one listed reply; muted `Showing the lat
 
 ### Variant: note-null
 
-Member identity card only (`profileMessage: null`, `aboutMe` null); copy-profile-link still on the card; no About me heading; no forum card.
+Member identity card only (`profileMessage: null`, `aboutMe` null); copy-profile-link still on the card; no About me heading; no forum card. A member who saved an empty About me looks the same: a profile note with no text, no media, and 0 sats reads as no note, so the profile does not fail to load.
 
 ![21.gifts member profile without note](images/members-note-null.png)
 

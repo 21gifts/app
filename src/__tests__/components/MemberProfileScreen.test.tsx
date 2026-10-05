@@ -28,6 +28,7 @@ import {
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
+  memberProfileSchema,
   type Account,
   type ForumMessage,
   type MemberProfile,
@@ -1102,6 +1103,33 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
     expect(screen.queryByText('About me')).toBeNull();
     expect(screen.queryByText('Tell others who you are.')).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+    });
+  });
+
+  it('shows the empty About me state when the profile note is an empty About me', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const parsed = memberProfileSchema.parse({
+      ...profile,
+      aboutMe: '',
+      profileMessage: {
+        id: '33333333-3333-4333-8333-333333333333',
+        accountId: profile.id,
+        name: 'Carol',
+        text: '',
+        createdAt: '2026-08-01T10:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+      },
+    });
+    warn.mockRestore();
+    expect(parsed.profileMessage).toBeNull();
+    renderWithLocale(<MemberProfileScreen profile={parsed} received={[]} donated={[]} />);
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+    expect(screen.queryByText('About me')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Message' })).toBeNull();
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
     });
