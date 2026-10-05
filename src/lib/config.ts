@@ -5,8 +5,11 @@
  * module. Keep it in sync with `src/types/env.d.ts`. `NEXT_PUBLIC_API_URL` is
  * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
  * start. `NEXT_PUBLIC_APP_VERSION` is baked at `next build`, not substituted by
- * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`, and
- * `NEXT_PUBLIC_PLATFORM_USERNAME` through `getPlatformUsername`.
+ * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
+ * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`, and
+ * `NEXT_PUBLIC_SENTRY_ENVIRONMENT` are optional Dockerfile placeholders:
+ * `entrypoint.sh` substitutes an empty string when the container has no value,
+ * which hides the donation address or turns error reporting off.
  */
 
 /**
@@ -89,19 +92,59 @@ export function getBreezApiKey(): string | null {
 
 /**
  * Optional username of the 21.gifts platform account
- * (`NEXT_PUBLIC_PLATFORM_USERNAME`), baked at `next build`. Donations to the
+ * (`NEXT_PUBLIC_PLATFORM_USERNAME`), set per deployment. Donations to the
  * project go to that account's in-app wallet address `<username>@<app host>`.
- * Unset or empty means the landing page shows no donation address. Does not
- * throw.
+ * Unset, empty, or blank means the landing page shows no donation address.
+ * Does not throw.
  *
- * Dot access is load-bearing so Next inlines the value when the build sets it.
+ * In the Docker image the build inlines the `__NEXT_PUBLIC_PLATFORM_USERNAME__`
+ * placeholder and `entrypoint.sh` substitutes the container value, or an empty
+ * string, at start. The blank check is a regular expression on purpose: the
+ * minifier cannot fold it against the placeholder literal, so the substituted
+ * empty string still reads as unset.
  *
  * @returns The trimmed username, or `null` when unset or blank.
  */
 export function getPlatformUsername(): string | null {
-  const value = process.env.NEXT_PUBLIC_PLATFORM_USERNAME?.trim();
-  if (value === undefined || value === '') {
+  const value = process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
+  if (value === undefined || !/\S/.test(value)) {
     return null;
   }
-  return value;
+  return value.trim();
+}
+
+/**
+ * Optional error-reporting DSN (`NEXT_PUBLIC_SENTRY_DSN`). Unset, empty, or
+ * blank turns error reporting off. Does not throw.
+ *
+ * In the Docker image the build inlines the `__NEXT_PUBLIC_SENTRY_DSN__`
+ * placeholder into the browser and server bundles, and `entrypoint.sh`
+ * substitutes the container value, or an empty string, at start. The blank
+ * check is a regular expression on purpose: the minifier cannot fold it
+ * against the placeholder literal, so the substituted empty string still
+ * reads as off.
+ *
+ * @returns The trimmed DSN, or `null` when unset or blank.
+ */
+export function getSentryDsn(): string | null {
+  const value = process.env.NEXT_PUBLIC_SENTRY_DSN;
+  if (value === undefined || !/\S/.test(value)) {
+    return null;
+  }
+  return value.trim();
+}
+
+/**
+ * Optional error-reporting environment name (`NEXT_PUBLIC_SENTRY_ENVIRONMENT`),
+ * e.g. `staging`. Unset, empty, or blank means the reports carry no
+ * environment name. Does not throw. Delivered like {@link getSentryDsn}.
+ *
+ * @returns The trimmed name, or `null` when unset or blank.
+ */
+export function getSentryEnvironment(): string | null {
+  const value = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT;
+  if (value === undefined || !/\S/.test(value)) {
+    return null;
+  }
+  return value.trim();
 }

@@ -34,6 +34,7 @@
   "dependencies": {
     "@breeztech/breez-sdk-spark": "0.26.0",
     "@scure/bip39": "^1.6.0",
+    "@sentry/nextjs": "^11.4.0",
     "jsqr": "^1.4.0",
     "lucide-react": "^0.469.0",
     "next": "^15.3.0",

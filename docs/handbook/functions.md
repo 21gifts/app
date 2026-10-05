@@ -2516,10 +2516,59 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: getPlatformUsername
 
-- **Purpose:** Reads the optional `NEXT_PUBLIC_PLATFORM_USERNAME`, the username of the 21.gifts platform account, baked at `next build`. Donations to the project go to that account's in-app wallet address `<username>@<app host>`. Unset or empty means the landing page shows no donation address.
-- **Inputs:** None. Literal `process.env.NEXT_PUBLIC_PLATFORM_USERNAME` access (dot access, so the build inlines the value).
+- **Purpose:** Reads the optional `NEXT_PUBLIC_PLATFORM_USERNAME`, the username of the 21.gifts platform account, set per deployment. In the Docker image it is an optional `entrypoint.sh` placeholder: an unset value is substituted with an empty string and the container still starts. Donations to the project go to that account's in-app wallet address `<username>@<app host>`. Unset, empty, or blank means the landing page shows no donation address.
+- **Inputs:** None. Literal `process.env.NEXT_PUBLIC_PLATFORM_USERNAME` access (dot access, so the build inlines the value). The blank check is a regular expression so the minifier cannot fold it against the placeholder.
 - **Returns / side effects:** The trimmed username, or `null` when unset or blank. Never throws.
 - **Used by:** `projectDonateAddress`.
+
+## Function: getSentryDsn
+
+- **Purpose:** Reads the optional error-reporting DSN `NEXT_PUBLIC_SENTRY_DSN`, set per deployment. An optional `entrypoint.sh` placeholder like `NEXT_PUBLIC_PLATFORM_USERNAME`. Unset, empty, or blank turns error reporting off.
+- **Inputs:** None. Literal `process.env.NEXT_PUBLIC_SENTRY_DSN` access; regular-expression blank check, as in `getPlatformUsername`.
+- **Returns / side effects:** The trimmed DSN, or `null` when unset or blank. Never throws.
+- **Used by:** `sentryOptions`, `forwardSentryEnvelope`.
+
+## Function: getSentryEnvironment
+
+- **Purpose:** Reads the optional error-reporting environment name `NEXT_PUBLIC_SENTRY_ENVIRONMENT` (for example `staging`), set per deployment. An optional `entrypoint.sh` placeholder.
+- **Inputs:** None. Literal `process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT` access; regular-expression blank check.
+- **Returns / side effects:** The trimmed name, or `null` when unset or blank (reports then carry no environment name). Never throws.
+- **Used by:** `sentryOptions`.
+
+## Function: sentryOptions
+
+- **Purpose:** Builds the error-reporting init options for the browser or the server and edge runtimes, or `null` when `NEXT_PUBLIC_SENTRY_DSN` is unset, empty, or not a DSN (then nothing starts and nothing is sent).
+- **Inputs:** `'browser'` or `'server'`. Reads `getSentryDsn`, `getSentryEnvironment`, and `getAppVersion` (the release).
+- **Returns / side effects:** Errors only: `tracesSampleRate: 0`, no trace headers, no sessions, replay, profiling, feedback, or client reports. No user info, IP address, cookies, bodies, query strings, or stack-frame variables (`dataCollection`). Drops the session, tracing, local-variable, and console integrations. Browser options post to the same-origin tunnel `/monitoring`. `beforeSend` and `beforeBreadcrumb` remove the user, reduce the request to method, path, User-Agent and Referer, and replace recovery-phrase-shaped word runs, `lnbc`/`lntb`/`lnurl` strings, `spark1`/`sparkrt1` addresses, 64+ hex digits, bearer tokens, the stored session token, URL queries and fragments, and every value under keys such as `mnemonic`, `phrase`, `words`, `seed`, `token`, `secret`, `prf`, `invoice`, or `pr`. Console breadcrumbs are dropped; request breadcrumbs keep method, path, and status only.
+- **Used by:** `register` (`src/instrumentation.ts`) and `src/instrumentation-client.ts`.
+
+## Function: forwardSentryEnvelope
+
+- **Purpose:** Same-origin error-report tunnel behind `POST /monitoring`, so content blockers do not drop reports. Forwards one browser envelope to the configured DSN's project.
+- **Inputs:** Incoming `Request` whose body is an envelope; its header line must name the configured DSN's host and project.
+- **Returns / side effects:** 404 while error reporting is off, 413 above 1 MiB, 400 for another host or project or a broken header, 502 when the Sentry server cannot be reached, otherwise the upstream status with an empty body. Does not pass on the visitor's IP address, cookies, or headers.
+- **Used by:** Route POST `/monitoring`.
+
+## Function: register
+
+- **Purpose:** Next.js server start hook (`src/instrumentation.ts`) for the Node.js and edge runtimes. Starts error reporting with `sentryOptions('server')`.
+- **Inputs:** None.
+- **Returns / side effects:** Calls the SDK `init` when a DSN is set; otherwise does nothing (no reports, no network traffic).
+- **Used by:** Next.js at server start.
+
+## Function: onRequestError
+
+- **Purpose:** Next.js hook in `src/instrumentation.ts` for errors thrown while rendering a page or handling a route on the server. It is the SDK's `captureRequestError`.
+- **Inputs:** The error, the request (path, method, headers), and the route context, from Next.js.
+- **Returns / side effects:** Reports the error when error reporting is on; the `sentryOptions` scrubber then keeps only method, path, User-Agent, and Referer of the request. A no-op while error reporting is off.
+- **Used by:** Next.js on server request errors.
+
+## Function: GlobalError
+
+- **Purpose:** Last-resort error boundary (`src/app/global-error.tsx`) for render errors no other boundary catches, including errors in the root layout.
+- **Inputs:** `error` — the caught error.
+- **Returns / side effects:** Reports the error once (a no-op while error reporting is off) and renders its own `<html lang="en">` document with the Next.js error page, because it replaces the root layout.
+- **Used by:** Next.js App Router.
 
 ## Function: getCatalog
 
