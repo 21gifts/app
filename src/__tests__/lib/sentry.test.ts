@@ -130,6 +130,14 @@ describe('beforeSend scrubber', () => {
     expect(scrubText(JSON.stringify(words))).toBe('["[Filtered]"]');
   });
 
+  it('redacts a phrase in upper or title case', () => {
+    expect(scrubText(PHRASE.toUpperCase())).toBe('[Filtered]');
+    const title = PHRASE.split(' ')
+      .map((word) => word[0]?.toUpperCase() + word.slice(1))
+      .join(' ');
+    expect(scrubText(title)).toBe('[Filtered]');
+  });
+
   it('keeps an ordinary short message', () => {
     expect(scrubText('Failed to fetch the forum feed')).toBe('Failed to fetch the forum feed');
   });
@@ -182,6 +190,7 @@ describe('beforeSend scrubber', () => {
         sessionToken: 'e',
         apiSecret: 'f',
         prf: 'g',
+        prfFirst: 'g2',
         invoice: 'h',
         pr: 'i',
         '21gifts.session': 'j',
@@ -199,6 +208,7 @@ describe('beforeSend scrubber', () => {
       sessionToken: '[Filtered]',
       apiSecret: '[Filtered]',
       prf: '[Filtered]',
+      prfFirst: '[Filtered]',
       invoice: '[Filtered]',
       pr: '[Filtered]',
       '21gifts.session': '[Filtered]',
@@ -223,6 +233,14 @@ describe('beforeSend scrubber', () => {
       other: ['one', 'two'],
       mixed: [...PHRASE.split(' ', 11), 7],
     });
+  });
+
+  it('redacts raw bytes and upper-case phrase word arrays', () => {
+    const event = on().beforeSend({
+      type: undefined,
+      extra: { bytes: new Uint8Array([1, 2, 3]), list: PHRASE.toUpperCase().split(' ') },
+    });
+    expect(event.extra).toEqual({ bytes: '[Filtered]', list: '[Filtered]' });
   });
 
   it('replaces values nested too deep to inspect', () => {
