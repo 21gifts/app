@@ -4160,7 +4160,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Next.js page for `/grants/apply`. Fill `AppShell` with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="profile"` around `FundingApplyScreen`. `/profile/apply` redirects to this path.
 - **Inputs:** None.
-- **Returns / side effects:** `FundingApplyScreen` inside fill AppShell: the paused card, the apply walk for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas`, or **You are not verified yet.** for a basis account with one of those names.
+- **Returns / side effects:** `FundingApplyScreen` inside fill AppShell. While applications are paused, the username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`, and the status is not pending, trial, or admitted: the paused card. A verified account with one of those names and status `none` or `rejected`: the apply walk. Pending, trial, and admitted: that copy for every verified username. A basis account named one of those three, and a basis account whose status is pending, trial, or admitted: **You are not verified yet.** Any other basis account sees the paused card.
 - **Used by:** Route `/grants/apply`.
 
 ## Function: FundingApplyScreen
