@@ -1,11 +1,13 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getApiUrl,
   getAppVersion,
   getBreezApiKey,
   getE2eNow,
   getPlatformUsername,
+  getSentryDsn,
+  getSentryEnvironment,
 } from '@/lib/config';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
@@ -15,6 +17,7 @@ const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 const ORIGINAL_PLATFORM_USERNAME = process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   if (ORIGINAL === undefined) {
     delete process.env.NEXT_PUBLIC_API_URL;
   } else {
@@ -144,5 +147,30 @@ describe('getPlatformUsername', () => {
   it('returns null when blank', () => {
     process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '   ';
     expect(getPlatformUsername()).toBeNull();
+  });
+});
+
+describe.each([
+  ['getSentryDsn', getSentryDsn, 'NEXT_PUBLIC_SENTRY_DSN', 'https://key@errors.example/7'],
+  ['getSentryEnvironment', getSentryEnvironment, 'NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'staging'],
+] as const)('%s', (_name, read, variable, value) => {
+  it('returns the configured value, trimmed', () => {
+    vi.stubEnv(variable, `  ${value}  `);
+    expect(read()).toBe(value);
+  });
+
+  it('returns null when unset', () => {
+    vi.stubEnv(variable, undefined);
+    expect(read()).toBeNull();
+  });
+
+  it('returns null for the empty string entrypoint.sh substitutes', () => {
+    vi.stubEnv(variable, '');
+    expect(read()).toBeNull();
+  });
+
+  it('returns null when blank', () => {
+    vi.stubEnv(variable, '   ');
+    expect(read()).toBeNull();
   });
 });

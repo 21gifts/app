@@ -104,6 +104,9 @@ export default defineConfig({
         NEXT_PUBLIC_APP_VERSION: 'dev',
         NEXT_PUBLIC_E2E_NOW: '2026-01-07T12:00:00.000Z',
         NEXT_PUBLIC_PLATFORM_USERNAME: '21gifts',
+        // Error reporting stays off in every Playwright run, whatever the shell sets.
+        NEXT_PUBLIC_SENTRY_DSN: '',
+        NEXT_PUBLIC_SENTRY_ENVIRONMENT: '',
       },
     },
   ],
