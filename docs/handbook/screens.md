@@ -514,7 +514,7 @@ Signed in, no grant application. The notice title is **Daily payout stopped**, t
 
 ### Variant: daily-payout-stopped-apply
 
-Username joey-rosima sees Apply for the 21 gifts grant under Daily payout stopped, not the paused sentence.
+Username joey-rosima, of any role, sees the Apply link under Daily payout stopped, not the paused sentence. That link is not the apply walk.
 
 ![21.gifts welcome daily payout stopped apply](images/welcome-daily-payout-stopped-apply.png)
 
@@ -2912,7 +2912,7 @@ Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, the
 
 ### Variant: funding-apply
 
-Username joey-rosima with no grant sees Apply for the 21 gifts grant instead of the paused sentence.
+Verified username joey-rosima with status none or rejected sees Apply for the 21 gifts grant instead of the paused sentence.
 
 ![21.gifts grants funding apply](images/grants-funding-apply.png)
 
@@ -3022,7 +3022,7 @@ Verified member, funding none. Heading **21 gifts grant**. The paused sentence. 
 
 ### Variant: about
 
-Username joey-rosima sees the first apply step, First, write a short About me so people can get to know you.
+Verified username joey-rosima with status none or rejected sees the first apply step, First, write a short About me so people can get to know you.
 
 ![21.gifts apply about](images/grants-apply-about.png)
 

@@ -3409,7 +3409,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: DailyPayoutStoppedNotice
 
-- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**. While `grantApplicationsPaused` is true, the body is `FundingPausedCopy` and Apply is not offered, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see the stopped-daily sentence and an Apply link to `/grants/apply`. When that switch is false, the body is the stopped-daily sentence and an Apply link to `/grants/apply`.
+- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**. While `grantApplicationsPaused` is true, the body is `FundingPausedCopy` and Apply is not offered, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, of any role, who still see the stopped-daily sentence and an Apply link to `/grants/apply`. That link is not the apply walk. When that switch is false, the body is the stopped-daily sentence and an Apply link to `/grants/apply`.
 - **Inputs:** None. Reads the auth store and translations.
 - **Returns / side effects:** A `role="region"` banner, or `null` when the flag is missing, false, or funding is null. No close control, no localStorage, no extra API call. Apply is offered when applications are not paused, or when the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 - **Used by:** `AppShell`.
@@ -4153,7 +4153,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply), including when the username is `joey-rosima`, `vincent`, or `jewel-bacolbas`. Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): while `grantApplicationsPaused` is true, `FundingPausedCopy` for `none`/`rejected` (no Apply, no About link) except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see the daily-gift sentence, About link, and Apply link to `/grants/apply`; when that switch is false, the daily-gift sentence, About link, and Apply link to `/grants/apply`. Then pending, one-day trial, or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number). Pending, trial, and admitted stay as they are for every username.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` do not offer Apply while applications are paused, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`.
+- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` do not offer Apply while applications are paused, except a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas`.
 - **Used by:** `GrantsScreen`.
 
 ## Function: FundingApplyPage
