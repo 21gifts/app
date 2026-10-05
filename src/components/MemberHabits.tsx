@@ -203,7 +203,7 @@ export function MemberHabits(): ReactElement {
           setPayError('request');
           return;
         }
-        if (/too many invoices/i.test(caught.message)) {
+        if (/too many payments/i.test(caught.message)) {
           setPayError('rateLimit');
           return;
         }

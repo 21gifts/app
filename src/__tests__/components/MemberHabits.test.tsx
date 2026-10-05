@@ -473,7 +473,7 @@ describe('MemberHabits', () => {
             return json({ error: 'No wallet' }, 409);
           }
           if (body.amountSats === 22) {
-            return json({ error: 'Too many invoices' }, 429);
+            return json({ error: 'Too many payments' }, 429);
           }
           if (body.amountSats === 99) {
             return json({});
