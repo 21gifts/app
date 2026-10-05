@@ -834,8 +834,10 @@ values into the bundles, so the image is built with literal placeholders
 (`__NEXT_PUBLIC_API_URL__`) and `entrypoint.sh` substitutes the runtime
 values at container start. The container refuses to start if a required
 variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
-`entrypoint.sh`) are substituted with an empty string instead, which the app
-reads as off. Each deployment sets them in its container environment.
+`entrypoint.sh`) are substituted with an empty string instead, and the app
+reads that empty string as unset: no donation address, no error reporting, or
+the SDK's default environment name (table below). Each deployment sets them in
+its container environment.
 
 | Variable                         | Required | Unset or empty                             |
 | -------------------------------- | -------- | ------------------------------------------ |
