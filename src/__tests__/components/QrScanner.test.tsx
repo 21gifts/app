@@ -159,6 +159,31 @@ describe('QrScanner', () => {
     expect(screen.queryByText('Point the camera at a Bitcoin QR code')).toBeNull();
   });
 
+  it('shows a large preview with a viewfinder and keeps the alert in the same box', async () => {
+    setCamera(() => Promise.resolve(fakeStream().stream));
+    const live = renderWithLocale(<QrScanner onResult={vi.fn()} />);
+    await flush();
+    const box = video().parentElement as HTMLElement;
+    expect(box.className).toContain('h-[calc(var(--app-height)*0.7)]');
+    expect(box.className).toContain('min-h-72');
+    expect(video().className).toContain('object-cover');
+    const finder = box.querySelector('[aria-hidden="true"]') as HTMLElement;
+    expect(finder.className).toContain('pointer-events-none');
+    expect(finder.className).toContain('size-[68cqmin]');
+    const hint = screen.getByText('Point the camera at a Bitcoin QR code');
+    expect(hint.parentElement).toBe(box);
+    expect(hint.className).toContain('text-lg');
+    const liveClass = box.className;
+    live.unmount();
+
+    setCamera(() => Promise.reject(new DOMException('blocked', 'NotAllowedError')));
+    renderWithLocale(<QrScanner onResult={vi.fn()} />);
+    await flush();
+    const alert = screen.getByRole('alert');
+    expect((alert.parentElement as HTMLElement).className).toBe(liveClass);
+    expect(alert.className).toContain('text-lg');
+  });
+
   it('says no camera was found when the browser has no media devices', async () => {
     renderWithLocale(<QrScanner onResult={vi.fn()} />);
     await flush();
