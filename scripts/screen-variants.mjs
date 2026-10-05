@@ -434,7 +434,7 @@ export const SCREEN_VARIANTS = [
     id: 'send-confirm',
     image: 'wallet-send-confirm.png',
     visual: 'state-wallet-send-confirm',
-    needle: "Send ₿2'100",
+    needle: "shotScreen(page, 'state-wallet-send-confirm')",
   },
   {
     route: '/wallet',

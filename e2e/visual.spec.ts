@@ -1978,8 +1978,10 @@ test.describe('screen baselines', () => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-confirm');
     await openWalletSend(page);
-    await expect(page.getByText("Send ₿2'100")).toBeVisible();
-    await expect(page.getByText('$2.10')).toBeVisible();
+    await expect(page.getByText("₿2'100", { exact: true })).toBeVisible();
+    await expect(page.getByText('$2.10', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fee ₿0', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await shotScreen(page, 'state-wallet-send-confirm');
   });
 
@@ -1991,6 +1993,8 @@ test.describe('screen baselines', () => {
     await expect(
       page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('status'),
     ).toContainText('$2.10');
+    await expect(page.getByText('To bob@example.com')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
     await shotScreen(page, 'state-wallet-send-sent');
   });
 
@@ -2112,8 +2116,9 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet?visual=send-confirm-fixed');
     await openWalletSend(page);
     await expect(page.getByText('To shop@21.gifts')).toBeVisible();
-    await expect(page.getByText("Send ₿7'000")).toBeVisible();
-    await expect(page.getByText('$7.00')).toBeVisible();
+    await expect(page.getByText("₿7'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$7.00', { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Fee ₿3 · \$0\.00$/)).toBeVisible();
     await shotScreen(page, 'state-wallet-send-confirm-fixed');
   });
 
@@ -2122,9 +2127,9 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet?visual=send-confirm-shop');
     await openWalletSend(page);
     await expect(page.getByText('To shop@21.gifts')).toBeVisible();
-    await expect(page.getByText("Send ₿7'000")).toBeVisible();
-    await expect(page.getByText('$7.00')).toBeVisible();
-    await expect(page.getByText(/Fee ₿0/)).toBeVisible();
+    await expect(page.getByText("₿7'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$7.00', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fee ₿0', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-wallet-send-confirm-shop');
   });
 

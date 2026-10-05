@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, X } from 'lucide-react';
+import { CircleCheck, Loader2, X } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { AppShellFooter } from '@/components/AppShell';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -43,6 +44,9 @@ export interface WalletSendProps {
    */
   walletReady?: boolean;
 }
+
+const LARGE_AMOUNT_CLASS =
+  'text-center text-5xl font-semibold tracking-tight tabular-nums lining-nums text-app-fg sm:text-6xl';
 
 const ERROR_KEYS: Record<WalletSendError, MessageKey> = {
   invalid: 'wallet.sendInvalid',
@@ -142,11 +146,31 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
 
   const fiatOf = (sats: number): ReactElement | null =>
     preferredFiatSuffix(sats, rateDay, fiat, numberFormat);
-  const boundText = (sats: number): string => {
+  const fiatText = (sats: number): string | null => {
     const live = satsToFiatAmount(sats, rateDay, fiat);
-    const bitcoin = formatBitcoin(sats, numberFormat);
-    return live === null ? bitcoin : `${bitcoin} · ${formatFiatDisplay(live, fiat, numberFormat)}`;
+    return live === null ? null : formatFiatDisplay(live, fiat, numberFormat);
   };
+  const boundText = (sats: number): string => {
+    const live = fiatText(sats);
+    const bitcoin = formatBitcoin(sats, numberFormat);
+    return live === null ? bitcoin : `${bitcoin} · ${live}`;
+  };
+  const largeAmount = (sats: number, amount: string): ReactElement => {
+    const live = fiatText(sats);
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <p className={LARGE_AMOUNT_CLASS}>{amount}</p>
+        {live === null ? null : (
+          <p className="text-center text-base tabular-nums lining-nums text-app-muted">{live}</p>
+        )}
+      </div>
+    );
+  };
+  const footerAction = (children: ReactNode): ReactElement => (
+    <AppShellFooter>
+      <div className="mx-auto flex w-full max-w-sm flex-col items-stretch gap-3">{children}</div>
+    </AppShellFooter>
+  );
 
   let body: ReactElement;
   if (state.step === 'input' && !walletReady && state.error !== null) {
@@ -261,41 +285,56 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
     );
   } else if (state.step === 'confirm') {
     body = (
-      <StepBox onClose={close}>
-        <p className="min-w-0 truncate text-center text-sm text-app-fg">
+      <div className="flex w-full flex-col items-center gap-4 py-6">
+        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
-        </p>
-        <p className="text-center text-base font-semibold tabular-nums lining-nums text-app-fg">
-          {t('wallet.sendConfirm', { amount: formatBitcoin(state.amountSats, numberFormat) })}
-          {fiatOf(state.amountSats)}
         </p>
         <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
           {t('wallet.payFee', { amount: formatBitcoin(state.feeSats, numberFormat) })}
-          {fiatOf(state.feeSats)}
+          {state.feeSats > 0 ? fiatOf(state.feeSats) : null}
         </p>
-        <div className="flex justify-center">
-          <Button
-            type="button"
-            variant="primary"
-            disabled={busy}
-            icon={spinner}
-            onClick={send.confirm}
-          >
-            {t('wallet.sendButton')}
-          </Button>
-        </div>
-      </StepBox>
+        {footerAction(
+          <>
+            <Button
+              size="lg"
+              className="min-h-14 text-base"
+              disabled={busy}
+              icon={spinner}
+              onClick={send.confirm}
+            >
+              {t('wallet.sendButton')}
+            </Button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={close}
+              className="self-center px-4 py-2 text-sm text-app-muted underline hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t('wallet.sendCancel')}
+            </button>
+          </>,
+        )}
+      </div>
     );
   } else {
     body = (
-      <div className="flex flex-col items-center gap-3">
-        <p role="status" className="text-center text-sm tabular-nums lining-nums text-app-fg">
-          {t('wallet.sendSent', { amount: formatBitcoin(state.amountSats, numberFormat) })}
-          {fiatOf(state.amountSats)}
+      <div className="flex w-full flex-col items-center gap-4 py-6">
+        <CircleCheck aria-hidden="true" className="h-16 w-16 text-app-success" />
+        <div role="status" className="flex flex-col items-center gap-2">
+          {largeAmount(
+            state.amountSats,
+            t('wallet.sendSent', { amount: formatBitcoin(state.amountSats, numberFormat) }),
+          )}
+        </div>
+        <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
+          {t('wallet.sendTo', { recipient: state.recipient })}
         </p>
-        <Button type="button" onClick={close}>
-          {t('wallet.sendDone')}
-        </Button>
+        {footerAction(
+          <Button size="lg" className="min-h-14 text-base" onClick={close}>
+            {t('wallet.sendDone')}
+          </Button>,
+        )}
       </div>
     );
   }

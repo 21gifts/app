@@ -809,26 +809,35 @@ test('wallet send-amount pin asks for an amount, bounds, and a comment', async (
   await expect(region.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });
 
-test('wallet send-confirm pin shows recipient, amount, and fee with fiat', async ({ page }) => {
+test('wallet send-confirm pin shows the large amount with fiat, recipient, fee, and the footer Send and Cancel', async ({
+  page,
+}) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-confirm');
   await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText("₿2'100", { exact: true })).toBeVisible();
+  await expect(region.getByText('$2.10', { exact: true })).toBeVisible();
   await expect(region.getByText('To bob@example.com')).toBeVisible();
-  await expect(region.getByText("Send ₿2'100")).toBeVisible();
-  await expect(region.getByText('$2.10')).toBeVisible();
-  await expect(region.getByText(/Fee ₿0/)).toBeVisible();
-  await expect(region.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(region.getByText('Fee ₿0', { exact: true })).toBeVisible();
+  await expect(region.getByText(/^Send ₿/)).toHaveCount(0);
+  await expect(region.getByRole('button')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveText('Cancel');
 });
 
-test('wallet send-sent pin shows the sent amount and Done', async ({ page }) => {
+test('wallet send-sent pin shows the check, the sent amount with fiat, the recipient, and Done', async ({
+  page,
+}) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await page.goto('/wallet?visual=send-sent');
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByRole('status')).toContainText("Sent ₿2'100");
-  await expect(region.getByRole('button', { name: 'Done' })).toBeVisible();
+  await expect(region.getByRole('status')).toContainText('$2.10');
+  await expect(region.getByText('To bob@example.com')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
 });
 
 test('wallet send-onchain pin says a base-chain address is not supported yet', async ({ page }) => {
@@ -929,13 +938,13 @@ test('Function: lnurlPayAddress — send-confirm-fixed pin names the shop of a p
   await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByText('To shop@21.gifts')).toBeVisible();
-  await expect(region.getByText("Send ₿7'000")).toBeVisible();
-  await expect(region.getByText('$7.00')).toBeVisible();
-  await expect(region.getByText(/Fee ₿3/)).toBeVisible();
+  await expect(region.getByText("₿7'000", { exact: true })).toBeVisible();
+  await expect(region.getByText('$7.00', { exact: true })).toBeVisible();
+  await expect(region.getByText(/^Fee ₿3 · \$0\.00$/)).toBeVisible();
   await expect(region.getByLabel('Amount')).toHaveCount(0);
   await expect(region.getByLabel('Message (optional)')).toHaveCount(0);
-  await expect(region.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
-  await expect(region.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });
 
 test('Function: ownShop — send-confirm-shop pin pays the shop charge of a point-of-sale QR with Fee ₿0', async ({
@@ -947,12 +956,12 @@ test('Function: ownShop — send-confirm-shop pin pays the shop charge of a poin
   await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.getByText('To shop@21.gifts')).toBeVisible();
-  await expect(region.getByText("Send ₿7'000")).toBeVisible();
-  await expect(region.getByText('$7.00')).toBeVisible();
-  await expect(region.getByText(/Fee ₿0/)).toBeVisible();
+  await expect(region.getByText("₿7'000", { exact: true })).toBeVisible();
+  await expect(region.getByText('$7.00', { exact: true })).toBeVisible();
+  await expect(region.getByText('Fee ₿0', { exact: true })).toBeVisible();
   await expect(region.getByLabel('Amount')).toHaveCount(0);
   await expect(region.getByLabel('Message (optional)')).toHaveCount(0);
-  await expect(region.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
 });
 
 test('Function: walletSendBounds — send-amount pin shows the receiver bounds', async ({ page }) => {
