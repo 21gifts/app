@@ -644,17 +644,17 @@ describe('MemberHabits', () => {
     }
     fireEvent.submit(settledForm);
     await waitFor(() => {
+      expect(posts).toBe(2);
       expect(gets).toBe(3);
       expect(settledName.value).toBe('');
     });
-    expect(posts).toBe(1);
-    expect(postAuth).toEqual(['Bearer tok']);
+    expect(postAuth).toEqual(['Bearer tok', 'Bearer other']);
 
     fireEvent.change(settledName, { target: { value: 'Next' } });
     fireEvent.submit(settledForm);
     await waitFor(() => {
-      expect(posts).toBe(2);
-      expect(postAuth).toEqual(['Bearer tok', 'Bearer other']);
+      expect(posts).toBe(3);
+      expect(postAuth).toEqual(['Bearer tok', 'Bearer other', 'Bearer other']);
     });
   });
 
@@ -712,19 +712,26 @@ describe('MemberHabits', () => {
     let gets = 0;
     let releasePost: (value: Response) => void = () => undefined;
     const pendingGets: Array<(value: Response) => void> = [];
+    const callAuth: string[] = [];
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         if (isGiftStats(input)) {
           return Promise.resolve(json({ spendOverTime: [] }));
         }
+        const auth = `${init?.method === 'POST' ? 'POST' : 'GET'} ${new Headers(init?.headers).get('Authorization') ?? ''}`;
         if (init?.method === 'POST') {
           posts += 1;
-          return new Promise<Response>((resolve) => {
-            releasePost = resolve;
-          });
+          callAuth.push(auth);
+          if (posts === 1) {
+            return new Promise<Response>((resolve) => {
+              releasePost = resolve;
+            });
+          }
+          return Promise.resolve(json({ ok: true }));
         }
         gets += 1;
+        callAuth.push(auth);
         if (gets === 1) {
           return Promise.resolve(json(payload()));
         }
@@ -783,11 +790,24 @@ describe('MemberHabits', () => {
     await act(async () => {
       releasePost(json({ ok: true }));
     });
+    expect(gets).toBe(2);
+    expect(posts).toBe(1);
+    expect(settledName.value).toBe('Held');
+    expect(callAuth).toEqual(['GET Bearer tok', 'POST Bearer tok', 'GET Bearer other']);
+
+    fireEvent.submit(settledForm);
     await waitFor(() => {
+      expect(posts).toBe(2);
       expect(gets).toBe(3);
       expect(settledName.value).toBe('');
     });
-    expect(posts).toBe(1);
+    expect(callAuth).toEqual([
+      'GET Bearer tok',
+      'POST Bearer tok',
+      'GET Bearer other',
+      'POST Bearer other',
+      'GET Bearer other',
+    ]);
   });
 
   it('sends the same action again after the request fails', async () => {

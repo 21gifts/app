@@ -126,11 +126,16 @@ export function MemberHabits(): ReactElement {
     if (!listSettled.current) {
       return false;
     }
+    const actor = useAuthStore.getState().session;
     const generation = listGeneration.current + 1;
     listGeneration.current = generation;
     try {
-      const next = await fetchMemberHabits(session);
-      if (!listAlive.current || generation !== listGeneration.current) {
+      const next = await fetchMemberHabits(actor);
+      if (
+        !listAlive.current ||
+        generation !== listGeneration.current ||
+        useAuthStore.getState().session !== actor
+      ) {
         return false;
       }
       setData(next);
@@ -139,6 +144,9 @@ export function MemberHabits(): ReactElement {
       return true;
     } catch {
       if (!listAlive.current || generation !== listGeneration.current) {
+        return false;
+      }
+      if (useAuthStore.getState().session !== actor) {
         return false;
       }
       setError(true);
@@ -150,24 +158,29 @@ export function MemberHabits(): ReactElement {
     if (!listSettled.current) {
       return false;
     }
+    const actor = session;
     const key = JSON.stringify(body);
     // The request already waiting owns the reload. Do not start a second one.
     if (inFlightKeys.current.has(key)) {
       return false;
     }
     try {
-      if (session === null || session === '') {
+      if (actor === null || actor === '') {
         throw new Error(SAVE_ERROR);
       }
       if (!postedKeys.current.has(key)) {
-        // Reserved before the request returns, so a settled session change cannot send it twice.
+        // Reserved before the request returns, so a second submit cannot send it twice.
         inFlightKeys.current.add(key);
         try {
-          await postMemberHabit(session, body, timeZone);
-          postedKeys.current.add(key);
+          await postMemberHabit(actor, body, timeZone);
         } finally {
           inFlightKeys.current.delete(key);
         }
+        // The session that arrived while this request waited owns the list.
+        if (useAuthStore.getState().session !== actor) {
+          return false;
+        }
+        postedKeys.current.add(key);
       }
       const listed = await refresh();
       if (!listed) {
@@ -181,6 +194,9 @@ export function MemberHabits(): ReactElement {
       }
       return true;
     } catch {
+      if (useAuthStore.getState().session !== actor) {
+        return false;
+      }
       setError(true);
       return false;
     }
