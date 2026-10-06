@@ -70,7 +70,10 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * fee and **Pay from wallet** when it is higher. An open wallet shows the fee
  * from the prepare response, then **Pay from wallet**. While and after sending it says so; the
  * sheet's own long-poll closes it on confirmation. Too little balance shows an
- * alert with the member's own address and QR when their username gives one.
+ * alert, how much is still missing (amount plus the known fee minus the
+ * balance, with fiat), and the member's own address and QR when their username
+ * gives one. When Bitcoin arrives after the member's own pay tap ended there,
+ * the slot says so and pays on its own (a fee above ₿0 stops at the fee).
  * Without a wallet the member can open here it says so, and a failed prepare
  * offers **Try again**. A passkey without PRF output says that this phone or
  * browser cannot hold a 21.gifts wallet, with **Try again**. It never shows an invoice QR or hands the payment to
@@ -83,7 +86,11 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const { view, feeSats, unlock, pay, retry } = useWalletPay(sparkInvoice, pr, amountSats);
+  const { view, feeSats, missingSats, unlock, pay, retry } = useWalletPay(
+    sparkInvoice,
+    pr,
+    amountSats,
+  );
   const username = useAuthStore((state) => state.account?.username ?? null);
   const hasAddress = giftsLightningAddress(username) !== null;
 
@@ -127,11 +134,18 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
       );
     case 'preparing':
     case 'paying':
+    case 'received':
       return (
         <div className="flex flex-col items-center gap-2">
           <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-app-subtle" />
           <p role="status" className="text-center text-sm text-app-muted">
-            {t(view === 'preparing' ? 'wallet.payPreparing' : 'wallet.paying')}
+            {t(
+              view === 'preparing'
+                ? 'wallet.payPreparing'
+                : view === 'paying'
+                  ? 'wallet.paying'
+                  : 'wallet.payReceived',
+            )}
           </p>
         </div>
       );
@@ -156,6 +170,12 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('wallet.payInsufficient')}
           </p>
+          {missingSats === null ? null : (
+            <p className="text-center text-sm tabular-nums lining-nums text-app-fg">
+              {t('wallet.payMissing', { amount: formatBitcoin(missingSats, numberFormat) })}
+              {preferredFiatSuffix(missingSats, rateDay, fiat, numberFormat)}
+            </p>
+          )}
           {hasAddress && username !== null ? <OwnAddress username={username} /> : null}
         </>
       );

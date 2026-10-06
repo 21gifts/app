@@ -1047,6 +1047,7 @@ describe('payFromWallet', () => {
     });
     await expect(payFromWallet({ type: 'input', input: 'spark1x' })).resolves.toEqual({
       kind: 'insufficient',
+      feeSats: 1,
     });
   });
 
@@ -1055,6 +1056,7 @@ describe('payFromWallet', () => {
     getInfo.mockResolvedValueOnce({ balanceSats: 50, identityPubkey: IDENTITY });
     await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
       kind: 'insufficient',
+      feeSats: 0,
     });
     expect(useWalletStore.getState().balanceSats).toBe(50);
   });
@@ -1098,7 +1100,7 @@ describe('payFromWallet', () => {
     const pendingRefresh = refreshWallet();
     payFinish({ balanceSats: 50, identityPubkey: IDENTITY });
     expect(useWalletStore.getState().balanceSats).toBe(30_000);
-    await expect(pending).resolves.toEqual({ kind: 'insufficient' });
+    await expect(pending).resolves.toEqual({ kind: 'insufficient', feeSats: 0 });
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
     await pendingRefresh;
 
