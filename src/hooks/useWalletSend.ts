@@ -365,6 +365,8 @@ function visualState(name: string | null): WalletSendState | null {
       return onchainConfirm('medium', fixture.onchainSpendableFeeSats, false);
     case 'send-confirm-onchain-fast':
       return onchainConfirm('fast', fixture.onchainSpendableFeeSats, false);
+    case 'send-confirm-onchain-slow':
+      return onchainConfirm('slow', fixture.onchainSpendableFeeSats, false);
     case 'send-confirm-onchain-low':
       return onchainConfirm('medium', fixture.onchainLowSpendableFeeSats, false);
     case 'send-confirm-onchain-renewed':
