@@ -46,11 +46,12 @@ import { useAuthStore } from '@/stores/auth-store';
  * is an 18rem (`w-72`) portal on the trigger parent and a scrim portals to
  * `[data-menu-scrim-host]` and uses `rounded-3xl` so it follows the frame.
  * On a narrow frame the panel is a full-width sheet in `[data-menu-sheet-host]`
- * (the host has the page's `px-8` inset) and the page underneath is hidden. When onboarding
- * is complete and `hasPosted` is false, also mounts
- * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
- * introduce CTA skips the overlay once so a remount after navigating to
- * `/welcome` does not show it again.
+ * (the host has the page's `px-8` inset) and the page underneath is hidden. On the
+ * forum home (`/welcome`) only, when onboarding is complete and `hasPosted` is
+ * false, also mounts {@link IntroduceYourselfOverlay}; it never covers
+ * `/wallet`, the point of sale, the profile, messages, setup, or any other
+ * screen. Close dismisses this mount only; the introduce CTA skips the overlay
+ * once, so the next mount does not show it again.
  *
  * @returns The signed-in Menu chrome.
  */
@@ -71,6 +72,7 @@ export function SignedInChrome(): ReactElement {
   const scroller = useAppShellScroller();
   const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
   const showIntroduce =
+    pathname === '/welcome' &&
     account !== null &&
     account.setup === null &&
     account.hasPosted === false &&
