@@ -1044,11 +1044,16 @@ describe('ShopNoteEditControl', () => {
     await waitFor(() => {
       expect(document.querySelector('input[type="file"][capture]')).not.toBeNull();
     });
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Take a photo' }).hasAttribute('disabled')).toBe(
+      false,
+    );
     await act(async () => {
       finish();
     });
     expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
   });
 
   it('says why a picked or taken photo cannot be used and clears that on the next good one', async () => {
