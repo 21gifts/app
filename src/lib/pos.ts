@@ -147,10 +147,35 @@ export async function fetchShopChargeInvoice(username: string): Promise<ShopChar
     ) {
       return null;
     }
-    const response = await fetch(`${path}/invoice`, {
+    const sparkInvoice = await fetchMemberSparkInvoice(username, charge.amountSats, '');
+    return sparkInvoice === null ? null : { amountSats: charge.amountSats, sparkInvoice };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Spark invoice for exactly `amountSats` to a 21.gifts member, so the in-app
+ * wallet pays that member without a fee. Asks `POST /pay/:username/invoice`
+ * with `{ amountSats }` and, when `comment` is not empty, `comment`. Never
+ * rejects.
+ *
+ * @param username - Member's 21.gifts username.
+ * @param amountSats - Whole sats to pay.
+ * @param comment - Message for the member, already trimmed and capped, or `''`.
+ * @returns The Spark invoice, or `null` when the answer has none (or names
+ *   another amount), the request fails, or the body is not the expected JSON.
+ */
+export async function fetchMemberSparkInvoice(
+  username: string,
+  amountSats: number,
+  comment: string,
+): Promise<string | null> {
+  try {
+    const response = await fetch(`/pay/${encodeURIComponent(username)}/invoice`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ amountSats: charge.amountSats }),
+      body: JSON.stringify(comment === '' ? { amountSats } : { amountSats, comment }),
     });
     if (!response.ok) {
       return null;
@@ -159,11 +184,11 @@ export async function fetchShopChargeInvoice(username: string): Promise<ShopChar
     if (
       invoice.sparkInvoice === null ||
       invoice.sparkInvoice === undefined ||
-      (invoice.amountSats !== undefined && invoice.amountSats !== charge.amountSats)
+      (invoice.amountSats !== undefined && invoice.amountSats !== amountSats)
     ) {
       return null;
     }
-    return { amountSats: charge.amountSats, sparkInvoice: invoice.sparkInvoice };
+    return invoice.sparkInvoice;
   } catch {
     return null;
   }
