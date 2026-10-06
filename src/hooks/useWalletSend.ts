@@ -367,6 +367,7 @@ function visualState(name: string | null): WalletSendState | null {
       };
     case 'send-confirm-onchain':
     case 'send-confirm-onchain-sending':
+    case 'send-confirm-onchain-renewing':
       return onchainConfirm('medium', fixture.onchainSpendableFeeSats, false);
     case 'send-confirm-onchain-fast':
       return onchainConfirm('fast', fixture.onchainSpendableFeeSats, false);
@@ -459,8 +460,8 @@ function relayInputError(error: unknown): WalletSendError {
  * invoice, or a prepare that fails or gives another amount, pays the member
  * over Lightning as before. An open charge that cannot be paid with a Spark
  * invoice is read as before, without that member step. Other own-host addresses and Spark targets are read by the
- * wallet. Nothing
- * is retried on its own. Visual
+ * wallet. No send is retried on its own; only an expired fee quote is
+ * prepared again once, before anything is sent. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
  * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
  * other `?visual=send-…` value there); under `send-input-busy` and `send-amount-busy`, **Continue**
@@ -919,6 +920,7 @@ export function useWalletSend(): UseWalletSendResult {
           pinnedNow.step === 'confirm' &&
           pinnedNow.onchain !== undefined &&
           pin !== 'send-confirm-onchain-sending' &&
+          pin !== 'send-confirm-onchain-renewing' &&
           pinnedNow.onchain.fees[speed] <= pinnedNow.onchain.spendableFeeSats
         ) {
           setPinSpeed(speed);
@@ -974,7 +976,7 @@ export function useWalletSend(): UseWalletSendResult {
   const pinSending = pin === 'send-confirm-sending' || pin === 'send-confirm-onchain-sending';
   return {
     state: shown ?? state,
-    busy: pinned === null ? busy : pinSending || pinBusy,
+    busy: pinned === null ? busy : pinSending || pinBusy || pin === 'send-confirm-onchain-renewing',
     sending: pinned === null ? sending : pinSending,
     text,
     setText,

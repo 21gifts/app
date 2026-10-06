@@ -366,6 +366,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-confirm-onchain-renewing",
+    "label": "/wallet send-confirm-onchain-renewing",
+    "visual": "state-wallet-send-confirm-onchain-renewing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-confirm-onchain-sending",
     "label": "/wallet send-confirm-onchain-sending",
     "visual": "state-wallet-send-confirm-onchain-sending",

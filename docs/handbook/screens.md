@@ -368,6 +368,12 @@ Pinned fixture (`?visual=send-confirm-onchain-renewed`, Playwright builds only).
 
 ![21.gifts wallet send confirm onchain renewed](images/wallet-send-confirm-onchain-renewed.png)
 
+### Variant: send-confirm-onchain-renewing
+
+Pinned fixture (`?visual=send-confirm-onchain-renewing`, Playwright builds only). The confirm step after **Send** found the fee offer expired, while the wallet asks for a new one: nothing was sent, the speed rows and **Send** (with its spinner) are disabled, and **Cancel** stays usable.
+
+![21.gifts wallet send confirm onchain renewing](images/wallet-send-confirm-onchain-renewing.png)
+
 ### Variant: send-confirm-onchain-sending
 
 Pinned fixture (`?visual=send-confirm-onchain-sending`, Playwright builds only). The confirm step after **Send**: the speed rows, **Send** with its spinner, and **Cancel** are disabled until the wallet answers.

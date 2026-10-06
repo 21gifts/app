@@ -615,6 +615,7 @@ describe('useWalletSend visual pins', () => {
     'send-confirm-onchain-slow',
     'send-confirm-onchain-low',
     'send-confirm-onchain-renewed',
+    'send-confirm-onchain-renewing',
     'send-confirm-onchain-sending',
   ])('ignores the %s pin outside a Playwright build', (visual) => {
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
@@ -955,6 +956,13 @@ describe('useWalletSend speed pins', () => {
       low.current.setSpeed('fast');
     });
     expect(low.current.state).toMatchObject({ onchain: { speed: 'medium' } });
+    const renewing = pinned('send-confirm-onchain-renewing');
+    expect(renewing.current.busy).toBe(true);
+    expect(renewing.current.sending).toBe(false);
+    act(() => {
+      renewing.current.setSpeed('fast');
+    });
+    expect(renewing.current.state).toMatchObject({ onchain: { speed: 'medium' } });
     const sending = pinned('send-confirm-onchain-sending');
     expect(sending.current.busy).toBe(true);
     act(() => {

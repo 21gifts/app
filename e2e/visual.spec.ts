@@ -2283,6 +2283,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-confirm-onchain-renewed');
   });
 
+  test('wallet send-confirm-onchain-renewing', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-renewing');
+    await expectPinnedSend(page);
+    await expect(page.getByText('$50.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-renewing');
+  });
+
   test('wallet send-confirm-onchain-sending', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-confirm-onchain-sending');
