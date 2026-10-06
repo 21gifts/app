@@ -193,6 +193,11 @@ export function ShopNoteEditControl({
   // prepared, so room and the too-many sentence read these, not the render.
   const keptRef = useRef<ShopKeptMedia[]>([]);
   const photoDraftsRef = useRef<ForumPhotoPayload[]>([]);
+  // Opening or closing the editor starts a new session; a pick still being
+  // prepared from an earlier session is dropped. Picks in flight keep the
+  // steps busy so Save cannot run before their stills land.
+  const pickSession = useRef(0);
+  const [picking, setPicking] = useState(0);
   const [saving, setSaving] = useState(false);
   // Written parts not reported to `onSaved` yet. A complete save reports at once;
   // a save that stopped part-way reports when the editor closes or unmounts (for
@@ -296,6 +301,7 @@ export function ShopNoteEditControl({
       return;
     }
     openingRef.current = true;
+    pickSession.current += 1;
     try {
       keptStillBytes.current.clear();
       setDraft(stripShopHashtag(message.text));
@@ -374,19 +380,28 @@ export function ShopNoteEditControl({
   /* v8 ignore stop */
 
   async function onPickFiles(files: File[]): Promise<void> {
+    const session = pickSession.current;
     const prepared: ForumPhotoPayload[] = [];
     let error: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
-    for (const file of files) {
-      try {
-        const result = await prepareForumPhoto(file);
-        if (result.ok) {
-          prepared.push(result.photo);
-        } else {
-          error = result.error;
+    setPicking((count) => count + 1);
+    try {
+      for (const file of files) {
+        try {
+          const result = await prepareForumPhoto(file);
+          if (result.ok) {
+            prepared.push(result.photo);
+          } else {
+            error = result.error;
+          }
+        } catch {
+          error = 'unsupported';
         }
-      } catch {
-        error = 'unsupported';
       }
+    } finally {
+      setPicking((count) => count - 1);
+    }
+    if (session !== pickSession.current) {
+      return;
     }
     const keptCount = keptRef.current.filter((item) => item.kind === 'photo').length;
     const current = photoDraftsRef.current;
@@ -505,6 +520,7 @@ export function ShopNoteEditControl({
         aria-expanded={open}
         onClick={() => {
           if (open) {
+            pickSession.current += 1;
             closeEditor();
             return;
           }
@@ -518,7 +534,7 @@ export function ShopNoteEditControl({
           <SundayWritingGate>
             <ShopAddWizard
               mode="edit"
-              posting={saving}
+              posting={saving || picking > 0}
               draft={draft}
               onDraftChange={setDraft}
               photoDrafts={photoDrafts}
@@ -540,6 +556,7 @@ export function ShopNoteEditControl({
                 void save();
               }}
               onCancel={() => {
+                pickSession.current += 1;
                 setSaveError(false);
                 closeEditor();
               }}
