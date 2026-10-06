@@ -937,7 +937,12 @@ describe('MemberHabits', () => {
     expect(addName.value).toBe('Held');
     expect(screen.queryByRole('alert')).toBeNull();
     expect(await screen.findByText('Walk')).toBeTruthy();
-    expect(callAuth).toEqual(['GET Bearer tok', 'POST Bearer tok', 'GET Bearer tok', 'GET Bearer other']);
+    expect(callAuth).toEqual([
+      'GET Bearer tok',
+      'POST Bearer tok',
+      'GET Bearer tok',
+      'GET Bearer other',
+    ]);
   });
 
   it('does not show a failed save on the session that arrived while it was posting', async () => {
