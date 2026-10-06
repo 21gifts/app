@@ -287,6 +287,25 @@ test('screen /habit-tracker archive-confirm', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
 });
 
+test('Function: InlineConfirm — archive uses the shared bordered group', async ({ page }) => {
+  await seedAda(page);
+  await stubHabits(page, {
+    reviewWeek: PUBLIC_LIST.reviewWeek,
+    habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Archive' }).click();
+  const group = page.getByRole('group', {
+    name: 'Archive this habit? Its history stays visible.',
+  });
+  await expect(group).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+  await group.getByRole('button', { name: 'Cancel archive' }).click();
+  await expect(group).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Archive' })).toBeVisible();
+});
+
 test('screen /habit-tracker archived', async ({ page }) => {
   await seedAda(page);
   let archived = false;

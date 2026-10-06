@@ -1019,17 +1019,14 @@ describe('SignedInChrome', () => {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
-      expect(panel.className).toContain('mt-0');
-      expect(panel.className).toContain('px-2');
-      expect(panel.className).toContain('py-0');
-      expect(panel.className).toContain('w-72');
-      expect(panel.className).toContain('absolute');
+      expect(panel.className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
+      expect(panel.className).not.toContain('absolute');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('min-h-8');
       expect(panel.className).not.toContain('max-h-');
       expect(panel.style.transform).toBe('');
       expect(panel.querySelector('a')?.className).toContain('min-h-11');
-      expect(panel.querySelector('p')?.className).not.toContain('py-2');
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       bottom = 700;
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
@@ -1115,6 +1112,9 @@ describe('SignedInChrome', () => {
       expect(panel.className).not.toContain('min-h-8');
       expect(panel.style.transform).toBe('');
       expect(panel.querySelector('a')?.className).toContain('min-h-11');
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(panel.className).toContain('hidden');
+      expect(panel.className).not.toContain('mt-0');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1396,10 +1396,11 @@ describe('SignedInChrome', () => {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
-      expect(panel.className).toContain('fixed');
+      expect(panel.className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
+      expect(panel.className).not.toContain('fixed');
       expect(panel.className).not.toContain('overflow-y-auto');
-      expect(panel.style.top).toBe('0px');
-      expect(panel.style.transform).toBe('');
+      expect(panel.style.top).toBe('');
       expect(panel.querySelector('a')?.className).toContain('min-h-11');
     } finally {
       if (previousInnerHeight === undefined) {
@@ -1442,14 +1443,12 @@ describe('SignedInChrome', () => {
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
-      expect(panel.className).toContain('mt-0');
-      expect(panel.className).toContain('px-2');
-      expect(panel.className).toContain('py-0');
+      expect(panel.className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('min-h-8');
       expect(panel.className).not.toContain('max-h-');
       expect(panel.querySelector('a')?.className).toContain('min-h-11');
-      expect(panel.querySelector('p')?.className).not.toContain('py-2');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1484,7 +1483,8 @@ describe('SignedInChrome', () => {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
-      expect(panel.className).toContain('mt-0');
+      expect(panel.className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
       Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 });
       act(() => {
         window.dispatchEvent(new Event('resize'));
@@ -1532,7 +1532,8 @@ describe('SignedInChrome', () => {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
-      expect(panel.className).toContain('mt-0');
+      expect(panel.className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
       Object.defineProperty(window, 'innerHeight', { configurable: true, value: 780 });
       act(() => {
         window.dispatchEvent(new Event('resize'));
@@ -1601,9 +1602,9 @@ describe('SignedInChrome', () => {
       act(() => {
         callback([], {} as ResizeObserver);
       });
-      expect(panel.className).toContain('mt-0');
-      expect(panel.className).toContain('px-2');
-      expect(panel.className).toContain('py-0');
+      expect(panel.className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
+      expect(panel.className).not.toContain('overflow-y-auto');
       cleanup();
       expect(disconnected).toBe(true);
     } finally {
@@ -1642,9 +1643,9 @@ describe('SignedInChrome', () => {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
-      expect(panel.className).toContain('mt-0');
-      expect(panel.className).toContain('px-2');
-      expect(panel.className).toContain('py-0');
+      expect(panel.className).toContain('w-full');
+      expect(document.documentElement.dataset['menuSheet']).toBe('1');
+      expect(panel.className).not.toContain('overflow-y-auto');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;

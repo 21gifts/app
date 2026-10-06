@@ -48,7 +48,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * is an 18rem (`w-72`) portal on the trigger parent and a scrim portals to
  * `[data-menu-scrim-host]` and uses `rounded-3xl` so it follows the frame.
  * On a narrow frame the panel is a full-width sheet in `[data-menu-sheet-host]`
- * (the host has the page's `px-8` inset) and the page underneath is hidden. When onboarding
+ * (the host has the page's `px-8` inset) and the page underneath is hidden.
+ * A wide menu that cannot fit even with its top on the window uses that same
+ * sheet, so the one page scrollport reaches every row. It does not grow a
+ * second scroll. When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
  * introduce CTA skips the overlay once so a remount after navigating to
@@ -65,6 +68,7 @@ export function SignedInChrome(): ReactElement {
   const [tight, setTight] = useState(false);
   const [menuLift, setMenuLift] = useState(0);
   const [menuBox, setMenuBox] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [sheetBecauseTall, setSheetBecauseTall] = useState(false);
   const tightRef = useRef(false);
   const menuLiftRef = useRef(0);
   const menuBoxRef = useRef(menuBox);
@@ -120,9 +124,10 @@ export function SignedInChrome(): ReactElement {
       : typeof window !== 'undefined' &&
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(max-width: 36rem)').matches === true;
+  const sheet = narrow || sheetBecauseTall;
 
   useLayoutEffect(() => {
-    if (!open || !narrow) {
+    if (!open || !sheet) {
       delete document.documentElement.dataset['menuSheet'];
       return;
     }
@@ -140,11 +145,33 @@ export function SignedInChrome(): ReactElement {
       delete document.documentElement.dataset['menuSheet'];
       scroller.scrollTop = previousScrollTop;
     };
-  }, [narrow, open, scroller]);
+  }, [open, scroller, sheet]);
 
   useLayoutEffect(() => {
-    if (!open || narrow) {
-      if (tightRef.current) {
+    if (open || !sheetBecauseTall) {
+      return;
+    }
+    setSheetBecauseTall(false);
+  }, [open, sheetBecauseTall]);
+
+  useLayoutEffect(() => {
+    if (!open || narrow || !sheetBecauseTall) {
+      return;
+    }
+    const onResize = (): void => {
+      setSheetBecauseTall(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [narrow, open, sheetBecauseTall]);
+
+  useLayoutEffect(() => {
+    if (!open || sheet) {
+      // Keep the compact measurement while the tall sheet is open, so a
+      // taller window can return to that menu instead of the loose one.
+      if ((!open || !sheetBecauseTall) && tightRef.current) {
         tightRef.current = false;
         setTight(false);
       }
@@ -185,9 +212,14 @@ export function SignedInChrome(): ReactElement {
         setTight(nextTight);
         return;
       }
-      // A second scroll is forbidden. Lift only as far as the top still stays in the window.
+      // A second scroll is forbidden. Lift only while the bottom stays in the window.
+      // When the compact menu cannot fit even at the top, use the narrow sheet.
       const overflow = Math.ceil(naturalBottom - limit);
       const room = Math.max(0, Math.floor(naturalTop));
+      if (nextTight && overflow > room) {
+        setSheetBecauseTall(true);
+        return;
+      }
       const nextLift = nextTight && overflow > 0 ? Math.min(overflow, room) : 0;
       const nextBox =
         nextLift > 0
@@ -225,7 +257,7 @@ export function SignedInChrome(): ReactElement {
       window.removeEventListener('resize', measure);
       observer?.disconnect();
     };
-  }, [open, narrow, tight, account?.role]);
+  }, [account?.role, open, sheet, sheetBecauseTall, tight]);
 
   useEffect(() => {
     if (session === null) {
@@ -239,14 +271,14 @@ export function SignedInChrome(): ReactElement {
   // that panel. `rootEl` is null on the first render, so the server and
   // the hydration pass both skip the portal.
   const sheetHost =
-    rootEl !== null && narrow && typeof document !== 'undefined'
+    rootEl !== null && sheet && typeof document !== 'undefined'
       ? document.querySelector('[data-menu-sheet-host]')
       : null;
   // `querySelector` is already an element or null. Do not touch `HTMLElement`:
   // that name does not exist while this component renders on the server.
   const panelTarget = sheetHost ?? rootEl;
   const scrimHost =
-    open && !narrow && typeof document !== 'undefined'
+    open && !sheet && typeof document !== 'undefined'
       ? document.querySelector('[data-menu-scrim-host]')
       : null;
   // A percentage width resolves against the trigger, which is only as
@@ -254,10 +286,11 @@ export function SignedInChrome(): ReactElement {
   // A tall wide menu drops its outer spacing. Rows stay at least 44px. If it still
   // passes the window, the panel becomes a fixed overlay whose measured top, left,
   // and width keep the bottom on the window and never use a negative top. It does not
-  // scroll. The trigger stays above that panel so Menu still receives the click
-  // that closes it.
-  const lifted = !narrow && menuBox !== null;
-  const panelClass = narrow
+  // scroll. When that lift would leave the bottom outside, the wide menu uses the
+  // same sheet as a narrow frame. The trigger stays above a lifted panel so Menu
+  // still receives the click that closes it.
+  const lifted = !sheet && menuBox !== null;
+  const panelClass = sheet
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : lifted
       ? `fixed z-50 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`

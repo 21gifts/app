@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
 import { HabitComments } from '@/components/HabitComments';
+import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
@@ -355,34 +356,18 @@ export function MemberHabits(): ReactElement {
                     ) : null}
                   </div>
                   {confirmArchiveId === habit.id ? (
-                    <div
-                      role="group"
-                      aria-label={t('habit.archiveConfirm')}
-                      className="flex flex-col gap-2 rounded-xl border border-app-border p-3"
-                    >
-                      <p className="text-sm text-app-fg">{t('habit.archiveConfirm')}</p>
-                      <div className="flex gap-3">
-                        <IconButton
-                          type="button"
-                          aria-label={t('habit.archiveConfirmAction')}
-                          onClick={() => {
-                            setConfirmArchiveId(null);
-                            void submit({ action: 'archive', id: habit.id }, false);
-                          }}
-                        >
-                          <Check aria-hidden="true" className="h-4 w-4" />
-                        </IconButton>
-                        <IconButton
-                          type="button"
-                          aria-label={t('habit.archiveCancel')}
-                          onClick={() => {
-                            setConfirmArchiveId(null);
-                          }}
-                        >
-                          <X aria-hidden="true" className="h-4 w-4" />
-                        </IconButton>
-                      </div>
-                    </div>
+                    <InlineConfirm
+                      label={t('habit.archiveConfirm')}
+                      confirmLabel={t('habit.archiveConfirmAction')}
+                      cancelLabel={t('habit.archiveCancel')}
+                      onConfirm={() => {
+                        setConfirmArchiveId(null);
+                        void submit({ action: 'archive', id: habit.id }, false);
+                      }}
+                      onCancel={() => {
+                        setConfirmArchiveId(null);
+                      }}
+                    />
                   ) : null}
                   {habit.description !== '' ? (
                     <p className="text-sm text-app-fg">{habit.description}</p>

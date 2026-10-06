@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Gift, Send, Trash2, X } from 'lucide-react';
+import { Gift, Send, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
 import {
@@ -8,6 +8,7 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
+import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { Field, IconButton } from '@/components/ui';
@@ -101,37 +102,19 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                     {canDelete ? (
                       <SundayWritingGate>
                         {confirmingCommentId === comment.id ? (
-                          <div
-                            role="group"
-                            aria-label={t('habit.deleteCommentConfirm')}
-                            className="order-last mt-2 w-full basis-full"
-                          >
-                            <div className="flex flex-col gap-2 rounded-xl border border-app-border p-3">
-                              <p className="text-sm text-app-fg">
-                                {t('habit.deleteCommentConfirm')}
-                              </p>
-                              <div className="flex gap-3">
-                                <IconButton
-                                  type="button"
-                                  aria-label={t('forum.deleteConfirmAction')}
-                                  onClick={() => {
-                                    setConfirmingCommentId(null);
-                                    onDeleteComment(comment.id);
-                                  }}
-                                >
-                                  <Check aria-hidden="true" className="h-4 w-4" />
-                                </IconButton>
-                                <IconButton
-                                  type="button"
-                                  aria-label={t('forum.deleteCancel')}
-                                  onClick={() => {
-                                    setConfirmingCommentId(null);
-                                  }}
-                                >
-                                  <X aria-hidden="true" className="h-4 w-4" />
-                                </IconButton>
-                              </div>
-                            </div>
+                          <div className="order-last mt-2 w-full basis-full">
+                            <InlineConfirm
+                              label={t('habit.deleteCommentConfirm')}
+                              confirmLabel={t('forum.deleteConfirmAction')}
+                              cancelLabel={t('forum.deleteCancel')}
+                              onConfirm={() => {
+                                setConfirmingCommentId(null);
+                                onDeleteComment(comment.id);
+                              }}
+                              onCancel={() => {
+                                setConfirmingCommentId(null);
+                              }}
+                            />
                           </div>
                         ) : (
                           <IconButton
