@@ -744,7 +744,7 @@ function CommentsBlock(props: {
       ) : (
         <ul className="flex flex-col gap-3">
           {habit.comments.map((comment) => {
-            const showGift = canPay && comment.accountId !== account.id;
+            const showGift = canPay && account !== null && comment.accountId !== account.id;
             return (
               <li key={comment.id} className="flex flex-col gap-2 text-sm text-app-fg">
                 <p>

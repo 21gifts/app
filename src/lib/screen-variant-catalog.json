@@ -1344,6 +1344,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:archive-confirm",
+    "label": "/habit-tracker archive-confirm",
+    "visual": "state-habit-tracker-archive-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:delete-comment-confirm",
+    "label": "/habit-tracker delete-comment-confirm",
+    "visual": "state-habit-tracker-delete-comment-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/contact:default",
     "label": "/contact default",
     "visual": "screen-contact",
