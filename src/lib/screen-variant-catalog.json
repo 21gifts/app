@@ -414,6 +414,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-confirm-member",
+    "label": "/wallet send-confirm-member",
+    "visual": "state-wallet-send-confirm-member",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-input-busy",
     "label": "/wallet send-input-busy",
     "visual": "state-wallet-send-input-busy",

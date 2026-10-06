@@ -1,7 +1,13 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
-import { cancelPosCharge, createPosCharge, fetchPosState, fetchShopChargeInvoice } from '@/lib/pos';
+import {
+  cancelPosCharge,
+  createPosCharge,
+  fetchMemberSparkInvoice,
+  fetchPosState,
+  fetchShopChargeInvoice,
+} from '@/lib/pos';
 
 const CHARGE = {
   id: 'c1',
@@ -167,5 +173,47 @@ describe('fetchShopChargeInvoice', () => {
     await expect(fetchShopChargeInvoice('shop')).resolves.toBeNull();
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     await expect(fetchShopChargeInvoice('shop')).resolves.toBeNull();
+  });
+});
+
+describe('fetchMemberSparkInvoice', () => {
+  it('asks for a Spark invoice of the amount with the message', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(json({ pr: 'lnbc1', amountSats: 2_100, sparkInvoice: 'spark1member' }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchMemberSparkInvoice('al ice', 2_100, 'Thanks')).resolves.toBe('spark1member');
+    expect(fetchMock).toHaveBeenCalledWith('/pay/al%20ice/invoice', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ amountSats: 2_100, comment: 'Thanks' }),
+    });
+  });
+
+  it('sends no message when it is empty and accepts an answer without the amount', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ pr: 'lnbc1', sparkInvoice: 'spark1' }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchMemberSparkInvoice('alice', 21, '')).resolves.toBe('spark1');
+    expect(fetchMock).toHaveBeenCalledWith('/pay/alice/invoice', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ amountSats: 21 }),
+    });
+  });
+
+  it.each([
+    ['no Spark invoice', json({ pr: 'lnbc1', amountSats: 21, sparkInvoice: null })],
+    ['an answer without a Spark invoice', json({ pr: 'lnbc1', amountSats: 21 })],
+    ['another amount', json({ pr: 'lnbc1', amountSats: 7_000, sparkInvoice: 'spark1' })],
+    ['a refused invoice', json({ error: 'Invalid amount' }, 400)],
+    ['an answer that is not JSON', new Response('nope', { status: 200 })],
+  ])('gives null for %s', async (_label, answer) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(answer));
+    await expect(fetchMemberSparkInvoice('alice', 21, '')).resolves.toBeNull();
+  });
+
+  it('gives null when the request fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    await expect(fetchMemberSparkInvoice('alice', 21, '')).resolves.toBeNull();
   });
 });

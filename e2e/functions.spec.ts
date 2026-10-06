@@ -9164,6 +9164,24 @@ test('Function: fetchShopChargeInvoice — GET /pay/shop shows the open charge a
   expect(await other.json()).toMatchObject({ amountSats: 21, sparkInvoice: null });
 });
 
+test('Function: fetchMemberSparkInvoice — POST /pay/alice/invoice issues a Spark invoice for the amount entered without a charge', async ({
+  request,
+}) => {
+  const withMessage = await request.post('/pay/alice/invoice', {
+    data: { amountSats: 2_100, comment: 'Thanks' },
+  });
+  expect(withMessage.status()).toBe(200);
+  expect(await withMessage.json()).toEqual({
+    pr: 'lnbc2100n1alice',
+    amountSats: 2_100,
+    sparkInvoice: 'sparkrt1alice2100-Thanks',
+  });
+  const plain = await request.post('/pay/alice/invoice', { data: { amountSats: 21 } });
+  expect(await plain.json()).toMatchObject({ amountSats: 21, sparkInvoice: 'sparkrt1alice21' });
+  const refused = await request.post('/pay/alice/invoice', { data: { amountSats: 0 } });
+  expect(refused.status()).toBe(400);
+});
+
 test('Function: PosTill — an open charge turns into Paid ✓ and New payment opens the keypad', async ({
   page,
 }) => {

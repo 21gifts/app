@@ -964,6 +964,24 @@ test('Function: ownShop — send-confirm-shop pin pays the shop charge of a poin
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
 });
 
+test('Function: useWalletSend — send-confirm-member pin pays a 21.gifts member the amount entered with Fee ₿0', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm-member');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText('To alice@21.gifts')).toBeVisible();
+  await expect(region.getByText("₿2'100", { exact: true })).toBeVisible();
+  await expect(region.getByText('$2.10', { exact: true })).toBeVisible();
+  await expect(region.getByText('Fee ₿0', { exact: true })).toBeVisible();
+  await expect(region.getByText(/^Fee ₿0 · /)).toHaveCount(0);
+  await expect(region.getByLabel('Amount')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+});
+
 test('Function: walletSendBounds — send-amount pin shows the receiver bounds', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);

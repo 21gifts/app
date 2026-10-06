@@ -5,8 +5,8 @@ import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/ap
 import { getE2eNow } from '@/lib/config';
 import { encodeLnurl } from '@/lib/lnurl';
 import { lnurlPayAddress } from '@/lib/pay-link';
-import { fetchShopChargeInvoice } from '@/lib/pos';
-import { lnurlRelayTarget, ownShop } from '@/lib/wallet/lnurl-relay';
+import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
+import { lnurlRelayTarget, ownShop, type OwnShop } from '@/lib/wallet/lnurl-relay';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
@@ -70,11 +70,18 @@ export interface WalletSendRelayTarget {
   recipient: string;
 }
 
+/**
+ * LNURL receiver read by the wallet. `member` is the lower-case username when
+ * it is a 21.gifts member on this app's own host (see `ownShop`) without an
+ * open charge, so the amount is first asked as a Spark invoice.
+ */
+export type WalletSendLnurlTarget = Extract<WalletTarget, { type: 'lnurl' }> & {
+  member?: string;
+};
+
 /** Receiver that still needs an amount. */
 export type WalletSendAmountTarget =
-  | Extract<WalletTarget, { type: 'request' }>
-  | Extract<WalletTarget, { type: 'lnurl' }>
-  | WalletSendRelayTarget;
+  Extract<WalletTarget, { type: 'request' }> | WalletSendLnurlTarget | WalletSendRelayTarget;
 
 /** Step of the `/wallet` send flow. */
 export type WalletSendState =
@@ -128,6 +135,8 @@ export interface UseWalletSendResult {
  * point-of-sale QR of `shop@21.gifts`, `fixedAmountSats` its open charge, and
  * `fixedFeeSats` the Lightning fee when that charge is paid over Lightning
  * (paid with the shop's Spark invoice, the fee is `feeSats`).
+ * `memberRecipient` is a 21.gifts member on this host, paid `amountSats`
+ * with that member's Spark invoice (fee `feeSats`).
  */
 export const WALLET_SEND_VISUAL_FIXTURE = {
   recipient: 'bob@example.com',
@@ -140,6 +149,7 @@ export const WALLET_SEND_VISUAL_FIXTURE = {
   fixedLink: `https://21.gifts/pl/?lightning=${encodeLnurl('https://21.gifts/.well-known/lnurlp/shop')}`,
   fixedAmountSats: 7_000,
   fixedFeeSats: 3,
+  memberRecipient: 'alice@21.gifts',
 } as const;
 
 /**
@@ -238,6 +248,13 @@ function visualState(name: string | null): WalletSendState | null {
         amountSats: fixture.fixedAmountSats,
         feeSats: name === 'send-confirm-shop' ? fixture.feeSats : fixture.fixedFeeSats,
       };
+    case 'send-confirm-member':
+      return {
+        step: 'confirm',
+        recipient: fixture.memberRecipient,
+        amountSats: fixture.amountSats,
+        feeSats: fixture.feeSats,
+      };
     case 'send-sent':
       return { step: 'sent', amountSats: fixture.amountSats, recipient: fixture.recipient };
     case 'send-onchain':
@@ -309,7 +326,12 @@ function relayInputError(error: unknown): WalletSendError {
  * (`fetchShopChargeInvoice`): with one, the wallet pays its Spark invoice for
  * exactly that amount, without a fee; with none, no Spark invoice, or a
  * prepare that fails or gives another amount, the text is read as below.
- * Other own-host addresses and Spark targets are read by the wallet. Nothing
+ * Without an open charge (or without its Spark invoice), the amount entered
+ * for that own-host member is first asked as a Spark invoice
+ * (`fetchMemberSparkInvoice`) and paid without a fee; no Spark invoice, or a
+ * prepare that fails or gives another amount, pays the member over Lightning
+ * as before. Other own-host addresses and Spark targets are read by the
+ * wallet. Nothing
  * is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
  * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
@@ -421,7 +443,9 @@ export function useWalletSend(): UseWalletSendResult {
    * relay asks the api for an invoice, an LNURL receiver is asked by the
    * wallet, and a request is prepared with that amount. The bounds are
    * already checked. A relay receiver that takes one amount never showed an
-   * amount step, so its refusals return to the input.
+   * amount step, so its refusals return to the input. An own-host member is
+   * first asked for a Spark invoice of `sats`; without one, or when it cannot
+   * be prepared for exactly `sats`, the wallet asks the LNURL receiver.
    */
   const payAmount = useCallback(
     (target: WalletSendAmountTarget, sats: number, note: string): void => {
@@ -466,15 +490,33 @@ export function useWalletSend(): UseWalletSendResult {
       }
       if (target.type === 'lnurl') {
         const trimmed = note.trim().slice(0, target.commentMaxLength);
-        prepare(
-          {
-            type: 'lnurl',
-            request: target.request,
-            amountSats: sats,
-            ...(trimmed === '' ? {} : { comment: trimmed }),
-          },
-          target.recipient,
-        );
+        const lightning = (): void => {
+          prepare(
+            {
+              type: 'lnurl',
+              request: target.request,
+              amountSats: sats,
+              ...(trimmed === '' ? {} : { comment: trimmed }),
+            },
+            target.recipient,
+          );
+        };
+        if (target.member === undefined) {
+          lightning();
+          return;
+        }
+        const run = generation.current;
+        setBusy(true);
+        void fetchMemberSparkInvoice(target.member, sats, trimmed).then((sparkInvoice) => {
+          if (run !== generation.current || !walletCanSend()) {
+            return;
+          }
+          if (sparkInvoice === null) {
+            lightning();
+            return;
+          }
+          prepare({ type: 'input', input: sparkInvoice }, target.recipient, sats, lightning);
+        });
         return;
       }
       prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
@@ -548,7 +590,7 @@ export function useWalletSend(): UseWalletSendResult {
       );
       return;
     }
-    const readWithWallet = (): void => {
+    const readWithWallet = (member: OwnShop | null): void => {
       void parseWalletInput(text).then((parsed) => {
         if (run !== generation.current || !walletCanSend()) {
           return;
@@ -573,7 +615,11 @@ export function useWalletSend(): UseWalletSendResult {
           return;
         }
         if (target.type === 'lnurl') {
-          askAmount({ ...target, recipient: recipientOf(text, target.recipient) });
+          askAmount({
+            ...target,
+            recipient: recipientOf(text, target.recipient),
+            ...(member === null ? {} : { member: member.name }),
+          });
           return;
         }
         if (target.amountSats !== null && target.amountSats > 0) {
@@ -594,7 +640,7 @@ export function useWalletSend(): UseWalletSendResult {
     };
     const shop = ownShop(text, window.location.hostname);
     if (shop === null) {
-      readWithWallet();
+      readWithWallet(null);
       return;
     }
     void fetchShopChargeInvoice(shop.name).then((charge) => {
@@ -602,14 +648,16 @@ export function useWalletSend(): UseWalletSendResult {
         return;
       }
       if (charge === null) {
-        readWithWallet();
+        readWithWallet(shop);
         return;
       }
       prepare(
         { type: 'input', input: charge.sparkInvoice },
         shop.address,
         charge.amountSats,
-        readWithWallet,
+        () => {
+          readWithWallet(null);
+        },
       );
     });
   }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount]);

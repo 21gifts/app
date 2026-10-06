@@ -2182,6 +2182,17 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-confirm-shop');
   });
 
+  test('wallet send-confirm-member', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-member');
+    await openWalletSend(page);
+    await expect(page.getByText('To alice@21.gifts')).toBeVisible();
+    await expect(page.getByText("₿2'100", { exact: true })).toBeVisible();
+    await expect(page.getByText('$2.10', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fee ₿0', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-member');
+  });
+
   test('wallet send-input-busy', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-input-busy');
