@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PosAmount, PosScreen, resetPosTillWriteForTests } from '@/components/PosScreen';
 import { fetchGiftStats } from '@/lib/api';
@@ -161,9 +161,16 @@ describe('PosScreen', () => {
     vi.stubGlobal('fetch', fetchMock);
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-    fetchMock.mockImplementation(async () => jsonResponse({ charge: null, history: [] }));
+    expect(screen.getByText('No payments yet.')).toBeTruthy();
+    fetchMock.mockImplementation(async () =>
+      jsonResponse({ charge: null, history: [{ ...charge, status: 'cancelled' }] }),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+    const history = screen.getByRole('region', { name: 'History' });
+    expect(within(history).getByText('Cancelled')).toBeTruthy();
+    expect(within(history).getByText('₿21')).toBeTruthy();
+    expect(screen.queryByText('No payments yet.')).toBeNull();
   });
 
   it('does not reload the till over an in-flight payment', async () => {
@@ -386,7 +393,9 @@ describe('PosScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
+    const history = screen.getByRole('region', { name: 'History' });
+    expect(within(history).getByText('No payments yet.')).toBeTruthy();
+    expect(within(history).queryByText('₿21')).toBeNull();
   });
 
   it('refetches once when the open charge is already expired', async () => {
@@ -413,7 +422,9 @@ describe('PosScreen', () => {
     );
     renderWithLocale(<PosScreen />);
     expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'History' })).toBeNull();
+    const history = screen.getByRole('region', { name: 'History' });
+    expect(within(history).getByText('Expired')).toBeTruthy();
+    expect(within(history).getByText('₿5')).toBeTruthy();
     expect(calls).toBe(2);
   });
 
@@ -866,8 +877,11 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />);
       expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
-      expect(screen.getByText('₿21')).toBeTruthy();
-      expect(await screen.findByText('$0.02')).toBeTruthy();
+      expect(screen.getAllByText('₿21')).toHaveLength(2);
+      expect(await screen.findAllByText('$0.02')).toHaveLength(2);
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
+      expect(within(history).getByText('$0.02')).toBeTruthy();
       expect(screen.getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
         '/pos/amount',
       );
@@ -900,9 +914,13 @@ describe('PosScreen', () => {
       await poll();
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(screen.getByText('No payments yet.')).toBeTruthy();
       await poll();
       expect(fetchMock).toHaveBeenCalledTimes(3);
       expect(screen.getByRole('status').textContent).toBe('Paid ✓');
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
+      expect(screen.queryByText('No payments yet.')).toBeNull();
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       await poll();
       expect(fetchMock).toHaveBeenCalledTimes(3);
