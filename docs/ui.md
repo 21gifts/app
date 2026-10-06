@@ -445,7 +445,9 @@ flowchart TB
 | Grants               | `HandCoins`                   | `/grants` — grant status, apply, and the staff queue                      |
 | Wallet               | `Wallet`                      | `/wallet` — receive QR, then Add recovery phrase or Advanced functions    |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                  |
+| Habit-Tracker        | `ListChecks`                  | `/habit-tracker`                                                          |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                            |
+| Statistics           | `BarChart3`                   | `/statistics` — every signed-in account                                   |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                              |
 | Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero     |
 | Messages             | `Inbox`                       | `/messages` — unread count `ml-auto` only when greater than zero          |
