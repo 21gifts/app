@@ -158,7 +158,9 @@ export interface UseWalletSendResult {
   confirm: () => void;
   /**
    * Closes the amount or confirm step (back to input) or the sent step. While
-   * a confirm send is in flight it closes nothing and still consumes Back.
+   * a confirm send is in flight it closes nothing and still consumes Back;
+   * while an expired quote is being renewed it closes the step and drops the
+   * renewal.
    *
    * @returns `true` when Back is consumed (a step was closed or a send is in
    *   flight), `false` when no step is open or the flow is pinned.
@@ -430,7 +432,12 @@ function relayInputError(error: unknown): WalletSendError {
  * Drives the `/wallet` send flow: paste, read with the SDK's `parse`, an
  * amount (and optional comment) when the receiver asks for one, a confirm
  * step with amount, fee, and recipient, then one send. A base-chain address
- * shows that it is not supported yet. A receiver whose server this browser
+ * (or a `bitcoin:` URI that offers only one) asks for an amount, or uses the
+ * URI amount; an amount below the SDK minimum reopens the amount step with
+ * that minimum. Its confirm step offers the speeds the balance covers
+ * (`setSpeed`, medium first), and an expired fee quote is prepared again
+ * instead of sent, returning to the confirm step marked `renewed`. A
+ * receiver whose server this browser
  * cannot reach shows a plain error. A Lightning address or LNURL on another
  * host (see `lnurlRelayTarget`) is read through the api instead: its pay
  * request gives the bounds and comment length, the api returns the invoice
@@ -450,7 +457,8 @@ function relayInputError(error: unknown): WalletSendError {
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
  * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
  * other `?visual=send-…` value there); under `send-input-busy` and `send-amount-busy`, **Continue**
- * only marks that step busy. While the one-time wallet setup is due, the
+ * only marks that step busy, and under an idle base-chain confirm pin
+ * `setSpeed` chooses a covered speed. While the one-time wallet setup is due, the
  * actions stay idle. When the wallet leaves `ready` or the account leaves
  * wallet mode, an open amount or confirm step and any read or prepare in
  * flight are dropped (a send in flight is kept), so a later reconnect starts
@@ -932,7 +940,7 @@ export function useWalletSend(): UseWalletSendResult {
     if (inert || state.step === 'input') {
       return false;
     }
-    if (state.step === 'confirm' && busy) {
+    if (state.step === 'confirm' && busy && sendingRef.current) {
       return true;
     }
     generation.current += 1;
