@@ -106,4 +106,6 @@ Reject the PR when any screen in the app has a second back control, or when the 
 
 Reject the PR when a screenshot pin (`?visual=…`, `e2e-now`, or other fixture switch) is read without the Playwright-build check (`getE2eNow()`, or the `e2e-now` meta tag in a pre-React script), or when a new pin has no unit test that a production build ignores it. See CONTRIBUTING.md “Screenshot baselines”.
 
+Reject the PR when the **Introduce yourself** dialog can open anywhere but `/welcome`.
+
 Reject the PR when moving between in-app views loads a new document (a raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path, or a link to a path that only redirects), when it adds a `window.location.reload()` other than the wallet retry after a failed initialisation, or when it asks for the passkey while the recovery phrase is already in tab memory. Reject it when it writes the phrase or the PRF bytes anywhere but tab memory. See CONTRIBUTING.md “No document load inside the app”.
