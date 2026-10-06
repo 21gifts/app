@@ -130,7 +130,13 @@ export function LoginCard(): ReactElement {
       />
     );
   } else {
-    body = <StartView onLogin={passkey.login} versionBlock={versionBlock} />;
+    body = (
+      <StartView
+        onLogin={passkey.login}
+        onRegister={() => passkey.register()}
+        versionBlock={versionBlock}
+      />
+    );
   }
 
   return <Card surface={false}>{body}</Card>;
@@ -158,17 +164,19 @@ function VersionNote({ block }: { block: VersionBlock | null }): ReactElement | 
 interface StartViewProps {
   /** Called to start authenticate-first login. */
   onLogin: () => void;
+  /** Open the name form; does not start create. */
+  onRegister: () => void;
   /** Old OS notice, or null. */
   versionBlock: VersionBlock | null;
 }
 
 /**
- * The initial logged-out state: a single Log in button.
+ * The initial logged-out state: **Log in**, then **Open a new account** under a short line.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({ onLogin, versionBlock }: StartViewProps): ReactElement {
+function StartView({ onLogin, onRegister, versionBlock }: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
@@ -181,6 +189,10 @@ function StartView({ onLogin, versionBlock }: StartViewProps): ReactElement {
         icon={<Fingerprint aria-hidden="true" className="h-4 w-4" />}
       >
         {t('login.submit')}
+      </Button>
+      <p className="text-center text-sm text-app-muted">{t('login.newHere')}</p>
+      <Button type="button" variant="secondary" onClick={onRegister}>
+        {t('login.create')}
       </Button>
     </>
   );
