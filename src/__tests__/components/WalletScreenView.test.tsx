@@ -666,6 +666,7 @@ function idleSend(extra: Partial<UseWalletSendResult> = {}): UseWalletSendResult
     setComment: vi.fn(),
     submitInput: vi.fn(),
     submitAmount: vi.fn(),
+    setSpeed: vi.fn(),
     confirm: vi.fn(),
     cancel: vi.fn(() => false),
     ...extra,

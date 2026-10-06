@@ -324,9 +324,45 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:send-onchain",
-    "label": "/wallet send-onchain",
-    "visual": "state-wallet-send-onchain",
+    "id": "/wallet:send-amount-onchain",
+    "label": "/wallet send-amount-onchain",
+    "visual": "state-wallet-send-amount-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-onchain-min",
+    "label": "/wallet send-amount-onchain-min",
+    "visual": "state-wallet-send-amount-onchain-min",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain",
+    "label": "/wallet send-confirm-onchain",
+    "visual": "state-wallet-send-confirm-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-fast",
+    "label": "/wallet send-confirm-onchain-fast",
+    "visual": "state-wallet-send-confirm-onchain-fast",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-low",
+    "label": "/wallet send-confirm-onchain-low",
+    "visual": "state-wallet-send-confirm-onchain-low",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-renewed",
+    "label": "/wallet send-confirm-onchain-renewed",
+    "visual": "state-wallet-send-confirm-onchain-renewed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-sending",
+    "label": "/wallet send-confirm-onchain-sending",
+    "visual": "state-wallet-send-confirm-onchain-sending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

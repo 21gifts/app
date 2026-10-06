@@ -12,8 +12,14 @@ import {
   registerWalletAddress,
   WALLET_SEND_TIMEOUT_MS,
   type WalletSdkLoader,
+  WALLET_QUOTE_MARGIN_MS,
 } from '@/lib/wallet/wallet-service';
-import type { WalletConnection, WalletSdk } from '@/lib/wallet/wallet-sdk';
+import type {
+  WalletConnection,
+  WalletPreparedPayment,
+  WalletSdk,
+  WalletTarget,
+} from '@/lib/wallet/wallet-sdk';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -962,6 +968,13 @@ describe('listWalletPayments', () => {
 /**
  * Connects a fake wallet whose connection also parses and prepares payments.
  */
+const ONCHAIN_TARGET: WalletTarget = {
+  type: 'onchain',
+  address: 'bc1q',
+  amountSats: null,
+  recipient: 'bc1q',
+};
+
 async function connectPaying(options: {
   balanceSats?: number;
   parse?: WalletConnection['parse'];
@@ -1248,6 +1261,139 @@ describe('payFromWallet', () => {
   });
 });
 
+describe('payFromWallet to a base-chain address', () => {
+  const FEES = { fast: 2_840, medium: 1_420, slow: 710 };
+  const REQUEST = { type: 'input' as const, input: 'bc1q', amountSats: 50_000 };
+
+  function onchainPrepared(
+    send: WalletPreparedPayment['send'],
+    expiresAtMs = Date.now() + 600_000,
+  ): WalletConnection['prepare'] {
+    return async () => ({
+      amountSats: 50_000,
+      feeSats: FEES.medium,
+      onchain: { fees: FEES, expiresAtMs },
+      send,
+    });
+  }
+
+  it('returns the fee of each speed and what the balance covers, then sends with the chosen speed', async () => {
+    const send = vi.fn(async () => undefined);
+    await connectPaying({ balanceSats: 60_000, prepare: onchainPrepared(send) });
+    const result = await payFromWallet(REQUEST);
+    expect(result).toMatchObject({
+      kind: 'confirm',
+      amountSats: 50_000,
+      feeSats: 1_420,
+      onchain: { fees: FEES, spendableFeeSats: 10_000 },
+    });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    await expect(result.send('fast')).resolves.toEqual({ kind: 'paid' });
+    expect(send).toHaveBeenCalledWith('fast');
+  });
+
+  it('sends with the medium speed when none is chosen', async () => {
+    const send = vi.fn(async () => undefined);
+    await connectPaying({ balanceSats: 60_000, prepare: onchainPrepared(send) });
+    const result = await payFromWallet(REQUEST);
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    await expect(result.send()).resolves.toEqual({ kind: 'paid' });
+    expect(send).toHaveBeenCalledWith('medium');
+  });
+
+  it('is insufficient when the balance does not cover the amount and the lowest fee', async () => {
+    await connectPaying({ balanceSats: 50_709, prepare: onchainPrepared(async () => undefined) });
+    await expect(payFromWallet(REQUEST)).resolves.toEqual({ kind: 'insufficient' });
+  });
+
+  it('refuses a speed the balance does not cover without sending, and still sends a covered one', async () => {
+    const send = vi.fn(async () => undefined);
+    await connectPaying({ balanceSats: 51_000, prepare: onchainPrepared(send) });
+    const result = await payFromWallet(REQUEST);
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    expect(result.onchain?.spendableFeeSats).toBe(1_000);
+    await expect(result.send('fast')).resolves.toEqual({ kind: 'insufficient' });
+    expect(send).not.toHaveBeenCalled();
+    await expect(result.send('slow')).resolves.toEqual({ kind: 'paid' });
+    expect(send).toHaveBeenCalledWith('slow');
+  });
+
+  it('refuses a quote within the margin of its expiry without sending', async () => {
+    const send = vi.fn(async () => undefined);
+    await connectPaying({
+      balanceSats: 60_000,
+      prepare: onchainPrepared(send, Date.now() + WALLET_QUOTE_MARGIN_MS - 1_000),
+    });
+    const result = await payFromWallet(REQUEST);
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    await expect(result.send()).resolves.toEqual({ kind: 'expired' });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [new Error('Fee quote expired'), 'expired'],
+    ['quote has expired', 'expired'],
+    [
+      new Error('Insufficient funds for withdrawal: amount 50000 sats, fee 1420 sats'),
+      'insufficient',
+    ],
+    [new Error('service unavailable'), 'failed'],
+  ])('maps the send rejection %s to %s', async (error, kind) => {
+    await connectPaying({
+      balanceSats: 60_000,
+      prepare: onchainPrepared(async () => {
+        throw error;
+      }),
+    });
+    const result = await payFromWallet(REQUEST);
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    await expect(result.send()).resolves.toEqual({ kind });
+  });
+
+  it('does not read an expired quote into a payment without one', async () => {
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 2_100,
+        feeSats: 0,
+        send: async () => {
+          throw new Error('quote expired');
+        },
+      }),
+    });
+    const result = await payFromWallet({ type: 'input', input: 'spark1x' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    expect(result.onchain).toBeUndefined();
+    await expect(result.send()).resolves.toEqual({ kind: 'failed' });
+  });
+
+  it.each([
+    new Error('Amount is below the minimum of 294 sats required for this address'),
+    'Amount is below the minimum of 294 sats required for this address after lowest fees of 710 sats',
+  ])('reads the SDK minimum from a refused amount: %s', async (error) => {
+    await connectPaying({
+      prepare: async () => {
+        throw error;
+      },
+    });
+    await expect(payFromWallet({ ...REQUEST, amountSats: 100 })).resolves.toEqual({
+      kind: 'belowMinimum',
+      minSats: 294,
+    });
+  });
+});
+
 describe('parseWalletInput', () => {
   it('treats blank text as invalid', async () => {
     await expect(parseWalletInput('   ')).resolves.toEqual({ kind: 'invalid' });
@@ -1258,10 +1404,10 @@ describe('parseWalletInput', () => {
   });
 
   it('returns the parsed target for trimmed text', async () => {
-    const { parse } = await connectPaying({ parse: async () => ({ type: 'onchain' }) });
+    const { parse } = await connectPaying({ parse: async () => ONCHAIN_TARGET });
     await expect(parseWalletInput('  bc1q  ')).resolves.toEqual({
       kind: 'target',
-      target: { type: 'onchain' },
+      target: ONCHAIN_TARGET,
     });
     expect(parse).toHaveBeenCalledWith('bc1q');
   });
@@ -1280,7 +1426,7 @@ describe('parseWalletInput', () => {
   });
 
   it('asks to unlock when the connection changed while the text was read', async () => {
-    let settle: { resolve: (t: { type: 'onchain' }) => void; reject: (e: Error) => void } = {
+    let settle: { resolve: (t: WalletTarget) => void; reject: (e: Error) => void } = {
       resolve: () => undefined,
       reject: () => undefined,
     };
@@ -1292,7 +1438,7 @@ describe('parseWalletInput', () => {
     });
     const read = parseWalletInput('bc1q');
     await disconnectWallet();
-    settle.resolve({ type: 'onchain' });
+    settle.resolve(ONCHAIN_TARGET);
     await expect(read).resolves.toEqual({ kind: 'unlock' });
 
     await connectPaying({

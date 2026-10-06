@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useWalletSend';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import type { MessageKey } from '@/lib/messages';
+import type { OnchainSpeed } from '@/lib/wallet/wallet-sdk';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -54,11 +55,17 @@ const ERROR_KEYS: Record<WalletSendError, MessageKey> = {
   notPayable: 'wallet.sendNotPayable',
   notFound: 'wallet.sendNotFound',
   relayUnreachable: 'wallet.sendRelayUnreachable',
-  onchain: 'wallet.sendOnchain',
   unsupported: 'wallet.sendUnsupported',
   insufficient: 'wallet.payInsufficient',
   failed: 'wallet.sendFailed',
 };
+
+/** Speeds of a payment to a base-chain address, fastest first, with their labels. */
+const SPEEDS: readonly { speed: OnchainSpeed; key: MessageKey }[] = [
+  { speed: 'fast', key: 'wallet.sendSpeedFast' },
+  { speed: 'medium', key: 'wallet.sendSpeedMedium' },
+  { speed: 'slow', key: 'wallet.sendSpeedSlow' },
+];
 
 /**
  * Bordered step box with the Cancel close (`X`) in the top-left corner. The
@@ -96,7 +103,12 @@ function StepBox({
 /**
  * Send view on `/wallet`, opened from the wallet home with Send: paste a
  * Bitcoin payment request or address, enter an amount when the receiver asks
- * for one, confirm amount, fee, and recipient, then send. The input step opens with the camera QR
+ * for one, confirm amount, fee, and recipient, then send. A base-chain Bitcoin
+ * address (or a `bitcoin:` URI that offers only one) asks for an amount, then
+ * confirms with one row per speed (each with its fee in ₿ and fiat), the chosen
+ * fee and the total in large type, and a line that this network fee is much
+ * higher than a Lightning fee; a speed the balance does not cover is disabled.
+ * The input step opens with the camera QR
  * scanner above the field; a decoded text goes into the field as if pasted and
  * Continue runs on it. The camera runs only while the input step is idle and
  * shows no alert, so a code that was just refused is not read again at once;
@@ -172,6 +184,28 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
     </AppShellFooter>
   );
 
+  const confirmFooter = footerAction(
+    <>
+      <Button
+        size="lg"
+        className="min-h-14 text-base"
+        disabled={busy}
+        icon={spinner}
+        onClick={send.confirm}
+      >
+        {t('wallet.sendButton')}
+      </Button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={close}
+        className="self-center px-4 py-2 text-sm text-app-muted underline hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {t('wallet.sendCancel')}
+      </button>
+    </>,
+  );
+
   let body: ReactElement;
   if (state.step === 'input' && !walletReady && state.error !== null) {
     body = (
@@ -228,7 +262,8 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
       const parsed = parseAmountDraft(amountUnit, amountDraft, rateDay, fiat);
       send.submitAmount(parsed.kind === 'sats' ? parsed.sats : null);
     };
-    const commentMax = target.type === 'request' ? 0 : target.commentMaxLength;
+    const anyAmount = target.type === 'request' || target.type === 'onchain';
+    const commentMax = anyAmount ? 0 : target.commentMaxLength;
     body = (
       <StepBox onClose={close}>
         <form onSubmit={onSubmit} className="flex flex-col items-stretch gap-3">
@@ -244,7 +279,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
             onValueChange={setAmountDraft}
             onUnitChange={setAmountUnit}
           />
-          {target.type === 'request' ? null : (
+          {anyAmount ? null : (
             <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
               {t('wallet.sendAmountRange', {
                 min: boundText(min),
@@ -270,7 +305,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
           ) : null}
           {state.amountError ? (
             <p role="alert" className="text-center text-sm text-app-danger">
-              {target.type === 'request'
+              {anyAmount
                 ? t('wallet.sendAmountMin', { min: boundText(min) })
                 : t('wallet.sendAmountInvalid', { min: boundText(min), max: boundText(max) })}
             </p>
@@ -283,6 +318,80 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
         </form>
       </StepBox>
     );
+  } else if (state.step === 'confirm' && state.onchain !== undefined) {
+    const onchain = state.onchain;
+    const totalSats = state.amountSats + state.feeSats;
+    body = (
+      <div className="flex w-full flex-col items-center gap-4 py-6">
+        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
+          {t('wallet.sendTo', { recipient: state.recipient })}
+        </p>
+        {onchain.renewed === true ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('wallet.sendQuoteRenewed')}
+          </p>
+        ) : null}
+        <div
+          role="group"
+          aria-label={t('wallet.sendSpeedLabel')}
+          className="flex w-full max-w-sm flex-col gap-2"
+        >
+          <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+            {t('wallet.sendSpeedLabel')}
+          </p>
+          {SPEEDS.map(({ speed, key }) => {
+            const fee = onchain.fees[speed];
+            const covered = fee <= onchain.spendableFeeSats;
+            const selected = onchain.speed === speed;
+            const live = fiatText(fee);
+            return (
+              <button
+                key={speed}
+                type="button"
+                aria-pressed={selected}
+                disabled={busy || !covered}
+                onClick={() => {
+                  send.setSpeed(speed);
+                }}
+                className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border px-4 py-2 text-left text-sm text-app-fg disabled:cursor-not-allowed disabled:opacity-50 ${
+                  selected
+                    ? 'border-app-accent bg-app-card-muted font-semibold'
+                    : 'border-app-border'
+                }`}
+              >
+                <span>{t(key)}</span>
+                <span className="flex flex-col items-end tabular-nums lining-nums">
+                  <span>{formatBitcoin(fee, numberFormat)}</span>
+                  {live === null ? null : (
+                    <span className="text-xs font-normal text-app-muted">{live}</span>
+                  )}
+                  {covered ? null : (
+                    <span className="text-xs font-normal text-app-danger">
+                      {t('wallet.sendSpeedUncovered')}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex flex-col items-center gap-1 text-center text-base font-semibold tabular-nums lining-nums text-app-fg">
+          <p>
+            {t('wallet.payFee', { amount: formatBitcoin(state.feeSats, numberFormat) })}
+            {fiatOf(state.feeSats)}
+          </p>
+          <p>
+            {t('wallet.sendTotal', { amount: formatBitcoin(totalSats, numberFormat) })}
+            {fiatOf(totalSats)}
+          </p>
+        </div>
+        <p className="max-w-sm text-center text-xs text-app-muted">
+          {t('wallet.sendOnchainFeeHint')}
+        </p>
+        {confirmFooter}
+      </div>
+    );
   } else if (state.step === 'confirm') {
     body = (
       <div className="flex w-full flex-col items-center gap-4 py-6">
@@ -294,27 +403,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
           {t('wallet.payFee', { amount: formatBitcoin(state.feeSats, numberFormat) })}
           {state.feeSats > 0 ? fiatOf(state.feeSats) : null}
         </p>
-        {footerAction(
-          <>
-            <Button
-              size="lg"
-              className="min-h-14 text-base"
-              disabled={busy}
-              icon={spinner}
-              onClick={send.confirm}
-            >
-              {t('wallet.sendButton')}
-            </Button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={close}
-              className="self-center px-4 py-2 text-sm text-app-muted underline hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t('wallet.sendCancel')}
-            </button>
-          </>,
-        )}
+        {confirmFooter}
       </div>
     );
   } else {

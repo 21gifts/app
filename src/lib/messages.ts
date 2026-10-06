@@ -627,7 +627,16 @@ const en = {
   'wallet.sendInvalid': 'This is not a Bitcoin payment request or address.',
   'wallet.sendUnreachable':
     'The receiver could not be reached from this browser. Please try again later.',
-  'wallet.sendOnchain': 'Sending to this kind of Bitcoin address is not supported yet.',
+  'wallet.sendSpeedLabel': 'Speed',
+  'wallet.sendSpeedFast': 'Fast',
+  'wallet.sendSpeedMedium': 'Medium',
+  'wallet.sendSpeedSlow': 'Slow',
+  'wallet.sendSpeedUncovered': 'Balance too low',
+  'wallet.sendTotal': 'Total {amount}',
+  'wallet.sendOnchainFeeHint':
+    'A payment to a Bitcoin address pays a network fee. It is much higher than the fee of other payments.',
+  'wallet.sendQuoteRenewed':
+    'The fee offer expired, so nothing was sent. Check the new fee and press Send again.',
   'wallet.sendNotPayable': 'This address cannot receive a payment.',
   'wallet.sendNotFound': 'This address was not found.',
   'wallet.sendRelayUnreachable': "The receiver's server did not answer. Please try again later.",
@@ -1799,7 +1808,16 @@ const de = {
   'wallet.sendInvalid': 'Das ist keine Bitcoin-Zahlungsanforderung und keine Adresse.',
   'wallet.sendUnreachable':
     'Der Empfänger ist von diesem Browser aus nicht erreichbar. Bitte versuchen Sie es später erneut.',
-  'wallet.sendOnchain': 'Senden an diese Art von Bitcoin-Adresse wird noch nicht unterstützt.',
+  'wallet.sendSpeedLabel': 'Geschwindigkeit',
+  'wallet.sendSpeedFast': 'Schnell',
+  'wallet.sendSpeedMedium': 'Mittel',
+  'wallet.sendSpeedSlow': 'Langsam',
+  'wallet.sendSpeedUncovered': 'Guthaben zu niedrig',
+  'wallet.sendTotal': 'Gesamt {amount}',
+  'wallet.sendOnchainFeeHint':
+    'Eine Zahlung an eine Bitcoin-Adresse kostet eine Netzwerkgebühr. Sie ist viel höher als die Gebühr anderer Zahlungen.',
+  'wallet.sendQuoteRenewed':
+    'Das Gebührenangebot ist abgelaufen, es wurde nichts gesendet. Prüfen Sie die neue Gebühr und tippen Sie erneut auf Senden.',
   'wallet.sendNotPayable': 'An diese Adresse kann keine Zahlung gesendet werden.',
   'wallet.sendNotFound': 'Diese Adresse wurde nicht gefunden.',
   'wallet.sendRelayUnreachable':
@@ -2981,7 +2999,16 @@ const es = {
   'wallet.sendInvalid': 'Esto no es una solicitud de pago Bitcoin ni una dirección.',
   'wallet.sendUnreachable':
     'No se pudo contactar al destinatario desde este navegador. Inténtalo más tarde.',
-  'wallet.sendOnchain': 'Todavía no se puede enviar a este tipo de dirección Bitcoin.',
+  'wallet.sendSpeedLabel': 'Velocidad',
+  'wallet.sendSpeedFast': 'Rápida',
+  'wallet.sendSpeedMedium': 'Media',
+  'wallet.sendSpeedSlow': 'Lenta',
+  'wallet.sendSpeedUncovered': 'Saldo insuficiente',
+  'wallet.sendTotal': 'Total {amount}',
+  'wallet.sendOnchainFeeHint':
+    'Un pago a una dirección Bitcoin paga una comisión de red. Es mucho más alta que la comisión de otros pagos.',
+  'wallet.sendQuoteRenewed':
+    'La oferta de comisión caducó y no se envió nada. Revisa la nueva comisión y pulsa Enviar otra vez.',
   'wallet.sendNotPayable': 'Esta dirección no puede recibir pagos.',
   'wallet.sendNotFound': 'No se encontró esta dirección.',
   'wallet.sendRelayUnreachable': 'El servidor del destinatario no respondió. Inténtalo más tarde.',
@@ -4147,7 +4174,16 @@ const fil = {
   'wallet.sendInvalid': 'Hindi ito Bitcoin payment request o address.',
   'wallet.sendUnreachable':
     'Hindi maabot ang tatanggap mula sa browser na ito. Pakisubukan ulit mamaya.',
-  'wallet.sendOnchain': 'Hindi pa suportado ang pagpapadala sa ganitong uri ng Bitcoin address.',
+  'wallet.sendSpeedLabel': 'Bilis',
+  'wallet.sendSpeedFast': 'Mabilis',
+  'wallet.sendSpeedMedium': 'Katamtaman',
+  'wallet.sendSpeedSlow': 'Mabagal',
+  'wallet.sendSpeedUncovered': 'Kulang ang balanse',
+  'wallet.sendTotal': 'Kabuuan {amount}',
+  'wallet.sendOnchainFeeHint':
+    'May network fee ang bayad sa isang Bitcoin address. Mas mataas ito nang malaki kaysa sa bayad sa ibang payment.',
+  'wallet.sendQuoteRenewed':
+    'Nag-expire ang alok na bayad, kaya walang naipadala. Tingnan ang bagong bayad at pindutin muli ang Ipadala.',
   'wallet.sendNotPayable': 'Hindi makakatanggap ng bayad ang address na ito.',
   'wallet.sendNotFound': 'Hindi nahanap ang address na ito.',
   'wallet.sendRelayUnreachable': 'Hindi sumagot ang server ng tatanggap. Pakisubukan ulit mamaya.',

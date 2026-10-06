@@ -5,7 +5,7 @@ import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/ap
 import type { LnurlPayRequest } from '@/lib/api-types';
 import { encodeLnurl } from '@/lib/lnurl';
 import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
-import type { WalletTarget } from '@/lib/wallet/wallet-sdk';
+import type { OnchainSpeed, WalletTarget } from '@/lib/wallet/wallet-sdk';
 import {
   parseWalletInput,
   payFromWallet,
@@ -174,11 +174,8 @@ describe('useWalletSend input', () => {
     expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
-  it('says a base-chain address is not supported yet, and so for other inputs', async () => {
-    target({ type: 'onchain' });
+  it('says an input the wallet does not pay is not supported', async () => {
     const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bc1q');
-    expect(result.current.state).toEqual({ step: 'input', error: 'onchain' });
     target({ type: 'unsupported' });
     await typeAndSubmit(result, 'lnurlw');
     expect(result.current.state).toEqual({ step: 'input', error: 'unsupported' });
@@ -472,7 +469,30 @@ describe('useWalletSend visual pins', () => {
       },
     ],
     ['send-sent', { step: 'sent', amountSats: fixture.amountSats, recipient: fixture.recipient }],
-    ['send-onchain', { step: 'input', error: 'onchain' }],
+    [
+      'send-amount-onchain',
+      { step: 'amount', amountError: false, target: { type: 'onchain', amountSats: null } },
+    ],
+    [
+      'send-amount-onchain-min',
+      { step: 'amount', amountError: true, target: { type: 'onchain', minSats: 294 } },
+    ],
+    [
+      'send-confirm-onchain',
+      {
+        step: 'confirm',
+        recipient: fixture.onchainRecipient,
+        amountSats: fixture.onchainAmountSats,
+        feeSats: 1_420,
+        onchain: { speed: 'medium', spendableFeeSats: fixture.onchainSpendableFeeSats },
+      },
+    ],
+    ['send-confirm-onchain-fast', { feeSats: 2_840, onchain: { speed: 'fast' } }],
+    [
+      'send-confirm-onchain-low',
+      { feeSats: 1_420, onchain: { speed: 'medium', spendableFeeSats: 2_000 } },
+    ],
+    ['send-confirm-onchain-renewed', { feeSats: 1_420, onchain: { renewed: true } }],
     ['send-unsupported', { step: 'input', error: 'unsupported' }],
     ['send-invalid', { step: 'input', error: 'invalid' }],
     ['send-failed', { step: 'input', error: 'failed' }],
@@ -591,6 +611,319 @@ describe('useWalletSend visual pins', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=balance-ready');
     expect(renderHook(() => useWalletSend()).result.current.state.step).toBe('input');
+  });
+});
+
+describe('useWalletSend base-chain address', () => {
+  const ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+  const ONCHAIN: Extract<WalletTarget, { type: 'onchain' }> = {
+    type: 'onchain',
+    address: ADDRESS,
+    amountSats: null,
+    recipient: 'bc1qar0srr…wf5mdq',
+  };
+  const FEES = { fast: 2_840, medium: 1_420, slow: 710 };
+
+  function onchainConfirm(
+    send: (speed?: OnchainSpeed) => Promise<WalletSendResult>,
+    spendableFeeSats = 10_000,
+  ): WalletPayResult {
+    return {
+      kind: 'confirm',
+      amountSats: 50_000,
+      feeSats: FEES.medium,
+      onchain: { fees: FEES, spendableFeeSats },
+      send,
+    };
+  }
+
+  async function toOnchainConfirm(
+    send: (speed?: OnchainSpeed) => Promise<WalletSendResult>,
+    spendableFeeSats = 10_000,
+  ): Promise<{ current: ReturnType<typeof useWalletSend> }> {
+    target(ONCHAIN);
+    vi.mocked(payFromWallet).mockResolvedValue(onchainConfirm(send, spendableFeeSats));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, ADDRESS);
+    await act(async () => {
+      result.current.submitAmount(50_000);
+    });
+    return result;
+  }
+
+  it('asks for an amount, then confirms with the medium speed and its fee', async () => {
+    const result = await toOnchainConfirm(async () => ({ kind: 'paid' }));
+    expect(payFromWallet).toHaveBeenCalledWith({
+      type: 'input',
+      input: ADDRESS,
+      amountSats: 50_000,
+    });
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'bc1qar0srr…wf5mdq',
+      amountSats: 50_000,
+      feeSats: 1_420,
+      onchain: { fees: FEES, spendableFeeSats: 10_000, speed: 'medium' },
+    });
+  });
+
+  it('opens with the slow speed when the balance does not cover the medium fee', async () => {
+    const result = await toOnchainConfirm(async () => ({ kind: 'paid' }), 1_000);
+    expect(result.current.state).toMatchObject({ feeSats: 710, onchain: { speed: 'slow' } });
+  });
+
+  it('chooses a covered speed, ignores one the balance does not cover, and sends with the choice', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    const result = await toOnchainConfirm(send, 2_000);
+    act(() => {
+      result.current.setSpeed('fast');
+    });
+    expect(result.current.state).toMatchObject({ feeSats: 1_420, onchain: { speed: 'medium' } });
+    act(() => {
+      result.current.setSpeed('slow');
+    });
+    expect(result.current.state).toMatchObject({ feeSats: 710, onchain: { speed: 'slow' } });
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(send).toHaveBeenCalledWith('slow');
+    expect(result.current.state).toEqual({
+      step: 'sent',
+      amountSats: 50_000,
+      recipient: 'bc1qar0srr…wf5mdq',
+    });
+  });
+
+  it('ignores a speed while sending and outside an on-chain confirm step', async () => {
+    let finish: (value: WalletSendResult) => void = () => undefined;
+    const result = await toOnchainConfirm(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    act(() => {
+      result.current.confirm();
+    });
+    act(() => {
+      result.current.setSpeed('fast');
+    });
+    expect(result.current.state).toMatchObject({ onchain: { speed: 'medium' } });
+    await act(async () => {
+      finish({ kind: 'failed' });
+    });
+    const before = result.current.state;
+    act(() => {
+      result.current.setSpeed('fast');
+    });
+    expect(result.current.state).toBe(before);
+    cleanup();
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    const lightning = renderHook(() => useWalletSend()).result;
+    await typeAndSubmit(lightning, 'lnbc1');
+    const confirm = lightning.current.state;
+    act(() => {
+      lightning.current.setSpeed('fast');
+    });
+    expect(lightning.current.state).toBe(confirm);
+  });
+
+  it('prepares the amount of a BIP21 URI at once', async () => {
+    target({ ...ONCHAIN, amountSats: 50_000 });
+    vi.mocked(payFromWallet).mockResolvedValue(onchainConfirm(async () => ({ kind: 'paid' })));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, `bitcoin:${ADDRESS}?amount=0.0005`);
+    expect(payFromWallet).toHaveBeenCalledWith({
+      type: 'input',
+      input: ADDRESS,
+      amountSats: 50_000,
+    });
+    expect(result.current.state).toMatchObject({ step: 'confirm', onchain: { speed: 'medium' } });
+  });
+
+  it('reopens the amount step with the SDK minimum and checks it before asking again', async () => {
+    target({ ...ONCHAIN, amountSats: 100 });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'belowMinimum', minSats: 294 });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, `bitcoin:${ADDRESS}?amount=0.000001`);
+    expect(result.current.state).toEqual({
+      step: 'amount',
+      target: { ...ONCHAIN, minSats: 294 },
+      amountError: true,
+    });
+    act(() => {
+      result.current.submitAmount(200);
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      result.current.submitAmount(250);
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(walletSendBounds({ ...ONCHAIN, minSats: 294 })).toEqual({
+      min: 294,
+      max: Number.MAX_SAFE_INTEGER,
+    });
+    expect(walletSendBounds(ONCHAIN)).toEqual({ min: 1, max: Number.MAX_SAFE_INTEGER });
+  });
+
+  it('shows a refused minimum outside a base-chain address as a failed payment', async () => {
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'belowMinimum', minSats: 294 });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+  });
+
+  it('renews an expired quote with the chosen speed and says so, without sending', async () => {
+    const expired = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'expired' }));
+    const result = await toOnchainConfirm(expired);
+    act(() => {
+      result.current.setSpeed('fast');
+    });
+    const paid = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(payFromWallet).mockResolvedValue(onchainConfirm(paid));
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(expired).toHaveBeenCalledWith('fast');
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(payFromWallet).toHaveBeenLastCalledWith({
+      type: 'input',
+      input: ADDRESS,
+      amountSats: 50_000,
+    });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'bc1qar0srr…wf5mdq',
+      amountSats: 50_000,
+      feeSats: 2_840,
+      onchain: { fees: FEES, spendableFeeSats: 10_000, speed: 'fast', renewed: true },
+    });
+    expect(paid).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(paid).toHaveBeenCalledWith('fast');
+  });
+
+  it('renews with the default speed when the new quote no longer covers the chosen one', async () => {
+    const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
+    act(() => {
+      result.current.setSpeed('fast');
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(
+      onchainConfirm(async () => ({ kind: 'paid' }), 2_000),
+    );
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(result.current.state).toMatchObject({
+      feeSats: 1_420,
+      onchain: { speed: 'medium', renewed: true },
+    });
+  });
+
+  it('renews a payment without a quote with its own fee', async () => {
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'expired' })));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'r',
+      amountSats: 2_100,
+      feeSats: 1,
+    });
+  });
+
+  it('returns to the input when a quote expired after the wallet left ready', async () => {
+    let finish: (value: WalletSendResult) => void = () => undefined;
+    const result = await toOnchainConfirm(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    act(() => {
+      result.current.confirm();
+    });
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    expect(result.current.state.step).toBe('confirm');
+    await act(async () => {
+      finish({ kind: 'expired' });
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(false);
+  });
+
+  it('returns to the input when the wallet leaves ready while a quote is renewed', async () => {
+    const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
+    vi.mocked(payFromWallet).mockReturnValue(new Promise(() => undefined));
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(false);
+  });
+});
+
+describe('useWalletSend speed pins', () => {
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+  });
+
+  function pinned(visual: string): { current: ReturnType<typeof useWalletSend> } {
+    window.history.replaceState({}, '', `/wallet?visual=${visual}`);
+    return renderHook(() => useWalletSend()).result;
+  }
+
+  it('lets a speed be chosen under the on-chain confirm pin without sending', () => {
+    const result = pinned('send-confirm-onchain');
+    act(() => {
+      result.current.setSpeed('fast');
+    });
+    expect(result.current.state).toMatchObject({ feeSats: 2_840, onchain: { speed: 'fast' } });
+    act(() => {
+      result.current.confirm();
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('ignores a speed the low-balance pin does not cover, a sending pin, and other pins', () => {
+    const low = pinned('send-confirm-onchain-low');
+    act(() => {
+      low.current.setSpeed('fast');
+    });
+    expect(low.current.state).toMatchObject({ onchain: { speed: 'medium' } });
+    const sending = pinned('send-confirm-onchain-sending');
+    expect(sending.current.busy).toBe(true);
+    act(() => {
+      sending.current.setSpeed('fast');
+    });
+    expect(sending.current.state).toMatchObject({ onchain: { speed: 'medium' } });
+    const lightning = pinned('send-confirm');
+    act(() => {
+      lightning.current.setSpeed('fast');
+    });
+    expect(lightning.current.state).not.toHaveProperty('onchain');
+    const balance = pinned('balance-ready');
+    act(() => {
+      balance.current.setSpeed('fast');
+    });
+    expect(balance.current.state).toEqual({ step: 'input', error: null });
   });
 });
 

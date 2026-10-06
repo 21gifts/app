@@ -850,13 +850,113 @@ test('wallet send-sent pin shows the check, the sent amount with fiat, the recip
   await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
 });
 
-test('wallet send-onchain pin says a base-chain address is not supported yet', async ({ page }) => {
+test('wallet send-amount-onchain pin asks for an amount for a Bitcoin address without bounds or a message', async ({
+  page,
+}) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
-  await page.goto('/wallet?visual=send-onchain');
+  await page.goto('/wallet?visual=send-amount-onchain');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText('To bc1qar0srr…wf5mdq')).toBeVisible();
+  await expect(region.getByLabel('Amount')).toBeVisible();
+  await expect(region.getByText(/^Between/)).toHaveCount(0);
+  await expect(region.getByLabel('Message (optional)')).toHaveCount(0);
+});
+
+test('wallet send-amount-onchain-min pin names the smallest amount for the address', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-amount-onchain-min');
+  await openSend(page);
   await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
-    'Sending to this kind of Bitcoin address is not supported yet.',
+    'Enter an amount of at least ₿294 · $0.29.',
   );
+});
+
+test('Function: useWalletSend — send-confirm-onchain pin shows each speed with its fee, and Fast changes the fee and total', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm-onchain');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.getByText("₿50'000", { exact: true })).toBeVisible();
+  await expect(region.getByText('$50.00', { exact: true })).toBeVisible();
+  await expect(region.getByText('To bc1qar0srr…wf5mdq')).toBeVisible();
+  const speeds = region.getByRole('group', { name: 'Speed' });
+  await expect(speeds.getByRole('button')).toHaveText([
+    "Fast₿2'840$2.84",
+    "Medium₿1'420$1.42",
+    'Slow₿710$0.71',
+  ]);
+  await expect(speeds.getByRole('button', { name: /^Medium/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(region.getByText("Fee ₿1'420 · $1.42", { exact: true })).toBeVisible();
+  await expect(region.getByText("Total ₿51'420 · $51.42", { exact: true })).toBeVisible();
+  await expect(
+    region.getByText(
+      'A payment to a Bitcoin address pays a network fee. It is much higher than the fee of other payments.',
+    ),
+  ).toBeVisible();
+  await speeds.getByRole('button', { name: /^Fast/ }).click();
+  await expect(speeds.getByRole('button', { name: /^Fast/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(region.getByText("Fee ₿2'840 · $2.84", { exact: true })).toBeVisible();
+  await expect(region.getByText("Total ₿52'840 · $52.84", { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(region.getByText("Total ₿52'840 · $52.84", { exact: true })).toBeVisible();
+  await expect(region.getByRole('status')).toHaveCount(0);
+});
+
+test('wallet send-confirm-onchain-low pin disables a speed the balance does not cover', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm-onchain-low');
+  await openSend(page);
+  const speeds = page.getByRole('group', { name: 'Speed' });
+  await expect(speeds.getByRole('button', { name: /^Fast/ })).toBeDisabled();
+  await expect(speeds.getByRole('button', { name: /^Fast/ })).toContainText('Balance too low');
+  await expect(speeds.getByRole('button', { name: /^Medium/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByText("Total ₿51'420 · $51.42", { exact: true })).toBeVisible();
+});
+
+test('wallet send-confirm-onchain-renewed pin says the fee offer expired and nothing was sent', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm-onchain-renewed');
+  await openSend(page);
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+    'The fee offer expired, so nothing was sent. Check the new fee and press Send again.',
+  );
+});
+
+test('wallet send-confirm-onchain-sending pin disables the speeds, Send, and Cancel', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm-onchain-sending');
+  const speeds = page.getByRole('group', { name: 'Speed' });
+  for (const name of [/^Fast/, /^Medium/, /^Slow/]) {
+    await expect(speeds.getByRole('button', { name })).toBeDisabled();
+  }
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeDisabled();
 });
 
 test('wallet send-error pin shows the plain unreachable error', async ({ page }) => {
