@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
 import { LocationForm } from '@/components/LocationForm';
@@ -260,18 +261,26 @@ function ProfileImages({
           ) : null}
         </div>
       ) : bannerSettled ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="lg"
-          disabled={saving !== null}
-          icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
-          onClick={() => {
-            bannerInputRef.current?.click();
-          }}
-        >
-          {t('profile.about.banner')}
-        </Button>
+        <div className="flex w-full items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            disabled={saving !== null}
+            icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
+            onClick={() => {
+              bannerInputRef.current?.click();
+            }}
+          >
+            {t('profile.about.banner')}
+          </Button>
+          <CameraPhotoButton
+            label={t('profile.about.bannerCamera')}
+            name="profile-banner-camera"
+            disabled={saving !== null}
+            onChange={onBannerFile}
+          />
+        </div>
       ) : null}
       {pictureUrl !== null && bannerUrl === null ? (
         // eslint-disable-next-line @next/next/no-img-element -- blob URL from the profile photo
@@ -282,24 +291,33 @@ function ProfileImages({
         />
       ) : null}
       {pictureSettled && pictureUrl === null ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="md"
-          disabled={saving !== null}
-          icon={
-            saving === 'picture' ? (
-              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-            ) : (
-              <ImagePlus aria-hidden="true" className="h-4 w-4" />
-            )
-          }
-          onClick={() => {
-            pictureInputRef.current?.click();
-          }}
-        >
-          {t('profile.about.portrait')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={saving !== null}
+            icon={
+              saving === 'picture' ? (
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <ImagePlus aria-hidden="true" className="h-4 w-4" />
+              )
+            }
+            onClick={() => {
+              pictureInputRef.current?.click();
+            }}
+          >
+            {t('profile.about.portrait')}
+          </Button>
+          <CameraPhotoButton
+            label={t('profile.about.portraitCamera')}
+            facing="user"
+            name="profile-photo-camera"
+            disabled={saving !== null}
+            onChange={onPictureFile}
+          />
+        </div>
       ) : null}
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-app-danger">

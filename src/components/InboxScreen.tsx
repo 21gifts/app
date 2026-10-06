@@ -22,6 +22,7 @@ import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
@@ -1091,36 +1092,42 @@ export function InboxScreen({
           </ul>
         ) : null}
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
+          {showAttach ? (
+            <div className="flex items-center gap-2">
+              <IconButton
+                type="button"
+                size="lg"
+                variant="secondary"
+                aria-label={t('inbox.attach')}
+                disabled={posting || messagesLoading}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+              >
+                <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+              </IconButton>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={posting || messagesLoading}
+                onChange={handleFileChange}
+              />
+              <CameraPhotoButton
+                label={t('camera.takePhoto')}
+                size="lg"
+                disabled={posting || messagesLoading}
+                onChange={handleFileChange}
+              />
+            </div>
+          ) : null}
           <div
             className={
               showAmount && invoice === null ? 'flex items-end gap-2' : 'flex items-center gap-2'
             }
           >
-            {showAttach ? (
-              <>
-                <IconButton
-                  type="button"
-                  size="lg"
-                  variant="secondary"
-                  aria-label={t('inbox.attach')}
-                  disabled={posting || messagesLoading}
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                </IconButton>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  disabled={posting || messagesLoading}
-                  onChange={handleFileChange}
-                />
-              </>
-            ) : null}
             <MentionTextarea
               ariaLabel={t('inbox.composerLabel')}
               placeholder={t('inbox.placeholder')}

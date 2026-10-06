@@ -28,6 +28,7 @@ import {
   type ReactElement,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useAppShellScroller } from '@/components/AppShell';
 import {
@@ -2055,9 +2056,6 @@ export function ForumBoard({
               >
                 <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
               </IconButton>
-              {onPlaceDraftChange !== undefined ? (
-                <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
-              ) : null}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -2067,6 +2065,17 @@ export function ForumBoard({
                 disabled={posting}
                 onChange={handleFileChange}
               />
+              <CameraPhotoButton
+                label={t('camera.takePhoto')}
+                size="lg"
+                disabled={posting}
+                onChange={handleFileChange}
+              />
+              {onPlaceDraftChange !== undefined ? (
+                <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2">
               <MentionTextarea
                 textareaRef={composerRef}
                 ariaLabel={t('forum.composerLabel')}

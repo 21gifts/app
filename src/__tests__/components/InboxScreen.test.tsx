@@ -3438,6 +3438,19 @@ describe('InboxScreen', () => {
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     fireEvent.change(input, { target: { files: [file] } });
     expect(onPickFiles).toHaveBeenCalledTimes(1);
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.getAttribute('accept')).toBe('image/*');
+    const cameraClick = vi.spyOn(camera, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
+    expect(cameraClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Take a photo')).toBeNull();
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    expect(onPickFiles).toHaveBeenCalledTimes(2);
+    expect(Array.from(onPickFiles.mock.calls[1]?.[0] as ArrayLike<File>)).toEqual([shot]);
   });
 
   it('shows the attach control when showAttach is true', () => {

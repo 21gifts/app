@@ -1370,6 +1370,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
 - **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
 
+## Function: CameraPhotoButton
+
+- **Purpose:** The camera button beside a gallery button wherever a member adds a photo. It is an icon-only `IconButton` (lucide `Camera`) with its own hidden `<input type="file" accept="image/*" capture>`. On a phone, `capture` opens the camera instead of the photo picker. Android's photo picker, which opens for the gallery inputs with their explicit type lists, has no camera. A desktop browser ignores `capture` and opens its file dialog. The input takes one photo per press and no video; video stays on the gallery button.
+- **Inputs:** `label` (catalog accessible name and tooltip), optional `facing` (`environment`, the back camera, by default; `user`, the front camera, for the profile photo), `size` (`md` default, `lg` beside a large gallery button), `disabled` (button and input together), `name` (on the hidden input), and `onChange`, the change handler of the gallery input beside it.
+- **Returns / side effects:** The icon button followed by its hidden input. A press clicks the input. The picked photo goes to `onChange`, so it gets the same type check, resize, Exif capture time, error sentences, and photo limit as a gallery photo. No network by itself.
+- **Used by:** `ForumBoard` (top-level composer), `ForumAskWizard` (photos step), `ShopAddWizard` (photos step, also when a shop note is edited), `InboxScreen` (thread composer, also in the moderator staff room), `AboutMeSection` (photo, profile photo, and wide image in the editor), and `ProfileScreen` (empty profile-photo and wide-image slots).
+
 ## Function: fitBoxInFrame
 
 - **Purpose:** Places one popover inside the app frame. The width is the preferred width when it fits, otherwise the room between the insets. The left edge stays on the anchor unless that would cross an inset. Vertically it opens downward when that side has at least 280px and at least as much room as above, otherwise upward, otherwise from the top inset across the whole frame height. It returns null when the frame has no positive room or the preferred width is not positive.
@@ -2023,16 +2030,16 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: isForumPhotoFile
 
-- **Purpose:** True when a browser `File` has mime type JPEG, PNG, or WebP for the forum attach control.
-- **Inputs:** `file` from `<input type="file">`.
+- **Purpose:** True when a browser `File` has mime type JPEG, PNG, WebP, HEIC, or HEIF, or has no mime type and a file name ending in one of those extensions. A phone camera can hand over HEIC or a file without a type. The browser decodes it and `prepareForumPhoto` or `WideImageCropper` turns it into a JPEG. A browser that cannot decode it shows the same unsupported-photo sentence as any other unusable file; the photo is never dropped without a sentence.
+- **Inputs:** `file` from `<input type="file">` (gallery or camera).
 - **Returns / side effects:** Boolean. No side effects.
-- **Used by:** `prepareForumPhoto`.
+- **Used by:** `prepareForumPhoto`, and the wide-image pick in `AboutMeSection` and `ProfileScreen`.
 
 ## Function: prepareForumPhoto
 
-- **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL. JPEG files also keep `takenAt` from Exif before the canvas encode; PNG and WebP set `takenAt` null.
+- **Purpose:** Client-side resize/JPEG-encode a picked forum photo (max edge 1280, quality 0.8, max 1 MiB) into raw base64 plus a preview data URL. A file whose bytes are a JPEG keeps `takenAt` from Exif before the canvas encode, also when the camera handed it over without a mime type; PNG, WebP, HEIC, and HEIF set `takenAt` null. HEIC and HEIF become a JPEG when the browser can decode them.
 - **Inputs:** `file` accepted by `isForumPhotoFile`.
-- **Returns / side effects:** `{ ok: true, photo }` (`photo.takenAt` is a civil string or null) or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Revokes temporary object URLs it creates. The wide profile image is not prepared here; `WideImageCropper` frames that JPEG.
+- **Returns / side effects:** `{ ok: true, photo }` (`photo.takenAt` is a civil string or null) or `{ ok: false, error: 'unsupported' | 'tooLarge' }`. Throws when the browser cannot decode the file; every caller shows that as the unsupported-photo sentence. Revokes temporary object URLs it creates. The wide profile image is not prepared here; `WideImageCropper` frames that JPEG.
 - **Used by:** `ForumLoader`, `AboutMeSection`, `InboxLoader`, `ModeratorGroupScreen`, `ProfileScreen`.
 
 ## Function: initialBannerCrop
@@ -2073,7 +2080,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: WideImageCropper
 
 - **Purpose:** In-app 5:2 frame for a picked wide profile image. The member drags, pinches, or scrolls the wheel, then confirms or cancels. A portrait, square, or 4:3 is framed here instead of rejected.
-- **Inputs:** `file` (JPEG, PNG, or WebP), optional `busy`, `onConfirm` with `{ contentType: 'image/jpeg', data }`, `onCancel`, and `onError` (`'unsupported'` or `'tooLarge'`).
+- **Inputs:** `file` (any file `isForumPhotoFile` accepts, from the gallery or the camera), optional `busy`, `onConfirm` with `{ contentType: 'image/jpeg', data }`, `onCancel`, and `onError` (`'unsupported'` or `'tooLarge'`).
 - **Returns / side effects:** The frame (`profile.about.bannerCropHint` **Drag the photo to choose the wide image**), labeled **Use this crop**, and an X IconButton whose accessible name is **Cancel crop** (no visible cancel sentence). Confirm calls `encodeWideBanner` and `onConfirm`. Cancel calls `onCancel` and uploads nothing. A file that cannot be decoded calls `onError('unsupported')`. No network by itself.
 - **Used by:** `ProfileScreen` (empty wide-image slot; the cropper replaces **Add a wide image** and leaves **Add a profile photo**), `AboutMeSection` (editor, full width above the small wide-image preview).
 

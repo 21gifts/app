@@ -493,7 +493,7 @@ describe('AboutMeSection', () => {
     expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
     expect(screen.queryByText('Add a photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     expect(input.accept).toBe('image/jpeg,image/png,image/webp');
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
@@ -522,9 +522,12 @@ describe('AboutMeSection', () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     const save = screen.getByRole('button', { name: 'Save About me' }) as HTMLButtonElement;
     const attach = screen.getByRole('button', { name: 'Add a photo' }) as HTMLButtonElement;
     expect(save.disabled).toBe(true);
@@ -566,9 +569,12 @@ describe('AboutMeSection', () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
@@ -595,9 +601,12 @@ describe('AboutMeSection', () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
@@ -628,9 +637,12 @@ describe('AboutMeSection', () => {
       expect(screen.getByAltText('About me photo')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Edit About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     expect(
       (screen.getByRole('button', { name: 'Remove photo' }) as HTMLButtonElement).disabled,
     ).toBe(true);
@@ -655,7 +667,7 @@ describe('AboutMeSection', () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={onSave} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
@@ -700,7 +712,7 @@ describe('AboutMeSection', () => {
     });
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
@@ -726,9 +738,12 @@ describe('AboutMeSection', () => {
       <AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     unmount();
     resolvePrep?.({
       ok: true,
@@ -753,9 +768,12 @@ describe('AboutMeSection', () => {
     );
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     resolvePrep?.({
       ok: true,
@@ -776,9 +794,12 @@ describe('AboutMeSection', () => {
     prepareMock.mockResolvedValue({ ok: false, error: 'unsupported' });
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
     });
@@ -788,9 +809,12 @@ describe('AboutMeSection', () => {
     prepareMock.mockResolvedValue({ ok: false, error: 'tooLarge' });
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
     });
@@ -800,9 +824,12 @@ describe('AboutMeSection', () => {
     prepareMock.mockRejectedValue(new Error('decode'));
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
     });
@@ -811,9 +838,12 @@ describe('AboutMeSection', () => {
   it('ignores an empty file change', () => {
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [] },
+      },
+    );
     expect(prepareMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
   });
@@ -901,14 +931,16 @@ describe('AboutMeSection', () => {
       <AboutMeSection mode="owner" aboutMe={null} onSave={onSave} onSaveBanner={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    let banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    let banner = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(banner, { target: { files: [jpegFile('wide.jpg')] } });
     expect(screen.getByText('wide.jpg')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
     expect(screen.queryByText('wide.jpg')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Use this crop' })).toBeNull();
-    banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    banner = document.querySelectorAll('input[type="file"]:not([capture])')[1] as HTMLInputElement;
     fireEvent.change(banner, { target: { files: [jpegFile('again.jpg')] } });
     expect(screen.getByText('again.jpg')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
@@ -926,7 +958,9 @@ describe('AboutMeSection', () => {
       <AboutMeSection mode="owner" aboutMe={null} onSave={onSave} onSaveBanner={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const banner = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(banner, { target: { files: [jpegFile('wide.jpg')] } });
     fireEvent.click(screen.getByRole('button', { name: 'Save About me' }));
     await waitFor(() => {
@@ -953,9 +987,12 @@ describe('AboutMeSection', () => {
     });
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSave={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
-      target: { files: [jpegFile()] },
-    });
+    fireEvent.change(
+      document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement,
+      {
+        target: { files: [jpegFile()] },
+      },
+    );
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
@@ -1008,6 +1045,61 @@ describe('AboutMeSection', () => {
     });
   });
 
+  it('offers a camera beside each photo control and sends its photo the same way', async () => {
+    const onSavePicture = vi.fn().mockResolvedValue(undefined);
+    const onSaveBanner = vi.fn().mockResolvedValue(undefined);
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'cam', previewUrl: 'data:image/jpeg;base64,cam' },
+    });
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        onSavePicture={onSavePicture}
+        onSaveBanner={onSaveBanner}
+        loadBanner={() => Promise.reject(new Error('missing'))}
+      />,
+    );
+    openEditor();
+    const names = ['Take a photo', 'Take a profile photo', 'Take a wide photo'];
+    for (const name of names) {
+      expect(screen.getByRole('button', { name })).toBeTruthy();
+      expect(screen.queryByText(name)).toBeNull();
+    }
+    const cameras = [
+      ...document.querySelectorAll('input[type="file"][capture]'),
+    ] as HTMLInputElement[];
+    expect(cameras.map((input) => input.getAttribute('capture'))).toEqual([
+      'environment',
+      'user',
+      'environment',
+    ]);
+    expect(cameras.every((input) => input.getAttribute('accept') === 'image/*')).toBe(true);
+    const clicks = cameras.map((input) =>
+      vi.spyOn(input, 'click').mockImplementation(() => undefined),
+    );
+    names.forEach((name) => {
+      fireEvent.click(screen.getByRole('button', { name }));
+    });
+    expect(clicks.map((spy) => spy.mock.calls.length)).toEqual([1, 1, 1]);
+
+    const note = jpegFile('note.jpg');
+    fireEvent.change(cameras[0] as HTMLInputElement, { target: { files: [note] } });
+    await waitFor(() => {
+      expect(prepareMock).toHaveBeenCalledWith(note);
+    });
+    const face = jpegFile('face.jpg');
+    fireEvent.change(cameras[1] as HTMLInputElement, { target: { files: [face] } });
+    await waitFor(() => {
+      expect(onSavePicture).toHaveBeenCalledWith({ contentType: 'image/jpeg', data: 'cam' });
+    });
+    expect(prepareMock).toHaveBeenCalledWith(face);
+    fireEvent.change(cameras[2] as HTMLInputElement, { target: { files: [jpegFile('wide.jpg')] } });
+    expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
+    expect(screen.getByText('wide.jpg')).toBeTruthy();
+  });
+
   it('saves a wide image on its own and can clear it', async () => {
     const onSaveBanner = vi.fn().mockResolvedValue(undefined);
     const loadBanner = vi.fn().mockRejectedValue(new Error('missing'));
@@ -1020,7 +1112,7 @@ describe('AboutMeSection', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const inputs = document.querySelectorAll('input[type="file"]');
+    const inputs = document.querySelectorAll('input[type="file"]:not([capture])');
     fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
     expect(prepareMock).not.toHaveBeenCalled();
     expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
@@ -1041,7 +1133,7 @@ describe('AboutMeSection', () => {
     const onSaveBanner = vi.fn().mockRejectedValueOnce(new Error('nope'));
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const inputs = document.querySelectorAll('input[type="file"]');
+    const inputs = document.querySelectorAll('input[type="file"]:not([capture])');
     fireEvent.change(inputs[1] as HTMLInputElement, { target: { files: [jpegFile()] } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
@@ -1217,7 +1309,9 @@ describe('AboutMeSection', () => {
     expect(screen.queryByText('Add a profile photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a profile photo' }));
     expect(await screen.findByAltText('Profile photo')).toBeTruthy();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [] } });
     expect(prepareMock).not.toHaveBeenCalled();
     fireEvent.change(input, { target: { files: [jpegFile()] } });
@@ -1257,7 +1351,9 @@ describe('AboutMeSection', () => {
     const onSavePicture = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSavePicture={onSavePicture} />);
     openEditor();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
@@ -1286,7 +1382,9 @@ describe('AboutMeSection', () => {
     );
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSavePicture={onSavePicture} />);
     openEditor();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
       expect(onSavePicture).toHaveBeenCalledTimes(1);
@@ -1321,7 +1419,9 @@ describe('AboutMeSection', () => {
     );
     openEditor();
     expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile('first.jpg')] } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
@@ -1348,7 +1448,9 @@ describe('AboutMeSection', () => {
     const onSavePicture = vi.fn().mockResolvedValue(undefined);
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSavePicture={onSavePicture} />);
     openEditor();
-    const picture = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const picture = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(picture, { target: { files: [jpegFile()] } });
     prepareMock.mockResolvedValueOnce({
       ok: true,
@@ -1373,7 +1475,9 @@ describe('AboutMeSection', () => {
     );
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
     openEditor();
-    const banner = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const banner = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(banner, { target: { files: [jpegFile('first.jpg')] } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
@@ -1397,7 +1501,9 @@ describe('AboutMeSection', () => {
     );
     renderWithLocale(<AboutMeSection mode="owner" aboutMe={null} onSaveBanner={onSaveBanner} />);
     openEditor();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile('first.jpg')] } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
@@ -1422,7 +1528,9 @@ describe('AboutMeSection', () => {
     expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
     expect(screen.queryByText('Add a wide image')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a wide image' }));
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [] } });
     expect(prepareMock).not.toHaveBeenCalled();
     fireEvent.change(input, {
@@ -1458,7 +1566,9 @@ describe('AboutMeSection', () => {
       expect(onSaveBanner).toHaveBeenCalledWith(null);
     });
     expect(screen.queryByAltText('Wide profile image')).toBeNull();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
     await waitFor(() => {
@@ -1489,7 +1599,9 @@ describe('AboutMeSection', () => {
       />,
     );
     openEditor();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
@@ -1522,7 +1634,9 @@ describe('AboutMeSection', () => {
       />,
     );
     openEditor();
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
       expect(onSavePicture).toHaveBeenCalled();
@@ -1562,7 +1676,9 @@ describe('AboutMeSection', () => {
       ok: true,
       photo: { contentType: 'image/jpeg', data: 'pic', previewUrl: 'data:image/jpeg;base64,pic' },
     });
-    const input = document.querySelectorAll('input[type="file"]')[1] as HTMLInputElement;
+    const input = document.querySelectorAll(
+      'input[type="file"]:not([capture])',
+    )[1] as HTMLInputElement;
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     expect(await screen.findByAltText('Profile photo')).toBeTruthy();
     onSavePicture.mockRejectedValueOnce(new Error('nope'));
