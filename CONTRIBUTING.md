@@ -624,7 +624,8 @@ pay sheet (`InboxScreen`) — pay from the member's in-app wallet only
 (`WalletPay`: the `sparkInvoice` when the api issued one, otherwise the
 payment request). A locked wallet shows one button, **Unlock and pay** with
 the amount: one passkey prompt opens it, and it pays at once when the fee
-is ₿0; a higher fee stops at the fee and **Pay from wallet**. They
+is ₿0; a higher fee stops at the fee and **Pay from wallet** (on the
+posting fee of a post or reply, **Pay {amount} and post**). They
 never mount the invoice `QrCode` and never show a button to another wallet
 app, on any user agent. Without a usable wallet they say so; there is no
 fallback.

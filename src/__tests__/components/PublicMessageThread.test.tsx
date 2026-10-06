@@ -2254,7 +2254,7 @@ describe('PublicMessageThread in-app wallet pay', () => {
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^Pay ₿\S+ and post/ })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 });
@@ -2315,7 +2315,7 @@ describe('PublicMessageThread in-app wallet pay', () => {
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^Pay ₿\S+ and post/ })).toBeTruthy();
     expect(postMessageInvoice).toHaveBeenCalledWith(
       'sess',
       'fee-note',

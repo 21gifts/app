@@ -4523,7 +4523,7 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^Pay ₿\S+ and post/ })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 });
@@ -4594,7 +4594,7 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^Pay ₿\S+ and post/ })).toBeTruthy();
     expect(postMessageInvoice).toHaveBeenCalledWith(
       'sess',
       'fee-note',
