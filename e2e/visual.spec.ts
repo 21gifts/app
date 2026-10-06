@@ -16597,7 +16597,7 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await page
-      .locator('input[type="file"]:not([name])')
+      .locator('input[type="file"]:not([name]):not([capture])')
       .nth(2)
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
     await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
@@ -19611,7 +19611,9 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/ask-card.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByLabel('Your message').fill('Need help with a train ticket');
@@ -19638,7 +19640,9 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/ask-card.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByLabel('Your message').fill('Need help with a train ticket');
@@ -19730,7 +19734,7 @@ test.describe('welcome forum variants', () => {
     await beginAsk(page);
     await askAmount(page, '21000');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-welcome-ask-several-photos');
@@ -19742,7 +19746,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await beginAsk(page);
     await askAmount(page, '21000');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.mp4');
     await expect(page.locator('video')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('button', { name: 'Remove video' })).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-video');
@@ -19755,7 +19759,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await beginAsk(page);
     await askAmount(page, '21000');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-preparing');
@@ -19782,7 +19786,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await beginAsk(page);
     await askAmount(page, '21000');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-too-large');
@@ -19795,7 +19799,7 @@ test.describe('welcome forum variants', () => {
     await beginAsk(page);
     await askAmount(page, '21000');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 15_000 });
     await shotScreen(page, 'state-welcome-ask-too-many');
@@ -19836,16 +19840,20 @@ test.describe('welcome forum variants', () => {
       await askAmount(page);
     }
     if (options.video === true) {
-      await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+      await page
+        .locator('input[type="file"]:not([capture])')
+        .setInputFiles('e2e/fixtures/tiny.mp4');
       await expect(page.locator('video')).toBeVisible({ timeout: 10_000 });
     } else if (options.photo === 'card') {
-      await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+      await page
+        .locator('input[type="file"]:not([capture])')
+        .setInputFiles('e2e/fixtures/ask-card.jpg');
       await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     } else if (options.photo === 'one') {
       await attachTinyJpeg(page);
     } else if (options.photo === 'several') {
       await page
-        .locator('input[type="file"]')
+        .locator('input[type="file"]:not([capture])')
         .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
       await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     }
@@ -20471,7 +20479,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello with this photo.');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     const row = page.locator('li[data-message-id="m-both"]');
@@ -20601,7 +20609,7 @@ test.describe('welcome forum variants', () => {
   );
 
   async function attachGif(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
       name: 'tiny.gif',
       mimeType: 'image/gif',
       buffer: TINY_GIF,
@@ -20609,12 +20617,12 @@ test.describe('welcome forum variants', () => {
   }
 
   async function attachTinyJpeg(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   }
 
   async function attachTinyMp4(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.mp4');
     await expect(page.locator('form video')).toBeVisible({ timeout: 10_000 });
   }
 
@@ -20862,7 +20870,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-welcome-composer-photos');
@@ -20889,7 +20897,7 @@ test.describe('welcome forum variants', () => {
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with selected photos.');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected photos.');
@@ -20942,7 +20950,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-preparing-photo');
@@ -20956,7 +20964,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption while the photo is preparing.');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByLabel('Your message')).toHaveValue(
       'Caption while the photo is preparing.',
     );
@@ -21139,7 +21147,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-error-too-large');
@@ -21152,7 +21160,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-welcome-error-too-many');
@@ -21166,7 +21174,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with a photo that is too large.');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveValue(
       'Caption with a photo that is too large.',
@@ -21183,7 +21191,7 @@ test.describe('welcome forum variants', () => {
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with too many photos.');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with too many photos.');
@@ -25355,7 +25363,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
       timeout: 10_000,
     });
@@ -25404,7 +25412,7 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-messages-thread-composer-photos');
@@ -25528,7 +25536,7 @@ test.describe('inbox screens', () => {
     await hangCreateImageBitmap(page);
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-preparing-photo');
@@ -25539,7 +25547,7 @@ test.describe('inbox screens', () => {
     await mockBobThread(page);
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
       name: 'tiny.gif',
       mimeType: 'image/gif',
       buffer: TINY_GIF,
@@ -25555,7 +25563,7 @@ test.describe('inbox screens', () => {
     await stubTooLargeJpeg(page);
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
     await shotScreen(page, 'state-messages-thread-error-too-large');
   });
@@ -25566,7 +25574,7 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-messages-thread-error-too-many');
@@ -27129,7 +27137,7 @@ test.describe('moderate group screens', () => {
   );
 
   async function attachGif(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
       name: 'tiny.gif',
       mimeType: 'image/gif',
       buffer: TINY_GIF,
@@ -27370,7 +27378,7 @@ test.describe('moderate group screens', () => {
     await mockThread(page, []);
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
       timeout: 10_000,
     });
@@ -27384,7 +27392,7 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-moderate-group-composer-photos');
@@ -27467,7 +27475,7 @@ test.describe('moderate group screens', () => {
     await hangCreateImageBitmap(page);
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-moderate-group-preparing-photo');
@@ -27492,7 +27500,7 @@ test.describe('moderate group screens', () => {
     await stubTooLargeJpeg(page);
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-error-too-large');
   });
@@ -27504,7 +27512,7 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-moderate-group-error-too-many');

@@ -1,7 +1,15 @@
 'use client';
 
 import { ImagePlus, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactElement,
+} from 'react';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -186,6 +194,13 @@ export function ShopAddWizard({
   }
 
   const title = t(STEP_KEY[step]);
+  const pickFiles = (event: ChangeEvent<HTMLInputElement>): void => {
+    const list = event.target.files;
+    if (list !== null && list.length > 0) {
+      onPickFiles(Array.from(list));
+    }
+    event.target.value = '';
+  };
   const cancelEdit = mode === 'edit' ? onCancel : undefined;
 
   return (
@@ -214,26 +229,28 @@ export function ShopAddWizard({
             }
             className="hidden"
             disabled={posting}
-            onChange={(event) => {
-              const list = event.target.files;
-              if (list !== null && list.length > 0) {
-                onPickFiles(Array.from(list));
-              }
-              event.target.value = '';
-            }}
+            onChange={pickFiles}
           />
-          <IconButton
-            type="button"
-            size="lg"
-            variant="secondary"
-            aria-label={t('forum.attach')}
-            disabled={posting}
-            onClick={() => {
-              fileInputRef.current?.click();
-            }}
-          >
-            <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-          </IconButton>
+          <div className="flex items-center gap-2">
+            <IconButton
+              type="button"
+              size="lg"
+              variant="secondary"
+              aria-label={t('forum.attach')}
+              disabled={posting}
+              onClick={() => {
+                fileInputRef.current?.click();
+              }}
+            >
+              <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+            </IconButton>
+            <CameraPhotoButton
+              label={t('camera.takePhoto')}
+              size="lg"
+              disabled={posting}
+              onChange={pickFiles}
+            />
+          </div>
           {keptMedia.map((item, index) =>
             item.kind === 'video' ? (
               <div key={`${item.url}:${index}`} className="flex items-start gap-3">
