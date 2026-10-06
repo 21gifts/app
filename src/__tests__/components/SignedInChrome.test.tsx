@@ -232,6 +232,10 @@ function trackScrollTop(
   return { read: () => top, log };
 }
 
+function follows(earlier: Node, later: Node): boolean {
+  return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
 describe('SignedInChrome', () => {
   it('shows Menu while Log out stays hidden', () => {
     renderWithLocale(<SignedInChrome />);
@@ -268,6 +272,19 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
     expect(screen.getByRole('link', { name: 'Grants' }).getAttribute('href')).toBe('/grants');
     expect(screen.getByRole('link', { name: 'Wallet' }).getAttribute('href')).toBe('/wallet');
+    expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
+    expect(
+      follows(
+        screen.getByRole('link', { name: 'Wallet' }),
+        screen.getByRole('link', { name: 'Settings' }),
+      ),
+    ).toBe(true);
+    expect(
+      follows(
+        screen.getByRole('link', { name: 'Settings' }),
+        screen.getByRole('link', { name: 'Living room rules' }),
+      ),
+    ).toBe(true);
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
@@ -549,6 +566,14 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Grants' }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Settings is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Settings' }));
     expectMenuClosed();
   });
 
@@ -1200,12 +1225,13 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('keeps the compact wide menu when a resize leaves less than 48px of room', () => {
+  it('keeps the compact wide menu until the roomy panel fits again, and does not flutter', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
-    const bottom = 751;
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    // The compact panel is 152px shorter than the roomy one, as with shorter rows.
     HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const bottom = this.className.includes('mt-0') ? 599 : 751;
       return {
         x: 0,
         y: 0,
@@ -1225,12 +1251,78 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(panel.className).toContain('mt-0');
-      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 780 });
+      expect(panel.className).toContain('[&_.min-h-11]:min-h-9');
+      // The compact panel has far more than 48px of room, but the roomy one would still stick out.
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 755 });
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
       expect(panel.className).toContain('mt-0');
       expect(panel.className).not.toContain('mt-2');
+      // The roomy panel fits with 8px reserve: back to it, and it stays.
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 760 });
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
+      expect(panel.className).not.toContain('min-h-9');
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('returns to the roomy wide menu when a row goes away while it is compact', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    let rows = 0;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    // Compact saves 152px. A removed row takes 44px off the roomy panel and 36px off the compact one.
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const bottom = this.className.includes('mt-0') ? 599 - rows * 36 : 751 - rows * 44;
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('mt-0');
+      // Still compact: the window is unchanged and no row went away.
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-0');
+      // Two rows go away. The estimate (527 + 152 = 679) assumes the recorded saving,
+      // which is 8px per row too high on the safe side, and fits with 8px reserve.
+      rows = 2;
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;

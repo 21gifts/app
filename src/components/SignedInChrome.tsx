@@ -9,6 +9,7 @@ import {
   Menu,
   MessageCircle,
   ScrollText,
+  Settings,
   Share2,
   Shield,
   Store,
@@ -34,7 +35,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, Statistics
+ * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, Settings (`/settings`, lucide `Settings`), living-room rules, Trust Chain, Statistics
  * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
@@ -62,6 +63,10 @@ export function SignedInChrome(): ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
+  /** Bottom of the roomy wide panel when it last stuck out of the window. */
+  const roomyBottom = useRef(0);
+  /** Pixels the compact layout saved, measured on its first compact measure. */
+  const compactSaving = useRef<number | null>(null);
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
@@ -144,16 +149,21 @@ export function SignedInChrome(): ReactElement {
     const measure = (): void => {
       const limit = window.innerHeight + 1;
       const bottom = menuRef.current!.getBoundingClientRect().bottom;
-      setTight((current) => {
+      if (!tight) {
         if (bottom > limit) {
-          return true;
+          roomyBottom.current = bottom;
+          compactSaving.current = null;
+          setTight(true);
         }
-        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
-        if (current && bottom <= limit - 48) {
-          return false;
-        }
-        return current;
-      });
+        return;
+      }
+      // How much compact saves depends on the row count. The first compact
+      // measure records it, so a row that appears or goes away while compact
+      // moves the roomy estimate too. Go back only when that fits with 8px reserve.
+      compactSaving.current ??= roomyBottom.current - bottom;
+      if (bottom + compactSaving.current <= limit - 8) {
+        setTight(false);
+      }
     };
     measure();
     window.addEventListener('resize', measure);
@@ -192,11 +202,12 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  // A tall wide menu drops its outer spacing so the last row stays inside the window. It does not scroll.
+  // A tall wide menu drops its outer spacing and shortens its rows to 36px
+  // (the Log out height) so the last row stays inside the window. It does not scroll.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg [&_.min-h-11]:min-h-9${open ? '' : ' hidden'}`
       : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
@@ -283,6 +294,16 @@ export function SignedInChrome(): ReactElement {
               >
                 <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 {t('wallet.title')}
+              </Link>
+              <Link
+                href="/settings"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Settings aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.settings')}
               </Link>
               <Link
                 href="/rules"

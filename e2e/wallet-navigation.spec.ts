@@ -124,16 +124,25 @@ test('Function: markBackNavigation keeps the document and asks for no passkey ac
   await page.getByRole('link', { name: 'Wallet', exact: true }).click();
   await expect(page).toHaveURL(`${origin}/wallet`);
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  await page.getByRole('link', { name: 'Show recovery phrase' }).click();
+  await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/settings`);
+  await page.getByRole('link', { name: 'Recovery phrase', exact: true }).click();
   await expect(page).toHaveURL(`${origin}/wallet/phrase`);
   await page.getByRole('button', { name: 'Show recovery phrase' }).click();
   await expect(page.getByRole('listitem')).toHaveCount(12);
   expect(await passkeyPrompts(page)).toBe(1);
 
-  // First press hides the words on the same view, the second leaves.
+  // First press hides the words on the same view, the second returns to Settings.
   await page.getByRole('link', { name: 'Back', exact: true }).click();
   await expect(page.getByRole('listitem')).toHaveCount(0);
   await expect(page).toHaveURL(`${origin}/wallet/phrase`);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/settings`);
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  expect(await sameDocument(page)).toBe('same');
+
   await page.getByRole('link', { name: 'Back', exact: true }).click();
   await expect(page).toHaveURL(`${origin}/wallet`);
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
