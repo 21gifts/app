@@ -756,6 +756,17 @@ Default screen shots use the `screen-…` args; extra states use `state-…` arg
 Every variant needs all four `BASELINE_COMBOS`.
 
 Adding a screen or UI state without updating the baselines in the **same PR**
+A screenshot pin (`?visual=…`, the `e2e-now` session value, or any other
+switch that makes a screen show fixture data or a forced state) is honoured
+**only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
+unset in every deployed build) before reading the pin, the way `useWallet`,
+`useWalletHistory`, `useWalletPay`, `useWalletSend`, `useWalletSetup`,
+`useWalletPhrase`, and `PasskeyRenewNotice` do. Inline scripts that run before
+React check for the `e2e-now` meta tag, which only a Playwright build renders.
+Do not add a second mechanism. A production build must ignore every pin, and a
+unit test proves that for each new pin. A pin honoured in a deployed build is
+an undeclared deviation.
+
 is rejected. `npm run screenshot:check` (and CI) fails when a PNG is missing or
 a variant has no matching shot in `e2e/visual.spec.ts`. It also fails when an
 unexpected PNG sits under `e2e/visual.spec.ts-snapshots/` (not a screen or

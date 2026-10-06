@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getE2eNow } from '@/lib/config';
 import { reportDiagnostic } from '@/lib/diagnostics';
 import { renewPasskey } from '@/lib/passkey-renew';
 import {
@@ -33,7 +34,7 @@ export function resetWalletCeremonyLock(): void {
   ceremonyInFlight = false;
 }
 
-/** Fixture words for `/wallet/phrase?visual=phrase` (not live PRF). */
+/** Fixture words for `/wallet/phrase?visual=phrase` (Playwright builds only; not live PRF). */
 export const WALLET_VISUAL_FIXTURE_MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
@@ -75,9 +76,19 @@ function abandonStaleSession(
   return true;
 }
 
+/**
+ * Name of the `?visual=` pin, honoured only in a Playwright build
+ * (`getE2eNow()` set). A production build never shows the fixture words or a
+ * pinned error.
+ *
+ * @returns The pin name, or `null`.
+ */
 function visualParam(): string | null {
   /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
+    return null;
+  }
+  if (getE2eNow() === null) {
     return null;
   }
   return new URLSearchParams(window.location.search).get('visual');

@@ -36,11 +36,18 @@ const account = {
   passkeyRenewFailed: false,
 } as Account;
 
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+
 afterEach(() => {
   cleanup();
   useAuthStore.setState({ session: null, account: null });
   vi.clearAllMocks();
   window.history.replaceState({}, '', '/');
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
 });
 
 describe('PasskeyRenewNotice', () => {
@@ -249,7 +256,8 @@ describe('PasskeyRenewNotice', () => {
     expect(renewPasskey).not.toHaveBeenCalled();
   });
 
-  it('shows the screenshot steps from the visual query', () => {
+  it('shows the screenshot steps from the visual query in a Playwright build', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/welcome?visual=renew-passkey');
     useAuthStore.setState({ session: 'tok', account });
     const passkey = renderWithLocale(<PasskeyRenewNotice />);
@@ -262,3 +270,26 @@ describe('PasskeyRenewNotice', () => {
     expect(screen.getByRole('heading', { name: 'It worked' })).toBeTruthy();
   });
 });
+
+  it('starts at the explanation in a Playwright build without a renew pin', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/welcome?visual=balance-ready');
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(<PasskeyRenewNotice />);
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
+  it('ignores the screenshot steps in a production build', () => {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+    useAuthStore.setState({ session: 'tok', account });
+    for (const visual of ['renew-passkey', 'renew-ok']) {
+      window.history.replaceState({}, '', `/welcome?visual=${visual}`);
+      const view = renderWithLocale(<PasskeyRenewNotice />);
+      expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+      expect(screen.queryByRole('heading', { name: 'It worked' })).toBeNull();
+      expect(
+        screen.queryByText('Your device is showing the passkey prompt.', { exact: false }),
+      ).toBeNull();
+      view.unmount();
+    }
+  });

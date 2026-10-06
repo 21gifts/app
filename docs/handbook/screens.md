@@ -250,13 +250,13 @@ Pinned fixture (`?visual=setup-intro`, Playwright builds only). Blocking dialog 
 
 ### Variant: setup-progress
 
-Pinned fixture (`?visual=setup-progress`). The same dialog with the status line **Setting up your wallet…** and a spinner, plus **Log out**.
+Pinned fixture (`?visual=setup-progress`, Playwright builds only). The same dialog with the status line **Setting up your wallet…** and a spinner, plus **Log out**.
 
 ![21.gifts wallet setup progress](images/wallet-setup-progress.png)
 
 ### Variant: setup-error
 
-Pinned fixture (`?visual=setup-error`). The dialog says **Your wallet could not be set up. Please try again.** with **Try again** and **Log out**.
+Pinned fixture (`?visual=setup-error`, Playwright builds only). The dialog says **Your wallet could not be set up. Please try again.** with **Try again** and **Log out**.
 
 ![21.gifts wallet setup error](images/wallet-setup-error.png)
 
@@ -268,19 +268,19 @@ Pinned fixture (`?visual=setup-no-prf`). Title **This passkey cannot hold a wall
 
 ### Variant: history-empty
 
-Pinned fixture (`?visual=history-empty`). Ready balance, then the **Payments** card with **No payments yet.**, above **Send** and **Receive**.
+Pinned fixture (`?visual=history-empty`, Playwright builds only). Ready balance, then the **Payments** card with **No payments yet.**, above **Send** and **Receive**.
 
 ![21.gifts wallet history empty](images/wallet-history-empty.png)
 
 ### Variant: history-rows
 
-Pinned fixture (`?visual=history-rows`). **Payments** lists four rows, newest first: received `₿21'000` with fiat and the note **Thank you for the coffee**, sent `₿5'000` with fiat, received `₿1'500` marked **Pending**, and sent `₿2'100` marked **Failed**. Each row shows its date and time.
+Pinned fixture (`?visual=history-rows`, Playwright builds only). **Payments** lists four rows, newest first: received `₿21'000` with fiat and the note **Thank you for the coffee**, sent `₿5'000` with fiat, received `₿1'500` marked **Pending**, and sent `₿2'100` marked **Failed**. Each row shows its date and time.
 
 ![21.gifts wallet history rows](images/wallet-history-rows.png)
 
 ### Variant: history-error
 
-Pinned fixture (`?visual=history-error`). **Payments** shows **Your payments could not be loaded. Please try again.** and **Try again**.
+Pinned fixture (`?visual=history-error`, Playwright builds only). **Payments** shows **Your payments could not be loaded. Please try again.** and **Try again**.
 
 ![21.gifts wallet history error](images/wallet-history-error.png)
 
@@ -473,13 +473,13 @@ The passkey can already show a phrase. **Show recovery phrase** is the only cont
 
 ### Variant: error
 
-Generic failure. Alert **The recovery phrase could not be created or opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
+Pinned fixture (`?visual=error`, Playwright builds only). Generic failure. Alert **The recovery phrase could not be created or opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet error](images/wallet-error.png)
 
 ### Variant: timeout
 
-Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**. No receive QR.
+Pinned fixture (`?visual=timeout`, Playwright builds only). Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet timeout](images/wallet-timeout.png)
 
@@ -790,13 +790,13 @@ Signed in, no seed yet. The dialog explains that the device will ask for a passk
 
 ### Variant: renew-passkey
 
-After **Continue**. The dialog says the device is showing the passkey prompt. The member confirms that prompt on the device. There is no second button.
+Pinned fixture (`?visual=renew-passkey`, Playwright builds only). After **Continue**. The dialog says the device is showing the passkey prompt. The member confirms that prompt on the device. There is no second button.
 
 ![21.gifts welcome renew passkey](images/welcome-renew-passkey.png)
 
 ### Variant: renew-ok
 
-The passkey was renewed. The dialog says it worked. **OK** closes it and the living room is usable.
+Pinned fixture (`?visual=renew-ok`, Playwright builds only). The passkey was renewed. The dialog says it worked. **OK** closes it and the living room is usable.
 
 ![21.gifts welcome renew ok](images/welcome-renew-ok.png)
 
@@ -2016,37 +2016,37 @@ Pinned fixture (`?visual=wallet-pay-unlock`, Playwright builds only). Payable re
 
 ### Variant: wallet-pay-preparing
 
-Pinned fixture (`?visual=wallet-pay-preparing`). The wallet opens or reads the fee: spinner and **Checking your wallet…**.
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only). The wallet opens or reads the fee: spinner and **Checking your wallet…**.
 
 ![21.gifts welcome wallet pay preparing](images/welcome-wallet-pay-preparing.png)
 
 ### Variant: wallet-pay-confirm
 
-Pinned fixture (`?visual=wallet-pay-confirm`). **Fee ₿0** with the default fiat, then **Pay from wallet**. No invoice QR and no button to another wallet app.
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only). **Fee ₿0** with the default fiat, then **Pay from wallet**. No invoice QR and no button to another wallet app.
 
 ![21.gifts welcome wallet pay confirm](images/welcome-wallet-pay-confirm.png)
 
 ### Variant: wallet-pay-paying
 
-Pinned fixture (`?visual=wallet-pay-paying`). Spinner and **Paying from your wallet…**, with **Waiting for payment…** under it while the existing long-poll waits.
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only). Spinner and **Paying from your wallet…**, with **Waiting for payment…** under it while the existing long-poll waits.
 
 ![21.gifts welcome wallet pay paying](images/welcome-wallet-pay-paying.png)
 
 ### Variant: wallet-pay-insufficient
 
-Pinned fixture (`?visual=wallet-pay-insufficient`). Alert **Your wallet does not have enough Bitcoin for this payment.**, then the member's own 21.gifts address and its Open CryptoPay QR to add Bitcoin (shown on a smartphone too, like the `/wallet` QR).
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only). Alert **Your wallet does not have enough Bitcoin for this payment.**, then the member's own 21.gifts address and its Open CryptoPay QR to add Bitcoin (shown on a smartphone too, like the `/wallet` QR).
 
 ![21.gifts welcome wallet pay insufficient](images/welcome-wallet-pay-insufficient.png)
 
 ### Variant: wallet-pay-failed
 
-Pinned fixture (`?visual=wallet-pay-failed`). The wallet could not be opened or could not prepare this payment: alert **Your wallet could not prepare this payment. Please try again.** and a secondary **Try again**, which opens the wallet again or prepares again. No invoice QR and no button to another wallet app.
+Pinned fixture (`?visual=wallet-pay-failed`, Playwright builds only). The wallet could not be opened or could not prepare this payment: alert **Your wallet could not prepare this payment. Please try again.** and a secondary **Try again**, which opens the wallet again or prepares again. No invoice QR and no button to another wallet app.
 
 ![21.gifts welcome wallet pay failed](images/welcome-wallet-pay-failed.png)
 
 ### Variant: wallet-pay-unconfirmed
 
-Pinned fixture (`?visual=wallet-pay-unconfirmed`). 60 seconds after a send (failed, timed out, or sent) without a confirmation that closed the sheet: the neutral sentence **This payment is not confirmed yet. Check your balance again later.** No alert and no retry.
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only). 60 seconds after a send (failed, timed out, or sent) without a confirmation that closed the sheet: the neutral sentence **This payment is not confirmed yet. Check your balance again later.** No alert and no retry.
 
 ![21.gifts welcome wallet pay unconfirmed](images/welcome-wallet-pay-unconfirmed.png)
 

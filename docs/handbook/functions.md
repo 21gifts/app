@@ -2180,7 +2180,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** True when `nowMs` falls on Sunday in an IANA zone, or in the runtime zone when `timeZone` is omitted. An invalid zone returns false. Does not use one fixed zone for every visitor.
 - **Inputs:** `nowMs` epoch milliseconds and optional `timeZone`.
 - **Returns / side effects:** boolean. No I/O.
-- **Used by:** tests. The painted Sunday flag comes from `SUNDAY_BOOTSTRAP_SCRIPT`.
+- **Used by:** tests. The painted Sunday flag comes from `SUNDAY_BOOTSTRAP_SCRIPT`, which uses the clock; only a Playwright build renders `meta[name=e2e-now]`, and only then does the script honour that meta or a sessionStorage `e2e-now` pin.
 
 ## Function: useLocalSunday
 
