@@ -233,6 +233,41 @@ describe('MemberHabits', () => {
     await Promise.resolve();
   });
 
+  it('ignores a failed reload after the page is gone', async () => {
+    let gets = 0;
+    let rejectRefresh: (reason: unknown) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          return Promise.resolve(json({ ok: true }));
+        }
+        gets += 1;
+        if (gets === 1) {
+          return Promise.resolve(json(payload()));
+        }
+        return new Promise<Response>((_resolve, reject) => {
+          rejectRefresh = reject;
+        });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    const view = renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
+    await waitFor(() => {
+      expect(gets).toBe(2);
+    });
+    view.unmount();
+    rejectRefresh(new Error('gone'));
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
   it('lets the owner rate, edit, comment, archive, and add', async () => {
     const bodies: unknown[] = [];
     let gets = 0;
