@@ -140,6 +140,18 @@ describe('ShopAddWizard', () => {
     fireEvent.change(input, { target: { files: [file] } });
     expect(onPickFiles).toHaveBeenCalledTimes(1);
     expect(onPickFiles).toHaveBeenCalledWith([file]);
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.getAttribute('accept')).toBe('image/*');
+    const cameraClick = vi.spyOn(camera, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
+    expect(cameraClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Take a photo')).toBeNull();
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    expect(onPickFiles).toHaveBeenLastCalledWith([shot]);
     fireEvent.click(screen.getByRole('button', { name: 'Remove video' }));
     expect(onClearPhoto).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
