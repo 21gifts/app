@@ -1187,7 +1187,7 @@ describe('SignedInChrome', () => {
     let fixedLeft = 100;
     let fixedWidth = 288;
     let fixedTop = 39;
-    let fixedBottom = 721;
+    const fixedBottom = 721;
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
     HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
       const menu = this.id === 'signed-in-menu';
