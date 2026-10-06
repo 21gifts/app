@@ -810,6 +810,194 @@ describe('MemberHabits', () => {
     ]);
   });
 
+  it('does not start another reload when Try again already owns the list', async () => {
+    let posts = 0;
+    let gets = 0;
+    let releasePost: (value: Response) => void = () => undefined;
+    let releaseRetry: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          if (posts === 1) {
+            return Promise.resolve(json({ error: 'Invalid name' }, 400));
+          }
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        gets += 1;
+        if (gets === 1) {
+          return Promise.resolve(json(payload()));
+        }
+        return new Promise<Response>((resolve) => {
+          releaseRetry = resolve;
+        });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+
+    const addName = screen.getByLabelText('Name');
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Held' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(posts).toBe(2);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(gets).toBe(2);
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    await act(async () => {
+      releasePost(json({ ok: true }));
+    });
+    expect(gets).toBe(2);
+    expect(posts).toBe(2);
+    expect(addName.value).toBe('Held');
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    await act(async () => {
+      releaseRetry(json(payload()));
+    });
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    expect(addName.value).toBe('Held');
+    expect(gets).toBe(2);
+  });
+
+  it('does not show a failed reload on the session that replaced it', async () => {
+    let posts = 0;
+    let gets = 0;
+    let releaseRefresh: (value: Response) => void = () => undefined;
+    const callAuth: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        callAuth.push(
+          `${init?.method === 'POST' ? 'POST' : 'GET'} ${new Headers(init?.headers).get('Authorization') ?? ''}`,
+        );
+        if (init?.method === 'POST') {
+          posts += 1;
+          return Promise.resolve(json({ ok: true }));
+        }
+        gets += 1;
+        if (gets === 1) {
+          return Promise.resolve(json(payload()));
+        }
+        if (gets === 2) {
+          return new Promise<Response>((resolve) => {
+            releaseRefresh = resolve;
+          });
+        }
+        return Promise.resolve(json(payload()));
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addName = screen.getByLabelText('Name');
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Held' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+
+    await act(async () => {
+      useAuthStore.setState({ session: 'other', account: viewer });
+      releaseRefresh(json({ error: 'down' }, 500));
+    });
+    expect(addName.value).toBe('Held');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    expect(callAuth).toEqual(['GET Bearer tok', 'POST Bearer tok', 'GET Bearer tok', 'GET Bearer other']);
+  });
+
+  it('does not show a failed save on the session that arrived while it was posting', async () => {
+    let posts = 0;
+    let gets = 0;
+    let releasePost: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        gets += 1;
+        return Promise.resolve(json(payload()));
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addName = screen.getByLabelText('Name');
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Held' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+
+    useAuthStore.setState({ session: 'other', account: viewer });
+    await waitFor(() => {
+      expect(gets).toBe(2);
+    });
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    await act(async () => {
+      releasePost(json({ error: 'Invalid name' }, 400));
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(posts).toBe(1);
+    expect(gets).toBe(2);
+    const settledName = screen.getByLabelText('Name');
+    if (!(settledName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    expect(settledName.value).toBe('Held');
+  });
+
   it('sends the same action again after the request fails', async () => {
     let posts = 0;
     vi.stubGlobal(

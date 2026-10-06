@@ -143,10 +143,10 @@ export function MemberHabits(): ReactElement {
       listSettled.current = true;
       return true;
     } catch {
-      if (!listAlive.current || generation !== listGeneration.current) {
+      if (useAuthStore.getState().session !== actor) {
         return false;
       }
-      if (useAuthStore.getState().session !== actor) {
+      if (!listAlive.current || generation !== listGeneration.current) {
         return false;
       }
       setError(true);
