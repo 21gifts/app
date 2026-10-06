@@ -1437,7 +1437,7 @@ Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidd
 
 ### Variant: empty
 
-Empty copy **No messages yet — be the first to write one.** plus composer (**Send a post** / **Ask for money** pill, attach + textarea + Post).
+Empty copy **No messages yet — be the first to write one.** plus composer (**Send a post** / **Ask for money** pill, attach + camera row, then textarea + Post).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -1697,13 +1697,13 @@ On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** tw
 
 ### Variant: photo-and-text
 
-After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + textarea + Post).
+After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + camera row, then textarea + Post).
 
 ![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
 
 ### Variant: photos-and-text
 
-On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
+On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the composer is empty (attach + camera row, then textarea + Post).
 
 ![21.gifts welcome photos and text](images/welcome-photos-and-text.png)
 

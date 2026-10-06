@@ -165,7 +165,13 @@ function ProfileImages({
     setError(null);
     void (async () => {
       try {
-        const result = await prepareForumPhoto(file);
+        let result: Awaited<ReturnType<typeof prepareForumPhoto>>;
+        try {
+          result = await prepareForumPhoto(file);
+        } catch {
+          setError(t('profile.about.errorUnsupported'));
+          return;
+        }
         if (!result.ok) {
           setError(
             result.error === 'tooLarge'
@@ -291,7 +297,7 @@ function ProfileImages({
         />
       ) : null}
       {pictureSettled && pictureUrl === null ? (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <Button
             type="button"
             variant="secondary"

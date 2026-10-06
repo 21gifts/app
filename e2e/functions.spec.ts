@@ -12857,11 +12857,17 @@ test('Function: CameraPhotoButton — the profile photo uses the front camera an
   const chooser = await chooserPromise;
   expect(await chooser.element().getAttribute('name')).toBe('profile-photo-camera');
   await page.setViewportSize({ width: 320, height: 700 });
-  for (const name of ['Take a profile photo', 'Take a wide photo']) {
+  for (const name of [
+    'Add a profile photo',
+    'Take a profile photo',
+    'Add a wide image',
+    'Take a wide photo',
+  ]) {
     const box = await page.getByRole('button', { name, exact: true }).boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(320);
   }
-  expect(await page.evaluate(pageFrameProblems)).toEqual([]);
   await chooser.setFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
   await expect.poll(() => picturePuts.length, { timeout: 10_000 }).toBe(1);
   expect(picturePuts[0]).toMatchObject({ photo: { contentType: 'image/jpeg' } });

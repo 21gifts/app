@@ -950,6 +950,24 @@ describe('ProfileScreen', () => {
     });
   });
 
+  it('says a camera photo cannot be used when the browser cannot read it', async () => {
+    vi.mocked(prepareForumPhoto).mockRejectedValueOnce(new Error('decode'));
+    vi.mocked(putProfilePhoto).mockClear();
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Take a profile photo' });
+    const selfie = document.querySelector('input[name="profile-photo-camera"]') as HTMLInputElement;
+    fireEvent.change(selfie, {
+      target: { files: [new File(['h'], 'IMG_0001.HEIC', { type: 'image/heic' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    expect(putProfilePhoto).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Take a profile photo' }).hasAttribute('disabled'),
+    ).toBe(false);
+  });
+
   it('frames a wide image from the empty-slot button instead of rejecting it', async () => {
     vi.mocked(putWideBanner).mockClear();
     renderWithLocale(<ProfileScreen />);

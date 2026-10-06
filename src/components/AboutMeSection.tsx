@@ -429,7 +429,15 @@ export function AboutMeSection({
     setPreparingPhoto(true);
     void (async () => {
       try {
-        const result = await prepareForumPhoto(file);
+        let result: Awaited<ReturnType<typeof prepareForumPhoto>>;
+        try {
+          result = await prepareForumPhoto(file);
+        } catch {
+          if (generation === photoGeneration.current) {
+            setError(t('profile.about.errorUnsupported'));
+          }
+          return;
+        }
         if (generation !== photoGeneration.current) {
           return;
         }

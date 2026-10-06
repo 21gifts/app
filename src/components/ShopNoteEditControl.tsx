@@ -184,6 +184,7 @@ export function ShopNoteEditControl({
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [pickError, setPickError] = useState<'unsupported' | 'tooLarge' | 'tooMany' | null>(null);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);
@@ -239,6 +240,7 @@ export function ShopNoteEditControl({
       setUsername(message.shopAccount?.username ?? '');
       setPhotoDrafts([]);
       setSaveError(false);
+      setPickError(null);
       setHistory(null);
       setHistoryError(false);
       let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
@@ -310,15 +312,26 @@ export function ShopNoteEditControl({
 
   async function onPickFiles(files: File[]): Promise<void> {
     const prepared: ForumPhotoPayload[] = [];
+    let error: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
     for (const file of files) {
-      const result = await prepareForumPhoto(file);
-      if (result.ok) {
-        prepared.push(result.photo);
+      try {
+        const result = await prepareForumPhoto(file);
+        if (result.ok) {
+          prepared.push(result.photo);
+        } else {
+          error = result.error;
+        }
+      } catch {
+        error = 'unsupported';
       }
     }
+    const keptCount = kept.filter((item) => item.kind === 'photo').length;
+    if (prepared.length > Math.max(0, 10 - keptCount - photoDrafts.length)) {
+      error = 'tooMany';
+    }
+    setPickError(error);
     if (prepared.length > 0) {
       setPhotoDrafts((current) => {
-        const keptCount = kept.filter((item) => item.kind === 'photo').length;
         const room = 10 - keptCount - current.length;
         if (room <= 0) {
           return current;
@@ -469,6 +482,21 @@ export function ShopNoteEditControl({
               imagesOnly
             />
           </SundayWritingGate>
+          {pickError === 'unsupported' ? (
+            <p role="alert" className="text-xs text-app-danger">
+              {t('inbox.errorUnsupported')}
+            </p>
+          ) : null}
+          {pickError === 'tooLarge' ? (
+            <p role="alert" className="text-xs text-app-danger">
+              {t('inbox.errorTooLarge')}
+            </p>
+          ) : null}
+          {pickError === 'tooMany' ? (
+            <p role="alert" className="text-xs text-app-danger">
+              {t('forum.errorTooMany')}
+            </p>
+          ) : null}
           {saveError ? (
             <p role="alert" className="text-xs text-app-danger">
               {t('forum.editShopNoteFailed')}

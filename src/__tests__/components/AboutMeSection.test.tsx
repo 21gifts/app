@@ -1331,6 +1331,11 @@ describe('AboutMeSection', () => {
     prepareMock.mockRejectedValueOnce(new Error('decode'));
     fireEvent.change(input, { target: { files: [jpegFile()] } });
     await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    onSavePicture.mockRejectedValueOnce(new Error('save'));
+    fireEvent.change(input, { target: { files: [jpegFile()] } });
+    await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('Could not save. Please try again.');
     });
   });
