@@ -1121,6 +1121,7 @@ test.describe('screen baselines', () => {
   test('screen /login', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
     await shotScreen(page, 'screen-login');
   });
 
@@ -3010,6 +3011,7 @@ test.describe('login variant baselines', () => {
 
   test('login language-open', async ({ page }) => {
     await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
     await page.getByLabel('Language').click();
     await expect(page.getByRole('option', { name: 'Deutsch' })).toBeVisible();
     await shotScreen(page, 'state-login-language');

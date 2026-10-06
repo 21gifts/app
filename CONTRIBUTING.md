@@ -376,7 +376,7 @@ app/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
-│   ├── login.spec.ts            # /login single Log in button + signed-in forms
+│   ├── login.spec.ts            # /login Log in + Open a new account + signed-in forms
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence

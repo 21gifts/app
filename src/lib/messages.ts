@@ -260,6 +260,7 @@ const en = {
   'login.choiceHeading': 'Do you already have an account?',
   'login.existing': 'Log in with existing account',
   'login.create': 'Open a new account',
+  'login.newHere': 'New to 21.gifts?',
   'login.nameHeading': 'Choose your name',
   'login.nameBody':
     'This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase.',
@@ -1412,6 +1413,7 @@ const de = {
   'login.choiceHeading': 'Haben Sie schon ein Konto?',
   'login.existing': 'Mit bestehendem Konto einloggen',
   'login.create': 'Ein neues Konto eröffnen',
+  'login.newHere': 'Neu bei 21.gifts?',
   'login.nameHeading': 'Wählen Sie Ihren Namen',
   'login.nameBody':
     'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
@@ -2595,6 +2597,7 @@ const es = {
   'login.choiceHeading': '¿Ya tienes una cuenta?',
   'login.existing': 'Iniciar sesión con una cuenta existente',
   'login.create': 'Abrir una cuenta nueva',
+  'login.newHere': '¿Primera vez en 21.gifts?',
   'login.nameHeading': 'Elige tu nombre',
   'login.nameBody':
     'Este nombre se guarda en la llave de acceso. También es el nombre de tu cuenta y tu usuario de 21.gifts. De 1 a 32 caracteres: letras, dígitos, guion, guion bajo o punto. Se guarda en minúsculas.',
@@ -3749,6 +3752,7 @@ const fil = {
   'login.choiceHeading': 'May account ka na ba?',
   'login.existing': 'Mag-log in gamit ang existing account',
   'login.create': 'Magbukas ng bagong account',
+  'login.newHere': 'Bago ka sa 21.gifts?',
   'login.nameHeading': 'Piliin ang pangalan mo',
   'login.nameBody':
     'Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok. Naka-lowercase ito.',
