@@ -6323,7 +6323,7 @@ test.describe('onboarding screens', () => {
     await page.goto('/pos');
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toHaveCount(2);
     await expect(page.getByRole('link', { name: 'New payment' })).toHaveAttribute(
       'href',
       '/pos/amount',
@@ -6988,7 +6988,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
+    await expect(page.getByText('No payments yet.')).toBeVisible();
     await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-pos-cancel-failed');
   });
@@ -7053,7 +7053,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('0:00 left')).toBeVisible();
     await expect(page.getByText('$0.02')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
+    await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-refresh-failed');
   });
 
