@@ -22525,7 +22525,7 @@ test.describe('habit tracker baselines', () => {
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await expect(page.getByLabel('Amount')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await shotScreen(page, 'state-habit-tracker-donate');
   });
 
@@ -22593,6 +22593,112 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-donate-invoice');
+  });
+
+  test('screen /habit-tracker donate-habit-amount', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('0');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Expected a JSON body with an integer "amountSats"',
+      }),
+    ).toHaveText('Expected a JSON body with an integer "amountSats"');
+    await shotScreen(page, 'state-habit-tracker-donate-habit-amount');
+  });
+
+  test('screen /habit-tracker donate-request', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'nope' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not start the Bitcoin payment' }),
+    ).toHaveText('Could not start the Bitcoin payment');
+    await shotScreen(page, 'state-habit-tracker-donate-request');
+  });
+
+  test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 429,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Too many payments' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Too many payments. Please wait a moment and try again.',
+      }),
+    ).toHaveText('Too many payments. Please wait a moment and try again.');
+    await shotScreen(page, 'state-habit-tracker-donate-rate-limit');
+  });
+
+  test('screen /habit-tracker donate-author-wallet', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: "The author's wallet cannot receive this Bitcoin payment",
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: "The author's wallet cannot receive this Bitcoin payment",
+      }),
+    ).toHaveText("The author's wallet cannot receive this Bitcoin payment");
+    await shotScreen(page, 'state-habit-tracker-donate-author-wallet');
   });
 
   test('screen /habit-tracker sunday', async ({ page }) => {

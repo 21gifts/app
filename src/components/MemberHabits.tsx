@@ -12,7 +12,7 @@ import {
 import { useTranslations } from '@/components/LocaleProvider';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { messageInvoiceSchema, type Account, type AmountUnit } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
@@ -72,7 +72,7 @@ export function MemberHabits(): ReactElement {
   const listAlive = useRef(true);
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
-  const rateDay = useLatestRateDay(signedIn);
+  const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
 
   useEffect(() => {
     setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -203,10 +203,11 @@ export function MemberHabits(): ReactElement {
   }
 
   function onPaySubmit(): void {
-    /* v8 ignore next 3 -- the sheet is not mounted without a session and comment, and Continue is disabled while busy */
-    if (session === null || session === '' || payCommentId === null || payBusy) {
+    /* v8 ignore start -- the sheet is not mounted without a session and comment, and Continue is disabled while busy or while the rate has not settled */
+    if (session === null || session === '' || payCommentId === null || payBusy || !rateSettled) {
       return;
     }
+    /* v8 ignore stop */
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
     if (sats === 'invalid' || sats > FORUM_GOAL_SATS_MAX) {
       setPayError('habitAmount');
@@ -529,6 +530,7 @@ export function MemberHabits(): ReactElement {
                     payError={payError}
                     payInvoice={payInvoice}
                     rateDay={rateDay}
+                    ratePending={!rateSettled}
                     showPaymentQr={showPaymentQr}
                     onPayOpen={openPay}
                     onPayDraftChange={(value) => {
@@ -699,6 +701,7 @@ function CommentsBlock(props: {
   payError: ForumPayError;
   payInvoice: ForumPayInvoice | null;
   rateDay: FiatRateDay | null;
+  ratePending: boolean;
   showPaymentQr: boolean;
   onPayOpen: (commentId: string) => void;
   onPayDraftChange: (value: string) => void;
@@ -722,6 +725,7 @@ function CommentsBlock(props: {
     payError,
     payInvoice,
     rateDay,
+    ratePending,
     showPaymentQr,
     onPayOpen,
     onPayDraftChange,
@@ -836,6 +840,7 @@ function CommentsBlock(props: {
                       onPaySubmit={onPaySubmit}
                       onPayCancel={onPayCancel}
                       rateDay={rateDay}
+                      ratePending={ratePending}
                       showPaymentQr={showPaymentQr}
                       onInteract={() => undefined}
                     />

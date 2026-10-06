@@ -563,6 +563,11 @@ describe('MemberHabits', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
     fireEvent.click(gift);
     const amount = screen.getByLabelText('Amount');
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(
       await screen.findByText("The author's wallet cannot receive this Bitcoin payment"),
@@ -651,6 +656,54 @@ describe('MemberHabits', () => {
     expect(screen.queryByText('Pay ₿50')).toBeNull();
     expect(screen.queryByText('Could not start the Bitcoin payment')).toBeNull();
     expect(screen.queryByText('lnbc-stale')).toBeNull();
+  });
+
+  it('does not invoice until the gift-day rate has settled', async () => {
+    let releaseStats!: (value: Response) => void;
+    const posts: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if (url.includes('/gifts/stats')) {
+          return new Promise<Response>((resolve) => {
+            releaseStats = resolve;
+          });
+        }
+        if (init?.method === 'POST') {
+          posts.push(String(init.body));
+          return json({ pr: 'lnbc1', amountSats: 21 });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: viewer });
+    renderWithLocale(<MemberHabits />);
+    const gifts = await screen.findAllByRole('button', { name: 'Send Bitcoin' });
+    const gift = gifts[0];
+    if (gift === undefined) {
+      throw new Error('missing gift button');
+    }
+    fireEvent.click(gift);
+    const cont = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(cont.disabled).toBe(true);
+    fireEvent.click(cont);
+    fireEvent.submit(cont.closest('form') as HTMLFormElement);
+    expect(posts).toEqual([]);
+
+    await act(async () => {
+      releaseStats(json({ spendOverTime: [] }));
+    });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts.some((body) => body.includes('"amountSats":21'))).toBe(true);
+    });
   });
 
   it('leaves the rating pill unpressed when the open period is not logged', async () => {

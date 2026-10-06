@@ -49,6 +49,7 @@ export function ForumPaySheet({
   onPaySubmit,
   onPayCancel,
   rateDay,
+  ratePending = false,
   showPaymentQr,
   onInteract,
 }: {
@@ -63,6 +64,8 @@ export function ForumPaySheet({
   onPaySubmit: () => void | Promise<ForumPayInvoice | null | undefined>;
   onPayCancel: () => void;
   rateDay: FiatRateDay | null;
+  /** When true, Continue does not submit. The rate request is still loading. */
+  ratePending?: boolean;
   showPaymentQr: boolean;
   onInteract: (event: MouseEvent) => void;
 }): ReactElement {
@@ -84,6 +87,9 @@ export function ForumPaySheet({
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
+    if (payBusy || ratePending) {
+      return;
+    }
     void Promise.resolve(onPaySubmit());
   };
 
@@ -171,7 +177,7 @@ export function ForumPaySheet({
         ) : null}
         <Button
           type="submit"
-          disabled={payBusy}
+          disabled={payBusy || ratePending}
           icon={
             payBusy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
           }

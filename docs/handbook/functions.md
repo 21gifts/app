@@ -1333,8 +1333,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: ForumPaySheet
 
 - **Purpose:** The amount form and invoice card already used for a payable forum reply. A habit comment uses this same sheet: Amount, Continue, then the confirmation, the desktop QR, and Pay with Wallet of Satoshi. It does not show the raw invoice. Close stays on the page.
-- **Inputs:** `messageId`, the pay draft, busy, error, invoice, waiting flag, draft and unit callbacks, submit, cancel, the gift-day rate, whether to show the QR, and a click handler so the sheet does not toggle the card under it.
-- **Returns / side effects:** The in-card sheet (`data-pay-sheet`). Continue calls `onPaySubmit`. The wallet button sets `window.location.href` to the Android Intent or `walletofsatoshi:`. No network of its own.
+- **Inputs:** `messageId`, the pay draft, busy, error, invoice, waiting flag, draft and unit callbacks, submit, cancel, the gift-day rate, optional `ratePending` (default false; Continue does not submit while it is true), whether to show the QR, and a click handler so the sheet does not toggle the card under it.
+- **Returns / side effects:** The in-card sheet (`data-pay-sheet`). Continue calls `onPaySubmit` only when it is not busy and `ratePending` is false. The wallet button sets `window.location.href` to the Android Intent or `walletofsatoshi:`. No network of its own.
 - **Used by:** `ForumBoard` and `MemberHabits`.
 
 ## Function: ForumReplyPayPage
@@ -2377,12 +2377,17 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useLatestRateDay
 
-- **Purpose:** Latest gift-day totals for preferred-fiat conversion. Fetches `GET /gifts/stats`
-  once on mount via `fetchGiftStats` and resolves `latestRateDay` of `spendOverTime`; a failed
-  fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
+- **Purpose:** Latest gift-day totals for preferred-fiat conversion. Returns the `rateDay` from `useLatestRateDayState`. A failed fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
-- **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
-- **Used by:** `ForumLoader`, `InboxLoader`, `MemberHabits`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
+- **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled. Loading and a settled missing rate are both `null`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
+
+## Function: useLatestRateDayState
+
+- **Purpose:** Latest gift-day totals and whether that `GET /gifts/stats` request has settled. `settled` is false while the request is in flight, so a payment screen does not treat the amount as ready. A settled `null` means the request finished with no usable rate. When `enabled` is false, the fetch is skipped and `settled` is true. Drops the response after unmount.
+- **Inputs:** Optional `enabled` (default true).
+- **Returns / side effects:** `{ rateDay: FiatRateDay | null, settled: boolean }`. Calls `fetchGiftStats` once per mount while enabled.
+- **Used by:** `useLatestRateDay`, `MemberHabits`.
 
 ## Function: shownFiatForSats
 
@@ -4787,7 +4792,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MemberHabits
 
-- **Purpose:** Loads `GET /habits` and writes `POST /habits`. Renders every member's public habits, periods, and comments on the same note card as a living-room note. Internal notes render only for the owner. The owner rates the open period on a neutral `SegmentedControl`, opens edit with the pencil, and archives from the card. Any signed-in account can comment. Comment and delete use `SundayWritingGate` and send `Time-Zone`. A gift on someone else's comment uses the same Gift control, `ForumPaySheet`, amount rules, and Sunday zap pause as a forum reply, and sends `Time-Zone`. The sheet does not show the raw invoice. Does not log invoices, addresses, notes, or comment text.
+- **Purpose:** Loads `GET /habits` and writes `POST /habits`. Renders every member's public habits, periods, and comments on the same note card as a living-room note. Internal notes render only for the owner. The owner rates the open period on a neutral `SegmentedControl`, opens edit with the pencil, and archives from the card. Any signed-in account can comment. Comment and delete use `SundayWritingGate` and send `Time-Zone`. A gift on someone else's comment uses the same Gift control, `ForumPaySheet`, amount rules, and Sunday zap pause as a forum reply, and sends `Time-Zone`. Continue stays disabled until `useLatestRateDayState` has settled. The sheet does not show the raw invoice. Does not log invoices, addresses, notes, or comment text.
 - **Inputs:** None. Reads the auth store session and account.
 - **Returns / side effects:** The habit-tracker body. Posts add, edit, archive, log, comment, deleteComment, and invoice actions.
 - **Used by:** `HabitTrackerPage`.

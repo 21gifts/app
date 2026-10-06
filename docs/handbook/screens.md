@@ -2215,8 +2215,8 @@ Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` wh
 
 - **URL:** `/habit-tracker` — public habit tracker. Every member's habits, periods, and comments. Signed-out visitors can read it. `OnboardingGate screen="welcome"` with `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /habits` and `POST /habits`.
 - **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` and either **Log in** or Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Habit-Tracker**. The schedule line says each habit is daily or weekly in the time zone chosen when it was created, a week can be rated from Monday 08:00 in that zone. People are grouped under their `ownerName`. Each habit is the same note card as a living-room note: name, a Daily or Weekly chip, an Archived chip when it has a last period, the public description when one is set, and one row per period (the date, then Achieved, Partially achieved, Not achieved, or Not rated yet). Comments are public and are not forum posts. Internal notes render only for the owner (`Internal notes:` plus the text). A signed-out visitor sees **Sign in to comment** and no add form, no rating pill, and no **Send Bitcoin**. A session sees an add form (Name, Description, Internal notes, a Daily | Weekly pill, **Add habit**). On each of their open habits the open period is that same pill (Achieved, Partially achieved, Not achieved; nothing pressed when it is not rated yet), **Edit** opens Name, Description, and Internal notes. **Save** and **Cancel** are icons; their accessible names are Save and Cancel, and the word Save is not visible. **Archive** opens the same inline confirm as deleting a note: the sentence, then a check named Confirm archive and an X named Cancel archive. A signed-in account sees **Write a comment** and **Post** on each habit. On the device's local Sunday those controls and **Delete comment** are removed and **Writing is paused on Sunday.** stands in their place. **Send Bitcoin** (the same Gift control as a forum reply) is on someone else's comment and opens the same amount sheet. On Sunday that gift shows **Zapping is paused on Sunday.** Menu row **Habit-Tracker** (`nav.habitTracker`, lucide `ListChecks`, `/habit-tracker`) sits immediately after **Living room rules** for every signed-in account.
-- **Actions:** Read the list. Sign in. Add a habit. Edit name, description, and internal notes. Rate the open period Achieved, Partially achieved, or Not achieved. Archive after confirm. Post a comment. Delete a comment when the account is at least initiator, after the same inline confirm. The check is named Confirm deletion and the X is named Cancel deletion. On the device's local Sunday those two writes and the gift are paused. Open **Send Bitcoin**, enter an amount, press **Continue**, and pay from the same invoice card as a forum reply. An amount that is not a whole number of sats from 1 through 10,000,000 shows `Expected a JSON body with an integer "amountSats"` and does not open the invoice. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `HabitTrackerPage`, `MemberHabits`, `ForumPaySheet`, `useLatestRateDay`, `SundayWritingGate`, `SignedInChrome`, `OnboardingGate`, `fetchMemberHabits`, `postMemberHabit`.
+- **Actions:** Read the list. Sign in. Add a habit. Edit name, description, and internal notes. Rate the open period Achieved, Partially achieved, or Not achieved. Archive after confirm. Post a comment. Delete a comment when the account is at least initiator, after the same inline confirm. The check is named Confirm deletion and the X is named Cancel deletion. On the device's local Sunday those two writes and the gift are paused. Open **Send Bitcoin**, enter an amount, press **Continue**, and pay from the same invoice card as a forum reply. **Continue** stays disabled until the gift-day rate request has settled. A settled request with no usable rate still allows **Continue**, and the fiat line stays absent. An amount that is not a whole number of sats from 1 through 10,000,000 shows `Expected a JSON body with an integer "amountSats"` and does not open the invoice. A payment that cannot be started shows **Could not start the Bitcoin payment**. Too many payments shows **Too many payments. Please wait a moment and try again.** A wallet that cannot receive the payment shows **The author's wallet cannot receive this Bitcoin payment**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `HabitTrackerPage`, `MemberHabits`, `ForumPaySheet`, `useLatestRateDayState`, `SundayWritingGate`, `SignedInChrome`, `OnboardingGate`, `fetchMemberHabits`, `postMemberHabit`.
 - **Auth:** No bearer required to read the page or `GET /habits`. `POST /habits` needs a bearer. `OnboardingGate screen="welcome"` with `allowGuest`. The page does not pay an invoice.
 
 ### Variant: default
@@ -2266,6 +2266,30 @@ Ada's session on someone else's comment. **Send Bitcoin** is open and the amount
 Ada's session after **Continue** on someone else's comment. The card shows **Pay ₿21**, the Bitcoin payment QR code on desktop, and **Pay with Wallet of Satoshi**. The raw invoice is not shown.
 
 ![21.gifts habit tracker donate invoice](images/habit-tracker-donate-invoice.png)
+
+### Variant: donate-habit-amount
+
+Ada's session. **Send Bitcoin** is open. **Continue** was pressed with an amount that is not a whole number of sats from 1 through 10,000,000. The sheet shows **Expected a JSON body with an integer "amountSats"**.
+
+![21.gifts habit tracker donate habit amount](images/habit-tracker-donate-habit-amount.png)
+
+### Variant: donate-request
+
+Ada's session. **Send Bitcoin** is open. **Continue** was pressed and the payment could not be started. The sheet shows **Could not start the Bitcoin payment**.
+
+![21.gifts habit tracker donate request](images/habit-tracker-donate-request.png)
+
+### Variant: donate-rate-limit
+
+Ada's session. **Send Bitcoin** is open. **Continue** was pressed and the payment was refused for too many payments. The sheet shows **Too many payments. Please wait a moment and try again.**
+
+![21.gifts habit tracker donate rate limit](images/habit-tracker-donate-rate-limit.png)
+
+### Variant: donate-author-wallet
+
+Ada's session. **Send Bitcoin** is open. **Continue** was pressed and the author's wallet cannot receive the payment. The sheet shows **The author's wallet cannot receive this Bitcoin payment**.
+
+![21.gifts habit tracker donate author wallet](images/habit-tracker-donate-author-wallet.png)
 
 ### Variant: sunday
 

@@ -143,7 +143,77 @@ test('screen /habit-tracker donate', async ({ page }) => {
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(page.getByLabel('Amount')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+});
+
+async function openHabitPay(
+  page: Page,
+  post: { status: number; error: string } | null,
+): Promise<void> {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST' && post !== null) {
+      await route.fulfill({
+        status: post.status,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: post.error }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PUBLIC_LIST),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+}
+
+test('screen /habit-tracker donate-habit-amount', async ({ page }) => {
+  await openHabitPay(page, null);
+  await page.getByLabel('Amount').fill('0');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'Expected a JSON body with an integer "amountSats"',
+    }),
+  ).toHaveText('Expected a JSON body with an integer "amountSats"');
+});
+
+test('screen /habit-tracker donate-request', async ({ page }) => {
+  await openHabitPay(page, { status: 500, error: 'nope' });
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Could not start the Bitcoin payment' }),
+  ).toHaveText('Could not start the Bitcoin payment');
+});
+
+test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
+  await openHabitPay(page, { status: 429, error: 'Too many payments' });
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'Too many payments. Please wait a moment and try again.',
+    }),
+  ).toHaveText('Too many payments. Please wait a moment and try again.');
+});
+
+test('screen /habit-tracker donate-author-wallet', async ({ page }) => {
+  await openHabitPay(page, {
+    status: 409,
+    error: "The author's wallet cannot receive this Bitcoin payment",
+  });
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: "The author's wallet cannot receive this Bitcoin payment",
+    }),
+  ).toHaveText("The author's wallet cannot receive this Bitcoin payment");
 });
 
 test('screen /habit-tracker donate-invoice', async ({ page }) => {
@@ -304,16 +374,67 @@ test('Function: MemberHabits — the owner logs the open period', async ({ page 
   await expect.poll(() => posted).toContain('"status":"achieved"');
 });
 
-test('Function: fetchMemberHabits — GET /habits is public', async ({ request }) => {
-  const response = await request.get('/habits');
-  expect(response.status()).toBe(200);
-  const body = (await response.json()) as { habits: Array<{ name: string }> };
-  expect(body.habits[0]?.name).toBe('Walk');
+test('Function: fetchMemberHabits — the habit tracker page loads the public list', async ({
+  page,
+}) => {
+  await stubHabits(page, PUBLIC_LIST);
+  await page.goto('/habit-tracker');
+  await expect(page.getByRole('heading', { name: 'Habit-Tracker' })).toBeVisible();
+  await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+  await expect(page.getByText('Outside')).toBeVisible();
 });
 
-test('Function: postMemberHabit — POST /habits without a session is unauthorized', async ({
-  request,
+test('Function: postMemberHabit — the owner logs the open period through the page', async ({
+  page,
 }) => {
-  const response = await request.post('/habits', { data: { action: 'add', name: 'Walk' } });
-  expect(response.status()).toBe(401);
+  await seedAda(page);
+  let posted = '';
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      posted = route.request().postData() ?? '';
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Achieved', exact: true }).click();
+  await expect.poll(() => posted).toContain('"action":"log"');
+  await expect.poll(() => posted).toContain('"status":"achieved"');
+});
+
+test('Function: useLatestRateDayState — Continue stays disabled until the gift-day rate settles', async ({
+  page,
+}) => {
+  await seedAda(page);
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await pending;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await stubHabits(page, PUBLIC_LIST);
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const cont = page.getByRole('button', { name: 'Continue' });
+  await expect(cont).toBeDisabled();
+  release();
+  await expect(cont).toBeEnabled();
 });

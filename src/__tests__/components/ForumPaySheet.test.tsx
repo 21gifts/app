@@ -15,6 +15,7 @@ const DAY: FiatRateDay = {
 function sheet(
   error: ForumPayError,
   invoice: boolean,
+  extra?: { payBusy?: boolean; ratePending?: boolean },
 ): {
   onPaySubmit: ReturnType<typeof vi.fn>;
   onPayCancel: ReturnType<typeof vi.fn>;
@@ -27,7 +28,7 @@ function sheet(
     <ForumPaySheet
       messageId="c-1"
       payDraft="21"
-      payBusy={false}
+      payBusy={extra?.payBusy ?? false}
       payError={error}
       payInvoice={invoice ? { messageId: 'c-1', pr: 'lnbc1', amountSats: 21 } : null}
       payWaiting={false}
@@ -36,6 +37,7 @@ function sheet(
       onPaySubmit={onPaySubmit}
       onPayCancel={onPayCancel}
       rateDay={DAY}
+      {...(extra?.ratePending === undefined ? {} : { ratePending: extra.ratePending })}
       showPaymentQr={false}
       onInteract={vi.fn()}
     />,
@@ -64,6 +66,21 @@ describe('ForumPaySheet', () => {
       'Expected a JSON body with an integer "amountSats"',
     );
     expect(screen.queryByText('Enter a whole number greater than zero')).toBeNull();
+  });
+
+  it('does not submit while busy or while the rate is still loading', () => {
+    const busy = sheet(null, false, { payBusy: true });
+    const busyButton = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(busyButton.disabled).toBe(true);
+    fireEvent.submit(busyButton.closest('form') as HTMLFormElement);
+    expect(busy.onPaySubmit).not.toHaveBeenCalled();
+    cleanup();
+
+    const pending = sheet(null, false, { ratePending: true });
+    const pendingButton = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
+    expect(pendingButton.disabled).toBe(true);
+    fireEvent.submit(pendingButton.closest('form') as HTMLFormElement);
+    expect(pending.onPaySubmit).not.toHaveBeenCalled();
   });
 
   it('shows the invoice card with the fiat line', () => {
