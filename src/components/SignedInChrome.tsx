@@ -63,6 +63,8 @@ export function SignedInChrome(): ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
+  /** Bottom of the roomy wide panel when it last stuck out of the window. */
+  const roomyBottom = useRef(0);
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
@@ -145,16 +147,18 @@ export function SignedInChrome(): ReactElement {
     const measure = (): void => {
       const limit = window.innerHeight + 1;
       const bottom = menuRef.current!.getBoundingClientRect().bottom;
-      setTight((current) => {
+      if (!tight) {
         if (bottom > limit) {
-          return true;
+          roomyBottom.current = bottom;
+          setTight(true);
         }
-        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
-        if (current && bottom <= limit - 48) {
-          return false;
-        }
-        return current;
-      });
+        return;
+      }
+      // How much compact saves depends on the row count, so go back to the roomy
+      // layout only when its last measured bottom fits with 8px reserve.
+      if (roomyBottom.current <= limit - 8) {
+        setTight(false);
+      }
     };
     measure();
     window.addEventListener('resize', measure);
@@ -193,11 +197,12 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  // A tall wide menu drops its outer spacing so the last row stays inside the window. It does not scroll.
+  // A tall wide menu drops its outer spacing and shortens its rows to 36px
+  // (the Log out height) so the last row stays inside the window. It does not scroll.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg [&_.min-h-11]:min-h-9${open ? '' : ' hidden'}`
       : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (

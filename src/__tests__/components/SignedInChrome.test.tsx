@@ -1225,12 +1225,13 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('keeps the compact wide menu when a resize leaves less than 48px of room', () => {
+  it('keeps the compact wide menu until the roomy panel fits again, and does not flutter', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
-    const bottom = 751;
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    // The compact panel is 152px shorter than the roomy one, as with shorter rows.
     HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const bottom = this.className.includes('mt-0') ? 599 : 751;
       return {
         x: 0,
         y: 0,
@@ -1250,12 +1251,25 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(panel.className).toContain('mt-0');
-      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 780 });
+      expect(panel.className).toContain('[&_.min-h-11]:min-h-9');
+      // The compact panel has far more than 48px of room, but the roomy one would still stick out.
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 755 });
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
       expect(panel.className).toContain('mt-0');
       expect(panel.className).not.toContain('mt-2');
+      // The roomy panel fits with 8px reserve: back to it, and it stays.
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 760 });
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
+      expect(panel.className).not.toContain('min-h-9');
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
