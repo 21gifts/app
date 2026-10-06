@@ -3961,6 +3961,42 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-laws');
   });
 
+  test('state /welcome first-post-free', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route('**/messages/compose-target', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messageId: 'compose-fee', sats: 0, firstPostFree: true }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByText('Your first post is free.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-first-post-free');
+  });
+
   test('state /welcome expanded', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

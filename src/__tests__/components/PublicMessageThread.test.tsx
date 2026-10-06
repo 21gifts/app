@@ -211,7 +211,11 @@ beforeEach(() => {
   vi.mocked(fetchReplies).mockResolvedValue([]);
   vi.mocked(fetchGiftStats).mockResolvedValue({ spendOverTime: [] } as never);
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
-  vi.mocked(fetchComposeTarget).mockResolvedValue({ messageId: 'fee-note', sats: 0 });
+  vi.mocked(fetchComposeTarget).mockResolvedValue({
+    messageId: 'fee-note',
+    sats: 0,
+    firstPostFree: false,
+  });
   vi.mocked(postMessage).mockResolvedValue({
     ...root,
     id: '99999999-9999-4999-8999-999999999999',

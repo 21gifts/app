@@ -114,6 +114,22 @@ export class NoteDeletedError extends Error {
   }
 }
 
+/**
+ * Api 403 on a forum note create that needs a Bitcoin payment first: a
+ * member below verified posting text without a paid fee, including a free
+ * first post the api no longer allows. The message is the same visitor copy
+ * a plain `Error` carried before, so screens that show it are unchanged.
+ */
+export class PostFeeRequiredError extends Error {
+  /**
+   * @param message - Visitor copy for the refusal.
+   */
+  public constructor(message: string) {
+    super(message);
+    this.name = 'PostFeeRequiredError';
+  }
+}
+
 /** Api error `code` (HTTP 400) when the signed-in member has no verified in-app wallet yet. */
 export const WALLET_REQUIRED_CODE = 'wallet_required';
 
@@ -2276,7 +2292,9 @@ function forumAskGoalFields(
  * @returns The created {@link ForumMessage}.
  * @throws {@link NoteDeletedError} on 404 unless the api error is exactly
  * `No account with that username`.
- * @throws Error when the api rejects the body (400, 403, or 429), or on 404
+ * @throws {@link PostFeeRequiredError} on 403 (the post or reply needs a
+ * Bitcoin payment), with the api error string when present.
+ * @throws Error when the api rejects the body (400 or 429), or on 404
  * whose error is exactly `No account with that username` — the api
  * error string when present, otherwise a fallback — {@link MissingRequirementsError}
  * on 409, on any other non-2xx status, or when the body fails
@@ -2342,7 +2360,9 @@ export async function postMessage(
   }
   if (response.status === 403) {
     const raw = await readApiError(response);
-    throw new Error(raw === null ? 'A reply needs a Bitcoin payment' : toUserFacingError(raw));
+    throw new PostFeeRequiredError(
+      raw === null ? 'A reply needs a Bitcoin payment' : toUserFacingError(raw),
+    );
   }
   if (response.status === 409) {
     let body: unknown;
@@ -2380,6 +2400,7 @@ export async function postMessage(
  * and optional `place` pin (omit when unset; form fields only when set),
  * and optional `shopUsername` (omit when unset; a leading `@` is stripped).
  * @returns The created {@link ForumMessage}.
+ * @throws {@link PostFeeRequiredError} on 403 (the post needs a Bitcoin payment).
  * @throws Error when the api rejects the body (400, 404, or 429) — the api error
  * string when present, otherwise a fallback — on any other non-2xx status, or
  * when the body fails {@link forumMessageSchema} validation.
@@ -2441,6 +2462,9 @@ export async function postMessageVideo(
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not post your message' : toUserFacingError(raw));
   }
+  if (response.status === 403) {
+    throw new PostFeeRequiredError('Could not post your message');
+  }
   if (response.status === 409) {
     let body: unknown;
     try {
@@ -2462,16 +2486,18 @@ export async function postMessageVideo(
 
 /**
  * Loads the official platform profile note so a basis account can invoice
- * 1 sat to 21.gifts before posting or replying.
+ * 1 sat to 21.gifts before posting or replying, and whether this member's
+ * next top-level post is their free first post.
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @returns `{ messageId, sats }` for `POST /messages/:id/invoice`.
+ * @returns `{ messageId, sats }` for `POST /messages/:id/invoice`, plus
+ * `firstPostFree` (true only when the api sends `true`).
  * @throws Error with collapsed visitor copy on non-2xx, or when the body is
  * not `{ messageId, sats }`.
  */
 export async function fetchComposeTarget(
   sessionToken: string,
-): Promise<{ messageId: string; sats: number }> {
+): Promise<{ messageId: string; sats: number; firstPostFree: boolean }> {
   const response = await fetch('/messages/compose-target', {
     headers: { Authorization: `Bearer ${sessionToken}` },
   });
@@ -2491,6 +2517,7 @@ export async function fetchComposeTarget(
   return {
     messageId: (body as { messageId: string }).messageId,
     sats: (body as { sats: number }).sats,
+    firstPostFree: (body as { firstPostFree?: unknown }).firstPostFree === true,
   };
 }
 

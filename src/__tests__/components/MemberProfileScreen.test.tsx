@@ -367,7 +367,11 @@ beforeEach(() => {
     unread: false,
   });
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
-  vi.mocked(fetchComposeTarget).mockResolvedValue({ messageId: 'fee-note', sats: 0 });
+  vi.mocked(fetchComposeTarget).mockResolvedValue({
+    messageId: 'fee-note',
+    sats: 0,
+    firstPostFree: false,
+  });
   vi.mocked(fetchPublicMessage).mockResolvedValue(null);
   vi.mocked(postMessage).mockResolvedValue({
     ...note,

@@ -85,6 +85,7 @@ import {
   postMessage,
   fetchComposeTarget,
   NoteDeletedError,
+  PostFeeRequiredError,
   WALLET_REQUIRED_CODE,
   CANNOT_RECEIVE_CODE,
   WalletRequiredError,
@@ -1853,7 +1854,27 @@ describe('fetchComposeTarget', () => {
     await expect(fetchComposeTarget('sess')).resolves.toEqual({
       messageId: 'fee-note',
       sats: 0,
+      firstPostFree: false,
     });
+  });
+
+  it('passes on a free first post only when the api says true', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messageId: 'fee-note', sats: 0, firstPostFree: true },
+    });
+    await expect(fetchComposeTarget('sess')).resolves.toEqual({
+      messageId: 'fee-note',
+      sats: 0,
+      firstPostFree: true,
+    });
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: { messageId: 'fee-note', sats: 0, firstPostFree: 'yes' },
+    });
+    await expect(fetchComposeTarget('sess')).resolves.toMatchObject({ firstPostFree: false });
   });
 
   it('throws collapsed copy when the request fails', async () => {
@@ -2490,6 +2511,14 @@ describe('postMessage', () => {
     );
   });
 
+  it('throws PostFeeRequiredError when a top-level post needs a payment', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'A post needs a Bitcoin payment' } });
+    const err = await postMessage('sess', { text: 'x' }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PostFeeRequiredError);
+    expect((err as Error).name).toBe('PostFeeRequiredError');
+    expect((err as Error).message).toBe('A post needs a Bitcoin payment');
+  });
+
   it('falls back when a 403 body is not an error envelope', async () => {
     stubFetch({ ok: false, status: 403, body: {} });
     await expect(postMessage('sess', { text: 'x', inReplyTo: 'p1' })).rejects.toThrow(
@@ -2731,6 +2760,14 @@ describe('postMessageVideo', () => {
     await expect(postMessageVideo('sess', { text: 'x', video })).rejects.toThrow(
       'Too many messages',
     );
+  });
+
+  it('throws PostFeeRequiredError on a 403', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'A post needs a Bitcoin payment' } });
+    const video = new File([new Uint8Array([1])], 'clip.mp4', { type: 'video/mp4' });
+    const err = await postMessageVideo('sess', { text: 'x', video }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PostFeeRequiredError);
+    expect((err as Error).message).toBe('Could not post your message');
   });
 
   it('throws the api error message on a 404', async () => {

@@ -44,6 +44,7 @@ import {
   postMessageInvoice,
   postMessageVideo,
   postRepaymentInvoice,
+  PostFeeRequiredError,
   PublicForumUnauthorizedError,
   WalletRequiredError,
 } from '@/lib/api';
@@ -519,6 +520,32 @@ export function ForumLoader({
   const pendingComposePlaceRef = useRef<ForumPlacePin | null>(null);
   const pendingComposeShopUsernameRef = useRef<string | null>(null);
   const composeFeePaidRef = useRef(false);
+  const [firstPostFree, setFirstPostFree] = useState(false);
+  const belowVerified = account !== null && !roleAtLeast(account.role, 'verified');
+  const missingCount = (account?.missing ?? []).length;
+
+  useEffect(() => {
+    if (session === null || !belowVerified || missingCount > 0) {
+      setFirstPostFree(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      let free = false;
+      try {
+        free = (await fetchComposeTarget(session)).firstPostFree;
+      } catch {
+        // No hint when the fee note cannot be read; Post still asks the api.
+      }
+      if (!cancelled) {
+        setFirstPostFree(free);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, belowVerified, missingCount]);
+
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
@@ -1786,6 +1813,7 @@ export function ForumLoader({
     /* v8 ignore next -- a created note is only applied for a signed-in post */
     if (session === null) return;
     composeFeePaidRef.current = false;
+    setFirstPostFree(false);
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
@@ -1857,6 +1885,65 @@ export function ForumLoader({
     startPayablePoll(session);
   };
 
+  const createNote = (
+    trimmed: string,
+    pendingPhotos: ForumPhotoPayload[],
+    pendingVideo: ForumVideoPayload | null,
+    askGoal:
+      | {
+          goalCurrency: ForumGoalCurrency;
+          goalAmount: string;
+          goalRepayable?: true;
+          goalTermDays?: number;
+        }
+      | undefined,
+    pendingPlace: ForumPlacePin | null,
+    sessionToken: string,
+  ): Promise<ForumMessage> => {
+    const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
+    const shopHandle = composeShopUsername(feed, shopUsername);
+    const shopAccount = shopHandle === null ? {} : { shopUsername: shopHandle };
+    return pendingVideo !== null
+      ? postMessageVideo(sessionToken, {
+          text: trimmed,
+          video: pendingVideo.file,
+          poster: pendingVideo.poster,
+          ...(askGoal !== undefined ? askGoal : {}),
+          ...placeFields,
+          ...shopAccount,
+        })
+      : postMessage(sessionToken, {
+          text: trimmed,
+          ...(pendingPhotos.length === 0
+            ? {}
+            : {
+                photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
+                  contentType,
+                  data,
+                  ...(takenAt === undefined ? {} : { takenAt }),
+                })),
+              }),
+          ...(askGoal !== undefined ? askGoal : {}),
+          ...placeFields,
+          ...shopAccount,
+        });
+  };
+
+  const showCreatedNote = (
+    created: ForumMessage,
+    pendingPhotos: ForumPhotoPayload[],
+    pendingVideo: ForumVideoPayload | null,
+    sessionToken: string,
+  ): void => {
+    applyCreatedNote(created, pendingPhotos, pendingVideo);
+    pendingPostRef.current = null;
+    const current = useAuthStore.getState();
+    if (current.session !== sessionToken || current.account === null) {
+      return;
+    }
+    setAccount({ ...current.account, hasPosted: true });
+  };
+
   const runNotePost = async (
     trimmed: string,
     pendingPhotos: ForumPhotoPayload[],
@@ -1883,13 +1970,32 @@ export function ForumLoader({
         !roleAtLeast(account.role, 'verified') &&
         !composeFeePaidRef.current
       ) {
+        const target = await fetchComposeTarget(session);
+        if (target.firstPostFree) {
+          try {
+            const created = await createNote(
+              trimmed,
+              pendingPhotos,
+              pendingVideo,
+              askGoal,
+              pendingPlace,
+              session,
+            );
+            showCreatedNote(created, pendingPhotos, pendingVideo, session);
+            return;
+          } catch (err) {
+            if (!(err instanceof PostFeeRequiredError)) {
+              throw err;
+            }
+            setFirstPostFree(false);
+          }
+        }
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
         const shopHandle = composeShopUsername(feed, shopUsername);
         const postAfterPay =
           hasMedia || askGoal !== undefined || pendingPlace !== null || shopHandle !== null;
         pendingComposePlaceRef.current = pendingPlace;
         pendingComposeShopUsernameRef.current = shopHandle;
-        const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
           target.messageId,
@@ -1920,41 +2026,15 @@ export function ForumLoader({
         awaitingPay = true;
         return;
       }
-      const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
-      const shopHandle = composeShopUsername(feed, shopUsername);
-      const shopAccount = shopHandle === null ? {} : { shopUsername: shopHandle };
-      const created =
-        pendingVideo !== null
-          ? await postMessageVideo(session, {
-              text: trimmed,
-              video: pendingVideo.file,
-              poster: pendingVideo.poster,
-              ...(askGoal !== undefined ? askGoal : {}),
-              ...placeFields,
-              ...shopAccount,
-            })
-          : await postMessage(session, {
-              text: trimmed,
-              ...(pendingPhotos.length === 0
-                ? {}
-                : {
-                    photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
-                      contentType,
-                      data,
-                      ...(takenAt === undefined ? {} : { takenAt }),
-                    })),
-                  }),
-              ...(askGoal !== undefined ? askGoal : {}),
-              ...placeFields,
-              ...shopAccount,
-            });
-      applyCreatedNote(created, pendingPhotos, pendingVideo);
-      pendingPostRef.current = null;
-      const current = useAuthStore.getState();
-      if (current.session !== session || current.account === null) {
-        return;
-      }
-      setAccount({ ...current.account, hasPosted: true });
+      const created = await createNote(
+        trimmed,
+        pendingPhotos,
+        pendingVideo,
+        askGoal,
+        pendingPlace,
+        session,
+      );
+      showCreatedNote(created, pendingPhotos, pendingVideo, session);
     } catch (err) {
       if (err instanceof WalletRequiredError) {
         setOverlayRequirement('wallet');
@@ -2773,6 +2853,7 @@ export function ForumLoader({
           setAttempt((n) => n + 1);
         }}
         formError={formError}
+        firstPostFree={firstPostFree}
         photoDrafts={photoDrafts}
         videoDraft={videoDraft}
         onPickFiles={onPickFiles}

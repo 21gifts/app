@@ -70,6 +70,7 @@ vi.mock('@/lib/api', () => ({
   PublicForumUnauthorizedError: class PublicForumUnauthorizedError extends Error {},
   CannotReceiveError: class CannotReceiveError extends Error {},
   WalletRequiredError: class WalletRequiredError extends Error {},
+  PostFeeRequiredError: class PostFeeRequiredError extends Error {},
   NoteDeletedError: class NoteDeletedError extends Error {
     constructor() {
       super('This note was deleted');
@@ -139,6 +140,7 @@ import {
   setMessageShopText,
   fetchShopNoteEdits,
   setName,
+  PostFeeRequiredError,
   WalletRequiredError,
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
@@ -423,7 +425,7 @@ beforeEach(() => {
   publicListMock.mockResolvedValue({ messages: [], nextCursor: null });
   publicPhotoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
   publicRepliesMock.mockResolvedValue([]);
-  composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0 });
+  composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0, firstPostFree: false });
   invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
   fetchNotificationsMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
   markNotificationReadMock.mockResolvedValue({
@@ -3508,6 +3510,173 @@ describe('ForumLoader', () => {
     expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
   });
 
+  it('posts a free first post directly and switches to All', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: false },
+    });
+    composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0, firstPostFree: true });
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({ ...SAMPLE, id: 'first', text: 'My first note', sats: 0 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Your first post is free.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'My first note' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByText('My first note')).toBeTruthy();
+    });
+    expect(postMock).toHaveBeenCalledWith('sess', { text: 'My first note' });
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
+    expect(useAuthStore.getState().account?.hasPosted).toBe(true);
+  });
+
+  it('posts a free first video post directly', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true },
+    });
+    composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0, firstPostFree: true });
+    fetchMock.mockResolvedValue(forumPage([]));
+    const file = new File(['v'], 'clip.mp4', { type: 'video/mp4' });
+    const poster = new Blob(['p']);
+    isVideoMock.mockReturnValue(true);
+    prepareVideoMock.mockResolvedValue({
+      ok: true,
+      video: { file, poster, previewUrl: 'blob:first-video' },
+    });
+    postVideoMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'first-video',
+      text: 'Clip',
+      sats: 0,
+      hasVideo: true,
+      videoContentType: 'video/mp4',
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Your first post is free.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Clip' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(postVideoMock).toHaveBeenCalledWith('sess', {
+        text: 'Clip',
+        video: file,
+        poster,
+      });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the fee when the api refuses a free first post', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true },
+    });
+    composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0, firstPostFree: true });
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new PostFeeRequiredError('A post needs a Bitcoin payment'));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Your first post is free.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, 'Hello gifts', NO_RATE_SHOWN);
+    });
+    expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hello gifts' });
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+  });
+
+  it('shows the request error when a free first post fails otherwise', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true },
+    });
+    composeTargetMock.mockResolvedValue({ messageId: 'fee-note', sats: 0, firstPostFree: true });
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new Error('Could not post your message'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Your first post is free.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Your first post is free.')).toBeTruthy();
+  });
+
+  it('shows no first-post hint when the fee note cannot be read', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true },
+    });
+    composeTargetMock.mockRejectedValue(new Error('Messages are unavailable'));
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+    });
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+  });
+
+  it('does not ask for the first-post hint for a verified member', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    expect(composeTargetMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+  });
+
+  it('drops a stale first-post answer after the session ends', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true },
+    });
+    let resolveTarget: (value: {
+      messageId: string;
+      sats: number;
+      firstPostFree: boolean;
+    }) => void = () => {};
+    composeTargetMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveTarget = resolve;
+      }),
+    );
+    fetchMock.mockResolvedValue(forumPage([]));
+    const view = renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(composeTargetMock).toHaveBeenCalledWith('sess');
+    });
+    view.unmount();
+    resolveTarget({ messageId: 'fee-note', sats: 0, firstPostFree: true });
+    await Promise.resolve();
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+  });
+
   it('restores the caption when compose-pay is cancelled', async () => {
     useAuthStore.setState({
       session: 'sess',
@@ -6499,7 +6668,8 @@ describe('ForumLoader', () => {
     });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(screen.getByRole('alert').textContent).toMatch(/8000/);
-    expect(composeTargetMock).not.toHaveBeenCalled();
+    // Only the first-post check on mount; the reply never asks for a fee note.
+    expect(composeTargetMock).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a 403 compose-pay whose prefix would exceed 8000 characters', async () => {

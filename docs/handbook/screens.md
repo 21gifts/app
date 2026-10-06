@@ -890,6 +890,12 @@ First visit: the dismissible living-room laws hint box is visible (two laws plus
 
 ![21.gifts welcome laws](images/welcome-laws.png)
 
+### Variant: first-post-free
+
+A member below verified who has never posted a top-level note (their About me note does not count) sees **Your first post is free.** (`forum.firstPostFree`) in muted text under the message composer, below Post. Post then creates the note directly, with no invoice and no pay sheet, and shows it as after a paid post: the feed switches to All and the composer clears. If the api no longer allows the free post (for example another first post got there first), the same Post opens the normal 1-sat posting fee instead. Verified members never see the line; they already post without a fee.
+
+![21.gifts welcome first post free](images/welcome-first-post-free.png)
+
 ### Variant: moderation
 
 A moderator sees an icon-only Delete post control in the note footer icon row with copy; confirming wraps to the next line. Other roles do not see it. The server independently checks the live role.

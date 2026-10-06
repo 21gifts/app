@@ -879,6 +879,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'first-post-free',
+    image: 'welcome-first-post-free.png',
+    visual: 'state-welcome-first-post-free',
+    needle: 'state /welcome first-post-free',
+  },
+  {
+    route: '/welcome',
     id: 'moderation',
     image: 'welcome-moderation.png',
     visual: 'state-welcome-moderation',

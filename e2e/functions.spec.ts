@@ -5348,6 +5348,76 @@ test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', 
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
 
+async function stubFirstPostFree(page: Page): Promise<void> {
+  await page.route('**/messages/compose-target', async (route) => {
+    const res = await route.fetch();
+    const body = (await res.json()) as Record<string, unknown>;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...body, firstPostFree: true }),
+    });
+  });
+}
+
+test('Function: fetchComposeTarget — a free first post is created without an invoice', async ({
+  page,
+  request,
+}) => {
+  await stubFirstPostFree(page);
+  let invoiced = false;
+  page.on('request', (req) => {
+    if (
+      req.method() === 'POST' &&
+      /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname)
+    ) {
+      invoiced = true;
+    }
+  });
+  await reachWelcome(page, request);
+  await expect(page.getByText('Your first post is free.')).toBeVisible();
+  await page.getByLabel('Your message').fill('My first note is free');
+  const created = page.waitForResponse(
+    (res) => res.request().method() === 'POST' && new URL(res.url()).pathname === '/forum/messages',
+  );
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  expect((await created).status()).toBe(200);
+  await expect(page.getByText('My first note is free')).toBeVisible();
+  await expect(page.getByLabel('Your message')).toHaveValue('');
+  await expect(page.getByText('Your first post is free.')).toHaveCount(0);
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toHaveCount(0);
+  expect(invoiced).toBe(false);
+});
+
+test('Function: PostFeeRequiredError — a refused free first post asks for the posting fee', async ({
+  page,
+  request,
+}) => {
+  await stubFirstPostFree(page);
+  await page.route('**/forum/messages', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'A post needs a Bitcoin payment' }),
+    });
+  });
+  await reachWelcome(page, request);
+  await expect(page.getByText('Your first post is free.')).toBeVisible();
+  await page.getByLabel('Your message').fill('Hello gifts');
+  const invoice = page.waitForRequest(
+    (req) =>
+      req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
+  );
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await invoice;
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByText('Your first post is free.')).toHaveCount(0);
+});
+
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {
   await openPayInvoice(page, request);
 });
