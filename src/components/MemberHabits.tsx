@@ -67,6 +67,7 @@ export function MemberHabits(): ReactElement {
   const listSettled = useRef(false);
   const listAlive = useRef(true);
   const postedKeys = useRef(new Set<string>());
+  const postedForSession = useRef<string | null>(null);
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
   const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
@@ -86,7 +87,11 @@ export function MemberHabits(): ReactElement {
     const generation = listGeneration.current + 1;
     listGeneration.current = generation;
     listSettled.current = false;
-    postedKeys.current.clear();
+    // Try again keeps a successful post from being sent again. A new session may send it.
+    if (postedForSession.current !== session) {
+      postedKeys.current.clear();
+      postedForSession.current = session;
+    }
     setLoading(true);
     setError(false);
     void fetchMemberHabits(session).then(

@@ -500,6 +500,66 @@ describe('MemberHabits', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('does not post the same action again after Try again reloads the list', async () => {
+    let posts = 0;
+    let gets = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          return json({ ok: true });
+        }
+        gets += 1;
+        if (gets === 2) {
+          throw new Error('refresh');
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addName = screen.getByLabelText('Name');
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Held' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+    expect(addName.value).toBe('Held');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(gets).toBe(3);
+    });
+    expect(addName.value).toBe('Held');
+
+    const settledForm = formsNamed('Add habit')[0];
+    if (settledForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(settledForm);
+    await waitFor(() => {
+      expect(gets).toBe(4);
+      expect(addName.value).toBe('');
+    });
+    expect(posts).toBe(1);
+  });
+
   it('does not replace the list load that started while a save was still posting', async () => {
     let posts = 0;
     let gets = 0;
