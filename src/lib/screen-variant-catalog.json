@@ -690,6 +690,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:first-post-free",
+    "label": "/welcome first-post-free",
+    "visual": "state-welcome-first-post-free",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:moderation",
     "label": "/welcome moderation",
     "visual": "state-welcome-moderation",
