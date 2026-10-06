@@ -896,6 +896,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Member `alice` without an open charge: a Spark invoice for any amount,
+  // carrying the trimmed message, so the in-app wallet pays without a fee.
+  if (method === 'POST' && pathName === '/pay/alice/invoice') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const amountSats = parsed?.amountSats;
+    if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
+      json(res, 400, { error: 'Invalid amount' });
+      return;
+    }
+    const comment = typeof parsed?.comment === 'string' ? parsed.comment.trim() : '';
+    json(res, 200, {
+      pr: `lnbc${amountSats}n1alice`,
+      amountSats,
+      sparkInvoice: `sparkrt1alice${amountSats}${comment === '' ? '' : `-${encodeURIComponent(comment)}`}`,
+    });
+    return;
+  }
+
   if (method === 'POST' && (pathName === '/lnurl/pay-request' || pathName === '/lnurl/invoice')) {
     const token = bearer(req);
     if (token === null || !byToken.has(token)) {

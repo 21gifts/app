@@ -23,9 +23,9 @@
 
 ## Endpoint: POST /pay/[username]/invoice
 
-- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats, sparkInvoice }`. `sparkInvoice` is a Spark invoice for the shop's pending charge when `amountSats` is that charge's amount and the api issues Spark invoices, otherwise `null`.
+- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` for the in-app wallet.
+- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]
