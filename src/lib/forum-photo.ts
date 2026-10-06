@@ -27,15 +27,32 @@ export type ForumPhotoPayload = {
 export type PrepareForumPhotoResult =
   { ok: true; photo: ForumPhotoPayload } | { ok: false; error: 'unsupported' | 'tooLarge' };
 
-const FORUM_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const FORUM_PHOTO_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
+
+/** Photo file names a phone camera may hand over without a MIME type. */
+const FORUM_PHOTO_NAME = /\.(jpe?g|png|webp|heic|heif)$/i;
 
 /**
- * True when `file.type` is JPEG, PNG, or WebP.
+ * True when `file.type` is JPEG, PNG, WebP, HEIC, or HEIF, or when the type is
+ * empty and the file name has one of those extensions.
+ *
+ * A camera capture can arrive as HEIC or without a type. The browser decodes
+ * it and {@link prepareForumPhoto} re-encodes it as JPEG; a browser that
+ * cannot decode it makes that call throw, which callers show as unsupported.
  *
  * @param file - Browser file from a file input.
- * @returns Whether the mime type is accepted for forum photos.
+ * @returns Whether the file is accepted for forum photos.
  */
 export function isForumPhotoFile(file: File): boolean {
+  if (file.type === '') {
+    return FORUM_PHOTO_NAME.test(file.name);
+  }
   return FORUM_PHOTO_TYPES.has(file.type);
 }
 
@@ -129,7 +146,7 @@ export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoRe
   }
 
   const bytes = await readFileBytes(file);
-  const takenAt = file.type === 'image/jpeg' ? readJpegTakenAt(bytes) : null;
+  const takenAt = readJpegTakenAt(bytes);
   const loaded = await loadImageSource(file);
   try {
     const longest = Math.max(loaded.width, loaded.height);

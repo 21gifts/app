@@ -482,7 +482,7 @@ describe('ProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
     fireEvent.change(screen.getByLabelText('About me'), { target: { value: 'Hello' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo' }));
-    const aboutInput = [...document.querySelectorAll('input[type="file"]')].find(
+    const aboutInput = [...document.querySelectorAll('input[type="file"]:not([capture])')].find(
       (input) => input.getAttribute('name') === null,
     );
     fireEvent.change(aboutInput as HTMLInputElement, {
@@ -848,7 +848,7 @@ describe('ProfileScreen', () => {
     vi.mocked(putWideBanner).mockResolvedValue(undefined);
     renderWithLocale(<ProfileScreen />);
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const inputs = [...document.querySelectorAll('input[type="file"]')].filter(
+    const inputs = [...document.querySelectorAll('input[type="file"]:not([capture])')].filter(
       (input) => input.getAttribute('name') === null,
     );
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'shot.jpg', {
@@ -896,6 +896,76 @@ describe('ProfileScreen', () => {
         data: 'pic',
       });
     });
+  });
+
+  it('takes the profile photo and the wide image with the camera beside each empty slot', async () => {
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'selfie',
+        previewUrl: 'data:image/jpeg;base64,selfie',
+      },
+    });
+    vi.mocked(putProfilePhoto).mockResolvedValue(undefined);
+    vi.mocked(putWideBanner).mockResolvedValue(undefined);
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Add a wide image' });
+    await screen.findByRole('button', { name: 'Add a profile photo' });
+    expect(screen.queryByText('Take a profile photo')).toBeNull();
+    expect(screen.queryByText('Take a wide photo')).toBeNull();
+    const selfie = document.querySelector('input[name="profile-photo-camera"]') as HTMLInputElement;
+    const wide = document.querySelector('input[name="profile-banner-camera"]') as HTMLInputElement;
+    expect(selfie.getAttribute('capture')).toBe('user');
+    expect(selfie.getAttribute('accept')).toBe('image/*');
+    expect(wide.getAttribute('capture')).toBe('environment');
+    expect(wide.getAttribute('accept')).toBe('image/*');
+    const selfieClick = vi.spyOn(selfie, 'click').mockImplementation(() => undefined);
+    const wideClick = vi.spyOn(wide, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a profile photo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Take a wide photo' }));
+    expect(selfieClick).toHaveBeenCalledTimes(1);
+    expect(wideClick).toHaveBeenCalledTimes(1);
+
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(wide, { target: { files: [shot] } });
+    expect(screen.getByText('Drag the photo to choose the wide image')).toBeTruthy();
+    expect(prepareForumPhoto).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this crop' }));
+    await waitFor(() => {
+      expect(putWideBanner).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'wide',
+      });
+    });
+    fireEvent.change(selfie, { target: { files: [shot] } });
+    await waitFor(() => {
+      expect(prepareForumPhoto).toHaveBeenCalledWith(shot);
+      expect(putProfilePhoto).toHaveBeenCalledWith('tok', {
+        contentType: 'image/jpeg',
+        data: 'selfie',
+      });
+    });
+  });
+
+  it('says a camera photo cannot be used when the browser cannot read it', async () => {
+    vi.mocked(prepareForumPhoto).mockRejectedValueOnce(new Error('decode'));
+    vi.mocked(putProfilePhoto).mockClear();
+    renderWithLocale(<ProfileScreen />);
+    await screen.findByRole('button', { name: 'Take a profile photo' });
+    const selfie = document.querySelector('input[name="profile-photo-camera"]') as HTMLInputElement;
+    fireEvent.change(selfie, {
+      target: { files: [new File(['h'], 'IMG_0001.HEIC', { type: 'image/heic' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    expect(putProfilePhoto).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Take a profile photo' }).hasAttribute('disabled'),
+    ).toBe(false);
   });
 
   it('frames a wide image from the empty-slot button instead of rejecting it', async () => {
@@ -1092,7 +1162,7 @@ describe('ProfileScreen', () => {
     });
     fireEvent.change(bannerInput, { target: { files: [wide] } });
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    const aboutPicture = [...document.querySelectorAll('input[type="file"]')].filter(
+    const aboutPicture = [...document.querySelectorAll('input[type="file"]:not([capture])')].filter(
       (input) => input.getAttribute('name') === null,
     )[1] as HTMLInputElement;
     const portrait = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'face.jpg', {

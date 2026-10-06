@@ -10,6 +10,7 @@ import {
   type ChangeEvent,
   type ReactElement,
 } from 'react';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { LinkedText } from '@/components/LinkedText';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -428,7 +429,15 @@ export function AboutMeSection({
     setPreparingPhoto(true);
     void (async () => {
       try {
-        const result = await prepareForumPhoto(file);
+        let result: Awaited<ReturnType<typeof prepareForumPhoto>>;
+        try {
+          result = await prepareForumPhoto(file);
+        } catch {
+          if (generation === photoGeneration.current) {
+            setError(t('profile.about.errorUnsupported'));
+          }
+          return;
+        }
         if (generation !== photoGeneration.current) {
           return;
         }
@@ -619,6 +628,11 @@ export function AboutMeSection({
                   disabled={saving}
                   onChange={handleFileChange}
                 />
+                <CameraPhotoButton
+                  label={t('camera.takePhoto')}
+                  disabled={saving || preparingPhoto}
+                  onChange={handleFileChange}
+                />
                 {onSavePicture !== undefined ? (
                   <>
                     <IconButton
@@ -640,6 +654,12 @@ export function AboutMeSection({
                       accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       disabled={saving}
+                      onChange={handlePictureChange}
+                    />
+                    <CameraPhotoButton
+                      label={t('profile.about.portraitCamera')}
+                      facing="user"
+                      disabled={saving || preparingPhoto}
                       onChange={handlePictureChange}
                     />
                   </>
@@ -665,6 +685,11 @@ export function AboutMeSection({
                       accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       disabled={saving}
+                      onChange={handleBannerChange}
+                    />
+                    <CameraPhotoButton
+                      label={t('profile.about.bannerCamera')}
+                      disabled={saving || preparingPhoto}
                       onChange={handleBannerChange}
                     />
                   </>

@@ -16,6 +16,32 @@ function jpegFile(name = 'shot.jpg'): File {
   return new File([new Uint8Array([0xff, 0xd8, 0xff])], name, { type: 'image/jpeg' });
 }
 
+/** Smallest JPEG whose IFD0 DateTime holds `dateTime` (little-endian Exif). */
+function exifJpegBytes(dateTime: string): Uint8Array<ArrayBuffer> {
+  const bytes = new Uint8Array(64);
+  const view = new DataView(bytes.buffer);
+  const tiff = 12;
+  const valueOffset = 8 + 2 + 12 + 4;
+  bytes.set([0xff, 0xd8, 0xff, 0xe1], 0);
+  bytes.set([0x45, 0x78, 0x69, 0x66, 0, 0], 6);
+  bytes.set([0x49, 0x49], tiff);
+  view.setUint16(tiff + 2, 42, true);
+  view.setUint32(tiff + 4, 8, true);
+  view.setUint16(tiff + 8, 1, true);
+  view.setUint16(tiff + 10, 0x0132, true);
+  view.setUint16(tiff + 12, 2, true);
+  view.setUint32(tiff + 14, dateTime.length + 1, true);
+  view.setUint32(tiff + 18, valueOffset, true);
+  view.setUint32(tiff + 22, 0, true);
+  for (let index = 0; index < dateTime.length; index += 1) {
+    bytes[tiff + valueOffset + index] = dateTime.charCodeAt(index);
+  }
+  const end = tiff + valueOffset + dateTime.length + 1;
+  view.setUint16(4, end - 4, false);
+  bytes.set([0xff, 0xd9], end);
+  return bytes.slice(0, end + 2);
+}
+
 /** jsdom's URL may omit createObjectURL / revokeObjectURL. */
 function stubUrlObjectMethods(): void {
   Object.defineProperty(URL, 'createObjectURL', {
@@ -37,9 +63,30 @@ describe('isForumPhotoFile', () => {
     expect(isForumPhotoFile(new File([], 'a.webp', { type: 'image/webp' }))).toBe(true);
   });
 
+  it('accepts heic and heif from a phone camera', () => {
+    expect(isForumPhotoFile(new File([], 'a.heic', { type: 'image/heic' }))).toBe(true);
+    expect(isForumPhotoFile(new File([], 'a.heif', { type: 'image/heif' }))).toBe(true);
+  });
+
+  it('accepts a camera photo without a type by its file name', () => {
+    expect(isForumPhotoFile(new File([], 'IMG_0001.JPG'))).toBe(true);
+    expect(isForumPhotoFile(new File([], 'image.jpeg'))).toBe(true);
+    expect(isForumPhotoFile(new File([], 'IMG_0002.HEIC'))).toBe(true);
+    expect(isForumPhotoFile(new File([], 'shot.png'))).toBe(true);
+    expect(isForumPhotoFile(new File([], 'shot.webp'))).toBe(true);
+    expect(isForumPhotoFile(new File([], 'shot.heif'))).toBe(true);
+  });
+
   it('rejects other types', () => {
     expect(isForumPhotoFile(new File([], 'a.gif', { type: 'image/gif' }))).toBe(false);
     expect(isForumPhotoFile(new File([], 'a.txt', { type: 'text/plain' }))).toBe(false);
+    expect(isForumPhotoFile(new File([], 'a.jpg', { type: 'text/plain' }))).toBe(false);
+  });
+
+  it('rejects a file without a type whose name is not a photo', () => {
+    expect(isForumPhotoFile(new File([], 'notes.txt'))).toBe(false);
+    expect(isForumPhotoFile(new File([], 'clip.mp4'))).toBe(false);
+    expect(isForumPhotoFile(new File([], 'jpg'))).toBe(false);
   });
 });
 
@@ -90,6 +137,62 @@ describe('prepareForumPhoto', () => {
       ok: true,
       photo: { takenAt: null },
     });
+  });
+
+  it('re-encodes a heic camera photo as jpeg when the browser decodes it', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 8, height: 8, close: vi.fn() }),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/jpeg;base64,smol',
+    );
+    const file = new File([new Uint8Array([0, 0, 0, 24])], 'IMG_0001.HEIC', {
+      type: 'image/heic',
+    });
+    await expect(prepareForumPhoto(file)).resolves.toEqual({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'smol',
+        previewUrl: 'data:image/jpeg;base64,smol',
+        takenAt: null,
+      },
+    });
+  });
+
+  it('reads the capture time of a camera jpeg that arrives without a type', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({ width: 8, height: 8, close: vi.fn() }),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
+      'data:image/jpeg;base64,smol',
+    );
+    const bytes = exifJpegBytes('2026:10:06 09:15:00');
+    const file = new File([bytes], 'image.jpg');
+    Object.defineProperty(file, 'arrayBuffer', {
+      configurable: true,
+      value: async () => bytes.buffer,
+    });
+    await expect(prepareForumPhoto(file)).resolves.toMatchObject({
+      ok: true,
+      photo: { takenAt: '2026-10-06T09:15:00' },
+    });
+  });
+
+  it('throws when the browser cannot decode a heic camera photo', async () => {
+    vi.stubGlobal('createImageBitmap', vi.fn().mockRejectedValue(new Error('decode')));
+    const file = new File([new Uint8Array([0, 0, 0, 24])], 'IMG_0001.HEIC', {
+      type: 'image/heic',
+    });
+    await expect(prepareForumPhoto(file)).rejects.toThrow('decode');
   });
 
   it('encodes a small jpeg without upscaling', async () => {

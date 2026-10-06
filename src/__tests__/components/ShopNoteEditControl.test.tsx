@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -367,7 +367,7 @@ describe('ShopNoteEditControl', () => {
     const stills = [...document.querySelectorAll('img')].map((img) => img.getAttribute('src'));
     expect(stills).toEqual(['blob:copy-0', 'blob:copy-1']);
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:video');
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -720,7 +720,7 @@ describe('ShopNoteEditControl', () => {
         takenAt: '',
       },
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -888,7 +888,7 @@ describe('ShopNoteEditControl', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -926,7 +926,7 @@ describe('ShopNoteEditControl', () => {
     });
     renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const files = Array.from(
       { length: 10 },
       (_, index) => new File(['a'], `${index}.jpg`, { type: 'image/jpeg' }),
@@ -942,6 +942,176 @@ describe('ShopNoteEditControl', () => {
       expect(prepareForumPhoto).toHaveBeenCalledTimes(11);
     });
     expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
+  it('counts room from the stills already added when two picks overlap', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const pending: Array<() => void> = [];
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => {
+            resolve({
+              ok: true,
+              photo: {
+                contentType: 'image/jpeg',
+                data: 'abc',
+                previewUrl: 'data:image/jpeg;base64,abc',
+                takenAt: null,
+              },
+            });
+          });
+        }),
+    );
+    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    const gallery = (await waitFor(() =>
+      document.querySelector('input[type="file"]:not([capture])'),
+    )) as HTMLInputElement;
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    const eight = (): File[] =>
+      Array.from(
+        { length: 8 },
+        (_, index) => new File(['a'], `${index}.jpg`, { type: 'image/jpeg' }),
+      );
+    fireEvent.change(gallery, { target: { files: eight() } });
+    fireEvent.change(camera, { target: { files: eight() } });
+    for (let index = 0; index < 16; index += 1) {
+      await waitFor(() => {
+        expect(pending.length).toBeGreaterThan(index);
+      });
+      await act(async () => {
+        pending[index]!();
+      });
+    }
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+    });
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
+  it('keeps the steps busy while a photo is prepared and drops it after the editor closes', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let finish: () => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () => {
+            resolve({
+              ok: true,
+              photo: {
+                contentType: 'image/jpeg',
+                data: 'abc',
+                previewUrl: 'data:image/jpeg;base64,abc',
+                takenAt: null,
+              },
+            });
+          };
+        }),
+    );
+    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    const camera = (await waitFor(() =>
+      document.querySelector('input[type="file"][capture]'),
+    )) as HTMLInputElement;
+    fireEvent.change(camera, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(true);
+    });
+    expect(screen.getByRole('button', { name: 'Take a photo' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    await act(async () => {
+      finish();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
+    });
+    expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(1);
+
+    fireEvent.change(document.querySelector('input[type="file"][capture]') as HTMLInputElement, {
+      target: { files: [new File(['b'], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(screen.getByRole('button', { name: 'Cancel' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(document.querySelector('input[type="file"][capture]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    await waitFor(() => {
+      expect(document.querySelector('input[type="file"][capture]')).not.toBeNull();
+    });
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Take a photo' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+    await act(async () => {
+      finish();
+    });
+    expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('says why a picked or taken photo cannot be used and clears that on the next good one', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const good = {
+      ok: true as const,
+      photo: {
+        contentType: 'image/jpeg' as const,
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+        takenAt: null,
+      },
+    };
+    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    const camera = (await waitFor(() =>
+      document.querySelector('input[type="file"][capture]'),
+    )) as HTMLInputElement;
+    const shot = new File(['h'], 'IMG_0001.HEIC', { type: 'image/heic' });
+
+    vi.mocked(prepareForumPhoto).mockRejectedValueOnce(new Error('decode'));
+    fireEvent.change(camera, { target: { files: [shot] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+    expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
+
+    vi.mocked(prepareForumPhoto).mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    });
+
+    vi.mocked(prepareForumPhoto).mockResolvedValueOnce({ ok: false, error: 'unsupported' });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Use a JPEG, PNG, or WebP photo');
+    });
+
+    vi.mocked(prepareForumPhoto).mockResolvedValueOnce(good);
+    fireEvent.change(camera, { target: { files: [shot] } });
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(1);
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    vi.mocked(prepareForumPhoto).mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Keep photos under 1 MB');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    await waitFor(() => {
+      expect(document.querySelector('input[type="file"][capture]')).not.toBeNull();
+    });
+    expect(screen.queryByText('Keep photos under 1 MB')).toBeNull();
   });
 
   it('replaces the previous still copies when the editor opens again', async () => {

@@ -64,7 +64,9 @@ test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', as
     }
     return /\/messages\/?$/.test(new URL(req.url()).pathname);
   });
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/taken-at.jpg');
+  await page
+    .locator('input[type="file"]:not([capture])')
+    .setInputFiles('e2e/fixtures/taken-at.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   const body = (await posted).postDataJSON() as {
@@ -1766,7 +1768,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
     });
   });
   await page.goto('/welcome');
-  const input = page.locator('input[type="file"]');
+  const input = page.locator('input[type="file"]:not([capture])');
   await expect(input).toHaveAttribute('accept', /image\/jpeg/);
   await expect(input).toHaveAttribute('accept', /image\/png/);
   await expect(input).toHaveAttribute('accept', /image\/webp/);
@@ -1848,7 +1850,7 @@ async function reachWelcomeVerified(page: Page, request: APIRequestContext): Pro
 }
 
 async function attachTinyJpeg(page: Page): Promise<void> {
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -1966,12 +1968,106 @@ test('Function: ForumBoard — empty post without a photo is rejected', async ({
 
 test('Function: ForumLoader — remove photo clears the preview', async ({ page, request }) => {
   await reachWelcome(page, request);
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Remove photo' }).click();
   await expect(page.getByAltText('Selected photo')).toHaveCount(0);
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
+});
+
+test('Function: CameraPhotoButton — the composer camera opens a photo-only camera input', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  const camera = page.locator('input[type="file"][capture]');
+  await expect(camera).toHaveCount(1);
+  await expect(camera).toHaveAttribute('capture', 'environment');
+  await expect(camera).toHaveAttribute('accept', /^image\/\*$/);
+  await expect(camera).not.toHaveAttribute('multiple', /.*/);
+  const gallery = page.locator('input[type="file"]:not([capture])');
+  await expect(gallery).toHaveAttribute('accept', /video\/mp4/);
+  await expect(gallery).not.toHaveAttribute('capture', /.*/);
+  const button = page.getByRole('button', { name: 'Take a photo' });
+  await expect(button).toBeVisible();
+  await expect(page.getByText('Take a photo')).toHaveCount(0);
+  const chooserPromise = page.waitForEvent('filechooser');
+  await button.click();
+  const chooser = await chooserPromise;
+  expect(chooser.isMultiple()).toBe(false);
+  expect(await chooser.element().getAttribute('capture')).toBe('environment');
+});
+
+test('Function: CameraPhotoButton — the composer photo row fits a 320 px phone', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.setViewportSize({ width: 320, height: 700 });
+  for (const name of ['Add a photo or video', 'Take a photo', 'Add a place']) {
+    const box = await page.getByRole('button', { name, exact: true }).boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+  }
+  const message = await page.getByLabel('Your message').boundingBox();
+  expect(message?.width ?? 0).toBeGreaterThanOrEqual(120);
+  expect(await page.evaluate(pageFrameProblems)).toEqual([]);
+});
+
+test('Function: CameraPhotoButton — a camera photo keeps its capture time and posts like a gallery photo', async ({
+  page,
+  request,
+}) => {
+  await reachWelcomeVerified(page, request);
+  const posted = page.waitForRequest((req) => {
+    if (req.method() !== 'POST') {
+      return false;
+    }
+    return /\/messages\/?$/.test(new URL(req.url()).pathname);
+  });
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Take a photo' }).click();
+  await (await chooserPromise).setFiles('e2e/fixtures/taken-at.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  const body = (await posted).postDataJSON() as {
+    photos?: { contentType?: string; takenAt?: string }[];
+  };
+  expect(body.photos?.[0]?.contentType).toBe('image/jpeg');
+  expect(body.photos?.[0]?.takenAt).toBe('2020-01-01T00:00:00');
+});
+
+test('Function: CameraPhotoButton — gallery and camera photos share the limit of 10', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page
+    .locator('input[type="file"]:not([capture])')
+    .setInputFiles(Array.from({ length: 9 }, () => 'e2e/fixtures/tiny.jpg'));
+  await expect(page.getByAltText('Selected photo')).toHaveCount(9, { timeout: 10_000 });
+  await page.locator('input[type="file"][capture]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toHaveCount(10, { timeout: 10_000 });
+  await page.locator('input[type="file"][capture]').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByText('You can add up to 10 photos')).toBeVisible();
+  await expect(page.getByAltText('Selected photo')).toHaveCount(10);
+});
+
+test('Function: CameraPhotoButton — a camera photo this browser cannot read shows the photo error', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.locator('input[type="file"][capture]').setInputFiles({
+    name: 'IMG_0001.HEIC',
+    mimeType: 'image/heic',
+    buffer: Buffer.from('not a picture this browser can decode'),
+  });
+  await expect(
+    page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'),
+  ).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByAltText('Selected photo')).toHaveCount(0);
 });
 
 test('Function: proxyMeGet — GET /me with bearer is 200', async ({ request }) => {
@@ -2092,7 +2188,7 @@ test('Function: fetchAboutMePhoto — signed-in profile About me photo is visibl
   await page.getByRole('button', { name: 'Write your About me' }).click();
   await page.getByRole('button', { name: 'Add a photo' }).click();
   await page
-    .locator('input[type="file"]:not([name])')
+    .locator('input[type="file"]:not([name]):not([capture])')
     .first()
     .setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
@@ -3942,6 +4038,94 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
   });
   await page.goto('/messages?c=conv-21');
   await expect(page.getByLabel(/amount/i)).toBeVisible();
+});
+
+test('Function: CameraPhotoButton — the inbox thread camera adds a photo through the same handler', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        hasPosted: true,
+      }),
+    });
+  });
+  await page.route(/\/conversations$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        conversations: [
+          {
+            id: 'conv-21',
+            kind: 'member_member',
+            name: 'Bob',
+            lastText: 'Hello team',
+            lastAt: '2026-08-28T12:00:00.000Z',
+            lastFromMe: false,
+            lastSats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm1',
+            name: 'Bob',
+            text: 'Hello team',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByLabel(/amount/i)).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 700 });
+  const camera = page.locator('input[type="file"][capture]');
+  await expect(camera).toHaveAttribute('capture', 'environment');
+  await expect(page.locator('input[type="file"]:not([capture])')).toHaveAttribute(
+    'accept',
+    'image/jpeg,image/png,image/webp',
+  );
+  for (const name of ['Add a photo', 'Take a photo']) {
+    const box = await page.getByRole('button', { name, exact: true }).boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+  }
+  const message = await page.getByLabel('Your message').boundingBox();
+  expect(message?.width ?? 0).toBeGreaterThanOrEqual(120);
+  expect(await page.evaluate(pageFrameProblems)).toEqual([]);
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Take a photo', exact: true }).click();
+  await (await chooserPromise).setFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
 });
 
 test('Function: markConversationRead — opening a thread POSTs read', async ({ page }) => {
@@ -10835,34 +11019,52 @@ test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) =>
 test('Function: isForumVideoFile — composer accept includes mp4', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
-  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await expect(page.locator('input[type="file"]:not([capture])')).toHaveAttribute(
+    'accept',
+    /video\/mp4/,
+  );
+  await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
 test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
-  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/webm/);
+  await expect(page.locator('input[type="file"]:not([capture])')).toHaveAttribute(
+    'accept',
+    /video\/webm/,
+  );
 });
 test('Function: postMessageVideo — composer accept includes quicktime', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
-  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/quicktime/);
+  await expect(page.locator('input[type="file"]:not([capture])')).toHaveAttribute(
+    'accept',
+    /video\/quicktime/,
+  );
 });
 test('Function: forumVideoSrc — composer accept includes mov', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
-  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.mov/);
+  await expect(page.locator('input[type="file"]:not([capture])')).toHaveAttribute(
+    'accept',
+    /\.mov/,
+  );
 });
 test('Function: isForumVideoFile — composer accept includes m4v', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
-  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/x-m4v/);
+  await expect(page.locator('input[type="file"]:not([capture])')).toHaveAttribute(
+    'accept',
+    /video\/x-m4v/,
+  );
 });
 test('Function: prepareForumVideo — composer accept includes m4v extension', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
-  await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.m4v/);
+  await expect(page.locator('input[type="file"]:not([capture])')).toHaveAttribute(
+    'accept',
+    /\.m4v/,
+  );
 });
 
 test('Function: forumVideoSrc — video note renders video.mp4 src', async ({ page }) => {
@@ -10914,7 +11116,7 @@ test('Function: prepareForumVideo — attaching an mp4 shows a preview', async (
     });
   });
   await page.goto('/welcome');
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
 
@@ -10934,7 +11136,7 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
     await route.fallback();
   });
   await page.goto('/welcome');
-  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+  await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect
     .poll(
       async () => {
@@ -12579,6 +12781,106 @@ test('Function: RepaymentPlanChart — dates run from the first day to the last'
 });
 
 /** Signed-in profile with an empty wide-image slot and the cropper open on a portrait. */
+async function openEmptyProfileImages(page: Page, picturePuts: unknown[]): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        donatedSats: 0,
+        receivedSats: 0,
+        donatedOverTime: [],
+        receivedOverTime: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
+      }),
+    });
+  });
+  await page.route(/\/pictures\/me$/, async (route) => {
+    if (route.request().method() === 'PUT') {
+      picturePuts.push(route.request().postDataJSON());
+      await route.fulfill({ status: 204, body: '' });
+      return;
+    }
+    await route.fulfill({ status: 404, body: '' });
+  });
+  await page.route(/\/banners\/me$/, async (route) => {
+    await route.fulfill({ status: 404, body: '' });
+  });
+  await page.goto('/profile');
+  await expect(page.getByText('alice@21.gifts')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+}
+
+test('Function: CameraPhotoButton — the profile photo uses the front camera and saves like a picked photo', async ({
+  page,
+}) => {
+  const picturePuts: unknown[] = [];
+  await openEmptyProfileImages(page, picturePuts);
+  const selfie = page.locator('input[name="profile-photo-camera"]');
+  await expect(selfie).toHaveAttribute('capture', 'user');
+  await expect(selfie).toHaveAttribute('accept', /^image\/\*$/);
+  const wide = page.locator('input[name="profile-banner-camera"]');
+  await expect(wide).toHaveAttribute('capture', 'environment');
+  await expect(page.getByRole('button', { name: 'Take a wide photo' })).toBeVisible();
+  const chooserPromise = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Take a profile photo' }).click();
+  const chooser = await chooserPromise;
+  expect(await chooser.element().getAttribute('name')).toBe('profile-photo-camera');
+  await page.setViewportSize({ width: 320, height: 700 });
+  // The settings pills further down this card are outside this change, so the
+  // frame check covers the photo controls rather than the whole page.
+  const frame = await page.locator('[data-app-frame]').boundingBox();
+  expect(frame).not.toBeNull();
+  for (const name of [
+    'Add a profile photo',
+    'Take a profile photo',
+    'Add a wide image',
+    'Take a wide photo',
+  ]) {
+    const box = await page.getByRole('button', { name, exact: true }).boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(box?.x ?? -1).toBeGreaterThanOrEqual(frame?.x ?? 0);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(
+      (frame?.x ?? 0) + (frame?.width ?? 320),
+    );
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await chooser.setFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+  await expect.poll(() => picturePuts.length, { timeout: 10_000 }).toBe(1);
+  expect(picturePuts[0]).toMatchObject({ photo: { contentType: 'image/jpeg' } });
+});
+
 async function openWideImageCrop(page: Page, puts: unknown[]): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
