@@ -72,7 +72,8 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * sheet's own long-poll closes it on confirmation. Too little balance shows an
  * alert with the member's own address and QR when their username gives one.
  * Without a wallet the member can open here it says so, and a failed prepare
- * offers **Try again**. It never shows an invoice QR or hands the payment to
+ * offers **Try again**. A passkey without PRF output says that this phone or
+ * browser cannot hold a 21.gifts wallet, with **Try again**. It never shows an invoice QR or hands the payment to
  * another wallet.
  *
  * @param props - Requests, shown amount, and rate day.
@@ -98,6 +99,17 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
         <>
           <p role="alert" className="px-6 text-center text-sm text-app-danger">
             {t('wallet.payFailed')}
+          </p>
+          <Button type="button" variant="secondary" onClick={retry}>
+            {t('wallet.payRetry')}
+          </Button>
+        </>
+      );
+    case 'prfUnsupported':
+      return (
+        <>
+          <p role="alert" className="px-6 text-center text-sm text-app-danger">
+            {t('wallet.prfUnsupported')}
           </p>
           <Button type="button" variant="secondary" onClick={retry}>
             {t('wallet.payRetry')}

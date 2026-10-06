@@ -60,11 +60,11 @@ describe('WalletSetupNotice', () => {
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
-  it('noPrf says this device cannot hold a wallet and offers only Log out', () => {
+  it('noPrf says this phone or browser cannot hold a wallet and offers only Log out', () => {
     show('noPrf');
-    expect(screen.getByRole('dialog', { name: 'This passkey cannot hold a wallet' })).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(
-      'This password manager or device cannot hold a wallet.',
+    expect(screen.getByRole('dialog', { name: 'No wallet on this phone or browser' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
     );
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Log out']);
   });

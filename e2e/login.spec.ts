@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
+import { installNoPrfWebAuthn, NO_PRF_REGISTER_BEGIN, PRF_UNSUPPORTED_MESSAGE } from './no-prf';
 
 async function agreeToLivingRoomRules(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/setup\/rules/);
@@ -197,6 +198,49 @@ test('login Open a new account creates a passkey after the choice', async ({ pag
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
   await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
+});
+
+test('sign-up on a browser whose passkey has no PRF says it cannot hold a wallet', async ({
+  page,
+}) => {
+  let finishes = 0;
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(NO_PRF_REGISTER_BEGIN),
+    });
+  });
+  await page.route(/\/auth\/passkey\/register\/finish$/, async (route) => {
+    finishes += 1;
+    await route.abort();
+  });
+  await installNoPrfWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE })).toBeVisible();
+  await expect(page.getByText('Something went wrong. Please try again.')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/login/);
+  expect(finishes).toBe(0);
+});
+
+test('a failed sign-up request keeps the generic error, not the PRF message', async ({ page }) => {
+  await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+    await route.fulfill({ status: 503, body: 'unavailable' });
+  });
+  await installNoPrfWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+  await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Something went wrong. Please try again.' }),
+  ).toBeVisible();
+  await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toHaveCount(0);
 });
 
 test('login Log in with existing account does not start register', async ({ page }) => {

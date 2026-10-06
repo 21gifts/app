@@ -449,6 +449,28 @@ describe('useWalletPay one tap unlock and pay', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('says the passkey cannot hold the wallet when the prompt gives no PRF output', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    lockedWith(send);
+    vi.mocked(unlockWalletPhrase).mockResolvedValue('noPrf');
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => {
+      result.current.unlock();
+    });
+    expect(result.current.view).toBe('prfUnsupported');
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(result.current.view).toBe('unlock');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('ignores the prf-unsupported pin outside a Playwright build', () => {
+    window.history.replaceState({}, '', '/welcome?visual=wallet-pay-prf-unsupported');
+    setWallet('disabled');
+    expect(renderHook(() => useWalletPay(SPARK, PR, 21)).result.current.view).toBe('unavailable');
+  });
+
   it('never pays on its own when the wallet fails after the unlock and opens later', async () => {
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     lockedWith(send);
@@ -982,6 +1004,7 @@ describe('useWalletPay visual pins', () => {
     ['wallet-pay-paying', 'paying'],
     ['wallet-pay-insufficient', 'insufficient'],
     ['wallet-pay-failed', 'failed'],
+    ['wallet-pay-prf-unsupported', 'prfUnsupported'],
     ['wallet-pay-unconfirmed', 'unconfirmed'],
   ] as const;
 
