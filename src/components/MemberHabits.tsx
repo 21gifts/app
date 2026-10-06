@@ -54,6 +54,7 @@ export function MemberHabits(): ReactElement {
   const [addNotes, setAddNotes] = useState('');
   const [addCadence, setAddCadence] = useState<'daily' | 'weekly'>('daily');
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
+  const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null);
   const [editByHabitId, setEditByHabitId] = useState<
     Record<string, { name: string; description: string; notes: string }>
   >({});
@@ -351,23 +352,52 @@ export function MemberHabits(): ReactElement {
                             <Pencil aria-hidden="true" className="h-4 w-4" />
                           </IconButton>
                         )}
-                        <IconButton
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          aria-label={t('habit.archive')}
-                          onClick={() => {
-                            if (!window.confirm(t('habit.archiveConfirm'))) {
-                              return;
-                            }
-                            void submit({ action: 'archive', id: habit.id }, false);
-                          }}
-                        >
-                          <Archive aria-hidden="true" className="h-4 w-4" />
-                        </IconButton>
+                        {confirmArchiveId === habit.id ? null : (
+                          <IconButton
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            aria-label={t('habit.archive')}
+                            onClick={() => {
+                              setConfirmArchiveId(habit.id);
+                            }}
+                          >
+                            <Archive aria-hidden="true" className="h-4 w-4" />
+                          </IconButton>
+                        )}
                       </div>
                     ) : null}
                   </div>
+                  {confirmArchiveId === habit.id ? (
+                    <div
+                      role="group"
+                      aria-label={t('habit.archiveConfirm')}
+                      className="flex flex-col gap-2 rounded-xl border border-app-border p-3"
+                    >
+                      <p className="text-sm text-app-fg">{t('habit.archiveConfirm')}</p>
+                      <div className="flex gap-3">
+                        <IconButton
+                          type="button"
+                          aria-label={t('habit.archiveConfirmAction')}
+                          onClick={() => {
+                            setConfirmArchiveId(null);
+                            void submit({ action: 'archive', id: habit.id }, false);
+                          }}
+                        >
+                          <Check aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
+                        <IconButton
+                          type="button"
+                          aria-label={t('habit.archiveCancel')}
+                          onClick={() => {
+                            setConfirmArchiveId(null);
+                          }}
+                        >
+                          <X aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
+                      </div>
+                    </div>
+                  ) : null}
                   {habit.description !== '' ? (
                     <p className="text-sm text-app-fg">{habit.description}</p>
                   ) : null}
@@ -523,9 +553,6 @@ export function MemberHabits(): ReactElement {
                       );
                     }}
                     onDeleteComment={(commentId) => {
-                      if (!window.confirm(t('habit.deleteCommentConfirm'))) {
-                        return;
-                      }
                       void submit({ action: 'deleteComment', id: commentId }, true);
                     }}
                   />
@@ -683,6 +710,7 @@ function CommentsBlock(props: {
   onDeleteComment: (commentId: string) => void;
 }): ReactElement {
   const { t } = useTranslations();
+  const [confirmingCommentId, setConfirmingCommentId] = useState<string | null>(null);
   const {
     habit,
     account,
@@ -728,17 +756,52 @@ function CommentsBlock(props: {
                   <div className="flex flex-wrap items-center gap-5">
                     {canDelete ? (
                       <SundayWritingGate>
-                        <IconButton
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          aria-label={t('habit.deleteComment')}
-                          onClick={() => {
-                            onDeleteComment(comment.id);
-                          }}
-                        >
-                          <Trash2 aria-hidden="true" className="h-4 w-4 text-app-danger" />
-                        </IconButton>
+                        {confirmingCommentId === comment.id ? (
+                          <div
+                            role="group"
+                            aria-label={t('habit.deleteCommentConfirm')}
+                            className="order-last mt-2 w-full basis-full"
+                          >
+                            <div className="flex flex-col gap-2 rounded-xl border border-app-border p-3">
+                              <p className="text-sm text-app-fg">
+                                {t('habit.deleteCommentConfirm')}
+                              </p>
+                              <div className="flex gap-3">
+                                <IconButton
+                                  type="button"
+                                  aria-label={t('forum.deleteConfirmAction')}
+                                  onClick={() => {
+                                    setConfirmingCommentId(null);
+                                    onDeleteComment(comment.id);
+                                  }}
+                                >
+                                  <Check aria-hidden="true" className="h-4 w-4" />
+                                </IconButton>
+                                <IconButton
+                                  type="button"
+                                  aria-label={t('forum.deleteCancel')}
+                                  onClick={() => {
+                                    setConfirmingCommentId(null);
+                                  }}
+                                >
+                                  <X aria-hidden="true" className="h-4 w-4" />
+                                </IconButton>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <IconButton
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            aria-label={t('habit.deleteComment')}
+                            onClick={() => {
+                              setConfirmingCommentId(comment.id);
+                            }}
+                          >
+                            <Trash2 aria-hidden="true" className="h-4 w-4 text-app-danger" />
+                          </IconButton>
+                        )}
                       </SundayWritingGate>
                     ) : null}
                     {showGift ? (

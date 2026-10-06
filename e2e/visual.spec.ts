@@ -22625,4 +22625,48 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-editing');
   });
+
+  test('screen /habit-tracker archive-confirm', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Archive' }).click();
+    await expect(page.getByText('Archive this habit? Its history stays visible.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-archive-confirm');
+  });
+
+  test('screen /habit-tracker delete-comment-confirm', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await expect(page.getByText('Delete this comment from the Habit-Tracker?')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel deletion' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-delete-comment-confirm');
+  });
 });

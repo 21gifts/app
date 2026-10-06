@@ -1640,6 +1640,20 @@ export const SCREEN_VARIANTS = [
     needle: 'screen /habit-tracker editing',
   },
   {
+    route: '/habit-tracker',
+    id: 'archive-confirm',
+    image: 'habit-tracker-archive-confirm.png',
+    visual: 'state-habit-tracker-archive-confirm',
+    needle: 'screen /habit-tracker archive-confirm',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'delete-comment-confirm',
+    image: 'habit-tracker-delete-comment-confirm.png',
+    visual: 'state-habit-tracker-delete-comment-confirm',
+    needle: 'screen /habit-tracker delete-comment-confirm',
+  },
+  {
     route: '/contact',
     id: 'default',
     image: 'contact.png',

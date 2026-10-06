@@ -144,7 +144,6 @@ function formsNamed(buttonName: string): HTMLFormElement[] {
 
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
 });
 
 afterEach(() => {
@@ -362,21 +361,28 @@ describe('MemberHabits', () => {
       expect((comment as HTMLTextAreaElement).value).toBe('');
     });
 
-    vi.mocked(window.confirm).mockReturnValueOnce(false);
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
     expect(bodies).toHaveLength(6);
-    vi.mocked(window.confirm).mockReturnValueOnce(false);
-    fireEvent.click(
-      screen.getAllByRole('button', { name: 'Delete comment' })[0] as HTMLButtonElement,
-    );
+    expect(screen.getByText('Archive this habit? Its history stays visible.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel archive' }));
+    expect(screen.queryByText('Archive this habit? Its history stays visible.')).toBeNull();
     expect(bodies).toHaveLength(6);
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Delete comment' })[0] as HTMLButtonElement,
     );
+    expect(bodies).toHaveLength(6);
+    expect(screen.getByText('Delete this comment from the Habit-Tracker?')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel deletion' }));
+    expect(screen.queryByText('Delete this comment from the Habit-Tracker?')).toBeNull();
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Delete comment' })[0] as HTMLButtonElement,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => {
       expect(bodies[6]).toEqual({ action: 'deleteComment', id: 'c-own' });
     });
     fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[1] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
     await waitFor(() => {
       expect(bodies[7]).toEqual({ action: 'archive', id: 'h-blank' });
     });

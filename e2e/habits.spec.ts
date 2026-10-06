@@ -198,6 +198,52 @@ test('screen /habit-tracker editing', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });
 
+test('screen /habit-tracker archive-confirm', async ({ page }) => {
+  await seedAda(page);
+  await stubHabits(page, {
+    reviewWeek: PUBLIC_LIST.reviewWeek,
+    habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Archive' }).click();
+  await expect(page.getByText('Archive this habit? Its history stays visible.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+});
+
+test('screen /habit-tracker delete-comment-confirm', async ({ page }) => {
+  await seedAda(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'initiator',
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await stubHabits(page, PUBLIC_LIST);
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Delete comment' }).click();
+  await expect(page.getByText('Delete this comment from the Habit-Tracker?')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel deletion' })).toBeVisible();
+});
+
 test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', async ({ page }) => {
   await seedAda(page);
   await page.route('**/habits', async (route) => {
