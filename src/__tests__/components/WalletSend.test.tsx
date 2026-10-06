@@ -56,6 +56,7 @@ function sendWith(
     setComment: vi.fn(),
     submitInput: vi.fn(),
     submitAmount: vi.fn(),
+    setSpeed: vi.fn(),
     confirm: vi.fn(),
     cancel: vi.fn(() => true),
     ...extra,
@@ -107,7 +108,6 @@ describe('WalletSend input', () => {
   it.each([
     ['invalid', 'This is not a Bitcoin payment request or address.'],
     ['unreachable', 'The receiver could not be reached from this browser. Please try again later.'],
-    ['onchain', 'Sending to this kind of Bitcoin address is not supported yet.'],
     ['unsupported', 'This payment request cannot be paid from your wallet yet.'],
     ['insufficient', 'Your wallet does not have enough Bitcoin for this payment.'],
     ['failed', 'The payment could not be sent. Check your balance before you try again.'],
@@ -302,6 +302,123 @@ describe('WalletSend amount', () => {
         .getByRole('button', { name: 'USD' })
         .getAttribute('aria-pressed'),
     ).toBe('true');
+  });
+});
+
+const ONCHAIN_TARGET = {
+  type: 'onchain' as const,
+  address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+  amountSats: null,
+  recipient: 'bc1qar0srr…wf5mdq',
+};
+
+function onchainState(
+  extra: { speed?: 'fast' | 'medium' | 'slow'; spendableFeeSats?: number; renewed?: true } = {},
+): WalletSendState {
+  const fees = { fast: 2_840, medium: 1_420, slow: 710 };
+  const speed = extra.speed ?? 'medium';
+  return {
+    step: 'confirm',
+    recipient: ONCHAIN_TARGET.recipient,
+    amountSats: 50_000,
+    feeSats: fees[speed],
+    onchain: {
+      fees,
+      spendableFeeSats: extra.spendableFeeSats ?? 950_000,
+      speed,
+      ...(extra.renewed === undefined ? {} : { renewed: extra.renewed }),
+    },
+  };
+}
+
+describe('WalletSend base-chain address', () => {
+  it('asks for an amount without bounds or a message, and names the SDK minimum', () => {
+    const { rerender } = renderWithLocale(
+      <WalletSend
+        send={sendWith({ step: 'amount', target: ONCHAIN_TARGET, amountError: false })}
+      />,
+    );
+    expect(screen.getByText('To bc1qar0srr…wf5mdq')).toBeTruthy();
+    expect(screen.queryByText(/^Between /)).toBeNull();
+    expect(screen.queryByLabelText('Message (optional)')).toBeNull();
+    rerender(
+      <WalletSend
+        send={sendWith({
+          step: 'amount',
+          target: { ...ONCHAIN_TARGET, minSats: 294 },
+          amountError: true,
+        })}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Enter an amount of at least ₿294 · $0.29.');
+  });
+
+  it('confirms in the large layout with one row per speed, the fee, the total, and the fee hint', () => {
+    const send = sendWith(onchainState());
+    renderSend(send);
+    const region = screen.getByRole('region', { name: 'Send Bitcoin' });
+    expect(within(region).getByText("₿50'000")).toBeTruthy();
+    expect(within(region).getByText('$50.00')).toBeTruthy();
+    expect(within(region).getByText('To bc1qar0srr…wf5mdq')).toBeTruthy();
+    const speeds = within(region).getByRole('group', { name: 'Speed' });
+    const buttons = within(speeds).getAllByRole('button');
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      "Fast₿2'840$2.84",
+      "Medium₿1'420$1.42",
+      'Slow₿710$0.71',
+    ]);
+    expect(buttons.map((button) => button.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'true',
+      'false',
+    ]);
+    expect(within(region).getByText(/^Fee ₿1'420/).textContent).toBe("Fee ₿1'420 · $1.42");
+    expect(within(region).getByText(/^Total /).textContent).toBe("Total ₿51'420 · $51.42");
+    expect(
+      within(region).getByText(
+        'A payment to a Bitcoin address pays a network fee. It is much higher than the fee of other payments.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(within(speeds).getByRole('button', { name: /^Fast/ }));
+    expect(send.setSpeed).toHaveBeenCalledWith('fast');
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(send.confirm).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(send.cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables a speed the balance does not cover and says why', () => {
+    renderSend(sendWith(onchainState({ spendableFeeSats: 2_000 })));
+    const fast = screen.getByRole('button', { name: /^Fast/ }) as HTMLButtonElement;
+    expect(fast.disabled).toBe(true);
+    expect(fast.textContent).toContain('Balance too low');
+    expect((screen.getByRole('button', { name: /^Medium/ }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+  });
+
+  it('says a renewed quote replaced an expired one', () => {
+    renderSend(sendWith(onchainState({ renewed: true })));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The fee offer expired, so nothing was sent. Check the new fee and press Send again.',
+    );
+  });
+
+  it('disables the speeds, Send, and Cancel while sending', () => {
+    renderSend(sendWith(onchainState({ speed: 'fast' }), { busy: true }));
+    for (const name of [/^Fast/, /^Medium/, /^Slow/, /^Send$/, /^Cancel$/]) {
+      expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
+    }
+    expect(screen.getByText(/^Total /).textContent).toBe("Total ₿52'840 · $52.84");
+  });
+
+  it('shows only bitcoin without a usable rate', () => {
+    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    renderSend(sendWith(onchainState()));
+    expect(screen.getByRole('button', { name: /^Slow/ }).textContent).toBe('Slow₿710');
+    expect(screen.getByText(/^Fee /).textContent).toBe("Fee ₿1'420");
+    expect(screen.getByText(/^Total /).textContent).toBe("Total ₿51'420");
   });
 });
 

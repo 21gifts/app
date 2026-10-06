@@ -207,6 +207,7 @@ describe('payments', () => {
     url: 'https://pay.example/.well-known/lnurlp/bob',
   };
   const BOLT11 = `lnbc21n1${'q'.repeat(40)}`;
+  const ONCHAIN = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 
   beforeEach(() => {
     for (const fn of Object.values(sdkPay)) {
@@ -379,11 +380,37 @@ describe('payments', () => {
     await expect(conn.parse('lnurl1')).resolves.toMatchObject({ minSats: 7, maxSats: 7 });
   });
 
-  it('parse maps a base-chain address to onchain and other inputs to unsupported', async () => {
-    sdkPay.parse.mockResolvedValueOnce({ type: 'bitcoinAddress', address: 'bc1q' });
+  it('parse maps a mainnet base-chain address to onchain and other inputs to unsupported', async () => {
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bitcoinAddress',
+      address: ONCHAIN,
+      network: 'bitcoin',
+    });
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bitcoinAddress',
+      address: '3J98t1',
+      network: 'bitcoin',
+    });
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bitcoinAddress',
+      address: 'tb1q',
+      network: 'testnet3',
+    });
     sdkPay.parse.mockResolvedValueOnce({ type: 'lnurlWithdraw' });
     const conn = await connection();
-    await expect(conn.parse('bc1q')).resolves.toEqual({ type: 'onchain' });
+    await expect(conn.parse(ONCHAIN)).resolves.toEqual({
+      type: 'onchain',
+      address: ONCHAIN,
+      amountSats: null,
+      recipient: 'bc1qar0srr…wf5mdq',
+    });
+    await expect(conn.parse('3J98t1')).resolves.toEqual({
+      type: 'onchain',
+      address: '3J98t1',
+      amountSats: null,
+      recipient: '3J98t1',
+    });
+    await expect(conn.parse('tb1q')).resolves.toEqual({ type: 'unsupported' });
     await expect(conn.parse('lnurlw')).resolves.toEqual({ type: 'unsupported' });
   });
 
@@ -406,15 +433,53 @@ describe('payments', () => {
     });
   });
 
-  it('parse maps a BIP21 URI with only a base-chain address to onchain, and none to unsupported', async () => {
+  it('parse maps a BIP21 URI with only a base-chain address to onchain with its amount, and none to unsupported', async () => {
+    const address = { type: 'bitcoinAddress', address: ONCHAIN, network: 'bitcoin' };
+    sdkPay.parse.mockResolvedValueOnce({ type: 'bip21', paymentMethods: [address] });
     sdkPay.parse.mockResolvedValueOnce({
       type: 'bip21',
-      paymentMethods: [{ type: 'bitcoinAddress', address: 'bc1q' }],
+      amountSat: 50_000,
+      paymentMethods: [address, { ...address, address: 'bc1qsecond' }],
+    });
+    sdkPay.parse.mockResolvedValueOnce({
+      type: 'bip21',
+      amountSat: 0.5,
+      paymentMethods: [address],
     });
     sdkPay.parse.mockResolvedValueOnce({ type: 'bip21', paymentMethods: [] });
     const conn = await connection();
-    await expect(conn.parse('bitcoin:bc1q')).resolves.toEqual({ type: 'onchain' });
+    const onchain = {
+      type: 'onchain',
+      address: ONCHAIN,
+      amountSats: null,
+      recipient: 'bc1qar0srr…wf5mdq',
+    };
+    await expect(conn.parse(`bitcoin:${ONCHAIN}`)).resolves.toEqual(onchain);
+    await expect(conn.parse(`bitcoin:${ONCHAIN}?amount=0.0005`)).resolves.toEqual({
+      ...onchain,
+      amountSats: 50_000,
+    });
+    await expect(conn.parse(`bitcoin:${ONCHAIN}?amount=0.000000005`)).resolves.toEqual(onchain);
     await expect(conn.parse('bitcoin:')).resolves.toEqual({ type: 'unsupported' });
+  });
+
+  it('parse keeps the Lightning method of a BIP21 URI before its base-chain address', async () => {
+    sdkPay.parse.mockResolvedValue({
+      type: 'bip21',
+      amountSat: 2_100,
+      paymentMethods: [
+        { type: 'bitcoinAddress', address: ONCHAIN, network: 'bitcoin' },
+        { type: 'sparkAddress', address: 'sp1short' },
+      ],
+    });
+    const conn = await connection();
+    await expect(conn.parse(`bitcoin:${ONCHAIN}?sp=sp1short`)).resolves.toEqual({
+      type: 'request',
+      input: 'sp1short',
+      amountSats: 2_100,
+      recipient: 'sp1short',
+      amountFromUri: true,
+    });
   });
 
   it('parse refuses a BIP21 URI that names an asset', async () => {
@@ -547,12 +612,55 @@ describe('payments', () => {
   it('prepare rejects a method the app does not pay', async () => {
     sdkPay.prepareSendPayment.mockResolvedValue({
       amount: 1_000n,
-      paymentMethod: { type: 'bitcoinAddress' },
+      paymentMethod: { type: 'crossChainAddress' },
     });
     const conn = await connection();
-    await expect(conn.prepare({ type: 'input', input: 'bc1q' })).rejects.toThrow(
+    await expect(conn.prepare({ type: 'input', input: '0xabc' })).rejects.toThrow(
       'Unsupported payment method',
     );
+  });
+
+  it('prepare reads the fee quote of a base-chain address and sends with the chosen speed', async () => {
+    const response = {
+      amount: 50_000n,
+      paymentMethod: {
+        type: 'bitcoinAddress',
+        address: { address: ONCHAIN, network: 'bitcoin', source: {} },
+        feeQuote: {
+          id: 'quote-1',
+          expiresAt: 1_800_000_000,
+          speedFast: { userFeeSat: 2_000, l1BroadcastFeeSat: 840 },
+          speedMedium: { userFeeSat: 1_000, l1BroadcastFeeSat: 420 },
+          speedSlow: { userFeeSat: 500, l1BroadcastFeeSat: 210 },
+          isEstimate: false,
+        },
+      },
+      feePolicy: 'feesExcluded',
+    };
+    sdkPay.prepareSendPayment.mockResolvedValue(response);
+    sdkPay.sendPayment.mockResolvedValue({ payment: {} });
+    const conn = await connection();
+    const prepared = await conn.prepare({ type: 'input', input: ONCHAIN, amountSats: 50_000 });
+    expect(sdkPay.prepareSendPayment).toHaveBeenCalledWith({
+      paymentRequest: { type: 'input', input: ONCHAIN },
+      amount: 50_000n,
+    });
+    expect(prepared.amountSats).toBe(50_000);
+    expect(prepared.feeSats).toBe(1_420);
+    expect(prepared.onchain).toEqual({
+      fees: { fast: 2_840, medium: 1_420, slow: 710 },
+      expiresAtMs: 1_800_000_000_000,
+    });
+    await prepared.send('fast');
+    expect(sdkPay.sendPayment).toHaveBeenLastCalledWith({
+      prepareResponse: response,
+      options: { type: 'bitcoinAddress', confirmationSpeed: 'fast' },
+    });
+    await prepared.send();
+    expect(sdkPay.sendPayment).toHaveBeenLastCalledWith({
+      prepareResponse: response,
+      options: { type: 'bitcoinAddress', confirmationSpeed: 'medium' },
+    });
   });
 
   it('prepare asks an LNURL receiver for an amount with and without comment, and sends', async () => {

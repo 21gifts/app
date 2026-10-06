@@ -2,6 +2,7 @@ import { getBreezApiKey } from '@/lib/config';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
 import {
   loadWalletSdk,
+  type OnchainSpeed,
   type WalletConnection,
   type WalletPayment,
   type WalletPaymentPage,
@@ -340,14 +341,33 @@ export const WALLET_SEND_TIMEOUT_MS = 30_000;
  * - `insufficient`: the wallet balance does not cover amount and fee.
  * - `failed`: the send failed, timed out, or the wallet changed since prepare.
  *   The payment may still arrive; callers do not retry on their own.
+ * - `expired`: the fee quote of a payment to a base-chain address expired;
+ *   nothing was sent, and only a new prepare gives a quote to send.
  */
-export type WalletSendResult = { kind: 'paid' } | { kind: 'insufficient' } | { kind: 'failed' };
+export type WalletSendResult =
+  { kind: 'paid' } | { kind: 'insufficient' } | { kind: 'failed' } | { kind: 'expired' };
+
+/**
+ * Fee choice of a prepared payment to a base-chain address: the fee of each
+ * speed, and the largest fee the balance still covers on top of the amount.
+ */
+export interface WalletOnchainFees {
+  /** Whole sats of fee for each speed. */
+  fees: Record<OnchainSpeed, number>;
+  /** Balance minus amount, in whole sats: a speed whose fee is higher cannot be sent. */
+  spendableFeeSats: number;
+}
 
 /**
  * Outcome of preparing a payment from the in-app wallet.
  *
- * - `confirm`: amount and fee to show; `send` pays it once.
- * - `insufficient`: the balance does not cover amount and fee.
+ * - `confirm`: amount and fee to show; `send` pays it once. A payment to a
+ *   base-chain address also carries `onchain`, and `feeSats` is its medium
+ *   speed; `send` then takes the chosen speed.
+ * - `insufficient`: the balance does not cover amount and fee (for a
+ *   base-chain address: amount and the lowest fee).
+ * - `belowMinimum`: the SDK refused the amount as below the smallest it sends
+ *   to this address; `minSats` is that smallest amount.
  * - `failed`: prepare or the balance read failed, or the connection changed
  *   during prepare or that read.
  * - `unlock`: no wallet connection; the member has to unlock first.
@@ -357,9 +377,11 @@ export type WalletPayResult =
       kind: 'confirm';
       amountSats: number;
       feeSats: number;
-      send: () => Promise<WalletSendResult>;
+      onchain?: WalletOnchainFees;
+      send: (speed?: OnchainSpeed) => Promise<WalletSendResult>;
     }
   | { kind: 'insufficient' }
+  | { kind: 'belowMinimum'; minSats: number }
   | { kind: 'failed' }
   | { kind: 'unlock' };
 
@@ -390,6 +412,36 @@ function isInsufficientFunds(err: unknown): boolean {
 }
 
 /**
+ * Smallest amount an SDK error names, when it refuses an amount as below the
+ * minimum for a base-chain address (`… below the minimum of 294 sats …`).
+ *
+ * @param err - Rejection from the SDK.
+ * @returns Whole sats, or `null` when the error is not that refusal.
+ */
+function minimumOf(err: unknown): number | null {
+  const text = err instanceof Error ? err.message : String(err);
+  const match = /below the minimum of (\d+) sats/i.exec(text);
+  return match === null ? null : Number(match[1]);
+}
+
+/**
+ * True when an SDK error says a fee quote expired.
+ *
+ * @param err - Rejection from the SDK.
+ * @returns Whether the error names an expired quote.
+ */
+function isQuoteExpired(err: unknown): boolean {
+  const text = err instanceof Error ? err.message : String(err);
+  return /quote[^.]*expired|expired[^.]*quote/i.test(text);
+}
+
+/**
+ * How long before its expiry a fee quote counts as expired, so a send never
+ * reaches the SDK with a quote that runs out on the way.
+ */
+export const WALLET_QUOTE_MARGIN_MS = 15_000;
+
+/**
  * Resolves with `null` after `ms`, or with the promise's value when it settles first.
  *
  * @param promise - Work to wait for.
@@ -417,7 +469,11 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
  * read already wrote the store, the check uses that newer balance, so the
  * check matches the balance shown. While a newer read is still pending, the
  * check uses this read. The returned `send` pays it once and then refreshes
- * the balance while its connection is still the current one. Never rejects.
+ * the balance while its connection is still the current one. For a
+ * base-chain address the balance must cover the amount and the lowest fee,
+ * and `send` takes a speed: it refuses a speed the balance does not cover
+ * (`insufficient`) and a quote within {@link WALLET_QUOTE_MARGIN_MS} of its
+ * expiry (`expired`) without calling the SDK. Never rejects.
  *
  * @param request - Request text to pay, or a receiver that takes an amount.
  * @returns Confirmation with `send`, or why the payment cannot be made.
@@ -434,9 +490,16 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     if (connection !== conn) {
       return { kind: 'failed' };
     }
+    const minSats = minimumOf(err);
+    if (minSats !== null) {
+      return { kind: 'belowMinimum', minSats };
+    }
     return isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
   }
   const { amountSats, feeSats } = prepared;
+  const quote = prepared.onchain;
+  const lowestFeeSats = quote === undefined ? feeSats : Math.min(...Object.values(quote.fees));
+  let spendableFeeSats = 0;
   if (connection !== conn) {
     return { kind: 'failed' };
   }
@@ -455,34 +518,55 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
       /* v8 ignore next -- a newer read of this connection wrote a balance */
       balanceSats = useWalletStore.getState().balanceSats ?? info.balanceSats;
     }
-    if (balanceSats < amountSats + feeSats) {
+    if (balanceSats < amountSats + lowestFeeSats) {
       return { kind: 'insufficient' };
     }
+    spendableFeeSats = balanceSats - amountSats;
   } catch {
     return { kind: 'failed' };
   }
   let sent = false;
-  const send = async (): Promise<WalletSendResult> => {
+  const send = async (speed: OnchainSpeed = 'medium'): Promise<WalletSendResult> => {
     if (sent || connection !== conn) {
       return { kind: 'failed' };
+    }
+    if (quote !== undefined) {
+      if (quote.fees[speed] > spendableFeeSats) {
+        return { kind: 'insufficient' };
+      }
+      if (Date.now() >= quote.expiresAtMs - WALLET_QUOTE_MARGIN_MS) {
+        return { kind: 'expired' };
+      }
     }
     sent = true;
     let result: WalletSendResult;
     try {
       const done = await withTimeout(
-        prepared.send().then(() => true),
+        prepared.send(speed).then(() => true),
         WALLET_SEND_TIMEOUT_MS,
       );
       result = done === null ? { kind: 'failed' } : { kind: 'paid' };
     } catch (err: unknown) {
-      result = isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
+      if (quote !== undefined && isQuoteExpired(err)) {
+        result = { kind: 'expired' };
+      } else {
+        result = isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
+      }
     }
     if (connection === conn) {
       void refreshWallet();
     }
     return result;
   };
-  return { kind: 'confirm', amountSats, feeSats, send };
+  return quote === undefined
+    ? { kind: 'confirm', amountSats, feeSats, send }
+    : {
+        kind: 'confirm',
+        amountSats,
+        feeSats,
+        onchain: { fees: quote.fees, spendableFeeSats },
+        send,
+      };
 }
 
 /**
