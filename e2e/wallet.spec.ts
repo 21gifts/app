@@ -889,9 +889,9 @@ test('Function: useWalletSend — send-confirm-onchain pin shows each speed with
   await expect(region.getByText('To bc1qar0srr…wf5mdq')).toBeVisible();
   const speeds = region.getByRole('group', { name: 'Speed' });
   await expect(speeds.getByRole('button')).toHaveText([
-    "Fast₿2'840$2.84",
-    "Medium₿1'420$1.42",
-    'Slow₿710$0.71',
+    "Fast₿2'840 · $2.84",
+    "Medium₿1'420 · $1.42",
+    'Slow₿710 · $0.71',
   ]);
   await expect(speeds.getByRole('button', { name: /^Medium/ })).toHaveAttribute(
     'aria-pressed',
