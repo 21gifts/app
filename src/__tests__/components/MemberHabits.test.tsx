@@ -500,6 +500,104 @@ describe('MemberHabits', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
+  it('does not replace the list load that started while a save was still posting', async () => {
+    let posts = 0;
+    let gets = 0;
+    let releasePost: (value: Response) => void = () => undefined;
+    const pendingGets: Array<(value: Response) => void> = [];
+    const postAuth: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          postAuth.push(new Headers(init.headers).get('Authorization') ?? '');
+          if (posts === 1) {
+            return new Promise<Response>((resolve) => {
+              releasePost = resolve;
+            });
+          }
+          return Promise.resolve(json({ ok: true }));
+        }
+        gets += 1;
+        if (gets === 1) {
+          return Promise.resolve(json(payload()));
+        }
+        if (gets === 2) {
+          return new Promise<Response>((resolve) => {
+            pendingGets.push(resolve);
+          });
+        }
+        return Promise.resolve(json(payload()));
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addName = screen.getByLabelText('Name');
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Held' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+
+    useAuthStore.setState({ session: 'other', account: viewer });
+    await waitFor(() => {
+      expect(gets).toBe(2);
+    });
+    await act(async () => {
+      releasePost(json({ ok: true }));
+    });
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+    expect(addName.value).toBe('Held');
+
+    const reload = pendingGets[0];
+    if (reload === undefined) {
+      throw new Error('missing reload');
+    }
+    await act(async () => {
+      reload(json(payload()));
+    });
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const settledName = screen.getByLabelText('Name');
+    if (!(settledName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    const settledForm = formsNamed('Add habit')[0];
+    if (settledForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(settledForm);
+    await waitFor(() => {
+      expect(gets).toBe(3);
+      expect(settledName.value).toBe('');
+    });
+    expect(posts).toBe(1);
+    expect(postAuth).toEqual(['Bearer tok']);
+
+    fireEvent.change(settledName, { target: { value: 'Next' } });
+    fireEvent.submit(settledForm);
+    await waitFor(() => {
+      expect(posts).toBe(2);
+      expect(postAuth).toEqual(['Bearer tok', 'Bearer other']);
+    });
+  });
+
   it('keeps the list and shows an error when a later save fails', async () => {
     let posts = 0;
     let gets = 0;

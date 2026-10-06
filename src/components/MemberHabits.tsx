@@ -115,6 +115,10 @@ export function MemberHabits(): ReactElement {
   }, [session, attempt]);
 
   async function refresh(): Promise<boolean> {
+    // A session change or Try again owns this generation until it settles.
+    if (!listSettled.current) {
+      return false;
+    }
     const generation = listGeneration.current + 1;
     listGeneration.current = generation;
     try {
@@ -124,6 +128,7 @@ export function MemberHabits(): ReactElement {
       }
       setData(next);
       setError(false);
+      listSettled.current = true;
       return true;
     } catch {
       if (!listAlive.current || generation !== listGeneration.current) {
