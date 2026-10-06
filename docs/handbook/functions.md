@@ -4785,17 +4785,31 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HabitTrackerPage
 
-- **Purpose:** Next.js page for `/habit-tracker` (public habit tracker). Top-right is **Log in** without a session and `SignedInChrome` with one. `OnboardingGate screen="welcome"` `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left around `MemberHabits`.
+- **Purpose:** Next.js server page for `/habit-tracker` (public habit tracker). It does not read the auth store. Top-right is `HabitTrackerTopRight`. `OnboardingGate screen="welcome"` `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left around `MemberHabits`.
 - **Inputs:** None.
 - **Returns / side effects:** The habit-tracker screen inside fill AppShell.
 - **Used by:** Route `/habit-tracker`.
 
+## Function: HabitTrackerTopRight
+
+- **Purpose:** Client boundary for the `/habit-tracker` header. **Log in** without a session and `SignedInChrome` with one. The page stays a server component.
+- **Inputs:** None. Reads the auth store session.
+- **Returns / side effects:** The top-right control. No request.
+- **Used by:** `HabitTrackerPage`.
+
 ## Function: MemberHabits
 
-- **Purpose:** Loads `GET /habits` and writes `POST /habits`. Renders every member's public habits, periods, and comments on the same note card as a living-room note. Internal notes render only for the owner. The owner rates every returned period of an open habit on a neutral `SegmentedControl` and posts that period's key. An archived habit keeps its rows and has no rating pill, pencil, or archive control. The owner opens edit with the pencil and archives from the card while the habit is open. Any signed-in account can comment. Comment and delete use `SundayWritingGate` and send `Time-Zone`. A gift on someone else's comment uses the same Gift control, `ForumPaySheet`, amount rules, and Sunday zap pause as a forum reply, and sends `Time-Zone`. Continue stays disabled until `useLatestRateDayState` has settled. The sheet does not show the raw invoice. Does not log invoices, addresses, notes, or comment text.
+- **Purpose:** Loads `GET /habits` and writes `POST /habits`. Renders every member's public habits, periods, and comments on the same note card as a living-room note. Internal notes render only for the owner. The owner rates every returned period of an open habit on a neutral `SegmentedControl` and posts that period's key. An archived habit keeps its rows, comments, and gift, and has no rating pill, pencil, or archive control. The owner opens edit with the pencil and archives from the card while the habit is open. Any signed-in account can comment. Comments render in `HabitComments`. Comment and delete use `SundayWritingGate` and send `Time-Zone`. Add, edit, log, and archive do not. A gift on someone else's comment uses the same Gift control, `ForumPaySheet`, amount rules, and Sunday zap pause as a forum reply, and sends `Time-Zone`. Continue stays disabled until `useLatestRateDayState` has settled. The sheet does not show the raw invoice. A failed reload keeps a list that was already shown and puts the error above it. The full-screen error is only when nothing has loaded. Does not log invoices, addresses, notes, or comment text.
 - **Inputs:** None. Reads the auth store session and account.
 - **Returns / side effects:** The habit-tracker body. Posts add, edit, archive, log, comment, deleteComment, and invoice actions.
 - **Used by:** `HabitTrackerPage`.
+
+## Function: HabitComments
+
+- **Purpose:** Public comments on one habit. An empty list says there are no comments yet. A signed-out visitor gets **Sign in to comment**. A signed-in account gets **Write a comment** and **Post** inside `SundayWritingGate`. Delete is the same inline confirm as a forum note and only when the account is at least initiator, also inside that gate, and sends `Time-Zone`. **Send Bitcoin** on someone else's comment uses `ForumPaySheet` inside the zap gate and sends `Time-Zone`. Archived habits keep this block.
+- **Inputs:** The habit, the viewer account and session, the comment draft, and the pay-sheet state owned by `MemberHabits`.
+- **Returns / side effects:** The comment block. Posts nothing itself; `MemberHabits` posts comment, deleteComment, and invoice.
+- **Used by:** `MemberHabits`.
 
 ## Function: fetchMemberHabits
 

@@ -490,6 +490,161 @@ describe('MemberHabits', () => {
     });
   });
 
+  it('keeps the loaded list when Try again and a session change also fail to load', async () => {
+    let gets = 0;
+    let releaseRetry: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          return Promise.resolve(json({ error: 'Invalid name' }, 400));
+        }
+        gets += 1;
+        if (gets === 1) {
+          return Promise.resolve(json(payload()));
+        }
+        return new Promise<Response>((resolve) => {
+          releaseRetry = resolve;
+        });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(gets).toBe(2);
+    });
+    expect(screen.getByText('Walk')).toBeTruthy();
+    expect(screen.getByText('hello')).toBeTruthy();
+    expect(screen.queryByText('Loading…')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    await act(async () => {
+      releaseRetry(json({ error: 'down' }, 500));
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Walk')).toBeTruthy();
+    expect(screen.getByText('hello')).toBeTruthy();
+
+    useAuthStore.setState({ session: 'other', account: viewer });
+    await waitFor(() => {
+      expect(gets).toBe(3);
+    });
+    expect(screen.getByText('Walk')).toBeTruthy();
+    await act(async () => {
+      releaseRetry(json({ error: 'down' }, 500));
+    });
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Walk')).toBeTruthy();
+    expect(screen.queryByText('Loading…')).toBeNull();
+  });
+
+  it('sends Time-Zone on add, comment, delete, and invoice only', async () => {
+    const posts: Array<{ body: { action?: string }; zone: string | null }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          const headers = new Headers(init.headers);
+          const body = JSON.parse(String(init.body)) as { action?: string };
+          posts.push({ body, zone: headers.get('Time-Zone') });
+          if (body.action === 'invoice') {
+            return json({ pr: 'lnbc1', amountSats: 21 });
+          }
+          return json({ ok: true });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    await waitFor(() => {
+      expect(posts.some((row) => row.body.action === 'log')).toBe(true);
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(posts.some((row) => row.body.action === 'edit')).toBe(true);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    });
+
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (comment === undefined) {
+      throw new Error('missing comment field');
+    }
+    fireEvent.change(comment, { target: { value: 'note' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(posts.some((row) => row.body.action === 'comment')).toBe(true);
+    });
+
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Delete comment' })[0] as HTMLButtonElement,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => {
+      expect(posts.some((row) => row.body.action === 'deleteComment')).toBe(true);
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => {
+      expect(posts.some((row) => row.body.action === 'archive')).toBe(true);
+    });
+
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Next' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(posts.some((row) => row.body.action === 'add')).toBe(true);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send Bitcoin' }));
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts.some((row) => row.body.action === 'invoice')).toBe(true);
+    });
+
+    const zoneOf = (action: string): string | null | undefined =>
+      posts.find((row) => row.body.action === action)?.zone;
+    expect(zoneOf('log')).toBeNull();
+    expect(zoneOf('edit')).toBeNull();
+    expect(zoneOf('archive')).toBeNull();
+    expect(zoneOf('add')?.length).toBeGreaterThan(0);
+    expect(zoneOf('comment')?.length).toBeGreaterThan(0);
+    expect(zoneOf('deleteComment')?.length).toBeGreaterThan(0);
+    expect(zoneOf('invoice')?.length).toBeGreaterThan(0);
+  });
+
   it('refuses to save when the session is missing or blank', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     useAuthStore.setState({ session: null, account: owner });
@@ -731,8 +886,18 @@ describe('MemberHabits', () => {
         timeZone: 'Asia/Manila',
         firstPeriod: '2026-10-03',
         lastPeriod: '2026-10-04',
-        periods: [period('2026-10-03', 'achieved'), period('2026-10-04', 'missed')],
-        comments: [],
+        periods: [period('2026-10-03', 'achieved'), period('2026-10-04', null)],
+        comments: [
+          {
+            id: 'c-archived',
+            habitId: 'h-archived',
+            accountId: 'acc-other',
+            name: 'Bea',
+            text: 'kept',
+            week: '2026-09-28',
+            createdAt: 3,
+          },
+        ],
       },
     ];
     vi.stubGlobal(
@@ -756,6 +921,9 @@ describe('MemberHabits', () => {
     expect(archived.getByText('Archived')).toBeTruthy();
     expect(archived.getByText('2026-10-03')).toBeTruthy();
     expect(archived.getByText('Achieved')).toBeTruthy();
+    expect(archived.getByText('kept')).toBeTruthy();
+    expect(archived.getByText('Not rated yet')).toBeTruthy();
+    expect(archived.getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
     expect(archived.queryByRole('button', { name: 'Achieved' })).toBeNull();
     expect(archived.queryByRole('button', { name: 'Edit' })).toBeNull();
     expect(archived.queryByRole('button', { name: 'Archive' })).toBeNull();

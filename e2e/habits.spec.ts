@@ -48,7 +48,7 @@ async function stubHabits(page: Page, body: unknown): Promise<void> {
   });
 }
 
-async function seedAda(page: Page): Promise<void> {
+async function seedAda(page: Page, role: 'basis' | 'initiator' = 'basis'): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -66,7 +66,7 @@ async function seedAda(page: Page): Promise<void> {
       body: JSON.stringify({
         id: 'acc_e2e',
         linkingKey: `02${'a'.repeat(62)}`,
-        role: 'basis',
+        role,
         name: 'Ada',
         location: null,
         username: 'alice',
@@ -243,7 +243,7 @@ test('screen /habit-tracker sunday', async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
   });
-  await seedAda(page);
+  await seedAda(page, 'initiator');
   await stubHabits(page, {
     reviewWeek: PUBLIC_LIST.reviewWeek,
     habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
@@ -251,8 +251,14 @@ test('screen /habit-tracker sunday', async ({ page }) => {
   await page.goto('/habit-tracker');
   await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
   await expect(page.getByText('Zapping is paused on Sunday.').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Add habit' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Archive' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Post' })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: 'Write a comment' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Delete comment' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
 });
 
 test('screen /habit-tracker editing', async ({ page }) => {
@@ -315,6 +321,9 @@ test('screen /habit-tracker archived', async ({ page }) => {
   await page.getByRole('button', { name: 'Confirm archive' }).click();
   await expect(page.getByText('Archived', { exact: true })).toBeVisible();
   await expect(page.getByText('2026-10-04')).toBeVisible();
+  await expect(page.getByText('hello')).toBeVisible();
+  await expect(page.getByText('Not rated yet')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Archive' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toHaveCount(0);
@@ -559,4 +568,114 @@ test('Function: useLatestRateDayState — Continue stays disabled until the gift
   await expect(cont).toBeDisabled();
   release();
   await expect(cont).toBeEnabled();
+});
+
+test('Function: HabitTrackerTopRight — Log in without a session and the menu with one', async ({
+  page,
+}) => {
+  await stubHabits(page, PUBLIC_LIST);
+  await page.goto('/habit-tracker');
+  await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+  await seedAda(page);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Log in' })).toHaveCount(0);
+});
+
+test('Function: HabitComments — a comment and Send Bitcoin stay on an archived habit', async ({
+  page,
+}) => {
+  await seedAda(page);
+  await stubHabits(page, {
+    reviewWeek: PUBLIC_LIST.reviewWeek,
+    habits: [{ ...PUBLIC_HABIT, lastPeriod: '2026-10-04' }],
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText('hello')).toBeVisible();
+  await expect(page.getByText('Not rated yet')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Archive' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toHaveCount(0);
+});
+
+test('Function: postMemberHabit — Time-Zone is sent only for add, comment, delete, and invoice', async ({
+  page,
+}) => {
+  await seedAda(page, 'initiator');
+  const posts: Array<{ body: string; zone: string | null }> = [];
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      const headers = await route.request().allHeaders();
+      posts.push({
+        body: route.request().postData() ?? '',
+        zone: headers['time-zone'] ?? null,
+      });
+      const body = route.request().postData() ?? '';
+      if (body.includes('"action":"invoice"')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Achieved', exact: true }).click();
+  await expect.poll(() => posts.length).toBe(1);
+
+  await page.getByRole('button', { name: 'Edit' }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect.poll(() => posts.length).toBe(2);
+  await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+
+  await page.getByLabel('Write a comment').fill('hello again');
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect.poll(() => posts.length).toBe(3);
+
+  await page.getByRole('button', { name: 'Delete comment' }).click();
+  await page.getByRole('button', { name: 'Confirm deletion' }).click();
+  await expect.poll(() => posts.length).toBe(4);
+
+  await page.getByLabel('Name').fill('Next');
+  await page.getByRole('button', { name: 'Add habit' }).click();
+  await expect.poll(() => posts.length).toBe(5);
+
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await page.getByLabel('Amount').fill('21');
+  const cont = page.getByRole('button', { name: 'Continue' });
+  await expect(cont).toBeEnabled();
+  await cont.click();
+  await expect.poll(() => posts.length).toBe(6);
+
+  await page.getByRole('button', { name: 'Archive' }).click();
+  await page.getByRole('button', { name: 'Confirm archive' }).click();
+  await expect.poll(() => posts.length).toBe(7);
+
+  const zoneOf = (action: string): string | null | undefined =>
+    posts.find((row) => row.body.includes(`"action":"${action}"`))?.zone;
+  expect(zoneOf('log')).toBeNull();
+  expect(zoneOf('edit')).toBeNull();
+  expect(zoneOf('archive')).toBeNull();
+  expect(zoneOf('add')).toBeTruthy();
+  expect(zoneOf('comment')).toBeTruthy();
+  expect(zoneOf('deleteComment')).toBeTruthy();
+  expect(zoneOf('invoice')).toBeTruthy();
 });
