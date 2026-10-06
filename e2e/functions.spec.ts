@@ -2372,8 +2372,19 @@ test('Function: fetchMessages — one empty note on the All page leaves the othe
       '/forum/members/77777777-7777-4777-8777-777777777777/posts',
       route.request().url(),
     );
-    const response = await route.fetch({ url: url.toString() });
-    const body = (await response.json()) as { messages: { text: string }[] };
+    const fetched = await route
+      .fetch({ url: url.toString() })
+      .then(async (response) => ({
+        response,
+        body: (await response.json()) as { messages: { text: string }[] },
+      }))
+      .catch(() => null);
+    if (fetched === null) {
+      // The reload below cancels a feed request the old page still had in
+      // flight; its response is disposed and nothing is left to answer.
+      return;
+    }
+    const { response, body } = fetched;
     // Page 1 holds only the empty About me note; its cursor leads to the fixture page.
     const json =
       requested.searchParams.get('cursor') === 'after-empty'
