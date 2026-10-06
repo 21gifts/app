@@ -100,6 +100,7 @@ export async function cancelPosCharge(sessionToken: string): Promise<void> {
 
 /** Open charge of a shop, as `GET /pay/:username` shows it. */
 const payChargeSchema = z.object({
+  id: z.string().optional(),
   amountSats: z.number().int().positive(),
   status: z.string().optional(),
   expiresAt: z.string(),
@@ -111,46 +112,84 @@ const payInvoiceSchema = z.object({
   sparkInvoice: z.string().min(1).nullable().optional(),
 });
 
-/** A shop's open charge and the Spark invoice that pays it without a fee. */
-export interface ShopChargeInvoice {
-  /** Whole sats of the charge. */
-  amountSats: number;
-  /** Spark invoice the api issued for that charge. */
-  sparkInvoice: string;
+/**
+ * What the in-app wallet does for a 21.gifts shop on this host.
+ *
+ * - `invoice`: pay the open charge with its Spark invoice, without a fee.
+ * - `none`: the shop has no open charge; it is paid like any member.
+ * - `fallback`: a charge may be open but cannot be paid with a Spark invoice;
+ *   the wallet reads the address as before.
+ */
+export type ShopChargeInvoice =
+  | { kind: 'invoice'; amountSats: number; sparkInvoice: string }
+  | { kind: 'none' }
+  | { kind: 'fallback' };
+
+/**
+ * The pending charge `GET /pay/:username` shows, if it has not run out.
+ *
+ * @param path - `/pay/:username`, already encoded.
+ * @returns The charge, or `null` when there is none.
+ * @throws Error when the answer is not OK or not the expected JSON.
+ */
+async function readOpenCharge(path: string): Promise<z.infer<typeof payChargeSchema> | null> {
+  const profile = await fetch(path);
+  if (!profile.ok) {
+    throw new Error(`Failed to load pay link: ${profile.status}`);
+  }
+  const body = z
+    .object({ charge: payChargeSchema.nullable().optional() })
+    .parse(await profile.json());
+  const charge = body.charge ?? null;
+  if (
+    charge === null ||
+    (charge.status !== undefined && charge.status !== 'pending') ||
+    !(Date.parse(charge.expiresAt) > Date.now())
+  ) {
+    return null;
+  }
+  return charge;
 }
 
 /**
  * Spark invoice for the open charge of a 21.gifts shop, so the in-app wallet
  * pays that charge without a fee. Reads `GET /pay/:username`; when its
  * `charge` is pending and not expired, asks `POST /pay/:username/invoice` for
- * exactly that amount. Never rejects.
+ * exactly that amount, then reads `GET /pay/:username` again: the invoice
+ * counts only while that same charge is still open, since the api also issues
+ * a Spark invoice to a member without a charge. Never rejects.
  *
  * @param username - Shop's 21.gifts username.
- * @returns The amount and Spark invoice, or `null` when there is no open
- *   charge, the api issued no Spark invoice, or a request failed.
+ * @returns `invoice` with the amount and Spark invoice; `none` when no charge
+ *   is open (also when it closed before the second read); `fallback` when a
+ *   read fails, the api issued no Spark invoice, or another charge is open on
+ *   the second read.
  */
-export async function fetchShopChargeInvoice(username: string): Promise<ShopChargeInvoice | null> {
+export async function fetchShopChargeInvoice(username: string): Promise<ShopChargeInvoice> {
   const path = `/pay/${encodeURIComponent(username)}`;
   try {
-    const profile = await fetch(path);
-    if (!profile.ok) {
-      return null;
-    }
-    const body = z
-      .object({ charge: payChargeSchema.nullable().optional() })
-      .parse(await profile.json());
-    const charge = body.charge ?? null;
-    if (
-      charge === null ||
-      (charge.status !== undefined && charge.status !== 'pending') ||
-      !(Date.parse(charge.expiresAt) > Date.now())
-    ) {
-      return null;
+    const charge = await readOpenCharge(path);
+    if (charge === null) {
+      return { kind: 'none' };
     }
     const sparkInvoice = await fetchMemberSparkInvoice(username, charge.amountSats, '');
-    return sparkInvoice === null ? null : { amountSats: charge.amountSats, sparkInvoice };
+    if (sparkInvoice === null) {
+      return { kind: 'fallback' };
+    }
+    const again = await readOpenCharge(path);
+    if (again === null) {
+      return { kind: 'none' };
+    }
+    if (
+      again.id !== charge.id ||
+      again.amountSats !== charge.amountSats ||
+      again.expiresAt !== charge.expiresAt
+    ) {
+      return { kind: 'fallback' };
+    }
+    return { kind: 'invoice', amountSats: charge.amountSats, sparkInvoice };
   } catch {
-    return null;
+    return { kind: 'fallback' };
   }
 }
 
