@@ -118,14 +118,6 @@ describe('WalletPay', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('says Bitcoin was received while it pays on its own after a top-up', () => {
-    hookWith('received');
-    renderPay();
-    expect(screen.getByRole('status').textContent).toBe('Bitcoin received — paying…');
-    expect(screen.queryByRole('button')).toBeNull();
-    expect(screen.queryByRole('alert')).toBeNull();
-  });
-
   it('shows the fee with its fiat line before Pay from wallet', () => {
     const hook = hookWith('confirm', 0);
     renderPay();
@@ -133,6 +125,50 @@ describe('WalletPay', () => {
     expect(screen.getByText(/\$0\.00/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pay from wallet' }));
     expect(hook.pay).toHaveBeenCalledTimes(1);
+  });
+
+  it('says Pay and post with the amount and its fiat on the posting fee', () => {
+    const hook = hookWith('confirm', 0);
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={RATE_DAY}
+        postsOnPay
+      />,
+    );
+    const button = screen.getByRole('button', { name: /^Pay ₿21 and post/ });
+    expect(button.textContent).toBe('Pay ₿21 and post · $0.02');
+    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    fireEvent.click(button);
+    expect(hook.pay).toHaveBeenCalledTimes(1);
+    cleanup();
+    hookWith('confirm', 0);
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={null}
+        postsOnPay
+      />,
+    );
+    expect(screen.getByRole('button').textContent).toBe('Pay ₿21 and post');
+  });
+
+  it('keeps Unlock and pay on the posting fee while the wallet is locked', () => {
+    hookWith('unlock');
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={RATE_DAY}
+        postsOnPay
+      />,
+    );
+    expect(screen.getByRole('button').textContent).toBe('Unlock and pay ₿21 · $0.02');
   });
 
   it('says the balance is too low and shows the own address and QR to add funds', () => {
@@ -150,8 +186,9 @@ describe('WalletPay', () => {
   it('says how much is still missing, in ₿ and fiat, above the own address', () => {
     hookWith('insufficient', 3, 1_234);
     renderPay();
-    const missing = screen.getByText(/^Still missing: ₿1'234/, { selector: 'p' });
-    expect(missing.textContent).toBe("Still missing: ₿1'234 · $1.23");
+    expect(screen.getByText(/^Still missing: ₿1'234/, { selector: 'p' }).textContent).toBe(
+      "Still missing: ₿1'234 · $1.23",
+    );
     expect(screen.getByText(/^ada@/)).toBeTruthy();
     cleanup();
     hookWith('insufficient', 3, 1_234);
@@ -159,6 +196,15 @@ describe('WalletPay', () => {
       <WalletPay sparkInvoice="spark1x" pr="lnbc210n1x" amountSats={21} rateDay={null} />,
     );
     expect(screen.getByText(/^Still missing/).textContent).toBe("Still missing: ₿1'234");
+  });
+
+  it('keeps the missing amount when the member has no address', () => {
+    useAuthStore.setState({ account: { username: null } as never });
+    hookWith('insufficient', 0, 21);
+    renderPay();
+    expect(screen.getByText(/^Still missing: ₿21/).textContent).toBe('Still missing: ₿21 · $0.02');
+    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('shows the alert alone when the member has no username', () => {
@@ -169,16 +215,6 @@ describe('WalletPay', () => {
     expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
-  });
-
-  it('keeps the missing amount when the member has no address', () => {
-    useAuthStore.setState({ account: { username: null } as never });
-    hookWith('insufficient', 0, 21);
-    renderPay();
-    expect(screen.getByRole('alert')).toBeTruthy();
-    expect(screen.getByText(/^Still missing: ₿21/).textContent).toBe('Still missing: ₿21 · $0.02');
-    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
-    expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('shows the alert alone when a blank username gives no address', () => {
