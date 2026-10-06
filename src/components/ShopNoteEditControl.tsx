@@ -253,6 +253,11 @@ export function ShopNoteEditControl({
   // and leave this panel open; the next save must not fetch those URLs again.
   const keptStillBytes = useRef(new Map<string, KeptStillBytes>());
 
+  function endPickSession(): void {
+    pickSession.current += 1;
+    setPicking(0);
+  }
+
   function replaceKept(next: ShopKeptMedia[]): void {
     keptRef.current = next;
     setKept(next);
@@ -301,7 +306,7 @@ export function ShopNoteEditControl({
       return;
     }
     openingRef.current = true;
-    pickSession.current += 1;
+    endPickSession();
     try {
       keptStillBytes.current.clear();
       setDraft(stripShopHashtag(message.text));
@@ -398,7 +403,9 @@ export function ShopNoteEditControl({
         }
       }
     } finally {
-      setPicking((count) => count - 1);
+      if (session === pickSession.current) {
+        setPicking((count) => count - 1);
+      }
     }
     if (session !== pickSession.current) {
       return;
@@ -520,7 +527,7 @@ export function ShopNoteEditControl({
         aria-expanded={open}
         onClick={() => {
           if (open) {
-            pickSession.current += 1;
+            endPickSession();
             closeEditor();
             return;
           }
@@ -556,7 +563,7 @@ export function ShopNoteEditControl({
                 void save();
               }}
               onCancel={() => {
-                pickSession.current += 1;
+                endPickSession();
                 setSaveError(false);
                 closeEditor();
               }}
