@@ -833,7 +833,7 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ### Variant: home-from-menu
 
-Signed in. The member opened **Shops** from the Menu (its arrow returns to `/welcome`), then chose Menu **Home**. The forum home shows the wordmark top-left and no arrow, although this tab has an earlier view. The in-app view history now holds only `/welcome`, so the next screen's arrow returns here. The rest is the default welcome.
+Signed in. The member opened **Shops** from the Menu (its arrow returns to `/welcome`), then chose Menu **Home**. The forum home shows the wordmark top-left and no arrow. The in-app view history now holds only `/welcome`, so the next screen's arrow returns here. The rest is the default welcome.
 
 ![21.gifts welcome after Menu Home](images/welcome-home-from-menu.png)
 
