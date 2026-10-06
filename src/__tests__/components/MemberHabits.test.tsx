@@ -433,6 +433,73 @@ describe('MemberHabits', () => {
     expect(gets).toBeGreaterThan(1);
   });
 
+  it('keeps an open edit and does not post the same action twice while the reload fails', async () => {
+    let posts = 0;
+    let gets = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          return json({ ok: true });
+        }
+        gets += 1;
+        if (gets === 2 || gets === 3) {
+          throw new Error('refresh');
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const editName = screen.getAllByLabelText('Name')[0];
+    if (!(editName instanceof HTMLInputElement)) {
+      throw new Error('missing edit name');
+    }
+    fireEvent.change(editName, { target: { value: 'Kept' } });
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+    expect(editName.value).toBe('Kept');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+
+    const addName = screen.getAllByLabelText('Name').at(-1);
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Twice' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(posts).toBe(2);
+      expect(gets).toBe(3);
+    });
+    expect(addName.value).toBe('Twice');
+    expect(editName.value).toBe('Kept');
+
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(gets).toBe(4);
+      expect(addName.value).toBe('');
+    });
+    expect(posts).toBe(2);
+    expect(editName.value).toBe('Kept');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('keeps the list and shows an error when a later save fails', async () => {
     let posts = 0;
     let gets = 0;

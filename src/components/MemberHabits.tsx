@@ -66,6 +66,7 @@ export function MemberHabits(): ReactElement {
   const listGeneration = useRef(0);
   const listSettled = useRef(false);
   const listAlive = useRef(true);
+  const postedKeys = useRef(new Set<string>());
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
   const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
@@ -85,6 +86,7 @@ export function MemberHabits(): ReactElement {
     const generation = listGeneration.current + 1;
     listGeneration.current = generation;
     listSettled.current = false;
+    postedKeys.current.clear();
     setLoading(true);
     setError(false);
     void fetchMemberHabits(session).then(
@@ -112,23 +114,23 @@ export function MemberHabits(): ReactElement {
     };
   }, [session, attempt]);
 
-  async function refresh(): Promise<void> {
+  async function refresh(): Promise<boolean> {
     const generation = listGeneration.current + 1;
     listGeneration.current = generation;
     try {
       const next = await fetchMemberHabits(session);
       if (!listAlive.current || generation !== listGeneration.current) {
-        return;
+        return false;
       }
       setData(next);
-      setEditByHabitId({});
-      setEditingHabitId(null);
       setError(false);
+      return true;
     } catch {
       if (!listAlive.current || generation !== listGeneration.current) {
-        return;
+        return false;
       }
       setError(true);
+      return false;
     }
   }
 
@@ -136,12 +138,24 @@ export function MemberHabits(): ReactElement {
     if (!listSettled.current) {
       return false;
     }
+    const key = JSON.stringify(body);
     try {
       if (session === null || session === '') {
         throw new Error(SAVE_ERROR);
       }
-      await postMemberHabit(session, body, timeZone);
-      await refresh();
+      if (!postedKeys.current.has(key)) {
+        await postMemberHabit(session, body, timeZone);
+        postedKeys.current.add(key);
+      }
+      const listed = await refresh();
+      if (!listed) {
+        return false;
+      }
+      postedKeys.current.delete(key);
+      const closeEdit = body.action === 'edit' || body.action === 'archive' ? body.id : undefined;
+      if (typeof closeEdit === 'string') {
+        cancelEdit(closeEdit);
+      }
       return true;
     } catch {
       setError(true);
