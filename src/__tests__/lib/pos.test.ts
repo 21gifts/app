@@ -110,20 +110,28 @@ describe('fetchShopChargeInvoice', () => {
     paidAt: null,
   };
 
-  function shop(charge: unknown, invoice: Response | (() => Response)): ReturnType<typeof vi.fn> {
+  function shop(
+    charge: unknown,
+    invoice: Response | (() => Response),
+    second: unknown = charge,
+  ): ReturnType<typeof vi.fn> {
+    let reads = 0;
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       if (init?.method === 'POST') {
         return typeof invoice === 'function' ? invoice() : invoice;
       }
-      return json({ name: 'Shop', username: 'shop', minSats: 1, maxSats: 9, charge });
+      reads += 1;
+      const shown = reads === 1 ? charge : second;
+      return json({ name: 'Shop', username: 'shop', minSats: 1, maxSats: 9, charge: shown });
     });
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
   }
 
-  it('asks the open charge for its Spark invoice', async () => {
+  it('asks the open charge for its Spark invoice and checks it is still open', async () => {
     const fetchMock = shop(OPEN, json({ pr: 'lnbc1', amountSats: 7_000, sparkInvoice: 'spark1' }));
     await expect(fetchShopChargeInvoice('my shop')).resolves.toEqual({
+      kind: 'invoice',
       amountSats: 7_000,
       sparkInvoice: 'spark1',
     });
@@ -133,13 +141,16 @@ describe('fetchShopChargeInvoice', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ amountSats: 7_000 }),
     });
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/pay/my%20shop');
   });
 
   it('accepts a charge and an invoice without the optional fields', async () => {
     const noStatus: Partial<typeof OPEN> = { ...OPEN };
     delete noStatus.status;
+    delete noStatus.id;
     shop(noStatus, json({ pr: 'lnbc1', sparkInvoice: 'spark1' }));
     await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({
+      kind: 'invoice',
       amountSats: 7_000,
       sparkInvoice: 'spark1',
     });
@@ -151,10 +162,27 @@ describe('fetchShopChargeInvoice', () => {
     ['a paid charge', { ...OPEN, status: 'paid' }],
     ['a charge that has run out', { ...OPEN, expiresAt: new Date(Date.now() - 1).toISOString() }],
     ['a charge without a readable end', { ...OPEN, expiresAt: 'soon' }],
-  ])('gives null for %s and asks for no invoice', async (_label, charge) => {
+  ])('gives none for %s and asks for no invoice', async (_label, charge) => {
     const fetchMock = shop(charge, json({ sparkInvoice: 'spark1' }));
-    await expect(fetchShopChargeInvoice('shop')).resolves.toBeNull();
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({ kind: 'none' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives none when the charge closed before the second read', async () => {
+    shop(OPEN, json({ pr: 'lnbc1', amountSats: 7_000, sparkInvoice: 'spark1' }), {
+      ...OPEN,
+      status: 'paid',
+    });
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({ kind: 'none' });
+  });
+
+  it.each([
+    ['another charge', { ...OPEN, id: 'c2' }],
+    ['another amount', { ...OPEN, amountSats: 21 }],
+    ['another end', { ...OPEN, expiresAt: new Date(Date.now() + 120_000).toISOString() }],
+  ])('falls back when the second read shows %s', async (_label, second) => {
+    shop(OPEN, json({ pr: 'lnbc1', amountSats: 7_000, sparkInvoice: 'spark1' }), second);
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({ kind: 'fallback' });
   });
 
   it.each([
@@ -163,16 +191,32 @@ describe('fetchShopChargeInvoice', () => {
     ['another amount', json({ pr: 'lnbc1', amountSats: 21, sparkInvoice: 'spark1' })],
     ['a refused invoice', json({ error: 'nope' }, 400)],
     ['an invoice that is not JSON', new Response('nope', { status: 200 })],
-  ])('gives null for %s', async (_label, invoice) => {
-    shop(OPEN, invoice);
-    await expect(fetchShopChargeInvoice('shop')).resolves.toBeNull();
+  ])('falls back for %s and reads the charge once', async (_label, invoice) => {
+    const fetchMock = shop(OPEN, invoice);
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({ kind: 'fallback' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('gives null when the shop cannot be read or the request fails', async () => {
+  it('falls back when the shop cannot be read or the request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ error: 'Not found' }, 404)));
-    await expect(fetchShopChargeInvoice('shop')).resolves.toBeNull();
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({ kind: 'fallback' });
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
-    await expect(fetchShopChargeInvoice('shop')).resolves.toBeNull();
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({ kind: 'fallback' });
+  });
+
+  it('falls back when the second read fails', async () => {
+    let reads = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          return json({ pr: 'lnbc1', amountSats: 7_000, sparkInvoice: 'spark1' });
+        }
+        reads += 1;
+        return reads === 1 ? json({ charge: OPEN }) : json({ error: 'busy' }, 503);
+      }),
+    );
+    await expect(fetchShopChargeInvoice('shop')).resolves.toEqual({ kind: 'fallback' });
   });
 });
 
