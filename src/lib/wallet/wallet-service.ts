@@ -192,20 +192,23 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
 }
 
 /**
- * Refreshes the balance on the current connection with a plain read. No-ops
- * without a connection. When reads overlap only the latest one writes. Never
- * rejects; a failure while current ends in the store.
+ * Refreshes the balance on the current connection with a plain read, or a
+ * read after the wallet has synced. No-ops without a connection. When reads
+ * overlap only the latest one writes. Never rejects; a failure while current
+ * ends in the store.
  *
+ * @param options - Set `ensureSynced` to read after the wallet has synced, so
+ *   a payment that arrived without a wallet event is counted.
  * @returns Resolves when the refresh finishes or is skipped.
  */
-export async function refreshWallet(): Promise<void> {
+export async function refreshWallet(options?: { ensureSynced?: boolean }): Promise<void> {
   const run = runCounter;
   const conn = connection;
   if (conn === null) {
     return;
   }
   try {
-    await readBalance(run, conn);
+    await readBalance(run, conn, options);
   } catch {
     await failRun(run);
   }

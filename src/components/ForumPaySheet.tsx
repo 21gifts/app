@@ -26,6 +26,8 @@ export interface ForumPayInvoice {
   amountSats: number;
   /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
   sparkInvoice?: string | null | undefined;
+  /** True for the posting fee of a new post or reply: paying it also posts that text. */
+  postsOnPay?: boolean;
 }
 
 /**
@@ -177,6 +179,7 @@ export function ForumPaySheet({
         pr={invoiceForCard.pr}
         amountSats={invoiceForCard.amountSats}
         rateDay={rateDay}
+        postsOnPay={invoiceForCard.postsOnPay === true}
       />
       {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
       {payWaiting ? (

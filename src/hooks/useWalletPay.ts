@@ -5,7 +5,12 @@ import { getE2eNow } from '@/lib/config';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
-import { connectWallet, payFromWallet, type WalletSendResult } from '@/lib/wallet/wallet-service';
+import {
+  connectWallet,
+  payFromWallet,
+  refreshWallet,
+  type WalletSendResult,
+} from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -16,6 +21,12 @@ import { useWalletStore } from '@/stores/wallet-store';
  * payment whose screen has no long-poll that closes the sheet (repayment).
  */
 export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
+
+/**
+ * How often the pay slot reads the synced wallet balance while `insufficient`
+ * shows, so Bitcoin that arrives without a wallet event still ends that view.
+ */
+export const WALLET_PAY_BALANCE_POLL_MS = 4_000;
 
 /**
  * What the pay slot of a pay sheet shows. The in-app wallet is the only way
@@ -29,9 +40,9 @@ export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
  * - `preparing`: the wallet opens or reads amount and fee.
  * - `confirm`: fee shown, **Pay from wallet** pays.
  * - `paying`: the payment is sent or was sent; the sheet's long-poll waits.
- * - `insufficient`: the balance does not cover the payment.
- * - `received`: Bitcoin arrived after `insufficient`, which the member's own
- *   pay tap reached; the slot prepares and pays on its own.
+ * - `insufficient`: the balance does not cover the payment; the slot reads the
+ *   synced balance every {@link WALLET_PAY_BALANCE_POLL_MS} and prepares again
+ *   once it covers amount and known fee.
  * - `failed`: the wallet could not be opened or could not prepare this
  *   payment; **Try again** starts over.
  * - `prfUnsupported`: the passkey answered without PRF output, so this phone
@@ -46,7 +57,6 @@ export type WalletPayView =
   | 'confirm'
   | 'paying'
   | 'insufficient'
-  | 'received'
   | 'failed'
   | 'prfUnsupported'
   | 'unconfirmed';
@@ -118,7 +128,6 @@ const VISUAL_VIEWS: Record<string, WalletPayView> = {
   'wallet-pay-confirm': 'confirm',
   'wallet-pay-paying': 'paying',
   'wallet-pay-insufficient': 'insufficient',
-  'wallet-pay-received': 'received',
   'wallet-pay-failed': 'failed',
   'wallet-pay-prf-unsupported': 'prfUnsupported',
   'wallet-pay-unconfirmed': 'unconfirmed',
@@ -156,15 +165,13 @@ function visualView(): WalletPayView | null {
  * gives no PRF output shows `prfUnsupported`. A wallet that leaves
  * `ready` before the send or while `insufficient` shows, or an account that
  * stops being able to pay from it then, starts over. After
- * `insufficient`, a balance above the one held when that prepare or send
- * started, or the lowest one seen since (or a first known balance), prepares
- * again; a send is never retried on its own. When the member's own tap
- * (**Unlock and pay** or **Pay from wallet**) reached `insufficient`, that
- * prepare shows `received` and continues like the one-tap unlock: it pays at
- * once when the fee is ₿0, or stops at `confirm` when it is higher. A prepare
- * that no tap started, a closed slot, a new request or amount, a retry, or a
- * wallet that leaves `ready` drops that tap. While `insufficient` shows,
- * `missingSats` is amount plus the known fee minus the balance. A new request or a new
+ * `insufficient`, a balance that covers amount and the known fee and is above
+ * the one held when that prepare or send started, or the lowest one seen since
+ * (or a first known balance that covers them), prepares again and ends at
+ * `confirm`; a send is never retried on its own. While `insufficient` shows,
+ * the slot reads the synced balance every {@link WALLET_PAY_BALANCE_POLL_MS},
+ * one read at a time, and `missingSats` is amount plus the known fee minus the
+ * balance. A new request or a new
  * `amountSats` starts over, and a send prepared for an earlier one is never
  * shown or paid. Visual pins (`?visual=wallet-pay-…`) apply only in a
  * Playwright build and leave the actions inert.
@@ -190,8 +197,6 @@ export function useWalletPay(
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insufficientBalance = useRef<number | null>(null);
   const autoPayRun = useRef<number | null>(null);
-  const tappedInsufficient = useRef(false);
-  const [resumed, setResumed] = useState(false);
   const input = typeof sparkInvoice === 'string' && sparkInvoice !== '' ? sparkInvoice : pr;
   const pinned = visualView();
   const usable =
@@ -203,8 +208,6 @@ export function useWalletPay(
   useEffect(() => {
     generation.current += 1;
     sendRef.current = null;
-    tappedInsufficient.current = false;
-    setResumed(false);
     setPhase('idle');
     setFeeSats(null);
     return () => {
@@ -225,8 +228,6 @@ export function useWalletPay(
       }
       if (result.kind === 'insufficient') {
         insufficientBalance.current = balanceBefore;
-        tappedInsufficient.current = true;
-        setResumed(false);
         setPhase('insufficient');
         return;
       }
@@ -252,17 +253,9 @@ export function useWalletPay(
       }
       const autoPay = autoPayRun.current === run;
       autoPayRun.current = null;
-      const autoSend =
-        result.kind === 'confirm' &&
-        result.amountSats === amountSats &&
-        autoPay &&
-        result.feeSats === 0;
-      if (!autoSend) {
-        setResumed(false);
-      }
       if (result.kind === 'confirm' && result.amountSats !== amountSats) {
         setPhase('failed');
-      } else if (result.kind === 'confirm' && autoSend) {
+      } else if (result.kind === 'confirm' && autoPay && result.feeSats === 0) {
         setFeeSats(result.feeSats);
         sendPrepared(result.send, run);
       } else if (result.kind === 'confirm') {
@@ -272,7 +265,6 @@ export function useWalletPay(
         setPhase('confirm');
       } else if (result.kind === 'insufficient') {
         insufficientBalance.current = balanceBefore;
-        tappedInsufficient.current = autoPay;
         setFeeSats(result.feeSats ?? null);
         setPhase('insufficient');
       } else {
@@ -286,23 +278,40 @@ export function useWalletPay(
       return;
     }
     const seen = insufficientBalance.current;
-    if (seen !== null && balanceSats <= seen) {
-      insufficientBalance.current = balanceSats;
+    const covers = balanceSats >= amountSats + (feeSats ?? 0);
+    if (!covers || (seen !== null && balanceSats <= seen)) {
+      if (seen === null || balanceSats < seen) {
+        insufficientBalance.current = balanceSats;
+      }
       return;
     }
     generation.current += 1;
     insufficientBalance.current = null;
-    if (tappedInsufficient.current) {
-      autoPayRun.current = generation.current;
-      setResumed(true);
-    }
     setPhase('idle');
-  }, [phase, balanceSats]);
+  }, [phase, balanceSats, amountSats, feeSats]);
+
+  useEffect(() => {
+    if (phase !== 'insufficient' || status !== 'ready' || !usable) {
+      return;
+    }
+    let reading = false;
+    const poll = setInterval(() => {
+      if (reading) {
+        return;
+      }
+      reading = true;
+      void refreshWallet({ ensureSynced: true }).then(() => {
+        reading = false;
+      });
+    }, WALLET_PAY_BALANCE_POLL_MS);
+    return () => {
+      clearInterval(poll);
+    };
+  }, [phase, status, usable]);
 
   useEffect(() => {
     if (status === 'error' || !usable) {
       autoPayRun.current = null;
-      tappedInsufficient.current = false;
     }
   }, [status, usable]);
 
@@ -316,8 +325,6 @@ export function useWalletPay(
     generation.current += 1;
     insufficientBalance.current = null;
     sendRef.current = null;
-    tappedInsufficient.current = false;
-    setResumed(false);
     setFeeSats(null);
     setPhase('idle');
   }, [status, usable, phase]);
@@ -361,8 +368,6 @@ export function useWalletPay(
     generation.current += 1;
     insufficientBalance.current = null;
     sendRef.current = null;
-    tappedInsufficient.current = false;
-    setResumed(false);
     setFeeSats(null);
     setPhase('idle');
     if (useWalletStore.getState().status !== 'error') {
@@ -385,8 +390,6 @@ export function useWalletPay(
     view = 'failed';
   } else if (phase === 'idle' && status === 'locked') {
     view = 'unlock';
-  } else if (resumed && (phase === 'idle' || phase === 'preparing' || phase === 'paying')) {
-    view = 'received';
   } else if (phase === 'idle' || phase === 'unlocking') {
     view = 'preparing';
   } else if (phase === 'confirm') {

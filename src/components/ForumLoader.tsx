@@ -1927,6 +1927,7 @@ export function ForumLoader({
           pr: invoice.pr,
           amountSats: invoice.amountSats,
           sparkInvoice: invoice.sparkInvoice,
+          postsOnPay: true,
         });
         setPayHost('composer');
         pendingComposeTextRef.current = trimmed;
@@ -2437,6 +2438,7 @@ export function ForumLoader({
         pr: invoice.pr,
         amountSats: invoice.amountSats,
         sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
