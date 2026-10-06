@@ -1088,7 +1088,7 @@ Handbook states: default (home without a configured wallet), balance-locked, bal
 
 ### `/settings`
 
-Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `SettingsScreen`: `Card surface={false}` with **h1** **Settings** (`nav.settings`, same classes as `/moderate`), then a `section` labelled by its **h2** **Wallet** (`wallet.title`, the small uppercase label classes of `wallet.balanceHeading`). With a non-empty `passkeyCredentialId`: one labeled secondary `ButtonLink size="lg"` **Recovery phrase** (`settings.recoveryPhrase`). Missing or empty id: the muted `text-sm` hint `wallet.addPhraseHint`, then a labeled primary `ButtonLink size="lg"` **Add recovery phrase** (`wallet.addPhrase`). Both open `/wallet/phrase` client-side; its top-left arrow comes back here. No passkey prompt on this page.
+Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `SettingsScreen`: `Card surface={false}` with **h1** **Settings** (`settings.heading`, same classes as `/moderate`), then a `section` labelled by its **h2** **Wallet** (`wallet.title`, the small uppercase label classes of `wallet.balanceHeading`). With a non-empty `passkeyCredentialId`: one labeled secondary `ButtonLink size="lg"` **Recovery phrase** (`settings.recoveryPhrase`). Missing or empty id: the muted `text-sm` hint `wallet.addPhraseHint`, then a labeled primary `ButtonLink size="lg"` **Add recovery phrase** (`wallet.addPhrase`). Both open `/wallet/phrase` client-side; its top-left arrow comes back here. No passkey prompt on this page.
 
 Handbook states: default (Recovery phrase), activate (hint and Add recovery phrase).
 

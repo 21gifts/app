@@ -4682,7 +4682,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Signed-in `/settings` body. Holds the recovery-phrase entry that used to sit under the wallet home buttons.
 - **Inputs:** `session` and `account` from `useAuthStore`. Reads only `account.passkeyCredentialId`.
-- **Returns / side effects:** `null` without a session or before the account has loaded. Otherwise a `Card surface={false}` with **h1** **Settings** (`nav.settings`) and a `section` labelled by its small uppercase heading **Wallet** (`wallet.title`). With a non-empty `passkeyCredentialId`: a secondary `ButtonLink size="lg"` **Recovery phrase** (`settings.recoveryPhrase`). Missing, null, or empty: the muted hint `wallet.addPhraseHint` and a primary `ButtonLink size="lg"` **Add recovery phrase** (`wallet.addPhrase`). Both open `/wallet/phrase` client-side, so its top-left arrow returns to `/settings`. No passkey prompt and no fetch on this page.
+- **Returns / side effects:** `null` without a session or before the account has loaded. Otherwise a `Card surface={false}` with **h1** **Settings** (`settings.heading`) and a `section` labelled by its small uppercase heading **Wallet** (`wallet.title`). With a non-empty `passkeyCredentialId`: a secondary `ButtonLink size="lg"` **Recovery phrase** (`settings.recoveryPhrase`). Missing, null, or empty: the muted hint `wallet.addPhraseHint` and a primary `ButtonLink size="lg"` **Add recovery phrase** (`wallet.addPhrase`). Both open `/wallet/phrase` client-side, so its top-left arrow returns to `/settings`. No passkey prompt and no fetch on this page.
 - **Used by:** `SettingsPage`.
 
 ## Function: GrantsPage
