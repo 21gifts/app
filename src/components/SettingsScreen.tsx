@@ -25,7 +25,7 @@ export function SettingsScreen(): ReactElement | null {
   return (
     <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-        {t('nav.settings')}
+        {t('settings.heading')}
       </h1>
       <section
         aria-labelledby="settings-wallet"
