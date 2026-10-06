@@ -170,7 +170,8 @@ function visualView(): WalletPayView | null {
  * (or a first known balance that covers them), prepares again and ends at
  * `confirm`; a send is never retried on its own. While `insufficient` shows,
  * the slot reads the synced balance every {@link WALLET_PAY_BALANCE_POLL_MS},
- * one read at a time, and `missingSats` is amount plus the known fee minus the
+ * one read at a time; a failed read leaves the wallet and the view as they
+ * are, and the next one tries again. `missingSats` is amount plus the known fee minus the
  * balance. A new request or a new
  * `amountSats` starts over, and a send prepared for an earlier one is never
  * shown or paid. Visual pins (`?visual=wallet-pay-…`) apply only in a
@@ -300,7 +301,7 @@ export function useWalletPay(
         return;
       }
       reading = true;
-      void refreshWallet({ ensureSynced: true }).then(() => {
+      void refreshWallet({ ensureSynced: true, ignoreFailure: true }).finally(() => {
         reading = false;
       });
     }, WALLET_PAY_BALANCE_POLL_MS);
