@@ -276,7 +276,11 @@ export function SignedInChrome(): ReactElement {
         onClick={() => {
           setOpen((current) => !current);
         }}
-        className="relative z-[60] inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg"
+        className={
+          lifted
+            ? 'relative z-[60] inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
+            : 'inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
+        }
       >
         <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         {t('aria.menu')}

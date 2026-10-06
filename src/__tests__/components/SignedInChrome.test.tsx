@@ -232,6 +232,7 @@ describe('SignedInChrome', () => {
   it('shows Menu while Log out stays hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Menu' }).className).not.toContain('z-[60]');
     expectMenuClosed();
   });
 
