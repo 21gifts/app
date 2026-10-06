@@ -50,6 +50,7 @@ function sendWith(
   return {
     state,
     busy: false,
+    sending: false,
     text: '',
     setText: vi.fn(),
     comment: '',
@@ -363,9 +364,9 @@ describe('WalletSend base-chain address', () => {
     const speeds = within(region).getByRole('group', { name: 'Speed' });
     const buttons = within(speeds).getAllByRole('button');
     expect(buttons.map((button) => button.textContent)).toEqual([
-      "Fast₿2'840$2.84",
-      "Medium₿1'420$1.42",
-      'Slow₿710$0.71',
+      "Fast₿2'840 · $2.84",
+      "Medium₿1'420 · $1.42",
+      'Slow₿710 · $0.71',
     ]);
     expect(buttons.map((button) => button.getAttribute('aria-pressed'))).toEqual([
       'false',
@@ -405,8 +406,20 @@ describe('WalletSend base-chain address', () => {
     );
   });
 
+  it('keeps Cancel usable while an expired quote is renewed', () => {
+    const send = sendWith(onchainState({ renewed: true }), { busy: true, sending: false });
+    renderSend(send);
+    expect((screen.getByRole('button', { name: /^Send$/ }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    const cancel = screen.getByRole('button', { name: /^Cancel$/ }) as HTMLButtonElement;
+    expect(cancel.disabled).toBe(false);
+    fireEvent.click(cancel);
+    expect(send.cancel).toHaveBeenCalledTimes(1);
+  });
+
   it('disables the speeds, Send, and Cancel while sending', () => {
-    renderSend(sendWith(onchainState({ speed: 'fast' }), { busy: true }));
+    renderSend(sendWith(onchainState({ speed: 'fast' }), { busy: true, sending: true }));
     for (const name of [/^Fast/, /^Medium/, /^Slow/, /^Send$/, /^Cancel$/]) {
       expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
     }
@@ -461,7 +474,7 @@ describe('WalletSend confirm and sent', () => {
   it('has no step Close, and disables Send with a spinner and Cancel while sending', () => {
     const send = sendWith(
       { step: 'confirm', recipient: 'r', amountSats: 1, feeSats: 0 },
-      { busy: true },
+      { busy: true, sending: true },
     );
     const { container } = renderWithLocale(<WalletSend send={send} />);
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);

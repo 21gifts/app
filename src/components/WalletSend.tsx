@@ -197,7 +197,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
       </Button>
       <button
         type="button"
-        disabled={busy}
+        disabled={send.sending}
         onClick={close}
         className="self-center px-4 py-2 text-sm text-app-muted underline hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -322,7 +322,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
     const onchain = state.onchain;
     const totalSats = state.amountSats + state.feeSats;
     body = (
-      <div className="flex w-full flex-col items-center gap-4 py-6">
+      <div className="flex w-full flex-col items-center gap-3 py-2">
         {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
         <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
           {t('wallet.sendTo', { recipient: state.recipient })}
@@ -344,7 +344,6 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
             const fee = onchain.fees[speed];
             const covered = fee <= onchain.spendableFeeSats;
             const selected = onchain.speed === speed;
-            const live = fiatText(fee);
             return (
               <button
                 key={speed}
@@ -362,10 +361,10 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
               >
                 <span>{t(key)}</span>
                 <span className="flex flex-col items-end tabular-nums lining-nums">
-                  <span>{formatBitcoin(fee, numberFormat)}</span>
-                  {live === null ? null : (
-                    <span className="text-xs font-normal text-app-muted">{live}</span>
-                  )}
+                  <span>
+                    {formatBitcoin(fee, numberFormat)}
+                    {fiatOf(fee)}
+                  </span>
                   {covered ? null : (
                     <span className="text-xs font-normal text-app-danger">
                       {t('wallet.sendSpeedUncovered')}

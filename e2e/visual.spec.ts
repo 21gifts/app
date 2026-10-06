@@ -2216,7 +2216,9 @@ test.describe('screen baselines', () => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-amount-onchain-min');
     await openWalletSend(page);
-    await expect(page.getByRole('alert')).toHaveText('Enter an amount of at least ₿294 · $0.29.');
+    await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+      'Enter an amount of at least ₿294 · $0.29.',
+    );
     await shotScreen(page, 'state-wallet-send-amount-onchain-min');
   });
 
@@ -2275,7 +2277,7 @@ test.describe('screen baselines', () => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-confirm-onchain-renewed');
     await openWalletSend(page);
-    await expect(page.getByRole('alert')).toHaveText(
+    await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
       'The fee offer expired, so nothing was sent. Check the new fee and press Send again.',
     );
     await shotScreen(page, 'state-wallet-send-confirm-onchain-renewed');
