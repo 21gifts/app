@@ -4,7 +4,7 @@ import { WALLET_SEND_VISUAL_FIXTURE, useWalletSend, walletSendBounds } from '@/h
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import type { LnurlPayRequest } from '@/lib/api-types';
 import { encodeLnurl } from '@/lib/lnurl';
-import { fetchShopChargeInvoice } from '@/lib/pos';
+import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
 import type { WalletTarget } from '@/lib/wallet/wallet-sdk';
 import {
   parseWalletInput,
@@ -23,6 +23,7 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
 
 vi.mock('@/lib/pos', () => ({
   fetchShopChargeInvoice: vi.fn(),
+  fetchMemberSparkInvoice: vi.fn(),
 }));
 
 vi.mock('@/lib/api', async (importOriginal) => ({
@@ -73,7 +74,9 @@ beforeEach(() => {
   vi.mocked(postLnurlPayRequest).mockReset();
   vi.mocked(postLnurlInvoice).mockReset();
   vi.mocked(fetchShopChargeInvoice).mockReset();
-  vi.mocked(fetchShopChargeInvoice).mockResolvedValue(null);
+  vi.mocked(fetchShopChargeInvoice).mockResolvedValue({ kind: 'none' });
+  vi.mocked(fetchMemberSparkInvoice).mockReset();
+  vi.mocked(fetchMemberSparkInvoice).mockResolvedValue(null);
   useAuthStore.setState({ session: 'sess' });
 });
 
@@ -251,7 +254,7 @@ describe('useWalletSend amount', () => {
       amountSats: 100,
       comment: 'Thank',
     });
-    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'bob@pay.example' });
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'bob@21.gifts' });
   });
 
   it('sends no comment when it is blank', async () => {
@@ -459,6 +462,15 @@ describe('useWalletSend visual pins', () => {
         feeSats: 0,
       },
     ],
+    [
+      'send-confirm-member',
+      {
+        step: 'confirm',
+        recipient: 'alice@21.gifts',
+        amountSats: fixture.amountSats,
+        feeSats: 0,
+      },
+    ],
     ['send-sent', { step: 'sent', amountSats: fixture.amountSats, recipient: fixture.recipient }],
     ['send-onchain', { step: 'input', error: 'onchain' }],
     ['send-unsupported', { step: 'input', error: 'unsupported' }],
@@ -504,6 +516,7 @@ describe('useWalletSend visual pins', () => {
     expect(parseWalletInput).not.toHaveBeenCalled();
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(postLnurlInvoice).not.toHaveBeenCalled();
+    expect(fetchMemberSparkInvoice).not.toHaveBeenCalled();
   });
 
   it('pins send-confirm-sending as a confirm step with a send in flight', () => {
@@ -572,6 +585,8 @@ describe('useWalletSend visual pins', () => {
 
   it('ignores pins outside a Playwright build and unknown values', () => {
     window.history.replaceState({}, '', '/wallet?visual=send-confirm');
+    expect(renderHook(() => useWalletSend()).result.current.state.step).toBe('input');
+    window.history.replaceState({}, '', '/wallet?visual=send-confirm-member');
     expect(renderHook(() => useWalletSend()).result.current.state.step).toBe('input');
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=balance-ready');
@@ -1256,6 +1271,7 @@ describe('useWalletSend fixed amount', () => {
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, encodeLnurl('https://21.gifts/pay/shop'));
     expect(result.current.state).toMatchObject({ step: 'confirm', recipient: '21.gifts' });
+    expect(fetchMemberSparkInvoice).not.toHaveBeenCalled();
   });
 
   it('keeps the recipient the wallet read for a pasted Lightning address', async () => {
@@ -1402,7 +1418,7 @@ describe('useWalletSend fixed amount', () => {
 
 describe('useWalletSend shop charge', () => {
   const SHOP_QR = WALLET_SEND_VISUAL_FIXTURE.fixedLink;
-  const CHARGE = { amountSats: 7_000, sparkInvoice: 'spark1shop' };
+  const CHARGE = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
 
   function confirmShop(amountSats = 7_000): WalletPayResult {
     return { kind: 'confirm', amountSats, feeSats: 0, send: async () => ({ kind: 'paid' }) };
@@ -1434,14 +1450,31 @@ describe('useWalletSend shop charge', () => {
     expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'shop@21.gifts' });
   });
 
-  it('reads the text with the wallet when the shop has no charge or Spark invoice', async () => {
+  it('reads the text with the wallet when the shop has no charge', async () => {
     target(LNURL);
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, SHOP_QR);
     expect(fetchShopChargeInvoice).toHaveBeenCalledWith('shop');
     expect(parseWalletInput).toHaveBeenCalledWith(SHOP_QR);
     expect(payFromWallet).not.toHaveBeenCalled();
-    expect(result.current.state).toMatchObject({ step: 'amount' });
+    expect(result.current.state).toMatchObject({ step: 'amount', target: { member: 'shop' } });
+  });
+
+  it('pays an open charge without a Spark invoice over Lightning, without asking again', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue({ kind: 'fallback' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmShop());
+    target({ ...LNURL, minSats: 7_000, maxSats: 7_000 } as WalletTarget);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(parseWalletInput).toHaveBeenCalledWith(SHOP_QR);
+    expect(fetchMemberSparkInvoice).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledWith({
+      type: 'lnurl',
+      request: (LNURL as Extract<WalletTarget, { type: 'lnurl' }>).request,
+      amountSats: 7_000,
+    });
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'shop@21.gifts' });
   });
 
   it.each([
@@ -1461,6 +1494,7 @@ describe('useWalletSend shop charge', () => {
       request: (LNURL as Extract<WalletTarget, { type: 'lnurl' }>).request,
       amountSats: 7_000,
     });
+    expect(fetchMemberSparkInvoice).not.toHaveBeenCalled();
   });
 
   it('shows the low balance of a Spark payment instead of falling back', async () => {
@@ -1486,5 +1520,186 @@ describe('useWalletSend shop charge', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(parseWalletInput).not.toHaveBeenCalled();
     expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+});
+
+describe('useWalletSend member without a charge', () => {
+  const MEMBER: WalletTarget = { ...LNURL, recipient: 'alice@21.gifts' };
+  const LIGHTNING = {
+    type: 'lnurl',
+    request: (LNURL as Extract<WalletTarget, { type: 'lnurl' }>).request,
+    amountSats: 100,
+    comment: 'Thank',
+  };
+  const LIGHTNING_NO_MESSAGE = {
+    type: 'lnurl',
+    request: LIGHTNING.request,
+    amountSats: 100,
+  };
+
+  function prepared(amountSats = 100, feeSats = 0): WalletPayResult {
+    return { kind: 'confirm', amountSats, feeSats, send: async () => ({ kind: 'paid' }) };
+  }
+
+  async function memberAmountStep(
+    text = 'Alice@21.gifts',
+  ): Promise<{ current: ReturnType<typeof useWalletSend> }> {
+    target(MEMBER);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, text);
+    act(() => {
+      result.current.setComment('  Thanks a lot ');
+    });
+    return result;
+  }
+
+  it.each([
+    ['a pasted address', 'Alice@21.gifts'],
+    [
+      'the /pl/?lightning= link',
+      `https://21.gifts/pl/?lightning=${encodeLnurl('https://21.gifts/.well-known/lnurlp/alice')}`,
+    ],
+  ])(
+    'pays the amount entered for %s with the member Spark invoice and no fee',
+    async (_label, text) => {
+      const result = await memberAmountStep(text);
+      expect(fetchShopChargeInvoice).toHaveBeenCalledWith('alice');
+      expect(result.current.state).toMatchObject({
+        step: 'amount',
+        target: { type: 'lnurl', member: 'alice', recipient: 'alice@21.gifts' },
+      });
+      vi.mocked(fetchMemberSparkInvoice).mockResolvedValue('spark1alice');
+      vi.mocked(payFromWallet).mockResolvedValue(prepared());
+      await act(async () => {
+        result.current.submitAmount(100);
+      });
+      expect(fetchMemberSparkInvoice).toHaveBeenCalledWith('alice', 100, 'Thank');
+      expect(payFromWallet).toHaveBeenCalledTimes(1);
+      expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'spark1alice' });
+      expect(result.current.busy).toBe(false);
+      expect(result.current.state).toEqual({
+        step: 'confirm',
+        recipient: 'alice@21.gifts',
+        amountSats: 100,
+        feeSats: 0,
+      });
+    },
+  );
+
+  it('stays busy while the Spark invoice is asked', async () => {
+    const result = await memberAmountStep();
+    const finish = pending(vi.mocked(fetchMemberSparkInvoice));
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.busy).toBe(true);
+    expect(payFromWallet).not.toHaveBeenCalled();
+    vi.mocked(payFromWallet).mockResolvedValue(prepared());
+    await act(async () => {
+      finish.resolve('spark1alice');
+    });
+    expect(result.current.state).toMatchObject({ step: 'confirm', feeSats: 0 });
+  });
+
+  it('pays over Lightning when the api issues no Spark invoice', async () => {
+    const result = await memberAmountStep();
+    vi.mocked(payFromWallet).mockResolvedValue(prepared(100, 2));
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(fetchMemberSparkInvoice).toHaveBeenCalledWith('alice', 100, 'Thank');
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledWith(LIGHTNING);
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'alice@21.gifts',
+      amountSats: 100,
+      feeSats: 2,
+    });
+  });
+
+  it.each([
+    ['a failed prepare', { kind: 'failed' } as WalletPayResult],
+    ['a closed wallet', { kind: 'unlock' } as WalletPayResult],
+    ['another amount', prepared(21)],
+  ])('pays over Lightning after %s of the Spark invoice', async (_label, first) => {
+    const result = await memberAmountStep();
+    vi.mocked(fetchMemberSparkInvoice).mockResolvedValue('spark1alice');
+    vi.mocked(payFromWallet).mockResolvedValueOnce(first).mockResolvedValueOnce(prepared(100, 2));
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(payFromWallet).toHaveBeenLastCalledWith(LIGHTNING);
+    expect(result.current.state).toMatchObject({ step: 'confirm', feeSats: 2 });
+  });
+
+  it('shows the low balance of the Spark payment instead of falling back', async () => {
+    const result = await memberAmountStep();
+    vi.mocked(fetchMemberSparkInvoice).mockResolvedValue('spark1alice');
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toEqual({ step: 'input', error: 'insufficient' });
+  });
+
+  it('sends no message when it is blank', async () => {
+    const result = await memberAmountStep();
+    act(() => {
+      result.current.setComment('   ');
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(prepared());
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(fetchMemberSparkInvoice).toHaveBeenCalledWith('alice', 100, '');
+    expect(payFromWallet).toHaveBeenCalledWith(LIGHTNING_NO_MESSAGE);
+  });
+
+  it.each([
+    ['the wallet left ready', (): void => useWalletStore.setState({ status: 'locked' })],
+    ['the amount step was closed', null],
+  ])('drops a Spark invoice that arrives after %s', async (_label, leave) => {
+    const result = await memberAmountStep();
+    const finish = pending(vi.mocked(fetchMemberSparkInvoice));
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    act(() => {
+      if (leave === null) {
+        result.current.cancel();
+      } else {
+        leave();
+      }
+    });
+    await act(async () => {
+      finish.resolve('spark1alice');
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('names the member as <name>@<host> whatever case or www. the text uses', async () => {
+    const result = await memberAmountStep('Alice@www.21.gifts');
+    expect(fetchShopChargeInvoice).toHaveBeenCalledWith('alice');
+    expect(result.current.state).toMatchObject({
+      step: 'amount',
+      target: { member: 'alice', recipient: 'alice@21.gifts' },
+    });
+  });
+
+  it('asks no Spark invoice for an address on another host read by the wallet', async () => {
+    target({ ...LNURL, recipient: 'bob@pay.example' });
+    vi.mocked(payFromWallet).mockResolvedValue(prepared(100, 1));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'sp1qexample');
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(fetchShopChargeInvoice).not.toHaveBeenCalled();
+    expect(fetchMemberSparkInvoice).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledWith(LIGHTNING_NO_MESSAGE);
   });
 });
