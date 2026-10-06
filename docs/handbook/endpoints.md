@@ -508,7 +508,7 @@
 
 ## Endpoint: GET /messages/compose-target
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats }` for the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying.
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats, firstPostFree }`: the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying, and whether this member's next top-level post is their free first post (no live or hidden top-level note of their own besides About me).
 - **Errors:** Upstream 401/409/400/503, or 502 if the api is unreachable.
 - **Used by:** `fetchComposeTarget`.
 - **Auth:** Bearer.
