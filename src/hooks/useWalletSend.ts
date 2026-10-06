@@ -326,11 +326,12 @@ function relayInputError(error: unknown): WalletSendError {
  * (`fetchShopChargeInvoice`): with one, the wallet pays its Spark invoice for
  * exactly that amount, without a fee; with none, no Spark invoice, or a
  * prepare that fails or gives another amount, the text is read as below.
- * Without an open charge (or without its Spark invoice), the amount entered
- * for that own-host member is first asked as a Spark invoice
- * (`fetchMemberSparkInvoice`) and paid without a fee; no Spark invoice, or a
- * prepare that fails or gives another amount, pays the member over Lightning
- * as before. Other own-host addresses and Spark targets are read by the
+ * When the shop has no open charge (`none`), the amount entered for that
+ * own-host member (shown as `<name>@<host>`) is first asked as a Spark
+ * invoice (`fetchMemberSparkInvoice`) and paid without a fee; no Spark
+ * invoice, or a prepare that fails or gives another amount, pays the member
+ * over Lightning as before. An open charge that cannot be paid with a Spark
+ * invoice is read as before, without that member step. Other own-host addresses and Spark targets are read by the
  * wallet. Nothing
  * is retried on its own. Visual
  * pins (`?visual=send-…`) apply only in a Playwright build and leave the
@@ -617,8 +618,9 @@ export function useWalletSend(): UseWalletSendResult {
         if (target.type === 'lnurl') {
           askAmount({
             ...target,
-            recipient: recipientOf(text, target.recipient),
-            ...(member === null ? {} : { member: member.name }),
+            ...(member === null
+              ? { recipient: recipientOf(text, target.recipient) }
+              : { recipient: member.address, member: member.name }),
           });
           return;
         }
@@ -647,8 +649,8 @@ export function useWalletSend(): UseWalletSendResult {
       if (run !== generation.current || !walletCanSend()) {
         return;
       }
-      if (charge === null) {
-        readWithWallet(shop);
+      if (charge.kind !== 'invoice') {
+        readWithWallet(charge.kind === 'none' ? shop : null);
         return;
       }
       prepare(
