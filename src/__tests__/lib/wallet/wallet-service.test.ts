@@ -1324,7 +1324,10 @@ describe('payFromWallet to a base-chain address', () => {
 
   it('is insufficient when the balance does not cover the amount and the lowest fee', async () => {
     await connectPaying({ balanceSats: 50_709, prepare: onchainPrepared(async () => undefined) });
-    await expect(payFromWallet(REQUEST)).resolves.toEqual({ kind: 'insufficient' });
+    await expect(payFromWallet(REQUEST)).resolves.toEqual({
+      kind: 'insufficient',
+      feeSats: FEES.slow,
+    });
   });
 
   it('refuses a speed the balance does not cover without sending, and still sends a covered one', async () => {
