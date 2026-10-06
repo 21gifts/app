@@ -3869,6 +3869,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'expanded-received',
+    image: 'welcome-expanded-received.png',
+    visual: 'state-welcome-expanded-received',
+    needle: "sent ₿21'000",
+  },
+  {
+    route: '/welcome',
     id: 'expanded-external',
     image: 'welcome-expanded-external.png',
     visual: 'state-welcome-expanded-external',
@@ -4706,6 +4713,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-reply.png',
     visual: 'state-messages-id-reply',
     needle: 'state-messages-id-reply',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'reply-received',
+    image: 'messages-id-reply-received.png',
+    visual: 'state-messages-id-reply-received',
+    needle: 'received ₿100',
   },
   {
     route: '/messages/[id]/author',

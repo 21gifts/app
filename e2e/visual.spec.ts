@@ -3215,6 +3215,63 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-gifts');
   });
 
+  test('state /welcome expanded-received', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-received',
+              parentId: 'm3',
+              name: 'Cyrill',
+              text: 'You got it right.',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              sats: 21000,
+              amountUsd: '18.14',
+              receivedSats: 100,
+              receivedAmountUsd: '0.09',
+              payable: false,
+              hasPhoto: false,
+              role: 'founder',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByText('You got it right.')).toBeVisible();
+    await expect(page.getByText("sent ₿21'000")).toBeVisible();
+    await expect(page.getByText('received ₿100')).toBeVisible();
+    await expect(page.getByText('$18.14')).toBeVisible();
+    await expect(page.getByText('$0.09')).toBeVisible();
+    await expect(page.getByText("₿21'100")).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-expanded-received');
+  });
+
   test('state /welcome expanded-external', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -10684,6 +10741,62 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Pater Severin')).toBeVisible();
     await expect(page.getByText("\u20BF3'000")).toBeVisible();
     await shotScreen(page, 'state-messages-id-reply');
+  });
+
+  test('state /messages/[id] reply-received', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '44444444-4444-4444-8444-444444444444';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 21000,
+      amountUsd: '18.14',
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Cyrill',
+      text: 'You got it right.',
+      createdAt: '2026-08-28T12:05:00.000Z',
+      sats: 21000,
+      amountUsd: '18.14',
+      receivedSats: 100,
+      receivedAmountUsd: '0.09',
+      payable: false,
+      hasPhoto: false,
+      role: 'founder',
+      replyCount: 0,
+    };
+    await fulfillPublicThreadReplies(page, parentId, [reply]);
+    await page.route(`**/public-messages/${replyId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(reply),
+      });
+    });
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${replyId}`);
+    await expect(page.getByText('Hello from Ada')).toBeVisible();
+    await expect(page.getByText('You got it right.')).toBeVisible();
+    await expect(page.getByText("sent ₿21'000")).toBeVisible();
+    await expect(page.getByText('received ₿100')).toBeVisible();
+    await expect(page.getByText('$18.14').first()).toBeVisible();
+    await expect(page.getByText('$0.09')).toBeVisible();
+    await expect(page.getByText("₿21'100")).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-reply-received');
   });
 
   test('screen /view/[viewKey] default', async ({ page }) => {

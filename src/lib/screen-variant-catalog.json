@@ -3252,6 +3252,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:expanded-received",
+    "label": "/welcome expanded-received",
+    "visual": "state-welcome-expanded-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:expanded-external",
     "label": "/welcome expanded-external",
     "visual": "state-welcome-expanded-external",
@@ -3969,6 +3975,12 @@
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply-received",
+    "label": "/messages/[id] reply-received",
+    "visual": "state-messages-id-reply-received",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

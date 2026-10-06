@@ -1193,6 +1193,12 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ![21.gifts welcome expanded gifts](images/welcome-expanded-gifts.png)
 
+### Variant: expanded-received
+
+On **All**, expand Ada's note. Cyrill's reply **You got it right.** shows two lines under a left rule: **sent ₿21'000 · $18.14** and **received ₿100 · $0.09**. The note footer stays **₿5**. The two amounts are not added.
+
+![21.gifts welcome expanded received](images/welcome-expanded-received.png)
+
 ### Variant: expanded-external
 
 On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button that opens `/messages/<id>/author`. This shot stays on the thread. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
@@ -4201,6 +4207,12 @@ Public permalink of Riana Rosello's note. Cyrill's reply shows `just for informa
 Same thread opened on the reply UUID. Parent + gift; permalink target ring (`data-permalink-target="true"`, `ring-1 ring-app-fg`) on the gift reply.
 
 ![21.gifts public message reply](images/messages-id-reply.png)
+
+### Variant: reply-received
+
+Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello from Ada** shows **₿21'000 · $18.14**. The reply shows **sent ₿21'000 · $18.14** and **received ₿100 · $0.09** on two lines under a left rule. Nothing on the page is **₿21'100**.
+
+![21.gifts public message reply received](images/messages-id-reply-received.png)
 
 ## Screen: /messages/[id]/author
 
