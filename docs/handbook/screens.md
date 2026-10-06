@@ -1580,6 +1580,18 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 Open **Menu** top-right → Menu includes **Home** first (Home, Shops, Point of sale, Profile, Grants, Wallet, Living room rules, Habit-Tracker, Trust Chain, Statistics, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {version}** line (`app.version`)). Profile is one line (User + Profile; no given or received amounts). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Messages shows a count on the right only when inbox unread > 0; Ada’s default shots are 0 so no number. Ada’s default welcome-menu shot shows Profile with no amounts. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {version}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. The Profile link’s accessible name is Profile. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
 ![21.gifts welcome menu](images/welcome-menu.png)
 
+### Variant: menu-lifted
+
+Open **Menu** on a wide frame whose window is too short for the ordinary dropdown but still tall enough for the compact menu once it moves up. The panel is a fixed 18rem overlay. Its top stays inside the window, it does not scroll, and **Habit-Tracker** and **Log out** stay on screen. This is not the narrow sheet.
+
+![21.gifts welcome menu lifted](images/welcome-menu-lifted.png)
+
+### Variant: menu-tall-sheet
+
+Open **Menu** on a wide frame shorter than the compact menu even with its top on the window. The wide menu uses the same full-width sheet as a narrow frame. The page underneath is hidden. The sheet does not grow its own scroll; the page scrollport reaches the lower rows.
+
+![21.gifts welcome menu tall sheet](images/welcome-menu-tall-sheet.png)
+
 ### Variant: menu-unread
 
 Open **Menu** with `unreadCount` 3 stubbed on `GET /forum/notifications` → Notifications shows **3** on the right (`nav.notificationsUnread`, accessible name Notifications, 3 unread). Messages shows a count on the right only when inbox unread > 0; Ada’s default inbox unread is 0 so no number. Other Menu rows match `menu-open`. The installed PWA home-screen badge is the sum of notification unread, inbox unread, and staff-room unread (0 or 1). The Menu still splits the counts (Notifications vs Messages vs Moderation).

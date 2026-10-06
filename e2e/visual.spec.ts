@@ -16036,6 +16036,81 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu');
   });
 
+  async function menuLayout(page: Page): Promise<'lifted' | 'sheet' | 'dropdown'> {
+    const sheet = await page.locator('html').getAttribute('data-menu-sheet');
+    const cls = (await page.locator('#signed-in-menu').getAttribute('class')) ?? '';
+    if (sheet === '1') {
+      return 'sheet';
+    }
+    if (cls.split(/\s+/).includes('fixed')) {
+      return 'lifted';
+    }
+    return 'dropdown';
+  }
+
+  /**
+   * Wide frame, short window. Mobile projects start at 375, which is always
+   * the narrow sheet, so every combo is forced to 1280px before the shot.
+   */
+  async function resizeWelcomeMenu(
+    page: Page,
+    want: 'lifted' | 'sheet',
+    heights: readonly number[],
+  ): Promise<void> {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeVisible();
+    const seen: string[] = [];
+    for (const height of heights) {
+      await page.setViewportSize({ width: 1280, height });
+      const matched = await page
+        .waitForFunction(
+          (expected) => {
+            const panel = document.getElementById('signed-in-menu');
+            const sheet = document.documentElement.dataset['menuSheet'] === '1';
+            const fixed = panel?.classList.contains('fixed') === true;
+            let layout = 'dropdown';
+            if (sheet) {
+              layout = 'sheet';
+            } else if (fixed) {
+              layout = 'lifted';
+            }
+            return layout === expected;
+          },
+          want,
+          { timeout: 800 },
+        )
+        .then(() => true)
+        .catch(() => false);
+      const layout = await menuLayout(page);
+      seen.push(`${height}:${layout}`);
+      if (matched && layout === want) {
+        return;
+      }
+    }
+    throw new Error(`welcome menu never became ${want} (${seen.join(', ')})`);
+  }
+
+  test('welcome menu-lifted', async ({ page }) => {
+    await resizeWelcomeMenu(page, 'lifted', [780, 740, 700, 680, 660, 640, 620, 600, 580, 560]);
+    await expect(page.locator('#signed-in-menu')).toHaveClass(/\bfixed\b/);
+    await expect(page.locator('html')).not.toHaveAttribute('data-menu-sheet');
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Log out' })).toBeInViewport();
+    await shotScreen(page, 'state-welcome-menu-lifted');
+  });
+
+  test('welcome menu-tall-sheet', async ({ page }) => {
+    await resizeWelcomeMenu(page, 'sheet', [520, 480, 440, 400, 360]);
+    await expect(page.locator('html')).toHaveAttribute('data-menu-sheet', '1');
+    await expect(page.locator('#signed-in-menu')).not.toHaveClass(/\bfixed\b/);
+    await expect(page.getByRole('link', { name: 'Home' })).toBeInViewport();
+    await shotScreen(page, 'state-welcome-menu-tall-sheet');
+  });
+
   test('welcome menu-unread', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
@@ -22627,6 +22702,7 @@ test.describe('habit tracker baselines', () => {
 
   test('screen /habit-tracker donate-request', async ({ page }) => {
     await seedHabitAda(page);
+    await fulfillRateDay(page);
     await page.route('**/habits', async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
@@ -22647,14 +22723,19 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(
-      page.getByRole('alert').filter({ hasText: 'Could not start the Bitcoin payment' }),
-    ).toHaveText('Could not start the Bitcoin payment');
+    const requestAlert = page
+      .getByRole('alert')
+      .filter({ hasText: 'Could not start the Bitcoin payment' });
+    await expect(requestAlert).toHaveText('Could not start the Bitcoin payment');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(requestAlert).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-request');
   });
 
   test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
     await seedHabitAda(page);
+    await fulfillRateDay(page);
     await page.route('**/habits', async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
@@ -22675,16 +22756,19 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(
-      page.getByRole('alert').filter({
-        hasText: 'Too many payments. Please wait a moment and try again.',
-      }),
-    ).toHaveText('Too many payments. Please wait a moment and try again.');
+    const rateAlert = page.getByRole('alert').filter({
+      hasText: 'Too many payments. Please wait a moment and try again.',
+    });
+    await expect(rateAlert).toHaveText('Too many payments. Please wait a moment and try again.');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(rateAlert).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-rate-limit');
   });
 
   test('screen /habit-tracker donate-author-wallet', async ({ page }) => {
     await seedHabitAda(page);
+    await fulfillRateDay(page);
     await page.route('**/habits', async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
@@ -22707,11 +22791,13 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(
-      page.getByRole('alert').filter({
-        hasText: "The author's wallet cannot receive this Bitcoin payment",
-      }),
-    ).toHaveText("The author's wallet cannot receive this Bitcoin payment");
+    const walletAlert = page.getByRole('alert').filter({
+      hasText: "The author's wallet cannot receive this Bitcoin payment",
+    });
+    await expect(walletAlert).toHaveText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(walletAlert).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-author-wallet');
   });
 

@@ -1459,6 +1459,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-lifted',
+    image: 'welcome-menu-lifted.png',
+    visual: 'state-welcome-menu-lifted',
+    needle: "shotScreen(page, 'state-welcome-menu-lifted')",
+  },
+  {
+    route: '/welcome',
+    id: 'menu-tall-sheet',
+    image: 'welcome-menu-tall-sheet.png',
+    visual: 'state-welcome-menu-tall-sheet',
+    needle: "shotScreen(page, 'state-welcome-menu-tall-sheet')",
+  },
+  {
+    route: '/welcome',
     id: 'menu-unread',
     image: 'welcome-menu-unread.png',
     visual: 'state-welcome-menu-unread',

@@ -1188,6 +1188,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-lifted",
+    "label": "/welcome menu-lifted",
+    "visual": "state-welcome-menu-lifted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-tall-sheet",
+    "label": "/welcome menu-tall-sheet",
+    "visual": "state-welcome-menu-tall-sheet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:menu-unread",
     "label": "/welcome menu-unread",
     "visual": "state-welcome-menu-unread",
