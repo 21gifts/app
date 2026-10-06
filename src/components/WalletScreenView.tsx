@@ -286,8 +286,9 @@ export function WalletScreenView({
     );
   }
   if (shown === 'send' && send !== undefined) {
+    // Below `sm` the Send column is the whole page width, so the camera can reach the frame edges.
     return (
-      <Card surface={false}>
+      <Card surface={false} className="max-sm:max-w-none">
         {chrome}
         <h1 className="sr-only">{t('wallet.title')}</h1>
         <WalletSend send={send} walletReady={walletReady} />
