@@ -760,7 +760,7 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 
 ### Variant: default
 
-Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the living-room laws hint (`forumLawsDismissed`), **Active** selected. Paid notes newest-first (Ada ₿5 then Carol ₿21); Bob's unpaid note is not visible. Composer is **Send a post** / **Ask for money**; Post is attach, camera, and Send icons, no Ask field on the Post messenger. React (`forum.react`) on every top-level note. Posts do not show Send Bitcoin; Gift appears on a payable reply after **Show reactions**. Founder / Moderator / Initiator / Verified pills beside the name when `role` is one of those four; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
+Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the living-room laws hint (`forumLawsDismissed`), **Active** selected. Paid notes newest-first (Ada ₿5 then Carol ₿21); Bob's unpaid note is not visible. Composer is **Send a post** / **Ask for money**; Post is the photo icon row (attach, camera, place), then the textarea and Send, no Ask field on the Post messenger. React (`forum.react`) on every top-level note. Posts do not show Send Bitcoin; Gift appears on a payable reply after **Show reactions**. Founder / Moderator / Initiator / Verified pills beside the name when `role` is one of those four; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -3068,7 +3068,7 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 
 ### Variant: default
 
-Above the heading, **Add a wide image** and **Add a profile photo** when those pictures are not stored. Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), then a Notifications section with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (selected fill `bg-app-btn`; On / Off visible text), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none); one **Menu** in that same header row (**Home** first; log out, then a quiet **Version {version}** line (`app.version`); the Profile row shows no given or received amounts). Chart never swaps to **Loading…**. A failed activity load is `profile.chartError`.
+Above the heading, **Add a wide image** and **Add a profile photo** when those pictures are not stored (each followed by its icon-only camera, **Take a wide photo** or **Take a profile photo**). Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), then a Notifications section with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (selected fill `bg-app-btn`; On / Off visible text), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none); one **Menu** in that same header row (**Home** first; log out, then a quiet **Version {version}** line (`app.version`); the Profile row shows no given or received amounts). Chart never swaps to **Loading…**. A failed activity load is `profile.chartError`.
 ![21.gifts profile](images/profile.png)
 
 ### Variant: sunday
@@ -3199,7 +3199,7 @@ Same German About me after POST /translate fails. Alert **Could not translate th
 
 ### Variant: about-photo
 
-Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA. No stored profile photo and no stored wide image, so the header shows **Add a wide image** and **Add a profile photo**.
+Owner card with bio and photo. Seed GET /me with `aboutMe: 'I build on Bitcoin'`, `aboutMeHasPhoto: true`. Stub GET `/me/about/photo` 200 JPEG. Shows the stored image (`About me photo`, the whole picture, `object-contain`, `max-h-80`, not a cover crop), the bio text, and the icon-only pencil (`Edit About me`), not the empty CTA. No stored profile photo and no stored wide image, so the header shows **Add a wide image** and **Add a profile photo** (each followed by its icon-only camera, **Take a wide photo** or **Take a profile photo**).
 
 ![21.gifts profile About me photo](images/profile-about-photo.png)
 
@@ -3211,25 +3211,25 @@ Owner card with three different pictures at once. Stub GET `/pictures/me` with a
 
 ### Variant: photo-only
 
-Round profile photo only. Stub GET `/pictures/me` with the square portrait. No wide image, so **Add a wide image** sits above the round photo. Needle `state-profile-photo-only`.
+Round profile photo only. Stub GET `/pictures/me` with the square portrait. No wide image, so **Add a wide image** and **Take a wide photo** sit above the round photo. Needle `state-profile-photo-only`.
 
 ![21.gifts profile photo only](images/profile-photo-only.png)
 
 ### Variant: banner-only
 
-Wide image only. Stub GET `/banners/me` with the wide scene. No profile photo, so **Add a profile photo** sits under the banner. Needle `state-profile-banner-only`.
+Wide image only. Stub GET `/banners/me` with the wide scene. No profile photo, so **Add a profile photo** and **Take a profile photo** sit under the banner. Needle `state-profile-banner-only`.
 
 ![21.gifts profile banner only](images/profile-banner-only.png)
 
 ### Variant: banner-not-wide
 
-Choosing a square portrait for the wide image opens the 5:2 cropper (**Drag the photo to choose the wide image**, labeled **Use this crop**, X with accessible name **Cancel crop**). **Add a wide image** is hidden. **Add a profile photo** stays. Needle `state-profile-banner-not-wide`.
+Choosing a square portrait for the wide image opens the 5:2 cropper (**Drag the photo to choose the wide image**, labeled **Use this crop**, X with accessible name **Cancel crop**). **Add a wide image** and its camera are hidden. **Add a profile photo** and its camera stay. Needle `state-profile-banner-not-wide`.
 
 ![21.gifts profile banner not wide](images/profile-banner-not-wide.png)
 
 ### Variant: banner-crop-saving
 
-The wide-image cropper stays open while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Add a wide image** stays hidden. **Add a profile photo** stays, disabled, without a spinner. Needle `state-profile-banner-crop-saving`.
+The wide-image cropper stays open while PUT `/banners/me` has not answered. **Use this crop** is disabled and shows a spinner. **Add a wide image** and its camera stay hidden. **Add a profile photo** and its camera stay, disabled, without a spinner. Needle `state-profile-banner-crop-saving`.
 
 ![21.gifts profile banner crop saving](images/profile-banner-crop-saving.png)
 
@@ -3259,13 +3259,13 @@ Choosing a photo whose encoded JPEG is over 1 MB. Alert **Keep photos under 1 MB
 
 ### Variant: picture-save-error
 
-PUT `/pictures/me` answers 500 after a JPEG is chosen. Alert **Could not save. Please try again.** The profile-photo button stays. Needle `state-profile-picture-save-error`.
+PUT `/pictures/me` answers 500 after a JPEG is chosen. Alert **Could not save. Please try again.** The profile-photo button and its camera stay. Needle `state-profile-picture-save-error`.
 
 ![21.gifts profile picture save error](images/profile-picture-save-error.png)
 
 ### Variant: picture-saving
 
-The profile-photo button is disabled and shows a spinner while PUT `/pictures/me` has not answered. Needle `state-profile-picture-saving`.
+The profile-photo button is disabled and shows a spinner while PUT `/pictures/me` has not answered; its camera is disabled too. Needle `state-profile-picture-saving`.
 
 ![21.gifts profile picture saving](images/profile-picture-saving.png)
 
@@ -3283,7 +3283,7 @@ Owner in the About me textarea editor. From the empty CTA, click **Write your Ab
 
 ### Variant: about-banner-crop
 
-About me editor with the wide-image cropper inside it. From the empty CTA, **Write your About me**, then a square portrait on the editor wide-image input. The cropper sits under the textarea (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). The header **Add a wide image** stays, because that crop belongs to the header. Needle `state-profile-about-banner-crop`.
+About me editor with the wide-image cropper inside it. From the empty CTA, **Write your About me**, then a square portrait on the editor wide-image input. The cropper sits under the textarea (**Drag the photo to choose the wide image**, **Use this crop**, X with accessible name **Cancel crop**). The header **Add a wide image** and its camera stay, because that crop belongs to the header. Needle `state-profile-about-banner-crop`.
 
 ![21.gifts profile About me banner crop](images/profile-about-banner-crop.png)
 
