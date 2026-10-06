@@ -1003,6 +1003,109 @@ describe('MemberHabits', () => {
     expect(settledName.value).toBe('Held');
   });
 
+  it('posts a changed rating again after another save confirms the list', async () => {
+    let posts = 0;
+    let gets = 0;
+    const bodies: Array<{ action?: string; status?: string; name?: string }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          bodies.push(
+            JSON.parse(String(init.body)) as { action?: string; status?: string; name?: string },
+          );
+          return json({ ok: true });
+        }
+        gets += 1;
+        if (gets === 2 || gets === 3 || gets === 4) {
+          throw new Error('refresh');
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const editName = screen.getAllByLabelText('Name')[0];
+    if (!(editName instanceof HTMLInputElement)) {
+      throw new Error('missing edit name');
+    }
+    fireEvent.change(editName, { target: { value: 'Run' } });
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.submit(saveForm);
+    await waitFor(() => {
+      expect(posts).toBe(2);
+      expect(gets).toBe(3);
+    });
+
+    const addName = screen.getAllByLabelText('Name').at(-1);
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Held' } });
+    const addForm = formsNamed('Add habit')[0];
+    if (addForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(addForm);
+    await waitFor(() => {
+      expect(posts).toBe(3);
+      expect(gets).toBe(4);
+    });
+    expect(addName.value).toBe('Held');
+
+    fireEvent.click(periodControl('2026-10-04', 'Partially achieved'));
+    await waitFor(() => {
+      expect(posts).toBe(4);
+      expect(gets).toBe(5);
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    await waitFor(() => {
+      expect(posts).toBe(5);
+    });
+    expect(bodies[4]).toMatchObject({ action: 'log', status: 'achieved' });
+
+    const openSave = formsNamed('Save')[0];
+    if (openSave === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.submit(openSave);
+    await waitFor(() => {
+      expect(posts).toBe(6);
+    });
+    expect(bodies[5]).toMatchObject({ action: 'edit', name: 'Run' });
+
+    const heldForm = formsNamed('Add habit')[0];
+    if (heldForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.submit(heldForm);
+    await waitFor(() => {
+      expect(gets).toBe(8);
+      expect(addName.value).toBe('');
+    });
+    expect(posts).toBe(6);
+    expect(bodies.filter((body) => body.action === 'add')).toHaveLength(1);
+  });
+
   it('sends the same action again after the request fails', async () => {
     let posts = 0;
     vi.stubGlobal(

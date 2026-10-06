@@ -187,6 +187,14 @@ export function MemberHabits(): ReactElement {
         return false;
       }
       postedKeys.current.delete(key);
+      // A confirmed list can show a different rating, edit, or archive.
+      // An add that already reached the server must not be created again.
+      for (const stored of [...postedKeys.current]) {
+        const parsed = JSON.parse(stored) as { action?: unknown };
+        if (parsed.action !== 'add') {
+          postedKeys.current.delete(stored);
+        }
+      }
       const action = body['action'];
       const closeEdit = action === 'edit' || action === 'archive' ? body['id'] : undefined;
       if (typeof closeEdit === 'string') {
