@@ -945,6 +945,18 @@ test('wallet send-confirm-onchain-renewed pin says the fee offer expired and not
   );
 });
 
+test('wallet send-confirm-onchain-renewing pin keeps Cancel usable while the fee offer is renewed', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await page.goto('/wallet?visual=send-confirm-onchain-renewing');
+  const speeds = page.getByRole('group', { name: 'Speed' });
+  await expect(speeds.getByRole('button', { name: /^Fast/ })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+});
+
 test('wallet send-confirm-onchain-sending pin disables the speeds, Send, and Cancel', async ({
   page,
 }) => {
