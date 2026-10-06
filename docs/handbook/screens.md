@@ -2571,7 +2571,7 @@ Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidd
 
 ### Variant: empty
 
-Empty copy **No messages yet — be the first to write one.** plus the **+** (no composer on the page; the **Send a post** / **Ask for money** pill, attach, textarea and Post are in the writer).
+Empty copy **No messages yet — be the first to write one.** plus the **+** (no composer on the page; the **Send a post** / **Ask for money** pill, the attach + camera row, textarea and Post are in the writer).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 

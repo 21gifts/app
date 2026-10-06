@@ -506,7 +506,8 @@ function ConversationListItem({
  * Non-empty bodies go through {@link ForumQuotedBody} so a pasted
  * `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card.
  * `showAttach` (default false for callers that omit it) adds the forum
- * ImagePlus control, still previews, and photo-only send for any caller
+ * ImagePlus control and the camera (`CameraPhotoButton`) in a row above the
+ * message, still previews, and photo-only send for any caller
  * that passes true (`/messages` open threads and the staff room);
  * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
  * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
@@ -1156,7 +1157,7 @@ export function InboxScreen({
           {showAmount && invoice === null ? (
             <AmountEntry
               layout="composer"
-              className={showAttach ? 'max-w-sm ps-14' : 'max-w-sm'}
+              className="max-w-sm"
               label={t('inbox.amountLabel')}
               placeholder={t('forum.payAmountPlaceholder')}
               value={amountDraft}

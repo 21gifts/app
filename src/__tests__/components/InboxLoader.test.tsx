@@ -1145,7 +1145,7 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('21.gifts')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Add a photo' })).toBeNull();
-    expect(document.querySelector('input[type="file"]')).toBeNull();
+    expect(document.querySelector('input[type="file"]:not([capture])')).toBeNull();
   });
 
   it('posts a photo-only message after remove and re-pick', async () => {
@@ -1164,7 +1164,7 @@ describe('InboxLoader', () => {
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1223,7 +1223,7 @@ describe('InboxLoader', () => {
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const files = [
       new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' }),
       new File([new Uint8Array([0xff, 0xd8, 0xff])], 'b.jpg', { type: 'image/jpeg' }),
@@ -1247,7 +1247,7 @@ describe('InboxLoader', () => {
     threadMock.mockResolvedValue(conversationPage([MESSAGE]));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const files = Array.from(
       { length: 11 },
       (_, i) => new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${i}.jpg`, { type: 'image/jpeg' }),
@@ -1266,7 +1266,7 @@ describe('InboxLoader', () => {
     prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1282,7 +1282,7 @@ describe('InboxLoader', () => {
     prepareMock.mockRejectedValueOnce(new Error('decode'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1310,7 +1310,7 @@ describe('InboxLoader', () => {
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1486,7 +1486,7 @@ describe('InboxLoader', () => {
     });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1522,7 +1522,7 @@ describe('InboxLoader', () => {
     );
     const view = renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1538,7 +1538,9 @@ describe('InboxLoader', () => {
       await Promise.resolve();
     });
     expect(screen.queryByAltText('Selected photo')).toBeNull();
-    const nextInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const nextInput = document.querySelector(
+      'input[type="file"]:not([capture])',
+    ) as HTMLInputElement;
     await act(async () => {
       fireEvent.change(nextInput, { target: { files: [file] } });
     });
@@ -1579,7 +1581,7 @@ describe('InboxLoader', () => {
       );
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1639,7 +1641,7 @@ describe('InboxLoader', () => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
       expect(screen.getByText('Pay ₿21')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -1681,7 +1683,7 @@ describe('InboxLoader', () => {
     };
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
