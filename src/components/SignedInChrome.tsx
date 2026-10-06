@@ -32,11 +32,13 @@ import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, Settings (`/settings`, lucide `Settings`), living-room rules,
+ * rows (Home, which clears this tab's view stack on a plain click so the
+ * next screen's back arrow returns to the forum home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, Settings (`/settings`, lucide `Settings`), living-room rules,
  * Habit-Tracker (`/habit-tracker`), Trust Chain, Statistics
  * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
@@ -345,8 +347,20 @@ export function SignedInChrome(): ReactElement {
                 href="/welcome"
                 onClick={(event) => {
                   setOpen(false);
+                  const plain =
+                    !event.metaKey &&
+                    !event.ctrlKey &&
+                    !event.shiftKey &&
+                    !event.altKey &&
+                    event.button === 0;
+                  if (plain) {
+                    resetViewHistory();
+                  }
                   if (pathname === '/welcome') {
                     event.preventDefault();
+                    if (plain) {
+                      recordCurrentView(`${window.location.pathname}${window.location.search}`);
+                    }
                     window.dispatchEvent(new Event(FORUM_HOME_EVENT));
                   }
                 }}

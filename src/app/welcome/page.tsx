@@ -12,7 +12,7 @@ import { PageChrome } from '@/components/ui';
 import { useAuthStore } from '@/stores/auth-store';
 
 function WelcomeTopLeft(): ReactElement {
-  return <ProfileChromeLeft hideWithoutHistory wordmark={<ForumHomeWordmark />} />;
+  return <ProfileChromeLeft hideHistoryArrow wordmark={<ForumHomeWordmark />} />;
 }
 
 function WelcomeTopRight(): ReactElement {

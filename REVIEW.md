@@ -102,7 +102,7 @@ screenshot baselines for new screenshot-gated screens/variants in the same PR
 follow the labeled vs icon-only table in `docs/ui.md` and CONTRIBUTING
 **Icon controls**. A new control that ignores the table is rejected. The `profile.chartError` chart-slot exception in CONTRIBUTING is not a new variant.
 
-Reject the PR when any screen in the app has a second back control, or when the top-left back arrow jumps to a fixed parent or can leave the site. A second back control is absolutely forbidden, including a back link in the page body. The arrow returns to the in-app view this tab showed immediately before. With no earlier in-app view it opens `/welcome`, except on `/welcome` itself, which omits the arrow only in that case. See CONTRIBUTING.md “One back”.
+Reject the PR when any screen in the app has a second back control, or when the top-left back arrow jumps to a fixed parent or can leave the site. A second back control is absolutely forbidden, including a back link in the page body. The arrow returns to the in-app view this tab showed immediately before. With no earlier in-app view it opens `/welcome`. `/welcome` itself never shows the arrow, whatever the view stack holds, and the Menu's **Home** clears the in-app view stack before it opens `/welcome` client-side. See CONTRIBUTING.md “One back”.
 
 Reject the PR when a screenshot pin (`?visual=…`, `e2e-now`, or other fixture switch) is read without the Playwright-build check (`getE2eNow()`, or the `e2e-now` meta tag in a pre-React script), or when a new pin has no unit test that a production build ignores it. See CONTRIBUTING.md “Screenshot baselines”.
 
