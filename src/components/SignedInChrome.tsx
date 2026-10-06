@@ -65,6 +65,8 @@ export function SignedInChrome(): ReactElement {
   const [tight, setTight] = useState(false);
   /** Bottom of the roomy wide panel when it last stuck out of the window. */
   const roomyBottom = useRef(0);
+  /** Pixels the compact layout saved, measured on its first compact measure. */
+  const compactSaving = useRef<number | null>(null);
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
@@ -150,13 +152,16 @@ export function SignedInChrome(): ReactElement {
       if (!tight) {
         if (bottom > limit) {
           roomyBottom.current = bottom;
+          compactSaving.current = null;
           setTight(true);
         }
         return;
       }
-      // How much compact saves depends on the row count, so go back to the roomy
-      // layout only when its last measured bottom fits with 8px reserve.
-      if (roomyBottom.current <= limit - 8) {
+      // How much compact saves depends on the row count. The first compact
+      // measure records it, so a row that appears or goes away while compact
+      // moves the roomy estimate too. Go back only when that fits with 8px reserve.
+      compactSaving.current ??= roomyBottom.current - bottom;
+      if (bottom + compactSaving.current <= limit - 8) {
         setTight(false);
       }
     };

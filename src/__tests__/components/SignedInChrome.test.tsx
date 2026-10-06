@@ -1280,6 +1280,59 @@ describe('SignedInChrome', () => {
     }
   });
 
+  it('returns to the roomy wide menu when a row goes away while it is compact', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    let rows = 0;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    // Compact saves 152px. A removed row takes 44px off the roomy panel and 36px off the compact one.
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const bottom = this.className.includes('mt-0') ? 599 - rows * 36 : 751 - rows * 44;
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('mt-0');
+      // Still compact: the window is unchanged and no row went away.
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-0');
+      // Two rows go away. The estimate (527 + 152 = 679) assumes the recorded saving,
+      // which is 8px per row too high on the safe side, and fits with 8px reserve.
+      rows = 2;
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.className).toContain('mt-2');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
   it('drops the wide menu outer spacing when ResizeObserver reports the panel grew', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
