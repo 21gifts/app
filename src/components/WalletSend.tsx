@@ -332,6 +332,16 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
             {t('wallet.sendQuoteRenewed')}
           </p>
         ) : null}
+        <div className="flex flex-col items-center gap-1 text-center text-base font-semibold tabular-nums lining-nums text-app-fg">
+          <p>
+            {t('wallet.payFee', { amount: formatBitcoin(state.feeSats, numberFormat) })}
+            {fiatOf(state.feeSats)}
+          </p>
+          <p>
+            {t('wallet.sendTotal', { amount: formatBitcoin(totalSats, numberFormat) })}
+            {fiatOf(totalSats)}
+          </p>
+        </div>
         <div
           role="group"
           aria-label={t('wallet.sendSpeedLabel')}
@@ -374,16 +384,6 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
               </button>
             );
           })}
-        </div>
-        <div className="flex flex-col items-center gap-1 text-center text-base font-semibold tabular-nums lining-nums text-app-fg">
-          <p>
-            {t('wallet.payFee', { amount: formatBitcoin(state.feeSats, numberFormat) })}
-            {fiatOf(state.feeSats)}
-          </p>
-          <p>
-            {t('wallet.sendTotal', { amount: formatBitcoin(totalSats, numberFormat) })}
-            {fiatOf(totalSats)}
-          </p>
         </div>
         <p className="max-w-sm text-center text-xs text-app-muted">
           {t('wallet.sendOnchainFeeHint')}
