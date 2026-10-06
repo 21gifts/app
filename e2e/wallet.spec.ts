@@ -1101,8 +1101,20 @@ test('wallet Send camera is large on a phone, keeps the field reachable, and sta
   const field = region.getByLabel('Payment request or address');
   await field.scrollIntoViewIfNeeded();
   await field.fill('lnbc1');
-  await expect(region.getByRole('button', { name: 'Continue' })).toBeInViewport();
+  const next = region.getByRole('button', { name: 'Continue' });
+  await next.scrollIntoViewIfNeeded();
+  await expect(next).toBeInViewport();
+  await expect(next).toBeEnabled();
   expect(await cameraStats(page)).toEqual({ requests: 1, live: 1 });
+
+  // A wide phone or small tablet below `sm` still runs edge to edge of the frame.
+  await page.setViewportSize({ width: 560, height: 812 });
+  await expect
+    .poll(async () => {
+      const wide = await cameraBox(page, 'video');
+      return Math.abs(wide.box.width - wide.frame.width);
+    })
+    .toBeLessThanOrEqual(1);
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect
