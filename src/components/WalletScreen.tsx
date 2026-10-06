@@ -8,8 +8,8 @@ import { useWalletSend } from '@/hooks/useWalletSend';
 
 /**
  * Signed-in `/wallet`: the balance and, while the wallet is ready, the
- * payments list, with Send and Receive and the recovery entry below. The 12
- * words are not rendered here.
+ * payments list, with Receive and Send below. The 12 words are not rendered
+ * here, and the recovery entry is on `/settings`.
  *
  * @returns The wallet cards.
  */
