@@ -13,7 +13,8 @@ import {
 /**
  * What the setup dialog shows. `intro` explains the step and offers the
  * button that opens the passkey prompt, `progress` runs the steps, `error`
- * offers a retry, and `noPrf` says that this passkey cannot hold a wallet.
+ * offers a retry, and `noPrf` says that this phone or browser cannot hold a
+ * 21.gifts wallet (`wallet.prfUnsupported`).
  */
 export type WalletSetupView = 'intro' | 'progress' | 'error' | 'noPrf';
 
