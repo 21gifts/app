@@ -990,22 +990,65 @@ describe('ShopNoteEditControl', () => {
       expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
     });
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
 
-    pending.length = 0;
+  it('keeps the steps busy while a photo is prepared and drops it after the editor closes', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let finish: () => void = () => undefined;
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () => {
+            resolve({
+              ok: true,
+              photo: {
+                contentType: 'image/jpeg',
+                data: 'abc',
+                previewUrl: 'data:image/jpeg;base64,abc',
+                takenAt: null,
+              },
+            });
+          };
+        }),
+    );
+    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    const camera = (await waitFor(() =>
+      document.querySelector('input[type="file"][capture]'),
+    )) as HTMLInputElement;
     fireEvent.change(camera, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(true);
+    });
+    expect(screen.getByRole('button', { name: 'Take a photo' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    await act(async () => {
+      finish();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' }).hasAttribute('disabled')).toBe(false);
+    });
+    expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(1);
+
+    fireEvent.change(document.querySelector('input[type="file"][capture]') as HTMLInputElement, {
       target: { files: [new File(['b'], 'b.jpg', { type: 'image/jpeg' })] },
     });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[0]!);
+    expect(screen.getByRole('button', { name: 'Cancel' }).hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(document.querySelector('input[type="file"][capture]')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     await waitFor(() => {
-      expect(pending.length).toBe(1);
+      expect(document.querySelector('input[type="file"][capture]')).not.toBeNull();
     });
     await act(async () => {
-      pending[0]!();
+      finish();
     });
-    await waitFor(() => {
-      expect(screen.queryByRole('alert')).toBeNull();
-    });
-    expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+    expect(screen.queryByRole('button', { name: 'Remove photo' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('says why a picked or taken photo cannot be used and clears that on the next good one', async () => {
