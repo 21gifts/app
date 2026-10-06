@@ -521,6 +521,12 @@ export function ForumLoader({
   const pendingComposeShopUsernameRef = useRef<string | null>(null);
   const composeFeePaidRef = useRef(false);
   const [firstPostFree, setFirstPostFree] = useState(false);
+  /** Bumps whenever the hint is decided, so an older compose-target answer cannot bring it back. */
+  const firstPostFreeGeneration = useRef(0);
+  const decideFirstPostFree = (free: boolean): void => {
+    firstPostFreeGeneration.current += 1;
+    setFirstPostFree(free);
+  };
   const belowVerified = account !== null && !roleAtLeast(account.role, 'verified');
   const missingCount = (account?.missing ?? []).length;
 
@@ -530,6 +536,7 @@ export function ForumLoader({
       return;
     }
     let cancelled = false;
+    const generation = firstPostFreeGeneration.current;
     void (async () => {
       let free = false;
       try {
@@ -537,7 +544,7 @@ export function ForumLoader({
       } catch {
         // No hint when the fee note cannot be read; Post still asks the api.
       }
-      if (!cancelled) {
+      if (!cancelled && generation === firstPostFreeGeneration.current) {
         setFirstPostFree(free);
       }
     })();
@@ -1813,7 +1820,7 @@ export function ForumLoader({
     /* v8 ignore next -- a created note is only applied for a signed-in post */
     if (session === null) return;
     composeFeePaidRef.current = false;
-    setFirstPostFree(false);
+    decideFirstPostFree(false);
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
@@ -1971,6 +1978,7 @@ export function ForumLoader({
         !composeFeePaidRef.current
       ) {
         const target = await fetchComposeTarget(session);
+        decideFirstPostFree(target.firstPostFree);
         if (target.firstPostFree) {
           try {
             const created = await createNote(
@@ -1987,7 +1995,7 @@ export function ForumLoader({
             if (!(err instanceof PostFeeRequiredError)) {
               throw err;
             }
-            setFirstPostFree(false);
+            decideFirstPostFree(false);
           }
         }
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;

@@ -3637,6 +3637,26 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Your first post is free.')).toBeNull();
   });
 
+  it('does not ask for the first-post hint while requirements are missing', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        role: 'basis',
+        name: null,
+        missing: ['name'],
+        forumLawsDismissed: true,
+      },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    expect(composeTargetMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+  });
+
   it('does not ask for the first-post hint for a verified member', async () => {
     useAuthStore.setState({
       session: 'sess',
@@ -3648,6 +3668,64 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     expect(composeTargetMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+  });
+
+  it('keeps the hint gone when the mount answer lands after a free first post', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true },
+    });
+    let resolveMount: (value: {
+      messageId: string;
+      sats: number;
+      firstPostFree: boolean;
+    }) => void = () => {};
+    composeTargetMock
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveMount = resolve;
+        }),
+      )
+      .mockResolvedValue({ messageId: 'fee-note', sats: 0, firstPostFree: true });
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({ ...SAMPLE, id: 'first', text: 'My first note', sats: 0 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'My first note' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByText('My first note')).toBeTruthy();
+    });
+    await act(async () => {
+      resolveMount({ messageId: 'fee-note', sats: 0, firstPostFree: true });
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Your first post is free.')).toBeNull();
+  });
+
+  it('drops the hint when Post learns the first post is no longer free', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true },
+    });
+    composeTargetMock
+      .mockResolvedValueOnce({ messageId: 'fee-note', sats: 0, firstPostFree: true })
+      .mockResolvedValue({ messageId: 'fee-note', sats: 0, firstPostFree: false });
+    fetchMock.mockResolvedValue(forumPage([]));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('Your first post is free.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    });
+    expect(postMock).not.toHaveBeenCalled();
     expect(screen.queryByText('Your first post is free.')).toBeNull();
   });
 
