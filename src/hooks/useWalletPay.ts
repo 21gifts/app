@@ -30,6 +30,8 @@ export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
  * - `confirm`: fee shown, **Pay from wallet** pays.
  * - `paying`: the payment is sent or was sent; the sheet's long-poll waits.
  * - `insufficient`: the balance does not cover the payment.
+ * - `received`: Bitcoin arrived after `insufficient`, which the member's own
+ *   pay tap reached; the slot prepares and pays on its own.
  * - `failed`: the wallet could not be opened or could not prepare this
  *   payment; **Try again** starts over.
  * - `prfUnsupported`: the passkey answered without PRF output, so this phone
@@ -44,6 +46,7 @@ export type WalletPayView =
   | 'confirm'
   | 'paying'
   | 'insufficient'
+  | 'received'
   | 'failed'
   | 'prfUnsupported'
   | 'unconfirmed';
@@ -54,6 +57,11 @@ export interface UseWalletPayResult {
   view: WalletPayView;
   /** Fee in whole sats from the prepare response, or `null` before it is known. */
   feeSats: number | null;
+  /**
+   * Whole sats still missing while `insufficient` shows: amount plus the known
+   * fee minus the balance, or `null` when the balance is unknown or covers that.
+   */
+  missingSats: number | null;
   /**
    * Opens the wallet with the member's passkey, then pays at once when the
    * prepared fee is ₿0, or stops at `confirm` when it is higher.
@@ -110,6 +118,7 @@ const VISUAL_VIEWS: Record<string, WalletPayView> = {
   'wallet-pay-confirm': 'confirm',
   'wallet-pay-paying': 'paying',
   'wallet-pay-insufficient': 'insufficient',
+  'wallet-pay-received': 'received',
   'wallet-pay-failed': 'failed',
   'wallet-pay-prf-unsupported': 'prfUnsupported',
   'wallet-pay-unconfirmed': 'unconfirmed',
@@ -149,7 +158,13 @@ function visualView(): WalletPayView | null {
  * stops being able to pay from it then, starts over. After
  * `insufficient`, a balance above the one held when that prepare or send
  * started, or the lowest one seen since (or a first known balance), prepares
- * again; a send is never retried on its own. A new request or a new
+ * again; a send is never retried on its own. When the member's own tap
+ * (**Unlock and pay** or **Pay from wallet**) reached `insufficient`, that
+ * prepare shows `received` and continues like the one-tap unlock: it pays at
+ * once when the fee is ₿0, or stops at `confirm` when it is higher. A prepare
+ * that no tap started, a closed slot, a new request or amount, a retry, or a
+ * wallet that leaves `ready` drops that tap. While `insufficient` shows,
+ * `missingSats` is amount plus the known fee minus the balance. A new request or a new
  * `amountSats` starts over, and a send prepared for an earlier one is never
  * shown or paid. Visual pins (`?visual=wallet-pay-…`) apply only in a
  * Playwright build and leave the actions inert.
@@ -157,7 +172,7 @@ function visualView(): WalletPayView | null {
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
  * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`.
  * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
- * @returns View, fee, and the unlock, pay, and retry actions.
+ * @returns View, fee, missing amount, and the unlock, pay, and retry actions.
  */
 export function useWalletPay(
   sparkInvoice: string | null | undefined,
@@ -175,6 +190,8 @@ export function useWalletPay(
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insufficientBalance = useRef<number | null>(null);
   const autoPayRun = useRef<number | null>(null);
+  const tappedInsufficient = useRef(false);
+  const [resumed, setResumed] = useState(false);
   const input = typeof sparkInvoice === 'string' && sparkInvoice !== '' ? sparkInvoice : pr;
   const pinned = visualView();
   const usable =
@@ -186,6 +203,8 @@ export function useWalletPay(
   useEffect(() => {
     generation.current += 1;
     sendRef.current = null;
+    tappedInsufficient.current = false;
+    setResumed(false);
     setPhase('idle');
     setFeeSats(null);
     return () => {
@@ -206,6 +225,8 @@ export function useWalletPay(
       }
       if (result.kind === 'insufficient') {
         insufficientBalance.current = balanceBefore;
+        tappedInsufficient.current = true;
+        setResumed(false);
         setPhase('insufficient');
         return;
       }
@@ -231,9 +252,17 @@ export function useWalletPay(
       }
       const autoPay = autoPayRun.current === run;
       autoPayRun.current = null;
+      const autoSend =
+        result.kind === 'confirm' &&
+        result.amountSats === amountSats &&
+        autoPay &&
+        result.feeSats === 0;
+      if (!autoSend) {
+        setResumed(false);
+      }
       if (result.kind === 'confirm' && result.amountSats !== amountSats) {
         setPhase('failed');
-      } else if (result.kind === 'confirm' && autoPay && result.feeSats === 0) {
+      } else if (result.kind === 'confirm' && autoSend) {
         setFeeSats(result.feeSats);
         sendPrepared(result.send, run);
       } else if (result.kind === 'confirm') {
@@ -243,6 +272,8 @@ export function useWalletPay(
         setPhase('confirm');
       } else if (result.kind === 'insufficient') {
         insufficientBalance.current = balanceBefore;
+        tappedInsufficient.current = autoPay;
+        setFeeSats(result.feeSats ?? null);
         setPhase('insufficient');
       } else {
         setPhase('failed');
@@ -261,12 +292,17 @@ export function useWalletPay(
     }
     generation.current += 1;
     insufficientBalance.current = null;
+    if (tappedInsufficient.current) {
+      autoPayRun.current = generation.current;
+      setResumed(true);
+    }
     setPhase('idle');
   }, [phase, balanceSats]);
 
   useEffect(() => {
     if (status === 'error' || !usable) {
       autoPayRun.current = null;
+      tappedInsufficient.current = false;
     }
   }, [status, usable]);
 
@@ -280,6 +316,8 @@ export function useWalletPay(
     generation.current += 1;
     insufficientBalance.current = null;
     sendRef.current = null;
+    tappedInsufficient.current = false;
+    setResumed(false);
     setFeeSats(null);
     setPhase('idle');
   }, [status, usable, phase]);
@@ -323,6 +361,8 @@ export function useWalletPay(
     generation.current += 1;
     insufficientBalance.current = null;
     sendRef.current = null;
+    tappedInsufficient.current = false;
+    setResumed(false);
     setFeeSats(null);
     setPhase('idle');
     if (useWalletStore.getState().status !== 'error') {
@@ -336,7 +376,7 @@ export function useWalletPay(
   }, [pinned]);
 
   if (pinned !== null) {
-    return { view: pinned, feeSats: 0, unlock, pay, retry };
+    return { view: pinned, feeSats: 0, missingSats: amountSats, unlock, pay, retry };
   }
   let view: WalletPayView;
   if (!usable) {
@@ -345,6 +385,8 @@ export function useWalletPay(
     view = 'failed';
   } else if (phase === 'idle' && status === 'locked') {
     view = 'unlock';
+  } else if (resumed && (phase === 'idle' || phase === 'preparing' || phase === 'paying')) {
+    view = 'received';
   } else if (phase === 'idle' || phase === 'unlocking') {
     view = 'preparing';
   } else if (phase === 'confirm') {
@@ -352,5 +394,8 @@ export function useWalletPay(
   } else {
     view = phase;
   }
-  return { view, feeSats, unlock, pay, retry };
+  const missing = amountSats + (feeSats ?? 0) - (balanceSats ?? 0);
+  const missingSats =
+    phase === 'insufficient' && balanceSats !== null && missing > 0 ? missing : null;
+  return { view, feeSats, missingSats, unlock, pay, retry };
 }

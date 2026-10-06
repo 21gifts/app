@@ -4760,10 +4760,20 @@ test.describe('onboarding screens', () => {
     await expect(
       page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
     ).toBeVisible();
+    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-insufficient');
+  });
+
+  test('state /welcome reaction-wallet-pay-received', async ({ page }) => {
+    const sheet = await openReactionWalletPay(page, 'wallet-pay-received');
+    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-reaction-wallet-pay-received');
   });
 
   test('state /welcome reaction-wallet-pay-unconfirmed', async ({ page }) => {
@@ -15432,8 +15442,17 @@ test.describe('welcome forum variants', () => {
     await openRepayWalletPay(page, 'wallet-pay-insufficient');
     const slot = page.getByText('Your wallet does not have enough Bitcoin for this payment.');
     await expect(slot).toBeVisible();
+    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await slot.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-wallet-pay-insufficient');
+  });
+
+  test('state /welcome repay-wallet-pay-received', async ({ page }) => {
+    await openRepayWalletPay(page, 'wallet-pay-received');
+    const slot = page.getByText('Bitcoin received — paying…');
+    await expect(slot).toBeVisible();
+    await slot.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-repay-wallet-pay-received');
   });
 
   test('state /welcome repay-wallet-pay-unconfirmed', async ({ page }) => {
@@ -17654,7 +17673,14 @@ test.describe('welcome forum variants', () => {
     await expect(
       page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
     ).toBeVisible();
+    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await shotScreen(page, 'state-welcome-composer-wallet-pay-insufficient');
+  });
+
+  test('welcome composer-wallet-pay-received', async ({ page }) => {
+    await openComposerWalletPay(page, 'wallet-pay-received');
+    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-composer-wallet-pay-received');
   });
 
   test('welcome composer-wallet-pay-unconfirmed', async ({ page }) => {
@@ -18078,8 +18104,15 @@ test.describe('welcome forum variants', () => {
     await expect(
       page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
     ).toBeVisible();
+    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-insufficient');
+  });
+
+  test('welcome wallet-pay-received', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-received');
+    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-received');
   });
 
   test('welcome wallet-pay-failed', async ({ page }) => {
@@ -21442,7 +21475,14 @@ test.describe('inbox screens', () => {
     await expect(
       page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
     ).toBeVisible();
+    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await shotScreen(page, 'state-messages-thread-wallet-pay-insufficient');
+  });
+
+  test('messages thread-wallet-pay-received', async ({ page }) => {
+    await openInboxWalletPay(page, 'wallet-pay-received');
+    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
+    await shotScreen(page, 'state-messages-thread-wallet-pay-received');
   });
 
   test('messages thread-wallet-pay-unconfirmed', async ({ page }) => {

@@ -16,8 +16,12 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
-function hookWith(view: WalletPayView, feeSats: number | null = 0): UseWalletPayResult {
-  const result = { view, feeSats, unlock: vi.fn(), pay: vi.fn(), retry: vi.fn() };
+function hookWith(
+  view: WalletPayView,
+  feeSats: number | null = 0,
+  missingSats: number | null = null,
+): UseWalletPayResult {
+  const result = { view, feeSats, missingSats, unlock: vi.fn(), pay: vi.fn(), retry: vi.fn() };
   vi.mocked(useWalletPay).mockReturnValue(result);
   return result;
 }
@@ -114,6 +118,14 @@ describe('WalletPay', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('says Bitcoin was received while it pays on its own after a top-up', () => {
+    hookWith('received');
+    renderPay();
+    expect(screen.getByRole('status').textContent).toBe('Bitcoin received — paying…');
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('shows the fee with its fiat line before Pay from wallet', () => {
     const hook = hookWith('confirm', 0);
     renderPay();
@@ -132,6 +144,21 @@ describe('WalletPay', () => {
     expect(screen.getByText('To add Bitcoin, send it to your address:')).toBeTruthy();
     expect(screen.getByText(/^ada@/)).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
+    expect(screen.queryByText(/Still missing/)).toBeNull();
+  });
+
+  it('says how much is still missing, in ₿ and fiat, above the own address', () => {
+    hookWith('insufficient', 3, 1_234);
+    renderPay();
+    const missing = screen.getByText(/^Still missing: ₿1'234/, { selector: 'p' });
+    expect(missing.textContent).toBe("Still missing: ₿1'234 · $1.23");
+    expect(screen.getByText(/^ada@/)).toBeTruthy();
+    cleanup();
+    hookWith('insufficient', 3, 1_234);
+    renderWithLocale(
+      <WalletPay sparkInvoice="spark1x" pr="lnbc210n1x" amountSats={21} rateDay={null} />,
+    );
+    expect(screen.getByText(/^Still missing/).textContent).toBe("Still missing: ₿1'234");
   });
 
   it('shows the alert alone when the member has no username', () => {
