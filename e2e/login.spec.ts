@@ -105,13 +105,74 @@ async function confirmNewAccount(page: Page): Promise<string> {
   return handle;
 }
 
-test('login page renders a single Log in button', async ({ page }) => {
+test('login page shows Log in and Open a new account from the start', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
+  await expect(page.getByText('New to 21.gifts?')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Create a passkey' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Continue with passkey' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Create a login' })).toHaveCount(0);
+});
+
+test('login Open a new account on the idle card opens the name form without a passkey prompt', async ({
+  page,
+}) => {
+  const passkeyBegins: string[] = [];
+  await page.route(/\/auth\/passkey\/(authenticate|register)\/begin$/, async (route) => {
+    passkeyBegins.push(new URL(route.request().url()).pathname);
+    await route.abort();
+  });
+  await page.addInitScript(() => {
+    const calls = { create: 0, get: 0 };
+    Object.assign(window, { __webAuthnCalls: calls });
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => {
+          calls.create += 1;
+          throw new DOMException('not expected', 'NotAllowedError');
+        },
+        get: async () => {
+          calls.get += 1;
+          throw new DOMException('not expected', 'NotAllowedError');
+        },
+      },
+    });
+  });
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+  await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toHaveCount(
+    0,
+  );
+  const calls = await page.evaluate(
+    () =>
+      (window as unknown as { __webAuthnCalls: { create: number; get: number } }).__webAuthnCalls,
+  );
+  expect(calls).toEqual({ create: 0, get: 0 });
+  expect(passkeyBegins).toEqual([]);
+  await expect(page).toHaveURL(/\/login/);
+});
+
+test('login Open a new account on the idle card creates the account after the name', async ({
+  page,
+}) => {
+  await installFakeWebAuthn(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Open a new account' }).click();
+  await expect(page.getByRole('heading', { name: 'Choose your name' })).toBeVisible();
+  const handle = `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.slice(
+    0,
+    32,
+  );
+  await page.getByRole('textbox', { name: 'Name' }).fill(handle);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
 });
 
 test('login shows Preparing your login while passkey begin hangs', async ({ page }) => {
@@ -138,7 +199,7 @@ test('login shows an error when passkey begin fails', async ({ page }) => {
   await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
 });
 
-test('login Try again restarts the single-button flow', async ({ page }) => {
+test('login Try again restarts the Log in flow', async ({ page }) => {
   let authenticateBegins = 0;
   let registerBegins = 0;
   let release: () => void = () => undefined;
