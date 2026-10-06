@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberHabits } from '@/components/MemberHabits';
 import { useAuthStore } from '@/stores/auth-store';
@@ -118,6 +118,15 @@ function json(body: unknown, status = 200): Response {
 
 function freshJson(body: unknown): () => Response {
   return () => json(body);
+}
+
+function periodControl(day: string, name: string): HTMLElement {
+  const time = screen.getByText(day);
+  const row = time.closest('li');
+  if (!(row instanceof HTMLElement)) {
+    throw new Error(`missing period ${day}`);
+  }
+  return within(row).getByRole('button', { name });
 }
 
 function isGiftStats(input: RequestInfo | URL): boolean {
@@ -256,7 +265,7 @@ describe('MemberHabits', () => {
     useAuthStore.setState({ session: 'tok', account: owner });
     const view = renderWithLocale(<MemberHabits />);
     expect(await screen.findByText('Walk')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     await waitFor(() => {
       expect(gets).toBe(2);
     });
@@ -294,9 +303,9 @@ describe('MemberHabits', () => {
     expect(screen.queryByText('Archive')).toBeNull();
     expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Partially achieved' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Not achieved' }));
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    fireEvent.click(periodControl('2026-10-04', 'Partially achieved'));
+    fireEvent.click(periodControl('2026-10-04', 'Not achieved'));
     await waitFor(() => {
       expect(bodies).toEqual([
         { action: 'log', id: 'h-owner', period: '2026-10-04', status: 'achieved' },
@@ -450,7 +459,7 @@ describe('MemberHabits', () => {
     useAuthStore.setState({ session: 'tok', account: owner });
     renderWithLocale(<MemberHabits />);
     expect(await screen.findByText('Walk')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Walk')).toBeTruthy();
 
@@ -485,16 +494,16 @@ describe('MemberHabits', () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(freshJson(payload())));
     useAuthStore.setState({ session: null, account: owner });
     const first = renderWithLocale(<MemberHabits />);
-    expect(await screen.findByRole('button', { name: 'Achieved' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     first.unmount();
 
     useAuthStore.setState({ session: '', account: owner });
     renderWithLocale(<MemberHabits />);
-    expect(await screen.findByRole('button', { name: 'Achieved' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Achieved' }));
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
@@ -703,6 +712,59 @@ describe('MemberHabits', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(posts.some((body) => body.includes('"amountSats":21'))).toBe(true);
+    });
+  });
+
+  it('rates an earlier returned period and leaves an archived habit read-only', async () => {
+    const bodies: unknown[] = [];
+    const list = payload();
+    const habits: unknown[] = [
+      ...list.habits,
+      {
+        id: 'h-archived',
+        accountId: 'acc-owner',
+        ownerName: 'Ada',
+        role: 'initiator',
+        name: 'Old walk',
+        description: 'Outside',
+        cadence: 'daily',
+        timeZone: 'Asia/Manila',
+        firstPeriod: '2026-10-03',
+        lastPeriod: '2026-10-04',
+        periods: [period('2026-10-03', 'achieved'), period('2026-10-04', 'missed')],
+        comments: [],
+      },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if (init?.method === 'POST') {
+          bodies.push(JSON.parse(String(init.body)));
+          return json({ ok: true });
+        }
+        return json({ reviewWeek: list.reviewWeek, habits });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    const title = await screen.findByRole('heading', { name: 'Old walk' });
+    const card = title.closest('article');
+    if (!(card instanceof HTMLElement)) {
+      throw new Error('missing archived card');
+    }
+    const archived = within(card);
+    expect(archived.getByText('Archived')).toBeTruthy();
+    expect(archived.getByText('2026-10-03')).toBeTruthy();
+    expect(archived.getByText('Achieved')).toBeTruthy();
+    expect(archived.queryByRole('button', { name: 'Achieved' })).toBeNull();
+    expect(archived.queryByRole('button', { name: 'Edit' })).toBeNull();
+    expect(archived.queryByRole('button', { name: 'Archive' })).toBeNull();
+
+    fireEvent.click(periodControl('2026-10-01', 'Not achieved'));
+    await waitFor(() => {
+      expect(bodies).toEqual([
+        { action: 'log', id: 'h-owner', period: '2026-10-01', status: 'missed' },
+      ]);
     });
   });
 

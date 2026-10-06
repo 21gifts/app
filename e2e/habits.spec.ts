@@ -281,6 +281,77 @@ test('screen /habit-tracker archive-confirm', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
 });
 
+test('screen /habit-tracker archived', async ({ page }) => {
+  await seedAda(page);
+  let archived = false;
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      archived = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [
+          {
+            ...PUBLIC_HABIT,
+            accountId: 'acc_e2e',
+            notes: 'secret',
+            lastPeriod: archived ? '2026-10-04' : null,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Archive' }).click();
+  await page.getByRole('button', { name: 'Confirm archive' }).click();
+  await expect(page.getByText('Archived', { exact: true })).toBeVisible();
+  await expect(page.getByText('2026-10-04')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Archive' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toHaveCount(0);
+});
+
+test('screen /habit-tracker save-error', async ({ page }) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid name' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Achieved', exact: true }).click();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'Could not load or save the tracker. Please try again.',
+    }),
+  ).toHaveText('Could not load or save the tracker. Please try again.');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+});
+
 test('screen /habit-tracker delete-comment-confirm', async ({ page }) => {
   await seedAda(page);
   await page.route(/\/me$/, async (route) => {
@@ -372,6 +443,57 @@ test('Function: MemberHabits — the owner logs the open period', async ({ page 
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Achieved', exact: true }).click();
   await expect.poll(() => posted).toContain('"status":"achieved"');
+});
+
+test('Function: MemberHabits — the owner logs an earlier returned period', async ({ page }) => {
+  await seedAda(page);
+  let posted = '';
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      posted = route.request().postData() ?? '';
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [
+          {
+            ...PUBLIC_HABIT,
+            accountId: 'acc_e2e',
+            notes: 'secret',
+            periods: [
+              {
+                period: '2026-10-02',
+                name: 'Walk',
+                description: 'Outside',
+                logged: true,
+                status: 'achieved',
+              },
+              {
+                period: '2026-10-04',
+                name: 'Walk',
+                description: 'Outside',
+                logged: false,
+                status: null,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  const earlier = page.getByRole('listitem').filter({ hasText: '2026-10-02' });
+  await earlier.getByRole('button', { name: 'Not achieved', exact: true }).click();
+  await expect.poll(() => posted).toContain('"period":"2026-10-02"');
+  await expect.poll(() => posted).toContain('"status":"missed"');
 });
 
 test('Function: fetchMemberHabits — the habit tracker page loads the public list', async ({

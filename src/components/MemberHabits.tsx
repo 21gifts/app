@@ -175,13 +175,8 @@ export function MemberHabits(): ReactElement {
     });
   }
 
-  async function onLog(habit: MemberHabit, status: HabitStatus): Promise<void> {
-    const current = habit.periods[habit.periods.length - 1];
-    /* v8 ignore next 3 -- the log buttons render only when a period exists */
-    if (current === undefined) {
-      throw new Error(SAVE_ERROR);
-    }
-    await submit({ action: 'log', id: habit.id, period: current.period, status }, false);
+  async function onLog(habitId: string, period: string, status: HabitStatus): Promise<void> {
+    await submit({ action: 'log', id: habitId, period, status }, false);
   }
 
   function openPay(commentId: string): void {
@@ -313,10 +308,6 @@ export function MemberHabits(): ReactElement {
                 notes: habit.notes === undefined ? '' : habit.notes,
               };
               const openHabit = owns && habit.lastPeriod === null;
-              const openPeriod =
-                openHabit && habit.periods.length > 0
-                  ? habit.periods[habit.periods.length - 1]
-                  : undefined;
               return (
                 <article
                   key={habit.id}
@@ -410,40 +401,36 @@ export function MemberHabits(): ReactElement {
                   ) : null}
                   {habit.periods.length > 0 ? (
                     <ul className="flex flex-col gap-2">
-                      {habit.periods.map((period) => {
-                        const isOpen =
-                          openPeriod !== undefined && period.period === openPeriod.period;
-                        return (
-                          <li key={period.period} className="flex flex-col gap-2">
-                            <div className="flex items-baseline justify-between gap-3">
-                              <time dateTime={period.period} className="text-xs text-app-subtle">
-                                {period.period}
-                              </time>
-                              {isOpen ? null : (
-                                <span className="text-sm text-app-fg">
-                                  {statusCopy(period.status, t)}
-                                </span>
-                              )}
-                            </div>
-                            {isOpen ? (
-                              <SegmentedControl<HabitStatus>
-                                tone="neutral"
-                                ariaLabel={t('habit.rate')}
-                                className="[&>button]:!flex [&>button]:!min-w-0 [&>button]:!items-center [&>button]:!justify-center [&>button]:!px-1.5 [&>button]:!text-center [&>button]:!text-xs [&>button]:!leading-tight sm:[&>button]:!px-3 sm:[&>button]:!text-sm sm:[&>button]:!leading-5"
-                                value={(period.status ?? 'unrated') as HabitStatus}
-                                options={[
-                                  { value: 'achieved', label: t('habit.achieved') },
-                                  { value: 'partial', label: t('habit.partial') },
-                                  { value: 'missed', label: t('habit.missed') },
-                                ]}
-                                onChange={(status) => {
-                                  void onLog(habit, status);
-                                }}
-                              />
-                            ) : null}
-                          </li>
-                        );
-                      })}
+                      {habit.periods.map((period) => (
+                        <li key={period.period} className="flex flex-col gap-2">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <time dateTime={period.period} className="text-xs text-app-subtle">
+                              {period.period}
+                            </time>
+                            {openHabit ? null : (
+                              <span className="text-sm text-app-fg">
+                                {statusCopy(period.status, t)}
+                              </span>
+                            )}
+                          </div>
+                          {openHabit ? (
+                            <SegmentedControl<HabitStatus>
+                              tone="neutral"
+                              ariaLabel={t('habit.rate')}
+                              className="[&>button]:!flex [&>button]:!min-w-0 [&>button]:!items-center [&>button]:!justify-center [&>button]:!px-1.5 [&>button]:!text-center [&>button]:!text-xs [&>button]:!leading-tight sm:[&>button]:!px-3 sm:[&>button]:!text-sm sm:[&>button]:!leading-5"
+                              value={(period.status ?? 'unrated') as HabitStatus}
+                              options={[
+                                { value: 'achieved', label: t('habit.achieved') },
+                                { value: 'partial', label: t('habit.partial') },
+                                { value: 'missed', label: t('habit.missed') },
+                              ]}
+                              onChange={(status) => {
+                                void onLog(habit.id, period.period, status);
+                              }}
+                            />
+                          ) : null}
+                        </li>
+                      ))}
                     </ul>
                   ) : null}
                   {editing ? (
