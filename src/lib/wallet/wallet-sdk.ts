@@ -209,10 +209,12 @@ export interface WalletLnurlRequest {
  * - `lnurl`: an address whose server issues the request for a chosen amount,
  *   between `minSats` and `maxSats`, with a comment of at most
  *   `commentMaxLength` characters (`0` means no comment).
- * - `onchain`: a Bitcoin address on the base chain, not supported yet.
+ * - `onchain`: a Bitcoin mainnet address on the base chain. `address` is what
+ *   `prepare` pays, `recipient` its shortened form. `amountSats` is the amount
+ *   of a BIP21 URI that offers only this address, otherwise `null`.
  * - `unsupported`: anything else the SDK recognised but the app does not pay,
- *   including a BOLT11 request for less than one whole sat and a BIP21 URI
- *   that names an asset (a token, not Bitcoin).
+ *   including a BOLT11 request for less than one whole sat, a BIP21 URI
+ *   that names an asset (a token, not Bitcoin), and an address of a test network.
  */
 export type WalletTarget =
   | {
@@ -230,17 +232,33 @@ export type WalletTarget =
       commentMaxLength: number;
       recipient: string;
     }
-  | { type: 'onchain' }
+  | { type: 'onchain'; address: string; amountSats: number | null; recipient: string }
   | { type: 'unsupported' };
 
 /**
  * Payment to prepare. `input` pays a request or address text (with
- * `amountSats` when the text carries none). `lnurl` asks the receiver's
+ * `amountSats` when the text carries none; a base-chain address always needs
+ * it). `lnurl` asks the receiver's
  * server for a request of `amountSats`, with an optional comment.
  */
 export type WalletPayRequest =
   | { type: 'input'; input: string; amountSats?: number }
   | { type: 'lnurl'; request: WalletLnurlRequest; amountSats: number; comment?: string };
+
+/** Confirmation speed of a payment to a base-chain address, as the SDK names it. */
+export type OnchainSpeed = 'fast' | 'medium' | 'slow';
+
+/**
+ * Fee quote of a payment to a base-chain address: the whole-sat fee of each
+ * speed (the fee the wallet pays plus the network fee), and when the quote
+ * expires.
+ */
+export interface WalletOnchainQuote {
+  /** Whole sats of fee for each speed. */
+  fees: Record<OnchainSpeed, number>;
+  /** Epoch ms after which the quote may no longer be sent. */
+  expiresAtMs: number;
+}
 
 /**
  * A prepared payment: what will leave the wallet, and how to send it.
@@ -248,14 +266,18 @@ export type WalletPayRequest =
 export interface WalletPreparedPayment {
   /** Whole sats the receiver gets. */
   amountSats: number;
-  /** Whole sats of fee on top of `amountSats`. */
+  /** Whole sats of fee on top of `amountSats` (the medium speed for a base-chain address). */
   feeSats: number;
+  /** Fee quote when the payment goes to a base-chain address. */
+  onchain?: WalletOnchainQuote;
   /**
    * Sends the prepared payment.
    *
+   * @param speed - Confirmation speed for a base-chain address (default `medium`);
+   *   ignored for other payments.
    * @returns Resolves when the SDK reports the payment sent.
    */
-  send(): Promise<void>;
+  send(speed?: OnchainSpeed): Promise<void>;
 }
 
 /** Characters kept at each end of a shortened request or address. */
@@ -291,7 +313,7 @@ type ParsedInput =
   | { type: 'sparkAddress'; address: string }
   | { type: 'lightningAddress'; address: string; payRequest: LnurlDetails }
   | ({ type: 'lnurlPay' } & LnurlDetails)
-  | { type: 'bitcoinAddress' }
+  | { type: 'bitcoinAddress'; address: string; network: string }
   | { type: 'bip21'; amountSat?: number; assetId?: string; paymentMethods: ParsedInput[] }
   | { type: string };
 
@@ -348,22 +370,32 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
       const details = parsed as Extract<ParsedInput, { type: 'lnurlPay' }>;
       return lnurlTarget(details, details.address ?? details.domain);
     }
-    case 'bitcoinAddress':
-      return { type: 'onchain' };
+    case 'bitcoinAddress': {
+      const bitcoin = parsed as Extract<ParsedInput, { type: 'bitcoinAddress' }>;
+      if (bitcoin.network !== 'bitcoin') {
+        return { type: 'unsupported' };
+      }
+      return {
+        type: 'onchain',
+        address: bitcoin.address,
+        amountSats: null,
+        recipient: shorten(bitcoin.address),
+      };
+    }
     case 'bip21': {
       const bip21 = parsed as Extract<ParsedInput, { type: 'bip21' }>;
       if (bip21.assetId !== undefined) {
         return { type: 'unsupported' };
       }
       const methods = bip21.paymentMethods;
-      let onchain = false;
+      let onchain: Extract<WalletTarget, { type: 'onchain' }> | null = null;
       for (const method of methods) {
         const target = targetFromParsed(method);
         if (target === null || target.type === 'unsupported') {
           continue;
         }
         if (target.type === 'onchain') {
-          onchain = true;
+          onchain ??= target;
           continue;
         }
         if (
@@ -375,7 +407,13 @@ function targetFromParsed(parsed: ParsedInput): WalletTarget | null {
         }
         return target;
       }
-      return onchain ? { type: 'onchain' } : null;
+      if (onchain === null) {
+        return null;
+      }
+      const uriSats = bip21.amountSat;
+      return uriSats !== undefined && uriSats >= 1
+        ? { ...onchain, amountSats: Math.floor(uriSats) }
+        : onchain;
     }
     default:
       return null;
@@ -406,12 +444,49 @@ function lnurlTarget(details: LnurlDetails, recipient: string): WalletTarget {
   };
 }
 
+/** Narrow view of one speed of the SDK's on-chain fee quote. */
+interface SpeedFeeQuote {
+  userFeeSat: number;
+  l1BroadcastFeeSat: number;
+}
+
 /** Narrow view of the SDK's prepared send method that the adapter reads. */
 type PreparedMethod =
   | { type: 'bolt11Invoice'; lightningFeeSats: number }
   | { type: 'sparkAddress'; fee: string }
   | { type: 'sparkInvoice'; fee: string }
+  | {
+      type: 'bitcoinAddress';
+      feeQuote: {
+        expiresAt: number;
+        speedFast: SpeedFeeQuote;
+        speedMedium: SpeedFeeQuote;
+        speedSlow: SpeedFeeQuote;
+      };
+    }
   | { type: string };
+
+/**
+ * Reads the SDK's on-chain fee quote. The fee of a speed is the wallet's fee
+ * plus the network fee. The SDK gives the expiry in epoch seconds.
+ *
+ * @param method - SDK prepared payment method of type `bitcoinAddress`.
+ * @returns Fees per speed and the expiry in epoch ms.
+ */
+function onchainQuoteOf(
+  method: Extract<PreparedMethod, { type: 'bitcoinAddress' }>,
+): WalletOnchainQuote {
+  const quote = method.feeQuote;
+  const total = (speed: SpeedFeeQuote): number => speed.userFeeSat + speed.l1BroadcastFeeSat;
+  return {
+    fees: {
+      fast: total(quote.speedFast),
+      medium: total(quote.speedMedium),
+      slow: total(quote.speedSlow),
+    },
+    expiresAtMs: quote.expiresAt * 1000,
+  };
+}
 
 /**
  * Reads the fee of a prepared send. A BOLT11 request is sent over Lightning
@@ -535,7 +610,24 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
           if (prepared.tokenIdentifier !== undefined || methodToken !== undefined) {
             throw new Error('Unsupported payment method');
           }
-          const feeSats = feeOf(prepared.paymentMethod as PreparedMethod);
+          const method = prepared.paymentMethod as PreparedMethod;
+          if (method.type === 'bitcoinAddress') {
+            const onchain = onchainQuoteOf(
+              method as Extract<PreparedMethod, { type: 'bitcoinAddress' }>,
+            );
+            return {
+              amountSats: Number(prepared.amount),
+              feeSats: onchain.fees.medium,
+              onchain,
+              async send(speed: OnchainSpeed = 'medium'): Promise<void> {
+                await handle.sendPayment({
+                  prepareResponse: prepared,
+                  options: { type: 'bitcoinAddress', confirmationSpeed: speed },
+                });
+              },
+            };
+          }
+          const feeSats = feeOf(method);
           return {
             amountSats: Number(prepared.amount),
             feeSats,

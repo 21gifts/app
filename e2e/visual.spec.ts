@@ -1951,16 +1951,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-sent');
   });
 
-  test('wallet send-onchain', async ({ page }) => {
-    await seedWalletSend(page);
-    await page.goto('/wallet?visual=send-onchain');
-    await expectPinnedSend(page);
-    await expect(
-      page.getByText('Sending to this kind of Bitcoin address is not supported yet.'),
-    ).toBeVisible();
-    await shotScreen(page, 'state-wallet-send-onchain');
-  });
-
   test('wallet send-unsupported', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-unsupported');
@@ -2095,6 +2085,107 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('$2.10', { exact: true })).toBeVisible();
     await expect(page.getByText('Fee ₿0', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-wallet-send-confirm-member');
+  });
+
+  test('wallet send-amount-onchain', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount-onchain');
+    await openWalletSend(page);
+    await expect(page.getByText('To bc1qar0srr…wf5mdq')).toBeVisible();
+    await expect(page.getByText(/^Between/)).toHaveCount(0);
+    await expect(page.getByLabel('Message (optional)')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-send-amount-onchain');
+  });
+
+  test('wallet send-amount-onchain-min', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-amount-onchain-min');
+    await openWalletSend(page);
+    await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+      'Enter an amount of at least ₿294 · $0.29.',
+    );
+    await shotScreen(page, 'state-wallet-send-amount-onchain-min');
+  });
+
+  test('wallet send-confirm-onchain', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain');
+    await openWalletSend(page);
+    await expect(page.getByText("₿50'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$50.00', { exact: true })).toBeVisible();
+    await expect(page.getByText('To bc1qar0srr…wf5mdq')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Medium/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText("Fee ₿1'420 · $1.42", { exact: true })).toBeVisible();
+    await expect(page.getByText("Total ₿51'420 · $51.42", { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain');
+  });
+
+  test('wallet send-confirm-onchain-fast', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-fast');
+    await openWalletSend(page);
+    await expect(page.getByRole('button', { name: /^Fast/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText("Fee ₿2'840 · $2.84", { exact: true })).toBeVisible();
+    await expect(page.getByText("Total ₿52'840 · $52.84", { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-fast');
+  });
+
+  test('wallet send-confirm-onchain-slow', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-slow');
+    await openWalletSend(page);
+    await expect(page.getByRole('button', { name: /^Slow/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('Fee ₿710 · $0.71', { exact: true })).toBeVisible();
+    await expect(page.getByText("Total ₿50'710 · $50.71", { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-slow');
+  });
+
+  test('wallet send-confirm-onchain-low', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-low');
+    await openWalletSend(page);
+    await expect(page.getByRole('button', { name: /^Fast/ })).toBeDisabled();
+    await expect(page.getByText('Balance too low')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-low');
+  });
+
+  test('wallet send-confirm-onchain-renewed', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-renewed');
+    await openWalletSend(page);
+    await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+      'The fee offer expired, so nothing was sent. Check the new fee and press Send again.',
+    );
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-renewed');
+  });
+
+  test('wallet send-confirm-onchain-renewing', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-renewing');
+    await expectPinnedSend(page);
+    await expect(page.getByText('$50.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-renewing');
+  });
+
+  test('wallet send-confirm-onchain-sending', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-sending');
+    await expectPinnedSend(page);
+    await expect(page.getByText('$50.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Medium/ })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-sending');
   });
 
   test('wallet send-input-busy', async ({ page }) => {
