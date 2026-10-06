@@ -865,6 +865,31 @@ describe('useWalletSend base-chain address', () => {
     expect(result.current.busy).toBe(false);
   });
 
+  it('closes the confirm step while a quote is renewed and drops the late renewal', async () => {
+    const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
+    let finish: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(result.current.busy).toBe(true);
+    let closed = false;
+    act(() => {
+      closed = result.current.cancel();
+    });
+    expect(closed).toBe(true);
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(false);
+    await act(async () => {
+      finish(onchainConfirm(async () => ({ kind: 'paid' })));
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
   it('returns to the input when the wallet leaves ready while a quote is renewed', async () => {
     const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
     vi.mocked(payFromWallet).mockReturnValue(new Promise(() => undefined));
