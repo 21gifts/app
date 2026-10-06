@@ -1,0 +1,78 @@
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ForumPaySheet, type ForumPayError } from '@/components/ForumPaySheet';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { FiatRateDay } from '@/lib/stats-money';
+
+const DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
+function sheet(
+  error: ForumPayError,
+  invoice: boolean,
+): {
+  onPaySubmit: ReturnType<typeof vi.fn>;
+  onPayCancel: ReturnType<typeof vi.fn>;
+  onPayDraftChange: ReturnType<typeof vi.fn>;
+} {
+  const onPaySubmit = vi.fn(() => undefined);
+  const onPayCancel = vi.fn();
+  const onPayDraftChange = vi.fn();
+  renderWithLocale(
+    <ForumPaySheet
+      messageId="c-1"
+      payDraft="21"
+      payBusy={false}
+      payError={error}
+      payInvoice={invoice ? { messageId: 'c-1', pr: 'lnbc1', amountSats: 21 } : null}
+      payWaiting={false}
+      onPayDraftChange={onPayDraftChange}
+      onPayUnitChange={vi.fn()}
+      onPaySubmit={onPaySubmit}
+      onPayCancel={onPayCancel}
+      rateDay={DAY}
+      showPaymentQr={false}
+      onInteract={vi.fn()}
+    />,
+  );
+  return { onPaySubmit, onPayCancel, onPayDraftChange };
+}
+
+describe('ForumPaySheet', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('shows the amount form and submits the draft', () => {
+    const { onPaySubmit, onPayCancel } = sheet(null, false);
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.getByText('$0.02')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(onPaySubmit).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the habit amount sentence, not the forum amount sentence', () => {
+    sheet('habitAmount', false);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Expected a JSON body with an integer "amountSats"',
+    );
+    expect(screen.queryByText('Enter a whole number greater than zero')).toBeNull();
+  });
+
+  it('shows the invoice card with the fiat line', () => {
+    const { onPayCancel } = sheet(null, true);
+    expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
+    expect(screen.getByText('$0.02')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+});

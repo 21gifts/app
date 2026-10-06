@@ -1326,6 +1326,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:sunday",
+    "label": "/habit-tracker sunday",
+    "visual": "state-habit-tracker-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:editing",
+    "label": "/habit-tracker editing",
+    "visual": "state-habit-tracker-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/contact:default",
     "label": "/contact default",
     "visual": "screen-contact",

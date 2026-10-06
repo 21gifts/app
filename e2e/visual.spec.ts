@@ -22546,10 +22546,12 @@ test.describe('habit tracker baselines', () => {
         body: JSON.stringify(HABIT_PUBLIC),
       });
     });
+    await fulfillRateDay(page);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-donate-invoice');
   });
 
