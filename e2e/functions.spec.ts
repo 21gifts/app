@@ -12857,6 +12857,10 @@ test('Function: CameraPhotoButton — the profile photo uses the front camera an
   const chooser = await chooserPromise;
   expect(await chooser.element().getAttribute('name')).toBe('profile-photo-camera');
   await page.setViewportSize({ width: 320, height: 700 });
+  // The settings pills further down this card are outside this change, so the
+  // frame check covers the photo controls rather than the whole page.
+  const frame = await page.locator('[data-app-frame]').boundingBox();
+  expect(frame).not.toBeNull();
   for (const name of [
     'Add a profile photo',
     'Take a profile photo',
@@ -12865,9 +12869,12 @@ test('Function: CameraPhotoButton — the profile photo uses the front camera an
   ]) {
     const box = await page.getByRole('button', { name, exact: true }).boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
-    expect(box?.x ?? -1).toBeGreaterThanOrEqual(0);
-    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(320);
+    expect(box?.x ?? -1).toBeGreaterThanOrEqual(frame?.x ?? 0);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(
+      (frame?.x ?? 0) + (frame?.width ?? 320),
+    );
   }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await chooser.setFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
   await expect.poll(() => picturePuts.length, { timeout: 10_000 }).toBe(1);
   expect(picturePuts[0]).toMatchObject({ photo: { contentType: 'image/jpeg' } });

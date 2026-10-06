@@ -182,6 +182,10 @@ export function ShopNoteEditControl({
   const [username, setUsername] = useState('');
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
+  // The lists a pick appends to. Two picks can overlap while photos are
+  // prepared, so room and the too-many sentence read these, not the render.
+  const keptRef = useRef<ShopKeptMedia[]>([]);
+  const photoDraftsRef = useRef<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [pickError, setPickError] = useState<'unsupported' | 'tooLarge' | 'tooMany' | null>(null);
@@ -195,6 +199,16 @@ export function ShopNoteEditControl({
   // Bytes read before the feed revokes preview URLs. A later step can fail
   // and leave this panel open; the next save must not fetch those URLs again.
   const keptStillBytes = useRef(new Map<string, KeptStillBytes>());
+
+  function replaceKept(next: ShopKeptMedia[]): void {
+    keptRef.current = next;
+    setKept(next);
+  }
+
+  function replacePhotoDrafts(next: ForumPhotoPayload[]): void {
+    photoDraftsRef.current = next;
+    setPhotoDrafts(next);
+  }
 
   function revokeOwnedPhotos(): void {
     for (const url of ownedPhotoUrls.current) {
@@ -238,14 +252,14 @@ export function ShopNoteEditControl({
       setDraft(stripShopHashtag(message.text));
       setPlace(message.place ?? null);
       setUsername(message.shopAccount?.username ?? '');
-      setPhotoDrafts([]);
+      replacePhotoDrafts([]);
       setSaveError(false);
       setPickError(null);
       setHistory(null);
       setHistoryError(false);
       let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
       if (photos.length < message.photoCount) {
-        setKept([]);
+        replaceKept([]);
         setPhotoBaseline([]);
         revokeOwnedPhotos();
         try {
@@ -258,7 +272,7 @@ export function ShopNoteEditControl({
           }
           photos = loaded;
         } catch {
-          setKept([]);
+          replaceKept([]);
           setPhotoBaseline([]);
           revokeOwnedPhotos();
           setPhotosReady(false);
@@ -270,7 +284,7 @@ export function ShopNoteEditControl({
         try {
           photos = await ownFeedStills(photos, ownedPhotoUrls.current, keptStillBytes.current);
         } catch {
-          setKept([]);
+          replaceKept([]);
           setPhotoBaseline([]);
           setPhotosReady(false);
           setSaveError(true);
@@ -283,7 +297,7 @@ export function ShopNoteEditControl({
         existingVideoUrl ??
         (message.hasVideo ? forumVideoSrc(message.id, message.videoContentType) : '');
       setPhotoBaseline(photos);
-      setKept([
+      replaceKept([
         ...photos.map((url) => ({ url, kind: 'photo' as const })),
         ...(video !== '' ? [{ url: video, kind: 'video' as const }] : []),
       ]);
@@ -306,7 +320,7 @@ export function ShopNoteEditControl({
 
   /* v8 ignore start -- edit mode never has a pending video to clear */
   function clearPendingPhotos(): void {
-    setPhotoDrafts([]);
+    replacePhotoDrafts([]);
   }
   /* v8 ignore stop */
 
@@ -325,19 +339,15 @@ export function ShopNoteEditControl({
         error = 'unsupported';
       }
     }
-    const keptCount = kept.filter((item) => item.kind === 'photo').length;
-    if (prepared.length > Math.max(0, 10 - keptCount - photoDrafts.length)) {
+    const keptCount = keptRef.current.filter((item) => item.kind === 'photo').length;
+    const current = photoDraftsRef.current;
+    const room = Math.max(0, 10 - keptCount - current.length);
+    if (prepared.length > room) {
       error = 'tooMany';
     }
     setPickError(error);
-    if (prepared.length > 0) {
-      setPhotoDrafts((current) => {
-        const room = 10 - keptCount - current.length;
-        if (room <= 0) {
-          return current;
-        }
-        return current.concat(prepared.slice(0, room));
-      });
+    if (prepared.length > 0 && room > 0) {
+      replacePhotoDrafts(current.concat(prepared.slice(0, room)));
     }
   }
 
@@ -456,8 +466,8 @@ export function ShopNoteEditControl({
                 void onPickFiles(files);
               }}
               onRemovePhoto={(index) => {
-                setPhotoDrafts((current) =>
-                  current.filter((_, photoIndex) => photoIndex !== index),
+                replacePhotoDrafts(
+                  photoDraftsRef.current.filter((_, photoIndex) => photoIndex !== index),
                 );
               }}
               onClearPhoto={clearPendingPhotos}
@@ -477,7 +487,7 @@ export function ShopNoteEditControl({
               submitLabel={t('shops.saveChanges')}
               keptMedia={kept}
               onRemoveKept={(index) => {
-                setKept((current) => current.filter((_, keptIndex) => keptIndex !== index));
+                replaceKept(keptRef.current.filter((_, keptIndex) => keptIndex !== index));
               }}
               imagesOnly
             />

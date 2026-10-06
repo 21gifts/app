@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -943,6 +943,69 @@ describe('ShopNoteEditControl', () => {
     });
     expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+  });
+
+  it('counts room from the stills already added when two picks overlap', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const pending: Array<() => void> = [];
+    vi.mocked(prepareForumPhoto).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => {
+            resolve({
+              ok: true,
+              photo: {
+                contentType: 'image/jpeg',
+                data: 'abc',
+                previewUrl: 'data:image/jpeg;base64,abc',
+                takenAt: null,
+              },
+            });
+          });
+        }),
+    );
+    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    const gallery = (await waitFor(() =>
+      document.querySelector('input[type="file"]:not([capture])'),
+    )) as HTMLInputElement;
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    const eight = (): File[] =>
+      Array.from(
+        { length: 8 },
+        (_, index) => new File(['a'], `${index}.jpg`, { type: 'image/jpeg' }),
+      );
+    fireEvent.change(gallery, { target: { files: eight() } });
+    fireEvent.change(camera, { target: { files: eight() } });
+    for (let index = 0; index < 16; index += 1) {
+      await waitFor(() => {
+        expect(pending.length).toBeGreaterThan(index);
+      });
+      await act(async () => {
+        pending[index]!();
+      });
+    }
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+    });
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+
+    pending.length = 0;
+    fireEvent.change(camera, {
+      target: { files: [new File(['b'], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[0]!);
+    await waitFor(() => {
+      expect(pending.length).toBe(1);
+    });
+    await act(async () => {
+      pending[0]!();
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+    expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
   });
 
   it('says why a picked or taken photo cannot be used and clears that on the next good one', async () => {
