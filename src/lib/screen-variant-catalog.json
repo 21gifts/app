@@ -1338,6 +1338,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:rated-achieved",
+    "label": "/habit-tracker rated-achieved",
+    "visual": "state-habit-tracker-rated-achieved",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:rated-partial",
+    "label": "/habit-tracker rated-partial",
+    "visual": "state-habit-tracker-rated-partial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:rated-missed",
+    "label": "/habit-tracker rated-missed",
+    "visual": "state-habit-tracker-rated-missed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/habit-tracker:donate",
     "label": "/habit-tracker donate",
     "visual": "state-habit-tracker-donate",
@@ -1371,6 +1389,12 @@
     "id": "/habit-tracker:donate-request",
     "label": "/habit-tracker donate-request",
     "visual": "state-habit-tracker-donate-request",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:donate-request-pending",
+    "label": "/habit-tracker donate-request-pending",
+    "visual": "state-habit-tracker-donate-request-pending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -2,9 +2,9 @@
 
 import { Archive, Check, Pencil, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { HabitComments } from '@/app/habit-tracker/HabitComments';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
-import { HabitComments } from '@/components/HabitComments';
 import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
@@ -68,6 +68,7 @@ export function MemberHabits(): ReactElement {
   const listAlive = useRef(true);
   const postedKeys = useRef(new Set<string>());
   const postedForSession = useRef<string | null>(null);
+  const inFlightKeys = useRef(new Set<string>());
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
   const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
@@ -88,6 +89,7 @@ export function MemberHabits(): ReactElement {
     listGeneration.current = generation;
     listSettled.current = false;
     // Try again keeps a successful post from being sent again. A new session may send it.
+    // A request still waiting keeps its reservation across that clear.
     if (postedForSession.current !== session) {
       postedKeys.current.clear();
       postedForSession.current = session;
@@ -149,13 +151,23 @@ export function MemberHabits(): ReactElement {
       return false;
     }
     const key = JSON.stringify(body);
+    // The request already waiting owns the reload. Do not start a second one.
+    if (inFlightKeys.current.has(key)) {
+      return false;
+    }
     try {
       if (session === null || session === '') {
         throw new Error(SAVE_ERROR);
       }
       if (!postedKeys.current.has(key)) {
-        await postMemberHabit(session, body, timeZone);
-        postedKeys.current.add(key);
+        // Reserved before the request returns, so a settled session change cannot send it twice.
+        inFlightKeys.current.add(key);
+        try {
+          await postMemberHabit(session, body, timeZone);
+          postedKeys.current.add(key);
+        } finally {
+          inFlightKeys.current.delete(key);
+        }
       }
       const listed = await refresh();
       if (!listed) {

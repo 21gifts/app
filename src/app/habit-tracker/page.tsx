@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { HabitTrackerTopRight } from '@/app/habit-tracker/HabitTrackerTopRight';
+import { MemberHabits } from '@/app/habit-tracker/MemberHabits';
 import { AppShell } from '@/components/AppShell';
-import { MemberHabits } from '@/components/MemberHabits';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 

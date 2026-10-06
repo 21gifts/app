@@ -191,6 +191,92 @@ test('screen /habit-tracker donate-request', async ({ page }) => {
   ).toHaveText('Could not start the Bitcoin payment');
 });
 
+test('screen /habit-tracker donate-request-pending', async ({ page }) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await new Promise(() => undefined);
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PUBLIC_LIST),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+  await page.getByLabel('Amount').fill('21');
+  const cont = page.getByRole('button', { name: 'Continue' });
+  await cont.click();
+  await expect(cont).toBeDisabled();
+  await expect(cont.locator('.animate-spin')).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Could not start the Bitcoin payment' }),
+  ).toHaveCount(0);
+});
+
+async function rateOwnHabit(
+  page: Page,
+  status: 'achieved' | 'partial' | 'missed',
+  buttonName: string,
+): Promise<void> {
+  await seedAda(page);
+  let rated = false;
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      rated = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [
+          {
+            ...PUBLIC_HABIT,
+            accountId: 'acc_e2e',
+            notes: 'secret',
+            periods: [
+              {
+                period: '2026-10-04',
+                name: 'Walk',
+                description: 'Outside',
+                logged: rated,
+                status: rated ? status : null,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  const pill = page.getByRole('button', { name: buttonName, exact: true });
+  await expect(pill).toHaveAttribute('aria-pressed', 'false');
+  await pill.click();
+  await expect(pill).toHaveAttribute('aria-pressed', 'true');
+}
+
+test('screen /habit-tracker rated-achieved', async ({ page }) => {
+  await rateOwnHabit(page, 'achieved', 'Achieved');
+});
+
+test('screen /habit-tracker rated-partial', async ({ page }) => {
+  await rateOwnHabit(page, 'partial', 'Partially achieved');
+});
+
+test('screen /habit-tracker rated-missed', async ({ page }) => {
+  await rateOwnHabit(page, 'missed', 'Not achieved');
+});
+
 test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
   await openHabitPay(page, { status: 429, error: 'Too many payments' });
   await page.getByLabel('Amount').fill('21');

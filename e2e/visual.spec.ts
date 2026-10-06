@@ -22518,6 +22518,55 @@ async function stubHabitList(page: Page, body: unknown, status = 200): Promise<v
   });
 }
 
+async function shotRatedHabit(
+  page: Page,
+  status: 'achieved' | 'partial' | 'missed',
+  buttonName: string,
+): Promise<void> {
+  await seedHabitAda(page);
+  let rated = false;
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      rated = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: HABIT_PUBLIC.reviewWeek,
+        habits: [
+          {
+            ...HABIT_ROW,
+            accountId: 'acc_e2e',
+            notes: 'secret',
+            periods: [
+              {
+                period: '2026-10-04',
+                name: 'Walk',
+                description: 'Outside',
+                logged: rated,
+                status: rated ? status : null,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  const pill = page.getByRole('button', { name: buttonName, exact: true });
+  await expect(pill).toHaveAttribute('aria-pressed', 'false');
+  await pill.click();
+  await expect(pill).toHaveAttribute('aria-pressed', 'true');
+  await pill.scrollIntoViewIfNeeded();
+}
+
 async function seedHabitAda(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -22620,6 +22669,21 @@ test.describe('habit tracker baselines', () => {
       'true',
     );
     await shotScreen(page, 'state-habit-tracker-add-weekly');
+  });
+
+  test('screen /habit-tracker rated-achieved', async ({ page }) => {
+    await shotRatedHabit(page, 'achieved', 'Achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-achieved');
+  });
+
+  test('screen /habit-tracker rated-partial', async ({ page }) => {
+    await shotRatedHabit(page, 'partial', 'Partially achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-partial');
+  });
+
+  test('screen /habit-tracker rated-missed', async ({ page }) => {
+    await shotRatedHabit(page, 'missed', 'Not achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-missed');
   });
 
   test('screen /habit-tracker donate', async ({ page }) => {
@@ -22759,6 +22823,36 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByText('$0.02')).toBeInViewport();
     await expect(requestAlert).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-request');
+  });
+
+  test('screen /habit-tracker donate-request-pending', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await new Promise(() => undefined);
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    const cont = page.getByRole('button', { name: 'Continue' });
+    await cont.click();
+    await expect(cont).toBeDisabled();
+    await expect(cont.locator('.animate-spin')).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not start the Bitcoin payment' }),
+    ).toHaveCount(0);
+    await cont.scrollIntoViewIfNeeded();
+    await expect(cont).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-request-pending');
   });
 
   test('screen /habit-tracker donate-rate-limit', async ({ page }) => {

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HabitComments } from '@/components/HabitComments';
+import { HabitComments } from '@/app/habit-tracker/HabitComments';
 import type { Account } from '@/lib/api-types';
 import type { MemberHabitList } from '@/lib/member-habits';
 import { renderWithLocale } from '@/__tests__/render-with-locale';

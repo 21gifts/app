@@ -1634,6 +1634,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'rated-achieved',
+    image: 'habit-tracker-rated-achieved.png',
+    visual: 'state-habit-tracker-rated-achieved',
+    needle: 'screen /habit-tracker rated-achieved',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'rated-partial',
+    image: 'habit-tracker-rated-partial.png',
+    visual: 'state-habit-tracker-rated-partial',
+    needle: 'screen /habit-tracker rated-partial',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'rated-missed',
+    image: 'habit-tracker-rated-missed.png',
+    visual: 'state-habit-tracker-rated-missed',
+    needle: 'screen /habit-tracker rated-missed',
+  },
+  {
+    route: '/habit-tracker',
     id: 'donate',
     image: 'habit-tracker-donate.png',
     visual: 'state-habit-tracker-donate',
@@ -1673,6 +1694,13 @@ export const SCREEN_VARIANTS = [
     image: 'habit-tracker-donate-request.png',
     visual: 'state-habit-tracker-donate-request',
     needle: 'screen /habit-tracker donate-request',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'donate-request-pending',
+    image: 'habit-tracker-donate-request-pending.png',
+    visual: 'state-habit-tracker-donate-request-pending',
+    needle: 'screen /habit-tracker donate-request-pending',
   },
   {
     route: '/habit-tracker',

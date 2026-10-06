@@ -5,7 +5,7 @@ import HabitTrackerPage from '@/app/habit-tracker/page';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('@/components/MemberHabits', () => ({
+vi.mock('@/app/habit-tracker/MemberHabits', () => ({
   MemberHabits: () => <div data-testid="member-habits" />,
 }));
 
