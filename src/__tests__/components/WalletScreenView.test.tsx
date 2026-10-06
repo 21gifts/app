@@ -660,6 +660,7 @@ function idleSend(extra: Partial<UseWalletSendResult> = {}): UseWalletSendResult
   return {
     state: { step: 'input', error: null },
     busy: false,
+    sending: false,
     text: '',
     setText: vi.fn(),
     comment: '',

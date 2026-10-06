@@ -396,6 +396,7 @@ describe('useWalletSend confirm', () => {
     act(() => {
       result.current.confirm();
     });
+    expect(result.current.sending).toBe(true);
     let closed = false;
     act(() => {
       closed = result.current.cancel();
@@ -406,6 +407,7 @@ describe('useWalletSend confirm', () => {
       finish({ kind: 'paid' });
     });
     expect(result.current.state).toMatchObject({ step: 'sent' });
+    expect(result.current.sending).toBe(false);
   });
 
   it('drops a send result after the wallet screen moved on', async () => {
@@ -546,6 +548,7 @@ describe('useWalletSend visual pins', () => {
     const { result } = renderHook(() => useWalletSend());
     expect(result.current.state.step).toBe('confirm');
     expect(result.current.busy).toBe(true);
+    expect(result.current.sending).toBe(true);
     act(() => {
       result.current.confirm();
     });
@@ -603,6 +606,23 @@ describe('useWalletSend visual pins', () => {
       expect(postLnurlPayRequest).not.toHaveBeenCalled();
     },
   );
+
+  it.each([
+    'send-amount-onchain',
+    'send-amount-onchain-min',
+    'send-confirm-onchain',
+    'send-confirm-onchain-fast',
+    'send-confirm-onchain-slow',
+    'send-confirm-onchain-low',
+    'send-confirm-onchain-renewed',
+    'send-confirm-onchain-sending',
+  ])('ignores the %s pin outside a Playwright build', (visual) => {
+    window.history.replaceState({}, '', `/wallet?visual=${visual}`);
+    const { result } = renderHook(() => useWalletSend());
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.sending).toBe(false);
+  });
 
   it('ignores pins outside a Playwright build and unknown values', () => {
     window.history.replaceState({}, '', '/wallet?visual=send-confirm');
@@ -878,6 +898,7 @@ describe('useWalletSend base-chain address', () => {
       result.current.confirm();
     });
     expect(result.current.busy).toBe(true);
+    expect(result.current.sending).toBe(false);
     let closed = false;
     act(() => {
       closed = result.current.cancel();

@@ -131,6 +131,11 @@ export interface UseWalletSendResult {
   state: WalletSendState;
   /** True while parse, prepare, or send runs. */
   busy: boolean;
+  /**
+   * True only while a confirmed payment is being sent; `busy` without
+   * `sending` on the confirm step is the renewal of an expired quote.
+   */
+  sending: boolean;
   /** Pasted text. */
   text: string;
   /** Updates the pasted text and clears an input alert. */
@@ -479,6 +484,7 @@ export function useWalletSend(): UseWalletSendResult {
   const sendRef = useRef<((speed?: OnchainSpeed) => Promise<WalletSendResult>) | null>(null);
   const preparedRef = useRef<PreparedSend | null>(null);
   const sendingRef = useRef(false);
+  const [sending, setSending] = useState(false);
   const generation = useRef(0);
   const pin = visualName();
   const pinned = visualState(pin);
@@ -872,8 +878,10 @@ export function useWalletSend(): UseWalletSendResult {
     const run = generation.current;
     setBusy(true);
     sendingRef.current = true;
+    setSending(true);
     void send(speed).then((result) => {
       sendingRef.current = false;
+      setSending(false);
       if (run !== generation.current) {
         return;
       }
@@ -963,12 +971,11 @@ export function useWalletSend(): UseWalletSendResult {
           onchain: { ...pinned.onchain, speed: pinSpeed },
         }
       : pinned;
+  const pinSending = pin === 'send-confirm-sending' || pin === 'send-confirm-onchain-sending';
   return {
     state: shown ?? state,
-    busy:
-      pinned === null
-        ? busy
-        : pin === 'send-confirm-sending' || pin === 'send-confirm-onchain-sending' || pinBusy,
+    busy: pinned === null ? busy : pinSending || pinBusy,
+    sending: pinned === null ? sending : pinSending,
     text,
     setText,
     comment,
