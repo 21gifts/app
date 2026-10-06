@@ -152,7 +152,8 @@ export function MemberHabits(): ReactElement {
         return false;
       }
       postedKeys.current.delete(key);
-      const closeEdit = body.action === 'edit' || body.action === 'archive' ? body.id : undefined;
+      const action = body['action'];
+      const closeEdit = action === 'edit' || action === 'archive' ? body['id'] : undefined;
       if (typeof closeEdit === 'string') {
         cancelEdit(closeEdit);
       }
