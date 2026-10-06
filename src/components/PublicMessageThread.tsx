@@ -650,6 +650,7 @@ export function PublicMessageThread(props: {
         pr: invoice.pr,
         amountSats: invoice.amountSats,
         sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
