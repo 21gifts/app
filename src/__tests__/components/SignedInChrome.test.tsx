@@ -1024,8 +1024,10 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('w-72');
       expect(panel.className).toContain('absolute');
       expect(panel.className).not.toContain('overflow-y-auto');
-      expect(panel.className).not.toContain('overflow-auto');
+      expect(panel.className).not.toContain('min-h-8');
       expect(panel.className).not.toContain('max-h-');
+      expect(panel.style.transform).toBe('');
+      expect(panel.querySelector('a')?.className).toContain('min-h-11');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       bottom = 700;
@@ -1033,6 +1035,7 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('mt-2');
       expect(panel.className).toContain('p-2');
       expect(panel.className).not.toContain('mt-0');
+      expect(panel.className).not.toContain('overflow-y-auto');
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1079,6 +1082,142 @@ describe('SignedInChrome', () => {
     }
   });
 
+  it('does not scroll the wide menu when compact spacing brings it back inside', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const menu = this.id === 'signed-in-menu';
+      const bottom = menu ? (this.className.includes('mt-0') ? 700 : 760) : 0;
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('mt-0');
+      expect(panel.className).toContain('px-2');
+      expect(panel.className).toContain('py-0');
+      expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.className).not.toContain('min-h-8');
+      expect(panel.style.transform).toBe('');
+      expect(panel.querySelector('a')?.className).toContain('min-h-11');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('lifts a compact wide menu that still passes a 720px window and does not scroll', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const menu = this.id === 'signed-in-menu';
+      const lifted = /^translateY\(-(\d+)px\)$/.exec(menu ? this.style.transform : '');
+      const lift = lifted === null ? 0 : Number(lifted[1]);
+      const compact = menu && this.className.includes('mt-0');
+      const naturalTop = compact ? 72 : 80;
+      const naturalBottom = compact ? 754 : 794;
+      return {
+        x: 0,
+        y: naturalTop - lift,
+        top: menu ? naturalTop - lift : 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: menu ? naturalBottom - lift : 0,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      const current = useAuthStore.getState().account;
+      if (current === null) {
+        throw new Error('expected account');
+      }
+      useAuthStore.setState({ account: { ...current, role: 'moderator' } });
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('mt-0');
+      expect(panel.className).toContain('px-2');
+      expect(panel.className).toContain('py-0');
+      expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.className).not.toContain('min-h-8');
+      expect(panel.style.transform).toBe('translateY(-33px)');
+      expect(panel.querySelector('a')?.className).toContain('min-h-11');
+      expect(panel.querySelector('p')?.className).not.toContain('py-2');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('does not lift a wide menu past the top of the window', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const menu = this.id === 'signed-in-menu';
+      const lifted = /^translateY\(-(\d+)px\)$/.exec(menu ? this.style.transform : '');
+      const lift = lifted === null ? 0 : Number(lifted[1]);
+      const naturalTop = 10;
+      const naturalBottom = menu ? 754 : 0;
+      return {
+        x: 0,
+        y: naturalTop - lift,
+        top: menu ? naturalTop - lift : 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: naturalBottom - lift,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('mt-0');
+      expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.style.transform).toBe('translateY(-10px)');
+      expect(panel.querySelector('a')?.className).toContain('min-h-11');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
   it('drops the wide menu outer spacing when a resize leaves it sticking out of the window', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
@@ -1114,7 +1253,9 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
       expect(panel.className).not.toContain('overflow-y-auto');
+      expect(panel.className).not.toContain('min-h-8');
       expect(panel.className).not.toContain('max-h-');
+      expect(panel.querySelector('a')?.className).toContain('min-h-11');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
     } finally {
       if (previousInnerHeight === undefined) {
@@ -1126,7 +1267,7 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('restores the wide menu outer spacing when a resize leaves 248px of room and does not flutter', () => {
+  it('restores the wide menu outer spacing when a resize leaves 48px of room and does not flutter', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
     const bottom = 751;
@@ -1151,7 +1292,7 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(panel.className).toContain('mt-0');
-      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1100 });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 });
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
@@ -1174,7 +1315,7 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('keeps the compact wide menu when a resize leaves less than 248px of room', () => {
+  it('keeps the compact wide menu when a resize leaves less than 48px of room', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
     const bottom = 751;

@@ -62,6 +62,11 @@ export function SignedInChrome(): ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
+  const [menuLift, setMenuLift] = useState(0);
+  const tightRef = useRef(false);
+  const menuLiftRef = useRef(0);
+  tightRef.current = tight;
+  menuLiftRef.current = menuLift;
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
@@ -135,26 +140,47 @@ export function SignedInChrome(): ReactElement {
 
   useLayoutEffect(() => {
     if (!open || narrow) {
-      if (tight) {
+      if (tightRef.current) {
+        tightRef.current = false;
         setTight(false);
+      }
+      if (menuLiftRef.current !== 0) {
+        menuLiftRef.current = 0;
+        setMenuLift(0);
       }
       return;
     }
     const measure = (): void => {
+      const panel = menuRef.current;
+      if (panel === null) {
+        return;
+      }
       const limit = window.innerHeight + 1;
-      const bottom = menuRef.current!.getBoundingClientRect().bottom;
-      setTight((current) => {
-        if (bottom > limit) {
-          return true;
-        }
-        // Compact drops about 40px of outer spacing and shortens each row from
-        // 44px to 32px. 248px of room covers that savings so the two layouts
-        // do not alternate.
-        if (current && bottom <= limit - 248) {
-          return false;
-        }
-        return current;
-      });
+      const rect = panel.getBoundingClientRect();
+      const applied = menuLiftRef.current;
+      // The rect already includes translateY. Add the lift back to read the unshifted box.
+      const naturalBottom = rect.bottom + applied;
+      const naturalTop = rect.top + applied;
+      const currentTight = tightRef.current;
+      // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
+      const nextTight =
+        naturalBottom > limit
+          ? true
+          : currentTight && naturalBottom <= limit - 48
+            ? false
+            : currentTight;
+      // A second scroll is forbidden. Lift only as far as the top still stays in the window.
+      const overflow = Math.ceil(naturalBottom - limit);
+      const room = Math.max(0, Math.floor(naturalTop));
+      const nextLift = nextTight && overflow > 0 ? Math.min(overflow, room) : 0;
+      if (nextTight !== currentTight) {
+        tightRef.current = nextTight;
+        setTight(nextTight);
+      }
+      if (nextLift !== applied) {
+        menuLiftRef.current = nextLift;
+        setMenuLift(nextLift);
+      }
     };
     measure();
     window.addEventListener('resize', measure);
@@ -193,11 +219,13 @@ export function SignedInChrome(): ReactElement {
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  // A tall wide menu drops its outer spacing and shortens each row so the last row stays inside the window. It does not scroll.
+  // A tall wide menu drops its outer spacing. Rows stay at least 44px. If it still
+  // passes the window, the panel moves up until its bottom sits on the window,
+  // and no further than a top of 0. It does not scroll.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg [&_a]:min-h-8 [&_a]:py-1 [&_button]:min-h-8 [&_button]:py-1${open ? '' : ' hidden'}`
+      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
       : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
@@ -220,7 +248,12 @@ export function SignedInChrome(): ReactElement {
       {panelTarget === null
         ? null
         : createPortal(
-            <div id="signed-in-menu" ref={menuRef} className={panelClass}>
+            <div
+              id="signed-in-menu"
+              ref={menuRef}
+              className={panelClass}
+              style={menuLift > 0 ? { transform: `translateY(-${String(menuLift)}px)` } : undefined}
+            >
               <Link
                 href="/welcome"
                 onClick={(event) => {
