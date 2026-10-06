@@ -105,9 +105,11 @@ function StepBox({
  * Bitcoin payment request or address, enter an amount when the receiver asks
  * for one, confirm amount, fee, and recipient, then send. A base-chain Bitcoin
  * address (or a `bitcoin:` URI that offers only one) asks for an amount, then
- * confirms with one row per speed (each with its fee in ₿ and fiat), the chosen
- * fee and the total in large type, and a line that this network fee is much
- * higher than a Lightning fee; a speed the balance does not cover is disabled.
+ * confirms with the chosen fee and the total in large type right under the
+ * recipient, then one row per speed (each with its fee in ₿ and fiat), and a
+ * line that this network fee is much higher than the fee of other payments; a
+ * speed the balance does not cover is disabled. While an expired quote is
+ * renewed, Cancel stays usable; it is disabled only while a payment is sent.
  * The input step opens with the camera QR
  * scanner above the field; a decoded text goes into the field as if pasted and
  * Continue runs on it. The camera runs only while the input step is idle and
