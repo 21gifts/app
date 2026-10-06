@@ -1016,7 +1016,9 @@ test('wallet Send reads a scanned QR once and keeps the camera off until the fie
   expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
   await expect(page.locator('video')).toHaveCount(0);
   await field.fill('');
-  await expect(page.locator('video')).toHaveCount(1);
+  // The stubbed camera still shows the same QR, so the restarted camera may read
+  // it again at once and close; the second camera request is the change itself.
+  await expect.poll(async () => (await cameraStats(page)).requests).toBe(2);
 });
 
 test('wallet Send camera stops on Back and starts again on Send', async ({ page }) => {
