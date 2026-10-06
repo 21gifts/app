@@ -171,6 +171,16 @@ describe('WalletPay', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
+  it('keeps the missing amount when the member has no address', () => {
+    useAuthStore.setState({ account: { username: null } as never });
+    hookWith('insufficient', 0, 21);
+    renderPay();
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getByText(/^Still missing: ₿21/).textContent).toBe('Still missing: ₿21 · $0.02');
+    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
   it('shows the alert alone when a blank username gives no address', () => {
     useAuthStore.setState({ account: { username: '  ' } as never });
     hookWith('insufficient');
