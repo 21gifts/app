@@ -308,9 +308,15 @@ describe('unlockWalletPhrase', () => {
     await expect(unlockWalletPhrase()).resolves.toBe('failed');
   });
 
-  it('fails when PRF is null', async () => {
-    vi.mocked(obtainPrfFirstFromGet).mockResolvedValueOnce(null);
+  it('fails when the phrase cannot be derived from the PRF output', async () => {
+    vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('derive'));
     await expect(unlockWalletPhrase()).resolves.toBe('failed');
+    expect(peekSessionPhrase()).toBeNull();
+  });
+
+  it('reports noPrf when the passkey gives no PRF output', async () => {
+    vi.mocked(obtainPrfFirstFromGet).mockResolvedValueOnce(null);
+    await expect(unlockWalletPhrase()).resolves.toBe('noPrf');
     expect(peekSessionPhrase()).toBeNull();
   });
 

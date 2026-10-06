@@ -191,13 +191,17 @@ describe('PasskeyRenewNotice', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
-  it('says a missing recovery key cannot be retried with the same passkey', () => {
+  it('says this phone or browser cannot hold a wallet after a renew without PRF', () => {
     useAuthStore.setState({
       session: 'tok',
       account: { ...account, passkeyRenewFailed: true, passkeyRenewPrfUnsupported: true },
     });
     renderWithLocale(<PasskeyRenewNotice />);
-    expect(screen.getByText(/another password manager/i)).toBeTruthy();
+    expect(
+      screen.getByText(
+        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+      ),
+    ).toBeTruthy();
     expect(screen.queryByText(/try again later/i)).toBeNull();
     expect(screen.getByRole('button', { name: 'OK' })).toBeTruthy();
   });
@@ -269,7 +273,6 @@ describe('PasskeyRenewNotice', () => {
     renderWithLocale(<PasskeyRenewNotice />);
     expect(screen.getByRole('heading', { name: 'It worked' })).toBeTruthy();
   });
-});
 
   it('starts at the explanation in a Playwright build without a renew pin', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
@@ -293,3 +296,4 @@ describe('PasskeyRenewNotice', () => {
       view.unmount();
     }
   });
+});
