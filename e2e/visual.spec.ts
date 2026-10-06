@@ -17963,7 +17963,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(page.getByText(/^Pay ₿1\b/)).toBeVisible();
+    await expect(page.getByText(/^Pay ₿1\b(?! and post)/)).toBeVisible();
   }
 
   const TINY_GIF = Buffer.from(
