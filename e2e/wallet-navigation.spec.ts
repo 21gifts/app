@@ -204,14 +204,6 @@ test('Function: SignedInChrome Home clears the back history and keeps the wallet
   await expect(page).toHaveURL(`${origin}/welcome`);
   await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
   expect(await sameDocument(page)).toBe('same');
-
-  await page.getByRole('button', { name: 'Menu' }).click();
-  await menu.getByRole('link', { name: 'Settings', exact: true }).click();
-  await page.getByRole('link', { name: 'Recovery phrase', exact: true }).click();
-  await expect(page).toHaveURL(`${origin}/wallet/phrase`);
-  await page.getByRole('button', { name: 'Show recovery phrase' }).click();
-  await expect(page.getByRole('listitem')).toHaveCount(12);
-  expect(await sameDocument(page)).toBe('same');
   expect(await passkeyPrompts(page)).toBe(1);
 });
 

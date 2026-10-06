@@ -555,7 +555,7 @@
 - **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A router `pushState` is a push, even when `history.length` does not grow. A URL-changing `replaceState` replaces the current entry once this document is anchored, so a replaced screen is not a previous view. The first path of a new document, and any path after a client-side navigation, is a push, unless it is the arrow's one-shot target (`markBackNavigation`), which steps the cursor back. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50 once a push is committed. A push that is not yet committed does not drop the oldest view; a later replace collapses that push first. A dropped entry keeps its absolute stamp, so browser back still finds it.
 - **Inputs:** A pathname, optionally with a query string. Optional `stampHistory` defaults to true. False updates the stack and does not write `giftsView`, so the history entry being left keeps its stamp.
 - **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor`, plus `base` after a capped drop). When `stampHistory` is true, stamps `giftsView` with `history.replaceState` without pushing a history entry. A stored stack that contains an unsafe path is ignored. A thrown storage write leaves the slot intact. No network.
-- **Used by:** `ViewHistoryRoot`.
+- **Used by:** `ViewHistoryRoot`; `SignedInChrome` (Menu **Home** pressed on `/welcome`, plain click, records that path as the only view).
 
 ## Function: resetViewHistory
 
