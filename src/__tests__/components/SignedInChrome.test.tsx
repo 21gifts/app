@@ -232,6 +232,10 @@ function trackScrollTop(
   return { read: () => top, log };
 }
 
+function follows(earlier: Node, later: Node): boolean {
+  return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
 describe('SignedInChrome', () => {
   it('shows Menu while Log out stays hidden', () => {
     renderWithLocale(<SignedInChrome />);
@@ -269,6 +273,19 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
     expect(screen.getByRole('link', { name: 'Grants' }).getAttribute('href')).toBe('/grants');
     expect(screen.getByRole('link', { name: 'Wallet' }).getAttribute('href')).toBe('/wallet');
+    expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
+    expect(
+      follows(
+        screen.getByRole('link', { name: 'Wallet' }),
+        screen.getByRole('link', { name: 'Settings' }),
+      ),
+    ).toBe(true);
+    expect(
+      follows(
+        screen.getByRole('link', { name: 'Settings' }),
+        screen.getByRole('link', { name: 'Living room rules' }),
+      ),
+    ).toBe(true);
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
@@ -556,6 +573,14 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Grants' }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Settings is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Settings' }));
     expectMenuClosed();
   });
 
