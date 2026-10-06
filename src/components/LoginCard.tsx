@@ -12,6 +12,9 @@ import { isInAppBrowser } from '@/lib/in-app-browser';
 import { iosPasskeyBlock } from '@/lib/ios-passkey';
 import { useAuthStore } from '@/stores/auth-store';
 
+/** `usePasskeyLogin` error when the new passkey returned no PRF output. */
+const PRF_UNSUPPORTED_ERROR = 'wallet.prfUnsupported';
+
 /** Installed OS version below the sign-in minimum, plus which sentence to show. */
 type VersionBlock = {
   installed: string;
@@ -65,6 +68,7 @@ export function LoginCard(): ReactElement {
     passkey.error === 'login.iosVersion' || passkey.error === 'login.androidVersion'
       ? passkey.error
       : null;
+  const prfUnsupported = passkey.error === PRF_UNSUPPORTED_ERROR;
 
   let body: ReactElement;
   if (account !== null) {
@@ -79,6 +83,7 @@ export function LoginCard(): ReactElement {
         wrongAccount={wrongAccountHint}
         versionBlock={versionBlock}
         versionErrorKey={versionErrorKey}
+        prfUnsupported={prfUnsupported}
         onRetry={() => {
           clearWrongAccount();
           if (wrongAccountHint) {
@@ -334,11 +339,14 @@ interface ErrorViewProps {
   versionBlock: VersionBlock | null;
   /** Version-error message key when the alert should be that sentence. */
   versionErrorKey: 'login.iosVersion' | 'login.androidVersion' | null;
+  /** When true, the new passkey cannot hold a wallet on this phone or browser. */
+  prfUnsupported: boolean;
 }
 
 /**
- * The error state: a request failed, a response was malformed, or the visitor
- * signed in with an account whose session is refused.
+ * The error state: a request failed, a response was malformed, the visitor
+ * signed in with an account whose session is refused, or the new passkey
+ * cannot hold a wallet on this phone or browser (no PRF output).
  *
  * @param props - See {@link ErrorViewProps}.
  * @returns The error view.
@@ -348,6 +356,7 @@ function ErrorView({
   wrongAccount,
   versionBlock,
   versionErrorKey,
+  prfUnsupported,
 }: ErrorViewProps): ReactElement {
   const { t } = useTranslations();
   const matchingBlock =
@@ -356,12 +365,14 @@ function ErrorView({
       : null;
   const alert = wrongAccount
     ? t('login.wrongAccount')
-    : matchingBlock !== null
-      ? t(matchingBlock.messageKey, {
-          version: matchingBlock.installed,
-          required: matchingBlock.required,
-        })
-      : t('login.error');
+    : prfUnsupported
+      ? t('wallet.prfUnsupported')
+      : matchingBlock !== null
+        ? t(matchingBlock.messageKey, {
+            version: matchingBlock.installed,
+            required: matchingBlock.required,
+          })
+        : t('login.error');
   return (
     <>
       <AlertTriangle aria-hidden="true" className="h-8 w-8 text-app-subtle" />

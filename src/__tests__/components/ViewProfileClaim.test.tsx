@@ -264,6 +264,18 @@ describe('ViewProfileClaim', () => {
     expect(container.querySelector('.animate-spin')).toBeTruthy();
   });
 
+  it('says this phone or browser cannot hold a wallet when the new passkey has no PRF', () => {
+    mockPasskey('error', 'wallet.prfUnsupported');
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    );
+    expect(screen.queryByText('Could not set up a passkey. Please try again.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retrySpy).toHaveBeenCalledTimes(1);
+  });
+
   it('shows claimError copy on other errors', () => {
     mockPasskey('error', 'network down');
     renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);

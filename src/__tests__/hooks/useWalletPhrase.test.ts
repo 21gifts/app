@@ -73,8 +73,25 @@ const mnemonic =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
 const originalHref = window.location.href;
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+
+/**
+ * Puts a `?visual=` pin in the URL. `playwright` sets the Playwright clock,
+ * which marks a Playwright build; without it the build is a production one.
+ */
+function pinVisual(name: string, playwright = true): void {
+  if (playwright) {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+  } else {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  }
+  const url = new URL(originalHref);
+  url.search = `?visual=${name}`;
+  window.history.replaceState({}, '', url.toString());
+}
 
 beforeEach(() => {
+  delete process.env.NEXT_PUBLIC_E2E_NOW;
   clearSessionPhrase();
   resetWalletCeremonyLock();
   useAuthStore.setState({ session: 'tok', account });
@@ -108,6 +125,11 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   window.history.replaceState({}, '', originalHref);
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
 });
 
 describe('session phrase helpers', () => {
@@ -543,24 +565,35 @@ describe('useWalletPhrase', () => {
   });
 
   it('uses the visual phrase fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=phrase';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('phrase');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('phrase');
     expect(result.current.words).toHaveLength(12);
   });
 
   it('refreshes the visual phrase when the wallet event fires', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=phrase';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('phrase');
     const { result } = renderHook(() => useWalletPhrase());
     act(() => {
       window.dispatchEvent(new Event('21gifts:wallet-phrase'));
     });
     expect(result.current.view).toBe('phrase');
     expect(result.current.words).toHaveLength(12);
+  });
+
+  it('ignores every visual pin in a production build', () => {
+    for (const name of ['phrase', 'timeout', 'error', 'prf-unsupported']) {
+      pinVisual(name, false);
+      const { result, unmount } = renderHook(() => useWalletPhrase());
+      act(() => {
+        window.dispatchEvent(new Event('21gifts:wallet-phrase'));
+      });
+      expect(result.current.view).toBe('activate');
+      expect(result.current.words).toEqual([]);
+      expect(result.current.error).toBeNull();
+      expect(result.current.status).toBe('idle');
+      unmount();
+    }
   });
 
   it('ignores the wallet phrase event when no visual fixture is set', () => {
@@ -639,26 +672,20 @@ describe('useWalletPhrase', () => {
   });
 
   it('uses the visual timeout fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=timeout';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('timeout');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.error).toBe('timeout');
   });
 
   it('uses the visual error fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=error';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('error');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.error).toBe('generic');
     expect(result.current.status).toBe('idle');
   });
 
   it('uses the visual prf-unsupported fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=prf-unsupported';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('prf-unsupported');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.error).toBe('prfUnsupported');
   });
