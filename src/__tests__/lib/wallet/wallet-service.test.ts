@@ -428,7 +428,7 @@ describe('connectWallet', () => {
     expect(useWalletStore.getState().balanceSats).toBe(45);
   });
 
-  it('refreshWallet with ignoreFailure keeps the wallet ready after a failed read, also once it is no longer the latest', async () => {
+  it('refreshWallet with ignoreFailure keeps the wallet ready after a failed read, and the next read writes', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = createFakeSdk();
     await connectWallet(loadSdk);
