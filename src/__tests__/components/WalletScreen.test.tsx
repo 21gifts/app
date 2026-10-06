@@ -56,7 +56,7 @@ afterEach(() => {
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
 describe('WalletScreenView', () => {
-  it('renders Add recovery phrase', () => {
+  it('renders the home without a recovery link when the account has no phrase', () => {
     renderWithLocale(
       <WalletScreenView
         view="activate"
@@ -70,12 +70,10 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Add recovery phrase' }).getAttribute('href')).toBe(
-      '/wallet/phrase',
-    );
+    expect(screen.queryByRole('link', { name: 'Add recovery phrase' })).toBeNull();
   });
 
-  it('renders Show recovery phrase', () => {
+  it('renders the home without a recovery link when the account has a phrase', () => {
     renderWithLocale(
       <WalletScreenView
         view="reveal"
@@ -89,9 +87,7 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.queryByText('Advanced functions')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Show recovery phrase' }).getAttribute('href')).toBe(
-      '/wallet/phrase',
-    );
+    expect(screen.queryByRole('link', { name: 'Show recovery phrase' })).toBeNull();
   });
 
   it('renders Try again on timeout', () => {
@@ -158,7 +154,7 @@ describe('WalletScreen', () => {
     phraseState.words = [];
     phraseState.error = null;
     renderWithLocale(<WalletScreen />);
-    expect(screen.getByRole('link', { name: 'Add recovery phrase' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Balance' })).toBeTruthy();
     expect(useWalletMock).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();

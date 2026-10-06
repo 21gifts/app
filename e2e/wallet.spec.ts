@@ -74,7 +74,9 @@ async function signInWalletEligible(page: Page): Promise<void> {
   });
 }
 
-test('wallet page shows Add recovery phrase for an existing member', async ({ page }) => {
+test('wallet page shows Receive left of Send and no recovery link for an existing member', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -104,7 +106,15 @@ test('wallet page shows Add recovery phrase for an existing member', async ({ pa
   });
   await page.goto('/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
+  const receive = await page.getByRole('button', { name: 'Receive' }).boundingBox();
+  const send = await page.getByRole('button', { name: 'Send', exact: true }).boundingBox();
+  expect(receive).not.toBeNull();
+  expect(send).not.toBeNull();
+  expect(receive!.x + receive!.width).toBeLessThanOrEqual(send!.x);
+  expect(Math.abs(receive!.y - send!.y)).toBeLessThan(1);
+  expect(Math.abs(receive!.width - send!.width)).toBeLessThan(1);
+  await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toHaveCount(0);
 });
 
 test('Function: WalletPage — /wallet renders the wallet heading', async ({ page }) => {
@@ -521,7 +531,7 @@ test('wallet key unset shows no balance region', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toHaveCount(0);
   await expect(page.getByText('Advanced functions')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);

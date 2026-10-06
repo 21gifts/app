@@ -226,33 +226,32 @@ describe('WalletScreenView', () => {
     renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
     const history = screen.getByRole('region', { name: 'Payments history stub' });
     expect(follows(screen.getByRole('region', { name: 'Balance' }), history)).toBe(true);
+    expect(follows(history, screen.getByRole('button', { name: 'Receive' }))).toBe(true);
     expect(follows(history, screen.getByRole('button', { name: 'Send' }))).toBe(true);
-    expect(follows(history, screen.getByRole('link', { name: 'Show recovery phrase' }))).toBe(true);
   });
 
-  it('shows Send and Receive side by side above the recovery link', () => {
+  it('shows Receive on the left and Send on the right, with no recovery link', () => {
     setWalletAccount();
     renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
     const sendButton = screen.getByRole('button', { name: 'Send' });
     const receiveButton = screen.getByRole('button', { name: 'Receive' });
     expect(sendButton.parentElement).toBe(receiveButton.parentElement);
     expect(sendButton.parentElement?.className).toContain('grid-cols-2');
-    expect(follows(sendButton, receiveButton)).toBe(true);
-    const recovery = screen.getByRole('link', { name: 'Show recovery phrase' });
-    expect(recovery.getAttribute('href')).toBe('/wallet/phrase');
-    expect(follows(receiveButton, recovery)).toBe(true);
+    expect(follows(receiveButton, sendButton)).toBe(true);
+    expect(screen.queryByRole('link', { name: 'Show recovery phrase' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Add recovery phrase' })).toBeNull();
     expect(screen.queryByText('Advanced functions')).toBeNull();
   });
 
-  it('offers Add recovery phrase with its hint below Send and Receive', () => {
+  it('shows neither the add link nor its hint on home when the account has no recovery phrase', () => {
     renderWithLocale(<WalletScreenView {...ENTRY_PROPS} view="activate" />);
-    const add = screen.getByRole('link', { name: 'Add recovery phrase' });
-    expect(add.getAttribute('href')).toBe('/wallet/phrase');
-    expect(add.parentElement?.textContent).toContain(
-      'This creates a recovery phrase on this device. Your existing login passkey stays.',
-    );
-    expect(follows(screen.getByRole('button', { name: 'Receive' }), add)).toBe(true);
-    expect(screen.queryByRole('link', { name: 'Show recovery phrase' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Add recovery phrase' })).toBeNull();
+    expect(
+      screen.queryByText(
+        'This creates a recovery phrase on this device. Your existing login passkey stays.',
+      ),
+    ).toBeNull();
+    expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
   });
 
   it('enables Send only while the wallet is ready and a send flow exists; Receive always works', () => {
@@ -420,7 +419,7 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.queryByRole('list')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Show recovery phrase' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
   });
 
   it('starts the recovery ceremony on the phrase page', () => {

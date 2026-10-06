@@ -10,6 +10,7 @@ import {
   MessageCircle,
   ListChecks,
   ScrollText,
+  Settings,
   Share2,
   Shield,
   Store,
@@ -35,7 +36,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules,
+ * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, Settings (`/settings`, lucide `Settings`), living-room rules,
  * Habit-Tracker (`/habit-tracker`), Trust Chain, Statistics
  * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
@@ -403,6 +404,16 @@ export function SignedInChrome(): ReactElement {
               >
                 <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 {t('wallet.title')}
+              </Link>
+              <Link
+                href="/settings"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Settings aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.settings')}
               </Link>
               <Link
                 href="/rules"

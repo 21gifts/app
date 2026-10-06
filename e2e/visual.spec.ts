@@ -1431,8 +1431,9 @@ test.describe('screen baselines', () => {
     });
     await page.goto('/wallet');
     await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toHaveCount(0);
     await shotScreen(page, 'screen-wallet');
   });
 
@@ -1527,7 +1528,7 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-phrase-reveal');
   });
 
-  test('wallet reveal', async ({ page }) => {
+  test('screen /settings', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -1549,17 +1550,35 @@ test.describe('screen baselines', () => {
         }),
       });
     });
-    await page.route(/\/pos\/charge$/, async (route) => {
+    await page.goto('/settings');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Recovery phrase', exact: true })).toBeVisible();
+    await shotScreen(page, 'screen-settings');
+  });
+
+  test('settings activate', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ charge: null, history: [] }),
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+        }),
       });
     });
-    await page.goto('/wallet');
-    await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
-    await shotScreen(page, 'state-wallet-reveal');
+    await page.goto('/settings');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toBeVisible();
+    await shotScreen(page, 'state-settings-activate');
   });
 
   test('wallet balance-locked', async ({ page }) => {

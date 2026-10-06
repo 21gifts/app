@@ -136,9 +136,9 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
 
 /**
  * `/wallet` home shows the large balance and, while the wallet is ready, the
- * payment list, with Send and Receive side by side in the shell footer and the
- * recovery entry below them. Send opens the send flow while the wallet is
- * ready; Receive opens the address, QR, and Set an amount. The Send view stays
+ * payment list, with Receive and Send side by side in the shell footer (Receive
+ * on the left). Recovery-phrase access lives on `/settings`. Send opens the
+ * send flow while the wallet is ready; Receive opens the address, QR, and Set an amount. The Send view stays
  * while a send is in flight, its Sent line shows, or a send alert is up, and
  * Done returns home. Back first closes an open send step (or is held while a
  * send is in flight), then returns from Send or Receive to home. The 12 words
@@ -324,45 +324,28 @@ export function WalletScreenView({
       </Card>
       {walletReady ? <WalletHistory /> : null}
       <AppShellFooter>
-        <div className="mx-auto flex w-full max-w-sm flex-col items-stretch gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              size="lg"
-              className="min-h-14 text-base"
-              icon={<ArrowUpRight aria-hidden="true" className={actionIconClass} />}
-              disabled={send === undefined || !walletReady}
-              onClick={() => {
-                setHomeView('send');
-              }}
-            >
-              {t('wallet.sendButton')}
-            </Button>
-            <Button
-              size="lg"
-              className="min-h-14 text-base"
-              icon={<ArrowDownLeft aria-hidden="true" className={actionIconClass} />}
-              onClick={() => {
-                setHomeView('receive');
-              }}
-            >
-              {t('wallet.receive')}
-            </Button>
-          </div>
-          {view === 'activate' ? (
-            <p className="text-center text-xs text-app-muted">
-              {t('wallet.addPhraseHint')}{' '}
-              <Link href="/wallet/phrase" className="text-app-fg underline">
-                {t('wallet.addPhrase')}
-              </Link>
-            </p>
-          ) : (
-            <Link
-              href="/wallet/phrase"
-              className="self-center text-xs text-app-muted underline hover:text-app-fg"
-            >
-              {t('wallet.showPhrase')}
-            </Link>
-          )}
+        <div className="mx-auto grid w-full max-w-sm grid-cols-2 gap-3">
+          <Button
+            size="lg"
+            className="min-h-14 text-base"
+            icon={<ArrowDownLeft aria-hidden="true" className={actionIconClass} />}
+            onClick={() => {
+              setHomeView('receive');
+            }}
+          >
+            {t('wallet.receive')}
+          </Button>
+          <Button
+            size="lg"
+            className="min-h-14 text-base"
+            icon={<ArrowUpRight aria-hidden="true" className={actionIconClass} />}
+            disabled={send === undefined || !walletReady}
+            onClick={() => {
+              setHomeView('send');
+            }}
+          >
+            {t('wallet.sendButton')}
+          </Button>
         </div>
       </AppShellFooter>
     </div>

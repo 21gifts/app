@@ -279,14 +279,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'wallet.png',
     visual: 'screen-wallet',
-    needle: 'Add recovery phrase',
-  },
-  {
-    route: '/wallet',
-    id: 'reveal',
-    image: 'wallet-reveal.png',
-    visual: 'state-wallet-reveal',
-    needle: 'Show recovery phrase',
+    needle: "shotScreen(page, 'screen-wallet')",
   },
   {
     route: '/wallet',
@@ -645,6 +638,20 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-prf-unsupported.png',
     visual: 'state-wallet-prf-unsupported',
     needle: "shotScreen(page, 'state-wallet-prf-unsupported')",
+  },
+  {
+    route: '/settings',
+    id: 'default',
+    image: 'settings.png',
+    visual: 'screen-settings',
+    needle: "shotScreen(page, 'screen-settings')",
+  },
+  {
+    route: '/settings',
+    id: 'activate',
+    image: 'settings-activate.png',
+    visual: 'state-settings-activate',
+    needle: "shotScreen(page, 'state-settings-activate')",
   },
   {
     route: '/setup/name',
