@@ -3357,13 +3357,13 @@ The open charge has already run out (0:00). The sat amount and the default fiat 
 
 ### Variant: need-username
 
-Setup is finished and the username is empty. Link **Set a username first.** No address and no amount form.
+Setup is finished and the username is empty. Link **Set a username first.** No address and no amount form. Under it, **History** with **No payments yet.**
 
 ![21.gifts point of sale need username](images/pos-need-username.png)
 
 ### Variant: need-wallet
 
-Username set, wallet not verified (`sparkWalletVerified` is not true). Link **Set up your wallet first.** to `/wallet`. No amount form.
+Username set, wallet not verified (`sparkWalletVerified` is not true). Link **Set up your wallet first.** to `/wallet`. No amount form. Under it, **History** with **No payments yet.**
 
 ![21.gifts point of sale need wallet](images/pos-need-wallet.png)
 
