@@ -1124,13 +1124,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'repay-wallet-pay-received',
-    image: 'welcome-repay-wallet-pay-received.png',
-    visual: 'state-welcome-repay-wallet-pay-received',
-    needle: "shotScreen(page, 'state-welcome-repay-wallet-pay-received')",
-  },
-  {
-    route: '/welcome',
     id: 'repay-wallet-pay-unconfirmed',
     image: 'welcome-repay-wallet-pay-unconfirmed.png',
     visual: 'state-welcome-repay-wallet-pay-unconfirmed',
@@ -1915,13 +1908,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'composer-wallet-pay-received',
-    image: 'welcome-composer-wallet-pay-received.png',
-    visual: 'state-welcome-composer-wallet-pay-received',
-    needle: "shotScreen(page, 'state-welcome-composer-wallet-pay-received')",
-  },
-  {
-    route: '/welcome',
     id: 'composer-wallet-pay-unconfirmed',
     image: 'welcome-composer-wallet-pay-unconfirmed.png',
     visual: 'state-welcome-composer-wallet-pay-unconfirmed',
@@ -2045,13 +2031,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-pay-insufficient.png',
     visual: 'state-welcome-wallet-pay-insufficient',
     needle: 'Your wallet does not have enough Bitcoin for this payment.',
-  },
-  {
-    route: '/welcome',
-    id: 'wallet-pay-received',
-    image: 'welcome-wallet-pay-received.png',
-    visual: 'state-welcome-wallet-pay-received',
-    needle: 'Bitcoin received — paying…',
   },
   {
     route: '/welcome',
@@ -4129,13 +4108,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
-    id: 'thread-wallet-pay-received',
-    image: 'messages-thread-wallet-pay-received.png',
-    visual: 'state-messages-thread-wallet-pay-received',
-    needle: "shotScreen(page, 'state-messages-thread-wallet-pay-received')",
-  },
-  {
-    route: '/messages',
     id: 'thread-wallet-pay-unconfirmed',
     image: 'messages-thread-wallet-pay-unconfirmed.png',
     visual: 'state-messages-thread-wallet-pay-unconfirmed',
@@ -5169,13 +5141,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-reaction-wallet-pay-insufficient.png',
     visual: 'state-welcome-reaction-wallet-pay-insufficient',
     needle: "shotScreen(page, 'state-welcome-reaction-wallet-pay-insufficient')",
-  },
-  {
-    route: '/welcome',
-    id: 'reaction-wallet-pay-received',
-    image: 'welcome-reaction-wallet-pay-received.png',
-    visual: 'state-welcome-reaction-wallet-pay-received',
-    needle: "shotScreen(page, 'state-welcome-reaction-wallet-pay-received')",
   },
   {
     route: '/welcome',

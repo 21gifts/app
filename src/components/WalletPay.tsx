@@ -24,6 +24,11 @@ export interface WalletPayProps {
   amountSats: number;
   /** Latest gift-day totals for the fee's fiat line, or `null`. */
   rateDay: FiatRateDay | null;
+  /**
+   * True on the posting fee: paying also posts the note, so the confirm button
+   * says **Pay {amount} and post** instead of **Pay from wallet**.
+   */
+  postsOnPay?: boolean;
 }
 
 /**
@@ -69,11 +74,12 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * one passkey prompt, then it pays at once when the fee is ₿0, or shows the
  * fee and **Pay from wallet** when it is higher. An open wallet shows the fee
  * from the prepare response, then **Pay from wallet**. While and after sending it says so; the
- * sheet's own long-poll closes it on confirmation. Too little balance shows an
- * alert, how much is still missing (amount plus the known fee minus the
- * balance, with fiat), and the member's own address and QR when their username
- * gives one. When Bitcoin arrives after the member's own pay tap ended there,
- * the slot says so and pays on its own (a fee above ₿0 stops at the fee).
+ * sheet's own long-poll closes it on confirmation. On the posting fee that
+ * button says **Pay {amount} and post**. Too little balance shows an alert,
+ * how much is still missing (amount plus the known fee minus the balance, with
+ * fiat), and the member's own address and QR when their username gives one;
+ * once the balance covers the payment, the slot prepares again and shows the
+ * fee and the pay button.
  * Without a wallet the member can open here it says so, and a failed prepare
  * offers **Try again**. A passkey without PRF output says that this phone or
  * browser cannot hold a 21.gifts wallet, with **Try again**. It never shows an invoice QR or hands the payment to
@@ -82,7 +88,13 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * @param props - Requests, shown amount, and rate day.
  * @returns The pay slot.
  */
-export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayProps): ReactElement {
+export function WalletPay({
+  sparkInvoice,
+  pr,
+  amountSats,
+  rateDay,
+  postsOnPay = false,
+}: WalletPayProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -134,18 +146,11 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
       );
     case 'preparing':
     case 'paying':
-    case 'received':
       return (
         <div className="flex flex-col items-center gap-2">
           <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-app-subtle" />
           <p role="status" className="text-center text-sm text-app-muted">
-            {t(
-              view === 'preparing'
-                ? 'wallet.payPreparing'
-                : view === 'paying'
-                  ? 'wallet.paying'
-                  : 'wallet.payReceived',
-            )}
+            {t(view === 'preparing' ? 'wallet.payPreparing' : 'wallet.paying')}
           </p>
         </div>
       );
@@ -159,7 +164,14 @@ export function WalletPay({ sparkInvoice, pr, amountSats, rateDay }: WalletPayPr
             {preferredFiatSuffix(fee, rateDay, fiat, numberFormat)}
           </p>
           <Button type="button" variant="primary" onClick={pay}>
-            {t('wallet.payFromWallet')}
+            {postsOnPay ? (
+              <span className="text-center">
+                {t('wallet.payAndPost', { amount: formatBitcoin(amountSats, numberFormat) })}
+                {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
+              </span>
+            ) : (
+              t('wallet.payFromWallet')
+            )}
           </Button>
         </>
       );

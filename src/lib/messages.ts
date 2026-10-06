@@ -599,7 +599,7 @@ const en = {
   'wallet.paying': 'Paying from your wallet…',
   'wallet.payInsufficient': 'Your wallet does not have enough Bitcoin for this payment.',
   'wallet.payMissing': 'Still missing: {amount}',
-  'wallet.payReceived': 'Bitcoin received — paying…',
+  'wallet.payAndPost': 'Pay {amount} and post',
   'wallet.payAddFunds': 'To add Bitcoin, send it to your address:',
   'wallet.payUnconfirmed': 'This payment is not confirmed yet. Check your balance again later.',
   'wallet.payUnavailable': 'Your 21.gifts wallet is not available here, so this cannot be paid.',
@@ -1778,7 +1778,7 @@ const de = {
   'wallet.paying': 'Zahlung aus Ihrer Wallet läuft…',
   'wallet.payInsufficient': 'Ihre Wallet hat nicht genug Bitcoin für diese Zahlung.',
   'wallet.payMissing': 'Es fehlen noch {amount}',
-  'wallet.payReceived': 'Bitcoin erhalten – wird bezahlt…',
+  'wallet.payAndPost': '{amount} zahlen und senden',
   'wallet.payAddFunds': 'Um Bitcoin hinzuzufügen, senden Sie es an Ihre Adresse:',
   'wallet.payUnconfirmed':
     'Diese Zahlung ist noch nicht bestätigt. Prüfen Sie Ihr Guthaben später erneut.',
@@ -2974,7 +2974,7 @@ const es = {
   'wallet.paying': 'Pagando desde tu wallet…',
   'wallet.payInsufficient': 'Tu wallet no tiene suficiente Bitcoin para este pago.',
   'wallet.payMissing': 'Faltan todavía {amount}',
-  'wallet.payReceived': 'Bitcoin recibido: pagando…',
+  'wallet.payAndPost': 'Pagar {amount} y publicar',
   'wallet.payAddFunds': 'Para añadir Bitcoin, envíalo a tu dirección:',
   'wallet.payUnconfirmed': 'Este pago aún no está confirmado. Vuelve a revisar tu saldo más tarde.',
   'wallet.payUnavailable':
@@ -4150,7 +4150,7 @@ const fil = {
   'wallet.paying': 'Nagbabayad mula sa wallet mo…',
   'wallet.payInsufficient': 'Kulang ang Bitcoin sa wallet mo para sa bayad na ito.',
   'wallet.payMissing': 'Kulang pa ng {amount}',
-  'wallet.payReceived': 'Natanggap ang Bitcoin — nagbabayad…',
+  'wallet.payAndPost': 'Magbayad ng {amount} at i-post',
   'wallet.payAddFunds': 'Para magdagdag ng Bitcoin, ipadala ito sa address mo:',
   'wallet.payUnconfirmed':
     'Hindi pa kumpirmado ang bayad na ito. Tingnan ulit ang balanse mo mamaya.',

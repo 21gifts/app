@@ -7587,6 +7587,44 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
+  it('says Pay and post on the posting fee, and keeps Pay from wallet on other invoices', async () => {
+    setWalletUsable('ready');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, parentId: 'p1' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        payMessageId="m1"
+        payInvoice={{
+          messageId: 'm1',
+          pr: 'lnbc21n1example',
+          amountSats: 21,
+          sparkInvoice: SPARK_INVOICE,
+          postsOnPay: true,
+        }}
+        payWaiting
+        {...modeProps('all')}
+      />,
+    );
+    const button = await screen.findByRole('button', { name: /^Pay ₿21 and post/ });
+    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    fireEvent.click(button);
+    expect(send).toHaveBeenCalledTimes(1);
+    cleanup();
+    renderWithLocale(cardBoard(SPARK_INVOICE));
+    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /and post/ })).toBeNull();
+  });
+
   function unlockSetsReady(): void {
     setWalletUsable('locked');
     vi.mocked(unlockWalletPhrase)

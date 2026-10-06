@@ -900,12 +900,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:repay-wallet-pay-received",
-    "label": "/welcome repay-wallet-pay-received",
-    "visual": "state-welcome-repay-wallet-pay-received",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:repay-wallet-pay-unconfirmed",
     "label": "/welcome repay-wallet-pay-unconfirmed",
     "visual": "state-welcome-repay-wallet-pay-unconfirmed",
@@ -1578,12 +1572,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:composer-wallet-pay-received",
-    "label": "/welcome composer-wallet-pay-received",
-    "visual": "state-welcome-composer-wallet-pay-received",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:composer-wallet-pay-unconfirmed",
     "label": "/welcome composer-wallet-pay-unconfirmed",
     "visual": "state-welcome-composer-wallet-pay-unconfirmed",
@@ -1689,12 +1677,6 @@
     "id": "/welcome:wallet-pay-insufficient",
     "label": "/welcome wallet-pay-insufficient",
     "visual": "state-welcome-wallet-pay-insufficient",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:wallet-pay-received",
-    "label": "/welcome wallet-pay-received",
-    "visual": "state-welcome-wallet-pay-received",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3474,12 +3456,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/messages:thread-wallet-pay-received",
-    "label": "/messages thread-wallet-pay-received",
-    "visual": "state-messages-thread-wallet-pay-received",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/messages:thread-wallet-pay-unconfirmed",
     "label": "/messages thread-wallet-pay-unconfirmed",
     "visual": "state-messages-thread-wallet-pay-unconfirmed",
@@ -4365,12 +4341,6 @@
     "id": "/welcome:reaction-wallet-pay-insufficient",
     "label": "/welcome reaction-wallet-pay-insufficient",
     "visual": "state-welcome-reaction-wallet-pay-insufficient",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:reaction-wallet-pay-received",
-    "label": "/welcome reaction-wallet-pay-received",
-    "visual": "state-welcome-reaction-wallet-pay-received",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

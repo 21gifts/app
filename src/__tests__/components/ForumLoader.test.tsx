@@ -10779,7 +10779,8 @@ describe('ForumLoader in-app wallet pay', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Show reactions' }));
     fireEvent.change(await screen.findByLabelText('Your reaction'), { target: { value: 'Hi' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^Pay ₿1 and post/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
     expect(invoiceMock).toHaveBeenCalledWith(
       'sess',
       'fee-note',
@@ -10805,7 +10806,7 @@ describe('ForumLoader in-app wallet pay', () => {
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /^Pay ₿1 and post/ })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
   });
@@ -10850,7 +10851,7 @@ describe('ForumLoader in-app wallet pay', () => {
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
-    fireEvent.click(await screen.findByRole('button', { name: 'Pay from wallet' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Pay ₿1 and post/ }));
     expect(send).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(screen.queryByText('Waiting for payment…')).toBeNull();
@@ -10902,7 +10903,7 @@ describe('ForumLoader in-app wallet pay', () => {
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
     fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
-    fireEvent.click(await screen.findByRole('button', { name: 'Pay from wallet' }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Pay ₿1 and post/ }));
     expect(send).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(screen.queryByText('Waiting for payment…')).toBeNull();
