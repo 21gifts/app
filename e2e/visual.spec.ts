@@ -3303,6 +3303,53 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-welcome');
   });
 
+  test('state /welcome home-from-menu', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    const menu = page.locator('#signed-in-menu');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await menu.getByRole('link', { name: 'Shops', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
+      'href',
+      '/welcome',
+    );
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await menu.getByRole('link', { name: 'Home', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Menu' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await page.mouse.move(0, 0);
+    await shotScreen(page, 'state-welcome-home-from-menu');
+  });
+
   test('state /welcome daily-payout-stopped', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

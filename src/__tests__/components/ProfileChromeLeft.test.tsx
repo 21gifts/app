@@ -156,33 +156,35 @@ describe('ProfileChromeLeft', () => {
     );
   });
 
-  it('omits the arrow when hideWithoutHistory has no earlier view', () => {
-    renderWithLocale(<ProfileChromeLeft hideWithoutHistory />);
+  it('omits the arrow when hideHistoryArrow has no earlier view', () => {
+    renderWithLocale(<ProfileChromeLeft hideHistoryArrow />);
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 
-  it('shows the previous view when hideWithoutHistory still has history', () => {
+  it('omits the arrow when hideHistoryArrow has an earlier view', () => {
     recordCurrentView('/shops');
     Object.defineProperty(window.history, 'length', {
       configurable: true,
       value: window.history.length + 1,
     });
     recordCurrentView('/welcome');
-    renderWithLocale(<ProfileChromeLeft hideWithoutHistory />);
-    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');
+    expect(previousViewPath()).toBe('/shops');
+    renderWithLocale(<ProfileChromeLeft hideHistoryArrow />);
+    expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 
-  it('keeps the ask-wizard button when hideWithoutHistory has no earlier view', () => {
+  it('keeps the ask-wizard button when hideHistoryArrow is set', () => {
     const onClick = vi.fn();
     function Arm(): ReactElement {
       const { setOverride } = useChromeBack();
       useLayoutEffect(() => {
         setOverride({ labelKey: 'forum.askBack', onClick });
       }, [setOverride]);
-      return <ProfileChromeLeft hideWithoutHistory />;
+      return <ProfileChromeLeft hideHistoryArrow />;
     }
 
     renderWithLocale(

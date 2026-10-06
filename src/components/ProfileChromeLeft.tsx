@@ -28,11 +28,11 @@ export interface ProfileChromeLeftProps {
   /** App shell or the ink marketing header. Default `app`. */
   tone?: 'app' | 'dark';
   /**
-   * Omit the arrow when this tab has no earlier in-app view. `/welcome` uses
-   * this because the fallback would be the current page. An ask or shop
-   * wizard override still shows.
+   * Omit the history arrow whatever this tab's view stack holds. `/welcome`
+   * uses this: the forum home has no back arrow. An ask or shop wizard
+   * override still shows.
    */
-  hideWithoutHistory?: boolean;
+  hideHistoryArrow?: boolean;
 }
 
 /**
@@ -43,8 +43,8 @@ export interface ProfileChromeLeftProps {
  * link opens it client-side, so the document and the unlocked wallet in tab
  * memory stay. The first client render matches SSR (`/welcome`, `profile.back`). An
  * ask or shop wizard override replaces the history link with a button. The wordmark is
- * not the back control. `hideWithoutHistory` omits the arrow only when there
- * is no earlier view and no wizard override.
+ * not the back control. `hideHistoryArrow` omits the history arrow; a wizard
+ * override still shows.
  *
  * @param props - Optional plain-click handler, wordmark, tone, and history hide.
  * @returns The back control and wordmark.
@@ -54,7 +54,7 @@ export function ProfileChromeLeft({
   wordmarkHref = '/welcome',
   wordmark,
   tone = 'app',
-  hideWithoutHistory = false,
+  hideHistoryArrow = false,
 }: ProfileChromeLeftProps = {}): ReactElement {
   const { t } = useTranslations();
   const { override } = useChromeBack();
@@ -74,7 +74,6 @@ export function ProfileChromeLeft({
     tone === 'dark'
       ? `${BACK_CLASS} text-paper/70 hover:bg-paper/10 hover:text-paper`
       : `${BACK_CLASS} text-app-muted hover:bg-app-hover hover:text-app-fg`;
-  const showHistoryArrow = !hideWithoutHistory || target.labelKey === 'nav.back';
   const mark =
     wordmark !== undefined ? (
       wordmark
@@ -93,7 +92,7 @@ export function ProfileChromeLeft({
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />
         </button>
-      ) : showHistoryArrow ? (
+      ) : !hideHistoryArrow ? (
         <Link
           href={target.href}
           aria-label={t(target.labelKey)}

@@ -13,6 +13,7 @@ import {
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
+import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
@@ -184,6 +185,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   delete document.documentElement.dataset['menuSheet'];
+  resetViewHistory();
 });
 
 function stubMatchMedia(matches: boolean): () => void {
@@ -556,6 +558,81 @@ describe('SignedInChrome', () => {
 
     expect(clickCompleted).toBe(true);
     expectMenuClosed();
+  });
+
+  it('clears the view stack in memory and storage on a plain Home click', () => {
+    navigation.pathname = '/notifications';
+    recordCurrentView('/shops');
+    recordCurrentView('/notifications');
+    expect(previousViewPath()).toBe('/shops');
+    expect(sessionStorage.getItem('21gifts.viewHistory')).not.toBeNull();
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    const clickCompleted = fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+
+    expect(clickCompleted).toBe(true);
+    expect(push).not.toHaveBeenCalled();
+    expect(previousViewPath()).toBeNull();
+    expect(sessionStorage.getItem('21gifts.viewHistory')).toBeNull();
+    recordCurrentView('/welcome');
+    recordCurrentView('/shops');
+    expect(previousViewPath()).toBe('/welcome');
+  });
+
+  it.each([
+    ['metaKey', { metaKey: true }],
+    ['ctrlKey', { ctrlKey: true }],
+    ['shiftKey', { shiftKey: true }],
+    ['altKey', { altKey: true }],
+    ['a middle button', { button: 1 }],
+  ])('keeps the view stack on a Home click with %s', (_label, init) => {
+    navigation.pathname = '/notifications';
+    recordCurrentView('/shops');
+    recordCurrentView('/notifications');
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }), init);
+
+    expect(previousViewPath()).toBe('/shops');
+    expect(sessionStorage.getItem('21gifts.viewHistory')).not.toBeNull();
+  });
+
+  it('leaves the forum home as the only view on a plain Home click on /welcome', () => {
+    navigation.pathname = '/welcome';
+    window.history.pushState(null, '', '/shops');
+    recordCurrentView('/shops');
+    window.history.pushState(null, '', '/welcome');
+    recordCurrentView('/welcome');
+    expect(previousViewPath()).toBe('/shops');
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    const clickCompleted = fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+
+    expect(clickCompleted).toBe(false);
+    expect(previousViewPath()).toBeNull();
+    expect(JSON.parse(sessionStorage.getItem('21gifts.viewHistory') ?? 'null')).toEqual({
+      stack: ['/welcome'],
+      cursor: 0,
+    });
+    recordCurrentView('/shops');
+    expect(previousViewPath()).toBe('/welcome');
+  });
+
+  it('keeps the view stack on a modified Home click on /welcome', () => {
+    navigation.pathname = '/welcome';
+    window.history.pushState(null, '', '/shops');
+    recordCurrentView('/shops');
+    window.history.pushState(null, '', '/welcome');
+    recordCurrentView('/welcome');
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }), { metaKey: true });
+
+    expect(previousViewPath()).toBe('/shops');
   });
 
   it('closes the menu when Profile is clicked', () => {

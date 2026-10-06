@@ -823,6 +823,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'home-from-menu',
+    image: 'welcome-home-from-menu.png',
+    visual: 'state-welcome-home-from-menu',
+    needle: 'state /welcome home-from-menu',
+  },
+  {
+    route: '/welcome',
     id: 'daily-payout-stopped',
     image: 'welcome-daily-payout-stopped.png',
     visual: 'state-welcome-daily-payout-stopped',

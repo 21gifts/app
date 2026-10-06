@@ -165,6 +165,56 @@ test('Function: markBackNavigation keeps the document and asks for no passkey ac
   expect(await passkeyPrompts(page)).toBe(1);
 });
 
+test('Function: SignedInChrome Home clears the back history and keeps the wallet unlocked', async ({
+  page,
+}) => {
+  await signInWithPasskey(page);
+  await page.goto('/shops');
+  await expect(page.getByRole('heading', { name: 'Shops' })).toBeVisible();
+  await markDocument(page);
+  const origin = new URL(page.url()).origin;
+  const menu = page.locator('#signed-in-menu');
+
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await menu.getByRole('link', { name: 'Settings', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/settings`);
+  await page.getByRole('link', { name: 'Recovery phrase', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/wallet/phrase`);
+  await page.getByRole('button', { name: 'Show recovery phrase' }).click();
+  await expect(page.getByRole('listitem')).toHaveCount(12);
+  expect(await passkeyPrompts(page)).toBe(1);
+
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await menu.getByRole('link', { name: 'Home', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.viewHistory')))
+    .toBe(JSON.stringify({ stack: ['/welcome'], cursor: 0 }));
+  expect(await sameDocument(page)).toBe('same');
+
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await menu.getByRole('link', { name: 'Settings', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/settings`);
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  expect(await sameDocument(page)).toBe('same');
+
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await menu.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Recovery phrase', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/wallet/phrase`);
+  await page.getByRole('button', { name: 'Show recovery phrase' }).click();
+  await expect(page.getByRole('listitem')).toHaveCount(12);
+  expect(await sameDocument(page)).toBe('same');
+  expect(await passkeyPrompts(page)).toBe(1);
+});
+
 test('Function: goToPreviousView opens the forum from the first rules chapter without a document load', async ({
   page,
 }) => {

@@ -4433,16 +4433,35 @@ test('Function: previousViewPath is the shops href on the back link', async ({ p
   );
 });
 
-test('Function: resetViewHistory leaves a fresh shops visit on the forum back', async ({
+test('Function: resetViewHistory clears the back history when the Menu opens Home', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
-  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+  await page.goto('/notifications');
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
     'href',
-    '/welcome',
+    '/shops',
   );
+  const origin = new URL(page.url()).origin;
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Home', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.viewHistory')))
+    .toBe(JSON.stringify({ stack: ['/welcome'], cursor: 0 }));
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Shops', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
 });
 
 test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ page }) => {
@@ -4454,18 +4473,18 @@ test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ pag
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
 });
 
-test('Function: previousViewPath is shops when welcome follows shops', async ({ page }) => {
+test('Function: ProfileChromeLeft shows no back arrow on welcome after shops', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-  const back = page.getByRole('link', { name: 'Back', exact: true });
-  await expect(back).toHaveCount(1);
-  await expect(back).toHaveAttribute('href', '/shops');
-  const origin = new URL(page.url()).origin;
-  await back.click();
-  await expect(page).toHaveURL(`${origin}/shops`);
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.viewHistory')))
+    .toBe(JSON.stringify({ stack: ['/shops', '/welcome'], cursor: 1 }));
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
 test('Function: useChromeBack shows one chrome Back on the ask step', async ({ page }) => {

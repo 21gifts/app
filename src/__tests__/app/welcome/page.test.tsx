@@ -3,7 +3,7 @@ import { useLayoutEffect, type ReactElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import WelcomePage from '@/app/welcome/page';
 import { ChromeBackProvider, useChromeBack } from '@/components/ViewHistoryRoot';
-import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
+import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -64,15 +64,17 @@ describe('WelcomePage', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('returns to the previous view when this tab has one', () => {
+  it('shows no back arrow when this tab has an earlier view', () => {
     recordCurrentView('/shops');
     Object.defineProperty(window.history, 'length', {
       configurable: true,
       value: window.history.length + 1,
     });
     recordCurrentView('/welcome');
+    expect(previousViewPath()).toBe('/shops');
     renderWithLocale(<WelcomePage />);
-    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/shops');
+    expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
   });
 });
