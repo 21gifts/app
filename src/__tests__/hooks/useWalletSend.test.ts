@@ -488,6 +488,7 @@ describe('useWalletSend visual pins', () => {
       },
     ],
     ['send-confirm-onchain-fast', { feeSats: 2_840, onchain: { speed: 'fast' } }],
+    ['send-confirm-onchain-slow', { feeSats: 710, onchain: { speed: 'slow' } }],
     [
       'send-confirm-onchain-low',
       { feeSats: 1_420, onchain: { speed: 'medium', spendableFeeSats: 2_000 } },
