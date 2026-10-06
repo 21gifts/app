@@ -3,6 +3,7 @@ import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { stubCamera, type CameraStub } from './camera';
+import { installNoPrfWebAuthn, NO_PRF_REGISTER_BEGIN, PRF_UNSUPPORTED_MESSAGE } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
 /**
@@ -1720,6 +1721,41 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-error');
   });
 
+  test('wallet balance-prf-unsupported', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/wallet?visual=balance-prf-unsupported');
+    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-balance-prf-unsupported');
+  });
+
   test('wallet setup-intro', async ({ page }) => {
     await stubWalletSetupAccount(page);
     await page.goto('/wallet?visual=setup-intro');
@@ -1747,8 +1783,9 @@ test.describe('screen baselines', () => {
     await stubWalletSetupAccount(page);
     await page.goto('/wallet?visual=setup-no-prf');
     await expect(
-      page.getByText('This password manager or device cannot hold a wallet.', { exact: false }),
+      page.getByRole('dialog', { name: 'No wallet on this phone or browser' }),
     ).toBeVisible();
+    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
     await shotScreen(page, 'state-wallet-setup-no-prf');
   });
 
@@ -2310,11 +2347,7 @@ test.describe('screen baselines', () => {
       });
     });
     await page.goto('/wallet/phrase?visual=prf-unsupported');
-    await expect(
-      page.getByText(
-        'This browser cannot create a recovery phrase. Try another browser or device.',
-      ),
-    ).toBeVisible();
+    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-prf-unsupported');
@@ -2405,6 +2438,28 @@ test.describe('login variant baselines', () => {
     await page.getByRole('button', { name: 'Log in' }).click();
     await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-login-error');
+  });
+
+  test('login prf-unsupported', async ({ page }) => {
+    await installNoPrfWebAuthn(page);
+    await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(NO_PRF_REGISTER_BEGIN),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await page.getByRole('button', { name: 'Open a new account' }).click();
+    await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE }),
+    ).toBeVisible();
+    await expect(page.getByText('Something went wrong. Please try again.')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-login-prf-unsupported');
   });
 
   test('login wrong-account', async ({ page }) => {
@@ -3336,10 +3391,7 @@ test.describe('onboarding screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('This passkey cannot create a recovery phrase.')).toBeVisible();
-    await expect(
-      page.getByText('You need another password manager or another device.'),
-    ).toBeVisible();
+    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
     await expect(page.getByRole('button', { name: 'OK' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-renew-failed-prf-unsupported');
@@ -13529,6 +13581,47 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-view-claimed');
   });
 
+  test('screen /view/[viewKey] claim-prf-unsupported', async ({ page }) => {
+    await installNoPrfWebAuthn(page);
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(NO_PRF_REGISTER_BEGIN),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Activate' }).click();
+    await expect(
+      page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE }),
+    ).toBeVisible();
+    await expect(page.getByText('Could not set up a passkey. Please try again.')).toHaveCount(0);
+    await shotScreen(page, 'state-view-claim-prf-unsupported');
+  });
+
   test('screen /view/[viewKey] in-app', async ({ page }) => {
     await page.addInitScript(() => {
       Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
@@ -18560,6 +18653,13 @@ test.describe('welcome forum variants', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-failed');
+  });
+
+  test('welcome wallet-pay-prf-unsupported', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-prf-unsupported');
+    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-prf-unsupported');
   });
 
   test('welcome wallet-pay-unconfirmed', async ({ page }) => {

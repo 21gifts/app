@@ -96,6 +96,24 @@ describe('useWallet', () => {
     const { result } = renderHook(() => useWallet());
     expect(result.current.status).toBe(status);
     expect(result.current.balanceSats).toBe(balanceSats);
+    expect(result.current.prfUnsupported).toBe(false);
+  });
+
+  it('pins balance-prf-unsupported to the no-PRF error in a Playwright build', () => {
+    setPlaywrightBuild();
+    window.history.replaceState({}, '', '/wallet?visual=balance-prf-unsupported');
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('error');
+    expect(result.current.prfUnsupported).toBe(true);
+  });
+
+  it('ignores balance-prf-unsupported in a production build', () => {
+    window.history.replaceState({}, '', '/wallet?visual=balance-prf-unsupported');
+    setWallet('ready', 42);
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('ready');
+    expect(result.current.balanceSats).toBe(42);
+    expect(result.current.prfUnsupported).toBe(false);
   });
 
   it('ignores visual pins outside a Playwright build', async () => {
@@ -177,6 +195,24 @@ describe('useWallet', () => {
       await Promise.resolve();
     });
     expect(result.current.status).toBe('error');
+    expect(result.current.prfUnsupported).toBe(false);
+  });
+
+  it('shows the no-PRF error when the passkey gives no PRF output', async () => {
+    vi.mocked(unlockWalletPhrase).mockResolvedValueOnce('noPrf');
+    const { result } = renderHook(() => useWallet());
+    await act(async () => {
+      result.current.unlock();
+      await Promise.resolve();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.prfUnsupported).toBe(true);
+    vi.mocked(unlockWalletPhrase).mockResolvedValueOnce('unlocked');
+    await act(async () => {
+      result.current.unlock();
+      await Promise.resolve();
+    });
+    expect(result.current.prfUnsupported).toBe(false);
   });
 
   it('runs only one unlock ceremony after a double click', async () => {

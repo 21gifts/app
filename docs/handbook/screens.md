@@ -242,6 +242,12 @@ Pinned fixture (`?visual=balance-error`, Playwright builds only), not a live wal
 
 ![21.gifts wallet balance error](images/wallet-balance-error.png)
 
+### Variant: balance-prf-unsupported
+
+Pinned fixture (`?visual=balance-prf-unsupported`, Playwright builds only), not a live wallet. The state after **Unlock wallet** when the passkey answers without PRF output, so this phone or browser cannot hold the wallet: region **Balance** shows the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of the open-failed sentence, and labeled **Try again**. A dismissed prompt returns to the locked state; other unlock failures keep the open-failed sentence.
+
+![21.gifts wallet balance prf unsupported](images/wallet-balance-prf-unsupported.png)
+
 ### Variant: setup-intro
 
 Pinned fixture (`?visual=setup-intro`, Playwright builds only). Blocking dialog **Set up your wallet** over the screen: one sentence that the 21.gifts address sends Bitcoin to the member's own wallet and that the passkey confirms once, labeled **Set up wallet**, and **Log out**. No dismiss control.
@@ -262,7 +268,7 @@ Pinned fixture (`?visual=setup-error`, Playwright builds only). The dialog says 
 
 ### Variant: setup-no-prf
 
-Pinned fixture (`?visual=setup-no-prf`). Title **This passkey cannot hold a wallet** and the sentence that this password manager or device cannot hold a wallet, with the advice to log in with a passkey from another one. Only **Log out**.
+Pinned fixture (`?visual=setup-no-prf`, Playwright builds only). The setup passkey answered without PRF output. Title **No wallet on this phone or browser** and the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`). Only **Log out**.
 
 ![21.gifts wallet setup no PRF](images/wallet-setup-no-prf.png)
 
@@ -467,7 +473,7 @@ The passkey can already show a phrase. **Show recovery phrase** is the only cont
 
 ### Variant: phrase
 
-12-word grid from a fixture mnemonic (not live PRF). No receive QR.
+Pinned fixture (`?visual=phrase`, Playwright builds only): 12-word grid from a fixture mnemonic (not live PRF). A production build ignores the pin and never shows these words. No receive QR.
 
 ![21.gifts wallet phrase](images/wallet-phrase.png)
 
@@ -485,14 +491,14 @@ Pinned fixture (`?visual=timeout`, Playwright builds only). Device prompt timed 
 
 ### Variant: prf-unsupported
 
-PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
+Pinned fixture (`?visual=prf-unsupported`, Playwright builds only). The passkey gave no PRF output while adding or showing the phrase. Alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
 
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A new account whose passkey gives no PRF output says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** instead, and no account is created. A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
 - **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, `openInSystemBrowser`.
 
@@ -513,6 +519,12 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 Login begin or finish failed. Copy **Something went wrong. Please try again.** (`login.error`) and **Try again**. Phone pictures also show the muted installed-iOS line. An old-iOS register that cannot finish is variant ios-version, not this picture. No account is created there.
 
 ![21.gifts login error](images/login-error.png)
+
+### Variant: prf-unsupported
+
+**Open a new account** on a phone or browser whose new passkey gives no PRF output. The account is not created. Alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of the generic error, then **Try again**. A dismissed prompt or a failed request keeps its own state and copy.
+
+![21.gifts login prf unsupported](images/login-prf-unsupported.png)
 
 ### Variant: ios-version
 
@@ -808,7 +820,7 @@ The renewal did not work. **OK** confirms that and closes the dialog. The renew 
 
 ### Variant: renew-failed-prf-unsupported
 
-The renewal did not work because this passkey cannot create a recovery phrase. The dialog says another password manager or another device is needed. **OK** confirms that and closes the dialog. The renew does not start again. The account still has no seed.
+The renewal did not work because the passkey gave no PRF output. The dialog says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`). **OK** confirms that and closes the dialog. The renew does not start again. The account still has no seed.
 
 ![21.gifts welcome renew failed prf unsupported](images/welcome-renew-failed-prf-unsupported.png)
 
@@ -2043,6 +2055,12 @@ Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only). Aler
 Pinned fixture (`?visual=wallet-pay-failed`, Playwright builds only). The wallet could not be opened or could not prepare this payment: alert **Your wallet could not prepare this payment. Please try again.** and a secondary **Try again**, which opens the wallet again or prepares again. No invoice QR and no button to another wallet app.
 
 ![21.gifts welcome wallet pay failed](images/welcome-wallet-pay-failed.png)
+
+### Variant: wallet-pay-prf-unsupported
+
+Pinned fixture (`?visual=wallet-pay-prf-unsupported`, Playwright builds only). **Unlock and pay** reached a passkey that gives no PRF output: alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of the prepare-failed sentence, and a secondary **Try again**. No invoice QR and no button to another wallet app.
+
+![21.gifts welcome wallet pay prf unsupported](images/welcome-wallet-pay-prf-unsupported.png)
 
 ### Variant: wallet-pay-unconfirmed
 
@@ -5484,6 +5502,12 @@ Profile fetch failed. Copy **Could not load this profile. Please try again.** an
 Valid known key whose profile already has a passkey (`hasPasskey: true`). Same read-only card as default, no yellow activation banner, no **Activate** button.
 
 ![21.gifts public view claimed](images/view-claimed.png)
+
+### Variant: claim-prf-unsupported
+
+Unclaimed profile after **Activate** on a phone or browser whose new passkey gives no PRF output. Under the card, the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of **Could not set up a passkey. Please try again.**, then **Try again**. The profile stays unclaimed.
+
+![21.gifts public view claim prf unsupported](images/view-claim-prf-unsupported.png)
 
 ### Variant: in-app
 

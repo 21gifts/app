@@ -74,7 +74,7 @@ export function WalletSetupNotice(): ReactElement {
   } else if (view === 'noPrf') {
     body = (
       <p role="alert" className="w-full text-sm text-app-muted">
-        {t('walletSetup.noPrf')}
+        {t('wallet.prfUnsupported')}
       </p>
     );
     action = null;

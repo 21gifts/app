@@ -12,6 +12,9 @@ import { isInAppBrowser } from '@/lib/in-app-browser';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
+/** `usePasskeyLogin` error when the new passkey returned no PRF output. */
+const PRF_UNSUPPORTED_ERROR = 'wallet.prfUnsupported';
+
 /**
  * Whether a passkey error means the profile is already claimed (HTTP 409).
  *
@@ -26,7 +29,9 @@ function isAlreadyClaimedError(message: string | null): boolean {
  * Public passkey claim control under the `/view/[viewKey]` profile card.
  * Unclaimed profiles (`hasPasskey` false) show the yellow Activate banner in a
  * real browser even when another session is signed in. In Telegram or another
- * in-app browser, shows the shared escape card on mount instead.
+ * in-app browser, shows the shared escape card on mount instead. When the new
+ * passkey returns no PRF output, the alert says that this phone or browser
+ * cannot hold a 21.gifts wallet instead of the generic claim error.
  *
  * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
  * @returns Yellow activate banner, in-app escape card, spinner, error copy, or `null` when claimed.
@@ -93,7 +98,9 @@ export function ViewProfileClaim({
     return (
       <div className="flex max-w-sm flex-col items-center gap-3">
         <p role="alert" className="text-center text-sm text-app-danger">
-          {t('view.claimError')}
+          {passkey.error === PRF_UNSUPPORTED_ERROR
+            ? t('wallet.prfUnsupported')
+            : t('view.claimError')}
         </p>
         <Button type="button" onClick={onRetry}>
           {t('view.retry')}

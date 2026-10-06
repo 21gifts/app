@@ -104,6 +104,26 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('says this phone or browser cannot hold a wallet when the new passkey has no PRF', async () => {
+    mockPasskey('error', 'wallet.prfUnsupported');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    );
+    expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('keeps the generic error for a failure that is not about PRF', async () => {
+    mockPasskey('error', 'Failed to start passkey registration: 503');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Something went wrong. Please try again.',
+    );
+  });
+
   it('shows the iOS version as the error when registration could not finish', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,

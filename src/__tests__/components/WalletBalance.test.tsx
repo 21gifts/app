@@ -114,6 +114,25 @@ describe('WalletBalance', () => {
     expect(useLatestRateDay).toHaveBeenCalledWith(false);
   });
 
+  it('says that this phone or browser cannot hold a wallet when the passkey has no PRF', () => {
+    const onRetry = vi.fn();
+    renderWithLocale(
+      <WalletBalance
+        status="error"
+        balanceSats={null}
+        onUnlock={vi.fn()}
+        onRetry={onRetry}
+        prfUnsupported
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    );
+    expect(screen.queryByText('Your wallet could not be opened. Please try again.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
   it('does not render prohibited implementation vocabulary', () => {
     vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
     for (const status of ['locked', 'connecting', 'ready', 'error'] as const) {

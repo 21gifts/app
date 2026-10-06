@@ -22,9 +22,19 @@ export interface UseWalletResult {
   unlock: () => void;
   /** Repeats phrase opening or connection after an error. */
   retry: () => void;
+  /**
+   * True while `status` is `error` because the passkey gave no PRF output, so
+   * this phone or browser cannot hold the wallet.
+   */
+  prfUnsupported: boolean;
 }
 
-function visualStatus(): WalletStatus | null {
+/**
+ * Name of the `?visual=` pin, honoured only in a Playwright build.
+ *
+ * @returns The pin name, or `null`.
+ */
+function visualPin(): string | null {
   /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
     return null;
@@ -32,7 +42,11 @@ function visualStatus(): WalletStatus | null {
   if (getE2eNow() === null) {
     return null;
   }
-  const visual = new URLSearchParams(window.location.search).get('visual');
+  return new URLSearchParams(window.location.search).get('visual');
+}
+
+function visualStatus(): WalletStatus | null {
+  const visual = visualPin();
   switch (visual) {
     case 'balance-locked':
     case 'send-alert-locked':
@@ -45,6 +59,7 @@ function visualStatus(): WalletStatus | null {
     case 'history-error':
       return 'ready';
     case 'balance-error':
+    case 'balance-prf-unsupported':
       return 'error';
     default:
       return visual?.startsWith('send-') === true ? 'ready' : null;
@@ -53,7 +68,8 @@ function visualStatus(): WalletStatus | null {
 
 /**
  * Selects the wallet balance state and exposes guarded unlock and retry actions.
- * Visual pins (`?visual=balance-…`, `?visual=send-alert-locked` as locked, and
+ * An unlock whose passkey gives no PRF output shows `error` with
+ * `prfUnsupported`. Visual pins (`?visual=balance-…`, `?visual=send-alert-locked` as locked, and
  * `?visual=history-…` and the other `?visual=send-…` pins as ready) are
  * honoured only in a Playwright build (`getE2eNow()` set) and leave unlock and
  * retry inert while pinned.
@@ -65,21 +81,22 @@ export function useWallet(): UseWalletResult {
   const storeBalanceSats = useWalletStore((state) => state.balanceSats);
   const account = useAuthStore((state) => state.account);
   const [unlocking, setUnlocking] = useState(false);
-  const [unlockFailed, setUnlockFailed] = useState(false);
+  const [unlockFailure, setUnlockFailure] = useState<'failed' | 'noPrf' | null>(null);
   const unlockInFlight = useRef(false);
   const pinnedStatus = visualStatus();
+  const pinnedPrf = pinnedStatus === 'error' && visualPin() === 'balance-prf-unsupported';
 
   const unlock = useCallback((): void => {
     if (pinnedStatus !== null || unlockInFlight.current) {
       return;
     }
     unlockInFlight.current = true;
-    setUnlockFailed(false);
+    setUnlockFailure(null);
     setUnlocking(true);
     void unlockWalletPhrase()
       .then((result) => {
-        if (result === 'failed') {
-          setUnlockFailed(true);
+        if (result === 'failed' || result === 'noPrf') {
+          setUnlockFailure(result);
         }
       })
       .finally(() => {
@@ -109,16 +126,29 @@ export function useWallet(): UseWalletResult {
       balanceSats: pinnedStatus === 'ready' ? WALLET_VISUAL_FIXTURE_SATS : null,
       unlock,
       retry,
+      prfUnsupported: pinnedPrf,
     };
   }
   if (storeStatus === 'disabled' || !canUnlockWallet(account)) {
-    return { status: 'disabled', balanceSats: null, unlock, retry };
+    return { status: 'disabled', balanceSats: null, unlock, retry, prfUnsupported: false };
   }
   if (unlocking) {
-    return { status: 'connecting', balanceSats: null, unlock, retry };
+    return { status: 'connecting', balanceSats: null, unlock, retry, prfUnsupported: false };
   }
-  if (storeStatus === 'locked' && unlockFailed) {
-    return { status: 'error', balanceSats: null, unlock, retry };
+  if (storeStatus === 'locked' && unlockFailure !== null) {
+    return {
+      status: 'error',
+      balanceSats: null,
+      unlock,
+      retry,
+      prfUnsupported: unlockFailure === 'noPrf',
+    };
   }
-  return { status: storeStatus, balanceSats: storeBalanceSats, unlock, retry };
+  return {
+    status: storeStatus,
+    balanceSats: storeBalanceSats,
+    unlock,
+    retry,
+    prfUnsupported: false,
+  };
 }

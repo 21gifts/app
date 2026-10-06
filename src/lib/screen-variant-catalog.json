@@ -48,6 +48,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:prf-unsupported",
+    "label": "/login prf-unsupported",
+    "visual": "state-login-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:ios-version",
     "label": "/login ios-version",
     "visual": "state-login-ios-version",
@@ -231,6 +237,12 @@
     "id": "/wallet:balance-error",
     "label": "/wallet balance-error",
     "visual": "state-wallet-balance-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-prf-unsupported",
+    "label": "/wallet balance-prf-unsupported",
+    "visual": "state-wallet-balance-prf-unsupported",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1605,6 +1617,12 @@
     "id": "/welcome:wallet-pay-failed",
     "label": "/welcome wallet-pay-failed",
     "visual": "state-welcome-wallet-pay-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-prf-unsupported",
+    "label": "/welcome wallet-pay-prf-unsupported",
+    "visual": "state-welcome-wallet-pay-prf-unsupported",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3117,6 +3135,12 @@
     "id": "/view/[viewKey]:claimed",
     "label": "/view/[viewKey] claimed",
     "visual": "state-view-claimed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:claim-prf-unsupported",
+    "label": "/view/[viewKey] claim-prf-unsupported",
+    "visual": "state-view-claim-prf-unsupported",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

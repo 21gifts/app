@@ -167,7 +167,7 @@ describe('AppShell', () => {
         </AppShell>,
       );
       expect(
-        screen.getByRole('dialog', { name: 'This passkey cannot hold a wallet' }),
+        screen.getByRole('dialog', { name: 'No wallet on this phone or browser' }),
       ).toBeTruthy();
     } finally {
       if (original === undefined) {

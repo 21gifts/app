@@ -129,6 +129,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'prf-unsupported',
+    image: 'login-prf-unsupported.png',
+    visual: 'state-login-prf-unsupported',
+    needle: "shotScreen(page, 'state-login-prf-unsupported')",
+  },
+  {
+    route: '/login',
     id: 'ios-version',
     image: 'login-ios-version.png',
     visual: 'state-login-ios-version',
@@ -346,6 +353,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'balance-prf-unsupported',
+    image: 'wallet-balance-prf-unsupported.png',
+    visual: 'state-wallet-balance-prf-unsupported',
+    needle: "shotScreen(page, 'state-wallet-balance-prf-unsupported')",
+  },
+  {
+    route: '/wallet',
     id: 'setup-intro',
     image: 'wallet-setup-intro.png',
     visual: 'state-wallet-setup-intro',
@@ -370,7 +384,7 @@ export const SCREEN_VARIANTS = [
     id: 'setup-no-prf',
     image: 'wallet-setup-no-prf.png',
     visual: 'state-wallet-setup-no-prf',
-    needle: 'This password manager or device cannot hold a wallet.',
+    needle: "shotScreen(page, 'state-wallet-setup-no-prf')",
   },
   {
     route: '/wallet',
@@ -623,7 +637,7 @@ export const SCREEN_VARIANTS = [
     id: 'prf-unsupported',
     image: 'wallet-prf-unsupported.png',
     visual: 'state-wallet-prf-unsupported',
-    needle: 'This browser cannot create a recovery phrase. Try another browser or device.',
+    needle: "shotScreen(page, 'state-wallet-prf-unsupported')",
   },
   {
     route: '/setup/name',
@@ -784,7 +798,7 @@ export const SCREEN_VARIANTS = [
     id: 'renew-failed-prf-unsupported',
     image: 'welcome-renew-failed-prf-unsupported.png',
     visual: 'state-welcome-renew-failed-prf-unsupported',
-    needle: 'This passkey cannot create a recovery phrase.',
+    needle: "shotScreen(page, 'state-welcome-renew-failed-prf-unsupported')",
   },
   {
     route: '/welcome',
@@ -1947,6 +1961,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-pay-failed.png',
     visual: 'state-welcome-wallet-pay-failed',
     needle: 'Your wallet could not prepare this payment. Please try again.',
+  },
+  {
+    route: '/welcome',
+    id: 'wallet-pay-prf-unsupported',
+    image: 'welcome-wallet-pay-prf-unsupported.png',
+    visual: 'state-welcome-wallet-pay-prf-unsupported',
+    needle: "shotScreen(page, 'state-welcome-wallet-pay-prf-unsupported')",
   },
   {
     route: '/welcome',
@@ -3713,6 +3734,13 @@ export const SCREEN_VARIANTS = [
     image: 'view-claimed.png',
     visual: 'state-view-claimed',
     needle: 'hasPasskey: true',
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'claim-prf-unsupported',
+    image: 'view-claim-prf-unsupported.png',
+    visual: 'state-view-claim-prf-unsupported',
+    needle: "shotScreen(page, 'state-view-claim-prf-unsupported')",
   },
   {
     route: '/view/[viewKey]',

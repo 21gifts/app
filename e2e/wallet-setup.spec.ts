@@ -196,14 +196,18 @@ test.describe('wallet setup dialog', () => {
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
   });
 
-  test('wallet setup-no-prf pin says this device cannot hold a wallet', async ({ page }) => {
+  test('wallet setup-no-prf pin says this phone or browser cannot hold a wallet', async ({
+    page,
+  }) => {
     await signIn(page);
     await openWallet(page, '?visual=setup-no-prf');
     await expect(
-      page.getByRole('dialog', { name: 'This passkey cannot hold a wallet' }),
+      page.getByRole('dialog', { name: 'No wallet on this phone or browser' }),
     ).toBeVisible();
     await expect(
-      page.getByText('This password manager or device cannot hold a wallet.', { exact: false }),
+      page.getByText(
+        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+      ),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   });

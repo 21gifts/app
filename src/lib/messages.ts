@@ -554,15 +554,13 @@ const en = {
   'passkeyRenew.failedTitle': 'That did not work',
   'passkeyRenew.failedBody':
     'The renewal did not work. You can try again later. You do not need to do anything now.',
-  'passkeyRenew.prfUnsupported':
-    'This passkey cannot create a recovery phrase. You need another password manager or another device. You do not need to do anything now.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'These 12 words are the only backup of this wallet. 21.gifts cannot recover them.',
   'wallet.showPhrase': 'Show recovery phrase',
   'wallet.setAmount': 'Set an amount',
   'wallet.prfUnsupported':
-    'This browser cannot create a recovery phrase. Try another browser or device.',
+    'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
   'wallet.timeout': 'The device prompt timed out before you finished. Try again.',
   'wallet.errorGeneric':
     'The recovery phrase could not be created or opened. Check this device and try again.',
@@ -586,9 +584,7 @@ const en = {
   'walletSetup.start': 'Set up wallet',
   'walletSetup.progress': 'Setting up your wallet…',
   'walletSetup.error': 'Your wallet could not be set up. Please try again.',
-  'walletSetup.noPrfTitle': 'This passkey cannot hold a wallet',
-  'walletSetup.noPrf':
-    'This password manager or device cannot hold a wallet. Log out and log in again with a passkey from another password manager or device.',
+  'walletSetup.noPrfTitle': 'No wallet on this phone or browser',
   'setup.usernameFrozen':
     'Your username can no longer be changed because your wallet address uses it.',
   'wallet.payFromWallet': 'Pay from wallet',
@@ -1713,15 +1709,13 @@ const de = {
   'passkeyRenew.failedTitle': 'Das hat nicht funktioniert',
   'passkeyRenew.failedBody':
     'Die Erneuerung ist nicht gelungen. Du kannst es später noch einmal versuchen. Jetzt musst du nichts unternehmen.',
-  'passkeyRenew.prfUnsupported':
-    'Dieser Passkey kann keinen Wiederherstellungssatz erzeugen. Dafür brauchst du einen anderen Passwortmanager oder ein anderes Gerät. Jetzt musst du nichts unternehmen.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Diese 12 Wörter sind die einzige Sicherung dieser Wallet. 21.gifts kann sie nicht wiederherstellen.',
   'wallet.showPhrase': 'Wiederherstellungssatz anzeigen',
   'wallet.setAmount': 'Betrag festlegen',
   'wallet.prfUnsupported':
-    'Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät.',
+    'Dieses Telefon oder dieser Browser kann keine 21.gifts-Wallet halten. Bitte verwenden Sie ein aktuelles Telefon oder einen aktuellen Browser, der Passkeys unterstützt.',
   'wallet.timeout':
     'Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut.',
   'wallet.errorGeneric':
@@ -1748,9 +1742,7 @@ const de = {
   'walletSetup.progress': 'Ihre Wallet wird eingerichtet…',
   'walletSetup.error':
     'Ihre Wallet konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut.',
-  'walletSetup.noPrfTitle': 'Dieser Passkey kann keine Wallet halten',
-  'walletSetup.noPrf':
-    'Dieser Passwort-Manager oder dieses Gerät kann keine Wallet halten. Melden Sie sich ab und mit einem Passkey aus einem anderen Passwort-Manager oder von einem anderen Gerät wieder an.',
+  'walletSetup.noPrfTitle': 'Keine Wallet auf diesem Telefon oder Browser',
   'setup.usernameFrozen':
     'Ihr Benutzername kann nicht mehr geändert werden, weil Ihre Wallet-Adresse ihn verwendet.',
   'wallet.payFromWallet': 'Aus der Wallet zahlen',
@@ -2894,15 +2886,13 @@ const es = {
   'passkeyRenew.failedTitle': 'Eso no funcionó',
   'passkeyRenew.failedBody':
     'La renovación no ha funcionado. Puedes intentarlo más tarde. Ahora no tienes que hacer nada.',
-  'passkeyRenew.prfUnsupported':
-    'Este passkey no puede crear una frase de recuperación. Hace falta otro gestor de contraseñas u otro dispositivo. Ahora no tienes que hacer nada.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Estas 12 palabras son la única copia de seguridad de esta wallet. 21.gifts no puede recuperarlas.',
   'wallet.showPhrase': 'Mostrar frase de recuperación',
   'wallet.setAmount': 'Fijar un importe',
   'wallet.prfUnsupported':
-    'Este navegador no puede crear una frase de recuperación. Prueba otro navegador u otro dispositivo.',
+    'Este teléfono o navegador no puede guardar una wallet de 21.gifts. Usa un teléfono o navegador actualizado que admita passkeys.',
   'wallet.timeout':
     'La solicitud del dispositivo caducó antes de que terminaras. Inténtalo de nuevo.',
   'wallet.errorGeneric':
@@ -2927,9 +2917,7 @@ const es = {
   'walletSetup.start': 'Configurar wallet',
   'walletSetup.progress': 'Configurando tu wallet…',
   'walletSetup.error': 'No se pudo configurar tu wallet. Inténtalo de nuevo.',
-  'walletSetup.noPrfTitle': 'Esta passkey no puede guardar una wallet',
-  'walletSetup.noPrf':
-    'Este gestor de contraseñas o dispositivo no puede guardar una wallet. Cierra sesión y vuelve a entrar con una passkey de otro gestor de contraseñas o de otro dispositivo.',
+  'walletSetup.noPrfTitle': 'No hay wallet en este teléfono o navegador',
   'setup.usernameFrozen':
     'Tu nombre de usuario ya no se puede cambiar porque la dirección de tu wallet lo usa.',
   'wallet.payFromWallet': 'Pagar desde la wallet',
@@ -4054,15 +4042,13 @@ const fil = {
   'passkeyRenew.failedTitle': 'Hindi iyon nagtagumpay',
   'passkeyRenew.failedBody':
     'Hindi nagtagumpay ang pag-renew. Maaari mong subukan ulit mamaya. Wala kang kailangang gawin ngayon.',
-  'passkeyRenew.prfUnsupported':
-    'Hindi makagawa ng recovery phrase ang passkey na ito. Kailangan mo ng ibang password manager o ibang device. Wala kang kailangang gawin ngayon.',
   'passkeyRenew.ok': 'OK',
   'wallet.onlyBackup':
     'Ang 12 salitang ito ang tanging backup ng wallet na ito. Hindi sila mare-recover ng 21.gifts.',
   'wallet.showPhrase': 'Ipakita ang recovery phrase',
   'wallet.setAmount': 'Magtakda ng halaga',
   'wallet.prfUnsupported':
-    'Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device.',
+    'Hindi kayang maglaman ng 21.gifts wallet ang phone o browser na ito. Gumamit ng updated na phone o browser na sumusuporta sa passkeys.',
   'wallet.timeout': 'Nag-timeout ang device prompt bago ka matapos. Subukan ulit.',
   'wallet.errorGeneric':
     'Hindi magawa o mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
@@ -4086,9 +4072,7 @@ const fil = {
   'walletSetup.start': 'I-set up ang wallet',
   'walletSetup.progress': 'Sine-set up ang wallet mo…',
   'walletSetup.error': 'Hindi ma-set up ang wallet mo. Pakisubukan ulit.',
-  'walletSetup.noPrfTitle': 'Hindi kayang maglaman ng wallet ang passkey na ito',
-  'walletSetup.noPrf':
-    'Hindi kayang maglaman ng wallet ang password manager o device na ito. Mag-log out at mag-log in ulit gamit ang passkey mula sa ibang password manager o device.',
+  'walletSetup.noPrfTitle': 'Walang wallet sa phone o browser na ito',
   'setup.usernameFrozen':
     'Hindi na mababago ang username mo dahil ginagamit ito ng address ng wallet mo.',
   'wallet.payFromWallet': 'Magbayad mula sa wallet',

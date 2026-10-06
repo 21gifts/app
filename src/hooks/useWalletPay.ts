@@ -32,6 +32,8 @@ export const WALLET_PAY_CONFIRM_WAIT_MS = 60_000;
  * - `insufficient`: the balance does not cover the payment.
  * - `failed`: the wallet could not be opened or could not prepare this
  *   payment; **Try again** starts over.
+ * - `prfUnsupported`: the passkey answered without PRF output, so this phone
+ *   or browser cannot hold the wallet; **Try again** starts over.
  * - `unconfirmed`: the sheet is still open {@link WALLET_PAY_CONFIRM_WAIT_MS}
  *   after a send (failed, timed out, or sent without a confirmation yet).
  */
@@ -43,6 +45,7 @@ export type WalletPayView =
   | 'paying'
   | 'insufficient'
   | 'failed'
+  | 'prfUnsupported'
   | 'unconfirmed';
 
 /** State and actions of the pay slot. */
@@ -58,7 +61,7 @@ export interface UseWalletPayResult {
   unlock: () => void;
   /** Sends the prepared payment once. */
   pay: () => void;
-  /** Starts over after `failed`: opens the wallet again or prepares again. */
+  /** Starts over after `failed` or `prfUnsupported`: opens the wallet again or prepares again. */
   retry: () => void;
 }
 
@@ -70,7 +73,8 @@ type Phase =
   | 'paying'
   | 'insufficient'
   | 'unconfirmed'
-  | 'failed';
+  | 'failed'
+  | 'prfUnsupported';
 
 /** The invoice and sheet amount a prepared send belongs to. */
 interface PreparedKey {
@@ -107,6 +111,7 @@ const VISUAL_VIEWS: Record<string, WalletPayView> = {
   'wallet-pay-paying': 'paying',
   'wallet-pay-insufficient': 'insufficient',
   'wallet-pay-failed': 'failed',
+  'wallet-pay-prf-unsupported': 'prfUnsupported',
   'wallet-pay-unconfirmed': 'unconfirmed',
 };
 
@@ -138,7 +143,8 @@ function visualView(): WalletPayView | null {
  * changed, the wallet failed to open or left `ready`, or the prompt was cancelled or failed. A
  * ready wallet prepares at once so the fee is shown before **Pay from
  * wallet**. A prepared amount that differs from `amountSats`, a failed prepare
- * or unlock, and a wallet in `error` show `failed`. A wallet that leaves
+ * or unlock, and a wallet in `error` show `failed`; an unlock whose passkey
+ * gives no PRF output shows `prfUnsupported`. A wallet that leaves
  * `ready` before the send or while `insufficient` shows, or an account that
  * stops being able to pay from it then, starts over. After
  * `insufficient`, a balance above the one held when that prepare or send
@@ -292,7 +298,7 @@ export function useWalletPay(
       if (result !== 'unlocked') {
         autoPayRun.current = null;
       }
-      setPhase(result === 'failed' ? 'failed' : 'idle');
+      setPhase(result === 'failed' ? 'failed' : result === 'noPrf' ? 'prfUnsupported' : 'idle');
     });
   }, [pinned, phase]);
 
