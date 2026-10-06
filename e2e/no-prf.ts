@@ -68,3 +68,18 @@ export async function installNoPrfWebAuthn(page: Page): Promise<void> {
     });
   });
 }
+
+/** iPhone user agent on iOS 18, the first version that can sign in. */
+const CURRENT_IPHONE_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+
+/**
+ * Reports an iPhone on iOS 18 to the page. The mobile visual projects use an
+ * iPhone below iOS 18, where the old-iOS sentence takes precedence over the
+ * no-PRF sentence; a no-PRF shot on a phone needs a current iOS.
+ */
+export async function stubCurrentIphone(page: Page): Promise<void> {
+  await page.addInitScript((ua: string) => {
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => ua });
+  }, CURRENT_IPHONE_UA);
+}

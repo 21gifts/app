@@ -522,7 +522,7 @@ Login begin or finish failed. Copy **Something went wrong. Please try again.** (
 
 ### Variant: prf-unsupported
 
-**Open a new account** on a phone or browser whose new passkey gives no PRF output. The account is not created. Alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of the generic error, then **Try again**. A dismissed prompt or a failed request keeps its own state and copy.
+**Open a new account** on a phone or browser whose new passkey gives no PRF output. The account is not created. Alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of the generic error, then **Try again**. A dismissed prompt or a failed request keeps its own state and copy. On iOS below 18 the old-iOS sentence (variant ios-version) takes precedence, so the phone pictures of this variant use an iPhone on iOS 18.
 
 ![21.gifts login prf unsupported](images/login-prf-unsupported.png)
 
@@ -5505,7 +5505,7 @@ Valid known key whose profile already has a passkey (`hasPasskey: true`). Same r
 
 ### Variant: claim-prf-unsupported
 
-Unclaimed profile after **Activate** on a phone or browser whose new passkey gives no PRF output. Under the card, the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of **Could not set up a passkey. Please try again.**, then **Try again**. The profile stays unclaimed.
+Unclaimed profile after **Activate** on a phone or browser whose new passkey gives no PRF output. Under the card, the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of **Could not set up a passkey. Please try again.**, then **Try again**. The profile stays unclaimed. On iOS below 18 the old-iOS sentence takes precedence, so the phone pictures of this variant use an iPhone on iOS 18.
 
 ![21.gifts public view claim prf unsupported](images/view-claim-prf-unsupported.png)
 

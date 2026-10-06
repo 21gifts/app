@@ -3,7 +3,12 @@ import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { stubCamera, type CameraStub } from './camera';
-import { installNoPrfWebAuthn, NO_PRF_REGISTER_BEGIN, PRF_UNSUPPORTED_MESSAGE } from './no-prf';
+import {
+  installNoPrfWebAuthn,
+  NO_PRF_REGISTER_BEGIN,
+  PRF_UNSUPPORTED_MESSAGE,
+  stubCurrentIphone,
+} from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
 
 /**
@@ -2440,7 +2445,10 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-error');
   });
 
-  test('login prf-unsupported', async ({ page }) => {
+  test('login prf-unsupported', async ({ page }, testInfo) => {
+    if (isMobileProject(testInfo)) {
+      await stubCurrentIphone(page);
+    }
     await installNoPrfWebAuthn(page);
     await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
       await route.fulfill({
@@ -13581,7 +13589,10 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-view-claimed');
   });
 
-  test('screen /view/[viewKey] claim-prf-unsupported', async ({ page }) => {
+  test('screen /view/[viewKey] claim-prf-unsupported', async ({ page }, testInfo) => {
+    if (isMobileProject(testInfo)) {
+      await stubCurrentIphone(page);
+    }
     await installNoPrfWebAuthn(page);
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
       await route.fulfill({
