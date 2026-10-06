@@ -22529,6 +22529,20 @@ test.describe('habit tracker baselines', () => {
     await shotScreen(page, 'state-habit-tracker-donate');
   });
 
+  test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.unroute('**/gifts/stats**');
+    await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    const cont = page.getByRole('button', { name: 'Continue' });
+    await expect(cont).toBeDisabled();
+    await cont.scrollIntoViewIfNeeded();
+    await expect(cont).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-rate-pending');
+  });
+
   test('screen /habit-tracker donate-fiat', async ({ page }) => {
     await seedHabitAda(page);
     await fulfillRateDay(page);

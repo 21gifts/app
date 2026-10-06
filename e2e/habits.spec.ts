@@ -287,6 +287,19 @@ test('screen /habit-tracker archive-confirm', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
 });
 
+test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
+  await seedAda(page);
+  await page.unroute('**/gifts/stats**');
+  await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+  await stubHabits(page, PUBLIC_LIST);
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const cont = page.getByRole('button', { name: 'Continue' });
+  await expect(cont).toBeDisabled();
+  await cont.scrollIntoViewIfNeeded();
+  await expect(cont).toBeInViewport();
+});
+
 test('Function: InlineConfirm — archive uses the shared bordered group', async ({ page }) => {
   await seedAda(page);
   await stubHabits(page, {

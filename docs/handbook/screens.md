@@ -2255,6 +2255,12 @@ Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** an
 
 ![21.gifts habit tracker donate](images/habit-tracker-donate.png)
 
+### Variant: donate-rate-pending
+
+Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The sheet is scrolled so **Continue** is on screen and stays disabled, and no fiat line is shown.
+
+![21.gifts habit tracker donate rate pending](images/habit-tracker-donate-rate-pending.png)
+
 ### Variant: donate-fiat
 
 Ada's session on someone else's comment. **Send Bitcoin** is open and the amount switch is on **USD**. The field shows the fiat figure, and the bitcoin equivalent sits under it.
