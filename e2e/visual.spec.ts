@@ -16337,10 +16337,12 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome repay-wallet-pay-insufficient', async ({ page }) => {
     await openRepayWalletPay(page, 'wallet-pay-insufficient');
-    const slot = page.getByText('Your wallet does not have enough Bitcoin for this payment.');
-    await expect(slot).toBeVisible();
-    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
-    await slot.scrollIntoViewIfNeeded();
+    await expect(
+      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
+    ).toBeVisible();
+    const missing = page.getByText(/^Still missing: ₿/);
+    await expect(missing).toBeVisible();
+    await missing.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-wallet-pay-insufficient');
   });
 
