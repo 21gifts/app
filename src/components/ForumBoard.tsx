@@ -229,6 +229,11 @@ export interface ForumBoardProps {
   /** New-post composer `maxLength`. Default {@link FORUM_MESSAGE_MAX_LENGTH}. */
   composerMaxLength?: number;
   /**
+   * When true, the message composer says under Post that this member's first
+   * post is free. Default false.
+   */
+  firstPostFree?: boolean;
+  /**
    * When true, the shops feed shows Add a shop instead of the message composer.
    * Default false.
    */
@@ -701,6 +706,7 @@ export function ForumBoard({
   onRetry,
   formError,
   composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
+  firstPostFree = false,
   shopComposer = false,
   shopUsername = '',
   onShopUsernameChange,
@@ -2093,6 +2099,9 @@ export function ForumBoard({
                 )}
               </IconButton>
             </div>
+            {firstPostFree ? (
+              <p className="text-center text-sm text-app-muted">{t('forum.firstPostFree')}</p>
+            ) : null}
             {videoDraft !== null ? (
               <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
                 <video
