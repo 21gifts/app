@@ -1620,6 +1620,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'menu-open',
+    image: 'habit-tracker-menu-open.png',
+    visual: 'state-habit-tracker-menu-open',
+    needle: 'screen /habit-tracker menu-open',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'add-weekly',
+    image: 'habit-tracker-add-weekly.png',
+    visual: 'state-habit-tracker-add-weekly',
+    needle: 'screen /habit-tracker add-weekly',
+  },
+  {
+    route: '/habit-tracker',
     id: 'donate',
     image: 'habit-tracker-donate.png',
     visual: 'state-habit-tracker-donate',

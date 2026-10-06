@@ -2261,6 +2261,18 @@ Ada's session. **Menu** is top-right. Her habit shows **Internal notes:** and **
 
 ![21.gifts habit tracker signed in](images/habit-tracker-signed-in.png)
 
+### Variant: menu-open
+
+Ada's session. **Menu** is open on this page. **Habit-Tracker** is in the menu. The closed signed-in page does not cover this.
+
+![21.gifts habit tracker menu open](images/habit-tracker-menu-open.png)
+
+### Variant: add-weekly
+
+Ada's session. **Weekly** is selected on the new-habit cadence. The signed-in page shows **Daily** selected and does not cover this.
+
+![21.gifts habit tracker add weekly](images/habit-tracker-add-weekly.png)
+
 ### Variant: donate
 
 Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** and **Continue** are visible.

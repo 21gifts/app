@@ -198,6 +198,12 @@ export function SignedInChrome(): ReactElement {
       // A fixed box is already shifted. Add the lift back. An absolute box is natural.
       const naturalBottom = rect.bottom + (fixed ? applied : 0);
       const naturalTop = rect.top + (fixed ? applied : 0);
+      // A fixed panel's left is the inline value from the last measure. The trigger
+      // moves when the frame resizes, so the horizontal position comes from the
+      // trigger parent. An absolute panel is already in that parent.
+      const anchorRight = rootEl?.getBoundingClientRect().right;
+      const naturalLeft =
+        fixed && typeof anchorRight === 'number' ? anchorRight - rect.width : rect.left;
       const currentTight = tightRef.current;
       // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
       const nextTight =
@@ -225,7 +231,7 @@ export function SignedInChrome(): ReactElement {
         nextLift > 0
           ? {
               top: Math.round(naturalTop - nextLift),
-              left: Math.round(rect.left),
+              left: Math.round(naturalLeft),
               width: Math.round(rect.width),
             }
           : null;
@@ -257,7 +263,7 @@ export function SignedInChrome(): ReactElement {
       window.removeEventListener('resize', measure);
       observer?.disconnect();
     };
-  }, [account?.role, open, sheet, sheetBecauseTall, tight]);
+  }, [account?.role, open, rootEl, sheet, sheetBecauseTall, tight]);
 
   useEffect(() => {
     if (session === null) {

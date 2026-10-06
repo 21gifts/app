@@ -22594,6 +22594,34 @@ test.describe('habit tracker baselines', () => {
     await shotScreen(page, 'state-habit-tracker-signed-in');
   });
 
+  test('screen /habit-tracker menu-open', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-menu-open');
+  });
+
+  test('screen /habit-tracker add-weekly', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    const cadence = page.getByRole('group', { name: 'Cadence' });
+    await cadence.getByRole('button', { name: 'Weekly' }).click();
+    await expect(cadence.getByRole('button', { name: 'Weekly' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-habit-tracker-add-weekly');
+  });
+
   test('screen /habit-tracker donate', async ({ page }) => {
     await seedHabitAda(page);
     await stubHabitList(page, HABIT_PUBLIC);

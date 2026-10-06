@@ -1182,10 +1182,10 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('measures a lifted wide menu again and keeps an unchanged box', () => {
+  it('keeps a lifted wide menu on the trigger when the frame moves', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
-    let fixedLeft = 100;
+    let anchorRight = 388;
     let fixedWidth = 288;
     let fixedTop = 39;
     const fixedBottom = 721;
@@ -1198,8 +1198,14 @@ describe('SignedInChrome', () => {
       const naturalBottom = compact ? 754 : 794;
       const top = fixed ? fixedTop : menu ? naturalTop : 0;
       const bottom = fixed ? fixedBottom : menu ? naturalBottom : 0;
-      const left = fixed ? fixedLeft : 100;
-      const width = fixed ? fixedWidth : 288;
+      // The fixed panel reports its own inline box, which stays put when the
+      // trigger parent moves. The parent is every other element in this test.
+      const width = fixed ? fixedWidth : menu ? 288 : 40;
+      const left = fixed
+        ? Number.parseFloat(this.style.left) || anchorRight - width
+        : menu
+          ? anchorRight - 288
+          : anchorRight - width;
       return {
         x: left,
         y: top,
@@ -1238,9 +1244,9 @@ describe('SignedInChrome', () => {
         window.dispatchEvent(new Event('resize'));
       });
       expect(panel.style.width).toBe('200px');
-      expect(panel.style.left).toBe('100px');
-      fixedLeft = 12;
+      expect(panel.style.left).toBe('188px');
       fixedWidth = 288;
+      anchorRight = 300;
       act(() => {
         window.dispatchEvent(new Event('resize'));
       });
