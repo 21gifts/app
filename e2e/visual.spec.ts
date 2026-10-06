@@ -3236,7 +3236,47 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await fulfillMixedSatsMessages(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21000,
+              amountUsd: '18.14',
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+            {
+              id: 'm2',
+              name: 'Carol',
+              text: 'I can send a small gift tomorrow.',
+              createdAt: '2026-08-28T11:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+            },
+            {
+              id: 'm1',
+              name: 'Bob',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
     await page.route('**/forum/messages/**/replies', async (route) => {
       await route.fulfill({
         status: 200,
@@ -3266,9 +3306,10 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('You got it right.')).toBeVisible();
     await expect(page.getByText("sent ₿21'000")).toBeVisible();
     await expect(page.getByText('received ₿100')).toBeVisible();
-    await expect(page.getByText('$18.14')).toBeVisible();
+    await expect(page.getByText('$18.14')).toHaveCount(2);
     await expect(page.getByText('$0.09')).toBeVisible();
     await expect(page.getByText("₿21'100")).toHaveCount(0);
+    await expect(page.getByText('₿5')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-expanded-received');
   });
 

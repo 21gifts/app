@@ -1195,7 +1195,7 @@ On **All**, expand Ada's note. The thread shows a gift-only reply (**send ₿21*
 
 ### Variant: expanded-received
 
-On **All**, expand Ada's note. Cyrill's reply **You got it right.** shows two lines under a left rule: **sent ₿21'000 · $18.14** and **received ₿100 · $0.09**. The note footer stays **₿5**. The two amounts are not added.
+On **All**, expand Ada's note. Cyrill's reply **You got it right.** shows two lines under a left rule: **sent ₿21'000 · $18.14** and **received ₿100 · $0.09**. The note footer is **₿21'000 · $18.14**, the same gift as the sent line, not a second payment. The later **₿100** is not added to either figure.
 
 ![21.gifts welcome expanded received](images/welcome-expanded-received.png)
 
