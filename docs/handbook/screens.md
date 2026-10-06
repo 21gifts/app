@@ -2255,6 +2255,12 @@ Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** an
 
 ![21.gifts habit tracker donate](images/habit-tracker-donate.png)
 
+### Variant: donate-fiat
+
+Ada's session on someone else's comment. **Send Bitcoin** is open and the amount switch is on **USD**. The field shows the fiat figure, and the bitcoin equivalent sits under it.
+
+![21.gifts habit tracker donate fiat](images/habit-tracker-donate-fiat.png)
+
 ### Variant: donate-invoice
 
 Ada's session after **Continue** on someone else's comment. The card shows **Pay ₿21**, the Bitcoin payment QR code on desktop, and **Pay with Wallet of Satoshi**. The raw invoice is not shown.

@@ -22529,6 +22529,46 @@ test.describe('habit tracker baselines', () => {
     await shotScreen(page, 'state-habit-tracker-donate');
   });
 
+  test('screen /habit-tracker donate-fiat', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/me/amount-unit', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('1000');
+    await expect(page.getByText('$1.00')).toBeVisible();
+    const saved = page.waitForResponse(
+      (response) => response.url().includes('/me/amount-unit') && response.ok(),
+    );
+    await page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await saved;
+    await expect(page.getByLabel('Amount')).toHaveValue('1.00');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donate-fiat');
+  });
+
   test('screen /habit-tracker donate-invoice', async ({ page }) => {
     await seedHabitAda(page);
     await page.route('**/habits', async (route) => {

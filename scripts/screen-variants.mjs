@@ -1613,6 +1613,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'donate-fiat',
+    image: 'habit-tracker-donate-fiat.png',
+    visual: 'state-habit-tracker-donate-fiat',
+    needle: 'screen /habit-tracker donate-fiat',
+  },
+  {
+    route: '/habit-tracker',
     id: 'donate-invoice',
     image: 'habit-tracker-donate-invoice.png',
     visual: 'state-habit-tracker-donate-invoice',
