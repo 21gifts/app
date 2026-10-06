@@ -3876,6 +3876,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'expanded-donated',
+    image: 'welcome-expanded-donated.png',
+    visual: 'state-welcome-expanded-donated',
+    needle: 'state /welcome expanded-donated',
+  },
+  {
+    route: '/welcome',
+    id: 'expanded-text',
+    image: 'welcome-expanded-text.png',
+    visual: 'state-welcome-expanded-text',
+    needle: 'state /welcome expanded-text',
+  },
+  {
+    route: '/welcome',
+    id: 'expanded-received-only',
+    image: 'welcome-expanded-received-only.png',
+    visual: 'state-welcome-expanded-received-only',
+    needle: 'state /welcome expanded-received-only',
+  },
+  {
+    route: '/welcome',
     id: 'expanded-external',
     image: 'welcome-expanded-external.png',
     visual: 'state-welcome-expanded-external',

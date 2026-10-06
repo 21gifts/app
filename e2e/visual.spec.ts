@@ -3313,6 +3313,240 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-received');
   });
 
+  test('state /welcome expanded-donated', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21000,
+              amountUsd: '18.14',
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-donated',
+              parentId: 'm3',
+              name: 'Cyrill',
+              text: '',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              sats: 21000,
+              amountUsd: '18.14',
+              payable: false,
+              hasPhoto: false,
+              role: 'founder',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByText("send ₿21'000")).toBeVisible();
+    await expect(page.getByText('$18.14')).toHaveCount(2);
+    await expect(page.getByText("sent ₿21'000")).toHaveCount(0);
+    await expect(page.getByText('received ₿100')).toHaveCount(0);
+    await expect(page.getByText("₿21'100")).toHaveCount(0);
+    await expect(page.getByText('₿100')).toHaveCount(0);
+    await expect(page.getByText('₿5')).toHaveCount(0);
+    await expect(page.getByText('$0.09')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-expanded-donated');
+  });
+
+  test('state /welcome expanded-text', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-text-only',
+              parentId: 'm3',
+              name: 'Cyrill',
+              text: 'You got it right.',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'founder',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByText('You got it right.')).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
+    await expect(page.getByRole('button', { name: '₿0', exact: true })).toBeVisible();
+    await expect(page.getByText('send ₿21')).toHaveCount(0);
+    await expect(page.getByText("sent ₿21'000")).toHaveCount(0);
+    await expect(page.getByText('received ₿100')).toHaveCount(0);
+    await expect(page.getByText("₿21'000")).toHaveCount(0);
+    await expect(page.getByText('₿100')).toHaveCount(0);
+    await expect(page.getByText("₿21'100")).toHaveCount(0);
+    await expect(page.getByText('$18.14')).toHaveCount(0);
+    await expect(page.getByText('$0.09')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-expanded-text');
+  });
+
+  test('state /welcome expanded-received-only', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm3',
+              name: 'Ada',
+              text: 'Thank you both — that helps.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-received-only',
+              parentId: 'm3',
+              name: 'Cyrill',
+              text: 'You got it right.',
+              createdAt: '2026-08-28T12:05:00.000Z',
+              sats: 0,
+              receivedSats: 100,
+              receivedAmountUsd: '0.09',
+              payable: false,
+              hasPhoto: false,
+              role: 'founder',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByText('You got it right.')).toBeVisible();
+    await expect(page.getByText('received ₿100')).toBeVisible();
+    await expect(page.getByText('$0.09')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: '₿0', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /₿100/ })).toHaveCount(0);
+    await expect(page.getByText('send ₿21')).toHaveCount(0);
+    await expect(page.getByText("sent ₿21'000")).toHaveCount(0);
+    await expect(page.getByText("₿21'000")).toHaveCount(0);
+    await expect(page.getByText("₿21'100")).toHaveCount(0);
+    await expect(page.getByText('$18.14')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-expanded-received-only');
+  });
+
   test('state /welcome expanded-external', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

@@ -1199,6 +1199,24 @@ On **All**, expand Ada's note. Cyrill's reply **You got it right.** shows two li
 
 ![21.gifts welcome expanded received](images/welcome-expanded-received.png)
 
+### Variant: expanded-donated
+
+Expand Ada's note. Cyrill's reply has no text. It shows **send ₿21'000 · $18.14** and no received line. The note footer is **₿21'000 · $18.14**, the same gift, not a second payment. Nothing on this reply is added into ₿21'100.
+
+![21.gifts welcome expanded donated](images/welcome-expanded-donated.png)
+
+### Variant: expanded-text
+
+Expand Ada's note. Cyrill's reply is the sentence **You got it right.** It sent nothing and received nothing, so no amount line sits under the sentence. The note footer is **₿0**, because this reply did not add a gift. Ada stays on the feed because she is a moderator.
+
+![21.gifts welcome expanded text](images/welcome-expanded-text.png)
+
+### Variant: expanded-received-only
+
+Expand Ada's note. Cyrill's reply **You got it right.** sent nothing. Under the sentence is only **received ₿100 · $0.09**. That 100 is not the note total. The note footer stays **₿0**.
+
+![21.gifts welcome expanded received only](images/welcome-expanded-received-only.png)
+
 ### Variant: expanded-external
 
 On **All**, expand Ada's note. The thread shows two replies from **Robin**, who has no 21.gifts account: a gift-only reply (**send ₿69**) and a text reply containing `https://example.com/hello`. Each author line shows an **External** button next to the name (same slot as a role pill); clicking it opens a short hint that the person wrote from another app, not from a 21.gifts account, and is shown because they sent bitcoin to a post. The name itself is a **View profile** button that opens `/messages/<id>/author`. This shot stays on the thread. The URL is visible as plain text — not a clickable link, no autolink, no quoted-note embed.
