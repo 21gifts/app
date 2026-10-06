@@ -2617,7 +2617,7 @@ Click **Send** with an empty composer → **Enter a message**.
 
 ### Variant: success
 
-After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence). Composer with ImagePlus attach visible. The message and send share one row; the amount sits under the message.
+After a successful send the app navigates to `/messages?c=` and shows the official **21.gifts** thread (the message body, not a dead-end thank-you sentence). Composer visible with the photo icon row (ImagePlus attach and **Take a photo**) above the message. The message and send share one row; the amount sits under the message.
 
 ![21.gifts contact success](images/contact-success.png)
 
@@ -3599,7 +3599,7 @@ List fetch failed. Button **Try again**. Chooser absent.
 
 ### Variant: thread
 
-Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible: ImagePlus, the message, and send on one row; the **Amount** field (₿ | fiat, other unit under it) on the next row. Chooser absent.
+Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible: the photo icon row (ImagePlus attach and **Take a photo**), then the message and send on one row, then the **Amount** field (₿ | fiat, other unit under it) on the next row. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
 
@@ -3641,13 +3641,13 @@ Member list. One conversation (**Bob**), gift-only last preview **₿21** (empty
 
 ### Variant: thread-gift
 
-Open official thread. fromMe gift-only bubble **send ₿21**. Composer still visible: ImagePlus on the message row, **Amount** on the row under the message. Chooser absent.
+Open official thread. fromMe gift-only bubble **send ₿21**. Composer still visible: the photo icon row (ImagePlus attach and **Take a photo**) above the message row, **Amount** on the row under the message. Chooser absent.
 
 ![21.gifts inbox thread gift](images/messages-thread-gift.png)
 
 ### Variant: thread-text-sats
 
-Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visible: ImagePlus on the message row, **Amount** on the row under the message.
+Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visible: the photo icon row (ImagePlus attach and **Take a photo**) above the message row, **Amount** on the row under the message.
 
 ![21.gifts inbox thread text sats](images/messages-thread-text-sats.png)
 
