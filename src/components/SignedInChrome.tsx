@@ -63,10 +63,13 @@ export function SignedInChrome(): ReactElement {
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
   const [menuLift, setMenuLift] = useState(0);
+  const [menuBox, setMenuBox] = useState<{ top: number; left: number; width: number } | null>(null);
   const tightRef = useRef(false);
   const menuLiftRef = useRef(0);
+  const menuBoxRef = useRef(menuBox);
   tightRef.current = tight;
   menuLiftRef.current = menuLift;
+  menuBoxRef.current = menuBox;
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
@@ -148,19 +151,25 @@ export function SignedInChrome(): ReactElement {
         menuLiftRef.current = 0;
         setMenuLift(0);
       }
+      if (menuBoxRef.current !== null) {
+        menuBoxRef.current = null;
+        setMenuBox(null);
+      }
       return;
     }
     const measure = (): void => {
-      const panel = menuRef.current;
+      // A node that has left the document is not a box anyone can see.
+      const panel = document.getElementById('signed-in-menu');
       if (panel === null) {
         return;
       }
       const limit = window.innerHeight + 1;
       const rect = panel.getBoundingClientRect();
       const applied = menuLiftRef.current;
-      // The rect already includes translateY. Add the lift back to read the unshifted box.
-      const naturalBottom = rect.bottom + applied;
-      const naturalTop = rect.top + applied;
+      const fixed = panel.classList.contains('fixed');
+      // A fixed box is already shifted. Add the lift back. An absolute box is natural.
+      const naturalBottom = rect.bottom + (fixed ? applied : 0);
+      const naturalTop = rect.top + (fixed ? applied : 0);
       const currentTight = tightRef.current;
       // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
       const nextTight =
@@ -169,17 +178,39 @@ export function SignedInChrome(): ReactElement {
           : currentTight && naturalBottom <= limit - 48
             ? false
             : currentTight;
+      // Wait until the compact absolute box is on screen, then pin that measurement.
+      if (nextTight !== currentTight) {
+        tightRef.current = nextTight;
+        setTight(nextTight);
+        return;
+      }
       // A second scroll is forbidden. Lift only as far as the top still stays in the window.
       const overflow = Math.ceil(naturalBottom - limit);
       const room = Math.max(0, Math.floor(naturalTop));
       const nextLift = nextTight && overflow > 0 ? Math.min(overflow, room) : 0;
-      if (nextTight !== currentTight) {
-        tightRef.current = nextTight;
-        setTight(nextTight);
-      }
+      const nextBox =
+        nextLift > 0
+          ? {
+              top: Math.round(naturalTop - nextLift),
+              left: Math.round(rect.left),
+              width: Math.round(rect.width),
+            }
+          : null;
+      const previous = menuBoxRef.current;
+      const sameBox =
+        (nextBox === null && previous === null) ||
+        (nextBox !== null &&
+          previous !== null &&
+          previous.top === nextBox.top &&
+          previous.left === nextBox.left &&
+          previous.width === nextBox.width);
       if (nextLift !== applied) {
         menuLiftRef.current = nextLift;
         setMenuLift(nextLift);
+      }
+      if (!sameBox) {
+        menuBoxRef.current = nextBox;
+        setMenuBox(nextBox);
       }
     };
     measure();
@@ -220,13 +251,18 @@ export function SignedInChrome(): ReactElement {
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
   // A tall wide menu drops its outer spacing. Rows stay at least 44px. If it still
-  // passes the window, the panel moves up until its bottom sits on the window,
-  // and no further than a top of 0. It does not scroll.
+  // passes the window, the panel becomes a fixed overlay whose measured top, left,
+  // and width keep the bottom on the window and never use a negative top. It does not
+  // scroll. The trigger stays above that panel so Menu still receives the click
+  // that closes it.
+  const lifted = !narrow && menuBox !== null;
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
-    : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
-      : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
+    : lifted
+      ? `fixed z-50 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      : tight
+        ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+        : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
     <div ref={setRootEl} className="relative">
@@ -240,7 +276,7 @@ export function SignedInChrome(): ReactElement {
         onClick={() => {
           setOpen((current) => !current);
         }}
-        className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg"
+        className="relative z-[60] inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg"
       >
         <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         {t('aria.menu')}
@@ -252,7 +288,11 @@ export function SignedInChrome(): ReactElement {
               id="signed-in-menu"
               ref={menuRef}
               className={panelClass}
-              style={menuLift > 0 ? { transform: `translateY(-${String(menuLift)}px)` } : undefined}
+              style={
+                lifted && menuBox !== null
+                  ? { top: menuBox.top, left: menuBox.left, width: menuBox.width }
+                  : undefined
+              }
             >
               <Link
                 href="/welcome"

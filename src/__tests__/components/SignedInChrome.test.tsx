@@ -1158,14 +1158,205 @@ describe('SignedInChrome', () => {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
-      expect(panel.className).toContain('mt-0');
+      expect(panel.className).not.toContain('mt-0');
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('min-h-8');
-      expect(panel.style.transform).toBe('translateY(-33px)');
+      expect(panel.className).toContain('fixed');
+      expect(panel.className).not.toContain('absolute');
+      expect(panel.style.top).toBe('39px');
+      expect(panel.style.transform).toBe('');
       expect(panel.querySelector('a')?.className).toContain('min-h-11');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
+      expect(screen.getByRole('button', { name: 'Menu' }).className).toContain('relative');
+      expect(screen.getByRole('button', { name: 'Menu' }).className).toContain('z-[60]');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('measures a lifted wide menu again and keeps an unchanged box', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    let fixedLeft = 100;
+    let fixedWidth = 288;
+    let fixedTop = 39;
+    let fixedBottom = 721;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const menu = this.id === 'signed-in-menu';
+      const fixed = menu && this.classList.contains('fixed');
+      const compact = menu && this.className.includes('mt-0');
+      const naturalTop = compact ? 72 : 80;
+      const naturalBottom = compact ? 754 : 794;
+      const top = fixed ? fixedTop : menu ? naturalTop : 0;
+      const bottom = fixed ? fixedBottom : menu ? naturalBottom : 0;
+      const left = fixed ? fixedLeft : 100;
+      const width = fixed ? fixedWidth : 288;
+      return {
+        x: left,
+        y: top,
+        top,
+        left,
+        right: left + width,
+        width,
+        height: bottom - top,
+        bottom,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      const current = useAuthStore.getState().account;
+      if (current === null) {
+        throw new Error('expected account');
+      }
+      useAuthStore.setState({ account: { ...current, role: 'moderator' } });
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('fixed');
+      expect(panel.style.top).toBe('39px');
+      expect(panel.style.left).toBe('100px');
+      expect(panel.style.width).toBe('288px');
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.style.top).toBe('39px');
+      expect(panel.style.left).toBe('100px');
+      expect(panel.style.width).toBe('288px');
+      fixedWidth = 200;
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.style.width).toBe('200px');
+      expect(panel.style.left).toBe('100px');
+      fixedLeft = 12;
+      fixedWidth = 288;
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.style.left).toBe('12px');
+      expect(panel.style.width).toBe('288px');
+      fixedTop = 50;
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.style.top).toBe('50px');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('clears a lifted wide menu when Menu closes it', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const menu = this.id === 'signed-in-menu';
+      const lifted = /^translateY\(-(\d+)px\)$/.exec(menu ? this.style.transform : '');
+      const lift = lifted === null ? 0 : Number(lifted[1]);
+      const compact = menu && this.className.includes('mt-0');
+      const naturalTop = compact ? 72 : 80;
+      const naturalBottom = compact ? 754 : 794;
+      return {
+        x: 0,
+        y: naturalTop - lift,
+        top: menu ? naturalTop - lift : 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: menu ? naturalBottom - lift : 0,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      const current = useAuthStore.getState().account;
+      if (current === null) {
+        throw new Error('expected account');
+      }
+      useAuthStore.setState({ account: { ...current, role: 'moderator' } });
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(panel.className).toContain('fixed');
+      expect(panel.style.top).toBe('39px');
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      expectMenuClosed();
+      expect(panel.className).not.toContain('fixed');
+      expect(panel.style.top).toBe('');
+      expect(panel.className).toContain('mt-2');
+      expect(panel.className).not.toContain('mt-0');
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('does not measure a wide menu that has left the document', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      const menu = this.id === 'signed-in-menu';
+      const lifted = /^translateY\(-(\d+)px\)$/.exec(menu ? this.style.transform : '');
+      const lift = lifted === null ? 0 : Number(lifted[1]);
+      const compact = menu && this.className.includes('mt-0');
+      const naturalTop = compact ? 72 : 80;
+      const naturalBottom = compact ? 754 : 794;
+      return {
+        x: 0,
+        y: naturalTop - lift,
+        top: menu ? naturalTop - lift : 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: menu ? naturalBottom - lift : 0,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      const current = useAuthStore.getState().account;
+      if (current === null) {
+        throw new Error('expected account');
+      }
+      useAuthStore.setState({ account: { ...current, role: 'moderator' } });
+      renderWithLocale(<SignedInChrome />);
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      const parent = panel.parentElement;
+      expect(panel.style.top).toBe('39px');
+      panel.remove();
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 2000 });
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(panel.style.top).toBe('39px');
+      if (parent !== null) {
+        parent.appendChild(panel);
+      }
     } finally {
       if (previousInnerHeight === undefined) {
         delete (window as { innerHeight?: number }).innerHeight;
@@ -1204,9 +1395,10 @@ describe('SignedInChrome', () => {
       renderWithLocale(<SignedInChrome />);
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
-      expect(panel.className).toContain('mt-0');
+      expect(panel.className).toContain('fixed');
       expect(panel.className).not.toContain('overflow-y-auto');
-      expect(panel.style.transform).toBe('translateY(-10px)');
+      expect(panel.style.top).toBe('0px');
+      expect(panel.style.transform).toBe('');
       expect(panel.querySelector('a')?.className).toContain('min-h-11');
     } finally {
       if (previousInnerHeight === undefined) {
