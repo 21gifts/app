@@ -413,6 +413,21 @@ describe('connectWallet', () => {
     expect(useWalletStore.getState().status).toBe('locked');
   });
 
+  it('refreshWallet reads plainly by default and after a sync when asked', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    connection.getInfo.mockClear();
+    connection.getInfo.mockResolvedValueOnce({ balanceSats: 40, identityPubkey: IDENTITY });
+    await refreshWallet();
+    expect(connection.getInfo).toHaveBeenLastCalledWith();
+    expect(useWalletStore.getState().balanceSats).toBe(40);
+    connection.getInfo.mockResolvedValueOnce({ balanceSats: 45, identityPubkey: IDENTITY });
+    await refreshWallet({ ensureSynced: true });
+    expect(connection.getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    expect(useWalletStore.getState().balanceSats).toBe(45);
+  });
+
   it('refresh rejection sets error and disconnects', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = createFakeSdk();

@@ -4381,15 +4381,6 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-insufficient');
   });
 
-  test('state /welcome reaction-wallet-pay-received', async ({ page }) => {
-    const sheet = await openReactionWalletPay(page, 'wallet-pay-received');
-    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
-    await shotScreen(page, 'state-welcome-reaction-wallet-pay-received');
-  });
-
   test('state /welcome reaction-wallet-pay-unconfirmed', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-unconfirmed');
     await expect(
@@ -14556,14 +14547,6 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-repay-wallet-pay-insufficient');
   });
 
-  test('state /welcome repay-wallet-pay-received', async ({ page }) => {
-    await openRepayWalletPay(page, 'wallet-pay-received');
-    const slot = page.getByText('Bitcoin received — paying…');
-    await expect(slot).toBeVisible();
-    await slot.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-wallet-pay-received');
-  });
-
   test('state /welcome repay-wallet-pay-unconfirmed', async ({ page }) => {
     await openRepayWalletPay(page, 'wallet-pay-unconfirmed');
     const slot = page.getByText(
@@ -16766,7 +16749,8 @@ test.describe('welcome forum variants', () => {
 
   test('welcome composer-wallet-pay-confirm', async ({ page }) => {
     await openComposerWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Pay ₿1 and post/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-wallet-pay-confirm');
   });
 
@@ -16783,12 +16767,6 @@ test.describe('welcome forum variants', () => {
     ).toBeVisible();
     await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await shotScreen(page, 'state-welcome-composer-wallet-pay-insufficient');
-  });
-
-  test('welcome composer-wallet-pay-received', async ({ page }) => {
-    await openComposerWalletPay(page, 'wallet-pay-received');
-    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
-    await shotScreen(page, 'state-welcome-composer-wallet-pay-received');
   });
 
   test('welcome composer-wallet-pay-unconfirmed', async ({ page }) => {
@@ -17140,12 +17118,6 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-insufficient');
-  });
-
-  test('welcome wallet-pay-received', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-received');
-    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
-    await shotScreen(page, 'state-welcome-wallet-pay-received');
   });
 
   test('welcome wallet-pay-failed', async ({ page }) => {
@@ -20510,12 +20482,6 @@ test.describe('inbox screens', () => {
     ).toBeVisible();
     await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
     await shotScreen(page, 'state-messages-thread-wallet-pay-insufficient');
-  });
-
-  test('messages thread-wallet-pay-received', async ({ page }) => {
-    await openInboxWalletPay(page, 'wallet-pay-received');
-    await expect(page.getByText('Bitcoin received — paying…')).toBeVisible();
-    await shotScreen(page, 'state-messages-thread-wallet-pay-received');
   });
 
   test('messages thread-wallet-pay-unconfirmed', async ({ page }) => {
