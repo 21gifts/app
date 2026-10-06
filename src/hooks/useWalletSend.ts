@@ -11,10 +11,11 @@ import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
-import type { WalletPayRequest, WalletTarget } from '@/lib/wallet/wallet-sdk';
+import type { OnchainSpeed, WalletPayRequest, WalletTarget } from '@/lib/wallet/wallet-sdk';
 import {
   parseWalletInput,
   payFromWallet,
+  type WalletOnchainFees,
   type WalletSendResult,
 } from '@/lib/wallet/wallet-service';
 
@@ -40,7 +41,6 @@ function walletCanSend(): boolean {
  * - `notPayable`: the api does not read this address as one it can pay.
  * - `notFound`: the receiver's server does not know this address.
  * - `relayUnreachable`: the receiver's server did not answer the api.
- * - `onchain`: a base-chain Bitcoin address, not supported yet.
  * - `unsupported`: recognised but not payable from this wallet.
  * - `insufficient`: the balance does not cover amount and fee.
  * - `failed`: prepare or send failed, or the wallet had no connection when the
@@ -52,7 +52,6 @@ export type WalletSendError =
   | 'notPayable'
   | 'notFound'
   | 'relayUnreachable'
-  | 'onchain'
   | 'unsupported'
   | 'insufficient'
   | 'failed';
@@ -79,9 +78,32 @@ export type WalletSendLnurlTarget = Extract<WalletTarget, { type: 'lnurl' }> & {
   member?: string;
 };
 
+/**
+ * Base-chain address that still needs an amount. `minSats` is the smallest
+ * amount the SDK sends to it, once a prepare refused a smaller one.
+ */
+export type WalletSendOnchainTarget = Extract<WalletTarget, { type: 'onchain' }> & {
+  minSats?: number;
+};
+
 /** Receiver that still needs an amount. */
 export type WalletSendAmountTarget =
-  Extract<WalletTarget, { type: 'request' }> | WalletSendLnurlTarget | WalletSendRelayTarget;
+  | Extract<WalletTarget, { type: 'request' }>
+  | WalletSendLnurlTarget
+  | WalletSendRelayTarget
+  | WalletSendOnchainTarget;
+
+/**
+ * Speed choice on the confirm step of a payment to a base-chain address:
+ * the fee of each speed, the largest fee the balance covers, the chosen
+ * speed, and `renewed` when the quote expired and this is the new one.
+ */
+export interface WalletSendOnchain extends WalletOnchainFees {
+  /** Chosen speed; `feeSats` of the confirm step is its fee. */
+  speed: OnchainSpeed;
+  /** Set when an expired quote was replaced by this one; nothing was sent. */
+  renewed?: true;
+}
 
 /** Step of the `/wallet` send flow. */
 export type WalletSendState =
@@ -93,7 +115,14 @@ export type WalletSendState =
       /** Set when the receiver refused the comment as too long. */
       commentError?: true;
     }
-  | { step: 'confirm'; recipient: string; amountSats: number; feeSats: number }
+  | {
+      step: 'confirm';
+      recipient: string;
+      amountSats: number;
+      feeSats: number;
+      /** Speed choice when the payment goes to a base-chain address. */
+      onchain?: WalletSendOnchain;
+    }
   | { step: 'sent'; amountSats: number; recipient: string };
 
 /** State and actions of the `/wallet` send flow. */
@@ -118,6 +147,13 @@ export interface UseWalletSendResult {
    * @param sats - Whole sats from the amount field, or `null` when it cannot be read.
    */
   submitAmount: (sats: number | null) => void;
+  /**
+   * Chooses the speed of a payment to a base-chain address on the confirm
+   * step. A speed whose fee the balance does not cover is ignored.
+   *
+   * @param speed - The speed to send with.
+   */
+  setSpeed: (speed: OnchainSpeed) => void;
   /** Sends the confirmed payment once. */
   confirm: () => void;
   /**
@@ -150,7 +186,44 @@ export const WALLET_SEND_VISUAL_FIXTURE = {
   fixedAmountSats: 7_000,
   fixedFeeSats: 3,
   memberRecipient: 'alice@21.gifts',
+  onchainAddress: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+  onchainRecipient: 'bc1qar0srr…wf5mdq',
+  onchainAmountSats: 50_000,
+  onchainMinSats: 294,
+  onchainFees: { fast: 2_840, medium: 1_420, slow: 710 },
+  onchainSpendableFeeSats: 950_000,
+  onchainLowSpendableFeeSats: 2_000,
 } as const;
+
+/** Options of one prepare in {@link useWalletSend}. */
+interface PrepareOptions {
+  /** Amount the prepared payment must have, or the result counts as failed. */
+  expectedSats?: number;
+  /** Runs instead of the input alert when the result fails (but not when the balance is too low). */
+  fallback?: () => void;
+  /** Base-chain address whose amount step reopens when the SDK refuses the amount as too small. */
+  onchainTarget?: WalletSendOnchainTarget;
+  /** Speed chosen before the quote expired; set only when renewing a quote. */
+  renewSpeed?: OnchainSpeed;
+}
+
+/** The last prepare that opened the confirm step, kept to renew an expired quote. */
+interface PreparedSend {
+  request: WalletPayRequest;
+  recipient: string;
+  options: PrepareOptions;
+}
+
+/**
+ * Speed shown first on the confirm step of a payment to a base-chain
+ * address: medium when the balance covers its fee, otherwise slow.
+ *
+ * @param fees - Fees per speed and the largest fee the balance covers.
+ * @returns The default speed.
+ */
+function defaultSpeed(fees: WalletOnchainFees): OnchainSpeed {
+  return fees.fees.medium <= fees.spendableFeeSats ? 'medium' : 'slow';
+}
 
 /**
  * Recipient shown for a receiver read from `text`: the Lightning address
@@ -203,6 +276,28 @@ function visualState(name: string | null): WalletSendState | null {
     amountSats: null,
     recipient: fixture.requestRecipient,
   };
+  const onchainTarget: WalletSendOnchainTarget = {
+    type: 'onchain',
+    address: fixture.onchainAddress,
+    amountSats: null,
+    recipient: fixture.onchainRecipient,
+  };
+  const onchainConfirm = (
+    speed: OnchainSpeed,
+    spendableFeeSats: number,
+    renewed: boolean,
+  ): WalletSendState => ({
+    step: 'confirm',
+    recipient: fixture.onchainRecipient,
+    amountSats: fixture.onchainAmountSats,
+    feeSats: fixture.onchainFees[speed],
+    onchain: {
+      fees: { ...fixture.onchainFees },
+      spendableFeeSats,
+      speed,
+      ...(renewed ? { renewed: true as const } : {}),
+    },
+  });
   switch (name) {
     case 'send-input':
     case 'send-input-busy':
@@ -255,10 +350,25 @@ function visualState(name: string | null): WalletSendState | null {
         amountSats: fixture.amountSats,
         feeSats: fixture.feeSats,
       };
+    case 'send-amount-onchain':
+      return { step: 'amount', target: onchainTarget, amountError: false };
+    case 'send-amount-onchain-min':
+      return {
+        step: 'amount',
+        target: { ...onchainTarget, minSats: fixture.onchainMinSats },
+        amountError: true,
+      };
+    case 'send-confirm-onchain':
+    case 'send-confirm-onchain-sending':
+      return onchainConfirm('medium', fixture.onchainSpendableFeeSats, false);
+    case 'send-confirm-onchain-fast':
+      return onchainConfirm('fast', fixture.onchainSpendableFeeSats, false);
+    case 'send-confirm-onchain-low':
+      return onchainConfirm('medium', fixture.onchainLowSpendableFeeSats, false);
+    case 'send-confirm-onchain-renewed':
+      return onchainConfirm('medium', fixture.onchainSpendableFeeSats, true);
     case 'send-sent':
       return { step: 'sent', amountSats: fixture.amountSats, recipient: fixture.recipient };
-    case 'send-onchain':
-      return { step: 'input', error: 'onchain' };
     case 'send-unsupported':
       return { step: 'input', error: 'unsupported' };
     case 'send-invalid':
@@ -288,6 +398,9 @@ function visualState(name: string | null): WalletSendState | null {
  * @returns Smallest and largest whole sats.
  */
 export function walletSendBounds(target: WalletSendAmountTarget): { min: number; max: number } {
+  if (target.type === 'onchain') {
+    return { min: target.minSats ?? 1, max: Number.MAX_SAFE_INTEGER };
+  }
   if (target.type !== 'request') {
     return { min: target.minSats, max: target.maxSats };
   }
@@ -352,7 +465,10 @@ export function useWalletSend(): UseWalletSendResult {
   const [pinBusy, setPinBusy] = useState(false);
   const [text, setTextState] = useState('');
   const [comment, setComment] = useState('');
-  const sendRef = useRef<(() => Promise<WalletSendResult>) | null>(null);
+  const [pinSpeed, setPinSpeed] = useState<OnchainSpeed | null>(null);
+  const sendRef = useRef<((speed?: OnchainSpeed) => Promise<WalletSendResult>) | null>(null);
+  const preparedRef = useRef<PreparedSend | null>(null);
+  const sendingRef = useRef(false);
   const generation = useRef(0);
   const pin = visualName();
   const pinned = visualState(pin);
@@ -376,7 +492,7 @@ export function useWalletSend(): UseWalletSendResult {
     if ((state.step === 'input' && !busy) || state.step === 'sent') {
       return;
     }
-    if (state.step === 'confirm' && busy) {
+    if (state.step === 'confirm' && busy && sendingRef.current) {
       return;
     }
     generation.current += 1;
@@ -396,15 +512,14 @@ export function useWalletSend(): UseWalletSendResult {
    * Prepares `request` and opens the confirm step. A result that is not the
    * expected amount, or that fails, runs `fallback` when given (a balance
    * that is too low still shows that alert), otherwise returns to the input
-   * with an alert.
+   * with an alert. An amount the SDK refuses as below its minimum for a
+   * base-chain address reopens the amount step with that minimum. A payment
+   * to a base-chain address opens with `renewSpeed` when the balance covers
+   * it (marked `renewed`), otherwise with {@link defaultSpeed}.
    */
   const prepare = useCallback(
-    (
-      request: WalletPayRequest,
-      recipient: string,
-      expectedSats?: number,
-      fallback?: () => void,
-    ): void => {
+    (request: WalletPayRequest, recipient: string, options: PrepareOptions = {}): void => {
+      const { expectedSats, fallback, onchainTarget, renewSpeed } = options;
       const run = generation.current;
       setBusy(true);
       void payFromWallet(request).then((result) => {
@@ -417,11 +532,40 @@ export function useWalletSend(): UseWalletSendResult {
         ) {
           setBusy(false);
           sendRef.current = result.send;
+          preparedRef.current = { request, recipient, options };
+          const fees = result.onchain;
+          if (fees === undefined) {
+            setState({
+              step: 'confirm',
+              recipient,
+              amountSats: result.amountSats,
+              feeSats: result.feeSats,
+            });
+            return;
+          }
+          const speed =
+            renewSpeed !== undefined && fees.fees[renewSpeed] <= fees.spendableFeeSats
+              ? renewSpeed
+              : defaultSpeed(fees);
           setState({
             step: 'confirm',
             recipient,
             amountSats: result.amountSats,
-            feeSats: result.feeSats,
+            feeSats: fees.fees[speed],
+            onchain: {
+              ...fees,
+              speed,
+              ...(renewSpeed === undefined ? {} : { renewed: true as const }),
+            },
+          });
+          return;
+        }
+        if (result.kind === 'belowMinimum' && onchainTarget !== undefined) {
+          setBusy(false);
+          setState({
+            step: 'amount',
+            target: { ...onchainTarget, minSats: result.minSats },
+            amountError: true,
           });
           return;
         }
@@ -463,7 +607,9 @@ export function useWalletSend(): UseWalletSendResult {
             if (run !== generation.current || !walletCanSend()) {
               return;
             }
-            prepare({ type: 'input', input: invoice.pr }, target.recipient, sats);
+            prepare({ type: 'input', input: invoice.pr }, target.recipient, {
+              expectedSats: sats,
+            });
           },
           (error: unknown) => {
             if (run !== generation.current || !walletCanSend()) {
@@ -516,7 +662,16 @@ export function useWalletSend(): UseWalletSendResult {
             lightning();
             return;
           }
-          prepare({ type: 'input', input: sparkInvoice }, target.recipient, sats, lightning);
+          prepare({ type: 'input', input: sparkInvoice }, target.recipient, {
+            expectedSats: sats,
+            fallback: lightning,
+          });
+        });
+        return;
+      }
+      if (target.type === 'onchain') {
+        prepare({ type: 'input', input: target.address, amountSats: sats }, target.recipient, {
+          onchainTarget: target,
         });
         return;
       }
@@ -530,7 +685,7 @@ export function useWalletSend(): UseWalletSendResult {
    * bounds are one amount (a point-of-sale charge): then no message is sent.
    */
   const askAmount = useCallback(
-    (target: Exclude<WalletSendAmountTarget, { type: 'request' }>): void => {
+    (target: Exclude<WalletSendAmountTarget, { type: 'request' | 'onchain' }>): void => {
       setComment('');
       if (target.minSats === target.maxSats) {
         payAmount(target, target.minSats, '');
@@ -610,9 +765,23 @@ export function useWalletSend(): UseWalletSendResult {
           return;
         }
         const target = parsed.target;
-        if (target.type === 'onchain' || target.type === 'unsupported') {
+        if (target.type === 'unsupported') {
           setBusy(false);
-          setState({ step: 'input', error: target.type });
+          setState({ step: 'input', error: 'unsupported' });
+          return;
+        }
+        if (target.type === 'onchain') {
+          if (target.amountSats !== null) {
+            prepare(
+              { type: 'input', input: target.address, amountSats: target.amountSats },
+              target.recipient,
+              { onchainTarget: { ...target, amountSats: null } },
+            );
+            return;
+          }
+          setBusy(false);
+          setComment('');
+          setState({ step: 'amount', target, amountError: false });
           return;
         }
         if (target.type === 'lnurl') {
@@ -653,14 +822,12 @@ export function useWalletSend(): UseWalletSendResult {
         readWithWallet(charge.kind === 'none' ? shop : null);
         return;
       }
-      prepare(
-        { type: 'input', input: charge.sparkInvoice },
-        shop.address,
-        charge.amountSats,
-        () => {
+      prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, {
+        expectedSats: charge.amountSats,
+        fallback: () => {
           readWithWallet(null);
         },
-      );
+      });
     });
   }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount]);
 
@@ -691,13 +858,28 @@ export function useWalletSend(): UseWalletSendResult {
     }
     sendRef.current = null;
     const { amountSats, recipient } = state;
+    const speed = state.onchain?.speed;
     const run = generation.current;
     setBusy(true);
-    void send().then((result) => {
+    sendingRef.current = true;
+    void send(speed).then((result) => {
+      sendingRef.current = false;
       if (run !== generation.current) {
         return;
       }
+      const last = preparedRef.current;
+      if (result.kind === 'expired' && last !== null && walletCanSend()) {
+        prepare(last.request, last.recipient, {
+          ...last.options,
+          renewSpeed: speed ?? 'medium',
+        });
+        return;
+      }
       setBusy(false);
+      if (result.kind === 'expired') {
+        setState({ step: 'input', error: null });
+        return;
+      }
       if (result.kind === 'paid') {
         setTextState('');
         setComment('');
@@ -709,7 +891,42 @@ export function useWalletSend(): UseWalletSendResult {
         error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
       });
     });
-  }, [inert, ready, busy, state]);
+  }, [inert, ready, busy, state, prepare]);
+
+  const setSpeed = useCallback(
+    (speed: OnchainSpeed): void => {
+      const pinnedNow = visualState(pin);
+      if (pinnedNow !== null) {
+        if (
+          pinnedNow.step === 'confirm' &&
+          pinnedNow.onchain !== undefined &&
+          pin !== 'send-confirm-onchain-sending' &&
+          pinnedNow.onchain.fees[speed] <= pinnedNow.onchain.spendableFeeSats
+        ) {
+          setPinSpeed(speed);
+        }
+        return;
+      }
+      if (busy) {
+        return;
+      }
+      setState((current) => {
+        if (
+          current.step !== 'confirm' ||
+          current.onchain === undefined ||
+          current.onchain.fees[speed] > current.onchain.spendableFeeSats
+        ) {
+          return current;
+        }
+        return {
+          ...current,
+          feeSats: current.onchain.fees[speed],
+          onchain: { ...current.onchain, speed },
+        };
+      });
+    },
+    [pin, busy],
+  );
 
   const cancel = useCallback((): boolean => {
     if (inert || state.step === 'input') {
@@ -725,15 +942,30 @@ export function useWalletSend(): UseWalletSendResult {
     return true;
   }, [inert, state.step, busy]);
 
+  const shown =
+    pinned !== null &&
+    pinned.step === 'confirm' &&
+    pinned.onchain !== undefined &&
+    pinSpeed !== null
+      ? {
+          ...pinned,
+          feeSats: pinned.onchain.fees[pinSpeed],
+          onchain: { ...pinned.onchain, speed: pinSpeed },
+        }
+      : pinned;
   return {
-    state: pinned ?? state,
-    busy: pinned === null ? busy : pin === 'send-confirm-sending' || pinBusy,
+    state: shown ?? state,
+    busy:
+      pinned === null
+        ? busy
+        : pin === 'send-confirm-sending' || pin === 'send-confirm-onchain-sending' || pinBusy,
     text,
     setText,
     comment,
     setComment,
     submitInput,
     submitAmount,
+    setSpeed,
     confirm,
     cancel,
   };
