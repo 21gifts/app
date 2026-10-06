@@ -8,6 +8,7 @@ import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { PosHistory } from '@/components/PosHistory';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
@@ -440,7 +441,9 @@ function usePosTillState(): PosTillState {
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
  * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel,
  * and asks every few seconds whether it is paid. A paid charge shows
- * **Paid ✓**, bitcoin, fiat, and **New payment** (to `/pos/amount`).
+ * **Paid ✓**, bitcoin, fiat, and **New payment** (to `/pos/amount`). Under
+ * that, once the till has loaded, {@link PosHistory} lists the past charges
+ * from the same answer, so the list changes whenever the till reloads.
  *
  * @returns The point-of-sale card.
  */
@@ -533,6 +536,13 @@ export function PosTill(): ReactElement {
         <p role="alert" className="text-center text-sm text-app-danger">
           {till.error}
         </p>
+      ) : null}
+      {till.state !== null ? (
+        <PosHistory
+          history={till.state.history}
+          openChargeId={till.charge?.id ?? null}
+          rateDay={till.rateDay}
+        />
       ) : null}
     </Card>
   );

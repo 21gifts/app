@@ -9310,6 +9310,129 @@ test('Function: PosTill — an open charge turns into Paid ✓ and New payment o
   await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
 });
 
+test('Function: PosHistory — the till list gains the charge once it is paid', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const earlier = {
+    id: 'pos-earlier',
+    amountSats: 500,
+    status: 'expired',
+    createdAt: '2026-09-19T08:30:00.000Z',
+    expiresAt: '2026-09-19T08:35:00.000Z',
+    paidAt: null,
+  };
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  };
+  let loads = 0;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    loads += 1;
+    const charge =
+      loads === 1 ? open : { ...open, status: 'paid', paidAt: new Date().toISOString() };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [charge, earlier] }),
+    });
+  });
+  await page.goto('/pos');
+  const history = page.getByRole('region', { name: 'History' });
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(history.getByRole('listitem')).toHaveCount(1);
+  await expect(history.getByText('Expired')).toBeVisible();
+  await expect(history.getByText(/^Paid ✓ /)).toBeVisible({ timeout: 10_000 });
+  await expect(history.getByRole('listitem')).toHaveCount(2);
+  await expect(history.getByRole('listitem').first()).toContainText('₿21');
+});
+
+test('Function: PosHistory — Cancel puts the charge in the list as Cancelled', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  };
+  let cancelled = false;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'DELETE') {
+      cancelled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    const body = cancelled
+      ? { charge: null, history: [{ ...open, status: 'cancelled' }] }
+      : { charge: open, history: [open] };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+  await page.goto('/pos');
+  const history = page.getByRole('region', { name: 'History' });
+  await expect(history.getByText('No payments yet.')).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(history.getByText('Cancelled')).toBeVisible();
+  await expect(history.getByText('₿21')).toBeVisible();
+  await expect(history.getByText('No payments yet.')).toHaveCount(0);
+});
+
 test('Function: proxyPosGet — GET /pos/charge without bearer is 401', async ({ request }) => {
   expect((await request.get('/pos/charge')).status()).toBe(401);
 });

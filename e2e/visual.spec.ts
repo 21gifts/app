@@ -6175,6 +6175,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
+    await expect(page.getByText('No payments yet.')).toBeVisible();
     await page.getByRole('link', { name: 'Set an amount' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'screen-pos');
   });
@@ -6273,7 +6274,8 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('5:00 left')).toBeVisible();
     await expect(page.getByText('$0.02')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'History' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'History' })).toBeVisible();
+    await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-open');
   });
 
@@ -6328,7 +6330,83 @@ test.describe('onboarding screens', () => {
     );
     await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
+    await expect(page.getByText('Paid ✓ 12:00 PM')).toBeVisible();
     await shotScreen(page, 'state-pos-paid');
+  });
+
+  test('state /pos history', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:10:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: null,
+          history: [
+            {
+              id: 'pos-paid',
+              amountSats: 2_100,
+              status: 'paid',
+              createdAt: '2026-09-20T12:00:00.000Z',
+              expiresAt: '2026-09-20T12:05:00.000Z',
+              paidAt: '2026-09-20T12:00:40.000Z',
+            },
+            {
+              id: 'pos-expired',
+              amountSats: 500,
+              status: 'expired',
+              createdAt: '2026-09-19T08:30:00.000Z',
+              expiresAt: '2026-09-19T08:35:00.000Z',
+              paidAt: null,
+            },
+            {
+              id: 'pos-cancelled',
+              amountSats: 42,
+              status: 'cancelled',
+              createdAt: '2026-09-18T17:45:00.000Z',
+              expiresAt: '2026-09-18T17:50:00.000Z',
+              paidAt: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    const history = page.getByRole('region', { name: 'History' });
+    await expect(history.getByRole('listitem')).toHaveCount(3);
+    await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
+    await expect(history.getByText('$2.10')).toBeVisible();
+    await expect(history.getByText('Expired')).toBeVisible();
+    await expect(history.getByText('Cancelled')).toBeVisible();
+    await expect(history.getByText('Sep 18, 2026, 5:45 PM')).toBeVisible();
+    await expect(page.getByText('No payments yet.')).toHaveCount(0);
+    await history.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-history');
   });
 
   test('pos loading', async ({ page }) => {
@@ -7009,6 +7087,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto('/pos');
     await expect(page.getByRole('link', { name: 'Set a username first.' })).toBeVisible();
+    await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-need-username');
   });
 
@@ -7045,6 +7124,7 @@ test.describe('onboarding screens', () => {
       'href',
       '/wallet',
     );
+    await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-need-wallet');
   });
 

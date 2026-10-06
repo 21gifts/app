@@ -3301,29 +3301,35 @@ Verify POST in flight. **Yes** disabled with a spinner; **No** disabled. The nam
 
 ## Screen: /pos
 
-- **Purpose:** Signed-in point of sale. With no charge, this page is only the Open CryptoPay QR and **Set an amount**. The keypad is `/pos/amount`. Confirming there returns here. The button is then **Cancel**, with the countdown and the amount in bitcoin and fiat. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount. A payer who scans the QR with the in-app wallet (`/wallet`, **Send**) goes straight to confirming that amount, with this member's address as the recipient; there is no amount to type. A payer whose 21.gifts in-app wallet scans the QR (or pastes this address) pays the charge with a Spark invoice the api issues for it, without a fee; any other wallet pays over Lightning. While the charge is open, and for one minute after it ran out, the page asks `GET /pos/charge` every three seconds (a payment the api confirms just after the end still counts); once the api has seen the payment, the charge is `paid` and the page shows **Paid ✓**, the amount in bitcoin and fiat, and **New payment**, without **Cancel**. The api keeps showing a paid charge for one minute. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. The member's own wallet receives the payment. A missing username links to `/profile`; with a username but no verified wallet (`sparkWalletVerified`), **Set up your wallet first.** links to `/wallet`. The api answers a charge with 400 and `code` `wallet_required` when the wallet is not set up, or `cannot_receive` when it cannot receive; the page shows **Set up your wallet first.** or **Your wallet cannot receive this payment right now. Please try again later.**
-- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, centered truncated address, Open CryptoPay QR, content-width **Set an amount** when no charge is open, otherwise the open charge (countdown, including 0:00, bitcoin, default fiat when a gift-day rate exists, and **Cancel**), or the paid charge (**Paid ✓**, bitcoin, default fiat when a gift-day rate exists, and **New payment**). No keypad on this page.
+- **Purpose:** Signed-in point of sale. With no charge, this page is only the Open CryptoPay QR and **Set an amount**. The keypad is `/pos/amount`. Confirming there returns here. The button is then **Cancel**, with the countdown and the amount in bitcoin and fiat. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount. A payer who scans the QR with the in-app wallet (`/wallet`, **Send**) goes straight to confirming that amount, with this member's address as the recipient; there is no amount to type. A payer whose 21.gifts in-app wallet scans the QR (or pastes this address) pays the charge with a Spark invoice the api issues for it, without a fee; any other wallet pays over Lightning. While the charge is open, and for one minute after it ran out, the page asks `GET /pos/charge` every three seconds (a payment the api confirms just after the end still counts); once the api has seen the payment, the charge is `paid` and the page shows **Paid ✓**, the amount in bitcoin and fiat, and **New payment**, without **Cancel**. The api keeps showing a paid charge for one minute. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. The member's own wallet receives the payment. Under the QR and the charge, **History** lists past charges, newest first: **Paid ✓** with the time it was paid, **Expired**, or **Cancelled**, the amount in bitcoin and fiat, and the date and time the charge was created. The list comes with every till answer, so it changes when the open charge is paid, cancelled, or runs out. Without past charges it says **No payments yet.** The api returns at most its newest 20 charges, and the list shows those. A missing username links to `/profile`; with a username but no verified wallet (`sparkWalletVerified`), **Set up your wallet first.** links to `/wallet`. The api answers a charge with 400 and `code` `wallet_required` when the wallet is not set up, or `cannot_receive` when it cannot receive; the page shows **Set up your wallet first.** or **Your wallet cannot receive this payment right now. Please try again later.**
+- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, centered truncated address, Open CryptoPay QR, content-width **Set an amount** when no charge is open, otherwise the open charge (countdown, including 0:00, bitcoin, default fiat when a gift-day rate exists, and **Cancel**), or the paid charge (**Paid ✓**, bitcoin, default fiat when a gift-day rate exists, and **New payment**). Below, once the till has loaded, a top border and the **History** section (`PosHistory`): small uppercase heading, then muted rounded rows (status left, bitcoin · fiat right, creation date and time under them), or one centered sentence when empty. No keypad on this page.
 - **Actions:** **Set an amount** and **New payment** open `/pos/amount`. **Cancel** clears the charge. Menu row `pos.nav`.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
 - **Used by:** Route `/pos`.
 
 ### Variant: default
 
-Signed-in Ada with a username and a verified wallet, no open charge. Heading **Point of sale**, address `alice@21.gifts`, Open CryptoPay QR, and **Set an amount**. No keypad. Desktop, iPad, and smartphone all show the QR.
+Signed-in Ada with a username and a verified wallet, no open charge and no past charge. Heading **Point of sale**, address `alice@21.gifts`, Open CryptoPay QR, **Set an amount**, and **History** with **No payments yet.** No keypad. Desktop, iPad, and smartphone all show the QR.
 
 ![21.gifts point of sale](images/pos.png)
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the default fiat under it, and **Cancel** stay up. The amount form is gone. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the default fiat under it, and **Cancel** stay up. The amount form is gone. The open charge is not in **History**, which says **No payments yet.** Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale open](images/pos-open.png)
 
 ### Variant: paid
 
-Signed-in Ada whose charge of ₿21 the api has marked paid. **Paid ✓** in green, the sat amount, the default fiat under it, and **New payment** (to `/pos/amount`). No countdown, no **Cancel**, and no **Set an amount**. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada whose charge of ₿21 the api has marked paid. **Paid ✓** in green, the sat amount, the default fiat under it, and **New payment** (to `/pos/amount`). No countdown, no **Cancel**, and no **Set an amount**. **History** lists that charge as **Paid ✓ 12:00 PM** with ₿21 and its fiat. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale paid](images/pos-paid.png)
+
+### Variant: history
+
+Signed-in Ada with no open charge and three past charges, scrolled to **History**: **Paid ✓ 12:00 PM** in green with ₿2’100 and $2.10, then **Expired** with ₿500, then **Cancelled** with ₿42, each with the date and time it was created, newest first. **Set an amount** stays above.
+
+![21.gifts point of sale history](images/pos-history.png)
 
 ### Variant: loading
 

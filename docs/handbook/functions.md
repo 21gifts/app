@@ -32,8 +32,15 @@
 
 - **Purpose:** The QR card on `/pos` only. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, content-width **Set an amount** linking to `/pos/amount` when no charge is open, otherwise the open charge (countdown, including 0:00, sat amount, default fiat when a gift-day rate exists, and Cancel) until the server returns no charge. While that charge is open, and for one minute after it ran out (the api still marks a payment confirmed after the end as paid, and shows a paid charge for one minute), it asks `fetchPosState` every three seconds, also after the refresh at expiry returned no charge; a failed poll is dropped and the next one tries again. Cancel stops asking. A charge the api returns as `paid` shows **Paid ✓** (`role="status"`), the sat amount, default fiat when a gift-day rate exists, and **New payment** linking to `/pos/amount`, without Cancel, countdown, or **Set an amount**; the poll stops. A slower refresh cannot replace a newer create or cancel, and an older till read that answers late cannot replace a newer one (such as a paid charge). No keypad on this card. The wallet does not mount this card. Without a username it shows **Set a username first.** linking to `/profile`. With a username but no verified in-app wallet (`sparkWalletVerified` not true) it shows **Set up your wallet first.** linking to `/wallet`, and **Set an amount** stays hidden; charging needs both a username and a verified wallet.
 - **Inputs:** None. Reads the auth store.
-- **Returns / side effects:** React element. Calls `fetchPosState` and `cancelPosCharge`.
+- **Returns / side effects:** React element. Calls `fetchPosState` and `cancelPosCharge`. Once the till has loaded, renders `PosHistory` under the card's other content with the `history` of the latest till answer, so the list changes with every answer the till applies: the poll that sees the charge paid, the reload after Cancel, and the refresh at expiry.
 - **Used by:** `PosScreen`.
+
+## Function: PosHistory
+
+- **Purpose:** Past till charges under the `/pos` QR and charge, newest first, as the api returns them. Heading **History**. Each row: the status (**Paid ✓** with the local time it was paid, in green; **Paid ✓** alone when the api sent no valid `paidAt`; **Expired**; or **Cancelled**), the amount in bitcoin with the default fiat from the latest gift-day rate, and the date and time the charge was created. The open charge is shown above the list and is left out of it. Any other `pending` row is shown as **Expired**, because the api has at most one open charge and returns it as `charge`. With no past charge: **No payments yet.** The api returns at most its newest 20 charges; the list shows what it returns and has no paging.
+- **Inputs:** `history` (`PosCharge[]` from `GET /pos/charge`), `openChargeId` (the charge shown as open above, or `null`), `rateDay` (latest gift-day rate, or `null`; without it each row is bitcoin only).
+- **Returns / side effects:** A section named **History**. No I/O.
+- **Used by:** `PosTill`.
 
 ## Function: resetPosTillWriteForTests
 

@@ -1962,6 +1962,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:history",
+    "label": "/pos history",
+    "visual": "state-pos-history",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:loading",
     "label": "/pos loading",
     "visual": "state-pos-loading",
