@@ -31,7 +31,7 @@ export interface PhraseSource {
  * Outcome of an unlock ceremony that re-derives the tab phrase from the seed
  * passkey.
  */
-export type WalletUnlockResult = 'unlocked' | 'cancelled' | 'failed';
+export type WalletUnlockResult = 'unlocked' | 'cancelled' | 'noPrf' | 'failed';
 
 /**
  * True when the account can unlock the in-app wallet with its seed passkey.
@@ -136,7 +136,8 @@ let unlockInFlight: Promise<WalletUnlockResult> | null = null;
  * login started from its own prompt has finished.
  *
  * @returns `'unlocked'` on success, `'cancelled'` when the visitor dismisses
- * the ceremony, otherwise `'failed'`.
+ * the ceremony, `'noPrf'` when the passkey answered without PRF output (this
+ * phone or browser cannot hold the wallet), otherwise `'failed'`.
  */
 export function unlockWalletPhrase(): Promise<WalletUnlockResult> {
   if (unlockInFlight === null) {
@@ -162,6 +163,9 @@ async function runUnlockCeremony(): Promise<WalletUnlockResult> {
     const prfFirst = await obtainPrfFirstFromGet(
       Uint8Array.from(base64UrlToBytes(account.passkeyCredentialId)),
     );
+    if (prfFirst === null) {
+      return 'noPrf';
+    }
     const remembered = await rememberPhraseFromPrf({
       prfFirst,
       credentialId: account.passkeyCredentialId,

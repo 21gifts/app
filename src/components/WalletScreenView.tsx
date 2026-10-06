@@ -317,6 +317,7 @@ export function WalletScreenView({
               balanceSats={wallet.balanceSats}
               onUnlock={wallet.unlock}
               onRetry={wallet.retry}
+              prfUnsupported={wallet.prfUnsupported}
             />
           </div>
         )}

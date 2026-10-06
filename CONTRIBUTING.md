@@ -379,6 +379,7 @@ app/
 │   ├── login.spec.ts            # /login single Log in button + signed-in forms
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
+│   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
 │   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
 │   ├── wallet-setup.spec.ts     # Wallet setup dialog, payments list, username freeze, address proxies
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
@@ -755,7 +756,6 @@ Every listed variant **must** have, in the **same PR**:
 Default screen shots use the `screen-…` args; extra states use `state-…` args.
 Every variant needs all four `BASELINE_COMBOS`.
 
-Adding a screen or UI state without updating the baselines in the **same PR**
 A screenshot pin (`?visual=…`, the `e2e-now` session value, or any other
 switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
@@ -767,6 +767,7 @@ Do not add a second mechanism. A production build must ignore every pin, and a
 unit test proves that for each new pin. A pin honoured in a deployed build is
 an undeclared deviation.
 
+Adding a screen or UI state without updating the baselines in the **same PR**
 is rejected. `npm run screenshot:check` (and CI) fails when a PNG is missing or
 a variant has no matching shot in `e2e/visual.spec.ts`. It also fails when an
 unexpected PNG sits under `e2e/visual.spec.ts-snapshots/` (not a screen or

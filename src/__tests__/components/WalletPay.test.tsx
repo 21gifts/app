@@ -67,6 +67,20 @@ describe('WalletPay', () => {
     expect(hook.pay).not.toHaveBeenCalled();
   });
 
+  it('says this phone or browser cannot hold a wallet and Try again retries', () => {
+    const hook = hookWith('prfUnsupported');
+    renderPay();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    );
+    expect(
+      screen.queryByText('Your wallet could not prepare this payment. Please try again.'),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(hook.retry).toHaveBeenCalledTimes(1);
+    expect(hook.unlock).not.toHaveBeenCalled();
+  });
+
   it('offers Unlock and pay with the amount and its fiat as the only button', () => {
     const hook = hookWith('unlock');
     renderPay();

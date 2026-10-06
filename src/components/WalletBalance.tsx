@@ -20,12 +20,16 @@ export interface WalletBalanceProps {
   onUnlock: () => void;
   /** Called by the labeled retry control. */
   onRetry: () => void;
+  /** In `error`, true when this phone or browser cannot hold the wallet (no PRF). */
+  prfUnsupported?: boolean;
 }
 
 /**
  * Wallet balance block for locked, connecting, ready, and error states. The
  * ready balance is a large ₿ figure; when the default fiat has a usable rate,
- * tapping it swaps which of ₿ and fiat is the large figure.
+ * tapping it swaps which of ₿ and fiat is the large figure. An error from a
+ * passkey without PRF output says that this phone or browser cannot hold a
+ * 21.gifts wallet instead of the generic open error.
  *
  * @param props - Wallet state and labeled control callbacks.
  * @returns The balance region, or `null` while the wallet feature is disabled.
@@ -35,6 +39,7 @@ export function WalletBalance({
   balanceSats,
   onUnlock,
   onRetry,
+  prfUnsupported = false,
 }: WalletBalanceProps): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -95,7 +100,7 @@ export function WalletBalance({
     body = (
       <>
         <p role="alert" className="text-center text-sm text-app-danger">
-          {t('wallet.balanceError')}
+          {t(prfUnsupported ? 'wallet.prfUnsupported' : 'wallet.balanceError')}
         </p>
         <Button onClick={onRetry}>{t('login.retry')}</Button>
       </>

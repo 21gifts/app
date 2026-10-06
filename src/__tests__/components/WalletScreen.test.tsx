@@ -17,6 +17,7 @@ const { walletState, useWalletMock } = vi.hoisted(() => {
     balanceSats: null,
     unlock: vi.fn(),
     retry: vi.fn(),
+    prfUnsupported: false,
   };
   return { walletState: state, useWalletMock: vi.fn((): UseWalletResult => state) };
 });
@@ -126,7 +127,7 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(screen.getByText(/cannot create a recovery phrase/i)).toBeTruthy();
+    expect(screen.getByText(/cannot hold a 21\.gifts wallet/i)).toBeTruthy();
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
   });
