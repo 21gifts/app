@@ -101,7 +101,8 @@ function appendUnseenMessages(
  * prepends unique older pages.
  * Prepending keeps the loaded thread visible and does not toggle its loading
  * state; {@link InboxScreen} stays pinned while stuck to the bottom.
- * Open Direct / Contact / Damus threads attach JPEG/PNG/WebP stills via
+ * Open Direct / Contact / Damus threads attach JPEG/PNG/WebP gallery stills or
+ * camera photos via
  * {@link prepareForumPhoto} (cap 10); photo-only send is allowed. Thread stills
  * load via {@link fetchConversationMessagePhoto} (no fetch without a session).
  * Blob URLs are revoked on unmount, when leaving a thread, and on session loss.

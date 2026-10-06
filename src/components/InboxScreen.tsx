@@ -261,7 +261,7 @@ export interface InboxScreenProps {
   /** Latest gift-day totals for unpaid invoice previews, or `null` without a usable rate. */
   rateDay?: FiatRateDay | null;
   /**
-   * Show the ImagePlus attach control and photo drafts. Default false for
+   * Show the ImagePlus attach control, the camera, and photo drafts. Default false for
    * callers that omit it; InboxLoader passes true on an open thread; the
    * staff room still passes true.
    */
