@@ -664,7 +664,11 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    json(res, 200, { messageId: COMPOSE_TARGET.id, sats: COMPOSE_TARGET.sats });
+    json(res, 200, {
+      messageId: COMPOSE_TARGET.id,
+      sats: COMPOSE_TARGET.sats,
+      firstPostFree: false,
+    });
     return;
   }
 
