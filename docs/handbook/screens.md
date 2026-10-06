@@ -1102,9 +1102,15 @@ Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, repayment i
 
 ### Variant: repay-wallet-pay-insufficient
 
-Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
 
 ![21.gifts welcome repay wallet pay insufficient](images/welcome-repay-wallet-pay-insufficient.png)
+
+### Variant: repay-wallet-pay-received
+
+Pinned fixture (`?visual=wallet-pay-received`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: a spinner and **Bitcoin received — paying…**. The slot shows it when Bitcoin arrives after the member's own pay tap ended at too little balance, while it prepares and pays on its own.
+
+![21.gifts welcome repay wallet pay received](images/welcome-repay-wallet-pay-received.png)
 
 ### Variant: repay-wallet-pay-unconfirmed
 
@@ -1654,9 +1660,15 @@ Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, invoice wit
 
 ### Variant: reaction-wallet-pay-insufficient
 
-Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
 
 ![21.gifts welcome reaction wallet pay insufficient](images/welcome-reaction-wallet-pay-insufficient.png)
+
+### Variant: reaction-wallet-pay-received
+
+Pinned fixture (`?visual=wallet-pay-received`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: a spinner and **Bitcoin received — paying…**, with **Waiting for payment…** under it. The slot shows it when Bitcoin arrives after the member's own pay tap ended at too little balance, while it prepares and pays on its own.
+
+![21.gifts welcome reaction wallet pay received](images/welcome-reaction-wallet-pay-received.png)
 
 ### Variant: reaction-wallet-pay-unconfirmed
 
@@ -2071,9 +2083,15 @@ Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, posting-fee
 
 ### Variant: composer-wallet-pay-insufficient
 
-Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
 
 ![21.gifts welcome composer wallet pay insufficient](images/welcome-composer-wallet-pay-insufficient.png)
+
+### Variant: composer-wallet-pay-received
+
+Pinned fixture (`?visual=wallet-pay-received`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: a spinner and **Bitcoin received — paying…**. The slot shows it when Bitcoin arrives after the member's own **Unlock and pay** or **Pay from wallet** ended at too little balance, while it prepares and pays on its own; a fee above ₿0 stops at the fee and **Pay from wallet**.
+
+![21.gifts welcome composer wallet pay received](images/welcome-composer-wallet-pay-received.png)
 
 ### Variant: composer-wallet-pay-unconfirmed
 
@@ -2119,9 +2137,15 @@ Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only). Spinner an
 
 ### Variant: wallet-pay-insufficient
 
-Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only). Alert **Your wallet does not have enough Bitcoin for this payment.**, then the member's own 21.gifts address and its Open CryptoPay QR to add Bitcoin (shown on a smartphone too, like the `/wallet` QR).
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only). Alert **Your wallet does not have enough Bitcoin for this payment.**, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR to add Bitcoin (shown on a smartphone too, like the `/wallet` QR).
 
 ![21.gifts welcome wallet pay insufficient](images/welcome-wallet-pay-insufficient.png)
+
+### Variant: wallet-pay-received
+
+Pinned fixture (`?visual=wallet-pay-received`, Playwright builds only). Spinner and **Bitcoin received — paying…**, with **Waiting for payment…** under it. The slot shows it when Bitcoin arrives after the member's own **Unlock and pay** or **Pay from wallet** ended at `insufficient`: it prepares again and pays at once when the fee is ₿0, or stops at the fee and **Pay from wallet** when it is higher. A slot the member closed, a changed invoice or amount, or an `insufficient` the member never tapped into never pays on its own.
+
+![21.gifts welcome wallet pay received](images/welcome-wallet-pay-received.png)
 
 ### Variant: wallet-pay-failed
 
@@ -4351,9 +4375,15 @@ Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, invoice wit
 
 ### Variant: thread-wallet-pay-insufficient
 
-Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then the member's own 21.gifts address and its Open CryptoPay QR.
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
 
 ![21.gifts inbox thread wallet pay insufficient](images/messages-thread-wallet-pay-insufficient.png)
+
+### Variant: thread-wallet-pay-received
+
+Pinned fixture (`?visual=wallet-pay-received`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: a spinner and **Bitcoin received — paying…**, with **Waiting for payment…** under it. The slot shows it when Bitcoin arrives after the member's own pay tap ended at too little balance, while it prepares and pays on its own.
+
+![21.gifts inbox thread wallet pay received](images/messages-thread-wallet-pay-received.png)
 
 ### Variant: thread-wallet-pay-unconfirmed
 

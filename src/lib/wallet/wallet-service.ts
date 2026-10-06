@@ -365,7 +365,8 @@ export interface WalletOnchainFees {
  *   base-chain address also carries `onchain`, and `feeSats` is its medium
  *   speed; `send` then takes the chosen speed.
  * - `insufficient`: the balance does not cover amount and fee (for a
- *   base-chain address: amount and the lowest fee).
+ *   base-chain address: amount and the lowest fee); `feeSats` is that fee
+ *   when the prepare succeeded and only the balance fell short.
  * - `belowMinimum`: the SDK refused the amount as below the smallest it sends
  *   to this address; `minSats` is that smallest amount.
  * - `failed`: prepare or the balance read failed, or the connection changed
@@ -380,7 +381,7 @@ export type WalletPayResult =
       onchain?: WalletOnchainFees;
       send: (speed?: OnchainSpeed) => Promise<WalletSendResult>;
     }
-  | { kind: 'insufficient' }
+  | { kind: 'insufficient'; feeSats?: number }
   | { kind: 'belowMinimum'; minSats: number }
   | { kind: 'failed' }
   | { kind: 'unlock' };
@@ -519,7 +520,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
       balanceSats = useWalletStore.getState().balanceSats ?? info.balanceSats;
     }
     if (balanceSats < amountSats + lowestFeeSats) {
-      return { kind: 'insufficient' };
+      return { kind: 'insufficient', feeSats: lowestFeeSats };
     }
     spendableFeeSats = balanceSats - amountSats;
   } catch {
