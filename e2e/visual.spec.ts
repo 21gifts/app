@@ -2249,6 +2249,19 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-confirm-onchain-fast');
   });
 
+  test('wallet send-confirm-onchain-slow', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-confirm-onchain-slow');
+    await openWalletSend(page);
+    await expect(page.getByRole('button', { name: /^Slow/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('Fee ₿710 · $0.71', { exact: true })).toBeVisible();
+    await expect(page.getByText("Total ₿50'710 · $50.71", { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-confirm-onchain-slow');
+  });
+
   test('wallet send-confirm-onchain-low', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-confirm-onchain-low');

@@ -480,6 +480,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-confirm-onchain-slow',
+    image: 'wallet-send-confirm-onchain-slow.png',
+    visual: 'state-wallet-send-confirm-onchain-slow',
+    needle: "shotScreen(page, 'state-wallet-send-confirm-onchain-slow')",
+  },
+  {
+    route: '/wallet',
     id: 'send-confirm-onchain-low',
     image: 'wallet-send-confirm-onchain-low.png',
     visual: 'state-wallet-send-confirm-onchain-low',

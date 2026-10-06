@@ -350,6 +350,12 @@ Pinned fixture (`?visual=send-confirm-onchain-fast`, Playwright builds only). Th
 
 ![21.gifts wallet send confirm onchain fast](images/wallet-send-confirm-onchain-fast.png)
 
+### Variant: send-confirm-onchain-slow
+
+Pinned fixture (`?visual=send-confirm-onchain-slow`, Playwright builds only). The same confirm step after pressing **Slow**: that row is pressed, and **Fee ₿710 · $0.71** and **Total ₿50'710 · $50.71**.
+
+![21.gifts wallet send confirm onchain slow](images/wallet-send-confirm-onchain-slow.png)
+
 ### Variant: send-confirm-onchain-low
 
 Pinned fixture (`?visual=send-confirm-onchain-low`, Playwright builds only). The confirm step when the balance covers at most a ₿2'000 fee: **Fast** is disabled and says **Balance too low**; **Medium** stays pressed.
