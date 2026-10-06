@@ -621,8 +621,9 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * is \> 0 and unpaid is not selected; omitted when `modeSelector` is false or
  * `composerHidden` is true), composer under the mode
  * filters above the newest-first list (new notes only; Post/Ask pill;
- * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
- * feed) or empty/loading/error, per-card expand for oldest-first replies +
+ * Post is a photo icon row (attach, camera, place) above text + send, Ask is
+ * the four-step wizard), newest-first list (social feed) or
+ * empty/loading/error, per-card expand for oldest-first replies +
  * reply composer (amount and the bitcoin/fiat switch on one line, text and
  * send on the next; reply money is `ReplyDirectionAmounts`: gift-only rows
  * use `forum.giftReply`, text-plus-gift shows the bare amount under the
