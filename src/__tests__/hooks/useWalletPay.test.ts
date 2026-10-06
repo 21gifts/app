@@ -524,6 +524,62 @@ describe('useWalletPay one tap unlock and pay', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('stops at confirm after a top-up when the amount changed while insufficient showed', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    setWallet('locked');
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({ kind: 'insufficient' })
+      .mockResolvedValueOnce({ kind: 'insufficient' })
+      .mockResolvedValueOnce({ kind: 'confirm', amountSats: 42, feeSats: 0, send });
+    const { result, rerender } = renderHook(({ amount }) => useWalletPay(SPARK, PR, amount), {
+      initialProps: { amount: 21 },
+    });
+    await unlockToReady(result);
+    expect(result.current.view).toBe('insufficient');
+    await act(async () => {
+      rerender({ amount: 42 });
+    });
+    expect(result.current.view).toBe('insufficient');
+    await act(async () => {
+      setWallet('ready', 50_000);
+    });
+    expect(result.current.view).toBe('confirm');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('pays nothing when the wallet locks while the top-up is prepared', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    let finish: (value: WalletPayResult) => void = () => undefined;
+    setWallet('locked');
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({ kind: 'insufficient' })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(confirmWith(send));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await unlockToReady(result);
+    await act(async () => {
+      setWallet('ready', 50_000);
+    });
+    expect(result.current.view).toBe('received');
+    await act(async () => {
+      setWallet('locked', null);
+    });
+    expect(result.current.view).toBe('unlock');
+    await act(async () => {
+      finish(confirmWith(send));
+    });
+    expect(send).not.toHaveBeenCalled();
+    await act(async () => {
+      setWallet('ready', 50_000);
+    });
+    expect(result.current.view).toBe('confirm');
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it('stops at confirm after a top-up when Try again or a locked wallet dropped the tap', async () => {
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     setWallet('locked');
