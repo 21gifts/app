@@ -12,7 +12,8 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Blocking one-time wallet setup, in the style of the passkey renew dialog.
  * Intro with **Set up wallet**, a progress line, an error with **Try again**,
- * or the message that this passkey cannot hold a wallet. No dismiss control;
+ * or `wallet.prfUnsupported` (this phone or browser cannot hold a 21.gifts
+ * wallet). No dismiss control;
  * **Log out** is the only way around it.
  *
  * Mount only when `needsWalletSetup` holds (or a screenshot pin is set).
