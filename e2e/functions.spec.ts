@@ -2574,9 +2574,8 @@ test('Function: requestForumCompose — Write an introduction focuses the welcom
   await expect(page.getByLabel('Your message')).toBeFocused();
 });
 
-test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcome without the dialog', async ({
-  page,
-}) => {
+/** A finished member who has not posted yet; the forum list and the till are empty. */
+async function stubMemberWithoutPost(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -2589,6 +2588,7 @@ test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcom
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        username: 'ada',
         location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
@@ -2604,7 +2604,7 @@ test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcom
     });
   });
   await page.route(/\/messages(?:\?|$)/, async (route) => {
-    if (route.request().method() !== 'GET') {
+    if (route.request().method() !== 'GET' || route.request().resourceType() === 'document') {
       await route.continue();
       return;
     }
@@ -2614,57 +2614,65 @@ test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcom
       body: JSON.stringify({ messages: [] }),
     });
   });
-  await page.goto('/profile');
-  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+}
+
+test('Function: consumeSkipIntroduceOverlay — after Write an introduction the next screen uses the skip, and the forum asks again', async ({
+  page,
+}) => {
+  await stubMemberWithoutPost(page);
+  await page.goto('/welcome');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  await expect(intro).toBeVisible();
   await page.getByRole('button', { name: 'Write an introduction' }).click();
+  await expect(intro).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('link', { name: 'Wallet', exact: true }).click();
+  await expect(page).toHaveURL(/\/wallet$/);
+  await expect(intro).toHaveCount(0);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
   await expect(page).toHaveURL(/\/welcome$/);
-  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toHaveCount(0);
+  await expect(intro).toBeVisible();
 });
 
-test('Function: consumePendingForumCompose — CTA from profile focuses the welcome composer after navigation', async ({
+test('Function: consumePendingForumCompose — Write an introduction on the forum focuses the composer', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: null,
-        missing: [],
-        hasPosted: false,
-      }),
-    });
-  });
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/profile');
+  await stubMemberWithoutPost(page);
+  await page.goto('/welcome');
   await page.getByRole('button', { name: 'Write an introduction' }).click();
   await expect(page).toHaveURL(/\/welcome$/);
   await expect(page.getByLabel('Your message')).toBeFocused();
+});
+
+test('introduce dialog never covers the wallet, its Send and Receive, or the profile after onboarding', async ({
+  page,
+}) => {
+  await stubMemberWithoutPost(page);
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Receive' }).click();
+  await expect(page.getByText('ada@21.gifts')).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/wallet/phrase');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/messages');
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/welcome');
+  await expect(intro).toBeVisible();
 });
 
 test('Function: MemberProfileScreen — public card shows About me, copy-profile-link, and Message', async ({

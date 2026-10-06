@@ -51,11 +51,12 @@ import { useAuthStore } from '@/stores/auth-store';
  * (the host has the page's `px-8` inset) and the page underneath is hidden.
  * A wide menu that cannot fit even with its top on the window uses that same
  * sheet, so the one page scrollport reaches every row. It does not grow a
- * second scroll. When onboarding
- * is complete and `hasPosted` is false, also mounts
- * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
- * introduce CTA skips the overlay once so a remount after navigating to
- * `/welcome` does not show it again.
+ * second scroll. On the
+ * forum home (`/welcome`) only, when onboarding is complete and `hasPosted` is
+ * false, also mounts {@link IntroduceYourselfOverlay}; it never covers
+ * `/wallet`, the point of sale, the profile, messages, setup, or any other
+ * screen. Close dismisses this mount only; the introduce CTA skips the overlay
+ * once, so the next mount does not show it again.
  *
  * @returns The signed-in Menu chrome.
  */
@@ -85,6 +86,7 @@ export function SignedInChrome(): ReactElement {
   const scroller = useAppShellScroller();
   const { unreadCount, inboxUnreadCount, moderationUnreadCount } = useUnreadCount(open);
   const showIntroduce =
+    pathname === '/welcome' &&
     account !== null &&
     account.setup === null &&
     account.hasPosted === false &&

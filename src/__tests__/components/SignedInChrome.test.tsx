@@ -761,7 +761,8 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('shows the introduce overlay when onboarding is done and hasPosted is false', () => {
+  it('shows the introduce overlay on /welcome when onboarding is done and hasPosted is false', () => {
+    navigation.pathname = '/welcome';
     const account = useAuthStore.getState().account;
     if (account === null) {
       throw new Error('expected account');
@@ -797,7 +798,33 @@ describe('SignedInChrome', () => {
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
   });
 
+  it.each([
+    '/wallet',
+    '/wallet/phrase',
+    '/pos',
+    '/pos/amount',
+    '/profile',
+    '/messages',
+    '/messages/msg-1',
+    '/setup/name',
+    '/setup/username',
+    '/setup/rules',
+    '/notifications',
+    '/shops',
+  ])('never shows the introduce overlay over %s', (path) => {
+    navigation.pathname = path;
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: false } });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+  });
+
   it('dismisses the introduce overlay for this mount', () => {
+    navigation.pathname = '/welcome';
     const account = useAuthStore.getState().account;
     if (account === null) {
       throw new Error('expected account');
@@ -824,6 +851,7 @@ describe('SignedInChrome', () => {
   });
 
   it('does not show the introduce overlay after requestForumCompose on a fresh mount', () => {
+    navigation.pathname = '/welcome';
     const account = useAuthStore.getState().account;
     if (account === null) {
       throw new Error('expected account');

@@ -698,7 +698,7 @@ Glyph: `aria-hidden` on the lucide node.
 
 **Anatomy.** Full-viewport scrim `fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4`. Panel is catalog `Card maxWidth="sm"` (`rounded-3xl border border-app-border bg-app-card p-8 shadow-sm`, `gap-6`). Close is `IconButton` ghost. `role="dialog"` `aria-modal="true"`.
 
-**Introduce yourself.** Title, body, labeled `Button` CTA **Write an introduction**. The CTA dismisses the overlay, focuses the welcome composer (`FORUM_COMPOSE_EVENT` / `requestForumCompose`), and `router.push('/welcome')` only when the path is not already `/welcome`. Close dismisses this mount. No Skip.
+**Introduce yourself.** Only on the forum home (`/welcome`); never over `/wallet`, `/wallet/*`, `/pos*`, `/profile*`, `/messages*`, the setup flow, or any other screen. Title, body, labeled `Button` CTA **Write an introduction**. The CTA dismisses the overlay and focuses the welcome composer (`FORUM_COMPOSE_EVENT` / `requestForumCompose`). Close dismisses this mount. No Skip.
 
 **Requirements.** Name, username, or living-room rules before a pending post retries; a missing wallet (api `lightning-address`, or a `wallet_required` answer on a forum gift, paid reply, posting fee, or today's repayment; the inbox shows its own **Set up your wallet first.** alert link instead) shows `requirements.walletTitle` with `requirements.walletBody` and a labeled **Open your wallet** link to `/wallet`, no form. Close dismisses without posting. No Skip. Username has no Skip.
 
@@ -1061,7 +1061,7 @@ Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** �
 - `ForumModeSelect`: one closed full-width combobox showing the selected label and ChevronDown; open listbox with a check on the selected row; unpaid count chip on the closed trigger when the count is positive and unpaid is not selected; omitted at 0 and when unpaid is selected. Not a pill grid.
 - Composer.
 - Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the gift-day rate). Top-level notes tagged `#21GiftsShop` show a `#Shop` pill (`forum.shopTag` → `/shops`) and hide the raw token. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. A moderator sees **Edit shop note** after copy on a top-level shop note, then icon-only Trash2 + inline confirm.
-- `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted.
+- `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted. No other screen shows it.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, username, or rules agreement, or explains the missing wallet.
 - `ExternalLinkWarning` (same overlay chrome, no Skip) when a visitor clicks an external http(s) URL in note, About me, or inbox text. Internal 21.gifts URLs navigate in-app with no overlay.
 
