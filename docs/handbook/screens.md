@@ -2047,7 +2047,7 @@ Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stay
 
 ### Variant: composer-wallet-pay-unlock
 
-Pinned fixture (`?visual=wallet-pay-unlock`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: one button **Unlock and pay ₿1** with the default fiat. One tap opens the wallet with one passkey prompt and pays at once when the fee is ₿0; a higher fee stops at **Fee {amount}** and **Pay from wallet**. A cancelled prompt returns to this button.
+Pinned fixture (`?visual=wallet-pay-unlock`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: one button **Unlock and pay ₿1** with the default fiat. One tap opens the wallet with one passkey prompt and pays at once when the fee is ₿0; a higher fee stops at **Fee {amount}** and **Pay ₿1 and post**. A cancelled prompt returns to this button.
 
 ![21.gifts welcome composer wallet pay unlock](images/welcome-composer-wallet-pay-unlock.png)
 

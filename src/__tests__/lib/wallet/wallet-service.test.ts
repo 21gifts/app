@@ -428,6 +428,23 @@ describe('connectWallet', () => {
     expect(useWalletStore.getState().balanceSats).toBe(45);
   });
 
+  it('refreshWallet with ignoreFailure keeps the wallet ready after a failed read, also once it is no longer the latest', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    const before = useWalletStore.getState().balanceSats;
+    connection.getInfo.mockRejectedValueOnce(new Error('sync failed'));
+    await expect(
+      refreshWallet({ ensureSynced: true, ignoreFailure: true }),
+    ).resolves.toBeUndefined();
+    expect(useWalletStore.getState().status).toBe('ready');
+    expect(useWalletStore.getState().balanceSats).toBe(before);
+    expect(connection.disconnect).not.toHaveBeenCalled();
+    connection.getInfo.mockResolvedValueOnce({ balanceSats: 99, identityPubkey: IDENTITY });
+    await refreshWallet({ ensureSynced: true, ignoreFailure: true });
+    expect(useWalletStore.getState().balanceSats).toBe(99);
+  });
+
   it('refresh rejection sets error and disconnects', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = createFakeSdk();

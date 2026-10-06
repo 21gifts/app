@@ -981,7 +981,7 @@ describe('useWalletPay balance reads while insufficient', () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
     });
     expect(refreshWallet).toHaveBeenCalledTimes(1);
-    expect(refreshWallet).toHaveBeenCalledWith({ ensureSynced: true });
+    expect(refreshWallet).toHaveBeenCalledWith({ ensureSynced: true, ignoreFailure: true });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS * 2);
     });
