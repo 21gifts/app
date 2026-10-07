@@ -333,7 +333,7 @@ describe('useHeartTip', () => {
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
     expect(vibrate).toHaveBeenCalledWith(10);
-    expect(result.current.heartTipViews.m1).toEqual({
+    expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
       alert: null,
@@ -343,7 +343,7 @@ describe('useHeartTip', () => {
     act(() => {
       vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
     });
-    expect(result.current.heartTipViews.m1).toBeUndefined();
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
     vi.useRealTimers();
   });
 
@@ -351,7 +351,7 @@ describe('useHeartTip', () => {
     Reflect.deleteProperty(navigator, 'vibrate');
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(result.current.heartTipViews.m1).toEqual({
+    expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
       alert: null,
@@ -390,7 +390,7 @@ describe('useHeartTip', () => {
     useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(result.current.heartTipViews.m1).toEqual({
+    expect(result.current.heartTipViews['m1']).toEqual({
       pressed: false,
       plusOne: false,
       alert: 'needsBalance',
@@ -402,14 +402,14 @@ describe('useHeartTip', () => {
     useAuthStore.setState({ session: null, account: HEART_ACCOUNT });
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(result.current.heartTipViews.m1).toBeUndefined();
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
   });
 
   it('does not throw when unmounted during the plusOne window', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { result, unmount } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(result.current.heartTipViews.m1).toEqual({
+    expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
       alert: null,
@@ -425,7 +425,7 @@ describe('useHeartTip', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(result.current.heartTipViews.m1).toEqual({
+    expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
       alert: null,
@@ -433,7 +433,7 @@ describe('useHeartTip', () => {
     await clickHeart(result);
     expect(postMessageInvoice).toHaveBeenCalledTimes(2);
     expect(Object.keys(result.current.heartTipViews)).toEqual(['m1']);
-    expect(result.current.heartTipViews.m1).toEqual({
+    expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
       alert: null,
