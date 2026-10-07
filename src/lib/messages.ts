@@ -1047,6 +1047,10 @@ const en = {
   'team.event.profile_opened': 'Opened a profile',
   'team.event.login': 'Logged in',
   'team.event.signup_completed': 'Opened an account',
+  'team.prop.amount': 'Amount',
+  'team.prop.count': 'Count',
+  'team.prop.reference': 'Reference',
+  'team.prop.search': 'Search text',
   'team.audit.heading': 'Access log',
   'team.audit.lead':
     "Each time a team member opened a member's wallet data or activity, newest first.",
@@ -2237,6 +2241,10 @@ const de = {
   'team.event.profile_opened': 'Profil geöffnet',
   'team.event.login': 'Angemeldet',
   'team.event.signup_completed': 'Konto eröffnet',
+  'team.prop.amount': 'Betrag',
+  'team.prop.count': 'Anzahl',
+  'team.prop.reference': 'Referenz',
+  'team.prop.search': 'Suchtext',
   'team.audit.heading': 'Zugriffsprotokoll',
   'team.audit.lead':
     'Jedes Öffnen der Wallet-Daten oder der Aktivität eines Mitglieds durch das Team, neueste zuerst.',
@@ -3406,6 +3414,10 @@ const es = {
   'team.event.profile_opened': 'Abrió un perfil',
   'team.event.login': 'Inició sesión',
   'team.event.signup_completed': 'Abrió una cuenta',
+  'team.prop.amount': 'Importe',
+  'team.prop.count': 'Cantidad',
+  'team.prop.reference': 'Referencia',
+  'team.prop.search': 'Texto de búsqueda',
   'team.audit.heading': 'Registro de accesos',
   'team.audit.lead':
     'Cada vez que alguien del equipo abrió los datos de la wallet o la actividad de un miembro, lo más reciente primero.',
@@ -4580,6 +4592,10 @@ const fil = {
   'team.event.profile_opened': 'Nagbukas ng profile',
   'team.event.login': 'Nag-log in',
   'team.event.signup_completed': 'Nagbukas ng account',
+  'team.prop.amount': 'Halaga',
+  'team.prop.count': 'Bilang',
+  'team.prop.reference': 'Reference',
+  'team.prop.search': 'Hinanap na text',
   'team.audit.heading': 'Log ng access',
   'team.audit.lead':
     'Tuwing binuksan ng isang taga-team ang data ng wallet o aktibidad ng isang miyembro, pinakabago muna.',

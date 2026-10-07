@@ -4570,7 +4570,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: TeamMemberEvents
 
-- **Purpose:** Activity tab of the member-data page. `useCursorPages` over `fetchTeamMemberEvents`; each event shows what the member did in plain words (the raw event name when the app has no label), the time, the page path, and its small values. A value whose name ends in `Sats` is a bitcoin amount and shows the default fiat beside it. Loading…, empty (**No activity yet.**), and error plus **Try again** are separate; a 403 shows the forbidden sentence.
+- **Purpose:** Activity tab of the member-data page. `useCursorPages` over `fetchTeamMemberEvents`; each event shows what the member did in plain words (the raw event name when the app has no label), the time, the page path, and the values it carried under plain-word labels: **Amount** (a whole number under a name ending in `Sats`, with the default fiat beside it), **Count**, **Reference** (an `id` or a name ending in `Id`), and **Search text** (`query` or `term`). Every other value is left out, so no field name reaches the screen. Loading…, empty (**No activity yet.**), and error plus **Try again** are separate; a 403 shows the forbidden sentence.
 - **Inputs:** `session`, `accountId`; number format, fiat preference, and catalog from providers.
 - **Returns / side effects:** React element. Fetches `GET /team/members/:id/events` pages.
 - **Used by:** `TeamMemberDataScreen`.

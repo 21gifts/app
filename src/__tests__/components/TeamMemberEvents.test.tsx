@@ -47,7 +47,19 @@ describe('TeamMemberEvents', () => {
           name: 'payment_sent',
           at: AT,
           path: '/wallet',
-          props: { amountSats: 2_100, paymentId: 'pay_1', ok: true, none: null, countSats: 'x' },
+          props: {
+            amountSats: 2_100,
+            paymentId: 'pay_1',
+            ok: true,
+            none: null,
+            countSats: 'x',
+            feeSats: -1,
+            itemCount: 3,
+            count: 1.5,
+            id: 7,
+            query: 'bread',
+            term: 4,
+          },
         },
         { name: 'screen_view', at: AT - 1, path: '', props: {} },
         { name: 'brand_new_event', at: AT - 2, path: null, props: {} },
@@ -62,11 +74,21 @@ describe('TeamMemberEvents', () => {
     expect(within(region).getByText('Opened a page')).toBeTruthy();
     expect(within(region).getByText('brand_new_event')).toBeTruthy();
     expect(within(region).getByText('/wallet')).toBeTruthy();
-    expect(within(region).getByText('amountSats').nextSibling?.textContent).toContain("₿2'100 · ");
-    expect(within(region).getByText('paymentId').nextSibling?.textContent).toBe('pay_1');
-    expect(within(region).getByText('ok').nextSibling?.textContent).toBe('true');
-    expect(within(region).getByText('none').nextSibling?.textContent).toBe('null');
-    expect(within(region).getByText('countSats').nextSibling?.textContent).toBe('x');
+    const values = Array.from(region.querySelectorAll('dl div')).map((row) => [
+      row.querySelector('dt')?.textContent,
+      row.querySelector('dd')?.textContent,
+    ]);
+    expect(values[0]?.[0]).toBe('Amount');
+    expect(values[0]?.[1]).toMatch(/^₿2'100 · /);
+    expect(values.slice(1)).toEqual([
+      ['Reference', 'pay_1'],
+      ['Count', '3'],
+      ['Reference', '7'],
+      ['Search text', 'bread'],
+    ]);
+    for (const raw of ['amountSats', 'paymentId', 'ok', 'none', 'countSats', 'feeSats', 'true']) {
+      expect(within(region).queryByText(raw)).toBeNull();
+    }
   });
 
   it('says when there is no activity', async () => {
