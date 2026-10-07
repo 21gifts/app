@@ -294,6 +294,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-manual",
+    "label": "/wallet send-manual",
+    "visual": "state-wallet-send-manual",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-paste-denied",
+    "label": "/wallet send-paste-denied",
+    "visual": "state-wallet-send-paste-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-camera-denied",
     "label": "/wallet send-camera-denied",
     "visual": "state-wallet-send-camera-denied",
@@ -498,9 +510,63 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-not-ready",
+    "label": "/wallet send-not-ready",
+    "visual": "state-wallet-send-not-ready",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-unreadable",
+    "label": "/wallet send-unreadable",
+    "visual": "state-wallet-send-unreadable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-comment-long",
     "label": "/wallet send-comment-long",
     "visual": "state-wallet-send-comment-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:default",
+    "label": "/wallet/payment default",
+    "visual": "screen-wallet-payment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:address-send",
+    "label": "/wallet/payment address-send",
+    "visual": "state-wallet-payment-address-send",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:pending",
+    "label": "/wallet/payment pending",
+    "visual": "state-wallet-payment-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:failed",
+    "label": "/wallet/payment failed",
+    "visual": "state-wallet-payment-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:deposit",
+    "label": "/wallet/payment deposit",
+    "visual": "state-wallet-payment-deposit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:withdraw",
+    "label": "/wallet/payment withdraw",
+    "visual": "state-wallet-payment-withdraw",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:missing",
+    "label": "/wallet/payment missing",
+    "visual": "state-wallet-payment-missing",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -549,30 +615,6 @@
     "id": "/settings:activate",
     "label": "/settings activate",
     "visual": "state-settings-activate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:header-wallet-balance",
-    "label": "/settings header-wallet-balance",
-    "visual": "state-settings-header-wallet-balance",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:header-wallet-locked",
-    "label": "/settings header-wallet-locked",
-    "visual": "state-settings-header-wallet-locked",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:header-wallet-balance-320",
-    "label": "/settings header-wallet-balance-320",
-    "visual": "state-settings-header-wallet-balance-320",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/settings:header-wallet-locked-320",
-    "label": "/settings header-wallet-locked-320",
-    "visual": "state-settings-header-wallet-locked-320",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -669,6 +711,36 @@
     "id": "/welcome:software-developer",
     "label": "/welcome software-developer",
     "visual": "state-welcome-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-buttons",
+    "label": "/welcome wallet-buttons",
+    "visual": "state-welcome-wallet-buttons",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive",
+    "label": "/welcome wallet-receive",
+    "visual": "state-welcome-wallet-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera",
+    "label": "/welcome wallet-send-camera",
+    "visual": "state-welcome-wallet-send-camera",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera-denied",
+    "label": "/welcome wallet-send-camera-denied",
+    "visual": "state-welcome-wallet-send-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-manual",
+    "label": "/welcome wallet-send-manual",
+    "visual": "state-welcome-wallet-send-manual",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1647,6 +1719,18 @@
     "id": "/welcome:menu-tall-sheet",
     "label": "/welcome menu-tall-sheet",
     "visual": "state-welcome-menu-tall-sheet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-loading",
+    "label": "/welcome menu-header-loading",
+    "visual": "state-welcome-menu-header-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-sheet-end",
+    "label": "/welcome menu-sheet-end",
+    "visual": "state-welcome-menu-sheet-end",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

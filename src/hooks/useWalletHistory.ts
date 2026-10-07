@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
-import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { listWalletPayments } from '@/lib/wallet/wallet-service';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -30,52 +31,6 @@ export interface UseWalletHistoryResult {
 }
 
 /**
- * Fixed rows for the `?visual=history-rows` screenshot, relative to the
- * Playwright clock.
- *
- * @param now - Pinned instant in epoch ms.
- * @returns Four payments: a received one with a note, a sent one, a pending
- * received one, and a failed sent one.
- */
-function fixturePayments(now: number): WalletPayment[] {
-  const hour = 60 * 60 * 1000;
-  return [
-    {
-      id: 'fixture-1',
-      direction: 'received',
-      amountSats: 21_000,
-      timestamp: now - 2 * hour,
-      status: 'completed',
-      senderComment: 'Thank you for the coffee',
-    },
-    {
-      id: 'fixture-2',
-      direction: 'sent',
-      amountSats: 5_000,
-      timestamp: now - 26 * hour,
-      status: 'completed',
-      senderComment: null,
-    },
-    {
-      id: 'fixture-3',
-      direction: 'received',
-      amountSats: 1_500,
-      timestamp: now - 50 * hour,
-      status: 'pending',
-      senderComment: null,
-    },
-    {
-      id: 'fixture-4',
-      direction: 'sent',
-      amountSats: 2_100,
-      timestamp: now - 74 * hour,
-      status: 'failed',
-      senderComment: null,
-    },
-  ];
-}
-
-/**
  * Screenshot pin for the payment list (`?visual=history-…`), honoured only in
  * a Playwright build (`getE2eNow()` set).
  *
@@ -86,15 +41,14 @@ function historyPin(): Pick<UseWalletHistoryResult, 'status' | 'payments'> | nul
   if (typeof window === 'undefined') {
     return null;
   }
-  const now = getE2eNow();
-  if (now === null) {
+  if (getE2eNow() === null) {
     return null;
   }
   switch (new URLSearchParams(window.location.search).get('visual')) {
     case 'history-empty':
       return { status: 'ready', payments: [] };
     case 'history-rows':
-      return { status: 'ready', payments: fixturePayments(Date.parse(now)) };
+      return { status: 'ready', payments: WALLET_PAYMENT_FIXTURES.map(toWalletPayment) };
     case 'history-error':
       return { status: 'error', payments: [] };
     default:

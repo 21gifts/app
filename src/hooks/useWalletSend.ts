@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
-import { getE2eNow } from '@/lib/config';
 import { encodeLnurl } from '@/lib/lnurl';
 import { lnurlPayAddress } from '@/lib/pay-link';
 import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
+import { visualPin } from '@/lib/visual-pin';
 import { lnurlRelayTarget, ownShop, type OwnShop } from '@/lib/wallet/lnurl-relay';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
@@ -45,6 +45,9 @@ function walletCanSend(): boolean {
  * - `insufficient`: the balance does not cover amount and fee.
  * - `failed`: prepare or send failed, or the wallet had no connection when the
  *   text was read.
+ * - `notReady`: the wallet was not ready when the text was submitted, or
+ *   stopped being ready while it was read.
+ * - `unreadable`: reading the text ended in an unexpected error.
  */
 export type WalletSendError =
   | 'invalid'
@@ -54,7 +57,9 @@ export type WalletSendError =
   | 'relayUnreachable'
   | 'unsupported'
   | 'insufficient'
-  | 'failed';
+  | 'failed'
+  | 'notReady'
+  | 'unreadable';
 
 /**
  * Lightning address or LNURL on another host, read through the api. `target`
@@ -246,25 +251,9 @@ function recipientOf(text: string, fallback: string): string {
 }
 
 /**
- * Name of the `?visual=` pin, honoured only in a Playwright build.
- *
- * @returns The pin name, or `null`.
- */
-function visualName(): string | null {
-  /* v8 ignore next 3 -- SSR has no window */
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  if (getE2eNow() === null) {
-    return null;
-  }
-  return new URLSearchParams(window.location.search).get('visual');
-}
-
-/**
  * Pinned step from `?visual=send-…`, honoured only in a Playwright build.
  *
- * @param name - Pin name from {@link visualName}.
+ * @param name - Pin name from {@link visualPin}.
  * @returns The pinned step, or `null`.
  */
 function visualState(name: string | null): WalletSendState | null {
@@ -396,6 +385,10 @@ function visualState(name: string | null): WalletSendState | null {
       return { step: 'input', error: 'notFound' };
     case 'send-relay-unreachable':
       return { step: 'input', error: 'relayUnreachable' };
+    case 'send-not-ready':
+      return { step: 'input', error: 'notReady' };
+    case 'send-unreadable':
+      return { step: 'input', error: 'unreadable' };
     default:
       return null;
   }
@@ -487,7 +480,7 @@ export function useWalletSend(): UseWalletSendResult {
   const sendingRef = useRef(false);
   const [sending, setSending] = useState(false);
   const generation = useRef(0);
-  const pin = visualName();
+  const pin = visualPin();
   const pinned = visualState(pin);
   const inert = pinned !== null || (pin !== null && /^(balance|history|send)-/.test(pin));
   const status = useWalletStore((store) => store.status);
@@ -515,7 +508,8 @@ export function useWalletSend(): UseWalletSendResult {
     generation.current += 1;
     sendRef.current = null;
     setBusy(false);
-    setState({ step: 'input', error: null });
+    // A text still being read gets an alert instead of a silent return to the input.
+    setState({ step: 'input', error: state.step === 'input' ? 'notReady' : null });
   }, [inert, ready, state.step, busy]);
 
   const setText = useCallback((value: string): void => {
@@ -523,6 +517,16 @@ export function useWalletSend(): UseWalletSendResult {
     setState((current) =>
       current.step === 'input' && current.error !== null ? { step: 'input', error: null } : current,
     );
+  }, []);
+
+  /**
+   * Ends a run whose handler threw unexpectedly with one plain alert on the
+   * input step. The handler already passed its own staleness check, and the
+   * throw reaches this in the next microtask, so no Cancel lands in between.
+   */
+  const failRun = useCallback((error: WalletSendError): void => {
+    setBusy(false);
+    setState({ step: 'input', error });
   }, []);
 
   /**
@@ -539,65 +543,69 @@ export function useWalletSend(): UseWalletSendResult {
       const { expectedSats, fallback, onchainTarget, renewSpeed } = options;
       const run = generation.current;
       setBusy(true);
-      void payFromWallet(request).then((result) => {
-        if (run !== generation.current || !walletCanSend()) {
-          return;
-        }
-        if (
-          result.kind === 'confirm' &&
-          (expectedSats === undefined || result.amountSats === expectedSats)
-        ) {
-          setBusy(false);
-          sendRef.current = result.send;
-          preparedRef.current = { request, recipient, options };
-          const fees = result.onchain;
-          if (fees === undefined) {
+      void payFromWallet(request)
+        .then((result) => {
+          if (run !== generation.current || !walletCanSend()) {
+            return;
+          }
+          if (
+            result.kind === 'confirm' &&
+            (expectedSats === undefined || result.amountSats === expectedSats)
+          ) {
+            setBusy(false);
+            sendRef.current = result.send;
+            preparedRef.current = { request, recipient, options };
+            const fees = result.onchain;
+            if (fees === undefined) {
+              setState({
+                step: 'confirm',
+                recipient,
+                amountSats: result.amountSats,
+                feeSats: result.feeSats,
+              });
+              return;
+            }
+            const speed =
+              renewSpeed !== undefined && fees.fees[renewSpeed] <= fees.spendableFeeSats
+                ? renewSpeed
+                : defaultSpeed(fees);
             setState({
               step: 'confirm',
               recipient,
               amountSats: result.amountSats,
-              feeSats: result.feeSats,
+              feeSats: fees.fees[speed],
+              onchain: {
+                ...fees,
+                speed,
+                ...(renewSpeed === undefined ? {} : { renewed: true as const }),
+              },
             });
             return;
           }
-          const speed =
-            renewSpeed !== undefined && fees.fees[renewSpeed] <= fees.spendableFeeSats
-              ? renewSpeed
-              : defaultSpeed(fees);
-          setState({
-            step: 'confirm',
-            recipient,
-            amountSats: result.amountSats,
-            feeSats: fees.fees[speed],
-            onchain: {
-              ...fees,
-              speed,
-              ...(renewSpeed === undefined ? {} : { renewed: true as const }),
-            },
-          });
-          return;
-        }
-        if (result.kind === 'belowMinimum' && onchainTarget !== undefined) {
+          if (result.kind === 'belowMinimum' && onchainTarget !== undefined) {
+            setBusy(false);
+            setState({
+              step: 'amount',
+              target: { ...onchainTarget, minSats: result.minSats },
+              amountError: true,
+            });
+            return;
+          }
+          if (fallback !== undefined && result.kind !== 'insufficient') {
+            fallback();
+            return;
+          }
           setBusy(false);
           setState({
-            step: 'amount',
-            target: { ...onchainTarget, minSats: result.minSats },
-            amountError: true,
+            step: 'input',
+            error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
           });
-          return;
-        }
-        if (fallback !== undefined && result.kind !== 'insufficient') {
-          fallback();
-          return;
-        }
-        setBusy(false);
-        setState({
-          step: 'input',
-          error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
+        })
+        .catch(() => {
+          failRun('failed');
         });
-      });
     },
-    [],
+    [failRun],
   );
 
   /**
@@ -719,7 +727,11 @@ export function useWalletSend(): UseWalletSendResult {
       setPinBusy(pin === 'send-input-busy');
       return;
     }
-    if (!ready || busy || state.step !== 'input') {
+    if (busy || state.step !== 'input') {
+      return;
+    }
+    if (!ready) {
+      setState({ step: 'input', error: 'notReady' });
       return;
     }
     const run = generation.current;
@@ -730,123 +742,135 @@ export function useWalletSend(): UseWalletSendResult {
         session === null
           ? Promise.reject(new LnurlRelayError('failed'))
           : postLnurlPayRequest(session, relay);
-      void request.then(
-        (payRequest) => {
+      void request
+        .then(
+          (payRequest) => {
+            if (run !== generation.current || !walletCanSend()) {
+              return;
+            }
+            const minSats = Math.max(1, Math.ceil(payRequest.minSendableMsat / 1000));
+            const maxSats = Math.floor(payRequest.maxSendableMsat / 1000);
+            if (minSats > maxSats) {
+              setBusy(false);
+              setState({ step: 'input', error: 'unsupported' });
+              return;
+            }
+            askAmount({
+              type: 'relay',
+              target: payRequest.target,
+              minSats,
+              maxSats,
+              commentMaxLength: payRequest.commentAllowed,
+              recipient: payRequest.target.includes('@')
+                ? payRequest.target
+                : recipientOf(text, payRequest.domain),
+            });
+          },
+          (error: unknown) => {
+            if (run !== generation.current || !walletCanSend()) {
+              return;
+            }
+            setBusy(false);
+            setState({ step: 'input', error: relayInputError(error) });
+          },
+        )
+        .catch(() => {
+          failRun('unreadable');
+        });
+      return;
+    }
+    const readWithWallet = (member: OwnShop | null): void => {
+      void parseWalletInput(text)
+        .then((parsed) => {
           if (run !== generation.current || !walletCanSend()) {
             return;
           }
-          const minSats = Math.max(1, Math.ceil(payRequest.minSendableMsat / 1000));
-          const maxSats = Math.floor(payRequest.maxSendableMsat / 1000);
-          if (minSats > maxSats) {
+          if (parsed.kind !== 'target') {
+            setBusy(false);
+            setState({
+              step: 'input',
+              error:
+                parsed.kind === 'unreachable'
+                  ? 'unreachable'
+                  : parsed.kind === 'unlock'
+                    ? 'failed'
+                    : 'invalid',
+            });
+            return;
+          }
+          const target = parsed.target;
+          if (target.type === 'unsupported') {
             setBusy(false);
             setState({ step: 'input', error: 'unsupported' });
             return;
           }
-          askAmount({
-            type: 'relay',
-            target: payRequest.target,
-            minSats,
-            maxSats,
-            commentMaxLength: payRequest.commentAllowed,
-            recipient: payRequest.target.includes('@')
-              ? payRequest.target
-              : recipientOf(text, payRequest.domain),
-          });
-        },
-        (error: unknown) => {
-          if (run !== generation.current || !walletCanSend()) {
+          if (target.type === 'onchain') {
+            if (target.amountSats !== null) {
+              prepare(
+                { type: 'input', input: target.address, amountSats: target.amountSats },
+                target.recipient,
+                { onchainTarget: { ...target, amountSats: null } },
+              );
+              return;
+            }
+            setBusy(false);
+            setComment('');
+            setState({ step: 'amount', target, amountError: false });
             return;
           }
-          setBusy(false);
-          setState({ step: 'input', error: relayInputError(error) });
-        },
-      );
-      return;
-    }
-    const readWithWallet = (member: OwnShop | null): void => {
-      void parseWalletInput(text).then((parsed) => {
-        if (run !== generation.current || !walletCanSend()) {
-          return;
-        }
-        if (parsed.kind !== 'target') {
-          setBusy(false);
-          setState({
-            step: 'input',
-            error:
-              parsed.kind === 'unreachable'
-                ? 'unreachable'
-                : parsed.kind === 'unlock'
-                  ? 'failed'
-                  : 'invalid',
-          });
-          return;
-        }
-        const target = parsed.target;
-        if (target.type === 'unsupported') {
-          setBusy(false);
-          setState({ step: 'input', error: 'unsupported' });
-          return;
-        }
-        if (target.type === 'onchain') {
-          if (target.amountSats !== null) {
+          if (target.type === 'lnurl') {
+            askAmount({
+              ...target,
+              ...(member === null
+                ? { recipient: recipientOf(text, target.recipient) }
+                : { recipient: member.address, member: member.name }),
+            });
+            return;
+          }
+          if (target.amountSats !== null && target.amountSats > 0) {
             prepare(
-              { type: 'input', input: target.address, amountSats: target.amountSats },
+              {
+                type: 'input',
+                input: target.input,
+                ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
+              },
               target.recipient,
-              { onchainTarget: { ...target, amountSats: null } },
             );
             return;
           }
           setBusy(false);
           setComment('');
           setState({ step: 'amount', target, amountError: false });
-          return;
-        }
-        if (target.type === 'lnurl') {
-          askAmount({
-            ...target,
-            ...(member === null
-              ? { recipient: recipientOf(text, target.recipient) }
-              : { recipient: member.address, member: member.name }),
-          });
-          return;
-        }
-        if (target.amountSats !== null && target.amountSats > 0) {
-          prepare(
-            {
-              type: 'input',
-              input: target.input,
-              ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
-            },
-            target.recipient,
-          );
-          return;
-        }
-        setBusy(false);
-        setComment('');
-        setState({ step: 'amount', target, amountError: false });
-      });
+        })
+        .catch(() => {
+          failRun('unreadable');
+        });
     };
     const shop = ownShop(text, window.location.hostname);
     if (shop === null) {
       readWithWallet(null);
       return;
     }
-    void fetchShopChargeInvoice(shop.name).then((charge) => {
-      if (run !== generation.current || !walletCanSend()) {
-        return;
-      }
-      if (charge.kind !== 'invoice') {
-        readWithWallet(charge.kind === 'none' ? shop : null);
-        return;
-      }
-      prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, {
-        expectedSats: charge.amountSats,
-        fallback: () => {
-          readWithWallet(null);
-        },
+    void fetchShopChargeInvoice(shop.name)
+      .then((charge) => {
+        if (run !== generation.current || !walletCanSend()) {
+          return;
+        }
+        if (charge.kind !== 'invoice') {
+          readWithWallet(charge.kind === 'none' ? shop : null);
+          return;
+        }
+        prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, {
+          expectedSats: charge.amountSats,
+          fallback: () => {
+            readWithWallet(null);
+          },
+        });
+      })
+      .catch(() => {
+        failRun('unreadable');
       });
-    });
-  }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount]);
+  }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount, failRun]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {

@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { getE2eNow } from '@/lib/config';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
+import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { connectWallet } from '@/lib/wallet/wallet-service';
@@ -27,22 +27,6 @@ export interface UseWalletResult {
    * this phone or browser cannot hold the wallet.
    */
   prfUnsupported: boolean;
-}
-
-/**
- * Name of the `?visual=` pin, honoured only in a Playwright build.
- *
- * @returns The pin name, or `null`.
- */
-function visualPin(): string | null {
-  /* v8 ignore next 3 -- SSR has no window */
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  if (getE2eNow() === null) {
-    return null;
-  }
-  return new URLSearchParams(window.location.search).get('visual');
 }
 
 function visualStatus(): WalletStatus | null {

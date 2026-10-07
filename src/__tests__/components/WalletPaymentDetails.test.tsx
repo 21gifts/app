@@ -1,0 +1,221 @@
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
+import { openInSystemBrowser } from '@/lib/in-app-browser';
+import type { FiatRateDay } from '@/lib/stats-money';
+import { WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: (): URLSearchParams => new URLSearchParams('id=p1'),
+}));
+vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
+vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
+/** The mapped fixture payment whose id starts with `prefix`. */
+function fixture(prefix: string): WalletPayment {
+  const found = WALLET_PAYMENT_FIXTURES.find((payment) => payment.id.startsWith(prefix));
+  if (found === undefined) {
+    throw new Error(`no fixture ${prefix}`);
+  }
+  return toWalletPayment(found);
+}
+
+const ZAP = 'f43f0362';
+const SPARK_SEND = 'df98837c';
+const ADDRESS_SEND = 'abe077a7';
+const NOTE_RECEIVE = 'b6f8bc08';
+const PENDING = '45c2cb5e';
+const FAILED = '24c8b87e';
+const DEPOSIT = '9bc2f53d';
+const WITHDRAW = '71a0b382';
+
+function show(state: WalletPaymentState): void {
+  vi.mocked(useWalletPayment).mockReturnValue(state);
+  renderWithLocale(<WalletPaymentDetails />);
+}
+
+function showPayment(payment: WalletPayment): void {
+  show({ status: 'ready', payment });
+}
+
+/** The value cell of the summary or details row named `label`. */
+function row(label: string): HTMLElement {
+  const term = screen.getByText(label, { selector: 'dt' });
+  return term.nextElementSibling as HTMLElement;
+}
+
+beforeEach(() => {
+  vi.mocked(useLatestRateDay).mockReset().mockReturnValue(RATE_DAY);
+  vi.mocked(openInSystemBrowser).mockReset();
+});
+
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  Reflect.deleteProperty(navigator, 'clipboard');
+});
+
+describe('WalletPaymentDetails', () => {
+  it('reads the id from the address and shows nothing while loading', () => {
+    show({ status: 'loading' });
+    expect(useWalletPayment).toHaveBeenCalledWith('p1');
+    expect(screen.getByRole('heading', { level: 1, name: 'Payment' }).className).toContain(
+      'sr-only',
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Date')).toBeNull();
+  });
+
+  it('says when the payment could not be found', () => {
+    show({ status: 'missing' });
+    expect(screen.getByRole('alert').textContent).toBe('This payment could not be found.');
+  });
+
+  it('shows a received zap: title, signed amount with fiat, message, sender npub, and the zapped post', () => {
+    showPayment(fixture(ZAP));
+    expect(screen.getByText('Zap on your post')).toBeTruthy();
+    expect(screen.getByText("+₿2'100")).toBeTruthy();
+    expect(screen.getByText('$2.10', { selector: 'p' })).toBeTruthy();
+    expect(screen.getByText('Completed').className).toContain('text-app-success');
+    expect(screen.getByText('Great photo!')).toBeTruthy();
+    expect(row('Type').textContent).toBe('Instant payment');
+    expect(row('From').textContent).toMatch(/^npub1\w{5}…\w{6}/);
+    expect(row('Post').textContent).toMatch(/^note1\w{5}…\w{6}/);
+    expect(row('Amount').textContent).toBe("₿2'100 · $2.10");
+    // A fee-less receive has no fee row, and a received payment shows no recipient node.
+    expect(screen.queryByText('Fee', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
+    expect(row('Proof of payment').textContent).toContain('…');
+    expect(screen.queryByText('View on mempool.space')).toBeNull();
+  });
+
+  it('shows a Lightning-address send: To, the comment, fee and total with fiat, and the recipient node', () => {
+    showPayment(fixture(ADDRESS_SEND));
+    expect(screen.getAllByText('bob@example.com')).toHaveLength(2);
+    expect(screen.getByText("−₿10'000")).toBeTruthy();
+    expect(screen.getByText('Thanks for dinner')).toBeTruthy();
+    expect(row('To').textContent).toBe('bob@example.com');
+    expect(row('Fee').textContent).toBe('₿3 · $0.00');
+    expect(row('Total').textContent).toBe("₿10'003 · $10.00");
+    expect(row('Recipient node').textContent).toMatch(/^0[23]/);
+    expect(screen.queryByText('Description', { selector: 'dt' })).toBeNull();
+  });
+
+  it('shows Free for a fee-less send and a received payment note', () => {
+    showPayment(fixture(SPARK_SEND));
+    expect(screen.getByText('Gift to @alice')).toBeTruthy();
+    expect(row('Type').textContent).toBe('Spark transfer');
+    expect(row('Fee').textContent).toBe('Free');
+    expect(screen.queryByText('Total', { selector: 'dt' })).toBeNull();
+    cleanup();
+    showPayment(fixture(NOTE_RECEIVE));
+    expect(screen.getByText('Happy birthday!')).toBeTruthy();
+    expect(screen.getByText('Received')).toBeTruthy();
+  });
+
+  it('marks a pending send with its hint', () => {
+    showPayment(fixture(PENDING));
+    expect(screen.getByText('Pending').className).toContain('bg-app-notice');
+    expect(
+      screen.getByText(
+        'Still on its way. The amount stays reserved until it arrives or comes back.',
+      ),
+    ).toBeTruthy();
+    expect(row('Total').textContent).toContain("₿1'502");
+  });
+
+  it('strikes a failed send through, hides its fee, and says nothing left the wallet', () => {
+    showPayment(fixture(FAILED));
+    expect(screen.getByText('Failed').className).toContain('text-app-danger');
+    expect(screen.getByText("−₿50'000").className).toContain('line-through');
+    expect(screen.getByText('Nothing left your wallet.')).toBeTruthy();
+    expect(screen.queryByText('Fee', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('Total', { selector: 'dt' })).toBeNull();
+  });
+
+  it('shows a deposit with what arrived on-chain, the transaction, and the output, and links to mempool.space through the warning', () => {
+    showPayment(fixture(DEPOSIT));
+    expect(screen.getByText('On-chain deposit', { selector: 'p' })).toBeTruthy();
+    expect(row('Fee').textContent).toContain('₿254');
+    expect(row('Arrived on-chain').textContent).toContain("₿44'000");
+    expect(row('Output').textContent).toBe('1');
+    expect(row('Transaction').textContent).toContain('…');
+    const link = screen.getByRole('link', { name: 'View on mempool.space' });
+    const url = link.getAttribute('href') as string;
+    expect(url).toMatch(/^https:\/\/mempool\.space\/tx\/[0-9a-f]{64}$/);
+    fireEvent.click(link);
+    const dialog = screen.getByRole('dialog', { name: 'Open external link?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(openInSystemBrowser).not.toHaveBeenCalled();
+    fireEvent.click(link);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Open link' }));
+    expect(openInSystemBrowser).toHaveBeenCalledWith(url);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('shows a withdrawal with its network fee and total', () => {
+    showPayment(fixture(WITHDRAW));
+    expect(screen.getByText('On-chain withdrawal', { selector: 'p' })).toBeTruthy();
+    expect(row('Total').textContent).toContain("₿41'840");
+    expect(screen.queryByText('Output', { selector: 'dt' })).toBeNull();
+  });
+
+  it('shows the description row when the title is not the description, and the other method, without a rate', () => {
+    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    showPayment({
+      ...fixture(DEPOSIT),
+      method: 'other',
+      feesSats: 0,
+      info: {
+        description: 'Refund',
+        zap: { senderPubkey: 'ab'.repeat(32), content: '', noteId: null },
+      },
+    });
+    expect(row('Description').textContent).toBe('Refund');
+    expect(row('Type').textContent).toBe('Payment');
+    expect(screen.queryByText('Post', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it('copies a value with the icon-only Copy and confirms for two seconds; a refused clipboard keeps Copy', async () => {
+    vi.useFakeTimers();
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
+    const payment = fixture(SPARK_SEND);
+    showPayment(payment);
+    const copy = screen.getByRole('button', { name: 'Copy Payment ID' });
+    expect(copy.textContent).toBe('');
+    await act(async () => {
+      fireEvent.click(copy);
+      await Promise.resolve();
+    });
+    expect(writeText).toHaveBeenCalledWith(payment.id);
+    expect(screen.getByText('Copied')).toBeTruthy();
+    expect(copy.querySelector('svg')?.getAttribute('class')).toContain('text-app-success');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(screen.queryByText('Copied')).toBeNull();
+    writeText.mockRejectedValueOnce(new Error('denied'));
+    await act(async () => {
+      fireEvent.click(copy);
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Copied')).toBeNull();
+  });
+});

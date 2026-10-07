@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
 
 /** Visual weight for {@link Button}. */
-export type ButtonVariant = 'primary' | 'secondary' | 'accent';
+export type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'overlay';
 
 /** Padding scale for {@link Button}. */
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -11,7 +11,10 @@ export type ButtonTone = 'app' | 'dark';
 
 /** Props for {@link Button}. */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Filled primary, bordered secondary, or accent fill. Default `primary`. */
+  /**
+   * Filled primary, bordered secondary, accent fill, or `overlay` (a dark
+   * translucent pill with white text over a camera picture). Default `primary`.
+   */
   variant?: ButtonVariant;
   /** Hit-target size. Default `md`. `lg` is full width. */
   size?: ButtonSize;
@@ -37,6 +40,9 @@ const SIZE_CLASS: Record<ButtonSize, string> = {
  * @returns Tailwind classes.
  */
 function variantClass(variant: ButtonVariant, tone: ButtonTone): string {
+  if (variant === 'overlay') {
+    return 'bg-black/55 text-white backdrop-blur-md hover:bg-black/70 disabled:cursor-not-allowed disabled:opacity-50';
+  }
   if (tone === 'dark') {
     if (variant === 'accent') {
       return 'bg-accent text-ink hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
@@ -56,7 +62,8 @@ function variantClass(variant: ButtonVariant, tone: ButtonTone): string {
 }
 
 /**
- * Labeled app button (primary filled, secondary bordered, or accent fill).
+ * Labeled app button (primary filled, secondary bordered, accent fill, or a
+ * dark translucent overlay pill over a camera picture).
  *
  * @param props - Native button props plus {@link ButtonVariant}, size, and {@link ButtonTone}.
  * @returns The button element.

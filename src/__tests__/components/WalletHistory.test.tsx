@@ -27,8 +27,11 @@ function payment(overrides: Partial<WalletPayment>): WalletPayment {
     direction: 'received',
     amountSats: 21_000,
     timestamp: Date.parse('2026-01-07T10:00:00.000Z'),
+    feesSats: 0,
     status: 'completed',
+    method: 'lightning',
     senderComment: null,
+    info: {},
     ...overrides,
   };
 }
@@ -91,28 +94,38 @@ describe('WalletHistory', () => {
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
-  it('shows direction, bitcoin with fiat, date, note, and status', () => {
+  it('links each row to its payment screen with a title, a signed amount with fiat, the date and status, and the message', () => {
     show({
       payments: [
         payment({ id: 'a', senderComment: 'Thanks for the coffee' }),
-        payment({ id: 'b', direction: 'sent', amountSats: 5_000 }),
+        payment({
+          id: 'b',
+          direction: 'sent',
+          amountSats: 5_000,
+          info: { lnAddress: 'bob@example.com', lnurlComment: 'For lunch' },
+        }),
         payment({ id: 'c', status: 'pending', amountSats: 1_500 }),
         payment({ id: 'd', status: 'failed', direction: 'sent', amountSats: 7 }),
       ],
     });
-    const rows = screen.getAllByRole('listitem');
+    const rows = screen.getAllByRole('link');
     expect(rows).toHaveLength(4);
+    expect(rows[0]?.getAttribute('href')).toBe('/wallet/payment?id=a');
     expect(rows[0]?.textContent).toContain('Received');
-    expect(rows[0]?.textContent).toContain("₿21'000");
+    expect(rows[0]?.textContent).toContain("+₿21'000");
     expect(rows[0]?.textContent).toContain('$21.00');
     expect(rows[0]?.textContent).toContain('Thanks for the coffee');
     expect(rows[0]?.querySelector('time')?.getAttribute('datetime')).toBe(
       '2026-01-07T10:00:00.000Z',
     );
-    expect(rows[1]?.textContent).toContain('Sent');
+    expect(rows[1]?.textContent).toContain('bob@example.com');
+    expect(rows[1]?.textContent).toContain("−₿5'000");
+    expect(rows[1]?.textContent).toContain('For lunch');
     expect(rows[1]?.textContent).not.toContain('Pending');
-    expect(rows[2]?.textContent).toContain('Received · Pending');
-    expect(rows[3]?.textContent).toContain('Sent · Failed');
+    expect(rows[2]?.textContent).toContain('· Pending');
+    expect(rows[3]?.textContent).toContain('Sent');
+    expect(screen.getByText('· Failed', { exact: false }).className).toContain('text-app-danger');
+    expect(screen.getByText('−₿7', { exact: false }).className).toContain('line-through');
   });
 
   it('keeps the bitcoin amount when no rate is loaded', () => {

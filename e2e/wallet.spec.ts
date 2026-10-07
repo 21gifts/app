@@ -546,8 +546,11 @@ test('wallet balance-locked pin shows unlock control', async ({ page }) => {
   await expect(region).toBeVisible();
   await expect(region.getByText('Unlock your wallet to see your Bitcoin balance.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+  // Locked, Send runs the same unlock first; the pinned unlock is inert, so nothing opens.
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Unlock wallet' }).click();
   await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
 });
@@ -782,7 +785,7 @@ test('wallet balance pins other than ready show no send region', async ({ page }
   await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
 });
 
-test('wallet send-input pin: Send replaces home with the camera and the paste field', async ({
+test('wallet send-input pin: Send replaces home with the camera, Paste, and Enter manually', async ({
   page,
 }) => {
   await signInWalletEligible(page);
@@ -796,7 +799,10 @@ test('wallet send-input pin: Send replaces home with the camera and the paste fi
   await expect(region.getByText('Point the camera at a Bitcoin QR code')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Receive' })).toHaveCount(0);
+  await expect(region.getByLabel('Payment request or address')).toHaveCount(0);
+  await region.getByRole('button', { name: 'Enter manually' }).click();
   const field = region.getByLabel('Payment request or address');
+  await expect(field).toBeFocused();
   await expect(field).toHaveAttribute('placeholder', 'Paste a Bitcoin payment request or address');
   await expect(region.getByRole('button', { name: 'Continue' })).toBeDisabled();
   await field.fill('lnbc1');
@@ -1125,7 +1131,7 @@ test('Function: parseWalletInput — unset key loads no wasm and shows no send r
   expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
 });
 
-test('Function: QrScanner — Send opens the camera; a scanned QR is pasted and submitted', async ({
+test('Function: QrScanner — Send opens the camera; a scanned QR is taken and submitted', async ({
   page,
 }) => {
   await signInWalletEligible(page);
@@ -1134,13 +1140,15 @@ test('Function: QrScanner — Send opens the camera; a scanned QR is pasted and 
   await page.goto('/wallet?visual=send-input-busy');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
-  await expect(region.getByLabel('Payment request or address')).toHaveValue('lnbc21scanned');
-  await expect(region.getByRole('button', { name: 'Continue' })).toBeDisabled();
+  // The pinned flow marks the submit busy: a spinner over the camera area, both buttons waiting.
+  await expect(region.locator('.animate-spin')).toBeVisible();
+  await expect(region.getByRole('button', { name: 'Paste' })).toBeDisabled();
+  await expect(region.getByRole('button', { name: 'Enter manually' })).toBeDisabled();
   await expect(region.locator('video')).toHaveCount(0);
   expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
 });
 
-test('wallet Send reads a scanned QR once and keeps the camera off until the field changes', async ({
+test('wallet Send reads a scanned QR once and keeps the camera off until the text changes', async ({
   page,
 }) => {
   await signInWalletEligible(page);
@@ -1148,14 +1156,16 @@ test('wallet Send reads a scanned QR once and keeps the camera off until the fie
   await stubCamera(page, { kind: 'qr', text: 'lnbc21scanned' });
   await page.goto('/wallet?visual=send-input');
   await openSend(page);
-  const field = page
-    .getByRole('region', { name: 'Send Bitcoin' })
-    .getByLabel('Payment request or address');
-  await expect(field).toHaveValue('lnbc21scanned');
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect.poll(async () => (await cameraStats(page)).requests).toBe(1);
   await page.waitForTimeout(1_000);
   expect(await cameraStats(page)).toEqual({ requests: 1, live: 0 });
   await expect(page.locator('video')).toHaveCount(0);
+  await region.getByRole('button', { name: 'Enter manually' }).click();
+  const field = region.getByLabel('Payment request or address');
+  await expect(field).toHaveValue('lnbc21scanned');
   await field.fill('');
+  await region.getByRole('button', { name: 'Cancel' }).click();
   // The stubbed camera still shows the same QR, so the restarted camera may read
   // it again at once and close; the second camera request is the change itself.
   await expect.poll(async () => (await cameraStats(page)).requests).toBe(2);
@@ -1178,30 +1188,32 @@ test('wallet Send camera stops on Back and starts again on Send', async ({ page 
   await expect.poll(async () => cameraStats(page)).toEqual({ requests: 2, live: 1 });
 });
 
-/** Box of the camera area (the parent of the preview or of the camera alert). */
-async function cameraBox(
-  page: Page,
-  child: string,
-): Promise<{
-  box: { x: number; y: number; width: number; height: number };
-  frame: { x: number; width: number };
+/** Boxes of the full-size camera layer and of the page port it fills. */
+async function cameraLayer(page: Page): Promise<{
+  layer: { x: number; y: number; width: number; height: number };
+  port: { x: number; y: number; width: number; height: number };
 }> {
-  return page.evaluate((selector) => {
-    const area = document.querySelector(`section[aria-label="Send Bitcoin"] ${selector}`);
-    const port = document.querySelector('[data-scrollport]');
-    if (area === null || area.parentElement === null || port === null) {
-      throw new Error('missing camera area');
+  return page.evaluate(() => {
+    const layer = document.querySelector('section[aria-label="Send Bitcoin"][data-port-fill]');
+    const port = document.querySelector('[data-scrollport][data-scroll-active]');
+    if (layer === null || port === null) {
+      throw new Error('missing camera layer');
     }
-    const rect = area.parentElement.getBoundingClientRect();
-    const frame = port.getBoundingClientRect();
-    return {
-      box: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
-      frame: { x: frame.x, width: frame.width },
+    const box = (element: Element): { x: number; y: number; width: number; height: number } => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
     };
-  }, child);
+    return { layer: box(layer), port: box(port) };
+  });
 }
 
-test('wallet Send camera is large on a phone, keeps the field reachable, and stays inside on desktop', async ({
+function expectFills(boxes: Awaited<ReturnType<typeof cameraLayer>>): void {
+  for (const key of ['x', 'y', 'width', 'height'] as const) {
+    expect(Math.abs(boxes.layer[key] - boxes.port[key])).toBeLessThanOrEqual(1);
+  }
+}
+
+test('wallet Send camera fills the page port edge to edge, with floating buttons over it, on a phone and on desktop', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
@@ -1212,15 +1224,13 @@ test('wallet Send camera is large on a phone, keeps the field reachable, and sta
   await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
   await expect(region.locator('video')).toBeVisible();
-  const phone = await cameraBox(page, 'video');
-  // Edge to edge of the app frame, about 70% of the visible height.
-  expect(Math.abs(phone.box.x - phone.frame.x)).toBeLessThanOrEqual(1);
-  expect(Math.abs(phone.box.width - phone.frame.width)).toBeLessThanOrEqual(1);
-  expect(phone.box.height).toBeGreaterThanOrEqual(812 * 0.7 - 1);
-  expect(phone.box.height).toBeLessThanOrEqual(812 * 0.7 + 1);
+  const phone = await cameraLayer(page);
+  expectFills(phone);
   await expect(region.locator('video')).toHaveCSS('object-fit', 'cover');
   const hint = region.getByText('Point the camera at a Bitcoin QR code');
   await expect(hint).toHaveCSS('font-size', '18px');
+  const hintBox = (await hint.boundingBox())!;
+  expect(Math.abs(hintBox.y - phone.layer.y)).toBeLessThanOrEqual(1);
   // The viewfinder is a centred square of 68% of the smaller side and lets taps through.
   const finder = await region.locator('video ~ div[aria-hidden="true"]').evaluate((element) => {
     const rect = element.getBoundingClientRect();
@@ -1231,43 +1241,42 @@ test('wallet Send camera is large on a phone, keeps the field reachable, and sta
     };
   });
   expect(Math.abs(finder.width - finder.height)).toBeLessThanOrEqual(1);
-  expect(finder.width).toBeCloseTo(Math.min(phone.box.width, phone.box.height) * 0.68, 0);
+  expect(finder.width).toBeCloseTo(Math.min(phone.layer.width, phone.layer.height) * 0.68, 0);
   expect(finder.pointer).toBe('none');
-  // No sideways page scroll; the field and Continue are reached by normal scrolling.
+  for (const name of ['Paste', 'Enter manually']) {
+    const button = region.getByRole('button', { name });
+    const box = (await button.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(48);
+    expect(box.y + box.height).toBeLessThanOrEqual(phone.layer.y + phone.layer.height);
+    expect(box.y).toBeGreaterThan(phone.layer.y + phone.layer.height / 2);
+    await expect(button).toHaveCSS('color', 'rgb(255, 255, 255)');
+  }
   expect(
     await page.evaluate(() => {
       const port = document.querySelector('[data-scrollport]') as HTMLElement;
-      return port.scrollWidth - port.clientWidth;
+      return [port.scrollWidth - port.clientWidth, port.scrollHeight - port.clientHeight];
     }),
-  ).toBeLessThanOrEqual(0);
-  const field = region.getByLabel('Payment request or address');
-  await field.scrollIntoViewIfNeeded();
-  await field.fill('lnbc1');
-  const next = region.getByRole('button', { name: 'Continue' });
-  await next.scrollIntoViewIfNeeded();
-  await expect(next).toBeInViewport();
-  await expect(next).toBeEnabled();
+  ).toEqual([0, 0]);
   expect(await cameraStats(page)).toEqual({ requests: 1, live: 1 });
 
-  // A wide phone or small tablet below `sm` still runs edge to edge of the frame.
-  await page.setViewportSize({ width: 560, height: 812 });
-  await expect
-    .poll(async () => {
-      const wide = await cameraBox(page, 'video');
-      return Math.abs(wide.box.width - wide.frame.width);
-    })
-    .toBeLessThanOrEqual(1);
+  // At 320 px the two buttons wrap and stay inside the camera area.
+  await page.setViewportSize({ width: 320, height: 640 });
+  await expect.poll(async () => expectFills(await cameraLayer(page))).toBeUndefined();
+  const narrow = await cameraLayer(page);
+  for (const name of ['Paste', 'Enter manually']) {
+    const box = (await region.getByRole('button', { name }).boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(narrow.layer.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(narrow.layer.x + narrow.layer.width);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
 
   await page.setViewportSize({ width: 1280, height: 900 });
-  await expect
-    .poll(async () => (await cameraBox(page, 'video')).box.height)
-    .toBeLessThanOrEqual(448);
-  const desktop = await cameraBox(page, 'video');
-  expect(desktop.box.width).toBeLessThanOrEqual(384);
-  expect(desktop.box.x).toBeGreaterThan(desktop.frame.x);
+  await expect.poll(async () => expectFills(await cameraLayer(page))).toBeUndefined();
 });
 
-test('wallet Send camera alert keeps the large camera area', async ({ page }) => {
+test('wallet Send camera alert sits on the full-size black area and both buttons still work', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await signInWalletEligible(page);
   await stubWalletRate(page);
@@ -1275,28 +1284,22 @@ test('wallet Send camera alert keeps the large camera area', async ({ page }) =>
   await page.goto('/wallet?visual=send-input');
   await openSend(page);
   const region = page.getByRole('region', { name: 'Send Bitcoin' });
-  await expect(region.getByRole('alert').first()).toBeVisible();
-  const blocked = await cameraBox(page, '[role="alert"]');
-  expect(Math.abs(blocked.box.width - blocked.frame.width)).toBeLessThanOrEqual(1);
-  expect(blocked.box.height).toBeGreaterThanOrEqual(812 * 0.7 - 1);
-  await expect(region.getByRole('alert').first()).toHaveCSS('font-size', '18px');
-});
-
-test('wallet Send says the camera was blocked and keeps the paste field', async ({ page }) => {
-  await signInWalletEligible(page);
-  await stubWalletRate(page);
-  await stubCamera(page, { kind: 'denied' });
-  await page.goto('/wallet?visual=send-input');
-  await openSend(page);
-  const region = page.getByRole('region', { name: 'Send Bitcoin' });
-  await expect(region.getByRole('alert')).toHaveText(
+  const alert = region.getByRole('alert');
+  await expect(alert).toHaveText(
     'Camera access was blocked. Allow it in your browser settings, or paste the payment request.',
   );
+  await expect(alert).toHaveCSS('font-size', '18px');
+  await expect(alert).toHaveCSS('color', 'rgb(255, 255, 255)');
+  expectFills(await cameraLayer(page));
   await expect(region.locator('video')).toHaveCount(0);
+  await expect(region.getByRole('button', { name: 'Paste' })).toBeEnabled();
+  await region.getByRole('button', { name: 'Enter manually' }).click();
   await expect(region.getByLabel('Payment request or address')).toBeVisible();
 });
 
-test('wallet Send says no camera was found and keeps the paste field', async ({ page }) => {
+test('wallet Send says no camera was found and keeps Paste and Enter manually', async ({
+  page,
+}) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
   await stubCamera(page, { kind: 'none' });
@@ -1306,7 +1309,103 @@ test('wallet Send says no camera was found and keeps the paste field', async ({ 
   await expect(region.getByRole('alert')).toHaveText(
     'No camera found. Paste the payment request instead.',
   );
-  await expect(region.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await expect(region.getByRole('button', { name: 'Paste' })).toBeVisible();
+  await expect(region.getByRole('button', { name: 'Enter manually' })).toBeVisible();
+});
+
+test('wallet Send Paste takes the clipboard text like a scan', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        readText: () => Promise.resolve('lnbc21pasted'),
+        writeText: () => Promise.resolve(),
+      },
+    });
+  });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect.poll(async () => (await cameraStats(page)).live).toBe(1);
+  await region.getByRole('button', { name: 'Paste' }).click();
+  // Like a scan: the camera stops until the text changes, and the text is in the field.
+  await expect(region.locator('video')).toHaveCount(0);
+  await expect.poll(async () => (await cameraStats(page)).live).toBe(0);
+  await region.getByRole('button', { name: 'Enter manually' }).click();
+  await expect(region.getByLabel('Payment request or address')).toHaveValue('lnbc21pasted');
+});
+
+for (const [label, readText, message] of [
+  ['refused', 'reject', 'Pasting was not allowed. Use Enter manually instead.'],
+  ['empty', 'empty', 'The clipboard is empty.'],
+] as const) {
+  test(`wallet Send Paste with a ${label} clipboard shows a short alert and keeps the camera`, async ({
+    page,
+  }) => {
+    await signInWalletEligible(page);
+    await stubWalletRate(page);
+    await stubCamera(page, { kind: 'blank' });
+    await page.addInitScript((mode) => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          readText: () =>
+            mode === 'reject'
+              ? Promise.reject(new DOMException('denied', 'NotAllowedError'))
+              : Promise.resolve(''),
+          writeText: () => Promise.resolve(),
+        },
+      });
+    }, readText);
+    await page.goto('/wallet?visual=send-input');
+    await openSend(page);
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await region.getByRole('button', { name: 'Paste' }).click();
+    await expect(region.getByRole('alert')).toHaveText(message);
+    await expect(region.locator('video')).toBeVisible();
+    await expect(region.getByRole('alert')).toHaveCount(0, { timeout: 6_000 });
+  });
+}
+
+test('wallet Send manual sheet: Close and Back return to the camera, the next Back returns home', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
+  await page.goto('/wallet?visual=send-input');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await region.getByRole('button', { name: 'Enter manually' }).click();
+  await expect(region.getByLabel('Payment request or address')).toBeVisible();
+  await expect(region.locator('video')).toHaveCount(0);
+  await region.getByRole('button', { name: 'Cancel' }).click();
+  await expect(region.getByLabel('Payment request or address')).toHaveCount(0);
+  await expect(region.locator('video')).toBeVisible();
+  await region.getByRole('button', { name: 'Enter manually' }).click();
+  await page.getByRole('link', { name: 'Back to the forum' }).click();
+  await expect(region.getByLabel('Payment request or address')).toHaveCount(0);
+  await expect(region.locator('video')).toBeVisible();
+  await page.getByRole('link', { name: 'Back to the forum' }).click();
+  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Balance' })).toBeVisible();
+});
+
+test('wallet Send shows the not-ready and unreadable alerts with Try again', async ({ page }) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  for (const [pin, message] of [
+    ['send-not-ready', 'Your wallet is not ready yet. Please try again in a moment.'],
+    ['send-unreadable', 'This could not be read. Please try again.'],
+  ] as const) {
+    await page.goto(`/wallet?visual=${pin}`);
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(region.getByRole('alert')).toHaveText(message);
+    await expect(region.getByRole('button', { name: 'Try again' })).toBeVisible();
+  }
 });
 
 test('wallet Receive shows the QR, the address, Copy, and Set an amount; Back returns home', async ({

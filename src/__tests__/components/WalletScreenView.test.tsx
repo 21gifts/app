@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
@@ -254,12 +254,13 @@ describe('WalletScreenView', () => {
     expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
   });
 
-  it('enables Send only while the wallet is ready and a send flow exists; Receive always works', () => {
+  it('enables Send while the wallet is ready or locked and a send flow exists; Receive always works', () => {
     setWalletAccount();
     const cases = [
       ['ready', true, true],
       ['ready', false, false],
-      ['locked', true, false],
+      ['locked', true, true],
+      ['locked', false, false],
       ['connecting', true, false],
       ['error', true, false],
     ] as const;
@@ -718,13 +719,42 @@ function rerenderEntry(
 }
 
 describe('WalletScreenView Send', () => {
+  it('runs the unlock when Send is pressed while locked, and opens Send once the wallet is ready', () => {
+    const send = idleSend();
+    const locked = walletResult('locked');
+    const view = renderWithLocale(
+      <WalletScreenView {...ENTRY_PROPS} wallet={locked} send={send} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(locked.unlock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    rerenderEntry(view, 'connecting', send);
+    rerenderEntry(view, 'ready', send);
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+  });
+
+  it('Back closes the manual sheet first, then returns home', () => {
+    const send = idleSend();
+    renderEntry('ready', send);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter manually' }));
+    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
+    pressBack();
+    expect(screen.queryByLabelText('Payment request or address')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Paste' })).toBeTruthy();
+    pressBack();
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
   it('opens the Send view with the camera live in place of the home view', () => {
     renderEntry('ready', idleSend());
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     const region = screen.getByRole('region', { name: 'Send Bitcoin' });
     expect(region.textContent).toContain('Camera stub');
-    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(region.hasAttribute('data-port-fill')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Paste' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Enter manually' })).toBeTruthy();
+    expect(screen.queryByLabelText('Payment request or address')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Wallet' }).className).toContain('sr-only');
     expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Receive' })).toBeNull();
@@ -785,7 +815,7 @@ describe('WalletScreenView Send', () => {
     expect(screen.queryByLabelText('Payment request or address')).toBeNull();
     cleanup();
     renderEntry('ready', idleSend({ state: { step: 'input', error: 'failed' } }));
-    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     expect(screen.queryByText('Camera stub')).toBeNull();
     cleanup();
     renderEntry('locked', idleSend());
@@ -857,82 +887,5 @@ describe('WalletScreenView Receive', () => {
     expect(historyBack).not.toHaveBeenCalled();
     expect(screen.queryByText('ada@21.gifts')).toBeNull();
     expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
-  });
-
-  it('copies the address and says Copied for two seconds', async () => {
-    vi.useFakeTimers();
-    const writeText = vi.fn(() => Promise.resolve());
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    try {
-      renderEntry('ready');
-      fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-        await Promise.resolve();
-      });
-      expect(writeText).toHaveBeenCalledWith('ada@21.gifts');
-      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1_999);
-      });
-      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1);
-      });
-      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-        await Promise.resolve();
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1_500);
-      });
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Copied' }));
-        await Promise.resolve();
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1_500);
-      });
-      expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(500);
-      });
-      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
-    } finally {
-      vi.useRealTimers();
-      Reflect.deleteProperty(navigator, 'clipboard');
-    }
-  });
-
-  it('keeps Copy when the clipboard refuses the write or is missing', async () => {
-    const writeText = vi.fn(() => Promise.reject(new Error('denied')));
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
-    try {
-      renderEntry('ready');
-      fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-        await Promise.resolve();
-      });
-      expect(writeText).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
-      Reflect.deleteProperty(navigator, 'clipboard');
-      await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
-        await Promise.resolve();
-      });
-      expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
-    } finally {
-      Reflect.deleteProperty(navigator, 'clipboard');
-    }
-  });
-
-  it('shows only Set an amount when signed out', () => {
-    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
-    expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Set a username first.' })).toBeNull();
   });
 });

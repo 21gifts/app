@@ -121,14 +121,15 @@ export function decodeLnurl(value: string): string | null {
 }
 
 /**
- * BIP-173 bech32 (not bech32m) of `url` with HRP `lnurl`, returned UPPERCASE.
+ * BIP-173 bech32 (not bech32m) of raw bytes, lowercase, without a length
+ * limit (an LNURL or a NIP-19 `npub` / `note` value).
  *
- * @param url - Cleartext URL.
- * @returns Uppercase `LNURL1…`.
+ * @param hrp - Human-readable part, lowercase.
+ * @param bytes - Data bytes.
+ * @returns `<hrp>1…`.
  */
-export function encodeLnurl(url: string): string {
-  const hrp = 'lnurl';
-  const data = convert8to5(new TextEncoder().encode(url));
+export function encodeBech32(hrp: string, bytes: Uint8Array): string {
+  const data = convert8to5(bytes);
   const mod = polymod([...hrpExpand(hrp), ...data, 0, 0, 0, 0, 0, 0]) ^ 1;
   const combined = [...data];
   for (let i = 0; i < 6; i += 1) {
@@ -138,5 +139,15 @@ export function encodeLnurl(url: string): string {
   for (const d of combined) {
     encoded += CHARSET.charAt(d);
   }
-  return encoded.toUpperCase();
+  return encoded;
+}
+
+/**
+ * BIP-173 bech32 (not bech32m) of `url` with HRP `lnurl`, returned UPPERCASE.
+ *
+ * @param url - Cleartext URL.
+ * @returns Uppercase `LNURL1…`.
+ */
+export function encodeLnurl(url: string): string {
+  return encodeBech32('lnurl', new TextEncoder().encode(url)).toUpperCase();
 }

@@ -2644,7 +2644,7 @@ test('Function: consumeSkipIntroduceOverlay — after Write an introduction the 
   await page.getByRole('button', { name: 'Write an introduction' }).click();
   await expect(intro).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByRole('link', { name: 'Wallet', exact: true }).click();
+  await page.getByRole('link', { name: 'Balance', exact: true }).click();
   await expect(page).toHaveURL(/\/wallet$/);
   await expect(intro).toHaveCount(0);
   await page.getByRole('link', { name: 'Back', exact: true }).click();

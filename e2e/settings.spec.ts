@@ -76,7 +76,7 @@ test('settings offers the add hint and Add recovery phrase without a recovery pa
   await expect(page.getByRole('button', { name: 'Add recovery phrase' })).toBeVisible();
 });
 
-test('the signed-in Menu lists Wallet first and opens /settings from Settings, right after Grants', async ({
+test('the signed-in Menu lists Home and Balance first and opens /settings from Settings, right after Grants', async ({
   page,
 }) => {
   await signIn(page, 'cred-seed');
@@ -84,7 +84,7 @@ test('the signed-in Menu lists Wallet first and opens /settings from Settings, r
   await page.getByRole('button', { name: 'Menu' }).click();
   const rows = page.locator('#signed-in-menu a');
   const names = (await rows.allInnerTexts()).map((name) => name.trim());
-  expect(names.slice(0, 2)).toEqual(['Wallet', 'Home']);
+  expect(names.slice(0, 2)).toEqual(['Home', 'Balance']);
   const grants = names.indexOf('Grants');
   expect(grants).toBeGreaterThanOrEqual(0);
   expect(names[grants + 1]).toBe('Settings');

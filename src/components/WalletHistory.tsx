@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useRef, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -11,6 +12,7 @@ import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { formatBitcoin } from '@/lib/stats-money';
+import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 
 /**
  * `/wallet` payment list, newest first: direction, Bitcoin amount with the
@@ -67,38 +69,52 @@ export function WalletHistory(): ReactElement | null {
         {payments.map((payment) => {
           const received = payment.direction === 'received';
           const Icon = received ? ArrowDownLeft : ArrowUpRight;
+          const title = paymentTitle(payment);
+          const message = paymentMessage(payment);
           return (
-            <li
-              key={payment.id}
-              className="flex w-full items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
-            >
-              <Icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-app-muted" />
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <span className="text-sm font-medium text-app-fg">
-                    {received ? t('wallet.received') : t('wallet.sent')}
-                    {payment.status === 'completed' ? null : (
-                      <span className="text-app-subtle">
-                        {' · '}
-                        {payment.status === 'pending' ? t('wallet.pending') : t('wallet.failed')}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-sm tabular-nums lining-nums text-app-fg">
-                    <span>{formatBitcoin(payment.amountSats, numberFormat)}</span>
-                    {preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)}
-                  </span>
+            <li key={payment.id} className="w-full">
+              <Link
+                href={paymentHref(payment.id)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <Icon
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-muted"
+                />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex items-baseline justify-between gap-x-3">
+                    <span className="min-w-0 truncate text-sm font-medium">
+                      {'text' in title ? title.text : t(title.key)}
+                    </span>
+                    <span
+                      className={`shrink-0 text-sm tabular-nums lining-nums${payment.status === 'failed' ? ' text-app-subtle line-through' : ''}`}
+                    >
+                      {received ? '+' : '−'}
+                      {formatBitcoin(payment.amountSats, numberFormat)}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-x-3 text-xs text-app-subtle">
+                    <time dateTime={new Date(payment.timestamp).toISOString()}>
+                      {formatForumTimeFromMs(payment.timestamp, locale)}
+                      {payment.status === 'completed' ? null : (
+                        <span
+                          className={payment.status === 'failed' ? 'text-app-danger' : undefined}
+                        >
+                          {' · '}
+                          {payment.status === 'pending' ? t('wallet.pending') : t('wallet.failed')}
+                        </span>
+                      )}
+                    </time>
+                    <span className="shrink-0 tabular-nums lining-nums">
+                      {preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)}
+                    </span>
+                  </div>
+                  {message === null ? null : (
+                    <p className="truncate text-sm text-app-muted">{message}</p>
+                  )}
                 </div>
-                <time
-                  dateTime={new Date(payment.timestamp).toISOString()}
-                  className="text-xs text-app-subtle"
-                >
-                  {formatForumTimeFromMs(payment.timestamp, locale)}
-                </time>
-                {payment.senderComment === null ? null : (
-                  <p className="break-words text-sm text-app-muted">{payment.senderComment}</p>
-                )}
-              </div>
+                <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-app-subtle" />
+              </Link>
             </li>
           );
         })}
