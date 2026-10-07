@@ -75,7 +75,7 @@ describe('useSpotRate', () => {
     expect(screen.getByText('CHF 80000.00 per 100000000')).toBeTruthy();
   });
 
-  it('drops the price when an answer has no usable price', async () => {
+  it('keeps the last price when an answer has no usable price', async () => {
     fetchFxSpotMock.mockResolvedValueOnce(spot({ CHF: '80000.00' }));
     fetchFxSpotMock.mockResolvedValueOnce(spot({}));
     renderWithLocale(<Probe />);
@@ -84,7 +84,7 @@ describe('useSpotRate', () => {
       vi.advanceTimersByTime(SPOT_REFRESH_MS);
     });
     await flush();
-    expect(screen.getByText('null')).toBeTruthy();
+    expect(screen.getByText('CHF 80000.00 per 100000000')).toBeTruthy();
   });
 
   it('does not start a refresh while the previous request is still open', async () => {
