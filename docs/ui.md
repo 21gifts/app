@@ -253,7 +253,7 @@ Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `₱80.00`
 | 3       | 12        | `p-3` `gap-3`            | Pay sheet padding, field stack                   |
 | 4       | 16        | `p-4` `top-4` `gap-4`    | Note card `px-4 py-3` (y=12)                     |
 | 5       | 20        | `px-5` `right-5` `gap-5` | Marketing horizontal, clustered `sm` IconButtons |
-| 6       | 24        | `px-6` `gap-6` `p-6`     | App page padding, card gap                       |
+| 6       | 24        | `px-6` `gap-6` `p-6`     | App page padding (360px and up), card gap        |
 | 8       | 32        | `p-8` `gap-8`            | Card padding                                     |
 | 10      | 40        | `gap-10` `py-10`         | PageChrome gap, footer py                        |
 | 12      | 48        | `mt-12` `gap-12`         | Section rhythm, stats `space-y-12`               |
@@ -262,7 +262,7 @@ Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `₱80.00`
 | 24      | 96        | `py-24`                  | Legal/handbook top                               |
 | 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | Marketing hero                                   |
 
-App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-5` (20px). Do not mix.
+App page padding is `px-6` (24px), not `px-5`; below 360px the `AppShell` inset is `px-3` (12px) so the signed-in header fits at 320px. Marketing content padding is `px-5` (20px). Do not mix.
 
 **Radius.**
 
