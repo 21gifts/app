@@ -19741,7 +19741,7 @@ test.describe('welcome forum variants', () => {
     want: 'lifted' | 'sheet',
     heights: readonly number[],
   ): Promise<void> {
-    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.setViewportSize({ width: 1280, height: 1200 });
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
@@ -19779,7 +19779,15 @@ test.describe('welcome forum variants', () => {
   }
 
   test('welcome menu-lifted', async ({ page }) => {
-    await resizeWelcomeMenu(page, 'lifted', [780, 740, 700, 680, 660, 640, 620, 600, 580, 560]);
+    // The Menu account header makes the compact menu taller, so the lift starts in taller windows.
+    await resizeWelcomeMenu(
+      page,
+      'lifted',
+      [
+        1080, 1060, 1040, 1020, 1000, 980, 960, 940, 920, 900, 880, 860, 840, 820, 800, 780, 740,
+        700, 680, 660, 640, 620, 600, 580, 560,
+      ],
+    );
     await expect(page.locator('#signed-in-menu')).toHaveClass(/\bfixed\b/);
     await expect(page.locator('html')).not.toHaveAttribute('data-menu-sheet');
     await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeInViewport();
