@@ -3474,6 +3474,36 @@ Founder presses the row pencil **Edit Ada**. The amount field **USD Ada** is ope
 
 ![21.gifts daily payment amounts editing](images/grants-payments-amounts-editing.png)
 
+### Variant: suggest
+
+Founder types a person prefix. The suggestion list shows **Cara (@cara)** and stays open. Needle `Cara (@cara)`
+
+![21.gifts daily payment amounts suggest](images/grants-payments-amounts-suggest.png)
+
+### Variant: pick-person
+
+Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** Needle `Choose a person.`
+
+![21.gifts daily payment amounts pick person](images/grants-payments-amounts-pick-person.png)
+
+### Variant: invalid-person
+
+Founder types a person prefix, picks that person, and spend answers that the person or amount is not valid. Alert **Choose a person and a valid amount.** Needle `Choose a person and a valid amount.`
+
+![21.gifts daily payment amounts invalid person](images/grants-payments-amounts-invalid-person.png)
+
+### Variant: unknown-person
+
+Founder types a person prefix, picks that person, and spend answers that the person was not found. Alert **That person was not found.** Needle `That person was not found.`
+
+![21.gifts daily payment amounts unknown person](images/grants-payments-amounts-unknown-person.png)
+
+### Variant: no-lightning
+
+Founder types a person prefix, picks that person, and spend answers that the person has no Lightning address. Alert **This person has no Wallet of Satoshi address.** Needle `This person has no Wallet of Satoshi address.`
+
+![21.gifts daily payment amounts no lightning](images/grants-payments-amounts-no-lightning.png)
+
 ## Screen: /profile/apply
 
 - **Purpose:** Permanent redirect to `/grants/apply`. That page shows the pause sentence and `https://21.gifts/statistics` for a verified account with status `none` or `rejected` whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`. A verified account with one of those names and status `none` or `rejected` sees the apply walk. Pending, trial, and admitted keep their copy for every verified username. A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.** and does not post. This path renders no grant UI of its own.

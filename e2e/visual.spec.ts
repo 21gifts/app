@@ -23151,6 +23151,114 @@ test.describe('daily payments', () => {
     await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
     await shotScreen(page, 'state-grants-payments-amounts-editing');
   });
+
+  test('state /grants/payments/amounts suggest', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
+    await expect(page.getByRole('option', { name: 'Cara (@cara)' })).toBeVisible();
+    await page.locator('#daily-person-add-list').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-suggest');
+  });
+
+  test('state /grants/payments/amounts pick-person', async ({ page }) => {
+    await stubRoster(page);
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const pickPersonAlert = page.getByText('Choose a person.');
+    await expect(pickPersonAlert).toBeVisible();
+    await pickPersonAlert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-pick-person');
+  });
+
+  test('state /grants/payments/amounts invalid-person', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid person or amount' }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
+    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const invalidPersonAlert = page.getByText('Choose a person and a valid amount.');
+    await expect(invalidPersonAlert).toBeVisible();
+    await invalidPersonAlert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-invalid-person');
+  });
+
+  test('state /grants/payments/amounts unknown-person', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unknown person' }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
+    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const unknownPersonAlert = page.getByText('That person was not found.');
+    await expect(unknownPersonAlert).toBeVisible();
+    await unknownPersonAlert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-unknown-person');
+  });
+
+  test('state /grants/payments/amounts no-lightning', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Person has no Lightning address' }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
+    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const noLightningAlert = page.getByText('This person has no Wallet of Satoshi address.');
+    await expect(noLightningAlert).toBeVisible();
+    await noLightningAlert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-no-lightning');
+  });
 });
 
 const HABIT_ROW = {
