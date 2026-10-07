@@ -297,9 +297,15 @@ function usePosTillState(): PosTillState {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
-    if (shownUnit === 'fiat' && parsed.kind === 'invalid') {
-      setError(t('amount.cannotConvert'));
-      return;
+    if (shownUnit === 'fiat') {
+      if (parsed.kind === 'invalid') {
+        setError(t('amount.cannotConvert'));
+        return;
+      }
+      if (parsed.kind === 'empty' || parsed.sats < 1) {
+        setError(t('wallet.sendAmountMin', { min: formatBitcoin(1) }));
+        return;
+      }
     }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));
