@@ -44,14 +44,16 @@ interface AuthState {
   setAccount(account: Account): void;
   /**
    * Holds a stored session back until its wallet is open (see
-   * {@link AuthState.lockedSession}). Keeps the token in storage.
+   * {@link AuthState.lockedSession}). Keeps the token in storage and clears
+   * the home-screen badge, as for a signed-out visitor.
    *
    * @param session - The stored session token.
    */
   setLockedSession(session: string): void;
   /**
    * Moves the current session to {@link AuthState.lockedSession}: a login
-   * whose wallet could not be opened does not count as signed in.
+   * whose wallet could not be opened does not count as signed in. Clears the
+   * home-screen badge; does nothing without a current session.
    */
   lockSession(): void;
   /** Clears the session from state and from storage, and the home-screen badge. */
@@ -87,14 +89,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ account });
   },
   setLockedSession: (session) => {
+    bumpUnreadAppBadgeEpoch();
+    setUnreadAppBadge(0);
     set({ session: null, account: null, lockedSession: session });
   },
   lockSession: () => {
-    set((state) =>
-      state.session === null
-        ? state
-        : { session: null, account: null, lockedSession: state.session },
-    );
+    const { session } = useAuthStore.getState();
+    if (session === null) {
+      return;
+    }
+    bumpUnreadAppBadgeEpoch();
+    setUnreadAppBadge(0);
+    set({ session: null, account: null, lockedSession: session });
   },
   clearAuth: () => {
     clearSessionPhrase();

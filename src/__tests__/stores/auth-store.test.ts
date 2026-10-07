@@ -81,16 +81,22 @@ describe('useAuthStore', () => {
     });
     expect(saveSession).not.toHaveBeenCalled();
     expect(clearSession).not.toHaveBeenCalled();
+    expect(bumpUnreadAppBadgeEpoch).toHaveBeenCalled();
+    expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
   });
 
-  it('moves the active session to lockedSession', () => {
+  it('moves the active session to lockedSession and clears the badge', () => {
     useAuthStore.getState().setAuth('tok', account);
+    vi.mocked(setUnreadAppBadge).mockClear();
+    vi.mocked(bumpUnreadAppBadgeEpoch).mockClear();
     useAuthStore.getState().lockSession();
     expect(useAuthStore.getState()).toMatchObject({
       session: null,
       account: null,
       lockedSession: 'tok',
     });
+    expect(bumpUnreadAppBadgeEpoch).toHaveBeenCalled();
+    expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
   });
 
   it('leaves state unchanged when there is no active session to lock', () => {

@@ -67,6 +67,8 @@ function localeAt(index: number): Locale {
 
 /**
  * Writes the locale cookie and refreshes when `next` differs from `current`.
+ * Also saves it on the account for a stored session, unless that session is
+ * held back until its wallet is open.
  *
  * @param next - Locale the visitor chose.
  * @param current - Locale currently active in the tree.
@@ -76,7 +78,9 @@ async function persistLocale(next: Locale, current: Locale, refresh: () => void)
   if (next === current) {
     return;
   }
-  const session = loadSession();
+  // A session held back until its wallet is open counts as signed out: only
+  // the cookie changes.
+  const session = useAuthStore.getState().lockedSession === null ? loadSession() : null;
   if (session !== null) {
     const generation = bumpLocaleGeneration();
     try {

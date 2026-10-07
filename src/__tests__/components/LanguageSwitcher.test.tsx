@@ -324,6 +324,18 @@ describe('LanguageSwitcher', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
+  it('only writes the cookie while the stored session is held back', () => {
+    vi.mocked(setAccountLocale).mockReset();
+    saveSession('tok');
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'tok' });
+    renderWithLocale(<LanguageSwitcher tone="light" />);
+    fireEvent.click(screen.getByLabelText('Language'));
+    fireEvent.click(screen.getByRole('option', { name: 'Deutsch' }));
+    expect(setAccountLocale).not.toHaveBeenCalled();
+    expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
+    useAuthStore.setState({ lockedSession: null });
+  });
+
   it('waits for the signed-in account locale update before writing the cookie', async () => {
     vi.mocked(setAccountLocale).mockReset();
     const original = account('language_switcher_original', 'en');
