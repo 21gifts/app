@@ -23465,4 +23465,59 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByRole('button', { name: 'Cancel deletion' })).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-delete-comment-confirm');
   });
+
+  test('screen /habit-tracker delete-comment-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Delete comment' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-delete-comment-error');
+  });
 });

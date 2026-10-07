@@ -2375,6 +2375,12 @@ Ada's session, at least an initiator, after **Delete comment** on someone else's
 
 ![21.gifts habit tracker delete comment confirm](images/habit-tracker-delete-comment-confirm.png)
 
+### Variant: delete-comment-error
+
+Ada's session, at least an initiator. **Confirm deletion** was pressed and the save failed. The alert **Could not load or save the tracker. Please try again.** and **Try again** sit above the list. The confirmation is closed, the comment is still there, and **Delete comment** is visible again. The edit form and the archive confirmation are not open.
+
+![21.gifts habit tracker delete comment error](images/habit-tracker-delete-comment-error.png)
+
 ### Variant: archived
 
 Ada's session after **Confirm archive**. The habit shows the **Archived** chip, the period row (including **Not rated yet**), the comment, and **Send Bitcoin**. The rating pill, **Edit**, and **Archive** are gone.

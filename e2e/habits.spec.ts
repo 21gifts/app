@@ -837,6 +837,39 @@ test('screen /habit-tracker delete-comment-confirm', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Cancel deletion' })).toBeVisible();
 });
 
+test('screen /habit-tracker delete-comment-error', async ({ page }) => {
+  await seedAda(page, 'initiator');
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid name' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PUBLIC_LIST),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await page.getByRole('button', { name: 'Delete comment' }).click();
+  await page.getByRole('button', { name: 'Confirm deletion' }).click();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'Could not load or save the tracker. Please try again.',
+    }),
+  ).toHaveText('Could not load or save the tracker. Please try again.');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete comment' })).toBeVisible();
+  await expect(page.getByText('hello', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirm deletion' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+});
+
 test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', async ({ page }) => {
   await seedAda(page);
   await page.route('**/habits', async (route) => {

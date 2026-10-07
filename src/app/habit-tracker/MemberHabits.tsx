@@ -157,7 +157,7 @@ export function MemberHabits(): ReactElement {
     };
   }, [session, attempt]);
 
-  // Cleared in this render, so the previous account's draft is not painted.
+  // Cleared in this render, so the previous account is not painted.
   if (draftSession !== session) {
     setDraftSession(session);
     sessionVisit.current += 1;
@@ -166,6 +166,15 @@ export function MemberHabits(): ReactElement {
     setAddNotes('');
     setAddCadence('daily');
     setCommentByHabitId({});
+    setEditingHabitId(null);
+    setEditByHabitId({});
+    setConfirmArchiveId(null);
+    payGeneration.current += 1;
+    setPayCommentId(null);
+    setPayDraft('');
+    setPayBusy(false);
+    setPayError(null);
+    setPayInvoice(null);
   }
 
   async function refresh(): Promise<boolean> {

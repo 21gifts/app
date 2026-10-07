@@ -1753,6 +1753,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'delete-comment-error',
+    image: 'habit-tracker-delete-comment-error.png',
+    visual: 'state-habit-tracker-delete-comment-error',
+    needle: 'screen /habit-tracker delete-comment-error',
+  },
+  {
+    route: '/habit-tracker',
     id: 'archived',
     image: 'habit-tracker-archived.png',
     visual: 'state-habit-tracker-archived',

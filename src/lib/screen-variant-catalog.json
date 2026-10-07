@@ -1440,6 +1440,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:delete-comment-error",
+    "label": "/habit-tracker delete-comment-error",
+    "visual": "state-habit-tracker-delete-comment-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/habit-tracker:archived",
     "label": "/habit-tracker archived",
     "visual": "state-habit-tracker-archived",
