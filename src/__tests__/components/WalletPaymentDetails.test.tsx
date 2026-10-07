@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
-import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useSpotRateState } from '@/hooks/useSpotRate';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
@@ -13,7 +13,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => new URLSearchParams('id=p1'),
 }));
-vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDayState: vi.fn() }));
+vi.mock('@/hooks/useSpotRate', () => ({ useSpotRateState: vi.fn() }));
 vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
@@ -71,9 +71,7 @@ function row(label: string): HTMLElement {
 }
 
 beforeEach(() => {
-  vi.mocked(useLatestRateDayState)
-    .mockReset()
-    .mockReturnValue({ rateDay: RATE_DAY, settled: true, loading: false });
+  vi.mocked(useSpotRateState).mockReset().mockReturnValue({ rateDay: RATE_DAY, loading: false });
   vi.mocked(openInSystemBrowser).mockReset();
   vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
 });
@@ -125,11 +123,7 @@ describe('WalletPaymentDetails', () => {
   });
 
   it('shows nothing of a loaded payment until the rate read has settled', () => {
-    vi.mocked(useLatestRateDayState).mockReturnValue({
-      rateDay: null,
-      settled: false,
-      loading: true,
-    });
+    vi.mocked(useSpotRateState).mockReturnValue({ rateDay: null, loading: true });
     showPayment(fixture(ZAP));
     expect(screen.queryByText("+₿2'100")).toBeNull();
     expect(screen.queryByText('Date')).toBeNull();
@@ -229,11 +223,7 @@ describe('WalletPaymentDetails', () => {
   });
 
   it('shows the description row when the title is not the description, and the other method, without a rate', () => {
-    vi.mocked(useLatestRateDayState).mockReturnValue({
-      rateDay: null,
-      settled: true,
-      loading: false,
-    });
+    vi.mocked(useSpotRateState).mockReturnValue({ rateDay: null, loading: false });
     showPayment({
       ...fixture(DEPOSIT),
       method: 'other',

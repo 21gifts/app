@@ -10,7 +10,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
 import { Button, Card, IconButton } from '@/components/ui';
-import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useSpotRateState } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
@@ -279,7 +279,7 @@ export function WalletPaymentDetails(): ReactElement {
   const { t } = useTranslations();
   const id = useSearchParams().get('id');
   const state = useWalletPayment(id);
-  const rate = useLatestRateDayState();
+  const rate = useSpotRateState();
   const wallet = useWallet();
   const waiting = state.status === 'loading';
   const missing = state.status === 'missing' || (waiting && wallet.status === 'disabled');

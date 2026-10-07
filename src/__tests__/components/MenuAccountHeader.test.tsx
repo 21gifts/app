@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MenuAccountHeader } from '@/components/MenuAccountHeader';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
 import type { Account, AccountActivity, MemberProfile } from '@/lib/api-types';
@@ -36,7 +36,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
-vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
 vi.mock('@/lib/api', () => ({
   fetchAccountActivity: vi.fn(),
   fetchMember: vi.fn(),
@@ -93,7 +93,7 @@ function statRow(): HTMLElement {
 
 beforeEach(() => {
   vi.mocked(useWallet).mockReturnValue(walletWith('disabled'));
-  vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
+  vi.mocked(useSpotRate).mockReturnValue(RATE_DAY);
   vi.mocked(fetchAccountActivity).mockReset().mockResolvedValue(ACTIVITY);
   vi.mocked(fetchMember).mockReset().mockResolvedValue(MEMBER);
   vi.mocked(fetchProfilePhoto).mockReset().mockRejectedValue(new Error('none'));
@@ -315,7 +315,7 @@ describe('MenuAccountHeader', () => {
 
   it('keeps the balance fiat line empty without a usable rate', async () => {
     signIn();
-    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    vi.mocked(useSpotRate).mockReturnValue(null);
     vi.mocked(useWallet).mockReturnValue(walletWith('ready', 21_000));
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();

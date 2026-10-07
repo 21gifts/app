@@ -8,7 +8,7 @@ import type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet'
 import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
-import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useSpotRateState } from '@/hooks/useSpotRate';
 import { messageInvoiceSchema, type AmountUnit } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
@@ -81,7 +81,8 @@ export function MemberHabits(): ReactElement {
   const inFlightKeys = useRef(new Set<string>());
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
-  const { rateDay, settled: rateSettled } = useLatestRateDayState(signedIn);
+  const { rateDay, loading: rateLoading } = useSpotRateState(signedIn);
+  const rateSettled = !rateLoading;
 
   useEffect(() => {
     listAlive.current = true;

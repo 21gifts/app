@@ -1,7 +1,7 @@
 import { act, cleanup, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SPOT_REFRESH_MS, useSpotRate } from '@/hooks/useSpotRate';
+import { SPOT_REFRESH_MS, useSpotRate, useSpotRateState } from '@/hooks/useSpotRate';
 import type { FxSpot } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -21,6 +21,12 @@ function spot(rates: FxSpot['rates']): FxSpot {
 function Probe({ enabled }: { enabled?: boolean }): ReactElement {
   const rate = useSpotRate(enabled);
   return <p>{rate === null ? 'null' : `CHF ${rate.chf ?? '-'} per ${rate.sats}`}</p>;
+}
+
+/** Mounts {@link useSpotRateState} and prints its load state and CHF price. */
+function StateProbe({ enabled }: { enabled?: boolean }): ReactElement {
+  const { rateDay, loading } = useSpotRateState(enabled);
+  return <p>{`${loading ? 'loading' : 'settled'} ${rateDay?.chf ?? 'none'}`}</p>;
 }
 
 /** Lets pending promise callbacks run. */
@@ -149,6 +155,44 @@ describe('useSpotRate', () => {
       resolve(spot({ CHF: '80000.00' }));
     });
     vi.advanceTimersByTime(SPOT_REFRESH_MS);
+    expect(fetchFxSpotMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useSpotRateState', () => {
+  it('is loading until the first answer, then settled with its price', async () => {
+    fetchFxSpotMock.mockResolvedValue(spot({ CHF: '80000.00' }));
+    renderWithLocale(<StateProbe />);
+    expect(screen.getByText('loading none')).toBeTruthy();
+    await flush();
+    expect(screen.getByText('settled 80000.00')).toBeTruthy();
+  });
+
+  it('settles without a price when the first request fails', async () => {
+    fetchFxSpotMock.mockRejectedValue(new Error('down'));
+    renderWithLocale(<StateProbe />);
+    await flush();
+    expect(screen.getByText('settled none')).toBeTruthy();
+  });
+
+  it('keeps the last price when a later request fails', async () => {
+    fetchFxSpotMock.mockResolvedValueOnce(spot({ CHF: '80000.00' }));
+    fetchFxSpotMock.mockRejectedValueOnce(new Error('down'));
+    renderWithLocale(<StateProbe />);
+    await flush();
+    await act(async () => {
+      vi.advanceTimersByTime(SPOT_REFRESH_MS);
+    });
+    await flush();
+    expect(screen.getByText('settled 80000.00')).toBeTruthy();
+  });
+
+  it('stays loading without a price while disabled', async () => {
+    fetchFxSpotMock.mockResolvedValue(spot({ CHF: '80000.00' }));
+    const { rerender } = renderWithLocale(<StateProbe />);
+    await flush();
+    rerender(<StateProbe enabled={false} />);
+    expect(screen.getByText('loading none')).toBeTruthy();
     expect(fetchFxSpotMock).toHaveBeenCalledTimes(1);
   });
 });
