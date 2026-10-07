@@ -286,8 +286,16 @@ test('team reads send only the session, and the browser keeps none of the data',
   await page.getByRole('button', { name: 'Activity' }).click();
   await expect(page.getByText('Opened a page')).toBeVisible();
   await page.goto('/moderate/audit');
-  await expect(page.getByText('Wallet data').first()).toBeVisible();
-  expect(sent.length).toBeGreaterThanOrEqual(4);
+  await expect(page.getByRole('list', { name: 'Access log entries' })).toBeVisible();
+  const kind = (request: PlaywrightRequest): string => {
+    const path = new URL(request.url()).pathname;
+    if (path === '/team/members') return 'search';
+    if (path === '/team/audit') return 'audit';
+    return path.endsWith('/wallet') ? 'wallet' : path.endsWith('/events') ? 'events' : path;
+  };
+  await expect
+    .poll(() => [...new Set(sent.map(kind))].sort())
+    .toEqual(['audit', 'events', 'search', 'wallet']);
   for (const request of sent) {
     expect(request.method()).toBe('GET');
     expect(request.postData()).toBeNull();

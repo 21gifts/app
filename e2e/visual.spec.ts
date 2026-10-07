@@ -21774,12 +21774,15 @@ test.describe('team access screens', () => {
   }
 
   /**
-   * Puts the page scroll back at the top after a press: a press can leave the
-   * scroll surface a pixel down, which is not part of the state.
+   * Scrolls the pressed control's part of the page to the top of the view.
+   * A press scrolls by whatever it needs, sometimes a fractional pixel; a
+   * fixed position keeps the shot on the same pixels every run.
+   *
+   * @param target - The part of the page the state is about.
    */
-  async function scrollToTop(page: Page): Promise<void> {
-    await page.evaluate(() => {
-      document.querySelector('[data-scrollport][data-scroll-active]')?.scrollTo(0, 0);
+  async function showAtTop(target: Locator): Promise<void> {
+    await target.evaluate((node) => {
+      node.scrollIntoView({ block: 'start' });
     });
   }
 
@@ -21897,7 +21900,7 @@ test.describe('team access screens', () => {
     await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
     await expect(page.getByText('Sent · Shop')).toBeVisible();
     await expect(page.getByText('From Bob')).toHaveCount(0);
-    await scrollToTop(page);
+    await showAtTop(page.getByRole('group', { name: 'Period' }));
     await shotScreen(page, 'state-moderate-member-period');
   });
 
@@ -21914,7 +21917,7 @@ test.describe('team access screens', () => {
     await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
     await expect(page.getByText('To carol@example.com')).toBeVisible();
     await expect(page.getByText('From Bob')).toHaveCount(0);
-    await scrollToTop(page);
+    await showAtTop(page.getByRole('region', { name: 'Payments' }));
     await shotScreen(page, 'state-moderate-member-direction');
   });
 
@@ -21924,7 +21927,7 @@ test.describe('team access screens', () => {
     await openAdaWallet(page);
     await page.getByRole('combobox', { name: 'Category' }).click();
     await expect(page.getByRole('option', { name: 'All categories' })).toBeVisible();
-    await scrollToTop(page);
+    await showAtTop(page.getByRole('combobox', { name: 'Category' }));
     await shotScreen(page, 'state-moderate-member-category-open');
   });
 
@@ -21939,7 +21942,7 @@ test.describe('team access screens', () => {
     await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
     await expect(page.getByText('Sent · Shop')).toBeVisible();
     await expect(page.getByText('From Bob')).toHaveCount(0);
-    await scrollToTop(page);
+    await showAtTop(page.getByRole('region', { name: 'Payments' }));
     await shotScreen(page, 'state-moderate-member-category');
   });
 
@@ -21950,7 +21953,7 @@ test.describe('team access screens', () => {
     await page.getByRole('button', { name: 'Activity' }).click();
     await expect(page.getByText('Opened a page')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Activity' })).toContainText(/₿2.000 · .*\d/);
-    await scrollToTop(page);
+    await showAtTop(page.getByRole('group', { name: 'Show' }));
     await shotScreen(page, 'state-moderate-member-activity');
   });
 
@@ -21960,7 +21963,7 @@ test.describe('team access screens', () => {
     await openAdaWallet(page);
     await page.getByRole('button', { name: 'Activity' }).click();
     await expect(page.getByText('No activity yet.')).toBeVisible();
-    await scrollToTop(page);
+    await showAtTop(page.getByRole('group', { name: 'Show' }));
     await shotScreen(page, 'state-moderate-member-activity-empty');
   });
 
@@ -21970,7 +21973,7 @@ test.describe('team access screens', () => {
     await openAdaWallet(page);
     await page.getByRole('button', { name: 'Activity' }).click();
     await expect(page.getByText('Could not load the activity. Please try again.')).toBeVisible();
-    await scrollToTop(page);
+    await showAtTop(page.getByRole('group', { name: 'Show' }));
     await shotScreen(page, 'state-moderate-member-activity-error');
   });
 
