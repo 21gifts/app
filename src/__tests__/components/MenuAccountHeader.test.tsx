@@ -247,7 +247,7 @@ describe('MenuAccountHeader', () => {
     const onNavigate = vi.fn();
     renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} open />);
     await settle();
-    const link = screen.getByRole('link');
+    const link = screen.getByRole('link', { name: "Balance ₿21'000 $21.00" });
     expect(link.getAttribute('href')).toBe('/wallet');
     expect(within(link).getByText("₿21'000")).toBeTruthy();
     expect(within(link).getByText('$21.00')).toBeTruthy();
