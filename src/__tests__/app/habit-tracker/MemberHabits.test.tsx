@@ -2278,8 +2278,10 @@ describe('MemberHabits', () => {
     fireEvent.change(amount, { target: { value: '23' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByText('Pay ₿23')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(
+      screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(screen.queryByText('lnbc23')).toBeNull();
     expect(screen.queryByDisplayValue('lnbc23')).toBeNull();
 

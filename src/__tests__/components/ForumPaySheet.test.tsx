@@ -86,7 +86,10 @@ describe('ForumPaySheet', () => {
     const { onPayCancel } = sheet(null, true);
     expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
     expect(screen.getByText('$0.02')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(
+      screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);
