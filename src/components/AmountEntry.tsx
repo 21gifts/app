@@ -301,7 +301,7 @@ export function AmountEntry({
     if (converted !== value) {
       onValueChange(converted);
     }
-  }, [decimal, fiat, keypad, locked, onUnitChange, onValueChange, rateDay, unit, value]);
+  }, [decimal, fiat, fiatReady, keypad, locked, onUnitChange, onValueChange, rateDay, unit, value]);
 
   useEffect(() => {
     if (!keypad || disabled || locked) {

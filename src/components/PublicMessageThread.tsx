@@ -26,12 +26,7 @@ import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-req
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import {
-  paySatsFromDraft,
-  replySatsFromDraft,
-  shownFiatForSats,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
