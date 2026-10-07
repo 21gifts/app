@@ -92,6 +92,33 @@ describe('RulesSetup', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
+  it('shows the Terms of Use line with a link only on the last chapter', () => {
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
+    expect(screen.queryByRole('link', { name: 'Terms of Use' })).toBeNull();
+    expect(screen.queryByText(/By continuing you accept the/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    const line = screen.getByText(/By continuing you accept the/);
+    expect(line.textContent).toBe('By continuing you accept the Terms of Use.');
+    const link = screen.getByRole('link', { name: 'Terms of Use' });
+    expect(link.getAttribute('href')).toBe('/terms');
+    expect(line.contains(link)).toBe(true);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('shows the Terms of Use line in German', () => {
+    renderWithLocale(<RulesSetup chapters={oneChapter} />, 'de');
+    expect(screen.getByText(/Mit dem Fortfahren akzeptieren Sie die/).textContent).toBe(
+      'Mit dem Fortfahren akzeptieren Sie die Nutzungsbedingungen.',
+    );
+    expect(screen.getByRole('link', { name: 'Nutzungsbedingungen' }).getAttribute('href')).toBe(
+      '/terms',
+    );
+  });
+
   it('labels the chapter 0 arrow Back when this tab has a previous view', () => {
     recordCurrentView('/shops');
     Object.defineProperty(window.history, 'length', {
