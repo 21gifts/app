@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import HandbookScreensPage from '@/app/(marketing)/handbook/screens/page';
 import { loadHandbookDocuments } from '@/lib/handbook';
+import { getRequestLocale } from '@/lib/request-locale';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/link', () => ({
@@ -65,6 +66,28 @@ describe('HandbookScreensPage', () => {
     const articles = document.querySelectorAll('article');
     expect(articles.length).toBeGreaterThan(0);
     expect(screen.getByAltText('/ default')).toBeTruthy();
+    const root = document.getElementById('root-default');
+    expect(root?.textContent).toContain('/ default');
+  });
+
+  it('shows German screen-card descriptions for locale de', async () => {
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
+    renderWithLocale(await HandbookScreensPage(), 'de');
+    expect(screen.getByRole('heading', { name: 'Screens' })).toBeTruthy();
+    expect(screen.getAllByText(/Heutige Rate zahlen/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/So funktioniert's/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Desktop\/wide layout/)).toBeNull();
+  });
+
+  it('falls back to the catalog label in German when variant bodies are missing', async () => {
+    vi.mocked(loadHandbookDocuments).mockReturnValueOnce([
+      { id: 'readme', title: 'Overview', markdown: '' },
+      { id: 'screens', title: 'Screens', markdown: '# Screens\n' },
+      { id: 'functions', title: 'Functions', markdown: '' },
+      { id: 'endpoints', title: 'Endpoints', markdown: '' },
+    ]);
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
+    renderWithLocale(await HandbookScreensPage(), 'de');
     const root = document.getElementById('root-default');
     expect(root?.textContent).toContain('/ default');
   });

@@ -3360,6 +3360,17 @@ test('Function: parseScreenVariantDescriptions — pay-qr description is visible
   await expect(page.getByText(/invoice card shows the Bitcoin payment QR/)).toBeVisible();
 });
 
+test('Function: screenVariantDescription — German screen cards follow the locale cookie', async ({
+  page,
+  context,
+}) => {
+  await context.addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('heading', { name: 'Screens' })).toBeVisible();
+  await expect(page.getByText(/Heutige Rate zahlen/).first()).toBeVisible();
+  await expect(page.getByText(/Desktop\/wide layout/)).toHaveCount(0);
+});
+
 test('Function: topicImageSrc — screens viewer shows an image', async ({ page }) => {
   await page.goto('/handbook/screens');
   await expect(page.locator('img[src*="/handbook-images/"]').first()).toBeVisible();

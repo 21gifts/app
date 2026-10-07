@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
+import type { Locale } from '@/lib/locale';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { HandbookImageViewer } from '@/components/HandbookImageViewer';
 import { HandbookIntro } from '@/components/HandbookIntro';
 import { loadHandbookDocuments } from '@/lib/handbook';
 import { HANDBOOK_COMBOS, type HandbookComboId, type HandbookTopic } from '@/lib/handbook-topics';
 import { parseScreenVariantDescriptions } from '@/lib/screen-variant-descriptions';
+import { screenVariantDescription } from '@/lib/screen-variant-locale';
 import screenVariantCatalog from '@/lib/screen-variant-catalog.json';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
@@ -28,7 +30,7 @@ export const metadata: Metadata = {
 export default async function HandbookScreensPage(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
-  const topics = loadScreenTopics();
+  const topics = loadScreenTopics(locale);
   const title = translate(messages, 'handbook.screensTitle');
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-24">
@@ -55,12 +57,14 @@ export default async function HandbookScreensPage(): Promise<ReactElement> {
 }
 
 /**
- * Screen-variant topics from the catalog written by `sync-handbook-images.mjs`,
- * with English descriptions from `docs/handbook/screens.md`.
+ * Screen-variant topics from the catalog written by `sync-handbook-images.mjs`.
+ * English card text comes from `docs/handbook/screens.md`; other locales use the
+ * screen-card locale file. Missing English shows the catalog label.
  *
- * @returns Topics with existing combo ids and a non-empty description.
+ * @param locale - Request UI locale for the card description.
+ * @returns Topics with existing combo ids and a description or catalog label.
  */
-function loadScreenTopics(): HandbookTopic[] {
+function loadScreenTopics(locale: Locale): HandbookTopic[] {
   const allowed = new Set<string>(HANDBOOK_COMBOS);
   const screensDoc = loadHandbookDocuments().find((doc) => doc.id === 'screens');
   if (screensDoc === undefined) {
@@ -72,7 +76,7 @@ function loadScreenTopics(): HandbookTopic[] {
       id: row.id,
       label: row.label,
       visual: row.visual,
-      description: descriptions.get(row.id) ?? row.label,
+      description: screenVariantDescription(locale, row.id, descriptions.get(row.id), row.label),
       combos: row.combos.filter((combo): combo is HandbookComboId => allowed.has(combo)),
     }))
     .filter((topic) => topic.combos.length > 0);

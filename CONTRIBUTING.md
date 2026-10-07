@@ -498,12 +498,19 @@ runtime — no silent English fallback.
 
 New or changed visitor-facing copy goes through a catalog key in the **same
 PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
-catalogize): legal body copy (English), handbook markdown bodies and handbook
-chapter-navigation labels (English), product tokens such as
+catalogize): legal body copy (English), handbook markdown bodies for Functions
+and Endpoints, handbook chapter-navigation labels (English), product tokens such as
 `Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
 `Deutsch` / `Español` / `Filipino`), stats body copy (English), and
 document/social metadata (`title`, `description`, Open Graph alt text —
 English).
+
+Screen-card descriptions are not part of that exception. English stays in
+`docs/handbook/screens.md`. German, Spanish, and Filipino for those cards live
+in `src/lib/screen-variant-descriptions-locale.json`, keyed by catalog id.
+Route and variant labels stay identifiers. A missing translation throws; it
+does not fall back to English. When `screens.md` has no description for an id,
+every locale shows the catalog label.
 
 ### Icon controls (hard requirement)
 
