@@ -37,8 +37,9 @@ function isAlreadyClaimedError(message: string | null): boolean {
  *
  * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
  * @returns Yellow activate banner, in-app escape card, spinner, error copy,
- *   `WalletLoginCard` after **Log in instead** until the wallet is open (and
- *   while that session is held back), or `null` when claimed.
+ *   `WalletLoginCard` after **Log in instead** (once that login is no longer
+ *   running) until the wallet is open (and while that session is held back),
+ *   or `null` when claimed.
  */
 export function ViewProfileClaim({
   viewKey,
@@ -116,6 +117,15 @@ export function ViewProfileClaim({
   }
 
   if (claimedLoginRef.current) {
+    // While this login is still running, only its spinner shows: a held-back
+    // session's card (with its own login and Log out) would race it.
+    if (account === null && passkey.status === 'starting') {
+      return (
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
+        </div>
+      );
+    }
     // Logging in here opens the wallet like everywhere else: until it is
     // open, and while the session is held back after it could not be, the
     // same login card stands in place, so its alert stays.
@@ -124,13 +134,6 @@ export function ViewProfileClaim({
     }
     if (account !== null) {
       return null;
-    }
-    if (passkey.status === 'starting') {
-      return (
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
-        </div>
-      );
     }
     if (passkey.status === 'unknown') {
       return claimFailedView(() => passkey.authenticate());

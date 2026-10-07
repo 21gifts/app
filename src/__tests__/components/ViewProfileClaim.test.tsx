@@ -231,6 +231,27 @@ describe('ViewProfileClaim', () => {
     }
   });
 
+  it('keeps the spinner, not the held-back login card, while login-instead is starting', () => {
+    mockPasskey('error', 'This profile already has a passkey');
+    const { rerender, container } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+    mockPasskey('starting');
+    try {
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: 'tok' });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(container.querySelector('.animate-spin')).not.toBeNull();
+      expect(screen.queryByText('wallet-login-card')).toBeNull();
+    } finally {
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: null });
+      });
+    }
+  });
+
   it('shows a spinner while login-instead is starting', () => {
     mockPasskey('error', 'This profile already has a passkey');
     const { rerender, container } = renderWithLocale(
