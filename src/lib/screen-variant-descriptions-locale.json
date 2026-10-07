@@ -165,9 +165,9 @@
     "fil": "Hindi pa naikarga ang mga publikasyon, kaya ipinapakita ng lakad ang Naglo-load…."
   },
   "/moderate/hidden:error": {
-    "de": "Das Abrufen der Personalliste (Moderator) ist fehlgeschlagen. Schaltfläche Erneut versuchen.",
-    "es": "Falló la obtención de la lista del personal (moderador). Botón Intentar de nuevo.",
-    "fil": "Nabigo ang pagkuha ng listahan ng tauhan (tagapamagitan). Pindutan Subukan ulit."
+    "de": "Das Abrufen der Liste auf der Personalseite (Moderator) ist fehlgeschlagen. Schaltfläche Erneut versuchen.",
+    "es": "Falló la obtención de la lista para el personal (moderador). Botón Intentar de nuevo.",
+    "fil": "Nabigo ang pagkuha ng listahan para sa tauhan (tagapamagitan). Pindutan Subukan ulit."
   },
   "/legal:default": {
     "de": "Der einzige Zustand: Impressum plus Datenschutz, Marketing-Rahmen.",
@@ -262,7 +262,7 @@
   "/pos:error": {
     "de": "Die Anfrage der Kasse ist fehlgeschlagen. Hinweis Die Kasse ist gerade nicht erreichbar.",
     "es": "Falló la petición de la caja. Alerta La caja no está disponible.",
-    "fil": "Nabigo ang kahilingan sa kahon. Alerto Hindi available ang point of sale."
+    "fil": "Nabigo ang kahilingan sa kaha. Alerto Hindi available ang point of sale."
   },
   "/messages:loading": {
     "de": "Warten auf GET /conversations. Text Wird geladen… Auswahl fehlt.",
@@ -400,9 +400,9 @@
     "fil": "Nananatili ang pormularyo, at Hindi magawa ang invoice. ang ipinapakita sa ilalim nito."
   },
   "/setup/rules:law2": {
-    "de": "Regelkarte Regel 2 / Spender kommen zuerst mit Textkörper und dem The-test-Hinweis.",
-    "es": "Tarjeta de regla Regla 2 / Los donantes van primero con el cuerpo y el recuadro The test.",
-    "fil": "Kard ng patakaran Panuntunan 2 / Una ang mga donor na may nilalaman at ang The test na tawag-pansin."
+    "de": "Regelkarte Regel 2 / Spender kommen zuerst mit Textkörper und dem Hinweis Die Probe.",
+    "es": "Tarjeta de regla Regla 2 / Los donantes van primero con el cuerpo y el recuadro La prueba.",
+    "fil": "Kard ng patakaran Panuntunan 2 / Una ang mga donor na may nilalaman at ang tawag-pansin na Ang pagsubok."
   },
   "/shops:empty": {
     "de": "Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Das Eingabefeld ist weiterhin vorhanden.",
@@ -622,7 +622,7 @@
   "/grants/apply:sunday": {
     "de": "Am Sonntag zeigt der Schritt Über mich Schreiben ist am Sonntag pausiert und blendet Speichern aus.",
     "es": "El domingo el paso Sobre mí muestra La escritura está en pausa el domingo y oculta Guardar.",
-    "fil": "Sa Linggo, ipinapakita ng hakbang Tungkol sa akin na Itinigil ang pagsusulat tuwing Linggo at itinatago ang Sagip."
+    "fil": "Sa Linggo, ipinapakita ng hakbang Tungkol sa akin na Itinigil ang pagsusulat tuwing Linggo at itinatago ang I-save."
   },
   "/statistics:staff-open": {
     "de": "Ein Gründer klickt auf Moderatorenfunktionen, danach ist Auszahlung pro Person anzeigen sichtbar.",
@@ -677,17 +677,17 @@
   "/notifications:default": {
     "de": "Geladene Liste mit mindestens einer ungelesenen Forenantwort (Akteur Bob, Bob hat geantwortet).",
     "es": "Lista cargada con al menos una respuesta de foro no leída (actor Bob, Bob respondió).",
-    "fil": "Nailutang na listahan na may hindi bababa sa isang hindi pa nababasang tugon sa talakayan (aktor Bob, Sumagot si Bob)."
+    "fil": "Nai-load na listahan na may hindi bababa sa isang hindi pa nababasang tugon sa talakayan (aktor Bob, Sumagot si Bob)."
   },
   "/moderate/proposals:empty": {
     "de": "Personal (Moderator) hat eine Liste mit null offenen Vorschlägen geladen. Keine offenen Vorschläge.",
     "es": "El personal (moderador) cargó una lista con cero propuestas abiertas. No hay propuestas abiertas.",
-    "fil": "Nailutang ng tauhan (tagapamagitan) ang listahan na walang bukas na mungkahi. Walang bukas na mungkahi."
+    "fil": "Na-load ng tauhan (tagapamagitan) ang listahan na walang bukas na mungkahi. Walang bukas na mungkahi."
   },
   "/grants/applications:default": {
     "de": "Personal (Gründer) hat die Warteschlange mit mindestens einem offenen Antrag geladen (Betreff Rose).",
     "es": "El personal (fundador) cargó la cola con al menos una solicitud abierta (asunto Rose).",
-    "fil": "Nailutang ng tauhan (tagapagtatag) ang pila na may hindi bababa sa isang bukas na aplikasyon (paksa Rose)."
+    "fil": "Na-load ng tauhan (tagapagtatag) ang pila na may hindi bababa sa isang bukas na aplikasyon (paksa Rose)."
   },
   "/profile:single-day": {
     "de": "Ein Empfangstag (₿21 am 2026-06-01). Das Diagramm zeichnet eine waagerechte Linie aus einem Punkt.",
@@ -841,7 +841,7 @@
   },
   "/welcome:ask-empty-daily": {
     "de": "Um Geld bitten gerade geöffnet. Schritt 1 von 4, Täglich gedrückt, Betrag leer, Weiter deaktiviert.",
-    "es": "Pedir dinero acaba de abrirse. Paso 1 de 4, Diaria pulsado, importe vacío, Continuar desactivado.",
+    "es": "Pedir dinero acaba de abrirse. Paso 1 de 4, Diario pulsado, importe vacío, Continuar desactivado.",
     "fil": "Kakabukas lang ng Humingi ng pera. Hakbang 1 ng 4, pinindot ang Araw-araw, walang laman ang halaga, naka-disable ang Magpatuloy."
   },
   "/members/[accountId]:replies-loading": {
@@ -852,7 +852,7 @@
   "/pos/amount:loading": {
     "de": "Die Kassenanfrage ist noch nicht zurück. Überschrift Betrag und der Ladekreis. Kein Tastenfeld und kein QR.",
     "es": "La solicitud de caja aún no ha vuelto. Encabezado Importe y el indicador. Sin teclado numérico y sin QR.",
-    "fil": "Hindi pa bumalik ang kahilingan ng kahon. Ulo na Halaga at ang umiikot. Walang numericong teclado at walang QR."
+    "fil": "Hindi pa bumalik ang kahilingan ng kaha. Ulo na Halaga at ang umiikot. Walang numericong teclado at walang QR."
   },
   "/messages:default": {
     "de": "Mitgliederliste. Kein Auswähler. Alle eingehenden Herkunftsadressen: Bob, offizielles 21.gifts und npub1abc…xyz.",
@@ -897,7 +897,7 @@
   "/welcome:ask-preview-video-text": {
     "de": "Anfragen, Schritt 4 von 4, Einmalig ist gedrückt, ein Video und die Bildunterschrift Brauche Hilfe bei einem Zugticket.",
     "es": "Pedir, paso 4 de 4, Una vez está pulsado, un vídeo y el pie Necesito ayuda con un billete de tren.",
-    "fil": "Hiling, hakbang 4 sa 4, nakapindot ang Isahan, isang bidyo at ang palyawan Kailangan ng tulong sa tiket ng tren."
+    "fil": "Hiling, hakbang 4 sa 4, nakapindot ang Isahan, isang bidyo at ang paliwanag Kailangan ng tulong sa tiket ng tren."
   },
   "/welcome:composer-place": {
     "de": "Ort hinzufügen ist geöffnet und der Kartenschlüssel ist leer, daher zeigt das Feld Die Karte ist nicht verfügbar.",
@@ -1005,9 +1005,9 @@
     "fil": "Nakalagda sa /members/:id na may Aleman na Tungkol sa akin. Nakikita ang Isalin sa ilalim ng katawan ng Tungkol sa akin."
   },
   "/messages/[id]:loan-tag-open": {
-    "de": "Derselbe unsignierte Kredit, nachdem Darlehen gedrückt wurde. Eine Zeile unter dem Namen besagt, dass ein Darlehen zurückgezahlt ist.",
-    "es": "El mismo crédito sin firmar, después de pulsar Préstamo. Una línea bajo el nombre indica que un préstamo está pagado.",
-    "fil": "Parehong utang na hindi nilagdaan, pagkatapos pindutin ang Pautang. Isang linya sa ilalim ng pangalan ang nagsasabing nabayaran na ang isang pautang."
+    "de": "Derselbe unsignierte Kredit, nachdem Darlehen gedrückt wurde. Eine Zeile unter dem Namen besagt, dass ein Darlehen zurückgezahlt wird.",
+    "es": "El mismo crédito sin firmar, después de pulsar Préstamo. Una línea bajo el nombre indica que un préstamo se devuelve.",
+    "fil": "Parehong utang na hindi nilagdaan, pagkatapos pindutin ang Pautang. Isang linya sa ilalim ng pangalan ang nagsasabing ibinabalik ang isang pautang."
   },
   "/messages/[id]/author:replies-error": {
     "de": "1 Reaktion gedrückt. Die Übersicht zeigt Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
@@ -1017,7 +1017,7 @@
   "/messages/[id]/author:posts-truncated": {
     "de": "2 Beiträge gedrückt. Eine Notiz, Robin hat eine Notiz geschrieben, und die gedämpfte Zeile Es werden die neuesten 1 von 2 angezeigt.",
     "es": "Se pulsaron 2 publicaciones. Una nota, Robin escribió una nota, y la línea atenuada Mostrando las últimas 1 de 2.",
-    "fil": "Pinindot ang 2 tala. Isang tala, Sumulat si Robin ng isang tala, at ang lining mahina ang kulay Ipinapakita ang pinakabagong 1 sa 2."
+    "fil": "Pinindot ang 2 tala. Isang tala, Sumulat si Robin ng isang tala, at ang naka-mute na linya Ipinapakita ang pinakabagong 1 sa 2."
   },
   "/members/[accountId]:replies-open": {
     "de": "Identitätskarte; Antworten gedrückt; keine angeheftete Profilnotiz-Karte; Antwortkarte Eine Antwort von Carol.",
@@ -1025,9 +1025,9 @@
     "fil": "Kard ng pagkakakilanlan; pinindot ang mga sagot; walang nakaangkla na kard ng tala sa pagkakakilanlan; kard ng sagot Isang sagot mula kay Carol."
   },
   "/grants/applications/[accountId]:deciding": {
-    "de": "Personal (Gründer) Ablehnen-POST unterwegs. Nichts deaktiviert mit einem Drehsymbol; Antrag weiter sichtbar.",
-    "es": "Personal (fundador) POST de Rechazar en curso. Nada desactivado con un indicador giratorio; la solicitud sigue visible.",
-    "fil": "Tauhan (tagapagtatag) POST ng Tanggihan na isinasagawa. Walang naka-disable na may umiikot na pananda; nakikita pa ang aplikasyon."
+    "de": "Personal (Gründer) Ablehnen-POST unterwegs. Nein deaktiviert mit einem Drehsymbol; Antrag weiter sichtbar.",
+    "es": "Personal (fundador) POST de Rechazar en curso. El botón No desactivado con un indicador giratorio; la solicitud sigue visible.",
+    "fil": "Tauhan (tagapagtatag) POST ng Tanggihan na isinasagawa. Naka-disable ang Hindi na may umiikot na pananda; nakikita pa ang aplikasyon."
   },
   "/moderate/group:photo": {
     "de": "Moderator. Geladener Gruppendiskussionsfaden mit einem angehängten Standbild und ohne Text. Bild-Alt Foto von Ada.",
@@ -1036,7 +1036,7 @@
   },
   "/pl:amount-invalid": {
     "de": "Weiter mit einem leeren oder nicht ganzen Betrag zeigt Bitte eine ganze Zahl eingeben. Das Formular bleibt. Kein Bezahlen.",
-    "es": "Continuar con un importe vacío o no entero muestra Introduce un número entero. El formulario permanece. Sin pagar.",
+    "es": "Continuar con un importe vacío o no entero muestra Introduce un número entero. El formulario permanece. Sin Pagar.",
     "fil": "Magpatuloy na may walang laman o hindi buong halaga ay nagpapakita ng Maglagay ng buong bilang. Nanatili ang pormularyo. Walang Magbayad."
   },
   "/welcome:ask-preparing": {
@@ -1157,7 +1157,7 @@
   "/messages/[id]:note-video-playing": {
     "de": "Dieselbe öffentliche Notiz nach Abspielen. Die Schaltfläche Abspielen ist weg. Die Schaltfläche Vollbild bleibt auf dem Bild.",
     "es": "La misma nota pública después de Reproducir. El botón Reproducir desapareció. El botón Pantalla completa permanece en la imagen.",
-    "fil": "Parehong pampublikong tala pagkatapos ng Patakbuhin. Wala na ang pindutan ng Patakbuhin. Nanatili sa larawan ang pindutan ng Buong palabas."
+    "fil": "Parehong pampublikong tala pagkatapos ng Patakbuhin. Wala na ang pindutan ng Patakbuhin. Nanatili sa larawan ang pindutan ng buong screen."
   },
   "/messages/[id]:sunday": {
     "de": "Geräte-lokaler Sonntag. Hallo von Ada bleibt. Reaktion schreiben ist weg. Am Sonntag ist das Schreiben pausiert.",
@@ -1240,7 +1240,7 @@
     "fil": "Pinindot ang Kopyahin. Ang simbolo ay ang tsek at ang naa-access na pangalan ay Nakopya. Ang susi ay npub1example pa rin."
   },
   "/welcome:ask-text-filled": {
-    "de": "Anfragen, Schritt 3 von 4, mit Hilfe bei einem Zugticket im Nachrichtenfeld. Weiter bleibt aktiviert.",
+    "de": "Anfragen, Schritt 3 von 4, mit Brauche Hilfe bei einem Zugticket im Nachrichtenfeld. Weiter bleibt aktiviert.",
     "es": "Pedir, paso 3 de 4, con Necesito ayuda con un billete de tren escrito en el campo de mensaje. Continuar sigue habilitado.",
     "fil": "Hiling, hakbang 3 ng 4, na may Kailangan ng tulong sa bilyete ng tren na nakasulat sa patlang ng mensahe. Magpatuloy ay nananatiling gumagana."
   },
@@ -1265,9 +1265,9 @@
     "fil": "Nakatakda ang pangalan ng gumagamit, walang Wallet of Satoshi address. Kawing Maglagay muna ng Wallet of Satoshi address. Walang porma ng halaga."
   },
   "/profile:usd-scale": {
-    "de": "Derselbe Empfangs-Platzhalter wie bei Empfangen, mit ausgewählter Fiat-Skala und gedrücktem USD (Gegeben und erhalten in USD).",
-    "es": "El mismo marcador de recepción que en recibir, con la escala fiat seleccionada y USD pulsado (Donado y recibido en USD).",
-    "fil": "Parehong palatandaan ng pagtanggap gaya ng sa tumanggap, na napili ang sukat ng fiat at naka-pindot ang USD (Ibinigay at natanggap sa USD)."
+    "de": "Derselbe Empfangs-Platzhalter wie bei receive, mit ausgewählter Fiat-Skala und gedrücktem USD (Gegeben und erhalten in USD).",
+    "es": "El mismo marcador de recepción que en receive, con la escala fiat seleccionada y USD pulsado (Donado y recibido en USD).",
+    "fil": "Parehong palatandaan ng pagtanggap gaya ng sa receive, na napili ang sukat ng fiat at naka-pindot ang USD (Ibinigay at natanggap sa USD)."
   },
   "/moderate/proposals:sunday": {
     "de": "Geräte-lokaler Sonntag. Rose bleibt. Als Moderator bestätigen und Ablehnen sind weg. Am Sonntag ist das Schreiben pausiert.",
@@ -1280,9 +1280,9 @@
     "fil": "Tauhan /grants/applications/:accountId na may nasuring post sa Aleman. Nakikita ang Isalin sa ilalim ng nilalaman."
   },
   "/welcome:reaction-paid": {
-    "de": "Die Zahlung wurde erkannt. Adas Antwort Das ist meine Antwort steht im Verlauf, und das Eingabefeld ist wieder leer.",
-    "es": "El pago fue detectado. La respuesta de Ada Esta es mi respuesta está en el hilo, y el cuadro de redacción está vacío de nuevo.",
-    "fil": "Natukoy ang bayad. Ang sagot ni Ada na Ito ang sagot ko ay nasa talakayan, at walang laman na muli ang kahon ng pagsulat."
+    "de": "Die Zahlung wurde erkannt. Adas Antwort This is my answer steht im Verlauf, und das Eingabefeld ist wieder leer.",
+    "es": "El pago fue detectado. La respuesta de Ada This is my answer está en el hilo, y el cuadro de redacción está vacío de nuevo.",
+    "fil": "Natukoy ang bayad. Ang sagot ni Ada na This is my answer ay nasa talakayan, at walang laman na muli ang kahon ng pagsulat."
   },
   "/moderate/hidden:default": {
     "de": "Das Personal (Moderatorin oder Moderator) hat eine Liste mit mindestens einer versteckten Notiz geladen (Autor Bob, Text Versteckte Notiz, Versteckt von Ada).",
@@ -1300,9 +1300,9 @@
     "fil": "Ang parehong pahina. Ang pangungusap ay isang paunang tingin, hindi isang hindi pinaganang patlang Ang iyong reaksyon, at walang patlang na Halaga."
   },
   "/members/[accountId]:posts-open-loan-tag-open": {
-    "de": "Derselbe Beitrag wie posts-open-goal-credit, nachdem Darlehen gedrückt wurde. Eine Zeile unter dem Namen sagt, dass ein Darlehen zurückgezahlt ist.",
-    "es": "La misma publicación que posts-open-goal-credit, después de pulsar Préstamo. Una línea bajo el nombre dice que un préstamo está pagado.",
-    "fil": "Parehong tala tulad ng posts-open-goal-credit, pagkatapos pindutin ang Pautang. May linya sa ilalim ng pangalan na nagsasabing nabayaran na ang pautang."
+    "de": "Derselbe Beitrag wie posts-open-goal-credit, nachdem Darlehen gedrückt wurde. Eine Zeile unter dem Namen sagt, dass ein Darlehen zurückgezahlt wird.",
+    "es": "La misma publicación que posts-open-goal-credit, después de pulsar Préstamo. Una línea bajo el nombre dice que un préstamo se devuelve.",
+    "fil": "Parehong tala tulad ng posts-open-goal-credit, pagkatapos pindutin ang Pautang. May linya sa ilalim ng pangalan na nagsasabing ibinabalik ang pautang."
   },
   "/grants/payments/amounts:off": {
     "de": "Gründerin oder Gründer mit ausgeschalteten Zahlungen. Aus ist gedrückt und Ein nicht. Nadel state-grants-payments-amounts-off.",
@@ -1321,8 +1321,8 @@
   },
   "/moderate/proposals:error": {
     "de": "Das Laden der Liste für das Personal (Moderatorin oder Moderator) ist fehlgeschlagen. Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
-    "es": "Falló la carga de la lista del personal (persona moderadora). No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo. Botón Intentar de nuevo.",
-    "fil": "Nabigo ang pagkuha ng listahan ng tauhan (moderator). Hindi ma-load ang mga bukas na mungkahi. Subukan ulit. Pindutan Subukan ulit."
+    "es": "Falló la carga de la lista para el personal (persona moderadora). No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo. Botón Intentar de nuevo.",
+    "fil": "Nabigo ang pagkuha ng listahan para sa tauhan (moderator). Hindi ma-load ang mga bukas na mungkahi. Subukan ulit. Pindutan Subukan ulit."
   },
   "/messages/[id]/author:replies-translate-error": {
     "de": "Nach einer fehlgeschlagenen Übersetzung dieser Reaktion. Der Verlauf zeigt Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen.",
@@ -1356,8 +1356,8 @@
   },
   "/grants/applications:error": {
     "de": "Das Laden der Liste für das Personal (Gründerin oder Gründer) ist fehlgeschlagen. Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
-    "es": "Falló la carga de la lista del personal (persona fundadora). No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo. Botón Intentar de nuevo.",
-    "fil": "Nabigo ang pagkuha ng listahan ng tauhan (tagapagtatag). Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit. Pindutan Subukan ulit."
+    "es": "Falló la carga de la lista para el personal (persona fundadora). No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo. Botón Intentar de nuevo.",
+    "fil": "Nabigo ang pagkuha ng listahan para sa tauhan (tagapagtatag). Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit. Pindutan Subukan ulit."
   },
   "/moderate/group:translate-error": {
     "de": "Moderatorin oder Moderator. Die Übersetzung ist fehlgeschlagen. Der Hinweis lautet, dass die Notiz nicht übersetzt werden konnte, und Übersetzen ist weiterhin da.",
@@ -1366,7 +1366,7 @@
   },
   "/trust-chain:expanded": {
     "de": "Cyrill antippen, dann Severin. Die Kette wächst von links nach rechts: Cyrill hat Severin ernannt, der Ada und Bob verifiziert hat.",
-    "es": "Pulsa Cyrill, luego Severin. La cadena crece de izquierda a derecha: Cyrill nombró a Severin, quien verificó a Ada y Bob.",
+    "es": "Pulsar Cyrill, luego Severin. La cadena crece de izquierda a derecha: Cyrill nombró a Severin, quien verificó a Ada y Bob.",
     "fil": "I-click si Cyrill, pagkatapos si Severin. Lumalaki ang kadena mula kaliwa pakanan: Inatasan ni Cyrill si Severin, na nagpatunay kina Ada at Bob."
   },
   "/welcome:ask-credit-preview-loan-open": {
@@ -1395,9 +1395,9 @@
     "fil": "Bukas ang thread. Ang patlang ng mensahe ay naglalaman ng @ at bukas ang listahan ng Mga tao. Ang pagpili ng tao ay hindi sila inaabisuhan."
   },
   "/grants/applications/[accountId]:error": {
-    "de": "Abruf der Mitarbeitenden-Details (founder) fehlgeschlagen. Text Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
-    "es": "Falló la obtención del detalle de personal (founder). Texto No se pudo cargar esta solicitud. Inténtalo de nuevo. Botón Intentar de nuevo.",
-    "fil": "Nabigo ang pagkuha ng detalye ng kawani (founder). Teksto Hindi ma-load ang aplikasyong ito. Subukan ulit. Pindutan Subukan ulit."
+    "de": "Abruf der Details auf der Personalseite (founder) fehlgeschlagen. Text Diese Bewerbung konnte nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
+    "es": "Falló la obtención del detalle para el personal (founder). Texto No se pudo cargar esta solicitud. Inténtalo de nuevo. Botón Intentar de nuevo.",
+    "fil": "Nabigo ang pagkuha ng detalye para sa kawani (founder). Teksto Hindi ma-load ang aplikasyong ito. Subukan ulit. Pindutan Subukan ulit."
   },
   "/messages/[id]:shop-edit": {
     "de": "Eine Moderationssitzung zu einer Shop-Notiz der obersten Ebene Cafe Luna. Die Fußzeile zeigt Shop-Notiz bearbeiten. Der Editor ist geschlossen.",
@@ -1626,8 +1626,8 @@
   },
   "/grants/payments/amounts:duplicate": {
     "de": "Der Gründer fügt eine Adresse hinzu, die Spend bereits auflistet. Hinweis Diese Adresse steht bereits auf der Liste. Nadel Diese Adresse steht bereits auf der Liste.",
-    "es": "El fundador añade una dirección que gastos ya enumera. Alerta Esa dirección ya está en la lista. Aguja Esa dirección ya está en la lista.",
-    "fil": "Nagdagdag ang tagapagtatag ng address na naka-lista na sa gastos. Alerto Naka-lista na ang address na iyon. Karayom Naka-lista na ang address na iyon."
+    "es": "El fundador añade una dirección que Spend ya enumera. Alerta Esa dirección ya está en la lista. Aguja Esa dirección ya está en la lista.",
+    "fil": "Nagdagdag ang tagapagtatag ng address na naka-lista na sa Spend. Alerto Naka-lista na ang address na iyon. Karayom Naka-lista na ang address na iyon."
   },
   "/wallet:reveal-open": {
     "de": "Konto, das bereits einen Satz anzeigen kann. Geöffnete Erweiterte Funktionen zeigt Wiederherstellungssatz anzeigen, das auf /wallet/phrase verweist.",
@@ -1715,9 +1715,9 @@
     "fil": "Gumawa ng bayad habang walang laman pa ang halaga. Alerto Maglagay ng buong bilang. Nanatili ang keypad at walang decimal na key. Walang QR."
   },
   "/shops:table-error": {
-    "de": "Tisch ist ausgewählt und die erste Seite ist fehlgeschlagen. Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen. Der Verfasser ist weg.",
-    "es": "Mesa está seleccionada y falló la primera página. No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo. El redactor desapareció.",
-    "fil": "Napili ang mesa at nabigo ang unang pahina. Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit. Wala na ang tagasulat."
+    "de": "Tabelle ist ausgewählt und die erste Seite ist fehlgeschlagen. Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen. Der Verfasser ist weg.",
+    "es": "Tabla está seleccionada y falló la primera página. No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo. El redactor desapareció.",
+    "fil": "Napili ang Talahanayan at nabigo ang unang pahina. Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit. Wala na ang tagasulat."
   },
   "/grants:funding-apply": {
     "de": "Verifizierter Benutzername joey-rosima mit Status none oder rejected sieht Für 21 Förderprogramm bewerben statt des pausierten Satzes.",
@@ -1770,9 +1770,9 @@
     "fil": "Hindi gumana ang pag-renew. Kinukumpirma iyon ng OK at isinasara ang diyalogo. Hindi muling nagsisimula ang pag-renew. Wala pa ring seed ang account."
   },
   "/welcome:reply-deleting": {
-    "de": "Während LÖSCHEN der Antwort aussteht, sind Bestätigung und Abbrechen bei dieser Antwort deaktiviert und ein Drehrad ersetzt das Häkchen.",
-    "es": "Mientras ELIMINAR de la respuesta está pendiente, la confirmación y la cancelación de esa respuesta están desactivadas y un indicador giratorio sustituye la marca.",
-    "fil": "Habang nakabinbin ang BURAHIN ng sagot, naka-disable ang kumpirmasyon at pagkansela sa sagot na iyon at pumapalit sa tsek ang isang umiikot na tagapaghintay."
+    "de": "Während DELETE der Antwort aussteht, sind Bestätigung und Abbrechen bei dieser Antwort deaktiviert und ein Drehrad ersetzt das Häkchen.",
+    "es": "Mientras DELETE de la respuesta está pendiente, la confirmación y la cancelación de esa respuesta están desactivadas y un indicador giratorio sustituye la marca.",
+    "fil": "Habang nakabinbin ang DELETE ng sagot, naka-disable ang kumpirmasyon at pagkansela sa sagot na iyon at pumapalit sa tsek ang isang umiikot na tagapaghintay."
   },
   "/shops:add-summary": {
     "de": "Shop hinzufügen ist geöffnet bei Schritt 5 / 5 · Zusammenfassung. Fotos, Ort, Text und die Nutzerin oder der Nutzer wurden übersprungen. Posten ist die einzige Schaltfläche auf der Karte.",
@@ -1805,9 +1805,9 @@
     "fil": "Bukas ang Magdagdag ng lugar na may susi ng mapa. Nakikita ang frame ng mapa at hindi ang Gamitin ang lugar na ito, dahil hindi pa na-click ang mapa."
   },
   "/moderate/proposals:waiting-confirm": {
-    "de": "Mitarbeitendenzeile (Moderatorin oder Moderator), die sie selbst vorgeschlagen haben. Kopieren Warten auf die Bestätigung durch eine andere Moderatorin oder einen anderen Moderator. Keine Schaltfläche Bestätigen. Ablehnen sichtbar.",
-    "es": "Fila de personal (moderación) que ellas mismas o ellos mismos propusieron. Copiar Esperando a que otra persona moderadora confirme. No hay botón Confirmar. Rechazar visible.",
-    "fil": "Hilera ng staff (moderator) na sila mismo ang nagmungkahi. Kopyahin Naghihintay ng kumpirmasyon mula sa ibang moderator. Walang pindutang Kumpirmahin. Nakikita ang Tanggihan."
+    "de": "Mitarbeitendenzeile (Moderatorin oder Moderator), die sie selbst vorgeschlagen haben. Text Warten auf die Bestätigung durch eine andere Moderatorin oder einen anderen Moderator. Keine Schaltfläche Bestätigen. Ablehnen sichtbar.",
+    "es": "Fila de personal (moderación) que ellas mismas o ellos mismos propusieron. Texto Esperando a que otra persona moderadora confirme. No hay botón Confirmar. Rechazar visible.",
+    "fil": "Hilera ng staff (moderator) na sila mismo ang nagmungkahi. Teksto Naghihintay ng kumpirmasyon mula sa ibang moderator. Walang pindutang Kumpirmahin. Nakikita ang Tanggihan."
   },
   "/moderate/group:mention-suggest": {
     "de": "Moderatorin oder Moderator. Geladener Gruppenthread. Das Nachrichtenfeld enthält @ und die Personenliste ist geöffnet. Die Auswahl einer Person benachrichtigt sie nicht.",
@@ -1832,7 +1832,7 @@
   "/pos/amount:create-already": {
     "de": "Zahlung erstellen mit 21. Die Kasse antwortet, dass schon eine Zahlung offen ist. Hinweis Es ist schon eine Zahlung offen. Die Tastatur bleibt. Kein QR.",
     "es": "Crear pago con 21. La caja responde que ya hay un pago abierto. Alerta Ya hay un pago abierto. El teclado se queda. Sin QR.",
-    "fil": "Gumawa ng bayad na may 21. Sumasagot ang kahon na may bukas nang bayad. Alerto May bukas nang bayad. Nanatili ang keypad. Walang QR."
+    "fil": "Gumawa ng bayad na may 21. Sumasagot ang kaha na may bukas nang bayad. Alerto May bukas nang bayad. Nanatili ang keypad. Walang QR."
   },
   "/messages:thread-translate-done": {
     "de": "Dieselbe eingehende deutsche Nachricht nach einer erfolgreichen Übersetzung. Übersetzter Text plus Original anzeigen; das deutsche Original wird nicht gezeigt.",
@@ -1887,7 +1887,7 @@
   "/pos/amount:error": {
     "de": "Die Anfrage an die Kasse ist fehlgeschlagen. Überschrift Betrag. Warnung Die Kasse ist gerade nicht erreichbar. Erneut versuchen lädt die Kasse erneut. Kein Tastenfeld und kein QR.",
     "es": "La solicitud a la caja falló. Encabezado Importe. Alerta La caja no está disponible. Intentar de nuevo carga la caja otra vez. Sin teclado numérico y sin QR.",
-    "fil": "Nabigo ang kahilingan sa kahon. Pamagat Halaga. Alerto Hindi available ang point of sale. Ang Subukan ulit ay muling naglo-load ng kahon. Walang pindutan ng numero at walang QR."
+    "fil": "Nabigo ang kahilingan sa kaha. Pamagat Halaga. Alerto Hindi available ang point of sale. Ang Subukan ulit ay muling naglo-load ng kaha. Walang pindutan ng numero at walang QR."
   },
   "/pos/amount:default": {
     "de": "Angemeldete Ada, keine offene Belastung. Überschrift Betrag, der Einheitenwechsel, das Tastenfeld und Zahlung erstellen. Die Überschrift ist das einzige Betrag. Kein QR.",
@@ -1950,9 +1950,9 @@
     "fil": "Bukas na talakayan. Ang papasok na mensaheng Hello @ada ay nag-iimbak ng marka ng profile. Ang Tingnan ang profile sa pangalang iyon ay nagbubukas ng miyembro. Hindi sila inaabisuhan."
   },
   "/profile:banner-crop-too-large": {
-    "de": "Dieser Zuschnitt kodiert ein JPEG über 1 MB. Hinweis Fotos unter 1 MB halten. Der Zuschneider bleibt geöffnet. Nadel state-profile-banner-crop-too-large.",
-    "es": "Este recorte codifica un JPEG de más de 1 MB. Alerta Mantén las fotos por debajo de 1 MB. El recortador permanece abierto. Aguja state-profile-banner-crop-too-large.",
-    "fil": "Ang gupit na ito ay nag-e-encode ng JPEG na mahigit 1 MB. Alerto Panatilihing wala pang 1 MB ang mga litrato. Nakabukas pa ang panggupit. Karayom state-profile-banner-crop-too-large."
+    "de": "Ausschnitt verwenden kodiert ein JPEG über 1 MB. Hinweis Fotos unter 1 MB halten. Der Zuschneider bleibt geöffnet. Nadel state-profile-banner-crop-too-large.",
+    "es": "Usar este recorte codifica un JPEG de más de 1 MB. Alerta Mantén las fotos por debajo de 1 MB. El recortador permanece abierto. Aguja state-profile-banner-crop-too-large.",
+    "fil": "Ang Gamitin ang crop na ito ay nag-e-encode ng JPEG na mahigit 1 MB. Alerto Panatilihing wala pang 1 MB ang mga litrato. Nakabukas pa ang panggupit. Karayom state-profile-banner-crop-too-large."
   },
   "/grants/payments/amounts:loading": {
     "de": "Gründer wartet auf GET /funding/daily-roster. Überschrift Beträge der täglichen Zahlungen. Text Wird geladen…. Nadel state-grants-payments-amounts-loading.",
@@ -1962,7 +1962,7 @@
   "/welcome:reaction-error": {
     "de": "Die Zahlungsanfrage ist fehlgeschlagen. Der Hinweis lautet Nachricht konnte nicht gesendet werden. Der getippte Satz steht noch im Feld, und kein Zahlungsblatt ist geöffnet.",
     "es": "La solicitud de pago falló. La alerta dice No se pudo publicar el mensaje. La frase escrita sigue en el campo, y no hay ninguna hoja de pago abierta.",
-    "fil": "Nabigo ang kahilingan sa bayad. Ang alerto ay nagsasabing Hindi ma-post ang mensahe. Nandiyan pa ang nai-type na pangungusap sa patlang, at walang bukas na piraso ng bayad."
+    "fil": "Nabigo ang kahilingan sa bayad. Ang alerto ay nagsasabing Hindi ma-post ang mensahe. Nandiyan pa ang nai-type na pangungusap sa patlang, at walang bukas na panel ng bayad."
   },
   "/members/[accountId]:about-translate-error": {
     "de": "Derselbe deutsche Text Über mich nach fehlgeschlagenem POST /translate. Hinweis Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen. und die Steuerung Übersetzen bleibt.",
@@ -2045,8 +2045,8 @@
     "fil": "Ang nabigong pagtanggal ay pinananatiling nakikita ang post at kumpirmasyon na may mali at subukan muli. Ang mga post na wala na (404) ay inaalis sa lokal na tanaw."
   },
   "/shops:map-pin-with-key": {
-    "de": "/shops?pin=m-pin#map mit einer Kartenlegende. Karte ist ausgewählt. Die Platzhalter-Kartenfläche ist im Rahmen. Ada · Happyland ist halbfett. Keine zweite Überschrift Karte.",
-    "es": "/shops?pin=m-pin#map con una leyenda del mapa. Mapa está seleccionado. La superficie del mapa de prueba está en el marco. Ada · Happyland está en seminegrita. No hay un segundo encabezado Mapa.",
+    "de": "/shops?pin=m-pin#map mit einem Kartenschlüssel. Karte ist ausgewählt. Die Platzhalter-Kartenfläche ist im Rahmen. Ada · Happyland ist halbfett. Keine zweite Überschrift Karte.",
+    "es": "/shops?pin=m-pin#map con una clave del mapa. Mapa está seleccionado. La superficie del mapa de prueba está en el marco. Ada · Happyland está en seminegrita. No hay un segundo encabezado Mapa.",
     "fil": "/shops?pin=m-pin#map na may susi ng mapa. Napili ang Mapa. Ang ibabaw ng pansamantalang mapa ay nasa kuwadro. Ada · Happyland ay bahagyang makapal. Walang pangalawang ulo na Mapa."
   },
   "/members/[accountId]:posts-open-goal-credit-open": {
@@ -2130,9 +2130,9 @@
     "fil": "Napili ang opsyong Mapa. Wala na ang tagasulat ng post. Nakikita ang listahan ng lugar nang walang pangalawang pamagat na Mapa. Walang susi ng mapa, kaya walang laman ang kuwadro."
   },
   "/welcome:reply-moderation": {
-    "de": "Ein Moderator, der eine Notiz aufklappt, sieht an jeder verschachtelten Antwort eine nur aus einem Symbol bestehende Löschen-Reaktion. Gewöhnliche Mitglieder nicht. Das Elternelement hat weiterhin Beitrag löschen.",
-    "es": "Un moderador que expande una nota ve un control de reacción Eliminar solo con icono en cada respuesta anidada. Los miembros ordinarios no. El padre sigue teniendo Eliminar publicación.",
-    "fil": "Ang moderator na nagbubukas ng tala ay nakakakita ng kontrol ng reaksyong Tanggalin na icon lamang sa bawat nakapailalim na sagot. Hindi ito nakikita ng karaniwang miyembro. Mayroon pa ring Tanggalin ang post ang magulang."
+    "de": "Ein Moderator, der eine Notiz aufklappt, sieht an jeder verschachtelten Antwort ein nur als Symbol dargestelltes Steuerelement Reaktion löschen. Gewöhnliche Mitglieder nicht. Das Elternelement hat weiterhin Beitrag löschen.",
+    "es": "Un moderador que expande una nota ve un control Eliminar reacción solo con icono en cada respuesta anidada. Los miembros ordinarios no. El padre sigue teniendo Eliminar publicación.",
+    "fil": "Ang moderator na nagbubukas ng tala ay nakakakita ng kontrol na Burahin ang reaksyon na icon lamang sa bawat nakapailalim na sagot. Hindi ito nakikita ng karaniwang miyembro. Mayroon pa ring Tanggalin ang post ang magulang."
   },
   "/welcome:reaction-rate-limit": {
     "de": "Die Zahlungsanfrage wurde durch eine Ratenbegrenzung blockiert. Der Hinweis lautet Zu viele Nachrichten. Bitte warten Sie einen Moment und versuchen Sie es erneut. Der eingegebene Satz steht noch im Feld.",
@@ -2157,7 +2157,7 @@
   "/view/[viewKey]:claimed": {
     "de": "Gültiger bekannter Schlüssel, dessen Profil bereits einen Passkey hat (hasPasskey: true). Dieselbe schreibgeschützte Karte wie Standard, kein gelbes Aktivierungsbanner, keine Schaltfläche Aktivieren.",
     "es": "Clave conocida válida cuyo perfil ya tiene una passkey (hasPasskey: true). La misma tarjeta de solo lectura que la predeterminada, sin franja amarilla de activación, sin botón Activar.",
-    "fil": "Wastong kilalang susi na may passkey na ang talaan ng tao (hasPasskey: true). Parehong talaang basahin-lamang tulad ng nakatakda, walang dilaw na bandila ng pag-activate, walang pindutang I-aktibo."
+    "fil": "Wastong kilalang susi na may passkey na ang talaan ng tao (hasPasskey: true). Parehong talaang basahin-lamang tulad ng nakatakda, walang dilaw na banner ng pag-activate, walang pindutang I-aktibo."
   },
   "/wallet/phrase:timeout": {
     "de": "Geräteabfrage abgelaufen. Hinweis Die Geräteabfrage ist abgelaufen, bevor Sie fertig waren. Versuchen Sie es erneut. plus derselbe gedämpfte Hinweis und beschriftetes Erneut versuchen. Kein Empfangs-QR.",
@@ -2180,9 +2180,9 @@
     "fil": "Naka-sign-in na /welcome na may isang bayad na notang Aleman. Nakikita ang Isalin sa hanay ng mga icon sa paanan kasama ang reaksyon / kopya. Ang mga notang Ingles sa ibang mga senaryo ay nagtatago pa rin nito."
   },
   "/grants/payments/amounts:invalid-switch": {
-    "de": "Der Gründer schaltet die Zahlungen aus und die Ausgabe lehnt den Schalter ab. Hinweis Der Schalter für die Zahlungen ist ungültig. An bleibt gedrückt. Nadel Der Schalter für die Zahlungen ist ungültig.",
-    "es": "El fundador apaga los pagos y el gasto rechaza el interruptor. Alerta El interruptor de pagos no es válido. Encendido sigue pulsado. Aguja El interruptor de pagos no es válido.",
-    "fil": "Binababa ng tagapagtatag ang mga bayad at tinatanggihan ng gastusin ang switch. Alerto Hindi wasto ang switch ng mga bayad. Naka-pindot pa ang Bukas. Karayom Hindi wasto ang switch ng mga bayad."
+    "de": "Der Gründer schaltet die Zahlungen aus und Spend lehnt den Schalter ab. Hinweis Der Schalter für die Zahlungen ist ungültig. An bleibt gedrückt. Nadel Der Schalter für die Zahlungen ist ungültig.",
+    "es": "El fundador apaga los pagos y Spend rechaza el interruptor. Alerta El interruptor de pagos no es válido. Encendido sigue pulsado. Aguja El interruptor de pagos no es válido.",
+    "fil": "Binababa ng tagapagtatag ang mga bayad at tinatanggihan ng Spend ang switch. Alerto Hindi wasto ang switch ng mga bayad. Naka-pindot pa ang Bukas. Karayom Hindi wasto ang switch ng mga bayad."
   },
   "/grants/applications/[accountId]:empty": {
     "de": "Das Personal (Gründer) hat den Antrag für Rose ohne Wohnzimmer-Beiträge geladen. Keine Wohnzimmer-Beiträge. Die Prinzipienfrage und Ja / Nein sind weiterhin sichtbar.",
@@ -2191,7 +2191,7 @@
   },
   "/welcome:filter-open": {
     "de": "Das Dropdown der Forenansicht ist auf dem Standard-Feed Aktiv geöffnet. Aktiv ist angehakt. Noch keine Geschenke, Alle und Beliebteste stehen darunter. Die Liste bleibt geöffnet.",
-    "es": "El menú desplegable de vista del foro está abierto en el feed predeterminado Activos. Activos está marcado. Aún no hay regalos, Todos y Más populares aparecen debajo. La lista permanece abierta.",
+    "es": "El menú desplegable de vista del foro está abierto en el feed predeterminado Activo. Activo está marcado. Aún no hay regalos, Todos y Más populares aparecen debajo. La lista permanece abierta.",
     "fil": "Nakabukas ang pambaba ng tanawin ng forum sa default na feed na Aktibo. Naka-check ang Aktibo. Wala pang mga regalo, Lahat, at Pinakapopular ay nakalista sa ilalim. Nakabukas pa ang listahan."
   },
   "/shops:map-edit-user": {
@@ -2242,7 +2242,7 @@
   "/setup/rules:default": {
     "de": "Mit Name und Adresse angemeldet und rulesAgreedAt noch null. Erstes Kapitel (einleitender Absatz plus der akzentumrandete Hinweis Der Test) und Weiter sichtbar.",
     "es": "Sesión iniciada con un nombre y una dirección y rulesAgreedAt todavía null. Primer capítulo (párrafo de apertura más el recuadro con borde de acento La prueba) y Continuar visible.",
-    "fil": "Nakapasok na may pangalan at adres at rulesAgreedAt ay null pa. Unang kabanata (pambungad na talata plus ang recuadro ng Ang pagsusulit na may accent na hangganan) at Magpatuloy nakikita."
+    "fil": "Nakapasok na may pangalan at adres at rulesAgreedAt ay null pa. Unang kabanata (pambungad na talata plus ang kahon ng Ang pagsusulit na may accent na hangganan) at Magpatuloy nakikita."
   },
   "/shops:staff-place-unlabeled": {
     "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und der Ortsname ist noch leer. Diesen Ort verwenden ist sichtbar.",
@@ -2250,13 +2250,13 @@
     "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May klik na naglagay ng tuldok at walang laman pa ang pangalan ng lugar. Nakikita ang Gamitin ang lugar na ito."
   },
   "/welcome:ask-credit-error-request-daily": {
-    "de": "Kredit, Schritt 9 of 9, mit Täglich gedrückt, nachdem Post fehlschlägt. Derselbe Fehler bleibt auf der Kreditvorschau. Täglich und Kredit bleiben gedrückt. Der Zähler zeigt 9 of 9.",
-    "es": "Crédito, paso 9 of 9, con Diario pulsado, después de que Post falle. El mismo error permanece en la vista previa del crédito. Diario y Crédito siguen pulsados. El contador muestra 9 of 9.",
-    "fil": "Utang, hakbang 9 of 9, naka-pindot ang Araw-araw, pagkatapos mabigo ang Post. Parehong mali ang nananatili sa paunang tanaw ng utang. Naka-pindot pa rin ang Araw-araw at Utang. Ang panbilang ay nagbabasa ng 9 of 9."
+    "de": "Kredit, Schritt 9 von 9, mit Täglich gedrückt, nachdem Post fehlschlägt. Derselbe Fehler bleibt auf der Kreditvorschau. Täglich und Kredit bleiben gedrückt. Der Zähler zeigt 9 von 9.",
+    "es": "Crédito, paso 9 de 9, con Diario pulsado, después de que Post falle. El mismo error permanece en la vista previa del crédito. Diario y Crédito siguen pulsados. El contador muestra 9 de 9.",
+    "fil": "Utang, hakbang 9 sa 9, naka-pindot ang Araw-araw, pagkatapos mabigo ang Post. Parehong mali ang nananatili sa paunang tanaw ng utang. Naka-pindot pa rin ang Araw-araw at Utang. Ang panbilang ay nagbabasa ng 9 sa 9."
   },
   "/shops:map-coords-pin-with-key": {
-    "de": "/shops?pin=m-pin#map mit einer Kartenlegende und ohne Beschriftung. Karte ist ausgewählt. Der Rahmen zeigt die Platzhalter-Kartenfläche. Die Koordinatenzeile ist halbfett. Keine zweite Überschrift Karte.",
-    "es": "/shops?pin=m-pin#map con una leyenda del mapa y sin etiqueta. Mapa está seleccionado. El marco muestra la superficie de mapa de prueba. La fila de coordenadas está en seminegrita. Sin un segundo encabezado Mapa.",
+    "de": "/shops?pin=m-pin#map mit einem Kartenschlüssel und ohne Beschriftung. Karte ist ausgewählt. Der Rahmen zeigt die Platzhalter-Kartenfläche. Die Koordinatenzeile ist halbfett. Keine zweite Überschrift Karte.",
+    "es": "/shops?pin=m-pin#map con una clave del mapa y sin etiqueta. Mapa está seleccionado. El marco muestra la superficie de mapa de prueba. La fila de coordenadas está en seminegrita. Sin un segundo encabezado Mapa.",
     "fil": "/shops?pin=m-pin#map na may susi ng mapa at walang etiketa. Napili ang Mapa. Ipinapakita ng kuwadro ang ibabaw ng pansamantalang mapa. Ang hilera ng koordinado ay naka-seminegrita. Walang pangalawang pamagat na Mapa."
   },
   "/moderate/handbook:default": {
@@ -2270,8 +2270,8 @@
     "fil": "Unang pagdalaw: nakikita ang maaaring alisin na kahon ng pahiwatig ng mga batas sa sala (dalawang batas plus mga link sa Mga patakaran sa living room at Makipag-ugnayan). Ang mga kuha sa walang ginagawa pagkatapos alisin ay inaalis ito."
   },
   "/shops:map-coords": {
-    "de": "Karte ist ausgewählt. Eine Stecknadel ohne Beschriftung und ohne Kartenlegende. Die Zeile lautet Ada · 14.60000, 120.98000 und ist nicht halbfett. Der Rahmen bleibt leer. Keine zweite Überschrift Karte.",
-    "es": "Mapa está seleccionado. Un pin sin etiqueta y sin leyenda del mapa. La fila dice Ada · 14.60000, 120.98000 y no está en seminegrita. El marco permanece vacío. Sin un segundo encabezado Mapa.",
+    "de": "Karte ist ausgewählt. Eine Stecknadel ohne Beschriftung und ohne Kartenschlüssel. Die Zeile lautet Ada · 14.60000, 120.98000 und ist nicht halbfett. Der Rahmen bleibt leer. Keine zweite Überschrift Karte.",
+    "es": "Mapa está seleccionado. Un pin sin etiqueta y sin clave del mapa. La fila dice Ada · 14.60000, 120.98000 y no está en seminegrita. El marco permanece vacío. Sin un segundo encabezado Mapa.",
     "fil": "Napili ang Mapa. Isang tuldok na walang etiketa at walang susi ng mapa. Ang hilera ay nagbabasa Ada · 14.60000, 120.98000 at hindi naka-seminegrita. Walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/profile:notification-level-error": {
@@ -2280,9 +2280,9 @@
     "fil": "Bahagi ng mga abiso na may mali sa pag-save na role=\"alert\" pagkatapos i-stub ang POST /me/notification-level sa 500 at pindutin ang Aktibo. Sipi Hindi ma-save ang antas ng notification."
   },
   "/welcome:ask-daily": {
-    "de": "Um Geld bitten ausgewählt. Schritt 1 of 4 mit Täglich gedrückt auf der Pille über dem Betrag und 1000 in Bitcoin eingegeben, sodass $1.00 unter dem Feld erscheint. Weiter ist aktiviert.",
-    "es": "Pedir dinero seleccionado. Paso 1 of 4 con Diario pulsado en la pastilla sobre el importe y 1000 escrito en bitcoin de modo que $1.00 aparece bajo el campo. Continuar está habilitado.",
-    "fil": "Humingi ng pera ang napili. Hakbang 1 of 4 na naka-pindot ang Araw-araw sa pildoras sa itaas ng halaga at 1000 ang nai-type sa bitcoin kaya $1.00 ang lumalabas sa ilalim ng patlang. Naka-enable ang Magpatuloy."
+    "de": "Um Geld bitten ausgewählt. Schritt 1 von 4 mit Täglich gedrückt auf der Pille über dem Betrag und 1000 in Bitcoin eingegeben, sodass $1.00 unter dem Feld erscheint. Weiter ist aktiviert.",
+    "es": "Pedir dinero seleccionado. Paso 1 de 4 con Diario pulsado en la pastilla sobre el importe y 1000 escrito en bitcoin de modo que $1.00 aparece bajo el campo. Continuar está habilitado.",
+    "fil": "Humingi ng pera ang napili. Hakbang 1 sa 4 na naka-pindot ang Araw-araw sa pildoras sa itaas ng halaga at 1000 ang nai-type sa bitcoin kaya $1.00 ang lumalabas sa ilalim ng patlang. Naka-enable ang Magpatuloy."
   },
   "/shops:staff-place-edit": {
     "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Ort bearbeiten ist geöffnet. Der Kartenrahmen ist sichtbar und Ort entfernen ist sichtbar. Die Stecknadel ist noch nicht geändert.",
@@ -2290,7 +2290,7 @@
     "fil": "Isang sesyon ng tagapamagitan. Ang tala ng Cafe Luna ay may lugar na Happyland. Bukas ang I-edit ang lugar. Nakikita ang kuwadro ng mapa at nakikita ang Alisin ang lugar. Hindi pa nababago ang tuldok."
   },
   "/messages:thread-gift": {
-    "de": "Offiziellen Thread geöffnet. fromMe-Blase nur mit Geschenk send ₿21. Verfasser weiterhin sichtbar: ImagePlus in der Nachrichtenzeile, Betrag in der Zeile unter der Nachricht. Auswähler fehlt.",
+    "de": "Offiziellen Thread geöffnet. fromMe-Blase nur mit Geschenk senden ₿21. Verfasser weiterhin sichtbar: ImagePlus in der Nachrichtenzeile, Betrag in der Zeile unter der Nachricht. Auswähler fehlt.",
     "es": "Hilo oficial abierto. Burbuja fromMe solo de regalo envío ₿21. El compositor sigue visible: ImagePlus en la fila del mensaje, Importe en la fila bajo el mensaje. El selector está ausente.",
     "fil": "Bukas ang opisyal na usapan. fromMe na bula ng regalo lamang na padala ₿21. Nakikita pa ang tagapagbuo: ImagePlus sa hilera ng mensahe, Halaga sa hilera sa ilalim ng mensahe. Wala ang tagapili."
   },
@@ -2315,8 +2315,8 @@
     "fil": "Pinindot ang 1 post, tapos Panlabas sa talang iyon. Ang pahiwatig ay Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post."
   },
   "/shops:map-staff": {
-    "de": "Eine Moderatorsitzung. Karte ist ausgewählt. Die Stecknadel ist ein Laden, daher sitzt Ladennotiz bearbeiten neben Ada · Happyland. Keine Kartenlegende, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
-    "es": "Una sesión de moderador. Mapa está seleccionado. El pin es una tienda, así que Editar nota de tienda está junto a Ada · Happyland. Sin leyenda del mapa, así que el marco permanece vacío. Sin un segundo encabezado Mapa.",
+    "de": "Eine Moderatorsitzung. Karte ist ausgewählt. Die Stecknadel ist ein Laden, daher sitzt Ladennotiz bearbeiten neben Ada · Happyland. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
+    "es": "Una sesión de moderador. Mapa está seleccionado. El pin es una tienda, así que Editar nota de tienda está junto a Ada · Happyland. Sin clave del mapa, así que el marco permanece vacío. Sin un segundo encabezado Mapa.",
     "fil": "Isang sesyon ng tagapamagitan. Napili ang Mapa. Ang tuldok ay isang tindahan, kaya nakaupo ang I-edit ang tala ng tindahan sa tabi ng Ada · Happyland. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-summary": {
@@ -2342,7 +2342,7 @@
   "/profile:picture-save-error": {
     "de": "PUT /pictures/me antwortet 500, nachdem ein JPEG gewählt wurde. Meldung Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut. Die Profilfoto-Schaltfläche bleibt. Needle state-profile-picture-save-error.",
     "es": "PUT /pictures/me responde 500 después de elegir un JPEG. Alerta No se pudo guardar. Inténtalo de nuevo. El botón de foto de perfil permanece. Needle state-profile-picture-save-error.",
-    "fil": "Sumasagot ng 500 ang PUT /pictures/me matapos pumili ng JPEG. Alerto Hindi ma-save. Subukan ulit. Nanatili ang pindutan ng larawan ng talaarawan. Needle state-profile-picture-save-error."
+    "fil": "Sumasagot ng 500 ang PUT /pictures/me matapos pumili ng JPEG. Alerto Hindi ma-save. Subukan ulit. Nanatili ang pindutan ng larawan ng profile. Needle state-profile-picture-save-error."
   },
   "/welcome:ask-credit-term": {
     "de": "Kredit, Schritt 3 von 9. Überschrift In welchem Zeitraum wird der Kredit zurückgezahlt? Die Auswahl ist 30 Tage (gedrückt), 1 Jahr, 2 Jahre und Benutzerdefiniert. Weiter ist aktiviert. Es gibt kein Kontrollkästchen.",
@@ -2365,9 +2365,9 @@
     "fil": "Utang, hakbang 1 sa 9, nakapindot ang Araw-araw at Utang at walang laman pa ang patlang na Hiling. Hindi pinagana ang Magpatuloy. Ang panbilang ay 1 sa 9. Hindi pa naka-imbak ang Isahang / Araw-araw."
   },
   "/welcome:reaction-pay": {
-    "de": "Die Rechnung wurde ausgestellt. Die Zahlungsseite steht dort, wo das Antwortfeld war. Die Notiz bleibt im Fenster. Die Seite zeigt als Vorschau Das ist meine Antwort. Das Antwortfeld ist verschwunden.",
-    "es": "La factura ha sido emitida. La página de pago ocupa el lugar del campo de respuesta. La nota permanece en la ventana. La página previsualiza Esta es mi respuesta. El campo de respuesta desapareció.",
-    "fil": "Nailabas na ang resibo. Nasa dating lugar ng patlang ng sagot ang pahina ng bayad. Nanatili ang tala sa bintana. Ipinapakita ng pahina ang Ito ang sagot ko. Wala na ang patlang ng sagot."
+    "de": "Die Rechnung wurde ausgestellt. Die Zahlungsseite steht dort, wo das Antwortfeld war. Die Notiz bleibt im Fenster. Die Seite zeigt als Vorschau This is my answer. Das Antwortfeld ist verschwunden.",
+    "es": "La factura ha sido emitida. La página de pago ocupa el lugar del campo de respuesta. La nota permanece en la ventana. La página previsualiza This is my answer. El campo de respuesta desapareció.",
+    "fil": "Nailabas na ang resibo. Nasa dating lugar ng patlang ng sagot ang pahina ng bayad. Nanatili ang tala sa bintana. Ipinapakita ng pahina ang This is my answer. Wala na ang patlang ng sagot."
   },
   "/welcome:photo": {
     "de": "Bei Alle (unbezahlte Nur-Foto-Notizen sind bei Aktiv ausgeblendet): Nur-Foto-Forumszeile von Ada mit eingebettetem Bild (Foto von Ada) und sichtbarer Anhängen-Steuerung im Eingabebereich.",
@@ -2376,8 +2376,8 @@
   },
   "/profile:given-received": {
     "de": "Beide Reihen ungleich null: empfangen ₿1,500 über drei UTC-Tage und gegeben ₿2,100 am 2026-06-02. Das Diagramm zeigt Gegeben und Empfangen zusammen. Needle state-profile-given-received.",
-    "es": "Ambas series distintas de cero: recibido ₿1,500 a lo largo de tres días UTC y aportado ₿2,100 el 2026-06-02. El gráfico muestra Aportado y Recibido juntos. Needle state-profile-given-received.",
-    "fil": "Parehong hanay ay hindi sero: natanggap ₿1,500 sa loob ng tatlong araw na UTC at naibigay ₿2,100 noong 2026-06-02. Ipinapakita ng grapiko ang Naibigay at Natanggap nang magkasama. Needle state-profile-given-received."
+    "es": "Ambas series distintas de cero: recibido ₿1,500 a lo largo de tres días UTC y donado ₿2,100 el 2026-06-02. El gráfico muestra Donado y Recibido juntos. Needle state-profile-given-received.",
+    "fil": "Parehong hanay ay hindi sero: natanggap ₿1,500 sa loob ng tatlong araw na UTC at ibinigay ₿2,100 noong 2026-06-02. Ipinapakita ng grapiko ang Ibinigay at Natanggap nang magkasama. Needle state-profile-given-received."
   },
   "/profile:about-save-error": {
     "de": "Eigentümer-Editor mit role=\"alert\" Speicherfehler nach Stub von PUT /me/about auf 500, Öffnen des Editors aus dem Leeren und Klick auf Speichern. Text Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
@@ -2397,7 +2397,7 @@
   "/profile:photo-only": {
     "de": "Nur rundes Profilfoto. Stub GET /pictures/me mit dem quadratischen Porträt. Kein breites Bild, daher sitzt Breites Bild hinzufügen über dem runden Foto. Needle state-profile-photo-only.",
     "es": "Solo foto de perfil redonda. Simulación de GET /pictures/me con el retrato cuadrado. No hay imagen ancha, así que Añadir una imagen ancha queda encima de la foto redonda. Needle state-profile-photo-only.",
-    "fil": "Bilog na larawan ng talaarawan lamang. I-stub ang GET /pictures/me gamit ang parisukat na larawan. Walang malapad na larawan, kaya nasa itaas ng bilog na larawan ang Magdagdag ng malapad na larawan. Needle state-profile-photo-only."
+    "fil": "Bilog na larawan ng profile lamang. I-stub ang GET /pictures/me gamit ang parisukat na larawan. Walang malapad na larawan, kaya nasa itaas ng bilog na larawan ang Magdagdag ng malapad na larawan. Needle state-profile-photo-only."
   },
   "/profile:about-banner-crop-save-error": {
     "de": "Derselbe Zuschneider im Editor, nachdem PUT /banners/me mit 500 antwortet. Hinweis Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut. Der Zuschneider bleibt offen. Nadel state-profile-about-banner-crop-save-error.",
@@ -2426,8 +2426,8 @@
   },
   "/pl:default": {
     "de": "Gescannter Zahlungslink ohne offene Zahlung (charge null oder fehlend). Der Laden-Aufkleber, der Name der Person, das Betragsfeld und Fortfahren. Kein Countdown, kein Bezahlen und kein Rechnungs-QR.",
-    "es": "Enlace de pago escaneado sin pago abierto (charge nulo o ausente). La pegatina de la tienda, el nombre de la persona, el campo de importe y Continuar. Sin cuenta atrás, sin pagar y sin código QR de factura.",
-    "fil": "Na-scan na link sa pagbabayad na walang bukas na bayad (charge na null o wala). Ang sticker ng tindahan, ang pangalan ng tao, ang patlang ng halaga, at Magpatuloy. Walang countdown, walang magbayad, at walang QR ng resibo."
+    "es": "Enlace de pago escaneado sin pago abierto (charge nulo o ausente). La pegatina de la tienda, el nombre de la persona, el campo de importe y Continuar. Sin cuenta atrás, sin Pagar y sin código QR de factura.",
+    "fil": "Na-scan na link sa pagbabayad na walang bukas na bayad (charge na null o wala). Ang sticker ng tindahan, ang pangalan ng tao, ang patlang ng halaga, at Magpatuloy. Walang countdown, walang Magbayad, at walang QR ng resibo."
   },
   "/shops:staff-place-map": {
     "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist geöffnet, mit einem Kartenschlüssel. Der Kartenrahmen ist sichtbar und Diesen Ort verwenden nicht, weil die Karte noch nicht angeklickt wurde.",
@@ -2527,7 +2527,7 @@
   "/pl:charge-failed": {
     "de": "Offene Kasse, Mint fehlgeschlagen. Der Ladenaufkleber, die Restzeit, der Sat-Betrag, die Standard-Fiat des Betrachters daneben, Die Rechnung konnte nicht erstellt werden., und Zahlen. Kein Rechnungs-QR. Zahlen versucht den Mint erneut.",
     "es": "Caja abierta, acuñación fallida. La pegatina de la tienda, el tiempo restante, la cantidad de sats, el fiat predeterminado del espectador al lado, No se pudo crear la factura., y Pagar. No hay código QR de factura. Pagar vuelve a intentar la acuñación.",
-    "fil": "Bukas na kahon, nabigo ang mint. Ang tatak ng tindahan, natitirang oras, ang halaga ng sat, ang umiiral na fiat ng tumitingin sa tabi, Hindi magawa ang invoice., at Magbayad. Walang QR ng resibo. Sinusubukan ulit ng Magbayad ang mint."
+    "fil": "Bukas na kaha, nabigo ang mint. Ang tatak ng tindahan, natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi, Hindi magawa ang invoice., at Magbayad. Walang QR ng resibo. Sinusubukan ulit ng Magbayad ang mint."
   },
   "/welcome:ask-credit-posting-daily": {
     "de": "Kredit, Schritt 9 von 9, mit Täglich gedrückt, während Veröffentlichen unterwegs ist. Die Zielleiste zeigt weiterhin den Rückzahlungsplan. Veröffentlichen ist deaktiviert. Einmalig / Täglich ist nicht gespeichert. Der Zähler zeigt 9 von 9.",
@@ -2546,8 +2546,8 @@
   },
   "/profile:receive": {
     "de": "Gefilterte Empfangsserie mit drei UTC-Tagen (einschließlich eines Lückentags mit Null) und Empfangen-Summe ₿1'500. Das Diagramm zeigt Tagmarken wie 2026-06-01; Gegeben bleibt flach bei null mit sichtbarer Legende.",
-    "es": "Serie de recepción filtrada con tres días UTC (incluido un día de hueco en cero) y total recibido ₿1'500. El gráfico muestra marcas de día como 2026-06-01; Aportado se mantiene plano en cero con una leyenda visible.",
-    "fil": "Nasalaang serye ng pagtanggap na may tatlong araw UTC (kasama ang araw na walang laman na sero) at kabuuan ng natanggap ₿1'500. Ipinapakita ng grapiko ang mga marka ng araw gaya ng 2026-06-01; Patag sa sero ang Naibigay na may nakikitang paliwanag."
+    "es": "Serie de recepción filtrada con tres días UTC (incluido un día de hueco en cero) y total recibido ₿1'500. El gráfico muestra marcas de día como 2026-06-01; Donado se mantiene plano en cero con una leyenda visible.",
+    "fil": "Nasalaang serye ng pagtanggap na may tatlong araw UTC (kasama ang araw na walang laman na sero) at kabuuan ng natanggap ₿1'500. Ipinapakita ng grapiko ang mga marka ng araw gaya ng 2026-06-01; Patag sa sero ang Ibinigay na may nakikitang paliwanag."
   },
   "/messages:thread-quoted-note": {
     "de": "Offener Direktfaden. Der eingehende Blasentext enthält eine öffentliche Forum-Notiz-URL; die verschachtelte Zitatnotiz-Karte zeigt Eine kurze technische Notiz und verbirgt die rohe URL https://21.gifts/messages/<uuid>.",
@@ -2556,8 +2556,8 @@
   },
   "/view/[viewKey]:in-app": {
     "de": "Telegram oder eine andere In-App-WebView auf einem unbeanspruchten Profil erkannt. Fluchtkarte unter dem Profil (Diese Seite im Browser öffnen, Im Browser öffnen, Link kopieren); kein gelbes Banner Aktivieren.",
-    "es": "Telegram u otro visor web dentro de la app detectado en un perfil no reclamado. Tarjeta de salida bajo el perfil (Abre esta página en tu navegador, Abrir en el navegador, Copiar enlace); sin bandera amarilla Activar.",
-    "fil": "Natukoy ang Telegram o ibang WebView sa loob ng app sa isang profile na hindi pa inaangkin. Tarheta ng pagtakas sa ilalim ng profile (Buksan ang page na ito sa browser, Buksan sa browser, Kopyahin ang link); walang dilaw na bandila na Isaaktibo."
+    "es": "Telegram u otro visor web dentro de la app detectado en un perfil no reclamado. Tarjeta de salida bajo el perfil (Abre esta página en tu navegador, Abrir en el navegador, Copiar enlace); sin banner amarillo Activar.",
+    "fil": "Natukoy ang Telegram o ibang WebView sa loob ng app sa isang profile na hindi pa inaangkin. Tarheta ng pagtakas sa ilalim ng profile (Buksan ang page na ito sa browser, Buksan sa browser, Kopyahin ang link); walang dilaw na banner na Isaaktibo."
   },
   "/welcome:ask-credit-photos": {
     "de": "Kredit, Schritt 7 von 9. Überschrift Fotos hinzufügen. Die Pillen Einmalig / Täglich und Spende / Kredit sind auf diesem Schritt nicht vorhanden. Ein Foto ist optional. Weiter führt zur Nachricht. Der Zähler zeigt 7 von 9.",
@@ -2620,9 +2620,9 @@
     "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang hakbang 2 / 5 · Lugar sa talahanayan. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng litrato. Nanatili ang lugar na Happyland at ang tagapagpatakbo na @luna."
   },
   "/shops:staff-account-error": {
-    "de": "Eine Moderationssitzung. Konto hinzufügen ist auf der Notiz Cafe Luna geöffnet. Benutzername fehlt wurde gespeichert. Das Speichern lieferte 404, daher ist der Hinweis Kein Konto mit diesem Benutzernamen. sichtbar. Konto speichern bleibt.",
-    "es": "Una sesión de moderador. Añadir una cuenta está abierto en la nota Cafe Luna. Se guardó Falta el nombre de usuario. El guardado devolvió 404, así que la alerta No hay ninguna cuenta con ese nombre de usuario. es visible. Guardar cuenta permanece.",
-    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng account sa tala ng Cafe Luna. Na-save ang Kulang ang username. Ang pag-save ay nagbalik ng 404, kaya nakikita ang alerto Walang account na may ganitong username. Nanatili ang I-save ang account."
+    "de": "Eine Moderationssitzung. Konto hinzufügen ist auf der Notiz Cafe Luna geöffnet. Benutzername missing wurde gespeichert. Das Speichern lieferte 404, daher ist der Hinweis Kein Konto mit diesem Benutzernamen. sichtbar. Konto speichern bleibt.",
+    "es": "Una sesión de moderador. Añadir una cuenta está abierto en la nota Cafe Luna. Se guardó el nombre de usuario missing. El guardado devolvió 404, así que la alerta No hay ninguna cuenta con ese nombre de usuario. es visible. Guardar cuenta permanece.",
+    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng account sa tala ng Cafe Luna. Na-save ang username na missing. Ang pag-save ay nagbalik ng 404, kaya nakikita ang alerto Walang account na may ganitong username. Nanatili ang I-save ang account."
   },
   "/grants:funding-program-open": {
     "de": "Zugelassene Inhaberin oder zugelassener Inhaber auf /grants. Der Teilnahmesatz Nimmt seit {date} am 21.gifts Förderprogramm teil ist auf der Förderkarte sichtbar. Aufnahme des Sichtfensters, nachdem diese Zeile ins Bild gescrollt wurde.",
@@ -2672,7 +2672,7 @@
   "/grants/payments/amounts:unknown": {
     "de": "Die Gründerin oder der Gründer öffnet eine Zeile mit dem Stift und drückt das Häkchen. Spend führt diese Adresse nicht auf. Das Feld bleibt offen. Hinweis Diese Person steht nicht auf der Liste. Nadel Diese Person steht nicht auf der Liste.",
     "es": "El fundador abre una fila con el lápiz y pulsa la marca. Spend no lista esa dirección. El campo permanece abierto. Alerta Esa persona no está en la lista. Aguja Esa persona no está en la lista.",
-    "fil": "Binubuksan ng tagapagtatag ang isang hilera gamit ang lapis at pinindot ang tsek. Hindi naka-lista ang address na iyon sa Gastos. Bukas pa ang patlang. Alerto Wala sa listahan ang tatanggap na iyon. Karayom Wala sa listahan ang tatanggap na iyon."
+    "fil": "Binubuksan ng tagapagtatag ang isang hilera gamit ang lapis at pinindot ang tsek. Hindi naka-lista ang address na iyon sa Spend. Bukas pa ang patlang. Alerto Wala sa listahan ang tatanggap na iyon. Karayom Wala sa listahan ang tatanggap na iyon."
   },
   "/shops:staff-place-set": {
     "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Die Karte zeigt den MapPin-Link Happyland plus in der Fusszeile Ort bearbeiten und Konto hinzufügen. Der Kartenbereich ist geschlossen. Der Kontenbereich ist geschlossen.",
@@ -2752,12 +2752,12 @@
   "/welcome:ask-credit-amount-fiat": {
     "de": "Kredit, Schritt 1 von 9, mit dem Betragsschalter auf USD. Kredit und Einmalig sind gedrückt. 1000 wurde in Bitcoin eingegeben, dann wurde der Schalter auf Fiat gestellt, daher zeigt das Feld 1.00 und darunter ₿1'000. Weiter ist aktiviert.",
     "es": "Crédito, paso 1 de 9, con el interruptor de importe en USD. Crédito y Una sola vez están pulsados. Se escribió 1000 en Bitcoin, luego el interruptor pasó a fiat, así que el campo muestra 1.00 y ₿1'000 debajo. Continuar está habilitado.",
-    "fil": "Utang, hakbang 1 sa 9, na ang pampalit ng halaga ay nasa USD. Utang at Isahang ang naka-pindot. 1000 ang na-type sa Bitcoin, tapos inilipat ang pampalit sa fiat, kaya ang hanay ay nagpapakita ng 1.00 at ₿1'000 sa ilalim. Naka-enable ang Magpatuloy."
+    "fil": "Utang, hakbang 1 sa 9, na ang pampalit ng halaga ay nasa USD. Nakapindot ang Utang at Isang beses. 1000 ang na-type sa Bitcoin, tapos inilipat ang pampalit sa fiat, kaya ang hanay ay nagpapakita ng 1.00 at ₿1'000 sa ilalim. Naka-enable ang Magpatuloy."
   },
   "/welcome:role-hint": {
     "de": "Carols Verifiziert-Markierung angeklickt; die Erklärung unter jener Kartenüberschrift ist sichtbar (Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.). Bob bleibt ohne Pille; Ada zeigt weiterhin Moderator.",
     "es": "Se pulsó la etiqueta Verificado de Carol; la explicación bajo el encabezado de esa tarjeta es visible (Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.). Bob sigue sin píldora; Ada sigue mostrando Moderador.",
-    "fil": "Na-click ang tatak na Beripika ni Carol; nakikita ang paliwanag sa ilalim ng pamuhatan ng talaang iyon (Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.). Si Bob ay walang pilduras; ipinapakita pa rin ni Ada ang Moderator."
+    "fil": "Na-click ang tatak na Beripikado ni Carol; nakikita ang paliwanag sa ilalim ng pamuhatan ng talaang iyon (Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.). Si Bob ay walang pilduras; ipinapakita pa rin ni Ada ang Moderator."
   },
   "/welcome:ask-credit-text": {
     "de": "Kredit, Schritt 8 von 9. Überschrift Nachricht schreiben. Die Nachricht kann leer sein; Weiter öffnet trotzdem die Vorschau. Posten auf dem nächsten Schritt bleibt deaktiviert, bis es Text, ein Foto oder ein Video gibt. Der Zähler zeigt 8 von 9.",
@@ -2767,7 +2767,7 @@
   "/welcome:ask-amount-fiat": {
     "de": "Um Geld bitten ausgewählt. Schritt 1 von 4 mit Einmalig gedrückt und dem Betragsschalter auf USD. 1000 wurde in Bitcoin eingegeben, dann wurde der Schalter auf Fiat gestellt, daher zeigt das Feld 1.00 und darunter ₿1'000. Weiter ist aktiviert.",
     "es": "Pedir dinero seleccionado. Paso 1 de 4 con Una sola vez pulsado y el interruptor de importe en USD. Se escribió 1000 en Bitcoin, luego el interruptor pasó a fiat, así que el campo muestra 1.00 y ₿1'000 debajo. Continuar está habilitado.",
-    "fil": "Napili ang Humingi ng pera. Hakbang 1 sa 4 na naka-pindot ang Isahang at ang pampalit ng halaga ay nasa USD. 1000 ang na-type sa Bitcoin, tapos inilipat ang pampalit sa fiat, kaya ang hanay ay nagpapakita ng 1.00 at ₿1'000 sa ilalim. Naka-enable ang Magpatuloy."
+    "fil": "Napili ang Humingi ng pera. Hakbang 1 sa 4 na naka-pindot ang Isang beses at ang pampalit ng halaga ay nasa USD. 1000 ang na-type sa Bitcoin, tapos inilipat ang pampalit sa fiat, kaya ang hanay ay nagpapakita ng 1.00 at ₿1'000 sa ilalim. Naka-enable ang Magpatuloy."
   },
   "/welcome:reaction-pay-sheet": {
     "de": "Dieselbe Seite, so gescrollt, dass Schließen (X), Zahlen ₿21, der QR oder die Telefon-Zahlen-Schaltfläche und Zahlung wird erwartet… im Fenster sind. Die Vorschau ist auf dieser Seite. Schließen bleibt in dieser Ansicht und ist nicht der Zurück-Pfeil oben links.",
@@ -2822,7 +2822,7 @@
   "/pos:open": {
     "de": "Angemeldete Ada mit einer ausstehenden Belastung von ₿21 und 5:00 Restzeit. Countdown, der Sat-Betrag, das Standard-Fiat darunter und Abbrechen bleiben oben. Das Betragsformular ist weg. Desktop, iPad und Smartphone zeigen alle den offenen CryptoPay-QR.",
     "es": "Ada con sesión iniciada y un cargo pendiente de ₿21 y 5:00 restantes. La cuenta atrás, el importe en sats, el fiat predeterminado debajo y Cancelar permanecen arriba. El formulario de importe ha desaparecido. Escritorio, iPad y teléfono muestran todos el código QR de CryptoPay abierto.",
-    "fil": "Naka-account si Ada na may nakabinbing singil na ₿21 at 5:00 na natitira. Ang countdown, ang halagang sat, ang default na fiat sa ilalim nito, at Kanselahin ay nananatiling nakataas. Wala na ang porma ng halaga. Kompyuter, iPad, at smartphone ay lahat nagpapakita ng bukas na QR ng CryptoPay."
+    "fil": "Naka-sign-in si Ada na may nakabinbing singil na ₿21 at 5:00 na natitira. Ang countdown, ang halagang sat, ang default na fiat sa ilalim nito, at Kanselahin ay nananatiling nakataas. Wala na ang porma ng halaga. Kompyuter, iPad, at smartphone ay lahat nagpapakita ng bukas na QR ng CryptoPay."
   },
   "/grants/payments/comment:default": {
     "de": "Gründerin mit gespeichertem Kommentar. Überschrift Text der täglichen Zahlungen. Der Kommentar Tägliches Geschenk ist Text, mit dem Bleistift Kommentar bearbeiten in derselben Zeile, rechts vom Text. Kein Empfänger- und kein Zahlungswechsel. Nadel Kommentar bearbeiten.",
@@ -2886,7 +2886,7 @@
   },
   "/welcome:reaction-draft": {
     "de": "Bei Aktiv Bobs Notiz aufklappen. Ada, ein Basis-Mitglied, hat 21 in Betrag eingegeben (die Zeile darunter zeigt $0.02) und This is my answer in Deine Reaktion. Bobs Notiz und die bestehende 21.gifts-Antwort bleiben auf dem Bildschirm. Posten ist weiterhin aktiv.",
-    "es": "En Activas, expandir la nota de Bob. Ada, una miembro basis, ha escrito 21 en Importe (la línea debajo muestra $0.02) y This is my answer en Tu reacción. La nota de Bob y la respuesta existente de 21.gifts permanecen en pantalla. Publicar sigue habilitado.",
+    "es": "En Activo, expandir la nota de Bob. Ada, una miembro basis, ha escrito 21 en Importe (la línea debajo muestra $0.02) y This is my answer en Tu reacción. La nota de Bob y la respuesta existente de 21.gifts permanecen en pantalla. Publicar sigue habilitado.",
     "fil": "Sa Aktibo, palawakin ang tala ni Bob. Si Ada, isang basis na miyembro, ay nag-type ng 21 sa Halaga (ang linya sa ibaba ay nagpapakita ng $0.02) at This is my answer sa Iyong reaksyon. Ang tala ni Bob at ang umiiral na sagot ng 21.gifts ay nananatili sa screen. Naka-enable pa rin ang I-post."
   },
   "/grants/goals:loading": {
@@ -2945,7 +2945,7 @@
     "fil": "Hindi naka-sign-in na permalink ng isang Ingles na tala na tinukoy bilang $1.50 na may frozen na ₿1'000 at label na 0%. Walang pangalawang halaga sa dolyar. Tumutugma ang tala sa wika ng UI, kaya hindi nag-aalok ang kard ng Isalin. Ang natanggap na halaga ay ₿0 · $0.00. Walang Hiling sa pambuo."
   },
   "/members/[accountId]:sticker-failed": {
-    "de": "Dasselbe Overlay nach fehlgeschlagenem Download (hier PNG in einem Browser, der die Leinwand nicht kodieren kann): role=\"alert\" Die Datei konnte nicht erstellt werden. Bitte erneut versuchen. über Download; der nächste Versuch räumt es. Mobile Kombinationen öffnen dasselbe Overlay wie am großen Bildschirm.",
+    "de": "Dasselbe Overlay nach fehlgeschlagenem Herunterladen (hier PNG in einem Browser, der die Leinwand nicht kodieren kann): role=\"alert\" Die Datei konnte nicht erstellt werden. Bitte erneut versuchen. über Herunterladen; der nächste Versuch räumt es. Mobile Kombinationen öffnen dasselbe Overlay wie am großen Bildschirm.",
     "es": "La misma superposición después de que falló Descargar (aquí PNG con un navegador que no puede codificar el lienzo): role=\"alert\" No se pudo crear el archivo. Inténtalo de nuevo. encima de Descargar; el siguiente intento lo borra. Las combinaciones en el móvil abren la misma superposición que en pantalla ancha.",
     "fil": "Parehong overlay pagkatapos mabigo ang I-download (dito PNG sa isang browser na hindi ma-encode ang canvas): role=\"alert\" Hindi magawa ang file. Subukan ulit. sa itaas ng I-download; nililinis ito ng susunod na pagsubok. Ang mga combo sa mobile ay nagbubukas ng parehong overlay tulad ng sa malawak na screen."
   },
@@ -2957,7 +2957,7 @@
   "/pl:charge": {
     "de": "Die offene Kasse: das Schaufenster des Shop-Aufklebers über dem Namen, dann verbleibende Zeit, der Sat-Betrag, die Standard-Fiat der betrachtenden Person daneben und Zahlen. Am großen Bildschirm wird auch der QR der Bitcoin-Rechnung gezeigt. Ein Smartphone nicht. Kein Geschenk-Glyphe und kein Betragsfeld.",
     "es": "La caja abierta: el escaparate de la pegatina de la tienda encima del nombre, luego el tiempo restante, el importe en sats, el fiat predeterminado de quien mira al lado, y Pagar. En pantalla ancha también se muestra el QR de la factura de Bitcoin. Un teléfono no. Sin glifo de regalo y sin campo de importe.",
-    "fil": "Ang bukas na kahon: ang storefront ng sticker ng tindahan sa itaas ng pangalan, pagkatapos ang natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at Magbayad. Sa malawak na screen ay ipinapakita rin ang QR ng invoice ng Bitcoin. Hindi sa smartphone. Walang glyph ng regalo at walang field ng halaga."
+    "fil": "Ang bukas na kaha: ang storefront ng sticker ng tindahan sa itaas ng pangalan, pagkatapos ang natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at Magbayad. Sa malawak na screen ay ipinapakita rin ang QR ng invoice ng Bitcoin. Hindi sa smartphone. Walang glyph ng regalo at walang field ng halaga."
   },
   "/shops:default": {
     "de": "Überschrift Geschäfte, Einleitung, die Pille Beitrag / Karte / Tabelle mit ausgewähltem Beitrag, Einen Laden hinzufügen (kein Wohnzimmer-Eingabefeld), eine Ladennotiz Cafe Luna mit einer #Geschäft-Pille. Ein Laden mit null Sats würde trotzdem gelistet. Hinweis zu Gesetzen fehlt. Rohes #21GiftsShop ist nicht sichtbar.",
@@ -2987,7 +2987,7 @@
   "/trust-chain:hop-error": {
     "de": "Der Gründer-Seed ist auf dem Bildschirm. Ein Klick auf diese Person lässt das Abrufen des Hops scheitern. Das Diagramm bleibt; derselbe Fehlertext und Erneut versuchen sitzen darüber. Erneut versuchen holt diesen Hop erneut, ohne die Gründer-Seeds erneut abzurufen; das Banner bleibt nur weg, wenn der Hop gelingt.",
     "es": "La semilla fundadora está en pantalla. Al pulsar a esa persona falla la obtención del salto. El diagrama se queda; el mismo texto de error e Intentar de nuevo están encima. Reintentar vuelve a obtener ese salto sin volver a obtener las semillas fundadoras; el aviso solo sigue ausente si el salto acierta.",
-    "fil": "Nasa screen ang seed ng founder. Ang pag-click sa taong iyon ay nabigo sa pagkuha ng hop. Nanatili ang dayagram; ang parehong teksto ng error at Subukan ulit ay nasa itaas nito. Ang ulit ay muling kumukuha ng hop na iyon nang hindi muling kinukuha ang mga seed ng founder; nananatiling wala ang banner kung magtagumpay ang hop."
+    "fil": "Nasa screen ang seed ng founder. Ang pag-click sa taong iyon ay nabigo sa pagkuha ng hop. Nanatili ang dayagram; ang parehong teksto ng error at Subukan ulit ay nasa itaas nito. Ang ulit ay muling kumukuha ng hop na iyon nang hindi muling kinukuha ang mga seed ng founder; nananatiling wala ang banner kung magtagumpay lamang ang hop."
   },
   "/welcome:ask-credit-confirm-can-fiat": {
     "de": "Kredit, Schritt 6 von 9, US-Dollar. Überschrift Kannst du ihn abzahlen? Der Satz lautet Ich kann den geschuldeten Betrag dieses Plans abzahlen: $33.33 pro Tag über 29 Tage, dann $33.43 am letzten Tag. Die Schaltfläche Ich kann das abzahlen. ist die Bestätigung. Es gibt kein Kontrollkästchen.",
@@ -3035,7 +3035,7 @@
     "fil": "Ang base account na joey-rosima, vincent, o jewel-bacolbas ay nakikita ang Hindi ka pa nabe-verify. Anumang ibang base account na ang status ay hindi pending, trial, o admitted ay nakikita ang kard ng paghinto. Ang base account na may isa sa mga status na iyon ay nakikita ang Hindi ka pa nabe-verify."
   },
   "/moderate/group:stipend": {
-    "de": "Moderatorin oder Moderator. Geladener Gruppenthread mit der Nachricht von Rose Otero Tolle Arbeit heute, Moderators! und dem bezahlten Stipendium als Fußzeile in dieser Sprechblase (keine eigene Sprechblase): 21.gifts, der ₿-Betrag plus preferred-fiat-Suffix und die Zahlungszeit. Eingabefeld sichtbar.",
+    "de": "Moderatorin oder Moderator. Geladener Gruppenthread mit der Nachricht von Rose Otero Tolle Arbeit heute, Moderatoren! und dem bezahlten Stipendium als Fußzeile in dieser Sprechblase (keine eigene Sprechblase): 21.gifts, der ₿-Betrag plus preferred-fiat-Suffix und die Zahlungszeit. Eingabefeld sichtbar.",
     "es": "Moderación. Hilo de grupo cargado con el mensaje de Rose Otero ¡Gran trabajo hoy, moderadores! y el estipendio pagado como línea de pie dentro de esa burbuja (no una burbuja aparte): 21.gifts, el importe ₿ más el sufijo preferred-fiat y la hora del pago. Cuadro de redacción visible.",
     "fil": "Moderator. Naka-load na thread ng grupo na may mensahe ni Rose Otero Magaling ang trabaho ngayon, mga moderator! at ang nabayarang stipendyo bilang linya sa paanan sa loob ng bula na iyon (hindi hiwalay na bula): 21.gifts, ang halagang ₿ plus preferred-fiat suffix, at ang oras ng bayad. Nakikita ang kahon ng pagsulat."
   },
@@ -3095,7 +3095,7 @@
     "fil": "Lahat, hindi Aktibo. Ang Humingi ng pera na zero-sat ni Dana ay tinukoy sa bitcoin, kaya ipinapakita ng bar ang ₿1'000 · $1.00 (USD ng tumitingin mula sa rate ng araw ng regalo; ang fixture na ito ay hindi nag-iimbak ng snapshot), larawan + caption, ForumGoalBar sa 0%. Wala ang zero-sat na hiling sa Aktibo, kaya binubuksan ng kuha na ito ang Lahat."
   },
   "/pl:invoice": {
-    "de": "Nach Weiter dieselbe aktive Zahlung wie an einer offenen Kasse: der Ladenaufkleber, fünf Minuten übrig, der gesperrte Sat-Betrag, daneben die Standard-Fiat der betrachtenden Person, und Zahlen. Kein Betragsfeld. Am Computer zeigt die Bitcoin-Rechnung den QR. Ein Smartphone zeigt den Countdown und Zahlen, nicht den QR.",
+    "de": "Nach Weiter dieselbe aktive Zahlung wie an einer offenen Kasse: der Ladenaufkleber, fünf Minuten übrig, der gesperrte Sat-Betrag, daneben die Standard-Fiat der betrachtenden Person, und Zahlen. Kein Betragsfeld. Am Computer wird der QR der Bitcoin-Rechnung gezeigt. Ein Smartphone zeigt den Countdown und Zahlen, nicht den QR.",
     "es": "Tras Continuar, el mismo pago activo que en una caja abierta: la pegatina de la tienda, cinco minutos restantes, el importe de sat bloqueado, al lado la moneda fiduciaria predeterminada de quien mira, y Pagar. Sin campo de importe. En el ordenador se muestra el código QR de la factura de Bitcoin. Un teléfono inteligente muestra la cuenta atrás y Pagar, no el código QR.",
     "fil": "Pagkatapos ng Magpatuloy, ang parehong aktibong bayad tulad ng bukas na kaha: ang sticker ng tindahan, limang minuto na natitira, ang naka-lock na halaga ng sat, sa tabi nito ang default na fiat ng tumitingin, at Magbayad. Walang field ng halaga. Sa malapad na screen ipinapakita ang QR ng resibo ng Bitcoin. Ang smartphone ay nagpapakita ng countdown at Magbayad, hindi ang QR."
   },
@@ -3132,11 +3132,11 @@
   "/welcome:menu-staff": {
     "de": "Personal (Moderator) in einer eigenständigen Anzeige, daher fehlt App installieren. Menü öffnen. Zeilen: Start, Shops, Verkaufsstelle, Profil, Förderungen, Wallet, Wohnzimmerregeln, Vertrauenskette, Statistiken, Moderation ohne ungelesene Anzahl, Benachrichtigungen, Nachrichten, Kontakt, Abmelden, dann Version dev.",
     "es": "Personal (moderador) en una pantalla independiente, por eso falta Instalar app. Abrir Menú. Filas: Inicio, Tiendas, Punto de venta, Perfil, Subvenciones, Wallet, Reglas del salón, Cadena de confianza, Estadísticas, Moderación sin recuento de no leídos, Notificaciones, Mensajes, Contacto, Cerrar sesión, luego Versión dev.",
-    "fil": "Staff (moderator) sa isang standalone na display, kaya wala ang I-install ang app. Buksan ang Menu. Mga hilera: Home, Mga Tindahan, Point of sale, Profile, Mga Grant, Wallet, Mga patakaran sa living room, Trust Chain, Statistics, Moderation na walang unread count, Notifications, Messages, Contact, Mag-log out, tapos Version dev."
+    "fil": "Staff (moderator) sa isang standalone na display, kaya wala ang I-install ang app. Buksan ang Menu. Mga hilera: Home, Mga Tindahan, Point of sale, Profile, Mga Grant, Wallet, Mga patakaran sa living room, Trust Chain, Estadistika, Moderasyon na walang bilang ng hindi pa nabasa, Mga abiso, Mga mensahe, Contact, Mag-log out, tapos Version dev."
   },
   "/members/[accountId]:posts-open-photos": {
     "de": "Identitätskarte; Beiträge gedrückt; Profilnotiz ausgeblendet; der aufgeführte Beitrag hat hasPhoto und photoCount: 2 und zeigt zwei Standbilder (Foto von Carol) in ForumPhotoGallery (horizontale Einrast-Reihe, data-scroll-x, 88% Peek, Chip 1/2, Punkte) über dem Text, dieselbe ForumBoard-Darstellung wie die Fotos auf /welcome.",
-    "es": "Tarjeta de identidad; publicaciones pulsadas; nota de perfil oculta; la publicación listada tiene hasPhoto y photoCount: 2 y muestra dos fotogramas (Foto de Carol) en ForumPhotoGallery (fila horizontal con encaje, data-scroll-x, sulyap del 88% no — peek del 88 %, ficha 1/2, puntos) encima del texto, la misma pintura de ForumBoard que las fotos de /welcome.",
+    "es": "Tarjeta de identidad; publicaciones pulsadas; nota de perfil oculta; la publicación listada tiene hasPhoto y photoCount: 2 y muestra dos fotogramas (Foto de Carol) en ForumPhotoGallery (fila horizontal con encaje, data-scroll-x, peek del 88 %, ficha 1/2, puntos) encima del texto, la misma pintura de ForumBoard que las fotos de /welcome.",
     "fil": "Kard ng pagkakakilanlan; pinindot ang mga post; nakatago ang tala sa profile; ang nakalistang post ay may hasPhoto at photoCount: 2 at nagpapakita ng dalawang still na larawan (Larawan mula kay Carol) sa ForumPhotoGallery (pahalang na hanay na kumakapit, data-scroll-x, 88% sulyap, chip na 1/2, mga tuldok) sa itaas ng teksto, parehong pintura ng ForumBoard tulad ng mga larawan sa /welcome."
   },
   "/welcome:expanded-received": {
@@ -3146,13 +3146,13 @@
   },
   "/welcome:overlay-address": {
     "de": "Benanntes Mitglied mit vereinbarten Wohnzimmerregeln und ohne Wallet of Satoshi address. Composer ausgefüllt, Post angeklickt. RequirementsOverlay-Dialog Wallet of Satoshi address hinterlegen mit dem Lightning-Address-Feld des Profils (LightningAddressForm variant=profile). Kein Überspringen. Schließen (X) ist vorhanden.",
-    "es": "Miembro con nombre, con las reglas del salón acordadas y sin Wallet of Satoshi address. Compositor rellenado, Post pulsado. Diálogo RequirementsOverlay Añade tu Wallet of Satoshi address con el campo Lightning Address del perfil (LightningAddressForm variant=profile). Sin omitir. Cerrar (X) está presente.",
+    "es": "Miembro con nombre, con las reglas del salón acordadas y sin Wallet of Satoshi address. Compositor rellenado, Post pulsado. Diálogo RequirementsOverlay Añade tu Wallet of Satoshi address con el campo Lightning Address del perfil (LightningAddressForm variant=profile). Sin Omitir. Cerrar (X) está presente.",
     "fil": "Pinangalanang miyembro na may napagkasunduang panuntunan ng sala at walang Wallet of Satoshi address. Napunan ang kompositor, na-click ang Post. Diyalogo ng RequirementsOverlay Idagdag ang Wallet of Satoshi address mo kasama ang patlang na Lightning Address ng profile (LightningAddressForm variant=profile). Walang Laktawan. May Isara (X)."
   },
   "/grants/payments/amounts:pending": {
     "de": "Der Gründer hat eine Zeile mit dem Bleistift geöffnet und das Häkchen gedrückt. Die Betragsaktualisierung ist noch nicht zurückgekommen. Das Häkchen (barrierefreier Name Speichern) zeigt einen Ladekreis und ist deaktiviert, ebenso Abbrechen, Ein, Aus, Hinzufügen und die übrigen Schaltflächen der Zeile. Es gibt keine Warnmeldung. Needle state-grants-payments-amounts-pending.",
     "es": "El fundador abrió una fila con el lápiz y pulsó la marca de verificación. La actualización del importe aún no ha vuelto. La marca de verificación (nombre accesible Guardar) muestra un indicador de carga y está deshabilitada, igual que Cancelar, Encendido, Apagado, Añadir y los demás botones de la fila. No hay alerta. Needle state-grants-payments-amounts-pending.",
-    "fil": "Binuksan ng tagapagtatag ang isang hilera gamit ang lapis at pinindot ang tsek. Hindi pa bumabalik ang pagsasapanahon ng halaga. Ang tsek (naa-access na pangalan Sagipin) ay nagpapakita ng umiikot na tagapagpahiwatig at hindi pinagana, gayundin ang Kanselahin, Bukas, Sarado, Magdagdag, at ang iba pang pindutan ng hilera. Walang alerto. Needle state-grants-payments-amounts-pending."
+    "fil": "Binuksan ng tagapagtatag ang isang hilera gamit ang lapis at pinindot ang tsek. Hindi pa bumabalik ang pagsasapanahon ng halaga. Ang tsek (naa-access na pangalan I-save) ay nagpapakita ng umiikot na tagapagpahiwatig at hindi pinagana, gayundin ang Kanselahin, Bukas, Sarado, Magdagdag, at ang iba pang pindutan ng hilera. Walang alerto. Needle state-grants-payments-amounts-pending."
   },
   "/login:name": {
     "de": "Überschrift Wählen Sie Ihren Namen. Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert. Beschriftung Name, Schaltfläche Weiter. Die gedämpfte iOS- oder Android-Zeile wird nicht angezeigt.",
@@ -3180,9 +3180,9 @@
     "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon, nabuksan ang regalo, napunan ang halaga, hindi pa naisumite. Ang panawagan sa kilos ng halaga ay Magpatuloy (forum.payContinue) sa bawat ahente ng gumagamit. Kasalukuyang katumbas sa nais na pera ng fiat (walang tagapili). Walang mali, walang QR ng bayad, wala pang pindutan para magbayad gamit ang pitaka. Ang publikasyon mismo ay hindi nagpapakita ng Magpadala ng Bitcoin."
   },
   "/shops:table-edit-open": {
-    "de": "Ein Moderator hat neben Cafe Luna auf Edit shop note geklickt. Schritt 1 / 5 · Fotos ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland und Betreiber @luna bleiben.",
+    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 / 5 · Fotos ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland und Betreiber @luna bleiben.",
     "es": "Un moderador hizo clic en Editar nota de tienda junto a Cafe Luna. El paso 1 / 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland y el operador @luna se mantienen.",
-    "fil": "Isang moderator ang nag-click sa I-edit ang tala ng tindahan sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 / 5 · Mga litrato. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Close (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland at ang operator na @luna."
+    "fil": "Isang moderator ang nag-click sa I-edit ang tala ng tindahan sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 / 5 · Mga litrato. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/view/[viewKey]:about-photo": {
     "de": "Gültiger bekannter Schlüssel mit Text und Foto unter Über mich (aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true). Dieselbe schreibgeschützte Karte wie die Standardansicht plus die Überschrift Über mich, die Bio und das Foto (Foto zu Über mich, das ganze Bild, object-contain, max-h-80, kein Zuschnitt zum Ausfüllen). Copy-profile-link bleibt. Keine Bearbeitung.",
@@ -3230,14 +3230,14 @@
     "fil": "Naka-sign-in na moderator na tumitingin sa ibang miyembro na basis. Kard ng staff na may nakasarang pagbubunyag Mga tungkulin ng moderator, ang parehong details / summary gaya ng pitaka Mga advanced na function (data-testid=\"state-members-staff-verify\"); Hindi nakikita ang Patunayan hangga't hindi ito nabubuksan. Ang resultang napindot ay staff-verify-open."
   },
   "/statistics:loading": {
-    "de": "Mitarbeiterseite (Moderator). Beide Felder zeigen Wird geladen…, während die jeweilige Anfrage unterwegs ist: das Personenfeld (Gruppe People paid) für GET /gifts/stats und das Shop-Feld (Gruppe Active shops) für GET /shops/activity. Ein Feld kann fertig sein, während das andere noch lädt. Moderatorenfunktionen wird nicht gezeigt.",
-    "es": "Página de personal (moderador). Ambos paneles muestran Cargando… mientras su propia petición está en curso: el panel de personas (grupo People paid) para GET /gifts/stats, y el panel de tienda (grupo Active shops) para GET /shops/activity. Un panel puede terminar mientras el otro sigue cargando. No se muestran Funciones de moderación.",
-    "fil": "Pahina ng staff (moderator). Parehong panel ay nagpapakita ng Naglo-load… habang nasa himpapawid ang kani-kanilang kahilingan: ang panel ng tao (pangkat People paid) para sa GET /gifts/stats, at ang panel ng tindahan (pangkat Active shops) para sa GET /shops/activity. Maaaring matapos ang isang panel habang naglo-load pa ang isa. Hindi ipinapakita ang Mga tungkulin ng moderator."
+    "de": "Mitarbeiterseite (Moderator). Beide Felder zeigen Wird geladen…, während die jeweilige Anfrage unterwegs ist: das Personenfeld (Gruppe Ausgezahlte Personen) für GET /gifts/stats und das Shop-Feld (Gruppe Aktive Shops) für GET /shops/activity. Ein Feld kann fertig sein, während das andere noch lädt. Moderatorenfunktionen wird nicht gezeigt.",
+    "es": "Página de personal (moderador). Ambos paneles muestran Cargando… mientras su propia petición está en curso: el panel de personas (grupo Personas pagadas) para GET /gifts/stats, y el panel de tienda (grupo Tiendas activas) para GET /shops/activity. Un panel puede terminar mientras el otro sigue cargando. No se muestran Funciones de moderación.",
+    "fil": "Pahina ng staff (moderator). Parehong panel ay nagpapakita ng Naglo-load… habang nasa himpapawid ang kani-kanilang kahilingan: ang panel ng tao (pangkat Mga taong nabayaran) para sa GET /gifts/stats, at ang panel ng tindahan (pangkat Mga aktibong tindahan) para sa GET /shops/activity. Maaaring matapos ang isang panel habang naglo-load pa ang isa. Hindi ipinapakita ang Mga tungkulin ng moderator."
   },
   "/login:android-version": {
-    "de": "Ein neues Konto eröffnen öffnet das Namensformular auch auf Android unter 9. Nach dem Absenden eines gültigen Namens und dem Schließen der Erstellungszeremonie lautet die Meldung genau Android 8.1.0 is installed. Sign-in needs at least Android 9. Schaltfläche Erneut versuchen. Die gedämpfte Statuszeile wird dann nicht zusätzlich gezeigt. Es wird kein Konto angelegt.",
-    "es": "Abrir una cuenta nueva abre el formulario de nombre incluso en Android por debajo de 9. Tras enviar un nombre válido y descartar la ceremonia de creación, la alerta dice exactamente Android 8.1.0 is installed. Sign-in needs at least Android 9. Botón Intentar de nuevo. La línea de estado atenuada no se muestra también entonces. No se crea ninguna cuenta.",
-    "fil": "Ang Magbukas ng bagong account ay nagbubukas ng form ng pangalan kahit sa Android na mas mababa sa 9. Pagkatapos magsumite ng wastong pangalan at tanggalin ang seremonya ng paglikha, ang alerto ay eksaktong Android 8.1.0 is installed. Sign-in needs at least Android 9. Pindutan Subukan ulit. Hindi rin ipinapakita ang naka-mute na linya ng katayuan. Walang account na nalilikha."
+    "de": "Ein neues Konto eröffnen öffnet das Namensformular auch auf Android unter 9. Nach dem Absenden eines gültigen Namens und dem Schließen der Erstellungszeremonie lautet die Meldung genau Installiert ist Android 8.1.0. Für die Anmeldung braucht es mindestens Android 9. Schaltfläche Erneut versuchen. Die gedämpfte Statuszeile wird dann nicht zusätzlich gezeigt. Es wird kein Konto angelegt.",
+    "es": "Abrir una cuenta nueva abre el formulario de nombre incluso en Android por debajo de 9. Tras enviar un nombre válido y descartar la ceremonia de creación, la alerta dice exactamente Este dispositivo tiene Android 8.1.0. Para iniciar sesión hace falta como mínimo Android 9. Botón Intentar de nuevo. La línea de estado atenuada no se muestra también entonces. No se crea ninguna cuenta.",
+    "fil": "Ang Magbukas ng bagong account ay nagbubukas ng form ng pangalan kahit sa Android na mas mababa sa 9. Pagkatapos magsumite ng wastong pangalan at tanggalin ang seremonya ng paglikha, ang alerto ay eksaktong Naka-install ang Android 8.1.0. Kailangan ng hindi bababa sa Android 9 para makapag-log in. Pindutan Subukan ulit. Hindi rin ipinapakita ang naka-mute na linya ng katayuan. Walang account na nalilikha."
   },
   "/members/[accountId]:sticker-lang": {
     "de": "Dieselbe Überlagerung nach dem Öffnen von Zweitsprache. Die Liste öffnet sich nach unten über die Vorschau. Optionen von oben nach unten: Keine (nur Englisch) (ausgewählt), Spanisch, Deutsch, Französisch, Filipino, Kikamba. Der Dialog bleibt offen. Mobile Kombinationen entsprechen dem Desktop. Nadel state-members-sticker-lang. Diese Aufnahmen verwenden die englische Oberfläche.",
@@ -3255,19 +3255,19 @@
     "fil": "Sa Lahat: isang pangunahing tala sa Ingles na tinukoy bilang ₱200.00, na may nagyeyelong ₿1'000. Ang default na fiat ng tumitingin ay USD, hindi piso, kaya ipinapakita rin ng bar ang dolyar na naka-imbak para sa tumitinging iyon, $1.50. Label 0%. Tumutugma ang tala sa wika ng UI, kaya hindi nag-aalok ang kard ng Isalin. Ang natanggap na halaga ay ₿0 · $0.00."
   },
   "/messages/[id]:signed-in": {
-    "de": "Hydrierte Ada-Sitzung: ein Pfeil oben links (vorherige In-App-Ansicht, oder /welcome, wenn dieser Tab keine hat) + Wortmarke → /welcome. Die Wortmarke ist nicht dieses Steuerelement. Menü oben rechts (Home zuerst). Thread-Karte Hello from Ada, Reagieren, Link kopieren und Reaktion schreiben (automatisch aufgeklappt). Beiträge zeigen weder Gift noch einen Umschlag.",
-    "es": "Sesión hidratada de Ada: una flecha arriba a la izquierda (vista previa en la app, o /welcome cuando esta pestaña no tiene ninguna) + isotipo → /welcome. El isotipo no es ese control. Menú arriba a la derecha (Inicio primero). Tarjeta del hilo Hello from Ada, Reaccionar, copiar enlace y Escribe una reacción (autoexpandido). Las publicaciones no muestran Gift ni un sobre.",
-    "fil": "Hydrated na session ni Ada: isang arrow sa itaas-kaliwa (nakaraang view sa app, o /welcome kapag wala ito sa tab na ito) + wordmark → /welcome. Hindi iyon ang kontrol ang wordmark. Menu sa itaas-kanan (Home muna). Kard ng thread Hello from Ada, Tumugon, kopyahin ang link, at Sumulat ng reaksyon (kusang naka-expand). Ang mga post ay hindi nagpapakita ng Gift o sobre."
+    "de": "Hydrierte Ada-Sitzung: ein Pfeil oben links (vorherige In-App-Ansicht, oder /welcome, wenn dieser Tab keine hat) + Wortmarke → /welcome. Die Wortmarke ist nicht dieses Steuerelement. Menü oben rechts (Home zuerst). Thread-Karte Hallo von Ada, Reagieren, Link kopieren und Reaktion schreiben (automatisch aufgeklappt). Beiträge zeigen weder Geschenk noch einen Umschlag.",
+    "es": "Sesión hidratada de Ada: una flecha arriba a la izquierda (vista previa en la app, o /welcome cuando esta pestaña no tiene ninguna) + isotipo → /welcome. El isotipo no es ese control. Menú arriba a la derecha (Inicio primero). Tarjeta del hilo Hola desde Ada, Reaccionar, copiar enlace y Escribe una reacción (autoexpandido). Las publicaciones no muestran Regalo ni un sobre.",
+    "fil": "Hydrated na session ni Ada: isang arrow sa itaas-kaliwa (nakaraang view sa app, o /welcome kapag wala ito sa tab na ito) + wordmark → /welcome. Hindi iyon ang kontrol ang wordmark. Menu sa itaas-kanan (Home muna). Kard ng thread Kumusta mula kay Ada, Tumugon, kopyahin ang link, at Sumulat ng reaksyon (kusang naka-expand). Ang mga post ay hindi nagpapakita ng Regalo o sobre."
   },
   "/members/[accountId]:overlay-address": {
-    "de": "Benannter Besucher mit akzeptierten Wohnzimmerregeln und ohne Wallet of Satoshi address. Beitrag-Feed offen, gelistete Notiz aufgeklappt, Antwort mit sichtbarem Feld Amount gefüllt, Post angeklickt. Dialog RequirementsOverlay Wallet of Satoshi address hinterlegen mit dem Profilfeld Lightning Address. Kein Skip. Schließen (X) ist vorhanden.",
-    "es": "Visitante con nombre, reglas del salón aceptadas y sin Wallet of Satoshi address. Feed de publicaciones abierto, nota listada expandida, respuesta rellenada con el campo Amount visible, Post pulsado. Diálogo RequirementsOverlay Añade tu Wallet of Satoshi address con el campo Lightning Address del perfil. Sin Skip. Cerrar (X) está presente.",
-    "fil": "Pinangalanang bisita na may sang-ayon sa mga patakaran ng living room at walang Wallet of Satoshi address. Bukas ang feed ng mga post, naka-expand ang nakalistang tala, napunan ang sagot na nakikita ang field na Amount, na-click ang Post. Diyalogo RequirementsOverlay Idagdag ang Wallet of Satoshi address mo kasama ang field na Lightning Address sa profile. Walang Skip. May Close (X)."
+    "de": "Benannter Besucher mit akzeptierten Wohnzimmerregeln und ohne Wallet of Satoshi address. Beitrag-Feed offen, gelistete Notiz aufgeklappt, Antwort mit sichtbarem Feld Betrag gefüllt, Posten angeklickt. Dialog RequirementsOverlay Wallet of Satoshi address hinterlegen mit dem Profilfeld Lightning Address. Kein Überspringen. Schließen (X) ist vorhanden.",
+    "es": "Visitante con nombre, reglas del salón aceptadas y sin Wallet of Satoshi address. Feed de publicaciones abierto, nota listada expandida, respuesta rellenada con el campo Importe visible, Publicar pulsado. Diálogo RequirementsOverlay Añade tu Wallet of Satoshi address con el campo Lightning Address del perfil. Sin Omitir. Cerrar (X) está presente.",
+    "fil": "Pinangalanang bisita na may sang-ayon sa mga patakaran ng living room at walang Wallet of Satoshi address. Bukas ang feed ng mga post, naka-expand ang nakalistang tala, napunan ang sagot na nakikita ang field na Halaga, na-click ang Mag-post. Diyalogo RequirementsOverlay Idagdag ang Wallet of Satoshi address mo kasama ang field na Lightning Address sa profile. Walang Laktawan. May Isara (X)."
   },
   "/welcome:unpaid": {
     "de": "Klick auf No gifts yet (Deutsch: Noch ohne Geschenk) — nur geladene Notizen mit genau null Sats erscheinen. Bob ist sichtbar; bezahlte Ada und Carol sind ausgeblendet. Das schließt Notizen ohne Empfangsbrieftasche ein. Die vier Filter sind ein Dropdown; Aktiv wird geschlossen gezeigt; öffnen und No gifts yet wählen. Aktiv bleibt die Voreinstellung.",
     "es": "Clic en No gifts yet (alemán: Noch ohne Geschenk) — solo aparecen las notas cargadas con exactamente cero sats. Bob es visible; Ada y Carol pagadas están ocultas. Esto incluye notas sin billetera receptora. Los cuatro filtros son un desplegable; Activo se muestra cerrado; ábrelo y elige No gifts yet. Activo sigue siendo el valor predeterminado.",
-    "fil": "I-click ang No gifts yet (Aleman: Noch ohne Geschenk) — tanging naka-load na tala na may eksaktong serong sats ang lumilitaw. Nakikita si Bob; nakatago ang bayad na sina Ada at Carol. Kasama rito ang mga talang walang pitakang tumatanggap. Ang apat na filter ay isang dropdown; Ipinapakita ang Active na nakasara; buksan at piliin ang No gifts yet. Nananatiling default ang Active."
+    "fil": "I-click ang No gifts yet (Aleman: Noch ohne Geschenk) — tanging naka-load na tala na may eksaktong serong sats ang lumilitaw. Nakikita si Bob; nakatago ang bayad na sina Ada at Carol. Kasama rito ang mga talang walang pitakang tumatanggap. Ang apat na filter ay isang dropdown; Ipinapakita ang Aktibo na nakasara; buksan at piliin ang No gifts yet. Nananatiling default ang Aktibo."
   },
   "/members/[accountId]:staff-verify-open": {
     "de": "Derselbe Moderator und dasselbe basis-Mitglied nach dem Drücken von Moderatorenfunktionen. Der Aufklapper ist geöffnet und Verifizieren ist sichtbar. Viewport-Aufnahme nach dem Scrollen von Verifizieren in den Blick: die Mitgliedskarte scrollt innerhalb des Seitenrahmens, und eine ganzseitige Naht lässt Verifizieren unterhalb des Falzes. Die geschlossene Aufnahme deckt dieses Ergebnis nicht ab.",
@@ -3275,7 +3275,7 @@
     "fil": "Parehong moderator at miyembrong basis pagkatapos pindutin ang Mga tungkulin ng moderator. Naka-expand ang pagbubunyag at nakikita ang Patunayan. Kuha ng viewport pagkatapos i-scroll ang Patunayan sa tanaw: ang kard ng miyembro ay nag-i-scroll sa loob ng frame ng pahina, at ang buong-pahinang tahi ay iniiwan ang Patunayan sa ibaba ng fold. Hindi saklaw ng nakasarang kuha ang resultang ito."
   },
   "/messages/[id]:goal-credit": {
-    "de": "Unsignierter Permalink einer Ada-Notiz der obersten Ebene mit sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in Bitcoin festgelegt, daher zeigt der Balken Anfragen ₿21'000 · $21.00, den Notizbetrag ₿10'500 · $10.50, ein Etikett Darlehen und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Beschriftung 50%. Kein Komponist Anfragen.",
+    "de": "Unsignierter Permalink einer Ada-Notiz der obersten Ebene mit sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in Bitcoin festgelegt, daher zeigt der Balken Anfragen ₿21'000 · $21.00, den Notizbetrag ₿10'500 · $10.50, ein Etikett Darlehen und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Beschriftung 50%. Kein Anfragen im Eingabebereich.",
     "es": "Enlace permanente sin firmar de una nota de nivel superior de Ada con sats: 10500, goalSats: 21000, goalRepayable: true y goalTermDays: 30. El pedido está definido en bitcoin, así que la barra muestra Pedir ₿21'000 · $21.00, el importe de la nota ₿10'500 · $10.50, una etiqueta Préstamo y A devolver por día: ₿700 · $0.70 por día durante 30 días. Etiqueta 50%. Sin compositor Pedir.",
     "fil": "Hindi naka-sign na permalink ng isang pangunahing tala ni Ada na may sats: 10500, goalSats: 21000, goalRepayable: true, at goalTermDays: 30. Nakapirmi ang hiling sa bitcoin, kaya ipinapakita ng bar ang Hiling ₿21'000 · $21.00, ang halaga ng tala ₿10'500 · $10.50, isang tatak na Pautang at Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Label 50%. Walang tagasulat Hiling."
   },
@@ -3305,8 +3305,8 @@
     "fil": "Bayaring sagot, naisumite ang halaga ng Gift, pero hindi makagawa ng zap na resibo ang wallet ng may-akda. Ang sheet ng bayad ay nananatili sa form ng halaga at ipinapakita ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito. Ang CTA ng halaga ay Magpatuloy (forum.payContinue) sa bawat user-agent. Walang QR ng bayad at walang pindutang Magbayad gamit ang Wallet of Satoshi sa hakbang ng resibo."
   },
   "/welcome:pay-composer": {
-    "de": "Leeres Forum, Basis-Konto veröffentlicht Hallo gifts. Die 1-sat-Verfassungsrechnung bleibt am Verfasser (payHost 'composer'), nicht an einer gelisteten Notiz. Der Desktop zeigt den Bitcoin-Zahlungs-QR und Mit Wallet of Satoshi zahlen. Ein Smartphone zeigt dieselbe Rechnungskarte ohne eingebundenen QrCode; die Wallet-Schaltfläche bleibt. Der Text des leeren Feeds bleibt sichtbar.",
-    "es": "Foro vacío, la cuenta base publica Hola gifts. La factura de composición de 1 sat permanece en el compositor (payHost 'composer'), no en una nota listada. El escritorio muestra el QR de pago en Bitcoin y Pagar con Wallet of Satoshi. Un smartphone muestra la misma tarjeta de factura sin un QrCode montado; el botón de wallet permanece. El texto del tablón vacío sigue visible.",
+    "de": "Leeres Forum, Basis-Konto veröffentlicht Hello gifts. Die 1-sat-Verfassungsrechnung bleibt am Verfasser (payHost 'composer'), nicht an einer gelisteten Notiz. Der Desktop zeigt den Bitcoin-Zahlungs-QR und Mit Wallet of Satoshi zahlen. Ein Smartphone zeigt dieselbe Rechnungskarte ohne eingebundenen QrCode; die Wallet-Schaltfläche bleibt. Der Text des leeren Feeds bleibt sichtbar.",
+    "es": "Foro vacío, la cuenta base publica Hello gifts. La factura de composición de 1 sat permanece en el compositor (payHost 'composer'), no en una nota listada. El escritorio muestra el QR de pago en Bitcoin y Pagar con Wallet of Satoshi. Un smartphone muestra la misma tarjeta de factura sin un QrCode montado; el botón de wallet permanece. El texto del tablón vacío sigue visible.",
     "fil": "Walang laman na forum, nagpo-post ang basis account ng Hello gifts. Ang 1-sat na resibo sa pagsulat ay nananatili sa kahon ng pagsulat (payHost 'composer'), hindi sa nakalistang tala. Ipinapakita ng computer ang QR ng bayad sa Bitcoin at Magbayad gamit ang Wallet of Satoshi. Ang smartphone ay nagpapakita ng parehong kard ng resibo nang walang naka-mount na QrCode; nananatili ang pindutan ng wallet. Nakikita pa rin ang teksto ng walang-lamang feed."
   },
   "/login:idle": {
@@ -3340,7 +3340,7 @@
     "fil": "Sa Lahat: pangunahing tala ni Ada na may sats: 23100 at goalSats: 21000. Ang hiling ay nakatakda sa bitcoin, kaya pinapangalanan ng ForumGoalBar ang Hiling ₿21'000 · $21.00 (ang USD ng tumitingin mula sa rate ng araw ng gift; walang snapshot na iniimbak ng fixture na ito). Ang halaga ng tala ay ₿23'100 · $23.10. Buong orange na landas dagdag ang green na umapaw (10% ng lapad ng landas lampas sa kanang gilid), label na 110%."
   },
   "/welcome:ask-credit-amount": {
-    "de": "Kredit, Schritt 1 von 9. Um Geld bitten ist ausgewählt. Kredit ist gedrückt unter Einmalig / Täglich (Einmalig gedrückt). Die Überschrift ist Wie viel? 21000 ist in Bitcoin eingegeben, mit dem bevorzugten Fiat-Gegenwert unter dem Feld. Weiter ist aktiv. Es gibt kein Kontrollkästchen und kein Beitragen auf diesem Schritt. Die Wahl von Spende verlässt diesen Pfad und kehrt zur vierstufigen Anfrage zurück.",
+    "de": "Kredit, Schritt 1 von 9. Um Geld bitten ist ausgewählt. Kredit ist gedrückt unter Einmalig / Täglich (Einmalig gedrückt). Die Überschrift ist Wie viel? 21000 ist in Bitcoin eingegeben, mit dem bevorzugten Fiat-Gegenwert unter dem Feld. Weiter ist aktiv. Es gibt kein Kontrollkästchen und kein Senden auf diesem Schritt. Die Wahl von Spende verlässt diesen Pfad und kehrt zur vierstufigen Anfrage zurück.",
     "es": "Crédito, paso 1 de 9. Pedir dinero está seleccionado. Crédito está pulsado bajo Una vez / Diario (Una vez pulsado). El encabezado es ¿Cuánto? 21000 está escrito en bitcoin, con el equivalente en fiat preferido bajo el campo. Continuar está habilitado. No hay casilla ni Publicar en este paso. Elegir Donación abandona esta ruta y vuelve al pedido de cuatro pasos.",
     "fil": "Utang, hakbang 1 ng 9. Nakapili ang Humingi ng pera. Nakapindot ang Utang sa ilalim ng Isahan / Araw-araw (nakapindot ang Isahan). Ang pamagat ay Magkano? 21000 ang naka-type sa bitcoin, kasama ang katumbas sa preferred-fiat sa ilalim ng field. Naka-enable ang Magpatuloy. Walang checkbox at walang Post sa hakbang na ito. Ang pagpili ng Donasyon ay umaalis sa landas na ito at bumabalik sa apat na hakbang na hiling."
   },
@@ -3400,7 +3400,7 @@
     "fil": "Na-verify na may-ari na may funding.status admitted. Teksto Admitted ka sa araw-araw na 21.gifts grant payouts. plus Kasali sa programa ng tulong ng 21.gifts mula noong {date}. Kapag naka-set ang reviewedByName, pinangalanan ng pangungusap na iyon ang tagasuri. Ang trial, pending, at rejected ay hindi nagpapakita ng pangalan. Ang icon ng programa ng tulong sa mga pampublikong katotohanan ay sarado dito. Ang resultang nakapindot ay funding-program-open."
   },
   "/messages:thread": {
-    "de": "Offizieller Faden geöffnet. Überschrift 21.gifts (eine Profilsteuerung, wenn die api accountId gesendet hat), Herkunft Kontakt unter der Überschrift, eingehend Hallo Team als gedämpfte Notizkarte über die volle Breite und rechts eine gesendete gefüllte app-btn-Sprechblase mit der Beschriftung Sie, Eingabebereich sichtbar: ImagePlus, die Nachricht und Senden in einer Zeile; das Feld Betrag (₿ | Fiat, andere Einheit darunter) in der nächsten Zeile. Auswahl fehlt.",
+    "de": "Offizieller Faden geöffnet. Überschrift 21.gifts (eine Profilsteuerung, wenn die api accountId gesendet hat), Herkunft Kontakt unter der Überschrift, eingehend Hallo Team als gedämpfte Notizkarte über die volle Breite und rechts eine gesendete gefüllte app-btn-Sprechblase mit der Beschriftung Du, Eingabebereich sichtbar: ImagePlus, die Nachricht und Senden in einer Zeile; das Feld Betrag (₿ | Fiat, andere Einheit darunter) in der nächsten Zeile. Auswahl fehlt.",
     "es": "Hilo oficial abierto. Encabezado 21.gifts (un control de perfil cuando la api envió accountId), origen Contacto bajo el encabezado, entrante Hola equipo como tarjeta de nota atenuada de ancho completo y a la derecha una burbuja enviada rellena app-btn con la etiqueta Tú, compositor visible: ImagePlus, el mensaje y enviar en una fila; el campo Importe (₿ | fiat, la otra unidad debajo) en la fila siguiente. Sin selector.",
     "fil": "Bukas ang opisyal na talakayan. Pamagat 21.gifts (isang kontrol sa profile kapag nagpadala ang api ng accountId), pinagmulan Kontak sa ilalim ng pamagat, papasok na Kumusta team bilang kard ng tala na naka-mute sa buong lapad at isang napunong app-btn na bula sa kanan na may etiketa na Ikaw, nakikita ang kompositor: ImagePlus, ang mensahe, at ipadala sa isang hilera; ang patlang na Halaga (₿ | fiat, kabilang yunit sa ilalim) sa susunod na hilera. Walang tagapili."
   },
@@ -3410,9 +3410,9 @@
     "fil": "Naka-sign in na may pangalan (o nilaktawang pangalan) at walang address. Ang Wallet of Satoshi address mo at ang patlang ng address sa itaas, Magpatuloy at may etiketa na Laktawan na nakaangkla sa ibaba ng screen. Isang Menu sa kanang itaas; nandoon ang Tahanan, Mga tindahan, Punto ng benta, Profile, Mga tulong, Pitaka, Mga patakaran sa living room, Kadena ng tiwala, Estadistika, Mga abiso, Mga mensahe, Kontak, opsyonal na I-install ang app, at Mag-log out."
   },
   "/welcome:quoted-note": {
-    "de": "Angemeldeter Gründer Cyrill, Wohnzimmergesetze verworfen, Aktiv. Nur die bezahlte verifizierte 21-sat-Notiz von Riana Rosello steht in der Liste; die Karte ist aufgeklappt. Cyrills Antwort zeigt nur zur Information: und einen verschachtelten technischen-Notiz-Beitrag (Foto, Bildunterschrift beginnend mit Eine kurze technische Notiz, Gründer-Umschalter, ₿43). Die rohe URL https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec ist nicht sichtbar.",
+    "de": "Angemeldeter Gründer Cyrill, Wohnzimmergesetze verworfen, Aktiv. Nur die bezahlte verifizierte 21-sat-Notiz von Riana Rosello steht in der Liste; die Karte ist aufgeklappt. Cyrills Antwort zeigt nur zur Information: und einen verschachtelten technischen-Notiz-Beitrag (Foto, Bildunterschrift beginnend mit Eine kurze technische Notiz, Gründer-Pille, ₿43). Die rohe URL https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec ist nicht sichtbar.",
     "es": "Fundador Cyrill con sesión iniciada, leyes del salón descartadas, Activo. Solo la nota verificada de 21 sat pagada de Riana Rosello está en la lista; la tarjeta está expandida. La respuesta de Cyrill muestra solo para información: y una publicación anidada de nota técnica (foto, pie que empieza Una nota técnica rápida, píldora Fundador, ₿43). La URL cruda https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec no es visible.",
-    "fil": "Naka-sign in na tagapagtatag na si Cyrill, tinanggi ang mga batas ng living room, Aktibo. Tanging ang nabayarang na-verify na tala na 21-sat ni Riana Rosello ang nasa listahan; naka-expand ang kard. Ang sagot ni Cyrill ay nagpapakita ng para sa impormasyon lang: at isang nested na post ng teknikal na tala (larawan, paliwanag na nagsisimula sa Isang Maikling Teknikal na Tala, pildora ng Tagapagtatag, ₿43). Hindi nakikita ang hilaw na URL na https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec."
+    "fil": "Naka-sign in na tagapagtatag na si Cyrill, inalis ang pahiwatig ng mga batas sa living room, Aktibo. Tanging ang nabayarang na-verify na tala na 21-sat ni Riana Rosello ang nasa listahan; naka-expand ang kard. Ang sagot ni Cyrill ay nagpapakita ng para sa impormasyon lang: at isang nested na post ng teknikal na tala (larawan, paliwanag na nagsisimula sa Isang Maikling Teknikal na Tala, pildora ng Tagapagtatag, ₿43). Hindi nakikita ang hilaw na URL na https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec."
   },
   "/members/[accountId]:default": {
     "de": "Mitglieder-Identitätskarte mit Über mich in der Karte, wenn aboutMe gesetzt ist; schreibgeschützter Standort; Nachricht auf der Karte, wenn ein anderes Mitglied ein profileMessage hat. Kein Forumsbeitrag. Eine erfolgreiche leere Reihe und laufende Aktivität zeigen profile.chartEmpty (Noch keine Gaben.); ein fehlgeschlagener Aktivitätsabruf zeigt profile.chartError (Gaben konnten nicht geladen werden.); das Diagramm sagt nie Wird geladen… und hat keine Steuerung zum erneuten Versuch.",
@@ -3490,24 +3490,24 @@
     "fil": "Tarheta ng pagkakakilanlan ng miyembro na may pilula ng tungkulin Na-verify at, sa tabi nito, isang pindutan ng programa ng tulong na icon lang kapag ang fundingReviewedAt ay isang numero. Ang pangalang pantulong ay Kasali sa programa ng tulong ng 21.gifts mula noong {date}, o ang parehong pangungusap na may sinuri ni {name} kapag nagpadala ang API ng fundingReviewedByName. Ang tarheta ng miyembro at ang sariling profile ay pinangalanan ang taong tumanggap sa kanila kapag ipinadala ng API ang pangalang iyon. Hindi nakikita ang pangungusap hangga't hindi pinipindot ang icon. Ang kuha sa pahinga ay hindi tinatakpan ang pindot."
   },
   "/welcome:overlay-external-link": {
-    "de": "Benanntes Mitglied mit abgelehnten Wohnzimmerregeln und einer bezahlten Forumbemerkung, deren Text New: plus https://example.com/phish lautet. Ein Klick auf diese URL öffnet den Dialog ExternalLinkWarning Externe Seite öffnen? mit dem Katalogtext, der Ziel-URL als umbrechendem Text, der Beschriftung Open link und einem nur als Symbol sichtbaren Close. Interne 21.gifts-URLs auf derselben Tafel öffnen diese Überlagerung nicht.\n\n- Aktionen: Close schliesst ohne zu öffnen. Open link (Button type=\"button\" size=\"lg\") bestätigt und übergibt die https-URL an openInSystemBrowser.",
-    "es": "Miembro con nombre, con las reglas del salón rechazadas y una nota de foro pagada cuyo cuerpo es New: más https://example.com/phish. Al pulsar esa URL se abre el diálogo ExternalLinkWarning ¿Abrir un enlace externo? con el cuerpo del catálogo, la URL de destino como texto que parte en cualquier punto, la etiqueta Open link y Close solo con icono. Las URLs internas de 21.gifts en el mismo tablón no abren esta superposición.\n\n- Acciones: Close cierra sin abrir. Open link (Button type=\"button\" size=\"lg\") confirma y entrega la URL https a openInSystemBrowser.",
-    "fil": "Pinangalanang miyembro na tinanggihan ang mga panuntunan ng sala at isang bayad na tala sa talakayan na ang katawan ay New: dagdag ang https://example.com/phish. Ang pag-click sa URL na iyon ay nagbubukas ng diyalogo ExternalLinkWarning Buksan ang panlabas na link? na may katawan mula sa katalogo, ang URL ng destinasyon bilang tekstong break-all, may etiketa Open link, at Close na icon lang. Ang mga panloob na URL ng 21.gifts sa parehong board ay hindi nagbubukas ng overlay na ito.\n\n- Mga aksyon: Isinasara ng Close nang hindi nagbubukas. Kinukumpirma ng Open link (Button type=\"button\" size=\"lg\") at ibinibigay ang https URL sa openInSystemBrowser."
+    "de": "Benanntes Mitglied mit ausgeblendetem Wohnzimmerregel-Hinweis und einer bezahlten Forumbemerkung, deren Text New: plus https://example.com/phish lautet. Ein Klick auf diese URL öffnet den Dialog ExternalLinkWarning Externe Seite öffnen? mit dem Katalogtext, der Ziel-URL als umbrechendem Text, der Beschriftung Link öffnen und einem nur als Symbol sichtbaren Schließen. Interne 21.gifts-URLs auf derselben Tafel öffnen diese Überlagerung nicht.\n\n- Aktionen: Schließen schliesst ohne zu öffnen. Link öffnen (Button type=\"button\" size=\"lg\") bestätigt und übergibt die https-URL an openInSystemBrowser.",
+    "es": "Miembro con nombre, con la pista de las reglas del salón descartada y una nota de foro pagada cuyo cuerpo es New: más https://example.com/phish. Al pulsar esa URL se abre el diálogo ExternalLinkWarning ¿Abrir un enlace externo? con el cuerpo del catálogo, la URL de destino como texto que parte en cualquier punto, la etiqueta Abrir enlace y Cerrar solo con icono. Las URLs internas de 21.gifts en el mismo tablón no abren esta superposición.\n\n- Acciones: Cerrar cierra sin abrir. Abrir enlace (Button type=\"button\" size=\"lg\") confirma y entrega la URL https a openInSystemBrowser.",
+    "fil": "Pinangalanang miyembro na inalis ang pahiwatig ng mga panuntunan ng sala at isang bayad na tala sa talakayan na ang katawan ay New: dagdag ang https://example.com/phish. Ang pag-click sa URL na iyon ay nagbubukas ng diyalogo ExternalLinkWarning Buksan ang panlabas na link? na may katawan mula sa katalogo, ang URL ng destinasyon bilang tekstong break-all, may etiketa Buksan ang link, at Isara na icon lang. Ang mga panloob na URL ng 21.gifts sa parehong board ay hindi nagbubukas ng overlay na ito.\n\n- Mga aksyon: Isinasara ng Isara nang hindi nagbubukas. Kinukumpirma ng Buksan ang link (Button type=\"button\" size=\"lg\") at ibinibigay ang https URL sa openInSystemBrowser."
   },
   "/welcome:overlay-introduce": {
-    "de": "Benanntes Mitglied mit akzeptierten Wohnzimmerregeln, einer Wallet of Satoshi address und hasPosted false. Nach der Anmeldung auf /welcome erscheint der Dialog IntroduceYourselfOverlay Stell dich vor mit Fliesstext und Vorstellung schreiben. Close (X) ist nur als Symbol sichtbar.\n\n- Aktionen: Close schliesst nur diese Einblendung. Vorstellung schreiben (Button type=\"button\" size=\"lg\") schliesst die Überlagerung, fokussiert den Willkommens-Verfasser (requestForumCompose / FORUM_COMPOSE_EVENT) und führt router.push('/welcome') nur aus, wenn der Pfad nicht bereits /welcome ist.",
-    "es": "Miembro con nombre, con las reglas del salón aceptadas, una Wallet of Satoshi address y hasPosted false. Tras iniciar sesión en /welcome, el diálogo IntroduceYourselfOverlay Preséntate con el texto del cuerpo y Escribe una presentación. Close (X) es solo icono.\n\n- Acciones: Close cierra solo esta montura. Escribe una presentación (Button type=\"button\" size=\"lg\") cierra la superposición, enfoca el redactor de bienvenida (requestForumCompose / FORUM_COMPOSE_EVENT) y hace router.push('/welcome') solo cuando la ruta no es ya /welcome.",
-    "fil": "Pinangalanang miyembro na sang-ayon sa mga panuntunan ng sala, may Wallet of Satoshi address, at hasPosted false. Pagkatapos mag-log in sa /welcome, ang diyalogo IntroduceYourselfOverlay Ipakilala ang sarili mo na may kopya ng katawan at Sumulat ng pagpapakilala. Ang Close (X) ay icon lang.\n\n- Mga aksyon: Isinasara ng Close ang pagkakabit na ito lang. Isinasara ng Sumulat ng pagpapakilala (Button type=\"button\" size=\"lg\") ang overlay, itinatakda ang pokus sa tagasulat sa welcome (requestForumCompose / FORUM_COMPOSE_EVENT), at ginagawa ang router.push('/welcome') lang kapag hindi pa /welcome ang landas."
+    "de": "Benanntes Mitglied mit akzeptierten Wohnzimmerregeln, einer Wallet of Satoshi address und hasPosted false. Nach der Anmeldung auf /welcome erscheint der Dialog IntroduceYourselfOverlay Stell dich vor mit Fliesstext und Vorstellung schreiben. Schließen (X) ist nur als Symbol sichtbar.\n\n- Aktionen: Schließen schliesst nur diese Einblendung. Vorstellung schreiben (Button type=\"button\" size=\"lg\") schliesst die Überlagerung, fokussiert den Willkommens-Verfasser (requestForumCompose / FORUM_COMPOSE_EVENT) und führt router.push('/welcome') nur aus, wenn der Pfad nicht bereits /welcome ist.",
+    "es": "Miembro con nombre, con las reglas del salón aceptadas, una Wallet of Satoshi address y hasPosted false. Tras iniciar sesión en /welcome, el diálogo IntroduceYourselfOverlay Preséntate con el texto del cuerpo y Escribe una presentación. Cerrar (X) es solo icono.\n\n- Acciones: Cerrar cierra solo esta montura. Escribe una presentación (Button type=\"button\" size=\"lg\") cierra la superposición, enfoca el redactor de bienvenida (requestForumCompose / FORUM_COMPOSE_EVENT) y hace router.push('/welcome') solo cuando la ruta no es ya /welcome.",
+    "fil": "Pinangalanang miyembro na sang-ayon sa mga panuntunan ng sala, may Wallet of Satoshi address, at hasPosted false. Pagkatapos mag-log in sa /welcome, ang diyalogo IntroduceYourselfOverlay Ipakilala ang sarili mo na may kopya ng katawan at Sumulat ng pagpapakilala. Ang Isara (X) ay icon lang.\n\n- Mga aksyon: Isinasara ng Isara ang pagkakabit na ito lang. Isinasara ng Sumulat ng pagpapakilala (Button type=\"button\" size=\"lg\") ang overlay, itinatakda ang pokus sa tagasulat sa welcome (requestForumCompose / FORUM_COMPOSE_EVENT), at ginagawa ang router.push('/welcome') lang kapag hindi pa /welcome ang landas."
   },
   "/welcome:menu-unread": {
-    "de": "Offenes Menü mit unreadCount 3, vorgegeben über GET /forum/notifications → Notifications zeigt rechts 3 (nav.notificationsUnread, zugänglicher Name Notifications, 3 ungelesen). Messages zeigt rechts nur dann eine Zahl, wenn ungelesene Posteingänge > 0 sind; Adas Standard-Posteingang ungelesen ist 0, daher keine Zahl. Die übrigen Menüzeilen entsprechen menu-open. Die installierte PWA-Startbildschirm-Markierung ist die Summe aus ungelesenen Benachrichtigungen, ungelesenem Posteingang und ungelesenem Moderationsraum (0 oder 1). Das Menü trennt die Zählungen weiterhin (Notifications gegen Messages gegen Moderation).",
-    "es": "Menú abierto con unreadCount 3 simulado en GET /forum/notifications → Notifications muestra 3 a la derecha (nav.notificationsUnread, nombre accesible Notifications, 3 no leídas). Messages muestra un recuento a la derecha solo cuando el buzón no leído > 0; el buzón no leído predeterminado de Ada es 0, así que no hay número. Las demás filas del menú coinciden con menu-open. La insignia de pantalla de inicio de la PWA instalada es la suma de no leídas de notificaciones, no leídas del buzón y no leídas de la sala de personal (0 o 1). El menú sigue separando los recuentos (Notifications frente a Messages frente a Moderation).",
-    "fil": "Bukas na Menu na may unreadCount 3 na naka-stub sa GET /forum/notifications → Ipinapakita ng Notifications ang 3 sa kanan (nav.notificationsUnread, accessible name Notifications, 3 hindi pa nababasa). Nagpapakita ang Messages ng bilang sa kanan lang kapag ang hindi pa nababasang inbox > 0; ang default na hindi pa nababasang inbox ni Ada ay 0 kaya walang numero. Ang ibang mga hanay ng Menu ay tumutugma sa menu-open. Ang badge sa home screen ng naka-install na PWA ay ang kabuuan ng hindi pa nababasang abiso, hindi pa nababasang inbox, at hindi pa nababasang silid ng tauhan (0 o 1). Hinihiwalay pa rin ng Menu ang mga bilang (Notifications vs Messages vs Moderation)."
+    "de": "Offenes Menü mit unreadCount 3, vorgegeben über GET /forum/notifications → Benachrichtigungen zeigt rechts 3 (nav.notificationsUnread, zugänglicher Name Benachrichtigungen, 3 ungelesen). Nachrichten zeigt rechts nur dann eine Zahl, wenn ungelesene Posteingänge > 0 sind; Adas Standard-Posteingang ungelesen ist 0, daher keine Zahl. Die übrigen Menüzeilen entsprechen menu-open. Die installierte PWA-Startbildschirm-Markierung ist die Summe aus ungelesenen Benachrichtigungen, ungelesenem Posteingang und ungelesenem Moderationsraum (0 oder 1). Das Menü trennt die Zählungen weiterhin (Benachrichtigungen gegen Nachrichten gegen Moderation).",
+    "es": "Menú abierto con unreadCount 3 simulado en GET /forum/notifications → Notificaciones muestra 3 a la derecha (nav.notificationsUnread, nombre accesible Notificaciones, 3 no leídas). Mensajes muestra un recuento a la derecha solo cuando el buzón no leído > 0; el buzón no leído predeterminado de Ada es 0, así que no hay número. Las demás filas del menú coinciden con menu-open. La insignia de pantalla de inicio de la PWA instalada es la suma de no leídas de notificaciones, no leídas del buzón y no leídas de la sala de personal (0 o 1). El menú sigue separando los recuentos (Notificaciones frente a Mensajes frente a Moderación).",
+    "fil": "Bukas na Menu na may unreadCount 3 na naka-stub sa GET /forum/notifications → Ipinapakita ng Mga abiso ang 3 sa kanan (nav.notificationsUnread, accessible name Mga abiso, 3 hindi pa nababasa). Nagpapakita ang Mga mensahe ng bilang sa kanan lang kapag ang hindi pa nababasang inbox > 0; ang default na hindi pa nababasang inbox ni Ada ay 0 kaya walang numero. Ang ibang mga hanay ng Menu ay tumutugma sa menu-open. Ang badge sa home screen ng naka-install na PWA ay ang kabuuan ng hindi pa nababasang abiso, hindi pa nababasang inbox, at hindi pa nababasang silid ng tauhan (0 o 1). Hinihiwalay pa rin ng Menu ang mga bilang (Mga abiso vs Mga mensahe vs Moderasyon)."
   },
   "/welcome:ask-credit-plan-btc": {
-    "de": "Kredit, Schritt 4 von 9, für 21000 Bitcoin über 30 Tage. Überschrift Wie die Rückzahlung funktioniert. Der Bildschirm sagt: Die Rückzahlung hat täglich zu erfolgen. Sie wird am Folgetag fällig, nachdem der Kredit zu 100 % bezahlt worden ist. Dauert es 10 Tage, bis der Kredit gegeben ist, beginnt die Rückzahlungspflicht am Tag 11. Dann: Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 days. Ein Diagramm zeichnet jeden Tag als Balken und die Schuld als Linie vom Tag 1 bis zum letzten Tag. Die Schaltfläche ist Continue. Ein Rest, der sich nicht gleichmässig teilt, wird dem letzten Tag zugeschlagen. Es gibt kein Kontrollkästchen.",
-    "es": "Crédito, paso 4 de 9, por 21000 bitcoin durante 30 días. Encabezado Cómo funciona la devolución. La pantalla dice: La devolución es diaria. Empieza el día después de que el crédito se haya pagado por completo. Si dar el crédito tarda 10 días, la devolución empieza el día 11. Luego: A devolver por día: ₿700 · $0.70 por día durante 30 days. Un gráfico dibuja cada día como barra y la deuda como una línea desde el día 1 hasta el último día. El botón es Continue. Cualquier resto que no se divida de forma exacta se añade al último día. No hay casilla.",
-    "fil": "Utang, hakbang 4 sa 9, para sa 21000 bitcoin sa loob ng 30 araw. Heading Paano ang pagbabayad. Sinasabi ng screen: Araw-araw dapat magbayad. Magsisimula ito sa araw pagkatapos mabayaran nang buo ang pautang. Kung 10 araw bago maibigay ang pautang, magsisimula ang bayad sa ika-11 araw. Pagkatapos: Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 days. Gumuguhit ang tsart ng bawat araw bilang bar at ang utang bilang linya mula sa araw 1 pababa hanggang sa huling araw. Ang pindutan ay Continue. Anumang natitira na hindi pantay na mahahati ay idinadagdag sa huling araw. Walang checkbox."
+    "de": "Kredit, Schritt 4 von 9, für 21000 Bitcoin über 30 Tage. Überschrift Wie die Rückzahlung funktioniert. Der Bildschirm sagt: Die Rückzahlung hat täglich zu erfolgen. Sie wird am Folgetag fällig, nachdem der Kredit zu 100 % bezahlt worden ist. Dauert es 10 Tage, bis der Kredit gegeben ist, beginnt die Rückzahlungspflicht am Tag 11. Dann: Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Ein Diagramm zeichnet jeden Tag als Balken und die Schuld als Linie vom Tag 1 bis zum letzten Tag. Die Schaltfläche ist Weiter. Ein Rest, der sich nicht gleichmässig teilt, wird dem letzten Tag zugeschlagen. Es gibt kein Kontrollkästchen.",
+    "es": "Crédito, paso 4 de 9, por 21000 bitcoin durante 30 días. Encabezado Cómo funciona la devolución. La pantalla dice: La devolución es diaria. Empieza el día después de que el crédito se haya pagado por completo. Si dar el crédito tarda 10 días, la devolución empieza el día 11. Luego: A devolver por día: ₿700 · $0.70 por día durante 30 días. Un gráfico dibuja cada día como barra y la deuda como una línea desde el día 1 hasta el último día. El botón es Continuar. Cualquier resto que no se divida de forma exacta se añade al último día. No hay casilla.",
+    "fil": "Utang, hakbang 4 sa 9, para sa 21000 bitcoin sa loob ng 30 araw. Heading Paano ang pagbabayad. Sinasabi ng screen: Araw-araw dapat magbayad. Magsisimula ito sa araw pagkatapos mabayaran nang buo ang pautang. Kung 10 araw bago maibigay ang pautang, magsisimula ang bayad sa ika-11 araw. Pagkatapos: Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Gumuguhit ang tsart ng bawat araw bilang bar at ang utang bilang linya mula sa araw 1 pababa hanggang sa huling araw. Ang pindutan ay Magpatuloy. Anumang natitira na hindi pantay na mahahati ay idinadagdag sa huling araw. Walang checkbox."
   },
   "/login:choice": {
     "de": "Nach Anmelden meldet der Browser NotAllowedError (kein auffindbarer Passkey, oder die Besucherin hat die Auswahl geschlossen). Überschrift Haben Sie schon ein Konto? mit beschriftetem Mit bestehendem Konto einloggen und Ein neues Konto eröffnen. Das Anlegen eines Kontos beginnt erst nach dem Namensformular, nicht beim Klick auf die Auswahl. Ein neues Konto eröffnen öffnet das Namensformular. Telefonfotos zeigen ausserdem die gedämpfte installierte-iOS-Zeile. Unter iOS unter 18 öffnet sich das Namensformular weiterhin, und das Absenden eines gültigen Namens schliesst create nicht ab; die Karte zeigt dann den Versionssatz als Warnung.",
@@ -3515,24 +3515,24 @@
     "fil": "Pagkatapos ng Mag-log in, iniulat ng browser ang NotAllowedError (walang matutuklasang passkey, o tinanggihan ng bisita ang pumili). Heading May account ka na ba? na may etiketa Mag-log in gamit ang existing account at Magbukas ng bagong account. Nagsisimula ang paglikha ng account pagkatapos lang ng form ng pangalan, hindi sa pag-click sa pagpili. Binubuksan ng Magbukas ng bagong account ang form ng pangalan. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Sa iOS na mas mababa sa 18 bubukas pa rin ang form ng pangalan, at ang pagsusumite ng wastong pangalan ay hindi nagtatapos ng create; ipinapakita ng kard ang pangungusap ng bersyon bilang alerto."
   },
   "/welcome:ask-credit-currency-fiat": {
-    "de": "Kredit, Schritt 2 von 9, nachdem die Betragsumschaltung USD ist und 1000 eingegeben wurde. Überschrift Wie der Betrag festgelegt ist. Der Bildschirm sagt: Dieser Kredit ist in US-Dollar festgelegt. Zahlungen sind Bitcoin und bleiben Bitcoin. Jede Zahlung wird nur in US-Dollar zum Kurs im Moment der Zahlung bewertet. Es wird nichts getauscht. Dann: Du erhältst den Betrag in Bitcoin. Fällt der Bitcoin-Kurs, bevor du ihn für deine geplanten Ausgaben ausgegeben hast, trägst du das volle Kursrisiko. Die Schaltfläche ist Continue. Schweizer Franken, Euro und philippinische Pesos verwenden dieselben Sätze mit diesem Währungsnamen. Es gibt kein Kontrollkästchen.",
-    "es": "Crédito, paso 2 de 9, después de que el interruptor de importe es USD y se ha escrito 1000. Encabezado Cómo queda fijado el importe. La pantalla dice: Este crédito queda fijado en dólares estadounidenses. Los pagos son bitcoin y siguen siendo bitcoin. Cada pago se valora en dólares estadounidenses solo al tipo del momento en que se hace. No se cambia nada. Luego: Recibes el importe en bitcoin. Si el precio del bitcoin baja antes de que lo gastes en lo que planeaste, asumes todo el riesgo del precio. El botón es Continue. Los francos suizos, los euros y los pesos filipinos usan las mismas frases con ese nombre de moneda. No hay casilla.",
-    "fil": "Utang, hakbang 2 sa 9, pagkatapos naging USD ang switch ng halaga at nai-type ang 1000. Heading Paano nakapirmi ang halaga. Sinasabi ng screen: Nakapirmi ang pautang na ito sa dolyar ng Estados Unidos. Ang mga bayad ay bitcoin at nananatiling bitcoin. Ang bawat bayad ay minamarkahan lang sa dolyar ng Estados Unidos ayon sa palitan kapag ito ginawa. Walang ipinagpapalit. Pagkatapos: Tatanggapin mo ang halaga sa bitcoin. Kung bumaba ang presyo ng bitcoin bago mo ito gastusin sa planong gastos, ikaw ang dadala ng buong panganib sa presyo. Ang pindutan ay Continue. Ang Swiss franc, euro, at pisong Pilipino ay gumagamit ng parehong mga pangungusap na may pangalan ng pera na iyon. Walang checkbox."
+    "de": "Kredit, Schritt 2 von 9, nachdem die Betragsumschaltung USD ist und 1000 eingegeben wurde. Überschrift Wie der Betrag festgelegt ist. Der Bildschirm sagt: Dieser Kredit ist in US-Dollar festgelegt. Zahlungen sind Bitcoin und bleiben Bitcoin. Jede Zahlung wird nur in US-Dollar zum Kurs im Moment der Zahlung bewertet. Es wird nichts getauscht. Dann: Du erhältst den Betrag in Bitcoin. Fällt der Bitcoin-Kurs, bevor du ihn für deine geplanten Ausgaben ausgegeben hast, trägst du das volle Kursrisiko. Die Schaltfläche ist Weiter. Schweizer Franken, Euro und philippinische Pesos verwenden dieselben Sätze mit diesem Währungsnamen. Es gibt kein Kontrollkästchen.",
+    "es": "Crédito, paso 2 de 9, después de que el interruptor de importe es USD y se ha escrito 1000. Encabezado Cómo queda fijado el importe. La pantalla dice: Este crédito queda fijado en dólares estadounidenses. Los pagos son bitcoin y siguen siendo bitcoin. Cada pago se valora en dólares estadounidenses solo al tipo del momento en que se hace. No se cambia nada. Luego: Recibes el importe en bitcoin. Si el precio del bitcoin baja antes de que lo gastes en lo que planeaste, asumes todo el riesgo del precio. El botón es Continuar. Los francos suizos, los euros y los pesos filipinos usan las mismas frases con ese nombre de moneda. No hay casilla.",
+    "fil": "Utang, hakbang 2 sa 9, pagkatapos naging USD ang switch ng halaga at nai-type ang 1000. Heading Paano nakapirmi ang halaga. Sinasabi ng screen: Nakapirmi ang pautang na ito sa dolyar ng Estados Unidos. Ang mga bayad ay bitcoin at nananatiling bitcoin. Ang bawat bayad ay minamarkahan lang sa dolyar ng Estados Unidos ayon sa palitan kapag ito ginawa. Walang ipinagpapalit. Pagkatapos: Tatanggapin mo ang halaga sa bitcoin. Kung bumaba ang presyo ng bitcoin bago mo ito gastusin sa planong gastos, ikaw ang dadala ng buong panganib sa presyo. Ang pindutan ay Magpatuloy. Ang Swiss franc, euro, at pisong Pilipino ay gumagamit ng parehong mga pangungusap na may pangalan ng pera na iyon. Walang checkbox."
   },
   "/profile:images-editing": {
-    "de": "Besitzerbearbeitung geöffnet aus der Variante images. Dieselben drei Stubs sind geladen (quadratisches Porträt, breite Szene, Über-mich-Foto) und der Seed ist aboutMe: 'I build on Bitcoin' mit aboutMeHasPhoto: true. Edit About me öffnet das Textfeld. Die Bearbeitung zeigt das runde Profilfoto neben Profilfoto entfernen, das breite Bild neben Breites Bild entfernen und das Über-mich-Foto neben Remove photo. Die drei nur als Symbol sichtbaren Anhänge bleiben: Add a photo (profile.about.attach), Profilfoto hinzufügen (profile.about.portrait) und Breites Bild hinzufügen (profile.about.banner). Nadel Profilfoto entfernen.",
-    "es": "Editor del propietario abierto desde la variante images. Se cargan los mismos tres stubs (retrato cuadrado, escena ancha, foto de Sobre mí) y la semilla es aboutMe: 'I build on Bitcoin' con aboutMeHasPhoto: true. Edit About me abre el área de texto. El editor muestra la foto de perfil redonda junto a Quitar la foto de perfil, la imagen ancha junto a Quitar la imagen ancha y la foto de Sobre mí junto a Remove photo. Siguen los tres adjuntos solo con icono: Add a photo (profile.about.attach), Añadir una foto de perfil (profile.about.portrait) y Añadir una imagen ancha (profile.about.banner). Aguja Quitar la foto de perfil.",
-    "fil": "Binuksan ang editor ng may-ari mula sa variant images. Nakarga ang parehong tatlong stub (parisukat na portrait, malapad na eksena, larawan ng Tungkol sa akin) at ang seed ay aboutMe: 'I build on Bitcoin' na may aboutMeHasPhoto: true. Binubuksan ng Edit About me ang textarea. Ipinapakita ng editor ang bilog na larawan ng profile sa tabi ng Alisin ang larawan ng profile, ang malapad na larawan sa tabi ng Alisin ang malapad na larawan, at ang larawan ng Tungkol sa akin sa tabi ng Remove photo. Nanatili ang tatlong attach na icon lang: Add a photo (profile.about.attach), Magdagdag ng larawan ng profile (profile.about.portrait), at Magdagdag ng malapad na larawan (profile.about.banner). Karayom Alisin ang larawan ng profile."
+    "de": "Besitzerbearbeitung geöffnet aus der Variante images. Dieselben drei Stubs sind geladen (quadratisches Porträt, breite Szene, Über-mich-Foto) und der Seed ist aboutMe: 'I build on Bitcoin' mit aboutMeHasPhoto: true. Über mich bearbeiten öffnet das Textfeld. Die Bearbeitung zeigt das runde Profilfoto neben Profilfoto entfernen, das breite Bild neben Breites Bild entfernen und das Über-mich-Foto neben Foto entfernen. Die drei nur als Symbol sichtbaren Anhänge bleiben: Foto hinzufügen (profile.about.attach), Profilfoto hinzufügen (profile.about.portrait) und Breites Bild hinzufügen (profile.about.banner). Nadel Profilfoto entfernen.",
+    "es": "Editor del propietario abierto desde la variante images. Se cargan los mismos tres stubs (retrato cuadrado, escena ancha, foto de Sobre mí) y la semilla es aboutMe: 'I build on Bitcoin' con aboutMeHasPhoto: true. Editar Sobre mí abre el área de texto. El editor muestra la foto de perfil redonda junto a Quitar la foto de perfil, la imagen ancha junto a Quitar la imagen ancha y la foto de Sobre mí junto a Quitar foto. Siguen los tres adjuntos solo con icono: Añadir una foto (profile.about.attach), Añadir una foto de perfil (profile.about.portrait) y Añadir una imagen ancha (profile.about.banner). Aguja Quitar la foto de perfil.",
+    "fil": "Binuksan ang editor ng may-ari mula sa variant images. Nakarga ang parehong tatlong stub (parisukat na portrait, malapad na eksena, larawan ng Tungkol sa akin) at ang seed ay aboutMe: 'I build on Bitcoin' na may aboutMeHasPhoto: true. Binubuksan ng I-edit ang Tungkol sa akin ang textarea. Ipinapakita ng editor ang bilog na larawan ng profile sa tabi ng Alisin ang larawan ng profile, ang malapad na larawan sa tabi ng Alisin ang malapad na larawan, at ang larawan ng Tungkol sa akin sa tabi ng Alisin ang litrato. Nanatili ang tatlong attach na icon lang: Magdagdag ng litrato (profile.about.attach), Magdagdag ng larawan ng profile (profile.about.portrait), at Magdagdag ng malapad na larawan (profile.about.banner). Karayom Alisin ang larawan ng profile."
   },
   "/profile:about-editing": {
-    "de": "Besitzerin im Textfeld-Editor Über mich. Von der leeren Handlungsaufforderung aus Schreib dein Über mich anklicken (empty→Write reicht). Nadel: getByRole('textbox', { name: 'About me' }) / Save About me Icon-Schaltfläche. Speichern/Abbrechen sind nur als Symbol sichtbare IconButtons (getByRole + Katalogtext ist nicht sichtbar). textarea verwendet text-base. Der leere Editor zeigt weiterhin drei nur als Symbol sichtbare Anhänge: Add a photo (profile.about.attach), Profilfoto hinzufügen (profile.about.portrait) und Breites Bild hinzufügen (profile.about.banner). Es ist noch kein Bild gespeichert, daher fehlen Profilfoto entfernen, Breites Bild entfernen und Remove photo.",
-    "es": "Propietario en el editor de área de texto Sobre mí. Desde la llamada a la acción vacía, pulsar Escribe tu Sobre mí (empty→Write basta). Aguja: getByRole('textbox', { name: 'About me' }) / botón de icono Save About me. Guardar/cancelar son IconButtons solo con icono (getByRole + el texto del catálogo no es visible). textarea usa text-base. El editor vacío sigue mostrando tres adjuntos solo con icono: Add a photo (profile.about.attach), Añadir una foto de perfil (profile.about.portrait) y Añadir una imagen ancha (profile.about.banner). Aún no hay imagen guardada, así que faltan Quitar la foto de perfil, Quitar la imagen ancha y Remove photo.",
-    "fil": "May-ari sa editor ng textarea ng Tungkol sa akin. Mula sa walang lamang CTA, i-click ang Isulat ang iyong Tungkol sa akin (sapat ang empty→Write). Karayom: getByRole('textbox', { name: 'About me' }) / pindutang icon Save About me. Ang save/cancel ay IconButtons na icon lang (getByRole + hindi nakikita ang teksto ng katalogo). Gumagamit ang textarea ng text-base. Ipinapakita pa rin ng walang lamang editor ang tatlong attach na icon lang: Add a photo (profile.about.attach), Magdagdag ng larawan ng profile (profile.about.portrait), at Magdagdag ng malapad na larawan (profile.about.banner). Wala pang nakaimbak na larawan, kaya wala ang Alisin ang larawan ng profile, Alisin ang malapad na larawan, at Remove photo."
+    "de": "Besitzerin im Textfeld-Editor Über mich. Von der leeren Handlungsaufforderung aus Schreib dein Über mich anklicken (empty→Write reicht). Nadel: getByRole('textbox', { name: 'About me' }) / Save About me Icon-Schaltfläche. Speichern/Abbrechen sind nur als Symbol sichtbare IconButtons (getByRole + Katalogtext ist nicht sichtbar). textarea verwendet text-base. Der leere Editor zeigt weiterhin drei nur als Symbol sichtbare Anhänge: Foto hinzufügen (profile.about.attach), Profilfoto hinzufügen (profile.about.portrait) und Breites Bild hinzufügen (profile.about.banner). Es ist noch kein Bild gespeichert, daher fehlen Profilfoto entfernen, Breites Bild entfernen und Foto entfernen.",
+    "es": "Propietario en el editor de área de texto Sobre mí. Desde la llamada a la acción vacía, pulsar Escribe tu Sobre mí (empty→Write basta). Aguja: getByRole('textbox', { name: 'About me' }) / botón de icono Save About me. Guardar/cancelar son IconButtons solo con icono (getByRole + el texto del catálogo no es visible). textarea usa text-base. El editor vacío sigue mostrando tres adjuntos solo con icono: Añadir una foto (profile.about.attach), Añadir una foto de perfil (profile.about.portrait) y Añadir una imagen ancha (profile.about.banner). Aún no hay imagen guardada, así que faltan Quitar la foto de perfil, Quitar la imagen ancha y Quitar foto.",
+    "fil": "May-ari sa editor ng textarea ng Tungkol sa akin. Mula sa walang lamang CTA, i-click ang Isulat ang iyong Tungkol sa akin (sapat ang empty→Write). Karayom: getByRole('textbox', { name: 'About me' }) / pindutang icon Save About me. Ang save/cancel ay IconButtons na icon lang (getByRole + hindi nakikita ang teksto ng katalogo). Gumagamit ang textarea ng text-base. Ipinapakita pa rin ng walang lamang editor ang tatlong attach na icon lang: Magdagdag ng litrato (profile.about.attach), Magdagdag ng larawan ng profile (profile.about.portrait), at Magdagdag ng malapad na larawan (profile.about.banner). Wala pang nakaimbak na larawan, kaya wala ang Alisin ang larawan ng profile, Alisin ang malapad na larawan, at Alisin ang litrato."
   },
   "/welcome:ask-credit-confirm-want-fiat": {
-    "de": "Kredit, Schritt 5 von 9, US-Dollar. Überschrift Kredit aufnehmen. Der Bildschirm wiederholt jede Bedingung: Amount owed: $1'000.00. Der Satz, dass Zahlungen Bitcoin bleiben und nur in US-Dollar zum Kurs jeder Zahlung bewertet werden und dass nichts getauscht wird. Der Satz, dass die Verfasserin den Betrag in Bitcoin erhält und das volle Kursrisiko trägt, wenn der Kurs fällt, bevor sie ihn ausgibt. Repayment term: 30 days. Die Tagesregel und Pro Tag zurückzuzahlen: $33.33 pro Tag über 29 days, then $33.43 on the last day. Das Diagramm wird wiederholt. Die Schaltfläche Ich will diesen Kredit aufnehmen. ist die Bestätigung. Es gibt kein Kontrollkästchen.",
-    "es": "Crédito, paso 5 de 9, dólares estadounidenses. Encabezado Tomar este crédito. La pantalla repite cada condición: Amount owed: $1'000.00. La frase de que los pagos siguen siendo bitcoin y se valoran en dólares estadounidenses solo al tipo de cada pago, y de que no se cambia nada. La frase de que quien escribe recibe el importe en bitcoin y asume todo el riesgo del precio si el precio baja antes de gastarlo. Repayment term: 30 days. La regla diaria y A devolver por día: $33.33 por día durante 29 days, then $33.43 on the last day. Se repite el gráfico. El botón Quiero tomar este crédito. es la confirmación. No hay casilla.",
-    "fil": "Utang, hakbang 5 sa 9, dolyar ng Estados Unidos. Heading Kunin ang pautang. Inuulit ng screen ang bawat kondisyon: Amount owed: $1'000.00. Ang pangungusap na nananatiling bitcoin ang mga bayad at minamarkahan lang sa dolyar ng Estados Unidos ayon sa palitan ng bawat bayad, at walang ipinagpapalit. Ang pangungusap na tinatanggap ng may-akda ang halaga sa bitcoin at dinadala ang buong panganib sa presyo kung bumaba ang presyo bago ito gastusin. Repayment term: 30 days. Ang araw-araw na tuntunin at Ibabalik bawat araw: $33.33 bawat araw sa loob ng 29 days, then $33.43 on the last day. Inuulit ang tsart. Ang pindutan Gusto kong kunin ang pautang na ito. ang kumpirmasyon. Walang checkbox."
+    "de": "Kredit, Schritt 5 von 9, US-Dollar. Überschrift Kredit aufnehmen. Der Bildschirm wiederholt jede Bedingung: Geschuldeter Betrag: $1'000.00. Der Satz, dass Zahlungen Bitcoin bleiben und nur in US-Dollar zum Kurs jeder Zahlung bewertet werden und dass nichts getauscht wird. Der Satz, dass die Verfasserin den Betrag in Bitcoin erhält und das volle Kursrisiko trägt, wenn der Kurs fällt, bevor sie ihn ausgibt. Rückzahlungszeitraum: 30 Tage. Die Tagesregel und Pro Tag zurückzuzahlen: $33.33 pro Tag über 29 Tage, dann $33.43 am letzten Tag. Das Diagramm wird wiederholt. Die Schaltfläche Ich will diesen Kredit aufnehmen. ist die Bestätigung. Es gibt kein Kontrollkästchen.",
+    "es": "Crédito, paso 5 de 9, dólares estadounidenses. Encabezado Tomar este crédito. La pantalla repite cada condición: Cantidad adeudada: $1'000.00. La frase de que los pagos siguen siendo bitcoin y se valoran en dólares estadounidenses solo al tipo de cada pago, y de que no se cambia nada. La frase de que quien escribe recibe el importe en bitcoin y asume todo el riesgo del precio si el precio baja antes de gastarlo. Plazo de devolución: 30 días. La regla diaria y A devolver por día: $33.33 por día durante 29 días, luego $33.43 el último día. Se repite el gráfico. El botón Quiero tomar este crédito. es la confirmación. No hay casilla.",
+    "fil": "Utang, hakbang 5 sa 9, dolyar ng Estados Unidos. Heading Kunin ang pautang. Inuulit ng screen ang bawat kondisyon: Halagang utang: $1'000.00. Ang pangungusap na nananatiling bitcoin ang mga bayad at minamarkahan lang sa dolyar ng Estados Unidos ayon sa palitan ng bawat bayad, at walang ipinagpapalit. Ang pangungusap na tinatanggap ng may-akda ang halaga sa bitcoin at dinadala ang buong panganib sa presyo kung bumaba ang presyo bago ito gastusin. Haba ng pagbabayad: 30 araw. Ang araw-araw na tuntunin at Ibabalik bawat araw: $33.33 bawat araw sa loob ng 29 araw, tapos $33.43 sa huling araw. Inuulit ang tsart. Ang pindutan Gusto kong kunin ang pautang na ito. ang kumpirmasyon. Walang checkbox."
   },
   "/welcome:expanded-external": {
     "de": "Bei Alle ist Adas Notiz aufgeklappt. Der Verlauf zeigt zwei Antworten von Robin, der kein 21.gifts-Konto hat: eine reine Geschenk-Antwort (senden ₿69) und eine Textantwort mit https://example.com/hello. Jede Autorenzeile zeigt neben dem Namen eine Schaltfläche Extern (derselbe Platz wie eine Rollenpille); ein Klick öffnet einen kurzen Hinweis, dass die Person aus einer anderen App geschrieben hat, nicht von einem 21.gifts-Konto, und angezeigt wird, weil sie Bitcoin an einen Post gesendet hat. Der Name selbst ist eine Schaltfläche Profil anzeigen, die /messages/<id>/author öffnet. Diese Aufnahme bleibt im Verlauf. Die URL ist als reiner Text sichtbar — kein klickbarer Link, kein automatischer Link, keine Einbettung einer zitierten Notiz.",
@@ -3540,9 +3540,9 @@
     "fil": "Sa Lahat, nakabuka ang tala ni Ada. Ang usapan ay nagpapakita ng dalawang sagot mula kay Robin, na walang account sa 21.gifts: isang sagot na regalo lang (magpadala ₿69) at isang sagot na teksto na may https://example.com/hello. Bawat linya ng may-akda ay may pindutang Panlabas sa tabi ng pangalan (parehong puwang ng isang pildoras ng tungkulin); ang pagpindot ay nagbubukas ng maikling paliwanag na nagsulat ang tao mula sa ibang app, hindi mula sa account ng 21.gifts, at ipinapakita dahil nagpadala siya ng bitcoin sa isang post. Ang pangalan mismo ay pindutang Tingnan ang propayl na nagbubukas ng /messages/<id>/author. Ang kuha na ito ay nananatili sa usapan. Nakikita ang URL bilang payak na teksto — hindi klikableng link, walang awtomatikong link, walang pagkakabit ng siniping tala."
   },
   "/messages:thread-pay-qr": {
-    "de": "Verlauf geöffnet, Betrag 21 abgeschickt. Zahlungsblatt offen, Mit Wallet of Satoshi zahlen. Schließen (X) blendet das Blatt aus und bleibt in diesem Verlauf. Es ist nicht der Pfeil oben links zurück. Die Betragszeile des Schreibfelds ist ausgeblendet; das Blatt nennt den Betrag einmal, als Sat-Betrag plus die Standard-Fiat aus dem jüngsten Geschenktageskurs. Das Schreibfeld hinter dem Blatt enthält ImagePlus zum Anhängen. Aufgenommen am großen Bildschirm und am Handy (gleiche Variante, vier Kombinationen). Der große Bildschirm zeigt den Bitcoin-Zahlungs-QR plus die Wallet-Schaltfläche Zahlen. Ein Smartphone zeigt dasselbe Blatt ohne montierten QrCode; Zahlen öffnet Wallet of Satoshi. Zahlung wird erwartet… ist in Ordnung, solange die Zahlungsumfrage hängt.",
+    "de": "Verlauf geöffnet, Betrag 21 abgeschickt. Zahlungsblatt offen, Mit Wallet of Satoshi zahlen. Schließen (X) blendet das Blatt aus und bleibt in diesem Verlauf. Es ist nicht der Pfeil oben links zurück. Die Betragszeile des Schreibfelds ist ausgeblendet; das Blatt nennt den Betrag einmal, als Sat-Betrag plus die Standard-Fiat aus dem jüngsten Geschenktageskurs. Das Schreibfeld hinter dem Blatt enthält ImagePlus zum Anhängen. Aufgenommen am großen Bildschirm und am Handy (gleiche Variante, vier Kombinationen). Der große Bildschirm zeigt den Bitcoin-Zahlungs-QR plus die Wallet-Schaltfläche Zahlen. Ein Smartphone zeigt dasselbe Blatt ohne montierten QrCode; Zahlen öffnet Wallet of Satoshi. Zahlung wird erwartet… ist in Ordnung, solange die Zahlungsabfrage hängt.",
     "es": "Hilo abierto, Importe 21 enviado. Hoja de pago abierta, Pagar con Wallet of Satoshi. Cerrar (X) cierra la hoja y se queda en este hilo. No es la flecha atrás de arriba a la izquierda. La fila de importe del cuadro de redacción está oculta; la hoja indica ese importe una vez, como el importe en sats más el fiat predeterminado del tipo del día de regalo más reciente. El cuadro de redacción detrás de la hoja incluye adjuntar ImagePlus. Capturado en ordenador y en teléfono (misma variante, cuatro combinaciones). El ordenador muestra el QR de pago Bitcoin más el botón Pagar del monedero. Un teléfono muestra la misma hoja sin un QrCode montado; Pagar abre Wallet of Satoshi. Esperando el pago… es aceptable mientras la consulta de pago queda colgada.",
-    "fil": "Bukas ang usapan, naisumite ang Halaga 21. Bukas ang panel ng bayad, Magbayad gamit ang Wallet of Satoshi. Ang Isara (X) ay nagsasara ng panel at nananatili sa usapang ito. Hindi ito ang palaso pabalik sa itaas-kaliwa. Nakatago ang hilera ng halaga ng kahon ng pagsulat; sinasabi ng panel ang halagang iyon minsan, bilang halaga sa sat plus ang default na fiat mula sa pinakabagong rate ng araw ng regalo. Ang kahon ng pagsulat sa likod ng panel ay may ImagePlus para maglakip. Kinuha sa kompyuter at sa telepono (parehong variant, apat na kombinasyon). Ipinapakita ng kompyuter ang QR ng bayad sa Bitcoin plus ang pindutang Magbayad ng pitaka. Ang isang smartphone ay nagpapakita ng parehong panel nang walang naka-mount na QrCode; ang Magbayad ay nagbubukas ng Wallet of Satoshi. Katanggap-tanggap ang Naghihintay ng bayad… habang nakabinbin ang pagtanong sa bayad."
+    "fil": "Bukas ang usapan, naisumite ang Halaga 21. Bukas ang panel ng bayad, Magbayad gamit ang Wallet of Satoshi. Ang Isara (X) ay nagsasara ng panel at nananatili sa usapang ito. Hindi ito ang palaso pabalik sa itaas-kaliwa. Nakatago ang hilera ng halaga ng kahon ng pagsulat; sinasabi ng panel ang halagang iyon minsan, bilang halaga sa sat plus ang default na fiat mula sa pinakabagong rate ng araw ng regalo. Ang kahon ng pagsulat sa likod ng panel ay may ImagePlus para maglakip. Kinuha sa kompyuter at sa telepono (parehong variant, apat na kombinasyon). Ipinapakita ng kompyuter ang QR ng bayad sa Bitcoin plus ang pindutang Magbayad ng pitaka. Ang isang smartphone ay nagpapakita ng parehong panel nang walang naka-mount na QrCode; ang Magbayad ay nagbubukas ng Wallet of Satoshi. Katanggap-tanggap ang Naghihintay ng bayad… habang nakabinbin ang pag-poll ng bayad."
   },
   "/view/[viewKey]:default": {
     "de": "Gültiger bekannter Schlüssel. Überschrift Profil, FiatPicker nur solange nicht angemeldet; leere Serie zeigt FiatPicker + profile.chartEmpty wenn nicht angemeldet (Noch keine Geschenke., keine Legende/SVG / keine ₿|Fiat-Skala; nie Wird geladen… am Diagramm) und nur profile.chartEmpty wenn angemeldet (ein fehlgeschlagener Aktivitätsabruf ist profile.chartError), Über mich in der Karte wenn aboutMe eine Zeichenkette ist (kein Forum-Post), nur-Icon Link zu diesem Profil kopieren, Name, Ort und Beschriftungen des Felds Wallet of Satoshi address, gelbes Aktion erforderlich, der Account muss aktiviert werden / Banner Aktivieren unter der Karte wenn nicht beansprucht (auch wenn angemeldet), keine sichtbare view-key-URL/Text. Die Karte hat keine Zurück-Steuerung; der Seitenkopf hat den einen Pfeil oben links.",
@@ -3576,7 +3576,7 @@
   },
   "/profile:default": {
     "de": "Oberhalb der Überschrift Breites Bild hinzufügen und Profilfoto hinzufügen, wenn diese Bilder nicht gespeichert sind. Überschrift Profil, danach in der einzelnen Identitätskarte max-w-sm: kein Diagramm-FiatPicker. Wenn die Reihe leer ist, profile.chartEmpty (role=\"status\", Noch keine Geschenke.) ohne Achse/SVG / ohne ₿|Fiat-Skala; sonst ein kompaktes Diagramm Gegeben/Empfangen (Legende links, ₿ | gewählte Fiat SegmentedControl tone=\"gift\" rechts; keine Diagramm-Überschrift); Über mich mit leerer Aufforderung Erzähl anderen, wer du bist. und Schreib dein Über mich, wenn aboutMe null ist (kein Forenbeitrag); nur Symbol Link zu diesem Profil kopieren; Name, Ort (Location / Ort, nicht gesetzt zeigt Nicht gesetzt), dann die öffentlichen Mitgliedsangaben (Rollenpille, wenn die Rolle verified oder höher ist, Förderprogramm-Symbol, wenn fundingReviewedAt eine Zahl ist (ein Tippen zeigt diesen einen Satz), username@21.gifts, Zahlungs-QR und Shop-Aufkleber, wenn ein Benutzername gesetzt ist, auch auf einem Smartphone, und Zählschaltflächen Beiträge / Reaktionen, die denselben Aktivitätsfeed öffnen wie /members/:id), dann Felder Wallet of Satoshi address mit Symbolaktionen rechts (Stift / Häkchen / X / Papierkorb), dann ein Benachrichtigungsabschnitt mit dreistufigem Alle / Aktiv / Erwähnungen SegmentedControl tone=\"neutral\" und, wenn Push-APIs bereit sind, einem zweiten Dieses Gerät Ein / Aus SegmentedControl tone=\"neutral\" (ausgewählte Füllung bg-app-btn; sichtbarer Text Ein / Aus), dann eine Zeile Spracheinstellungen (Kicker in Großbuchstaben und einzeiliges SegmentedControl tone=\"neutral\" wie Thema, English / Deutsch / Español / Filipino), dann eine Zeile Theme-Einstellungen (Kicker in Großbuchstaben und SegmentedControl tone=\"neutral\" System / Hell / Dunkel), dann eine Zeile Fiatwährung-Einstellungen (FiatPreferenceSwitcher, der einzige FiatPicker auf der Karte, dieselbe Pillenoptik wie Thema, nicht der kompakte orange Geschenke-Wähler; CHF|EUR|USD|PHP), dann eine Zeile Zahlenformat-Einstellungen (Kicker in Großbuchstaben und SegmentedControl tone=\"neutral\" Beispiele 10'000.23 / 10,000.23 / 23.000,33); keine Überschrift Schlüssel anzeigen und kein sichtbarer URL/Schlüssel-Text. Kein zweites Feld unter der Karte. Nur-Symbol Zurück und Wortmarke in der Kopfzeile des Seitenrahmens (der Pfeil kehrt zur vorherigen In-App-Ansicht in diesem Tab zurück, oder nach /welcome, wenn dieser Tab keine hat); ein Menu in derselben Kopfzeilenzeile (Home zuerst; Abmelden, danach eine unauffällige Zeile Version {version} (app.version); die Profilzeile zeigt keine gegebenen oder empfangenen Beträge). Das Diagramm wechselt nie zu Wird geladen…. Ein fehlgeschlagener Aktivitätsabruf ist profile.chartError.",
-    "es": "Por encima del encabezado, Añadir una imagen ancha y Añadir una foto de perfil cuando esas imágenes no están guardadas. Encabezado Perfil, luego dentro de la única tarjeta de identidad max-w-sm: ningún FiatPicker de gráfico. Cuando la serie está vacía, profile.chartEmpty (role=\"status\", Aún no hay regalos.) sin eje/SVG / sin escala ₿|fiat; de lo contrario un gráfico compacto Aportado/Recibido (leyenda a la izquierda, ₿ | fiat seleccionada SegmentedControl tone=\"gift\" a la derecha; sin encabezado de título del gráfico); Sobre mí con la indicación vacía Cuéntales a los demás quién eres. y Escribe tu Sobre mí cuando aboutMe es null (no una publicación del foro); solo icono Copiar enlace a este perfil; nombre, ubicación (Location / Ort, sin definir muestra No definido), luego los datos públicos del miembro (pastilla de rol cuando el rol es verified o superior, icono del programa de financiación cuando fundingReviewedAt es un número (pulsarlo revela esa frase), username@21.gifts, QR de pago y pegatina de tienda cuando hay un nombre de usuario, también en un teléfono, y botones de recuento Publicaciones / Reacciones que abren el mismo feed de actividad que /members/:id), luego campos Wallet of Satoshi address con acciones de icono a la derecha (lápiz / visto / X / papelera), luego una sección Notificaciones con un SegmentedControl de tres etapas Todos / Activos / Menciones tone=\"neutral\" y, cuando las API Push están listas, un segundo SegmentedControl Este dispositivo Encendido / Apagado tone=\"neutral\" (relleno seleccionado bg-app-btn; texto visible Encendido / Apagado), luego una fila Ajustes de idioma (rótulo en mayúsculas y SegmentedControl de una fila tone=\"neutral\" igual que Tema, English / Deutsch / Español / Filipino), luego una fila Ajustes de tema (rótulo en mayúsculas y SegmentedControl tone=\"neutral\" Sistema / Claro / Oscuro), luego una fila Ajustes de moneda fiat (FiatPreferenceSwitcher, el único FiatPicker de la tarjeta, el mismo acabado de pastilla que Tema, no el selector compacto naranja de regalos; CHF|EUR|USD|PHP), luego una fila Ajustes de formato numérico (rótulo en mayúsculas y SegmentedControl tone=\"neutral\" muestras 10'000.23 / 10,000.23 / 23.000,33); sin encabezado Ver clave y sin texto visible de URL/clave. Ningún segundo panel debajo de la tarjeta. Solo icono atrás y marca tipográfica en el encabezado del marco de página (la flecha vuelve a la vista anterior de la aplicación en esta pestaña, o a /welcome cuando esta pestaña no tiene ninguna); un Menú en esa misma fila del encabezado (Home primero; cerrar sesión, después una línea discreta Versión {version} (app.version); la fila Perfil no muestra importes dados ni recibidos). El gráfico nunca pasa a Cargando…. Una carga de actividad fallida es profile.chartError.",
-    "fil": "Sa itaas ng pamagat, Magdagdag ng malapad na larawan at Magdagdag ng larawan ng profile kapag hindi naka-imbak ang mga larawang iyon. Pamagat na Profile, pagkatapos sa loob ng iisang kard ng pagkakakilanlan na max-w-sm: walang tsart na FiatPicker. Kapag walang laman ang serye, profile.chartEmpty (role=\"status\", Wala pang mga regalo.) na walang axis/SVG / walang sukat na ₿|fiat; kung hindi, isang siksik na tsart Naibigay/Natanggap (alamat sa kaliwa, ₿ | napiling fiat SegmentedControl tone=\"gift\" sa kanan; walang pamagat ng tsart); Tungkol sa akin na may bakanteng paalala Sabihin sa iba kung sino ka. at Isulat ang iyong Tungkol sa akin kapag ang aboutMe ay null (hindi publikasyon sa forum); icon lang Kopyahin ang link sa profile na ito; pangalan, lokasyon (Location / Ort, kung hindi nakatakda ay Hindi nakatakda), pagkatapos ang pampublikong mga katotohanan ng miyembro (pil ng tungkulin kapag ang tungkulin ay verified o mas mataas, icon ng programa ng pagpopondo kapag ang fundingReviewedAt ay isang numero (ang pagpindot ay nagpapakita ng pangungusap na iyon), username@21.gifts, QR sa pagbabayad at stiker ng Tindahan kapag may username, kasama sa smartphone, at mga pindutan ng bilang Mga publikasyon / Mga reaksyon na nagbubukas ng parehong feed ng aktibidad tulad ng /members/:id), pagkatapos ay mga patlang na Wallet of Satoshi address na may mga aksyon ng icon sa kanan (lapis / tsek / X / basurahan), pagkatapos ay isang seksyon ng Mga abiso na may tatlong-antas na Lahat / Aktibo / Mga banggit SegmentedControl tone=\"neutral\" at, kapag handa ang mga Push API, pangalawang SegmentedControl Ang aparatong ito Bukas / Sarado tone=\"neutral\" (napiling puno bg-app-btn; nakikitang teksto Bukas / Sarado), pagkatapos ay isang hilera ng Mga setting ng wika (rótulo na malalaking titik at isang-hilera SegmentedControl tone=\"neutral\" katulad ng Tema, English / Deutsch / Español / Filipino), pagkatapos ay isang hilera ng Mga setting ng tema (rótulo na malalaking titik at SegmentedControl tone=\"neutral\" Sistema / Maliwanag / Madilim), pagkatapos ay isang hilera ng Mga setting ng pera fiat (FiatPreferenceSwitcher, ang tanging FiatPicker sa kard, parehong hitsura ng pil tulad ng Tema, hindi ang siksik na kahel na pumili ng regalo; CHF|EUR|USD|PHP), pagkatapos ay isang hilera ng Mga setting ng anyo ng numero (rótulo na malalaking titik at SegmentedControl tone=\"neutral\" mga halimbawa 10'000.23 / 10,000.23 / 23.000,33); walang pamagat Tingnan ang susi at walang nakikitang teksto ng URL/susi. Walang pangalawang panid sa ibaba ng kard. Icon lang na balik at marka ng salita sa ulo ng frame ng pahina (ang palaso ay bumabalik sa nakaraang tanawin sa app sa tab na ito, o /welcome kapag wala ito sa tab na ito); isang Menu sa parehong hilera ng ulo (Home muna; umalis sa account, pagkatapos ay isang tahimik na linya Bersyon {version} (app.version); ang hilera ng Profile ay hindi nagpapakita ng naibigay o natanggap na mga halaga). Ang tsart ay hindi kailanman nagiging Naglo-load…. Ang nabigong pagkarga ng aktibidad ay profile.chartError."
+    "es": "Por encima del encabezado, Añadir una imagen ancha y Añadir una foto de perfil cuando esas imágenes no están guardadas. Encabezado Perfil, luego dentro de la única tarjeta de identidad max-w-sm: ningún FiatPicker de gráfico. Cuando la serie está vacía, profile.chartEmpty (role=\"status\", Aún no hay regalos.) sin eje/SVG / sin escala ₿|fiat; de lo contrario un gráfico compacto Donado/Recibido (leyenda a la izquierda, ₿ | fiat seleccionada SegmentedControl tone=\"gift\" a la derecha; sin encabezado de título del gráfico); Sobre mí con la indicación vacía Cuéntales a los demás quién eres. y Escribe tu Sobre mí cuando aboutMe es null (no una publicación del foro); solo icono Copiar enlace a este perfil; nombre, ubicación (Location / Ort, sin definir muestra No definido), luego los datos públicos del miembro (pastilla de rol cuando el rol es verified o superior, icono del programa de financiación cuando fundingReviewedAt es un número (pulsarlo revela esa frase), username@21.gifts, QR de pago y pegatina de tienda cuando hay un nombre de usuario, también en un teléfono, y botones de recuento Publicaciones / Reacciones que abren el mismo feed de actividad que /members/:id), luego campos Wallet of Satoshi address con acciones de icono a la derecha (lápiz / visto / X / papelera), luego una sección Notificaciones con un SegmentedControl de tres etapas Todos / Activos / Menciones tone=\"neutral\" y, cuando las API Push están listas, un segundo SegmentedControl Este dispositivo Encendido / Apagado tone=\"neutral\" (relleno seleccionado bg-app-btn; texto visible Encendido / Apagado), luego una fila Ajustes de idioma (rótulo en mayúsculas y SegmentedControl de una fila tone=\"neutral\" igual que Tema, English / Deutsch / Español / Filipino), luego una fila Ajustes de tema (rótulo en mayúsculas y SegmentedControl tone=\"neutral\" Sistema / Claro / Oscuro), luego una fila Ajustes de moneda fiat (FiatPreferenceSwitcher, el único FiatPicker de la tarjeta, el mismo acabado de pastilla que Tema, no el selector compacto naranja de regalos; CHF|EUR|USD|PHP), luego una fila Ajustes de formato numérico (rótulo en mayúsculas y SegmentedControl tone=\"neutral\" muestras 10'000.23 / 10,000.23 / 23.000,33); sin encabezado Ver clave y sin texto visible de URL/clave. Ningún segundo panel debajo de la tarjeta. Solo icono atrás y marca tipográfica en el encabezado del marco de página (la flecha vuelve a la vista anterior de la aplicación en esta pestaña, o a /welcome cuando esta pestaña no tiene ninguna); un Menú en esa misma fila del encabezado (Home primero; cerrar sesión, después una línea discreta Versión {version} (app.version); la fila Perfil no muestra importes dados ni recibidos). El gráfico nunca pasa a Cargando…. Una carga de actividad fallida es profile.chartError.",
+    "fil": "Sa itaas ng pamagat, Magdagdag ng malapad na larawan at Magdagdag ng larawan ng profile kapag hindi naka-imbak ang mga larawang iyon. Pamagat na Profile, pagkatapos sa loob ng iisang kard ng pagkakakilanlan na max-w-sm: walang tsart na FiatPicker. Kapag walang laman ang serye, profile.chartEmpty (role=\"status\", Wala pang mga regalo.) na walang axis/SVG / walang sukat na ₿|fiat; kung hindi, isang siksik na tsart Ibinigay/Natanggap (alamat sa kaliwa, ₿ | napiling fiat SegmentedControl tone=\"gift\" sa kanan; walang pamagat ng tsart); Tungkol sa akin na may bakanteng paalala Sabihin sa iba kung sino ka. at Isulat ang iyong Tungkol sa akin kapag ang aboutMe ay null (hindi publikasyon sa forum); icon lang Kopyahin ang link sa profile na ito; pangalan, lokasyon (Location / Ort, kung hindi nakatakda ay Hindi nakatakda), pagkatapos ang pampublikong mga katotohanan ng miyembro (pil ng tungkulin kapag ang tungkulin ay verified o mas mataas, icon ng programa ng pagpopondo kapag ang fundingReviewedAt ay isang numero (ang pagpindot ay nagpapakita ng pangungusap na iyon), username@21.gifts, QR sa pagbabayad at stiker ng Tindahan kapag may username, kasama sa smartphone, at mga pindutan ng bilang Mga publikasyon / Mga reaksyon na nagbubukas ng parehong feed ng aktibidad tulad ng /members/:id), pagkatapos ay mga patlang na Wallet of Satoshi address na may mga aksyon ng icon sa kanan (lapis / tsek / X / basurahan), pagkatapos ay isang seksyon ng Mga abiso na may tatlong-antas na Lahat / Aktibo / Mga banggit SegmentedControl tone=\"neutral\" at, kapag handa ang mga Push API, pangalawang SegmentedControl Ang aparatong ito Bukas / Sarado tone=\"neutral\" (napiling puno bg-app-btn; nakikitang teksto Bukas / Sarado), pagkatapos ay isang hilera ng Mga setting ng wika (label na malalaking titik at isang-hilera SegmentedControl tone=\"neutral\" katulad ng Tema, English / Deutsch / Español / Filipino), pagkatapos ay isang hilera ng Mga setting ng tema (label na malalaking titik at SegmentedControl tone=\"neutral\" Sistema / Maliwanag / Madilim), pagkatapos ay isang hilera ng Mga setting ng pera fiat (FiatPreferenceSwitcher, ang tanging FiatPicker sa kard, parehong hitsura ng pil tulad ng Tema, hindi ang siksik na kahel na pumili ng regalo; CHF|EUR|USD|PHP), pagkatapos ay isang hilera ng Mga setting ng anyo ng numero (label na malalaking titik at SegmentedControl tone=\"neutral\" mga halimbawa 10'000.23 / 10,000.23 / 23.000,33); walang pamagat Tingnan ang susi at walang nakikitang teksto ng URL/susi. Walang pangalawang panid sa ibaba ng kard. Icon lang na balik at marka ng salita sa ulo ng frame ng pahina (ang palaso ay bumabalik sa nakaraang tanawin sa app sa tab na ito, o /welcome kapag wala ito sa tab na ito); isang Menu sa parehong hilera ng ulo (Home muna; umalis sa account, pagkatapos ay isang tahimik na linya Bersyon {version} (app.version); ang hilera ng Profile ay hindi nagpapakita ng naibigay o natanggap na mga halaga). Ang tsart ay hindi kailanman nagiging Naglo-load…. Ang nabigong pagkarga ng aktibidad ay profile.chartError."
   }
 }
