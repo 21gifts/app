@@ -341,7 +341,10 @@ export const giftStatsSchema = z.object({
  */
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
-/** A positive decimal price string from the api, such as `"62345.12"`. */
+/**
+ * A decimal price string from the api, such as `"62345.12"`. `"0"` parses here
+ * and is treated as no price by `spotRateDay`.
+ */
 const spotPriceSchema = z.string().regex(/^\d+(\.\d+)?$/);
 
 /**
