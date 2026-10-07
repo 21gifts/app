@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberVerifyScreen } from '@/components/MemberVerifyScreen';
 import { fetchMember, postTrustVerify } from '@/lib/api';
@@ -129,6 +129,13 @@ describe('MemberVerifyScreen', () => {
     expect(fetchMember).not.toHaveBeenCalled();
   });
 
+  it('shows forbidden when the session has no account and does not fetch', () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(screen.getByText('You cannot verify this member.')).toBeTruthy();
+    expect(fetchMember).not.toHaveBeenCalled();
+  });
+
   it('shows forbidden when a moderator views themself', async () => {
     setModerator({ id: profile.id });
     vi.mocked(fetchMember).mockResolvedValue(profile);
@@ -225,5 +232,43 @@ describe('MemberVerifyScreen', () => {
     });
     expect(screen.getByRole('button', { name: 'Yes, this name identifies them' })).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it('ignores a stale member resolve after unmount', async () => {
+    setModerator();
+    let resolveMember: ((value: MemberProfile | null) => void) | undefined;
+    vi.mocked(fetchMember).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveMember = resolve;
+        }),
+    );
+    const view = renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    view.unmount();
+    resolveMember?.(profile);
+    await Promise.resolve();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(fetchMember).toHaveBeenCalled();
+  });
+
+  it('ignores a stale member reject after unmount', async () => {
+    setModerator();
+    let rejectMember: ((reason: Error) => void) | undefined;
+    vi.mocked(fetchMember).mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectMember = reject;
+        }),
+    );
+    const view = renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    view.unmount();
+    rejectMember?.(new Error('gone'));
+    await Promise.resolve();
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(fetchMember).toHaveBeenCalled();
   });
 });
