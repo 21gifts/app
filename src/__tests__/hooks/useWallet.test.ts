@@ -75,7 +75,7 @@ const PINS = [
   ['balance-setup-failed', 'error', null],
   ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-  ['send-alert-locked', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['send-alert-not-ready', 'connecting', null],
 ] as const;
 
 describe('useWallet visual pins', () => {
