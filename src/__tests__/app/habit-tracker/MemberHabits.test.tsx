@@ -1155,6 +1155,123 @@ describe('MemberHabits', () => {
     expect(addName.value).toBe('');
   });
 
+  it('posts a rating again after Try again confirms the list', async () => {
+    let posts = 0;
+    let gets = 0;
+    const bodies: Array<{ action?: string; status?: string }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          bodies.push(JSON.parse(String(init.body)) as { action?: string; status?: string });
+          return json({ ok: true });
+        }
+        gets += 1;
+        if (gets === 2) {
+          throw new Error('refresh');
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(gets).toBe(3);
+    });
+
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    await waitFor(() => {
+      expect(posts).toBe(2);
+      expect(gets).toBe(4);
+    });
+    expect(bodies[1]).toMatchObject({ action: 'log', status: 'achieved' });
+  });
+
+  it('closes a saved edit after Try again confirms the list', async () => {
+    let posts = 0;
+    let gets = 0;
+    const bodies: Array<{ action?: string; name?: string }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          bodies.push(JSON.parse(String(init.body)) as { action?: string; name?: string });
+          return json({ ok: true });
+        }
+        gets += 1;
+        if (gets === 2) {
+          throw new Error('refresh');
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const editName = screen.getAllByLabelText('Name')[0];
+    if (!(editName instanceof HTMLInputElement)) {
+      throw new Error('missing edit name');
+    }
+    fireEvent.change(editName, { target: { value: 'Run' } });
+    const saveForm = formsNamed('Save')[0];
+    if (saveForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.submit(saveForm);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+    expect(editName.value).toBe('Run');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+      expect(gets).toBe(3);
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const again = screen.getAllByLabelText('Name')[0];
+    if (!(again instanceof HTMLInputElement)) {
+      throw new Error('missing edit name');
+    }
+    expect(again.value).toBe('Walk');
+    fireEvent.change(again, { target: { value: 'Run' } });
+    const againForm = formsNamed('Save')[0];
+    if (againForm === undefined) {
+      throw new Error('missing save form');
+    }
+    fireEvent.submit(againForm);
+    await waitFor(() => {
+      expect(posts).toBe(2);
+      expect(gets).toBe(4);
+    });
+    expect(bodies[1]).toMatchObject({ action: 'edit', name: 'Run' });
+  });
+
   it('does not replace a reload that a save already started', async () => {
     let posts = 0;
     let gets = 0;

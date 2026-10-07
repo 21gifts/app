@@ -103,6 +103,11 @@ export function MemberHabits(): ReactElement {
         }
         setData(next);
         setLoading(false);
+        // A confirmed list releases a rating, edit, archive, comment, or deletion.
+        // An add that already reached the server stays reserved.
+        for (const id of releaseConfirmedPosts(postedKeys.current)) {
+          cancelEdit(id);
+        }
         listSettled.current = true;
       },
       () => {
@@ -142,6 +147,8 @@ export function MemberHabits(): ReactElement {
       }
       setData(next);
       setError(false);
+      // A rating or a comment does not close an open edit. Try again does.
+      releaseConfirmedPosts(postedKeys.current);
       listSettled.current = true;
       return true;
     } catch {
@@ -188,14 +195,6 @@ export function MemberHabits(): ReactElement {
       const listed = await refresh();
       if (!listed) {
         return false;
-      }
-      // A confirmed list can show a different rating, edit, or archive.
-      // An add that already reached the server must not be created again.
-      for (const stored of [...postedKeys.current]) {
-        const parsed = JSON.parse(stored) as { action?: unknown };
-        if (parsed.action !== 'add') {
-          postedKeys.current.delete(stored);
-        }
       }
       const action = body['action'];
       const closeEdit = action === 'edit' || action === 'archive' ? body['id'] : undefined;
@@ -707,6 +706,24 @@ function statusCopy(
     return t('habit.missed');
   }
   return t('habit.unrated');
+}
+
+/** Drops every confirmed action except an add. Edit and archive ids close. */
+function releaseConfirmedPosts(keys: Set<string>): string[] {
+  const closeIds: string[] = [];
+  for (const stored of [...keys]) {
+    const parsed = JSON.parse(stored) as { action?: unknown; id?: unknown };
+    if (parsed.action === 'add') {
+      continue;
+    }
+    const closeEdit =
+      parsed.action === 'edit' || parsed.action === 'archive' ? parsed.id : undefined;
+    if (typeof closeEdit === 'string') {
+      closeIds.push(closeEdit);
+    }
+    keys.delete(stored);
+  }
+  return closeIds;
 }
 
 function lightningInvoicePr(body: unknown, amountSats: number): string {
