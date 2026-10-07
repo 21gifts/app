@@ -120,4 +120,26 @@ describe('useWalletPayment', () => {
       status: 'loading',
     });
   });
+
+  it('starts over for another id and never shows the previous payment under it', async () => {
+    vi.mocked(getWalletPayment).mockResolvedValueOnce(PAYMENT);
+    const { result, rerender } = renderHook(({ id }) => useWalletPayment(id), {
+      initialProps: { id: 'p1' },
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({ status: 'ready', payment: PAYMENT });
+    });
+    vi.mocked(getWalletPayment).mockRejectedValueOnce(new Error('unknown'));
+    rerender({ id: 'p2' });
+    expect(result.current).toEqual({ status: 'loading' });
+    await waitFor(() => {
+      expect(result.current).toEqual({ status: 'missing' });
+    });
+    const other = { id: 'p3', status: 'completed' } as WalletPayment;
+    vi.mocked(getWalletPayment).mockResolvedValueOnce(other);
+    rerender({ id: 'p3' });
+    await waitFor(() => {
+      expect(result.current).toEqual({ status: 'ready', payment: other });
+    });
+  });
 });

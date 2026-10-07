@@ -8,8 +8,10 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { WalletBalance } from '@/components/WalletBalance';
 import { Card, IconButton } from '@/components/ui';
 import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
@@ -221,9 +223,6 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
           {info.preimage === undefined ? null : (
             <CopyRow label={t('wallet.payment.preimage')} value={info.preimage} />
           )}
-          {info.destinationPubkey === undefined || received ? null : (
-            <CopyRow label={t('wallet.payment.node')} value={info.destinationPubkey} />
-          )}
           <CopyRow label={t('wallet.payment.id')} value={payment.id} />
         </dl>
         {txUrl === null ? null : (
@@ -263,9 +262,12 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
  * for a pending or failed send), the message, a summary list (date, type,
  * counterparty, description, amount, fee, total, what arrived on-chain), and
  * the technical details with Copy (transaction and output, payment request,
- * payment hash, proof of payment, recipient node, payment id). Nothing shows
- * until the rate read has settled, so no amount appears without its fiat
- * while the rate is still loading. An
+ * payment hash, proof of payment, payment id). Nothing shows until the rate
+ * read has settled, so no amount appears without its fiat while the rate is
+ * still loading. Opened directly while the wallet is not open, it shows the
+ * wallet's own unlock, opening, or error state (`WalletBalance`) and loads the
+ * payment once the wallet is ready; without a wallet here it says the payment
+ * could not be found. An
  * on-chain payment links to its transaction on mempool.space through the
  * external-link warning. A missing or unknown id says so.
  *
@@ -276,16 +278,28 @@ export function WalletPaymentDetails(): ReactElement {
   const id = useSearchParams().get('id');
   const state = useWalletPayment(id);
   const rate = useLatestRateDayState();
+  const wallet = useWallet();
+  const waiting = state.status === 'loading';
+  const missing = state.status === 'missing' || (waiting && wallet.status === 'disabled');
   return (
     <Card surface={false}>
       <h1 className="sr-only">{t('wallet.payment.heading')}</h1>
       {state.status === 'ready' && !rate.loading ? (
         <PaymentView payment={state.payment} rateDay={rate.rateDay} />
       ) : null}
-      {state.status === 'missing' ? (
+      {missing ? (
         <p role="alert" className="text-center text-sm text-app-muted">
           {t('wallet.payment.missing')}
         </p>
+      ) : null}
+      {waiting && wallet.status !== 'ready' && wallet.status !== 'disabled' ? (
+        <WalletBalance
+          status={wallet.status}
+          balanceSats={null}
+          onUnlock={wallet.unlock}
+          onRetry={wallet.retry}
+          prfUnsupported={wallet.prfUnsupported}
+        />
       ) : null}
     </Card>
   );

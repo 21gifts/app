@@ -63,8 +63,8 @@ describe('getCatalog', () => {
     }
   });
 
-  it('contains no Lightning or LNURL jargon in any catalog value', () => {
-    const jargon = /Lightning|LNURL/i;
+  it('contains no Lightning, LNURL, or Spark jargon in any catalog value', () => {
+    const jargon = /Lightning|LNURL|\bSpark\b/i;
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
       for (const [key, value] of Object.entries(catalog)) {
