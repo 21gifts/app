@@ -2,18 +2,18 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Locale } from '../src/lib/locale';
 import { getCatalog, type MessageKey } from '../src/lib/messages';
 
-const LOCALES: ReadonlyArray<{ locale: Locale; acceptLanguage: string }> = [
-  { locale: 'en', acceptLanguage: 'en-US,en;q=0.9' },
-  { locale: 'de', acceptLanguage: 'de-DE,de;q=0.9' },
-  { locale: 'es', acceptLanguage: 'es-ES,es;q=0.9' },
-  { locale: 'fil', acceptLanguage: 'fil-PH,fil;q=0.9' },
+const LOCALES: ReadonlyArray<{ locale: Locale; browserLocale: string; acceptLanguage: string }> = [
+  { locale: 'en', browserLocale: 'en-US', acceptLanguage: 'en-US,en;q=0.9' },
+  { locale: 'de', browserLocale: 'de-DE', acceptLanguage: 'de-DE,de;q=0.9' },
+  { locale: 'es', browserLocale: 'es-ES', acceptLanguage: 'es-ES,es;q=0.9' },
+  { locale: 'fil', browserLocale: 'fil-PH', acceptLanguage: 'fil-PH,fil;q=0.9' },
 ];
 
 const CLAUSES = [1, 2, 3, 4, 5] as const;
 
-for (const { locale, acceptLanguage } of LOCALES) {
+for (const { locale, browserLocale, acceptLanguage } of LOCALES) {
   test.describe(`Terms of Use in ${locale}`, () => {
-    test.use({ extraHTTPHeaders: { 'Accept-Language': acceptLanguage } });
+    test.use({ locale: browserLocale, extraHTTPHeaders: { 'Accept-Language': acceptLanguage } });
 
     test(`Function: TermsPage renders the five ${locale} clauses in order`, async ({ page }) => {
       const catalog = getCatalog(locale);
