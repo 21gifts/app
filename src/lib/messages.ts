@@ -661,6 +661,7 @@ const en = {
   'wallet.payment.copied': 'Copied',
   'wallet.payment.viewTx': 'View on mempool.space',
   'wallet.payment.missing': 'This payment could not be found.',
+  'wallet.payment.error': 'This payment could not be loaded. Please try again.',
   'wallet.payment.pendingHint':
     'Still on its way. The amount stays reserved until it arrives or comes back.',
   'wallet.payment.failedHint': 'Nothing left your wallet.',
@@ -1823,6 +1824,8 @@ const de = {
   'wallet.payment.copied': 'Kopiert',
   'wallet.payment.viewTx': 'Auf mempool.space ansehen',
   'wallet.payment.missing': 'Diese Zahlung wurde nicht gefunden.',
+  'wallet.payment.error':
+    'Diese Zahlung konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'wallet.payment.pendingHint':
     'Noch unterwegs. Der Betrag bleibt reserviert, bis die Zahlung ankommt oder zurückkommt.',
   'wallet.payment.failedHint': 'Nichts hat Ihre Wallet verlassen.',
@@ -2988,6 +2991,7 @@ const es = {
   'wallet.payment.copied': 'Copiado',
   'wallet.payment.viewTx': 'Ver en mempool.space',
   'wallet.payment.missing': 'No se encontró este pago.',
+  'wallet.payment.error': 'No se pudo cargar este pago. Inténtalo de nuevo.',
   'wallet.payment.pendingHint':
     'Todavía en camino. El importe queda reservado hasta que llegue o vuelva.',
   'wallet.payment.failedHint': 'No salió nada de tu wallet.',
@@ -4141,6 +4145,7 @@ const fil = {
   'wallet.payment.copied': 'Nakopya',
   'wallet.payment.viewTx': 'Tingnan sa mempool.space',
   'wallet.payment.missing': 'Hindi mahanap ang bayad na ito.',
+  'wallet.payment.error': 'Hindi ma-load ang bayad na ito. Pakisubukan ulit.',
   'wallet.payment.pendingHint': 'Papunta pa. Nakareserba ang halaga hanggang dumating o bumalik.',
   'wallet.payment.failedHint': 'Walang lumabas sa wallet mo.',
   'wallet.sendPaste': 'I-paste',
