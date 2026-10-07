@@ -52,11 +52,11 @@ async function seedAda(page: Page, role: 'basis' | 'initiator' = 'basis'): Promi
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/fx/spot', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: '{"spendOverTime":[]}',
+      body: '{"asOf":null,"source":null,"rates":{}}',
     });
   });
   await page.route(/\/me$/, async (route) => {
@@ -378,8 +378,8 @@ test('screen /habit-tracker archive-confirm', async ({ page }) => {
 
 test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
   await seedAda(page);
-  await page.unroute('**/gifts/stats**');
-  await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+  await page.unroute('**/fx/spot');
+  await page.route('**/fx/spot', () => new Promise(() => undefined));
   await stubHabits(page, PUBLIC_LIST);
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
@@ -1025,7 +1025,7 @@ test('Function: postMemberHabit — the owner logs the open period through the p
   await expect.poll(() => posted).toContain('"status":"achieved"');
 });
 
-test('Function: useLatestRateDayState — Continue stays disabled until the gift-day rate settles', async ({
+test('Function: useSpotRateState — Continue stays disabled until the spot rate read settles', async ({
   page,
 }) => {
   await seedAda(page);
@@ -1033,12 +1033,12 @@ test('Function: useLatestRateDayState — Continue stays disabled until the gift
   const pending = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/fx/spot', async (route) => {
     await pending;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: '{"spendOverTime":[]}',
+      body: '{"asOf":null,"source":null,"rates":{}}',
     });
   });
   await stubHabits(page, PUBLIC_LIST);
