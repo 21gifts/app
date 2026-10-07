@@ -9,6 +9,13 @@ import { finishWalletOpen } from '@/lib/wallet/wallet-open';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
+ * How the last wallet open of a held-back session ended, so a card that
+ * mounts for that session later (the visitor moved to another screen) still
+ * shows its alert; `null` before any.
+ */
+let lastOutcome: { session: string; problem: 'noPrf' | 'failed' | null } | null = null;
+
+/**
  * Alert pinned by `?visual=balance-locked-…`, honoured only in a Playwright build.
  *
  * @returns The pinned alert, or `null`.
@@ -37,7 +44,9 @@ function pinnedProblem(): 'noPrf' | 'failed' | null {
  * above **Log in**; a dismissed prompt shows **Log in** alone. Under the card,
  * **Log out** (`LogoutButton`, the same control as in the Menu, which is not
  * shown here) ends a held-back session; it is not offered while a fresh
- * login is still opening its wallet. In a
+ * login is still opening its wallet, nor while a new login is in flight on
+ * the card. A card that mounts later for the same held-back session shows
+ * the alert of its last wallet open. In a
  * Playwright build `?visual=balance-locked-prf-unsupported` and
  * `?visual=balance-locked-error` pin those two alerts.
  *
@@ -47,7 +56,13 @@ export function WalletLoginCard(): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const lockedSession = useAuthStore((state) => state.lockedSession);
-  const [problem, setProblem] = useState<'noPrf' | 'failed' | null>(pinnedProblem);
+  const [problem, setProblem] = useState<'noPrf' | 'failed' | null>(
+    () =>
+      pinnedProblem() ??
+      (lastOutcome !== null && lastOutcome.session === useAuthStore.getState().lockedSession
+        ? lastOutcome.problem
+        : null),
+  );
 
   useEffect(() => {
     if (session === null) {
@@ -56,14 +71,21 @@ export function WalletLoginCard(): ReactElement {
     let live = true;
     setProblem(null);
     void finishWalletOpen().then((outcome) => {
-      if (outcome === 'open' || useAuthStore.getState().session !== session) {
+      if (outcome === 'open') {
         return;
       }
-      // Hold the session back even when the card has unmounted meanwhile;
-      // only the alert belongs to this card.
-      useAuthStore.getState().lockSession();
+      const state = useAuthStore.getState();
+      if (state.session === session) {
+        // Hold the session back even when the card has unmounted meanwhile.
+        state.lockSession();
+      } else if (state.lockedSession !== session) {
+        // Another session took over; this outcome is not about it.
+        return;
+      }
+      const next = outcome === 'cancelled' ? null : outcome;
+      lastOutcome = { session, problem: next };
       if (live) {
-        setProblem(outcome === 'cancelled' ? null : outcome);
+        setProblem(next);
       }
     });
     return () => {
@@ -78,12 +100,15 @@ export function WalletLoginCard(): ReactElement {
           {t(problem === 'noPrf' ? 'wallet.prfUnsupported' : 'login.error')}
         </p>
       )}
-      <LoginCard />
-      {lockedSession === null ? null : (
-        <div className="w-full max-w-xs">
-          <LogoutButton />
-        </div>
-      )}
+      <LoginCard
+        footer={
+          lockedSession === null ? undefined : (
+            <div className="w-full max-w-xs">
+              <LogoutButton />
+            </div>
+          )
+        }
+      />
     </div>
   );
 }

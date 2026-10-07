@@ -7,6 +7,7 @@ import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser, openInSystemBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { Account } from '@/lib/api-types';
 
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 
@@ -80,6 +81,21 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
+  it('shows the footer only while nothing is starting and nobody is signed in', () => {
+    const footer = <p>footer-slot</p>;
+    const first = renderWithLocale(<LoginCard footer={footer} />);
+    expect(screen.getByText('footer-slot')).toBeTruthy();
+    first.unmount();
+    mockPasskey('starting');
+    const second = renderWithLocale(<LoginCard footer={footer} />);
+    expect(screen.queryByText('footer-slot')).toBeNull();
+    second.unmount();
+    mockPasskey('idle');
+    useAuthStore.setState({ session: 'tok', account: { id: 'a' } as Account });
+    renderWithLocale(<LoginCard footer={footer} />);
+    expect(screen.queryByText('footer-slot')).toBeNull();
+  });
+
   it('shows the installed iOS version when the phone is below iOS 18', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
