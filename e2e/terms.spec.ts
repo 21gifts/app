@@ -102,4 +102,9 @@ test('Function: RulesSetup links the Terms of Use on the last chapter only', asy
   await page.getByRole('link', { name: 'Terms of Use' }).click();
   await expect(page).toHaveURL(/\/terms$/);
   await expect(page.getByRole('heading', { name: 'Wallet and data' })).toBeVisible();
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(/\/setup\/rules$/);
+  await expect(page.getByRole('heading', { name: 'Our house' })).toBeVisible();
+  await expect(page.getByText('9 of 9')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'I agree to these rules' })).toBeVisible();
 });
