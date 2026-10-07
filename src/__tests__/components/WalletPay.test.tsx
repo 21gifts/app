@@ -25,7 +25,7 @@ function hookWith(
   feeSats: number | null = 0,
   missingSats: number | null = null,
 ): UseWalletPayResult {
-  const result = { view, feeSats, missingSats, unlock: vi.fn(), pay: vi.fn(), retry: vi.fn() };
+  const result = { view, feeSats, missingSats, pay: vi.fn(), retry: vi.fn() };
   vi.mocked(useWalletPay).mockReturnValue(result);
   return result;
 }
@@ -71,22 +71,7 @@ describe('WalletPay', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(hook.retry).toHaveBeenCalledTimes(1);
-    expect(hook.unlock).not.toHaveBeenCalled();
     expect(hook.pay).not.toHaveBeenCalled();
-  });
-
-  it('says this phone or browser cannot hold a wallet and Try again retries', () => {
-    const hook = hookWith('prfUnsupported');
-    renderPay();
-    expect(screen.getByRole('alert').textContent).toBe(
-      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
-    );
-    expect(
-      screen.queryByText('Your wallet could not prepare this payment. Please try again.'),
-    ).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(hook.retry).toHaveBeenCalledTimes(1);
-    expect(hook.unlock).not.toHaveBeenCalled();
   });
 
   it('renders the inline setup note when background setup failed', () => {
@@ -95,27 +80,6 @@ describe('WalletPay', () => {
     expect(screen.getByRole('alert').textContent).toBe('setup failed');
     expect(screen.queryByRole('status')).toBeNull();
     expect(hook.retry).not.toHaveBeenCalled();
-  });
-
-  it('offers Unlock and pay with the amount and its fiat as the only button', () => {
-    const hook = hookWith('unlock');
-    renderPay();
-    const button = screen.getByRole('button', { name: /^Unlock and pay ₿21/ });
-    expect(button.textContent).toBe('Unlock and pay ₿21 · $0.02');
-    expect(button.children).toHaveLength(1);
-    fireEvent.click(button);
-    expect(hook.unlock).toHaveBeenCalledTimes(1);
-    expect(hook.pay).not.toHaveBeenCalled();
-    expect(screen.getAllByRole('button')).toHaveLength(1);
-    expect(screen.queryByText('Unlock wallet')).toBeNull();
-  });
-
-  it('shows Unlock and pay without fiat while no rate is known', () => {
-    hookWith('unlock');
-    renderWithLocale(
-      <WalletPay sparkInvoice="spark1x" pr="lnbc210n1x" amountSats={21} rateDay={null} />,
-    );
-    expect(screen.getByRole('button').textContent).toBe('Unlock and pay ₿21');
   });
 
   it('shows checking and paying as status lines without buttons', () => {
@@ -169,18 +133,12 @@ describe('WalletPay', () => {
     expect(screen.getByRole('button').textContent).toBe('Pay ₿21 and post');
   });
 
-  it('keeps Unlock and pay on the posting fee while the wallet is locked', () => {
-    hookWith('unlock');
+  it('keeps Send when no rate is known', () => {
+    hookWith('confirm', 0);
     renderWithLocale(
-      <WalletPay
-        sparkInvoice="spark1x"
-        pr="lnbc210n1x"
-        amountSats={21}
-        rateDay={RATE_DAY}
-        postsOnPay
-      />,
+      <WalletPay sparkInvoice="spark1x" pr="lnbc210n1x" amountSats={21} rateDay={null} />,
     );
-    expect(screen.getByRole('button').textContent).toBe('Unlock and pay ₿21 · $0.02');
+    expect(screen.getByRole('button').textContent).toBe('Send');
   });
 
   it('says the balance is too low and shows the own address and QR to add funds', () => {

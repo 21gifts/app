@@ -18,10 +18,11 @@ vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
 vi.mock('@/components/WalletBalance', () => ({
-  WalletBalance: ({ status, onUnlock }: { status: string; onUnlock: () => void }) => (
-    <button type="button" onClick={onUnlock}>
+  WalletBalance: ({ status, setupFailed }: { status: string; setupFailed?: boolean }) => (
+    <p>
       Wallet {status}
-    </button>
+      {setupFailed === true ? ' setup failed' : ''}
+    </p>
   ),
 }));
 
@@ -52,7 +53,7 @@ const DEPOSIT = '9bc2f53d';
 const WITHDRAW = '71a0b382';
 
 function walletWith(status: UseWalletResult['status']): UseWalletResult {
-  return { status, balanceSats: null, unlock: vi.fn(), retry: vi.fn(), prfUnsupported: false };
+  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false, canReceive: true };
 }
 
 function show(state: WalletPaymentState): void {
@@ -94,11 +95,9 @@ describe('WalletPaymentDetails', () => {
   });
 
   it('shows the wallet state while the wallet is not open, and says not found without a wallet here', () => {
-    const locked = walletWith('locked');
-    vi.mocked(useWallet).mockReturnValue(locked);
+    vi.mocked(useWallet).mockReturnValue(walletWith('connecting'));
     show({ status: 'loading' });
-    fireEvent.click(screen.getByRole('button', { name: 'Wallet locked' }));
-    expect(locked.unlock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Wallet connecting')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     cleanup();
     vi.mocked(useWallet).mockReturnValue(walletWith('disabled'));
@@ -284,6 +283,6 @@ describe('WalletPaymentDetails', () => {
     vi.mocked(useWallet).mockReturnValue(walletWith('error'));
     showPayment(fixture(ZAP));
     expect(screen.queryByText("+₿2'100")).toBeNull();
-    expect(screen.getByRole('button', { name: 'Wallet error' })).toBeTruthy();
+    expect(screen.getByText('Wallet error')).toBeTruthy();
   });
 });

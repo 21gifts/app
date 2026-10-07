@@ -52,7 +52,7 @@ const RATE_DAY_STATS = {
   },
 };
 
-/** Signs in Ada, an account that could unlock the in-app wallet. */
+/** Signs in Ada, whose seed passkey owns the in-app wallet. */
 async function signInAda(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -171,7 +171,7 @@ async function openPaySheet(page: Page, visual: string | null): Promise<void> {
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await replyCard.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText(/^Pay ₿21\b/)).toBeVisible();
+  await expect(page.locator('[data-pay-sheet] > p').first()).toHaveText('Pay ₿21 · $0.02');
 }
 
 test('wallet pay: key unset shows only the unavailable wallet sentence', async ({ page }) => {
@@ -188,7 +188,6 @@ test('wallet pay: key unset shows only the unavailable wallet sentence', async (
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Unlock and pay/ })).toHaveCount(0);
   expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
 });
 
@@ -216,18 +215,15 @@ test('wallet pay: unavailable pin shows the unavailable wallet sentence', async 
   await expect(page.locator('[data-pay-sheet]').getByRole('status')).toHaveText(UNAVAILABLE);
 });
 
-test('wallet pay: locked wallet offers one Unlock and pay button and nothing else', async ({
-  page,
-}) => {
+test('wallet pay confirm shows Send without another wallet fallback', async ({ page }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);
-  await openPaySheet(page, 'wallet-pay-unlock');
+  await page.goto('/wallet?visual=balance-ready');
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toBeVisible();
+
+  await openPaySheet(page, 'wallet-pay-confirm');
   const sheet = page.locator('[data-pay-sheet]');
-  await expect(sheet.getByRole('button', { name: /^Unlock and pay ₿21/ })).toHaveText(
-    'Unlock and pay ₿21 · $0.02',
-  );
-  await expect(sheet.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
-  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
@@ -324,35 +320,6 @@ test('Function: WalletPay — confirm pin shows Send and no wallet app link', as
   await openPaySheet(page, 'wallet-pay-confirm');
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
-});
-
-test('Function: WalletPay — locked pin shows one Unlock and pay button with the amount and fiat', async ({
-  page,
-}) => {
-  await signInAda(page);
-  await stubPayableReply(page, null);
-  await openPaySheet(page, 'wallet-pay-unlock');
-  const sheet = page.locator('[data-pay-sheet]');
-  await expect(sheet.getByRole('button', { name: /^Unlock and pay ₿21/ })).toHaveText(
-    'Unlock and pay ₿21 · $0.02',
-  );
-  await expect(sheet.getByRole('button', { name: 'Close' })).toBeVisible();
-  await expect(sheet.getByRole('button')).toHaveCount(2);
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-});
-
-test('Function: useWalletPay — a tap on the pinned Unlock and pay neither prompts nor pays', async ({
-  page,
-}) => {
-  await signInAda(page);
-  await stubPayableReply(page, SPARK_INVOICE);
-  await openPaySheet(page, 'wallet-pay-unlock');
-  const sheet = page.locator('[data-pay-sheet]');
-  const button = sheet.getByRole('button', { name: /^Unlock and pay ₿21/ });
-  await button.click();
-  await expect(button).toBeVisible();
-  await expect(sheet.getByText('Checking your wallet…')).toHaveCount(0);
-  await expect(sheet.getByText('Paying from your wallet…')).toHaveCount(0);
 });
 
 test('Function: WalletPay — insufficient pin shows the missing amount above the own address and QR', async ({

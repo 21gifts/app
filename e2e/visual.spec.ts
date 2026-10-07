@@ -1997,7 +1997,7 @@ test.describe('screen baselines', () => {
     await page.goto(
       '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-locked',
     );
-    await expect(page.getByText('Unlock wallet').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-locked');
   });
 
@@ -2025,9 +2025,10 @@ test.describe('screen baselines', () => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
     await page.goto(
-      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-prf-unsupported',
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-locked-prf-unsupported',
     );
     await expect(page.getByRole('alert').filter({ hasText: /phone or browser/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-prf-unsupported');
   });
 
@@ -2421,11 +2422,10 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-failed');
   });
 
-  test('wallet send-alert-locked', async ({ page }) => {
+  test('wallet send-alert-not-ready', async ({ page }) => {
     await seedWalletSend(page);
-    await page.goto('/wallet?visual=send-alert-locked');
+    await page.goto('/wallet?visual=send-alert-not-ready');
     await expectPinnedSend(page);
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
     await expect(
       send.getByText('The payment could not be sent. Check your balance before you try again.'),
@@ -2434,7 +2434,7 @@ test.describe('screen baselines', () => {
       0,
     );
     await expect(send.getByRole('button', { name: 'Continue' })).toHaveCount(0);
-    await shotScreen(page, 'state-wallet-send-alert-locked');
+    await shotScreen(page, 'state-wallet-send-alert-not-ready');
   });
 
   test('wallet send-insufficient', async ({ page }) => {
@@ -2863,11 +2863,10 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-welcome-wallet-send-failed');
   });
 
-  test('welcome wallet-send-alert-locked', async ({ page }) => {
+  test('welcome wallet-send-alert-not-ready', async ({ page }) => {
     await seedWalletSend(page);
-    await page.goto('/welcome?visual=send-alert-locked');
+    await page.goto('/welcome?visual=send-alert-not-ready');
     await expectPinnedSend(page);
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
     await expect(
       send.getByText('The payment could not be sent. Check your balance before you try again.'),
@@ -2876,7 +2875,7 @@ test.describe('screen baselines', () => {
       0,
     );
     await expect(send.getByRole('button', { name: 'Continue' })).toHaveCount(0);
-    await shotScreen(page, 'state-welcome-wallet-send-alert-locked');
+    await shotScreen(page, 'state-welcome-wallet-send-alert-not-ready');
   });
 
   test('welcome wallet-send-insufficient', async ({ page }) => {

@@ -98,7 +98,7 @@ function PanelChromeBack({ onBack }: { onBack: () => void }): null {
  * **Receive** (left) and **Send** (right) in the shell footer
  * (`WalletFooterActions`, the same buttons as `/wallet`), outside the
  * scrollport, so they stay while the feed scrolls. Send is enabled while the
- * wallet is ready or locked (locked: the existing unlock runs first). Either
+ * wallet is ready, and Receive once the account's address is registered. Either
  * opens a full-screen view over `/welcome` (in-page state from
  * `useWalletPanel`, not a route): the column stays mounted but hidden, the
  * footer buttons hide, and the feed's scroll position comes back on close.

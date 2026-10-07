@@ -1,29 +1,28 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getE2eNow } from '@/lib/config';
 import { visualPin } from '@/lib/visual-pin';
 
-const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+vi.mock('@/lib/config', () => ({ getE2eNow: vi.fn() }));
 
-afterEach(() => {
-  if (ORIGINAL_E2E_NOW === undefined) {
-    delete process.env.NEXT_PUBLIC_E2E_NOW;
-  } else {
-    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
-  }
-  window.history.replaceState({}, '', '/');
+beforeEach(() => {
+  window.history.replaceState({}, '', '/wallet');
+  vi.mocked(getE2eNow).mockReset().mockReturnValue(null);
 });
 
 describe('visualPin', () => {
-  it('reads the ?visual= pin in a Playwright build', () => {
-    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
-    window.history.replaceState({}, '', '/welcome?visual=send-input');
-    expect(visualPin()).toBe('send-input');
-    window.history.replaceState({}, '', '/welcome');
+  it('reads the visual parameter in a Playwright build', () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/wallet?visual=balance-ready');
+    expect(visualPin()).toBe('balance-ready');
+  });
+
+  it('returns null without a visual parameter', () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
     expect(visualPin()).toBeNull();
   });
 
-  it('ignores the pin in a deployed build', () => {
-    delete process.env.NEXT_PUBLIC_E2E_NOW;
-    window.history.replaceState({}, '', '/welcome?visual=send-input');
+  it('ignores visual parameters in a production build', () => {
+    window.history.replaceState({}, '', '/wallet?visual=balance-ready');
     expect(visualPin()).toBeNull();
   });
 });

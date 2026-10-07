@@ -30,8 +30,8 @@ function sendWith(
   };
 }
 
-function walletWith(status: UseWalletResult['status'], unlock = vi.fn()): UseWalletResult {
-  return { status, balanceSats: null, unlock, retry: vi.fn(), prfUnsupported: false };
+function walletWith(status: UseWalletResult['status'], canReceive = true): UseWalletResult {
+  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false, canReceive };
 }
 
 const CONFIRM: WalletSendState = { step: 'confirm', recipient: 'r', amountSats: 1, feeSats: 0 };
@@ -111,10 +111,9 @@ describe('useWalletPanel open and Back', () => {
     expect(result.current.shown).toBe('send');
   });
 
-  it('enables Send only for a send flow while the wallet is ready or locked', () => {
+  it('enables Send only for a send flow while the wallet is ready', () => {
     const cases = [
       ['ready', true, false],
-      ['locked', true, false],
       ['connecting', true, true],
       ['error', true, true],
       ['disabled', true, true],
@@ -130,6 +129,17 @@ describe('useWalletPanel open and Back', () => {
     }
     const { result } = renderPanel({ send: sendWith(), wallet: undefined });
     expect(result.current.sendDisabled).toBe(true);
+  });
+
+  it('disables Receive while the account address is not registered yet', () => {
+    const blocked = renderPanel({ send: sendWith(), wallet: walletWith('connecting', false) });
+    expect(blocked.result.current.receiveDisabled).toBe(true);
+    blocked.unmount();
+    const open = renderPanel({ send: sendWith(), wallet: walletWith('ready') });
+    expect(open.result.current.receiveDisabled).toBe(false);
+    open.unmount();
+    const none = renderPanel({ send: sendWith(), wallet: undefined });
+    expect(none.result.current.receiveDisabled).toBe(false);
   });
 
   it('Back in Send closes an open step first, then clears the text and returns to the page', () => {
@@ -167,7 +177,7 @@ describe('useWalletPanel open and Back', () => {
     const wallet = walletWith('ready');
     const { result, rerender } = renderPanel({
       send: sendWith({ step: 'input', error: 'notReady' }),
-      wallet: walletWith('locked'),
+      wallet: walletWith('connecting'),
     });
     expect(result.current.shown).toBe('send');
     rerender({ send: sendWith({ step: 'sent', amountSats: 1, recipient: 'r' }), wallet });
@@ -181,62 +191,6 @@ describe('useWalletPanel open and Back', () => {
     rerender({ send: sendWith(), wallet: walletWith('connecting') });
     expect(result.current.shown).toBe('none');
     rerender({ send: sendWith(), wallet });
-    expect(result.current.shown).toBe('none');
-  });
-});
-
-describe('useWalletPanel locked wallet', () => {
-  it('runs the unlock and opens Send once the wallet is ready', () => {
-    const unlock = vi.fn();
-    const send = sendWith();
-    const { result, rerender } = renderPanel({ send, wallet: walletWith('locked', unlock) });
-    act(() => {
-      result.current.openSend();
-    });
-    expect(unlock).toHaveBeenCalledTimes(1);
-    expect(result.current.shown).toBe('none');
-    rerender({ send, wallet: walletWith('connecting', unlock) });
-    expect(result.current.shown).toBe('none');
-    rerender({ send, wallet: walletWith('ready', unlock) });
-    expect(result.current.shown).toBe('send');
-  });
-
-  it('opens nothing after an unlock that fails or is dismissed', () => {
-    const send = sendWith();
-    const failed = renderPanel({ send, wallet: walletWith('locked') });
-    act(() => {
-      failed.result.current.openSend();
-    });
-    failed.rerender({ send, wallet: walletWith('error') });
-    failed.rerender({ send, wallet: walletWith('ready') });
-    expect(failed.result.current.shown).toBe('none');
-    failed.unmount();
-
-    const dismissed = renderPanel({ send, wallet: walletWith('locked') });
-    act(() => {
-      dismissed.result.current.openSend();
-    });
-    dismissed.rerender({ send, wallet: walletWith('connecting') });
-    dismissed.rerender({ send, wallet: walletWith('locked') });
-    dismissed.rerender({ send, wallet: walletWith('ready') });
-    expect(dismissed.result.current.shown).toBe('none');
-  });
-
-  it('keeps waiting while the status stays locked, and close drops the wait', () => {
-    const send = sendWith();
-    const { result, rerender } = renderPanel({ send, wallet: walletWith('locked') });
-    act(() => {
-      result.current.openSend();
-    });
-    rerender({
-      send: sendWith({ step: 'amount', target: CONFIRM as never, amountError: false }),
-      wallet: walletWith('locked'),
-    });
-    rerender({ send, wallet: walletWith('locked') });
-    act(() => {
-      result.current.close();
-    });
-    rerender({ send, wallet: walletWith('ready') });
     expect(result.current.shown).toBe('none');
   });
 });
@@ -263,7 +217,7 @@ describe('useWalletPanel focus', () => {
   });
 });
 
-describe('useWalletPanel manual entry and pending unlock', () => {
+describe('useWalletPanel manual entry and readiness', () => {
   it('closes the sheet when the wallet stops being ready, so Back takes no invisible step', () => {
     const send = sendWith({ step: 'input', error: 'notReady' });
     const { result, rerender } = renderPanel({ send, wallet: walletWith('ready') });
@@ -277,20 +231,6 @@ describe('useWalletPanel manual entry and pending unlock', () => {
       result.current.stepBack();
     });
     expect(send.setText).toHaveBeenCalledWith('');
-  });
-
-  it('drops a pending unlock-then-Send when Receive is chosen meanwhile', () => {
-    const send = sendWith();
-    const { result, rerender } = renderPanel({ send, wallet: walletWith('locked') });
-    act(() => {
-      result.current.openSend();
-    });
-    rerender({ send, wallet: walletWith('connecting') });
-    act(() => {
-      result.current.openReceive();
-    });
-    rerender({ send, wallet: walletWith('ready') });
-    expect(result.current.shown).toBe('receive');
   });
 });
 

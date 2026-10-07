@@ -17,7 +17,6 @@ import { getCatalog } from '@/lib/messages';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
 import {
   SPARK_INVOICE,
@@ -33,12 +32,6 @@ function paySend(): HTMLElement | null {
     null
   );
 }
-
-vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
-  return { ...actual, unlockWalletPhrase: vi.fn() };
-});
-
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
   return { ...actual, payFromWallet: vi.fn() };
@@ -3743,7 +3736,6 @@ describe('InboxScreen in-app wallet pay', () => {
     });
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expectWalletOnly();
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
   });
 
   it('pays the payment request from the wallet without a sparkInvoice', async () => {
@@ -3754,50 +3746,6 @@ describe('InboxScreen in-app wallet pay', () => {
     });
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1test' });
     expectWalletOnly();
-  });
-
-  function unlockSetsReady(): void {
-    setWalletUsable('locked');
-    vi.mocked(unlockWalletPhrase)
-      .mockReset()
-      .mockImplementation(async () => {
-        setWalletUsable('ready');
-        return 'unlocked';
-      });
-  }
-
-  it('unlocks and pays with one tap and one passkey prompt when the fee is ₿0', async () => {
-    unlockSetsReady();
-    const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
-    renderWithLocale(inbox(SPARK_INVOICE));
-    expect(payFromWallet).not.toHaveBeenCalled();
-    expect(paySend()).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
-    expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
-    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
-    expect(payFromWallet).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledTimes(1);
-    expect(paySend()).toBeNull();
-  });
-
-  it('unlocks with one tap and stops at the fee and Send when the fee is above ₿0', async () => {
-    unlockSetsReady();
-    const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 21,
-      feeSats: 3,
-      send,
-    });
-    renderWithLocale(inbox(SPARK_INVOICE));
-    fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
-    await waitFor(() => {
-      expect(paySend()).not.toBeNull();
-    });
-    expect(screen.getByText(/Fee ₿3/)).toBeTruthy();
-    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
-    expect(send).not.toHaveBeenCalled();
   });
 
   it('offers Try again when the wallet failed, and no other way to pay', () => {

@@ -571,10 +571,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
-    id: 'send-alert-locked',
-    image: 'wallet-send-alert-locked.png',
-    visual: 'state-wallet-send-alert-locked',
-    needle: "shotScreen(page, 'state-wallet-send-alert-locked')",
+    id: 'send-alert-not-ready',
+    image: 'wallet-send-alert-not-ready.png',
+    visual: 'state-wallet-send-alert-not-ready',
+    needle: "shotScreen(page, 'state-wallet-send-alert-not-ready')",
   },
   {
     route: '/wallet',
@@ -1125,10 +1125,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'wallet-send-alert-locked',
-    image: 'welcome-wallet-send-alert-locked.png',
-    visual: 'state-welcome-wallet-send-alert-locked',
-    needle: "shotScreen(page, 'state-welcome-wallet-send-alert-locked')",
+    id: 'wallet-send-alert-not-ready',
+    image: 'welcome-wallet-send-alert-not-ready.png',
+    visual: 'state-welcome-wallet-send-alert-not-ready',
+    needle: "shotScreen(page, 'state-welcome-wallet-send-alert-not-ready')",
   },
   {
     route: '/welcome',
