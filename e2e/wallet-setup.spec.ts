@@ -181,7 +181,7 @@ test.describe('wallet setup in the background', () => {
     await expect(note).toBeVisible();
     await expect(note.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeDisabled();
   });
 
   test('pos-setup-failed pin shows the setup note instead of the wallet link', async ({ page }) => {
@@ -265,7 +265,7 @@ test.describe('wallet setup in the background', () => {
   }) => {
     await signIn(page);
     await openWallet(page);
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
