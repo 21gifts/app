@@ -19519,6 +19519,14 @@ test.describe('welcome forum variants', () => {
   test('welcome menu-header-photo', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
+    // The photo shows only with a complete load, so the totals must be readable too.
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
     await page.route(/\/pictures\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
