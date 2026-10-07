@@ -449,6 +449,7 @@ flowchart TB
 | Settings             | `Settings`                    | `/settings` — Wallet section: Recovery phrase, or Add recovery phrase     |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                  |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                            |
+| Statistics           | `BarChart3`                   | `/statistics` — every signed-in account                                   |
 | Moderation           | `Shield`                      | `/moderate` — moderator only                                              |
 | Notifications        | `Bell`                        | `/notifications` — unread count `ml-auto` only when greater than zero     |
 | Messages             | `Inbox`                       | `/messages` — unread count `ml-auto` only when greater than zero          |
