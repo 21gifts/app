@@ -612,6 +612,12 @@ An id the wallet does not know: only **This payment could not be found.**
 
 ![21.gifts wallet payment not found](images/wallet-payment-missing.png)
 
+### Variant: load-error
+
+The wallet is open but reading the payment failed (Playwright pin `?visual=history-error`): **This payment could not be loaded. Please try again.** in the danger colour, and **Try again**.
+
+![21.gifts wallet payment load error](images/wallet-payment-load-error.png)
+
 ### Variant: copied
 
 The deposit after **Copy** on **Payment ID**: that row's icon turns into a green check for two seconds (and a screen reader hears **Copied**).

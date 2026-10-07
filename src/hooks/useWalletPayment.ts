@@ -9,16 +9,36 @@ import { useWalletStore } from '@/stores/wallet-store';
 
 /** Load state of one payment. */
 export type WalletPaymentState =
-  { status: 'loading' } | { status: 'ready'; payment: WalletPayment } | { status: 'missing' };
+  | { status: 'loading' }
+  | { status: 'ready'; payment: WalletPayment }
+  | { status: 'missing' }
+  | { status: 'error'; retry: () => void };
 
 /**
- * The fixture payment under the `?visual=history-rows` pin (Playwright builds only).
+ * Whether a failed read means the wallet has no Bitcoin payment with that id:
+ * the SDK's not-found answer, or a token payment (not shown, like the list).
+ *
+ * @param error - What the read threw.
+ * @returns `true` for an unknown id, `false` for any other failure.
+ */
+function isUnknownPayment(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message === 'wallet-payment-not-bitcoin' || /not found/i.test(message);
+}
+
+/**
+ * The fixture payment under the `?visual=history-rows` pin, and a failed read
+ * under `?visual=history-error` (Playwright builds only).
  *
  * @param id - Payment id from the address.
- * @returns The pinned state, or `null` without the pin.
+ * @returns The pinned state, or `null` without either pin.
  */
 function pinnedPayment(id: string | null): WalletPaymentState | null {
-  if (visualPin() !== 'history-rows') {
+  const pin = visualPin();
+  if (pin === 'history-error') {
+    return { status: 'error', retry: () => undefined };
+  }
+  if (pin !== 'history-rows') {
     return null;
   }
   const payment = WALLET_PAYMENT_FIXTURES.find((entry) => entry.id === id);
@@ -30,12 +50,14 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
 /**
  * Loads one payment of the connected wallet by id once the wallet is ready,
  * and again after each wallet sync, so a pending payment updates in place. A
- * missing id or a payment the wallet does not know is `missing`; a later read
+ * missing id or a payment the wallet does not know is `missing`; any other
+ * failed read is `error` with a `retry` that reads again; a later read
  * of the same id that fails keeps the payment already shown, and a wallet that
  * stops being ready drops it back to `loading`. The state belongs
  * to one id: another id starts at `loading` and never shows the previous
  * payment. Under the `?visual=history-rows` pin (Playwright builds only) it
- * shows the fixture payment with that id.
+ * shows the fixture payment with that id, and under `?visual=history-error`
+ * a failed read.
  *
  * @param id - SDK payment id, or `null` when the address has none.
  * @returns The payment state.
@@ -44,6 +66,7 @@ export function useWalletPayment(id: string | null): WalletPaymentState {
   const ready = useWalletStore((state) => state.status === 'ready');
   const syncCount = useWalletStore((state) => state.syncCount);
   const pinned = useMemo(() => pinnedPayment(id), [id]);
+  const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<{ id: string | null; state: WalletPaymentState }>({
     id,
     state: { status: 'loading' },
@@ -69,12 +92,19 @@ export function useWalletPayment(id: string | null): WalletPaymentState {
           setLoaded({ id, state: { status: 'ready', payment } });
         }
       },
-      () => {
+      (error: unknown) => {
         if (live) {
+          const failed: WalletPaymentState = isUnknownPayment(error)
+            ? { status: 'missing' }
+            : {
+                status: 'error',
+                retry: () => {
+                  setLoaded({ id, state: { status: 'loading' } });
+                  setAttempt((count) => count + 1);
+                },
+              };
           setLoaded((current) =>
-            current.id === id && current.state.status === 'ready'
-              ? current
-              : { id, state: { status: 'missing' } },
+            current.id === id && current.state.status === 'ready' ? current : { id, state: failed },
           );
         }
       },
@@ -82,7 +112,7 @@ export function useWalletPayment(id: string | null): WalletPaymentState {
     return () => {
       live = false;
     };
-  }, [pinned, id, ready, syncCount]);
+  }, [pinned, id, ready, syncCount, attempt]);
 
   if (pinned !== null) {
     return pinned;
