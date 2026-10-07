@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppShell } from '@/components/AppShell';
+import { AppShell, AppShellContext } from '@/components/AppShell';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
@@ -56,6 +56,13 @@ vi.mock('next/link', () => ({
   ),
 }));
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+vi.mock('@/components/MenuAccountHeader', () => ({
+  MenuAccountHeader: ({ tight, onNavigate }: { tight: boolean; onNavigate: () => void }) => (
+    <button type="button" onClick={onNavigate}>
+      {tight ? 'Account header tight' : 'Account header'}
+    </button>
+  ),
+}));
 vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
@@ -239,37 +246,38 @@ function follows(earlier: Node, later: Node): boolean {
   return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 }
 
-/** Wallet links outside the Menu panel: the header wallet button only. */
-function headerWalletLinks(): HTMLElement[] {
-  return screen
-    .queryAllByRole('link', { name: 'Wallet' })
-    .filter((link) => !menuPanel().contains(link));
-}
-
 describe('SignedInChrome', () => {
-  it('shows no header wallet button while this build has no wallet', () => {
-    renderWithLocale(<SignedInChrome />);
-    expect(headerWalletLinks()).toEqual([]);
-  });
-
-  it('places the header wallet button just left of Menu when the wallet is set up', () => {
+  it('shows no wallet control outside the Menu', () => {
     const account = useAuthStore.getState().account!;
     useAuthStore.setState({
       account: { ...account, walletRequired: true, passkeyCredentialId: 'credential' },
     });
-    useWalletStore.setState({ status: 'locked', balanceSats: null });
+    useWalletStore.setState({ status: 'ready', balanceSats: 21_000 });
     try {
       renderWithLocale(<SignedInChrome />);
-      const [wallet] = headerWalletLinks();
-      expect(headerWalletLinks()).toHaveLength(1);
-      expect(wallet?.getAttribute('href')).toBe('/wallet');
-      expect(
-        wallet?.nextElementSibling?.contains(screen.getByRole('button', { name: 'Menu' })),
-      ).toBe(true);
-      expectMenuClosed();
+      expect(screen.queryAllByRole('link').filter((link) => !menuPanel().contains(link))).toEqual(
+        [],
+      );
     } finally {
       useWalletStore.getState().reset();
     }
+  });
+
+  it('starts the Menu with the account header and a divider, mounted while closed, and its link closes the Menu', () => {
+    renderWithLocale(<SignedInChrome />);
+    const header = screen.getByRole('button', { name: 'Account header', hidden: true });
+    expect(menuPanel().firstElementChild).toBe(header);
+    expect((header.nextElementSibling as HTMLElement).className).toContain('border-t');
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('button', { name: 'Account header' }));
+    expectMenuClosed();
+  });
+
+  it('leaves the account header out before the account is loaded', () => {
+    useAuthStore.setState({ account: null });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('button', { name: 'Account header', hidden: true })).toBeNull();
   });
 
   it('shows Menu while Log out stays hidden', () => {
@@ -306,11 +314,14 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
     expect(screen.getByRole('link', { name: 'Grants' }).getAttribute('href')).toBe('/grants');
-    expect(screen.getByRole('link', { name: 'Wallet' }).getAttribute('href')).toBe('/wallet');
+    expect(screen.getByRole('link', { name: 'Balance' }).getAttribute('href')).toBe('/wallet');
+    expect(screen.queryByRole('link', { name: 'Wallet' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
-    expect(menuPanel().firstElementChild).toBe(screen.getByRole('link', { name: 'Wallet' }));
-    expect(screen.getByRole('link', { name: 'Wallet' }).nextElementSibling).toBe(
-      screen.getByRole('link', { name: 'Home' }),
+    expect(screen.getByRole('link', { name: 'Home' }).nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Balance' }),
+    );
+    expect(screen.getByRole('link', { name: 'Balance' }).nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Shops' }),
     );
     expect(screen.getByRole('link', { name: 'Grants' }).nextElementSibling).toBe(
       screen.getByRole('link', { name: 'Settings' }),
@@ -667,7 +678,9 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
-    fireEvent.click(screen.getByRole('link', { name: 'Wallet' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Balance' }));
+    expectMenuClosed();
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
     expectMenuClosed();
   });
@@ -1024,7 +1037,10 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
-      expect(document.querySelector('[data-menu-sheet-host]')?.className).toContain('px-8');
+      expect(document.querySelector('[data-menu-sheet-host]')?.className).toContain('px-5');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.hasAttribute('data-scroll-active')).toBe(true);
+      expect(scroller.hasAttribute('data-scroll-active')).toBe(false);
       expect(panel.className).toContain('w-full');
       expect(panel.className).not.toContain('absolute');
       expect(document.documentElement.dataset['menuSheet']).toBe('1');
@@ -1037,6 +1053,9 @@ describe('SignedInChrome', () => {
       expect(scroll.read()).toBe(80);
       expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Menu' }));
       expect(menuPanel()).toBe(panel);
+      expect(panel.hasAttribute('data-scrollport')).toBe(false);
+      expect(panel.hasAttribute('data-scroll-active')).toBe(false);
+      expect(scroller.hasAttribute('data-scroll-active')).toBe(true);
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
       expect(panel.className).toContain('hidden');
       expect(panel.className).toContain('w-full');
@@ -1151,6 +1170,50 @@ describe('SignedInChrome', () => {
     }
   });
 
+  it('binds the new sheet as the scrollport when an open compact menu crosses to narrow', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return { top: 0, bottom: 751, toJSON: () => ({}) } as DOMRect;
+    };
+    const host = document.createElement('div');
+    host.setAttribute('data-menu-sheet-host', '');
+    document.body.append(host);
+    const shell = (frameWidth: number): React.ReactElement => (
+      <AppShellContext.Provider
+        value={
+          { frameWidth, scrollerEl: null } as unknown as NonNullable<
+            React.ContextType<typeof AppShellContext>
+          >
+        }
+      >
+        <SignedInChrome />
+      </AppShellContext.Provider>
+    );
+    try {
+      const { rerender } = renderWithLocale(shell(800));
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const wide = menuPanel();
+      expect(wide.className).toContain('max-h-[calc(var(--app-height)-6rem)]');
+      expect(wide.hasAttribute('data-scroll-active')).toBe(true);
+      rerender(shell(400));
+      const sheet = menuPanel();
+      expect(sheet).not.toBe(wide);
+      expect(host.contains(sheet)).toBe(true);
+      expect(sheet.hasAttribute('data-scroll-active')).toBe(true);
+      expect(wide.hasAttribute('data-scroll-active')).toBe(false);
+    } finally {
+      host.remove();
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
   it('drops the wide menu outer spacing when it would stick out of a 720px window', () => {
     const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     const previousRect = HTMLElement.prototype.getBoundingClientRect;
@@ -1187,7 +1250,9 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('absolute');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('overflow-auto');
-      expect(panel.className).not.toContain('max-h-');
+      // Compact is capped at the window and becomes the bound scrollport.
+      expect(panel.className).toContain('max-h-[calc(var(--app-height)-6rem)]');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       bottom = 700;
@@ -1276,7 +1341,7 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
       expect(panel.className).not.toContain('overflow-y-auto');
-      expect(panel.className).not.toContain('max-h-');
+      expect(panel.className).toContain('max-h-[calc(var(--app-height)-6rem)]');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
     } finally {
       if (previousInnerHeight === undefined) {

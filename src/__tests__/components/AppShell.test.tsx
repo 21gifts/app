@@ -195,7 +195,7 @@ describe('AppShell', () => {
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');
     expect(main?.className).not.toContain('overflow-hidden');
-    expect(main?.className).toContain('py-4');
+    expect(main?.className).toContain('px-3 max-[359px]:px-2 py-2');
     expect(main?.className).not.toContain('min-h-screen');
     expect(main?.className).not.toContain('h-svh');
 
@@ -213,6 +213,13 @@ describe('AppShell', () => {
     expect(scroller?.className).toContain('min-h-0');
     expect(footer).toBeTruthy();
     expect(footer?.previousElementSibling).toBe(scroller);
+    expect(footer?.className).toContain('px-5 pb-5');
+    expect(header?.className).toContain('px-5');
+    expect(main?.querySelector('[data-app-chrome]')?.className).toContain(
+      'px-5 pt-4 pb-1 max-[359px]:px-3',
+    );
+    expect(main?.querySelector('[data-menu-sheet-host]')?.className).toBe('px-5');
+    expect(main?.querySelector('[data-scroll-page]')?.className).toContain('px-5 py-4');
     expect(scroller?.contains(footer as Node)).toBe(false);
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Title' })).toBeTruthy();
@@ -261,7 +268,7 @@ describe('AppShell', () => {
       const main = container.querySelector('main');
       expect(main?.className).toContain('h-[var(--app-height)]');
       expect(main?.className).not.toContain('overflow-hidden');
-      expect(main?.className).toContain('py-4');
+      expect(main?.className).toContain('py-2');
       expect(main?.className).not.toContain('justify-center');
       const frame = main?.querySelector(':scope > section');
       expect(frame?.className).toContain('rounded-3xl');

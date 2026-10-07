@@ -157,3 +157,20 @@ body {
 html[data-menu-sheet='1'] [data-scroll-page] {
   display: none !important;
 }
+
+/* The open sheet ends above the footer and scrolls inside its own border. */
+html[data-menu-sheet='1'] [data-menu-sheet-host] {
+  height: 100%;
+  padding-bottom: 1.25rem;
+}
+
+html[data-menu-sheet='1'] [data-menu-sheet-host] > #signed-in-menu {
+  max-height: 100%;
+}
+
+/* A full-size layer (the wallet Send camera) fills the visible page port:
+   it is absolute to the port, so the port is its containing block only
+   while such a layer is in the page. */
+[data-scrollport]:has(> [data-scroll-page] [data-port-fill]) {
+  position: relative;
+}

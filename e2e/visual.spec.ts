@@ -257,6 +257,30 @@ const RATE_DAY_STATS = {
   fx: FX_USD,
 };
 
+/** Makes `navigator.clipboard.readText` answer `text`. */
+async function clipboardText(page: Page, text: string): Promise<void> {
+  await page.addInitScript((value) => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { readText: () => Promise.resolve(value), writeText: () => Promise.resolve() },
+    });
+  }, text);
+}
+
+/** Makes `navigator.clipboard.readText` refuse, as a browser that does not allow pasting. */
+async function denyClipboard(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        readText: () =>
+          Promise.reject(new DOMException('Read permission denied.', 'NotAllowedError')),
+        writeText: () => Promise.resolve(),
+      },
+    });
+  });
+}
+
 async function fulfillRateDay(page: Page): Promise<void> {
   await page.route('**/gifts/stats**', async (route) => {
     await route.fulfill({
@@ -1473,136 +1497,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-settings-activate');
   });
 
-  test('settings header wallet balance', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: null,
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-          walletRequired: true,
-          walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
-        }),
-      });
-    });
-    await fulfillRateDay(page);
-    await page.goto('/settings?visual=balance-ready');
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
-      name: "Wallet, balance ₿21'000",
-    });
-    await expect(wallet).toContainText('$21.00');
-    await shotScreen(page, 'state-settings-header-wallet-balance');
-  });
-
-  test('settings header wallet locked', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: null,
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-          walletRequired: true,
-          walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
-        }),
-      });
-    });
-    await page.goto('/settings?visual=balance-locked');
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
-      name: 'Wallet',
-      exact: true,
-    });
-    await expect(wallet).toHaveText('Wallet');
-    await shotScreen(page, 'state-settings-header-wallet-locked');
-  });
-
-  test('settings header wallet balance at 320 px', async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: page.viewportSize()!.height });
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: null,
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-          walletRequired: true,
-          walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
-        }),
-      });
-    });
-    await fulfillRateDay(page);
-    await page.goto('/settings?visual=balance-ready');
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
-      name: "Wallet, balance ₿21'000",
-    });
-    await expect(wallet).toContainText('$21.00');
-    await shotScreen(page, 'state-settings-header-wallet-balance-320');
-  });
-
-  test('settings header wallet locked at 320 px', async ({ page }) => {
-    await page.setViewportSize({ width: 320, height: page.viewportSize()!.height });
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: null,
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-          walletRequired: true,
-          walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
-        }),
-      });
-    });
-    await page.goto('/settings?visual=balance-locked');
-    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
-      name: 'Wallet',
-      exact: true,
-    });
-    await expect(wallet).toHaveText('Wallet');
-    await shotScreen(page, 'state-settings-header-wallet-locked-320');
-  });
-
   test('wallet balance-locked', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -1850,8 +1744,8 @@ test.describe('screen baselines', () => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
     await page.goto('/wallet?visual=history-rows');
-    await expect(page.getByText('Thank you for the coffee')).toBeVisible();
-    await expect(page.getByText('$5.00')).toBeVisible();
+    await expect(page.getByText('Happy birthday!')).toBeVisible();
+    await expect(page.getByText('Great photo!')).toBeVisible();
     await expect(page.getByText('Failed')).toBeVisible();
     await page
       .getByRole('region', { name: 'Payments' })
@@ -1859,6 +1753,156 @@ test.describe('screen baselines', () => {
       .last()
       .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-wallet-history-rows');
+  });
+
+  test('screen-wallet-payment', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
+    await expect(page.getByText('Gift on your post').first()).toBeVisible();
+    await shotScreen(page, 'screen-wallet-payment');
+  });
+
+  test('state-wallet-payment-address-send', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=abe077a7-b1b1-4d5b-ac14-77b6f9684698&visual=history-rows');
+    await expect(page.getByText('Thanks for dinner').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-address-send');
+  });
+
+  test('state-wallet-payment-pending', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=45c2cb5e-be0e-4e6a-bdfa-9b68d5f988c3&visual=history-rows');
+    await expect(
+      page
+        .getByText('Still on its way. The amount stays reserved until it arrives or comes back.')
+        .first(),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-pending');
+  });
+
+  test('state-wallet-payment-failed', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=24c8b87e-0c86-4db2-bcbd-4b6198ad0f62&visual=history-rows');
+    await expect(page.getByText('Nothing left your wallet.').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-failed');
+  });
+
+  test('state-wallet-payment-spark-send', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=df98837c-6a12-4b15-94f8-375c33937a4e&visual=history-rows');
+    await expect(page.getByText('Gift to @alice').first()).toBeVisible();
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('Free')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-spark-send');
+  });
+
+  test('state-wallet-payment-deposit', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=9bc2f53d-fe70-45e8-bc5d-92184b7b0e01&visual=history-rows');
+    await expect(page.getByText('Arrived on-chain').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-deposit');
+  });
+
+  test('state-wallet-payment-withdraw', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=71a0b382-78b2-4caa-9e32-c26615982801&visual=history-rows');
+    await expect(page.getByText('On-chain withdrawal').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-withdraw');
+  });
+
+  test('state-wallet-payment-missing', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=nope&visual=history-rows');
+    await expect(page.getByText('This payment could not be found.').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-missing');
+  });
+
+  test('state-wallet-payment-load-error', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-error');
+    await expect(
+      page.getByText('This payment could not be loaded. Please try again.').first(),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-load-error');
+  });
+
+  test('state-wallet-payment-loading', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    // The rate read never answers, so the screen stays in its loading state.
+    await page.route(/\/gifts\/stats$/, () => undefined);
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
+    await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
+    await expect(page.getByText("+₿2'100")).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-loading');
+  });
+
+  test('state-wallet-payment-locked', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-locked',
+    );
+    await expect(page.getByText('Unlock wallet').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-locked');
+  });
+
+  test('state-wallet-payment-connecting', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-connecting',
+    );
+    await expect(page.getByText('Opening your wallet…').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-connecting');
+  });
+
+  test('state-wallet-payment-error', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-error');
+    await expect(
+      page.getByText('Your wallet could not be opened. Please try again.').first(),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-error');
+  });
+
+  test('state-wallet-payment-prf-unsupported', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-prf-unsupported',
+    );
+    await expect(page.getByRole('alert').filter({ hasText: /phone or browser/ })).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-prf-unsupported');
+  });
+
+  test('state-wallet-payment-copied', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await clipboardText(page, '');
+    await page.goto('/wallet/payment?id=9bc2f53d-fe70-45e8-bc5d-92184b7b0e01&visual=history-rows');
+    await page.getByRole('button', { name: 'Copy Payment ID' }).click();
+    await expect(page.getByText('Copied')).toBeAttached();
+    await shotScreen(page, 'state-wallet-payment-copied');
+  });
+
+  test('state-wallet-payment-external-link', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=9bc2f53d-fe70-45e8-bc5d-92184b7b0e01&visual=history-rows');
+    await page.getByRole('link', { name: 'View on mempool.space' }).click();
+    await expect(page.getByRole('dialog', { name: 'Open external link?' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-external-link');
   });
 
   test('wallet history-error', async ({ page }) => {
@@ -1962,13 +2006,109 @@ test.describe('screen baselines', () => {
     await expect
       .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
       .toBeGreaterThanOrEqual(2);
+    await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
+    await expect(page.getByPlaceholder('Paste a Bitcoin payment request or address')).toHaveCount(
+      0,
+    );
+    await shotScreen(page, 'state-wallet-send-input');
+  });
+
+  test('wallet send-manual', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-input');
+    await openWalletSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
     const field = page.getByPlaceholder('Paste a Bitcoin payment request or address');
-    await expect(field).toBeVisible();
+    await expect(field).toBeFocused();
     await field.fill('bob@example.com');
     await expect(
       page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('button', { name: 'Continue' }),
     ).toBeEnabled();
-    await shotScreen(page, 'state-wallet-send-input');
+    await expect(page.locator('video')).toHaveCount(0);
+    await field.blur();
+    await shotScreen(page, 'state-wallet-send-manual');
+  });
+
+  test('wallet send-manual-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-input-busy');
+    await openWalletSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const field = page.getByPlaceholder('Paste a Bitcoin payment request or address');
+    await field.fill('bob@example.com');
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send.getByRole('button', { name: 'Continue' }).click();
+    await expect(field).toBeDisabled();
+    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(send.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-manual-busy');
+  });
+
+  test('wallet send-manual-alert', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-invalid');
+    await expectPinnedSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const sheetAlert = page.getByText('This is not a Bitcoin payment request or address.');
+    await expect(sheetAlert).toHaveClass(/text-app-danger/);
+    await page.getByPlaceholder('Paste a Bitcoin payment request or address').blur();
+    await shotScreen(page, 'state-wallet-send-manual-alert');
+  });
+
+  test('welcome wallet-send-manual-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-input-busy');
+    await openWelcomeSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const field = page.getByPlaceholder('Paste a Bitcoin payment request or address');
+    await field.fill('bob@example.com');
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send.getByRole('button', { name: 'Continue' }).click();
+    await expect(field).toBeDisabled();
+    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(send.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-manual-busy');
+  });
+
+  test('welcome wallet-send-manual-alert', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-invalid');
+    await openWelcomeSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const sheetAlert = page.getByText('This is not a Bitcoin payment request or address.');
+    await expect(sheetAlert).toHaveClass(/text-app-danger/);
+    await page.getByPlaceholder('Paste a Bitcoin payment request or address').blur();
+    await shotScreen(page, 'state-welcome-wallet-send-manual-alert');
+  });
+
+  test('wallet send-paste-denied', async ({ page }) => {
+    await seedWalletSend(page);
+    await denyClipboard(page);
+    await page.goto('/wallet?visual=send-input');
+    await openWalletSend(page);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+      .toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: 'Paste' }).click();
+    await expect(
+      page.getByText('Pasting was not allowed. Use Enter manually instead.'),
+    ).toBeVisible();
+    await expect(page.locator('video')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-paste-denied');
+  });
+
+  test('wallet send-paste-empty', async ({ page }) => {
+    await seedWalletSend(page);
+    await clipboardText(page, '');
+    await page.goto('/wallet?visual=send-input');
+    await openWalletSend(page);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+      .toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: 'Paste' }).click();
+    await expect(page.getByText('The clipboard is empty.')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-paste-empty');
   });
 
   test('wallet send-camera-denied', async ({ page }) => {
@@ -2096,6 +2236,26 @@ test.describe('screen baselines', () => {
       page.getByText('This payment request cannot be paid from your wallet yet.'),
     ).toBeVisible();
     await shotScreen(page, 'state-wallet-send-unsupported');
+  });
+
+  test('wallet send-not-ready', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-not-ready');
+    await expectPinnedSend(page);
+    await expect(
+      page.getByText('Your wallet is not ready yet. Please try again in a moment.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-not-ready');
+  });
+
+  test('wallet send-unreadable', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-unreadable');
+    await expectPinnedSend(page);
+    await expect(page.getByText('This could not be read. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-unreadable');
   });
 
   test('wallet send-invalid', async ({ page }) => {
@@ -2327,17 +2487,14 @@ test.describe('screen baselines', () => {
 
   test('wallet send-input-busy', async ({ page }) => {
     await seedWalletSend(page);
+    await clipboardText(page, 'bob@example.com');
     await page.goto('/wallet?visual=send-input-busy');
     await openWalletSend(page);
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
-    await send
-      .getByPlaceholder('Paste a Bitcoin payment request or address')
-      .fill('bob@example.com');
-    await send.getByRole('button', { name: 'Continue' }).click();
-    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
-    await expect(
-      send.getByPlaceholder('Paste a Bitcoin payment request or address'),
-    ).toBeDisabled();
+    await send.getByRole('button', { name: 'Paste' }).click();
+    await expect(send.getByRole('button', { name: 'Paste' })).toBeDisabled();
+    await expect(send.getByRole('button', { name: 'Enter manually' })).toBeDisabled();
+    await expect(send.locator('.animate-spin')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-input-busy');
   });
 
@@ -2397,6 +2554,448 @@ test.describe('screen baselines', () => {
     await openWalletSend(page, '$0.00');
     await expect(page.getByText('This message is too long for the receiver.')).toBeVisible();
     await shotScreen(page, 'state-wallet-send-comment-long');
+  });
+
+  /**
+   * Waits for the Send view a `send-…` pin opens over the forum home. A step
+   * that shows fiat passes the fiat text it must show before the screenshot.
+   *
+   * @param page - Forum home page.
+   * @param fiat - Fiat text the Send view shows once its rate is loaded.
+   */
+  async function openWelcomeSend(page: Page, fiat?: string): Promise<void> {
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(send).toBeAttached({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: /^Welcome/ })).toBeHidden();
+    if (fiat !== undefined) {
+      await expect(send).toContainText(fiat);
+    }
+  }
+
+  test('welcome wallet-send-paste-denied', async ({ page }) => {
+    await seedWalletSend(page);
+    await denyClipboard(page);
+    await page.goto('/welcome?visual=send-input');
+    await openWelcomeSend(page);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+      .toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: 'Paste' }).click();
+    await expect(
+      page.getByText('Pasting was not allowed. Use Enter manually instead.'),
+    ).toBeVisible();
+    await expect(page.locator('video')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-paste-denied');
+  });
+
+  test('welcome wallet-send-paste-empty', async ({ page }) => {
+    await seedWalletSend(page);
+    await clipboardText(page, '');
+    await page.goto('/welcome?visual=send-input');
+    await openWelcomeSend(page);
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+      .toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: 'Paste' }).click();
+    await expect(page.getByText('The clipboard is empty.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-paste-empty');
+  });
+
+  test('welcome wallet-send-camera-unavailable', async ({ page }) => {
+    await seedWalletSend(page, 'btc', { kind: 'none' });
+    await page.goto('/welcome?visual=send-input');
+    await openWelcomeSend(page);
+    await expect(
+      page.getByText('No camera found. Paste the payment request instead.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-camera-unavailable');
+  });
+
+  test('welcome wallet-receive-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await seedWalletSend(page);
+    await page.clock.install();
+    await page.goto('/welcome?visual=balance-ready');
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-receive-copied');
+  });
+
+  test('welcome wallet-send-amount', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount');
+    await openWelcomeSend(page, '$0.00');
+    await expect(page.getByLabel('Message (optional)')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-amount');
+  });
+
+  test('welcome wallet-send-amount-fiat', async ({ page }) => {
+    await seedWalletSend(page, 'fiat');
+    await page.goto('/welcome?visual=send-amount');
+    await openWelcomeSend(page);
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(
+      send.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', { name: 'USD' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await send.getByLabel('Amount').fill('2.10');
+    await expect(send.getByText("₿2'100")).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-amount-fiat');
+  });
+
+  test('welcome wallet-send-confirm', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm');
+    await openWelcomeSend(page);
+    await expect(page.getByText("₿2'100", { exact: true })).toBeVisible();
+    await expect(page.getByText('$2.10', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fee ₿0', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm');
+  });
+
+  test('welcome wallet-send-sent', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-sent');
+    await expectPinnedSend(page);
+    await expect(page.getByText("Sent ₿2'100")).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('status'),
+    ).toContainText('$2.10');
+    await expect(page.getByText('To bob@example.com')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-sent');
+  });
+
+  test('welcome wallet-send-unsupported', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-unsupported');
+    await expectPinnedSend(page);
+    await expect(
+      page.getByText('This payment request cannot be paid from your wallet yet.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-unsupported');
+  });
+
+  test('welcome wallet-send-not-ready', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-not-ready');
+    await expectPinnedSend(page);
+    await expect(
+      page.getByText('Your wallet is not ready yet. Please try again in a moment.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-not-ready');
+  });
+
+  test('welcome wallet-send-unreadable', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-unreadable');
+    await expectPinnedSend(page);
+    await expect(page.getByText('This could not be read. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-unreadable');
+  });
+
+  test('welcome wallet-send-invalid', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-invalid');
+    await expectPinnedSend(page);
+    await expect(page.getByText('This is not a Bitcoin payment request or address.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-invalid');
+  });
+
+  test('welcome wallet-send-failed', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-failed');
+    await expectPinnedSend(page);
+    await expect(
+      page.getByText('The payment could not be sent. Check your balance before you try again.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-failed');
+  });
+
+  test('welcome wallet-send-alert-locked', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-alert-locked');
+    await expectPinnedSend(page);
+    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(
+      send.getByText('The payment could not be sent. Check your balance before you try again.'),
+    ).toBeVisible();
+    await expect(send.getByPlaceholder('Paste a Bitcoin payment request or address')).toHaveCount(
+      0,
+    );
+    await expect(send.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-wallet-send-alert-locked');
+  });
+
+  test('welcome wallet-send-insufficient', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-insufficient');
+    await expectPinnedSend(page);
+    await expect(
+      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-insufficient');
+  });
+
+  test('welcome wallet-send-amount-error', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount-error');
+    await openWelcomeSend(page, '$0.00');
+    await expect(
+      page.getByRole('alert').filter({ hasText: /^Enter an amount between/ }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-amount-error');
+  });
+
+  test('welcome wallet-send-amount-request', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount-request');
+    await openWelcomeSend(page);
+    await expect(page.getByText('To sp1qexample…a9f2')).toBeVisible();
+    await expect(page.getByLabel('Message (optional)')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-wallet-send-amount-request');
+  });
+
+  test('welcome wallet-send-amount-no-comment', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount-no-comment');
+    await openWelcomeSend(page, '$0.00');
+    await expect(page.getByText('To bob@example.com')).toBeVisible();
+    await expect(page.getByText(/^Between/)).toBeVisible();
+    await expect(page.getByLabel('Message (optional)')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-wallet-send-amount-no-comment');
+  });
+
+  test('welcome wallet-send-amount-min', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount-min');
+    await openWelcomeSend(page, '$0.00');
+    await expect(
+      page.getByRole('alert').filter({ hasText: /^Enter an amount of at least/ }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-amount-min');
+  });
+
+  test('welcome wallet-send-confirm-sending', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-sending');
+    await expectPinnedSend(page);
+    await expect(page.getByText('$2.10')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-sending');
+  });
+
+  test('welcome wallet-send-confirm-fixed', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-fixed');
+    await openWelcomeSend(page);
+    await expect(page.getByText('To shop@21.gifts')).toBeVisible();
+    await expect(page.getByText("₿7'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$7.00', { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Fee ₿3 · \$0\.00$/)).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-fixed');
+  });
+
+  test('welcome wallet-send-confirm-shop', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-shop');
+    await openWelcomeSend(page);
+    await expect(page.getByText('To shop@21.gifts')).toBeVisible();
+    await expect(page.getByText("₿7'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$7.00', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fee ₿0', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-shop');
+  });
+
+  test('welcome wallet-send-confirm-member', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-member');
+    await openWelcomeSend(page);
+    await expect(page.getByText('To alice@21.gifts')).toBeVisible();
+    await expect(page.getByText("₿2'100", { exact: true })).toBeVisible();
+    await expect(page.getByText('$2.10', { exact: true })).toBeVisible();
+    await expect(page.getByText('Fee ₿0', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-member');
+  });
+
+  test('welcome wallet-send-amount-onchain', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount-onchain');
+    await openWelcomeSend(page);
+    await expect(page.getByText('To bc1qar0srr…wf5mdq')).toBeVisible();
+    await expect(page.getByText(/^Between/)).toHaveCount(0);
+    await expect(page.getByLabel('Message (optional)')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-wallet-send-amount-onchain');
+  });
+
+  test('welcome wallet-send-amount-onchain-min', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount-onchain-min');
+    await openWelcomeSend(page);
+    await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+      'Enter an amount of at least ₿294 · $0.29.',
+    );
+    await shotScreen(page, 'state-welcome-wallet-send-amount-onchain-min');
+  });
+
+  test('welcome wallet-send-confirm-onchain', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-onchain');
+    await openWelcomeSend(page);
+    await expect(page.getByText("₿50'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$50.00', { exact: true })).toBeVisible();
+    await expect(page.getByText('To bc1qar0srr…wf5mdq')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Medium/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText("Fee ₿1'420 · $1.42", { exact: true })).toBeVisible();
+    await expect(page.getByText("Total ₿51'420 · $51.42", { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-onchain');
+  });
+
+  test('welcome wallet-send-confirm-onchain-fast', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-onchain-fast');
+    await openWelcomeSend(page);
+    await expect(page.getByRole('button', { name: /^Fast/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText("Fee ₿2'840 · $2.84", { exact: true })).toBeVisible();
+    await expect(page.getByText("Total ₿52'840 · $52.84", { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-onchain-fast');
+  });
+
+  test('welcome wallet-send-confirm-onchain-slow', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-onchain-slow');
+    await openWelcomeSend(page);
+    await expect(page.getByRole('button', { name: /^Slow/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByText('Fee ₿710 · $0.71', { exact: true })).toBeVisible();
+    await expect(page.getByText("Total ₿50'710 · $50.71", { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-onchain-slow');
+  });
+
+  test('welcome wallet-send-confirm-onchain-low', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-onchain-low');
+    await openWelcomeSend(page);
+    await expect(page.getByRole('button', { name: /^Fast/ })).toBeDisabled();
+    await expect(page.getByText('Balance too low')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-onchain-low');
+  });
+
+  test('welcome wallet-send-confirm-onchain-renewed', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-onchain-renewed');
+    await openWelcomeSend(page);
+    await expect(page.getByRole('region', { name: 'Send Bitcoin' }).getByRole('alert')).toHaveText(
+      'The fee offer expired, so nothing was sent. Check the new fee and press Send again.',
+    );
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-onchain-renewed');
+  });
+
+  test('welcome wallet-send-confirm-onchain-renewing', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-onchain-renewing');
+    await expectPinnedSend(page);
+    await expect(page.getByText('$50.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-onchain-renewing');
+  });
+
+  test('welcome wallet-send-confirm-onchain-sending', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-confirm-onchain-sending');
+    await expectPinnedSend(page);
+    await expect(page.getByText('$50.00')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Medium/ })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-wallet-send-confirm-onchain-sending');
+  });
+
+  test('welcome wallet-send-input-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await clipboardText(page, 'bob@example.com');
+    await page.goto('/welcome?visual=send-input-busy');
+    await openWelcomeSend(page);
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send.getByRole('button', { name: 'Paste' }).click();
+    await expect(send.getByRole('button', { name: 'Paste' })).toBeDisabled();
+    await expect(send.getByRole('button', { name: 'Enter manually' })).toBeDisabled();
+    await expect(send.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-input-busy');
+  });
+
+  test('welcome wallet-send-amount-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-amount-busy');
+    await openWelcomeSend(page, '$0.00');
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send.getByLabel('Amount').fill('2100');
+    await send.getByRole('button', { name: 'Continue' }).click();
+    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(send.getByLabel('Amount')).toBeDisabled();
+    await shotScreen(page, 'state-welcome-wallet-send-amount-busy');
+  });
+
+  test('welcome wallet-send-error', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-error');
+    await expectPinnedSend(page);
+    await expect(
+      page.getByText(
+        'The receiver could not be reached from this browser. Please try again later.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-error');
+  });
+
+  test('welcome wallet-send-not-payable', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-not-payable');
+    await expectPinnedSend(page);
+    await expect(page.getByText('This address cannot receive a payment.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-not-payable');
+  });
+
+  test('welcome wallet-send-not-found', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-not-found');
+    await expectPinnedSend(page);
+    await expect(page.getByText('This address was not found.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-not-found');
+  });
+
+  test('welcome wallet-send-relay-unreachable', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-relay-unreachable');
+    await expectPinnedSend(page);
+    await expect(
+      page.getByText("The receiver's server did not answer. Please try again later."),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-relay-unreachable');
+  });
+
+  test('welcome wallet-send-comment-long', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-comment-long');
+    await openWelcomeSend(page, '$0.00');
+    await expect(page.getByText('This message is too long for the receiver.')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-comment-long');
   });
 
   test('wallet error', async ({ page }) => {
@@ -3323,6 +3922,108 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
     await expect(page.getByRole('listbox')).toHaveCount(0);
     await shotScreen(page, 'screen-welcome');
+  });
+
+  /**
+   * Signs in Ada with a wallet-eligible account on the mixed forum, with a
+   * stub rate and camera (a plain black stream unless another stub is given).
+   */
+  async function seedWelcomeWallet(
+    page: Page,
+    camera: CameraStub = { kind: 'blank' },
+  ): Promise<void> {
+    await stubCamera(page, camera);
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page);
+    await fulfillRateDay(page);
+  }
+
+  test('welcome wallet-buttons', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.goto('/welcome?visual=balance-ready');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+    await shotScreen(page, 'state-welcome-wallet-buttons');
+  });
+
+  test('welcome wallet-buttons-disabled', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.goto('/welcome?visual=balance-connecting');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-wallet-buttons-disabled');
+  });
+
+  test('welcome wallet-receive', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.goto('/welcome?visual=balance-ready');
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await expect(page.getByText('ada@21.gifts')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
+    await shotScreen(page, 'state-welcome-wallet-receive');
+  });
+
+  test('welcome wallet-send-camera', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.goto('/welcome?visual=send-input');
+    await expect(page.getByText('Point the camera at a Bitcoin QR code')).toBeVisible();
+    await expect
+      .poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState))
+      .toBeGreaterThanOrEqual(2);
+    await expect(page.getByRole('button', { name: 'Paste' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-camera');
+  });
+
+  test('welcome wallet-send-camera-denied', async ({ page }) => {
+    await seedWelcomeWallet(page, { kind: 'denied' });
+    await page.goto('/welcome?visual=send-input');
+    await expect(
+      page.getByText(
+        'Camera access was blocked. Allow it in your browser settings, or paste the payment request.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Enter manually' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-camera-denied');
+  });
+
+  test('welcome wallet-send-manual', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.goto('/welcome?visual=send-input');
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const field = page.getByPlaceholder('Paste a Bitcoin payment request or address');
+    await field.fill('bob@example.com');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await field.blur();
+    await shotScreen(page, 'state-welcome-wallet-send-manual');
   });
 
   test('state /welcome home-from-menu', async ({ page }) => {
@@ -4591,7 +5292,7 @@ test.describe('onboarding screens', () => {
 
   test('state /welcome reaction-wallet-pay-confirm', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -14886,7 +15587,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome repay-wallet-pay-confirm', async ({ page }) => {
     await openRepayWalletPay(page, 'wallet-pay-confirm');
-    const slot = page.getByRole('button', { name: 'Pay from wallet' });
+    const slot = page.getByRole('button', { name: 'Send', exact: true });
     await expect(slot).toBeVisible();
     await slot.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-wallet-pay-confirm');
@@ -17115,7 +17816,7 @@ test.describe('welcome forum variants', () => {
   test('welcome composer-wallet-pay-confirm', async ({ page }) => {
     await openComposerWalletPay(page, 'wallet-pay-confirm');
     await expect(page.getByRole('button', { name: /^Pay ₿1 and post/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-wallet-pay-confirm');
   });
 
@@ -17230,7 +17931,132 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
+    await expect(page.locator('#signed-in-menu dl .animate-pulse')).toHaveCount(0);
+    await expect(page.locator('#signed-in-menu dl')).toContainText('Posts');
     await shotScreen(page, 'state-welcome-menu');
+  });
+
+  /** Answers the Menu header's totals and the gift-day rate, so every ₿ figure shows its fiat. */
+  async function menuTotals(page: Page): Promise<void> {
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await fulfillRateDay(page);
+  }
+
+  test('welcome menu-header-balance', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await menuTotals(page);
+    await page.goto('/welcome?visual=balance-ready');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();
+    await expect(menu.getByText('$21.00')).toBeVisible();
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-header-balance');
+  });
+
+  test('welcome menu-header-no-rate', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    const stats = page.waitForResponse('**/gifts/stats**');
+    await page.goto('/welcome?visual=balance-ready');
+    await stats;
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await expect(menu.getByText(/\$/)).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-header-no-rate');
+  });
+
+  test('welcome menu-header-connecting', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await menuTotals(page);
+    await page.goto('/welcome?visual=balance-connecting');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByRole('status', { name: 'Opening your wallet…' })).toBeVisible();
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-header-connecting');
+  });
+
+  test('welcome menu-header-failed', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route(/\/me\/activity$/, async (route) => {
+      await route.fulfill({ status: 500, body: '' });
+    });
+    await page.route(/\/forum\/members\/[^/?]+$/, async (route) => {
+      await route.fulfill({ status: 500, body: '' });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const stats = page.locator('#signed-in-menu dl');
+    await expect(stats.getByText('–')).toHaveCount(3);
+    await shotScreen(page, 'state-welcome-menu-header-failed');
+  });
+
+  test('welcome menu-header-photo', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    // The photo shows only with a complete load, so the totals must be readable too.
+    await menuTotals(page);
+    await page.route(/\/pictures\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const photo = page.locator('#signed-in-menu').getByRole('img', { name: 'Profile photo' });
+    await expect(photo).toBeVisible();
+    await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.complete)).toBe(true);
+    await shotScreen(page, 'state-welcome-menu-header-photo');
+  });
+
+  test('welcome menu-header-loading', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    // The account header's reads never answer, so its skeleton bars stay.
+    await page.route(/\/me\/activity$/, () => undefined);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
+    await expect(page.locator('#signed-in-menu dl .animate-pulse')).toHaveCount(5);
+    await shotScreen(page, 'state-welcome-menu-header-loading');
+  });
+
+  test('welcome menu-sheet-end', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await menu.evaluate((panel) => {
+      panel.scrollTop = panel.scrollHeight;
+    });
+    await expect(page.getByRole('button', { name: /log out/i })).toBeInViewport();
+    await shotScreen(page, 'state-welcome-menu-sheet-end');
   });
 
   test('welcome menu-unread', async ({ page }) => {
@@ -17464,7 +18290,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome wallet-pay-confirm', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
     await expect(page.locator('[data-pay-sheet]').getByText('$0.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-confirm');
   });
@@ -20830,7 +21656,8 @@ test.describe('inbox screens', () => {
 
   test('messages thread-wallet-pay-confirm', async ({ page }) => {
     await openInboxWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    // The pay card's labeled Send, not the composer's icon-only Send (aria-label).
+    await expect(page.locator('button:not([aria-label])', { hasText: /^Send$/ })).toBeVisible();
     await shotScreen(page, 'state-messages-thread-wallet-pay-confirm');
   });
 

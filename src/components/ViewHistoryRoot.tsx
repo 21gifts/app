@@ -16,11 +16,19 @@ import {
 } from 'react';
 import { recordCurrentView } from '@/lib/view-history';
 
-/** Top-left chrome override while an in-page wizard step can go back. */
+/**
+ * Top-left chrome override while an in-page step can go back: an ask or shop
+ * wizard step, or a wallet Receive or Send view over `/welcome`.
+ */
 export type ChromeBackOverride = {
-  labelKey: 'forum.askBack' | 'shops.back';
+  labelKey: 'forum.askBack' | 'shops.back' | 'nav.back';
   onClick: () => void;
   disabled?: boolean;
+  /**
+   * A view laid over the page (a wallet view on `/welcome`): it wins over the
+   * page's own steps, however often those register again behind it.
+   */
+  over?: boolean;
 };
 
 type ChromeBackSlot = {
@@ -65,7 +73,9 @@ export function useChromeBack(): {
 }
 
 /**
- * Holds the top-left chrome back override for in-page steps (ask or shop wizard).
+ * Holds the top-left chrome back override for in-page steps (ask or shop
+ * wizard, or a wallet view over `/welcome`). The latest registration wins,
+ * except that the latest one marked `over` beats every page step.
  *
  * @param props - Tree that may register an override.
  * @returns The provider.
@@ -81,8 +91,8 @@ export function ChromeBackProvider({ children }: { children: ReactNode }): React
       return [...without, { id, override: next }];
     });
   }, []);
-  const last = slots[slots.length - 1];
-  const override = last === undefined ? null : last.override;
+  const top = slots.findLast((slot) => slot.override.over === true) ?? slots[slots.length - 1];
+  const override = top === undefined ? null : top.override;
   const value = useMemo((): ChromeBackContextValue => ({ override, setSlot }), [override, setSlot]);
   return <ChromeBackContext.Provider value={value}>{children}</ChromeBackContext.Provider>;
 }

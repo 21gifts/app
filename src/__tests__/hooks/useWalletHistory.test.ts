@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WALLET_HISTORY_PAGE_LIMIT, useWalletHistory } from '@/hooks/useWalletHistory';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { listWalletPayments } from '@/lib/wallet/wallet-service';
+import { WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import { toWalletPayment } from '@/lib/wallet/wallet-sdk';
 import { useWalletStore } from '@/stores/wallet-store';
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
@@ -18,8 +20,11 @@ function payments(count: number, start = 0): WalletPayment[] {
     direction: 'received' as const,
     amountSats: 100,
     timestamp: 1_000 - start - index,
+    feesSats: 0,
     status: 'completed' as const,
+    method: 'lightning' as const,
     senderComment: null,
+    info: {},
   }));
 }
 
@@ -277,7 +282,7 @@ describe('useWalletHistory', () => {
 
   it.each([
     ['history-empty', 'ready', 0],
-    ['history-rows', 'ready', 4],
+    ['history-rows', 'ready', 10],
     ['history-error', 'error', 0],
   ] as const)('pins %s in a Playwright build', (visual, status, count) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
@@ -294,19 +299,12 @@ describe('useWalletHistory', () => {
     expect(listWalletPayments).not.toHaveBeenCalled();
   });
 
-  it('the rows pin has a received note, a sent row, a pending row, and a failed row', () => {
+  it('the rows pin maps the synthetic SDK payments, newest first', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=history-rows');
     const { result } = renderHook(() => useWalletHistory());
-    const [first, second, third, fourth] = result.current.payments;
-    expect(first).toMatchObject({
-      direction: 'received',
-      senderComment: 'Thank you for the coffee',
-    });
-    expect(first?.timestamp).toBe(Date.parse('2026-01-07T10:00:00.000Z'));
-    expect(second).toMatchObject({ direction: 'sent', status: 'completed' });
-    expect(third).toMatchObject({ direction: 'received', status: 'pending' });
-    expect(fourth).toMatchObject({ direction: 'sent', status: 'failed' });
+    expect(result.current.payments).toEqual(WALLET_PAYMENT_FIXTURES.map(toWalletPayment));
+    expect(result.current.payments[0]?.info.zap?.content).toBe('Great photo!');
   });
 
   it('ignores pins outside a Playwright build and unrelated values', async () => {
