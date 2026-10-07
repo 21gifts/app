@@ -632,7 +632,7 @@ The deposit after **View on mempool.space**: the **Open external link?** dialog 
 
 ### Variant: loading
 
-The screen while the rate is still on its way (the payment itself is known): only the frame and the top-left arrow, no amount yet, so no ₿ figure ever shows without its fiat.
+The screen while the rate is still on its way (the payment itself is known): only the frame and the top-left arrow, no amount yet. Once the read has finished without a usable rate, the ₿ figures show without their fiat line.
 
 ![21.gifts wallet payment loading](images/wallet-payment-loading.png)
 
