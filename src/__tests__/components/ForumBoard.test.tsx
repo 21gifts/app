@@ -7851,4 +7851,49 @@ describe('ForumBoard in-app wallet pay', () => {
     );
     expect(screen.getByText('+1')).toBeTruthy();
   });
+
+  it('calls onHeartTip with the message id when Send ₿1 is clicked', () => {
+    const onHeartTip = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-viewer"
+        onHeartTip={onHeartTip}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
+    expect(onHeartTip).toHaveBeenCalledWith('m1');
+  });
+
+  it('does not throw when Send ₿1 is clicked without onHeartTip', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-viewer"
+        {...modeProps('all')}
+      />,
+    );
+    expect(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
+    }).not.toThrow();
+  });
 });
