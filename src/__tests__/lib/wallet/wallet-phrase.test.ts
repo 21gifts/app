@@ -320,6 +320,39 @@ describe('unlockWalletPhrase', () => {
     expect(peekSessionPhrase()).toBeNull();
   });
 
+  it('answers noPrf without a prompt after the seed passkey logged in without PRF', async () => {
+    useAuthStore.setState({ session: 'tok-no-prf', account: baseAccount });
+    await expect(
+      rememberPhraseFromPrf({
+        prfFirst: undefined,
+        credentialId: CREDENTIAL_ID,
+        account: baseAccount,
+        sessionToken: 'tok-no-prf',
+      }),
+    ).resolves.toBe(false);
+    await expect(unlockWalletPhrase()).resolves.toBe('noPrf');
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+  });
+
+  it('still asks the seed passkey after another passkey logged in without PRF', async () => {
+    useAuthStore.setState({ session: 'tok-other', account: baseAccount });
+    await rememberPhraseFromPrf({
+      prfFirst: null,
+      credentialId: 'another-credential',
+      account: baseAccount,
+      sessionToken: 'tok-other',
+    });
+    await rememberPhraseFromPrf({
+      prfFirst: new Uint8Array(0),
+      credentialId: CREDENTIAL_ID,
+      account: { ...baseAccount, walletRequired: false },
+      sessionToken: 'tok-other',
+    });
+    vi.mocked(obtainPrfFirstFromGet).mockResolvedValueOnce(null);
+    await expect(unlockWalletPhrase()).resolves.toBe('noPrf');
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(1);
+  });
+
   it('unlocks when PRF is present', async () => {
     const expected = await mnemonicFromPrfFirst(Uint8Array.from(PRF));
     await expect(unlockWalletPhrase()).resolves.toBe('unlocked');

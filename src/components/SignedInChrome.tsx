@@ -69,9 +69,12 @@ import { useAuthStore } from '@/stores/auth-store';
  * screen. Close dismisses this mount only; the introduce CTA skips the overlay
  * once, so the next mount does not show it again.
  *
- * @returns The signed-in Menu chrome.
+ * Renders nothing without a session: signed out, or while a stored session
+ * is held back until its wallet is open (the login card is on screen).
+ *
+ * @returns The signed-in Menu chrome, or `null` without a session.
  */
-export function SignedInChrome(): ReactElement {
+export function SignedInChrome(): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
@@ -339,6 +342,11 @@ export function SignedInChrome(): ReactElement {
         ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
         : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
+  if (session === null) {
+    // Signed out, or a session held back until its wallet is open: the
+    // login card is on screen, and a signed-out visitor gets no Menu.
+    return null;
+  }
   return (
     <div className="flex items-center">
       <div ref={setRootEl} className="relative">
@@ -546,9 +554,6 @@ export function SignedInChrome(): ReactElement {
                   }
                   onClick={() => {
                     setOpen(false);
-                    if (session === null) {
-                      return;
-                    }
                     if (
                       typeof Notification !== 'undefined' &&
                       Notification.permission !== 'granted' &&
