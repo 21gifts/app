@@ -341,6 +341,21 @@ export async function listWalletPayments(page: WalletPaymentPage): Promise<Walle
   return conn.listPayments(page);
 }
 
+/**
+ * Reads one payment of the connected wallet.
+ *
+ * @param id - SDK payment id.
+ * @returns The payment.
+ * @throws Error `wallet-connect` while no wallet is connected; the SDK's error for an unknown id.
+ */
+export async function getWalletPayment(id: string): Promise<WalletPayment> {
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.getPayment(id);
+}
+
 /** How long a send may take before the app stops waiting for the SDK. */
 export const WALLET_SEND_TIMEOUT_MS = 30_000;
 

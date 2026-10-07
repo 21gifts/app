@@ -121,7 +121,7 @@ test('Function: markBackNavigation keeps the document and asks for no passkey ac
   const origin = new URL(page.url()).origin;
 
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByRole('link', { name: 'Wallet', exact: true }).click();
+  await page.getByRole('link', { name: 'Balance', exact: true }).click();
   await expect(page).toHaveURL(`${origin}/wallet`);
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toHaveCount(0);
@@ -158,7 +158,7 @@ test('Function: markBackNavigation keeps the document and asks for no passkey ac
   );
 
   await page.getByRole('button', { name: 'Menu' }).click();
-  await page.getByRole('link', { name: 'Wallet', exact: true }).click();
+  await page.getByRole('link', { name: 'Balance', exact: true }).click();
   await expect(page).toHaveURL(`${origin}/wallet`);
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
@@ -411,93 +411,74 @@ async function fulfillRateDay(page: Page): Promise<void> {
   });
 }
 
-/** The header wallet button: a Wallet link outside the Menu panel. */
-function headerWallet(page: Page, name: string | RegExp): ReturnType<Page['getByRole']> {
-  return page.locator('[data-app-chrome]').getByRole('link', { name, exact: true });
-}
-
-test('Function: HeaderWalletButton opens the wallet client-side from the locked header and asks for no passkey', async ({
-  page,
-}) => {
-  await signInWithPasskey(page);
-  await page.goto('/settings?visual=balance-locked');
-  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-  const wallet = headerWallet(page, 'Wallet');
-  await expect(wallet).toBeVisible();
-  await expect(wallet).toHaveText('Wallet');
-  await expect(wallet).toHaveAttribute('href', '/wallet');
-  await expect(page.locator('[data-app-chrome] .animate-spin')).toHaveCount(0);
-  await markDocument(page);
-  const origin = new URL(page.url()).origin;
-
-  await wallet.click();
-  await expect(page).toHaveURL(`${origin}/wallet`);
-  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
-  expect(await sameDocument(page)).toBe('same');
-  expect(await passkeyPrompts(page)).toBe(0);
-});
-
-test('Function: HeaderWalletButton shows the ready balance with fiat and opens the wallet without a document load', async ({
+test('Function: MenuAccountHeader shows the ready balance with fiat, the name, and the stats, and its balance opens the wallet without a document load', async ({
   page,
 }) => {
   await signInWithPasskey(page);
   await fulfillRateDay(page);
   await page.goto('/settings?visual=balance-ready');
-  const wallet = headerWallet(page, "Wallet, balance ₿21'000");
-  await expect(wallet).toBeVisible();
-  await expect(wallet).toContainText("₿21'000");
-  await expect(wallet).toContainText('$21.00');
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  // No wallet control in the header row any more; the balance lives in the Menu.
+  await expect(
+    page.locator('[data-app-chrome]').getByRole('link', { name: /Wallet|₿/ }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  const menu = page.locator('#signed-in-menu');
+  const balance = menu.getByRole('link', { name: /₿21'000/ });
+  await expect(balance).toContainText('$21.00');
+  await expect(balance).toHaveAttribute('href', '/wallet');
+  for (const label of ['Received', 'Given', 'Posts']) {
+    await expect(menu.locator('dl').getByText(label, { exact: true })).toBeVisible();
+  }
+  await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+  const rows = menu.getByRole('link');
+  await expect(rows.nth(1)).toHaveAccessibleName('Home');
+  await expect(rows.nth(2)).toHaveAccessibleName('Balance');
   await markDocument(page);
   const origin = new URL(page.url()).origin;
-
-  await wallet.click();
+  await balance.click();
   await expect(page).toHaveURL(`${origin}/wallet`);
+  await expect(menu).toBeHidden();
   expect(await sameDocument(page)).toBe('same');
   expect(await passkeyPrompts(page)).toBe(0);
 });
 
-test('Function: HeaderWalletButton is hidden on /wallet and without a configured wallet', async ({
-  page,
-}) => {
+test('MenuAccountHeader keeps the stats row height while the numbers load', async ({ page }) => {
   await signInWithPasskey(page);
-  await page.goto('/wallet?visual=balance-ready');
-  await expect(page.getByText("₿21'000")).toBeVisible();
-  await expect(
-    page.locator('[data-app-chrome]').getByRole('link', { name: /^Wallet/ }),
-  ).toHaveCount(0);
-
-  // This build has no wallet key, so without a pin the wallet is not configured.
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/me\/activity$/, async (route) => {
+    await held;
+    await route.fallback();
+  });
   await page.goto('/settings');
-  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(
-    page.locator('[data-app-chrome]').getByRole('link', { name: /^Wallet/ }),
-  ).toHaveCount(0);
-  expect(await passkeyPrompts(page)).toBe(0);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  const row = page.locator('#signed-in-menu dl');
+  await expect(row.locator('.animate-pulse')).toHaveCount(5);
+  const before = (await row.boundingBox())!;
+  release();
+  await expect(row.locator('.animate-pulse')).toHaveCount(0);
+  const after = (await row.boundingBox())!;
+  expect(after.height).toBe(before.height);
 });
 
 for (const width of [320, 375]) {
-  test(`HeaderWalletButton fits next to Menu, the back arrow, and the wordmark at ${width} px`, async ({
+  test(`the signed-in header fits the back arrow, the wordmark, and Menu at ${width} px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 700 });
     await signInWithPasskey(page);
-    await fulfillRateDay(page);
-    for (const pin of ['balance-ready', 'balance-locked']) {
-      await page.goto(`/settings?visual=${pin}`);
-      const wallet = page.locator('[data-app-chrome]').getByRole('link', { name: /^Wallet/ });
-      await expect(wallet).toBeVisible();
-      const chrome = (await page.locator('[data-app-chrome]').boundingBox())!;
-      const back = (await page.locator('[data-app-chrome] a').first().boundingBox())!;
-      const mark = (await page.locator('[data-app-chrome]').getByText('21.gifts').boundingBox())!;
-      const box = (await wallet.boundingBox())!;
-      const menu = (await page.getByRole('button', { name: 'Menu' }).boundingBox())!;
-      expect(back.width).toBe(44);
-      expect(box.height).toBeGreaterThanOrEqual(44);
-      expect(mark.x + mark.width).toBeLessThanOrEqual(box.x);
-      expect(box.x + box.width).toBeLessThanOrEqual(menu.x);
-      expect(menu.x + menu.width).toBeLessThanOrEqual(chrome.x + chrome.width);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
-    }
+    await page.goto('/settings?visual=balance-ready');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    const chrome = (await page.locator('[data-app-chrome]').boundingBox())!;
+    const back = (await page.locator('[data-app-chrome] a').first().boundingBox())!;
+    const mark = (await page.locator('[data-app-chrome]').getByText('21.gifts').boundingBox())!;
+    const menu = (await page.getByRole('button', { name: 'Menu' }).boundingBox())!;
+    expect(back.width).toBe(44);
+    expect(mark.x + mark.width).toBeLessThanOrEqual(menu.x);
+    expect(menu.x + menu.width).toBeLessThanOrEqual(chrome.x + chrome.width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
   });
 }

@@ -515,6 +515,8 @@ describe('useWalletSend visual pins', () => {
     ['send-not-payable', { step: 'input', error: 'notPayable' }],
     ['send-not-found', { step: 'input', error: 'notFound' }],
     ['send-relay-unreachable', { step: 'input', error: 'relayUnreachable' }],
+    ['send-not-ready', { step: 'input', error: 'notReady' }],
+    ['send-unreadable', { step: 'input', error: 'unreadable' }],
     [
       'send-comment-long',
       {
@@ -617,6 +619,8 @@ describe('useWalletSend visual pins', () => {
     'send-confirm-onchain-renewed',
     'send-confirm-onchain-renewing',
     'send-confirm-onchain-sending',
+    'send-not-ready',
+    'send-unreadable',
   ])('ignores the %s pin outside a Playwright build', (visual) => {
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
     const { result } = renderHook(() => useWalletSend());
@@ -1035,7 +1039,7 @@ describe('useWalletSend wallet status', () => {
     expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
-  it('drops a read in flight when the wallet leaves ready', async () => {
+  it('drops a read in flight when the wallet leaves ready and shows the not-ready alert', async () => {
     let finish: (value: Awaited<ReturnType<typeof parseWalletInput>>) => void = () => undefined;
     vi.mocked(parseWalletInput).mockReturnValue(
       new Promise((resolve) => {
@@ -1054,7 +1058,7 @@ describe('useWalletSend wallet status', () => {
     await act(async () => {
       finish({ kind: 'invalid' });
     });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
   });
 
   it('drops a read or prepare that settles after the wallet left ready but before the reset ran', async () => {
@@ -1332,24 +1336,27 @@ describe('useWalletSend relay pay request', () => {
   it.each([
     ['an answer', (finish: Settle<LnurlPayRequest>) => finish.resolve(PAY_REQUEST)],
     ['a refusal', (finish: Settle<LnurlPayRequest>) => finish.reject(new Error('x'))],
-  ])('drops %s that arrives after the wallet left ready', async (_label, settle) => {
-    const finish = pending(vi.mocked(postLnurlPayRequest));
-    const { result } = renderHook(() => useWalletSend());
-    act(() => {
-      result.current.setText('bob@example.com');
-    });
-    act(() => {
-      result.current.submitInput();
-    });
-    expect(result.current.busy).toBe(true);
-    act(() => {
-      useWalletStore.setState({ status: 'locked' });
-    });
-    await act(async () => {
-      settle(finish);
-    });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-  });
+  ])(
+    'drops %s that arrives after the wallet left ready and shows the not-ready alert',
+    async (_label, settle) => {
+      const finish = pending(vi.mocked(postLnurlPayRequest));
+      const { result } = renderHook(() => useWalletSend());
+      act(() => {
+        result.current.setText('bob@example.com');
+      });
+      act(() => {
+        result.current.submitInput();
+      });
+      expect(result.current.busy).toBe(true);
+      act(() => {
+        useWalletStore.setState({ status: 'locked' });
+      });
+      await act(async () => {
+        settle(finish);
+      });
+      expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
+    },
+  );
 });
 
 /** Controls of a promise a mock returns. */
@@ -1752,7 +1759,7 @@ describe('useWalletSend fixed amount', () => {
     },
   );
 
-  it('drops a fixed-amount prepare that settles after the wallet left ready and came back', async () => {
+  it('drops a fixed-amount prepare that settles after the wallet left ready and came back and shows the not-ready alert', async () => {
     target(FIXED);
     const finish = pending(vi.mocked(payFromWallet));
     const { result } = renderHook(() => useWalletSend());
@@ -1768,10 +1775,10 @@ describe('useWalletSend fixed amount', () => {
     await act(async () => {
       finish.resolve(confirmFixed());
     });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
   });
 
-  it('drops a fixed-amount invoice that arrives after the wallet left ready', async () => {
+  it('drops a fixed-amount invoice that arrives after the wallet left ready and shows the not-ready alert', async () => {
     vi.mocked(postLnurlPayRequest).mockResolvedValue({
       ...PAY_REQUEST,
       target: OUTSIDE_SHOP,
@@ -1789,7 +1796,7 @@ describe('useWalletSend fixed amount', () => {
       finish.resolve({ pr: 'lnbc70n1shop' });
     });
     expect(payFromWallet).not.toHaveBeenCalled();
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
   });
 
   it('keeps the amount step and the address for an outside LNURL whose bounds differ', async () => {
@@ -1895,7 +1902,7 @@ describe('useWalletSend shop charge', () => {
     expect(result.current.busy).toBe(false);
   });
 
-  it('drops a charge answer that arrives after the wallet left ready', async () => {
+  it('drops a charge answer that arrives after the wallet left ready and shows the not-ready alert', async () => {
     const finish = pending(vi.mocked(fetchShopChargeInvoice));
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, SHOP_QR);
@@ -1907,7 +1914,7 @@ describe('useWalletSend shop charge', () => {
     });
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(parseWalletInput).not.toHaveBeenCalled();
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
   });
 });
 
@@ -2089,5 +2096,62 @@ describe('useWalletSend member without a charge', () => {
     expect(fetchShopChargeInvoice).not.toHaveBeenCalled();
     expect(fetchMemberSparkInvoice).not.toHaveBeenCalled();
     expect(payFromWallet).toHaveBeenCalledWith(LIGHTNING_NO_MESSAGE);
+  });
+});
+
+describe('useWalletSend unreadable text', () => {
+  it('shows the not-ready alert when the text is submitted while the wallet is not ready', () => {
+    setWalletUsable('locked');
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.setText('lnbc1');
+    });
+    act(() => {
+      result.current.submitInput();
+    });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
+    expect(parseWalletInput).not.toHaveBeenCalled();
+  });
+
+  it('shows the unreadable alert when reading the text throws', async () => {
+    vi.mocked(parseWalletInput).mockResolvedValue({
+      kind: 'target',
+      target: undefined as unknown as WalletTarget,
+    });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({ step: 'input', error: 'unreadable' });
+  });
+
+  it('shows the unreadable alert when an outside pay request cannot be read', async () => {
+    vi.mocked(postLnurlPayRequest).mockResolvedValue({
+      minSendableMsat: 1_000,
+      maxSendableMsat: 9_000,
+      commentAllowed: 0,
+      domain: 'example.com',
+    } as unknown as LnurlPayRequest);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@example.com');
+    expect(result.current.state).toEqual({ step: 'input', error: 'unreadable' });
+  });
+
+  it('shows the unreadable alert when a shop charge answer cannot be read', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(
+      null as unknown as Awaited<ReturnType<typeof fetchShopChargeInvoice>>,
+    );
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, WALLET_SEND_VISUAL_FIXTURE.fixedLink);
+    expect(result.current.state).toEqual({ step: 'input', error: 'unreadable' });
+  });
+
+  it('shows the failed alert when a prepare answer cannot be read', async () => {
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'Coffee' });
+    vi.mocked(payFromWallet).mockResolvedValue(undefined as unknown as WalletPayResult);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
   });
 });

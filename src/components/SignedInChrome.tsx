@@ -22,25 +22,27 @@ import { usePathname } from 'next/navigation';
 import { useContext, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { AppShellContext, useAppShellScroller } from '@/components/AppShell';
-import { HeaderWalletButton } from '@/components/HeaderWalletButton';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
+import { MenuAccountHeader } from '@/components/MenuAccountHeader';
 import { PwaInstall } from '@/components/PwaInstall';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
+import { bindScrollport, releaseScrollport } from '@/lib/scroll-surface';
 import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Top-right signed-in page chrome: {@link HeaderWalletButton} (the wallet
- * shortcut, which hides itself while the wallet is not configured and on
- * `/wallet`) just left of one Menu disclosure; open for icon+label
- * rows (Wallet first, then Home, which clears this tab's view stack on a plain click so the
- * next screen's back arrow returns to the forum home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Settings (`/settings`, lucide `Settings`), living-room rules, Trust Chain, Statistics
+ * Top-right signed-in page chrome: one Menu disclosure; open, it starts with
+ * {@link MenuAccountHeader} (photo, name, balance, Received / Given / Posts),
+ * mounted with the chrome so its data loads before the Menu opens, and a
+ * divider, then icon+label rows (Home first, which clears this tab's view
+ * stack on a plain click so the next screen's back arrow returns to the forum
+ * home, then Balance (`/wallet`), Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Settings (`/settings`, lucide `Settings`), living-room rules, Trust Chain, Statistics
  * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
@@ -52,7 +54,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * is an 18rem (`w-72`) portal on the trigger parent and a scrim portals to
  * `[data-menu-scrim-host]` and uses `rounded-3xl` so it follows the frame.
  * On a narrow frame the panel is a full-width sheet in `[data-menu-sheet-host]`
- * (the host has the page's `px-8` inset) and the page underneath is hidden. On the
+ * (the host has the page's `px-5` inset) and the page underneath is hidden; the
+ * open sheet ends above the shell footer and is itself the bound scrollport,
+ * so its last rows scroll into view while the page stays put. On the
  * forum home (`/welcome`) only, when onboarding is complete and `hasPosted` is
  * false, also mounts {@link IntroduceYourselfOverlay}; it never covers
  * `/wallet`, the point of sale, the profile, messages, setup, or any other
@@ -144,6 +148,23 @@ export function SignedInChrome(): ReactElement {
     };
   }, [narrow, open, scroller]);
 
+  // The open sheet is the one scrollport, so its own rows scroll and the page behind stays put.
+  // The panel stays mounted while closed, so it binds only while open.
+  const sheetScrolls = open && narrow;
+  useLayoutEffect(() => {
+    if (!sheetScrolls) {
+      return;
+    }
+    const panel = menuRef.current as HTMLDivElement;
+    bindScrollport(panel);
+    return () => {
+      releaseScrollport(panel);
+      // The resync no longer visits the panel once React dropped `data-scrollport`.
+      panel.removeAttribute('data-scroll-active');
+      panel.removeAttribute('data-scroll-locked');
+    };
+  }, [sheetScrolls]);
+
   useLayoutEffect(() => {
     if (!open || narrow) {
       if (tight) {
@@ -217,7 +238,6 @@ export function SignedInChrome(): ReactElement {
 
   return (
     <div className="flex items-center">
-      <HeaderWalletButton />
       <div ref={setRootEl} className="relative">
         <button
           ref={buttonRef}
@@ -237,17 +257,23 @@ export function SignedInChrome(): ReactElement {
         {panelTarget === null
           ? null
           : createPortal(
-              <div id="signed-in-menu" ref={menuRef} className={panelClass}>
-                <Link
-                  href="/wallet"
-                  onClick={() => {
-                    setOpen(false);
-                  }}
-                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-                >
-                  <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                  {t('wallet.title')}
-                </Link>
+              <div
+                id="signed-in-menu"
+                ref={menuRef}
+                className={panelClass}
+                {...(sheetScrolls ? { 'data-scrollport': '' } : {})}
+              >
+                {account !== null ? (
+                  <>
+                    <MenuAccountHeader
+                      tight={tight}
+                      onNavigate={() => {
+                        setOpen(false);
+                      }}
+                    />
+                    <div aria-hidden="true" className="my-2 border-t border-app-border" />
+                  </>
+                ) : null}
                 <Link
                   href="/welcome"
                   onClick={(event) => {
@@ -273,6 +299,16 @@ export function SignedInChrome(): ReactElement {
                 >
                   <Home aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                   {t('nav.home')}
+                </Link>
+                <Link
+                  href="/wallet"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('wallet.balanceHeading')}
                 </Link>
                 <Link
                   href="/shops"

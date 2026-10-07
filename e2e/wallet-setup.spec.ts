@@ -280,18 +280,114 @@ test.describe('wallet history', () => {
     await expect(page.getByText('No payments yet.')).toBeVisible();
   });
 
-  test('wallet history-rows pin shows direction, amount, fiat, and note', async ({ page }) => {
+  test('wallet history-rows pin shows titled rows with signed amounts, fiat, status, and messages', async ({
+    page,
+  }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');
-    const rows = page.getByRole('region', { name: 'Payments' }).getByRole('listitem');
-    await expect(rows).toHaveCount(4);
-    await expect(rows.nth(0)).toContainText('Received');
-    await expect(rows.nth(0)).toContainText("₿21'000");
-    await expect(rows.nth(0)).toContainText('$21.00');
-    await expect(page.getByText('Thank you for the coffee')).toBeVisible();
-    await expect(rows.nth(1)).toContainText('Sent');
-    await expect(rows.nth(2)).toContainText('Pending');
-    await expect(rows.nth(3)).toContainText('Sent · Failed');
+    const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
+    await expect(rows).toHaveCount(10);
+    await expect(rows.nth(0)).toContainText('Zap on your post');
+    await expect(rows.nth(0)).toContainText("+₿2'100");
+    await expect(rows.nth(0)).toContainText('$2.10');
+    await expect(rows.nth(0)).toContainText('Great photo!');
+    await expect(rows.nth(1)).toContainText('Gift to @alice');
+    await expect(rows.nth(1)).toContainText("−₿5'000");
+    await expect(rows.nth(3)).toContainText('bob@example.com');
+    await expect(rows.nth(3)).toContainText('Thanks for dinner');
+    await expect(page.getByText('Happy birthday!')).toBeVisible();
+    await expect(rows.nth(5)).toContainText('Pending');
+    await expect(rows.nth(6)).toContainText('Failed');
+    await expect(rows.nth(7)).toContainText('On-chain deposit');
+    await expect(rows.nth(8)).toContainText('On-chain withdrawal');
+  });
+
+  test('Function: WalletPaymentDetails — tapping a row opens its payment screen and the arrow returns to the list', async ({
+    page,
+  }) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
+    await rows.nth(3).click();
+    await expect(page).toHaveURL(/\/wallet\/payment\?id=abe077a7-[0-9a-f-]+&visual=history-rows$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
+    await expect(page.getByText("−₿10'000")).toBeVisible();
+    await expect(page.getByText('Thanks for dinner')).toBeVisible();
+    const summary = page.locator('dl').first();
+    await expect(summary).toContainText('Total');
+    await expect(summary).toContainText("₿10'003");
+    await page.getByRole('link', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(/\/wallet\?visual=history-rows$/);
+    await expect(page.getByRole('region', { name: 'Payments' })).toBeVisible();
+  });
+
+  test('Function: useWalletPayment — an unknown payment says it could not be found', async ({
+    page,
+  }) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await page.goto('/wallet/payment?id=nope&visual=history-rows');
+    await expect(page.getByRole('alert')).toHaveText('This payment could not be found.');
+    await page.goto('/wallet/payment?visual=history-rows');
+    await expect(page.getByRole('alert')).toHaveText('This payment could not be found.');
+  });
+
+  test('Function: encodeBech32 — the zap screen shows the sender npub and the zapped note, and Copy writes the full value', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    await page.getByRole('region', { name: 'Payments' }).getByRole('link').first().click();
+    await expect(page.getByText('Zap on your post')).toBeVisible();
+    await page.getByRole('button', { name: 'Copy From' }).click();
+    const npub = await page.evaluate(() => navigator.clipboard.readText());
+    expect(npub).toMatch(/^npub1[02-9ac-hj-np-z]{58}$/);
+    await page.getByRole('button', { name: 'Copy Post' }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
+      /^note1[02-9ac-hj-np-z]{58}$/,
+    );
+  });
+
+  test('Function: paymentHref — an on-chain payment links to mempool.space only through the external-link warning', async ({
+    page,
+  }) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    await page.getByRole('region', { name: 'Payments' }).getByRole('link').nth(7).click();
+    await expect(page).toHaveURL(/\/wallet\/payment\?id=9bc2f53d-/);
+    await page.getByRole('link', { name: 'View on mempool.space' }).click();
+    await expect(page.getByRole('dialog', { name: 'Open external link?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('Function: paymentTitle — the rows pin names each row', async ({ page }) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
+    await expect(rows.first()).toContainText('Zap on your post');
+    await expect(rows.nth(9)).toContainText('Posting fee');
+  });
+
+  test('Function: paymentMessage — the rows pin shows the message under each row', async ({
+    page,
+  }) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
+    await expect(rows.first()).toContainText('Great photo!');
+    await expect(rows.nth(4)).toContainText('Happy birthday!');
+  });
+
+  test('Function: WalletPaymentPage — /wallet/payment renders the payment screen behind the wallet chrome', async ({
+    page,
+  }) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await page.goto('/wallet/payment');
+    await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
+    await expect(page.getByRole('alert')).toHaveText('This payment could not be found.');
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   });
 
   test('wallet history-error pin shows the error and Try again', async ({ page }) => {
@@ -317,12 +413,26 @@ test.describe('wallet history', () => {
     await expect(page.locator('[data-scrollport] button', { hasText: 'Receive' })).toHaveCount(0);
   });
 
-  test('Function: useWalletHistory — pinned rows stay four after scrolling', async ({ page }) => {
+  test('Function: useWalletHistory — pinned rows stay ten after scrolling', async ({ page }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');
     const rows = page.getByRole('region', { name: 'Payments' }).getByRole('listitem');
     await rows.last().scrollIntoViewIfNeeded();
-    await expect(rows).toHaveCount(4);
+    await expect(rows).toHaveCount(10);
+  });
+
+  test('Function: getWalletPayment — unset key shows no payment screen data or wasm', async ({
+    page,
+  }) => {
+    const urls: string[] = [];
+    page.on('request', (request) => {
+      urls.push(request.url());
+    });
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await page.goto('/wallet/payment?id=p1');
+    await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
+    await expect(page.getByText('Date', { exact: true })).toHaveCount(0);
+    expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
   });
 
   test('Function: toWalletPayment — unset key shows no payment list or wasm', async ({ page }) => {
