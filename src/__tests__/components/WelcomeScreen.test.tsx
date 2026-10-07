@@ -15,7 +15,7 @@ vi.mock('@/hooks/useWalletSend', () => ({ useWalletSend: vi.fn() }));
 const askStep = vi.hoisted(() => ({ on: false }));
 vi.mock('@/components/ForumLoader', async () => {
   const { useChromeBack } = await import('@/components/ViewHistoryRoot');
-  const { useLayoutEffect } = await import('react');
+  const { useLayoutEffect, useState } = await import('react');
   /** Like an ask-wizard step: registers the Back it gets from its parent's render. */
   function AskStep({ onBack }: { onBack: () => void }): ReactNode {
     const { setOverride } = useChromeBack();
@@ -26,8 +26,25 @@ vi.mock('@/components/ForumLoader', async () => {
     }, [onBack, setOverride]);
     return <p>Forum stub</p>;
   }
+  /** Re-renders on demand, so the ask step registers its Back again (a new callback). */
+  function Forum(): ReactNode {
+    const [renders, setRenders] = useState(0);
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            setRenders(renders + 1);
+          }}
+        >
+          Forum re-render
+        </button>
+        <AskStep onBack={() => undefined} />
+      </>
+    );
+  }
   return {
-    ForumLoader: () => <AskStep onBack={() => undefined} />,
+    ForumLoader: Forum,
   };
 });
 vi.mock('@/components/WalletPanelView', () => ({
@@ -220,5 +237,15 @@ describe('WelcomeScreen with an ask step', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.queryByText('Panel receive')).toBeNull();
     expect(screen.getByText('Forum stub')).toBeTruthy();
+  });
+
+  it('keeps the wallet view Back on top when the hidden ask step registers again', () => {
+    askStep.on = true;
+    vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
+    renderWelcome();
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Forum re-render' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByText('Panel receive')).toBeNull();
   });
 });

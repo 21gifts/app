@@ -587,7 +587,7 @@
 
 ## Function: ChromeBackProvider
 
-- **Purpose:** Hold the top-left back overrides, one slot per caller. The chrome arrow runs the latest in-page step instead of the view history. Pay-sheet dismiss stays Close (`X`), not this control.
+- **Purpose:** Hold the top-left back overrides, one slot per caller. The chrome arrow runs the latest in-page step instead of the view history; an override marked `over` (a wallet view laid over `/welcome`) beats every page step, even one that registers again after it. Pay-sheet dismiss stays Close (`X`), not this control.
 - **Inputs:** `children`.
 - **Returns / side effects:** Context provider. Each caller has its own slot. The arrow shows the last set override. Clearing or unmounting a caller restores the previous. No network.
 - **Used by:** `ViewHistoryRoot`.

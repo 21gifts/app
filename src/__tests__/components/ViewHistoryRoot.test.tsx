@@ -240,4 +240,42 @@ describe('ViewHistoryRoot', () => {
     expect(screen.getByText('first:forum.askBack')).toBeTruthy();
     expect(screen.queryByText('second:shops.back')).toBeNull();
   });
+
+  it('keeps a view laid over the page on top while a page step registers again', () => {
+    function Caller({
+      name,
+      labelKey,
+      over,
+    }: {
+      name: string;
+      labelKey: 'forum.askBack' | 'nav.back';
+      over?: boolean;
+    }): ReactElement {
+      const { override, setOverride } = useChromeBack();
+      return (
+        <div>
+          <p>{`${name}:${override === null ? 'none' : override.labelKey}`}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setOverride({ labelKey, onClick: (): void => undefined, over: over === true });
+            }}
+          >
+            {`${name} set`}
+          </button>
+        </div>
+      );
+    }
+    renderWithLocale(
+      <ChromeBackProvider>
+        <Caller name="page" labelKey="forum.askBack" />
+        <Caller name="view" labelKey="nav.back" over />
+      </ChromeBackProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'page set' }));
+    fireEvent.click(screen.getByRole('button', { name: 'view set' }));
+    expect(screen.getByText('page:nav.back')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'page set' }));
+    expect(screen.getByText('page:nav.back')).toBeTruthy();
+  });
 });

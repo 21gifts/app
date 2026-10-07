@@ -62,8 +62,9 @@ function WelcomeColumn(): ReactElement {
 
 /**
  * Registers the top-left Back of an open wallet view as the chrome back
- * override (the slot an ask-wizard step uses). It is a leaf of its own, so
- * only it re-renders when the override changes, not the forum column.
+ * override (the slot an ask-wizard step uses), marked `over` so it stays on
+ * top while a hidden ask step registers its own again. It is a leaf of its
+ * own, so only it re-renders when the override changes, not the forum column.
  *
  * @param props - The view's one Back step.
  * @returns `null` (registration only).
@@ -77,6 +78,7 @@ function PanelChromeBack({ onBack }: { onBack: () => void }): null {
   useLayoutEffect(() => {
     setOverride({
       labelKey: 'nav.back',
+      over: true,
       onClick: (): void => {
         backRef.current();
       },
