@@ -34,6 +34,8 @@ export interface UseWalletPanelResult {
    * existing unlock first and opens Send once the wallet is ready.
    */
   openSend: () => void;
+  /** The footer button to focus when the page comes back (the view that just closed), or `null`. */
+  returnFocus: 'receive' | 'send' | null;
   /** Whether Send cannot be pressed now (no send flow, or the wallet is neither ready nor locked). */
   sendDisabled: boolean;
   /** Whether the Send input step shows its manual-entry sheet over the camera. */
@@ -131,6 +133,10 @@ export function useWalletPanel({
         ? 'none'
         : panel;
   const manualEntry = manual && shown === 'send' && sendStep === 'input';
+  const [lastView, setLastView] = useState<'receive' | 'send' | null>(null);
+  if (shown !== 'none' && lastView !== shown) {
+    setLastView(shown);
+  }
 
   const scroller = useAppShellScroller();
   /** Page scroll position when a view opened. */
@@ -222,6 +228,7 @@ export function useWalletPanel({
 
   return {
     shown,
+    returnFocus: shown === 'none' ? lastView : null,
     openReceive,
     openSend,
     sendDisabled: send === undefined || !(walletReady || status === 'locked'),

@@ -142,4 +142,16 @@ describe('useWalletPayment', () => {
       expect(result.current).toEqual({ status: 'ready', payment: other });
     });
   });
+
+  it('drops a loaded payment back to loading when the wallet stops being ready', async () => {
+    vi.mocked(getWalletPayment).mockResolvedValue(PAYMENT);
+    const { result } = renderHook(() => useWalletPayment('p1'));
+    await waitFor(() => {
+      expect(result.current.status).toBe('ready');
+    });
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    expect(result.current).toEqual({ status: 'loading' });
+  });
 });

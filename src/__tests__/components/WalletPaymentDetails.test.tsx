@@ -266,4 +266,11 @@ describe('WalletPaymentDetails', () => {
     });
     expect(screen.queryByText('Copied')).toBeNull();
   });
+
+  it('hides a loaded payment while the wallet is not open and shows the wallet state instead', () => {
+    vi.mocked(useWallet).mockReturnValue(walletWith('error'));
+    showPayment(fixture(ZAP));
+    expect(screen.queryByText("+₿2'100")).toBeNull();
+    expect(screen.getByRole('button', { name: 'Wallet error' })).toBeTruthy();
+  });
 });

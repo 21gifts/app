@@ -240,6 +240,28 @@ describe('useWalletPanel locked wallet', () => {
   });
 });
 
+describe('useWalletPanel focus', () => {
+  it('names the view that just closed as the footer button to focus', () => {
+    const { result } = renderPanel({ send: sendWith(), wallet: walletWith('ready') });
+    expect(result.current.returnFocus).toBeNull();
+    act(() => {
+      result.current.openSend();
+    });
+    expect(result.current.returnFocus).toBeNull();
+    act(() => {
+      result.current.stepBack();
+    });
+    expect(result.current.returnFocus).toBe('send');
+    act(() => {
+      result.current.openReceive();
+    });
+    act(() => {
+      result.current.stepBack();
+    });
+    expect(result.current.returnFocus).toBe('receive');
+  });
+});
+
 describe('useWalletPanel manual entry and pending unlock', () => {
   it('closes the sheet when the wallet stops being ready, so Back takes no invisible step', () => {
     const send = sendWith({ step: 'input', error: 'notReady' });

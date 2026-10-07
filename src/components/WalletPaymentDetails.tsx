@@ -284,7 +284,7 @@ export function WalletPaymentDetails(): ReactElement {
   return (
     <Card surface={false}>
       <h1 className="sr-only">{t('wallet.payment.heading')}</h1>
-      {state.status === 'ready' && !rate.loading ? (
+      {state.status === 'ready' && wallet.status === 'ready' && !rate.loading ? (
         <PaymentView payment={state.payment} rateDay={rate.rateDay} />
       ) : null}
       {missing ? (
@@ -292,7 +292,7 @@ export function WalletPaymentDetails(): ReactElement {
           {t('wallet.payment.missing')}
         </p>
       ) : null}
-      {waiting && wallet.status !== 'ready' && wallet.status !== 'disabled' ? (
+      {!missing && wallet.status !== 'ready' && wallet.status !== 'disabled' ? (
         <WalletBalance
           status={wallet.status}
           balanceSats={null}

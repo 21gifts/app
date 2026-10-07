@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactElement, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactElement, ReactNode, Ref } from 'react';
 
 /** Visual weight for {@link Button}. */
 export type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'overlay';
@@ -24,6 +24,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode;
   /** Button label. */
   children: ReactNode;
+  /** The rendered `<button>` (to move focus to it). */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 const SIZE_CLASS: Record<ButtonSize, string> = {

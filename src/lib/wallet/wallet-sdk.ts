@@ -756,6 +756,10 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
         },
         async getPayment(id: string): Promise<WalletPayment> {
           const response = await handle.getPayment({ paymentId: id });
+          // Token amounts are not satoshis; like the Bitcoin-only list, they are not shown.
+          if (response.payment.method === 'token') {
+            throw new Error('wallet-payment-not-bitcoin');
+          }
           return toWalletPayment(response.payment);
         },
         async parse(input: string): Promise<WalletTarget> {
