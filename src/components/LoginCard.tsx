@@ -33,7 +33,7 @@ type VersionBlock = {
  * @param props - `footer`: shown under the card only while no login or
  *   sign-up is running and nobody is signed in (`WalletLoginCard` puts
  *   **Log out** there, so it cannot race a login in flight).
- * @returns The card element.
+ * @returns The card, followed by `footer` when one is given and shown.
  */
 export function LoginCard({ footer }: { footer?: ReactNode } = {}): ReactElement {
   const account = useAuthStore((state) => state.account);

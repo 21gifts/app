@@ -1260,7 +1260,7 @@ Fill `AppShell` (page frame); `ProfileChromeLeft` with `HomeWordmark` + Language
 
 - Unclaimed: `bg-app-notice` banner + labeled **Activate**.
 - Loading: `Loader2` `text-app-subtle`.
-- Already claimed: muted sentence + fingerprint `IconButton` primary.
+- Already claimed: muted sentence + fingerprint `IconButton` primary. After **Log in instead**, `WalletLoginCard` stands in place until the wallet is open, and stays with its alert while that session is held back (no new variant: it is the shared login card).
 - Error: alert + `Button` **Try again**.
 - In-app: `InAppBrowserView` in a Card.
 
