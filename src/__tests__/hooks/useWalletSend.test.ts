@@ -403,11 +403,43 @@ describe('useWalletSend confirm', () => {
     });
     expect(closed).toBe(true);
     expect(result.current.state).toMatchObject({ step: 'confirm' });
+    act(() => {
+      result.current.abandon();
+    });
+    expect(result.current.state).toMatchObject({ step: 'confirm' });
     await act(async () => {
       finish({ kind: 'paid' });
     });
     expect(result.current.state).toMatchObject({ step: 'sent' });
     expect(result.current.sending).toBe(false);
+  });
+
+  it('abandon drops a read in flight and empties the field', async () => {
+    const read = pending<Awaited<ReturnType<typeof parseWalletInput>>>(vi.mocked(parseWalletInput));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      result.current.abandon();
+    });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.text).toBe('');
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    await act(async () => {
+      read.resolve({ kind: 'target', target: LNURL });
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('abandon does nothing on a pinned flow', () => {
+    window.history.replaceState({}, '', '/wallet?visual=send-unreadable');
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    const { result } = renderHook(() => useWalletSend());
+    const before = result.current.state;
+    act(() => {
+      result.current.abandon();
+    });
+    expect(result.current.state).toBe(before);
   });
 
   it('drops a send result after the wallet screen moved on', async () => {

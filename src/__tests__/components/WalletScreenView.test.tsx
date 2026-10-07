@@ -671,6 +671,7 @@ function idleSend(extra: Partial<UseWalletSendResult> = {}): UseWalletSendResult
     setSpeed: vi.fn(),
     confirm: vi.fn(),
     cancel: vi.fn(() => false),
+    abandon: vi.fn(),
     ...extra,
   };
 }

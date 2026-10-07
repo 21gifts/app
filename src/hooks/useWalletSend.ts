@@ -176,6 +176,12 @@ export interface UseWalletSendResult {
    *   flight), `false` when no step is open or the flow is pinned.
    */
   cancel: () => boolean;
+  /**
+   * Leaves the flow on an empty input step without an alert, dropping a read,
+   * prepare, or quote renewal in flight. Does nothing while a confirm send is
+   * in flight or the flow is pinned.
+   */
+  abandon: () => void;
 }
 
 /**
@@ -989,6 +995,17 @@ export function useWalletSend(): UseWalletSendResult {
     return true;
   }, [inert, state.step, busy]);
 
+  const abandon = useCallback((): void => {
+    if (inert || sendingRef.current) {
+      return;
+    }
+    generation.current += 1;
+    sendRef.current = null;
+    setBusy(false);
+    setTextState('');
+    setState({ step: 'input', error: null });
+  }, [inert]);
+
   const shown =
     pinned !== null &&
     pinned.step === 'confirm' &&
@@ -1014,5 +1031,6 @@ export function useWalletSend(): UseWalletSendResult {
     setSpeed,
     confirm,
     cancel,
+    abandon,
   };
 }

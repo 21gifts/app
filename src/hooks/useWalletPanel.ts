@@ -52,7 +52,8 @@ export interface UseWalletPanelResult {
   stepBack: () => boolean;
   /**
    * Returns to the page at its top (the wordmark and the Menu's Home),
-   * unless a send is in flight.
+   * dropping a read or prepare in flight, unless a confirmed send is in
+   * flight.
    */
   close: () => void;
 }
@@ -214,11 +215,10 @@ export function useWalletPanel({
 
   const close = (): void => {
     if (shown === 'send' && send !== undefined) {
-      if (send.busy) {
+      if (send.sending) {
         return;
       }
-      send.cancel();
-      send.setText('');
+      send.abandon();
     }
     savedScroll.current = 0;
     setSendAfterUnlock(false);

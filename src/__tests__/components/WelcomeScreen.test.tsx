@@ -75,6 +75,7 @@ const SEND: UseWalletSendResult = {
   setSpeed: vi.fn(),
   confirm: vi.fn(),
   cancel: vi.fn(() => false),
+  abandon: vi.fn(),
 };
 
 /** The welcome screen under the chrome back slot, as `/welcome` mounts it. */

@@ -61,6 +61,7 @@ function sendWith(
     setSpeed: vi.fn(),
     confirm: vi.fn(),
     cancel: vi.fn(() => true),
+    abandon: vi.fn(),
     ...extra,
   };
 }

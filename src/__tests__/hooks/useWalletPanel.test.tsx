@@ -25,6 +25,7 @@ function sendWith(
     setSpeed: vi.fn(),
     confirm: vi.fn(),
     cancel: vi.fn(() => state.step !== 'input'),
+    abandon: vi.fn(),
     ...extra,
   };
 }
@@ -326,25 +327,27 @@ describe('useWalletPanel manual entry', () => {
 });
 
 describe('useWalletPanel close', () => {
-  it('cancels the flow, clears the text, and returns to the page top, but not while a send is in flight', () => {
+  it('drops the flow and returns to the page top, but not while a confirmed send is in flight', () => {
     const scroller = document.createElement('div');
-    const busy = sendWith(CONFIRM, { busy: true });
-    const { result, rerender } = renderPanel({ send: busy, wallet: walletWith('ready') }, scroller);
+    const sending = sendWith(CONFIRM, { busy: true, sending: true });
+    const { result, rerender } = renderPanel(
+      { send: sending, wallet: walletWith('ready') },
+      scroller,
+    );
     act(() => {
       result.current.close();
     });
-    expect(busy.cancel).not.toHaveBeenCalled();
+    expect(sending.abandon).not.toHaveBeenCalled();
     expect(result.current.shown).toBe('send');
-    const idle = sendWith(CONFIRM);
-    rerender({ send: idle, wallet: walletWith('ready') });
+    const reading = sendWith({ step: 'input', error: null }, { busy: true });
+    rerender({ send: reading, wallet: walletWith('ready') });
     act(() => {
       result.current.openSend();
     });
     act(() => {
       result.current.close();
     });
-    expect(idle.cancel).toHaveBeenCalledTimes(1);
-    expect(idle.setText).toHaveBeenCalledWith('');
+    expect(reading.abandon).toHaveBeenCalledTimes(1);
     rerender({ send: sendWith(), wallet: walletWith('ready') });
     expect(result.current.shown).toBe('none');
     expect(scroller.scrollTop).toBe(0);
@@ -359,7 +362,7 @@ describe('useWalletPanel close', () => {
     act(() => {
       result.current.close();
     });
-    expect(send.cancel).not.toHaveBeenCalled();
+    expect(send.abandon).not.toHaveBeenCalled();
     expect(result.current.shown).toBe('none');
   });
 });
