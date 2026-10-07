@@ -290,6 +290,11 @@ describe('SignedInChrome', () => {
     const header = screen.getByRole('button', { name: 'Account header', hidden: true });
     expect(menuPanel().firstElementChild).toBe(header);
     expect((header.nextElementSibling as HTMLElement).className).toContain('border-t');
+    vi.mocked(loadSession).mockReturnValue(null);
+    act(() => {
+      useAuthStore.getState().clearAuth();
+    });
+    expect(screen.queryByRole('button', { name: 'Account header', hidden: true })).toBeNull();
   });
 
   it('shows Menu while Log out stays hidden', () => {

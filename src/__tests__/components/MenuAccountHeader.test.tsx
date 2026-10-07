@@ -154,6 +154,18 @@ describe('MenuAccountHeader', () => {
     },
   );
 
+  it('drops the pending card when the stored session is rejected while the Menu is open', () => {
+    localStorage.setItem('21gifts.session', 'sess-stored');
+    const { container } = renderWithLocale(
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
+    );
+    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
+    act(() => {
+      useAuthStore.getState().clearAuth();
+    });
+    expect(container.innerHTML).toBe('');
+  });
+
   it('holds its space in the compact Menu too, and stays closed while the Menu is', () => {
     localStorage.setItem('21gifts.session', 'sess-stored');
     const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight open={false} />);

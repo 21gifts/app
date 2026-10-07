@@ -131,6 +131,10 @@ export function MenuAccountHeader({
   const { fiat } = useFiatPreference();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  // Read on every auth change, so a sign-out that clears the stored session also clears the card.
+  const storedSession = useAuthStore((state) =>
+    state.session === null || state.account === null ? loadSession() : null,
+  );
   const accountId = account?.id ?? null;
   const wallet = useWallet();
   const rateDay = useLatestRateDay();
@@ -155,7 +159,7 @@ export function MenuAccountHeader({
     return null;
   }
   const pending = account === null || session === null;
-  if (pending && loadSession() === null) {
+  if (pending && storedSession === null) {
     return null;
   }
   const stats = pending
