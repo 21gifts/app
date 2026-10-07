@@ -759,7 +759,7 @@ Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-
 
 ### ForumModeSelect
 
-Closed full-width combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. Shops does not mount it. Post/Ask stays a SegmentedControl.
+Closed full-width combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. Shops does not mount it. Post/Ask stays a SegmentedControl. The staff member-data wallet tab (`/moderate/members/[accountId]`) mounts one as its **Category** filter (**All categories** plus seven categories): the same job, one view of a list. One per page, because the listbox id is fixed.
 
 ```tsx
 export function ForumModeSelect<T extends string>(props: {
@@ -1132,9 +1132,27 @@ Handbook states: default list, empty, loading, error.
 
 ### `/moderate`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Moderation** (`h1` ramp). Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`, **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, and **Show payout per person** `ButtonLink` → `/moderate/payouts` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Statistics. This page does not fetch `GET /gifts/stats` or the hidden list. No un-hide control.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Moderation** (`h1` ramp). Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` → `/moderate/proposals`, **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, **Show payout per person** `ButtonLink` → `/moderate/payouts`, **Member data** `ButtonLink` → `/moderate/members`, and **Access log** `ButtonLink` → `/moderate/audit` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after Statistics. This page does not fetch `GET /gifts/stats` or the hidden list. No un-hide control.
 
 Handbook states: default hub, group-unread, proposals-unread, forbidden.
+
+### `/moderate/members`
+
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `Card xl` `surface={false}` → **h1** **Member data**, muted lead, `Field` **Name or username** (`type="search"`), then the hint, **Loading…**, the result rows, **No member found.**, or the `role="alert"` error plus **Try again**. A result row is a full-row `next/link` with visible text (name over `@username`, `rounded-2xl border border-app-border bg-app-card-muted`), like the Notifications rows; it is not icon-only. Lower roles see the heading plus **This page is for moderators.**
+
+Handbook states: default, loading, results, empty, error, forbidden.
+
+### `/moderate/members/[accountId]`
+
+Same shell. `Card xl` `surface={false}` → **h1** **Member data**, the member's name as an inline underlined `Link` to `/members/{id}`, then a neutral `SegmentedControl` **Wallet** / **Activity** (the same control as the staff inbox origin filter). Wallet: **Balance** section (label in the uppercase `xs` section-heading style, `formatBitcoin` plus the fiat suffix at `text-2xl`, **Reported {time}**), summary tiles (`dl` of `rounded-2xl border border-app-border bg-app-card-muted` tiles: **Received**, **Sent**, **Fees**; then **Spent in the community** / **Spent outside** as whole percents), **Sent by category** rows, a neutral `SegmentedControl` for the period, then **Payments** with a neutral `SegmentedControl` for the direction and `ForumModeSelect` **Category**. Payment rows follow the `/wallet` payments card (direction icon, label with `·` category and status, amount with fiat, fee, counterparty, time, note). Activity rows use the same row chrome: plain-word label and time, the path in `font-mono text-xs`, and the values as a small `dl`. Every amount shows the default fiat. No labeled staff-action stack: this page only reads.
+
+Handbook states: default, loading, error, forbidden, no-report, period, direction, category-open, category, activity, activity-empty, activity-error.
+
+### `/moderate/audit`
+
+Same shell. `Card xl` `surface={false}` → **h1** **Access log**, muted lead, then rows in the same row chrome: **Wallet data** / **Activity** with the time, then **Member** and **Opened by**, each an inline underlined `Link` to `/members/{id}`. Empty, Loading…, and error plus **Try again** as on `/moderate/payouts`. Forbidden copy **This page is for founders and initiators.**
+
+Handbook states: default, loading, empty, error, forbidden.
 
 ### `/grants/applications`
 

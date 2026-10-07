@@ -839,7 +839,7 @@
 
 ## Function: ForumModeSelect
 
-- **Purpose:** Closed combobox for the living-room forum view (Active, No gifts yet, All, Most popular). The trigger shows the selected label and a chevron. A positive unpaid badge is also shown as a count chip on the closed trigger. Opening the trigger shows a listbox of option rows; the selected row has a check. Choosing a row calls onChange and closes the list. Shops does not mount it. Post/Ask stays a SegmentedControl.
+- **Purpose:** Closed combobox for the living-room forum view (Active, No gifts yet, All, Most popular). The trigger shows the selected label and a chevron. A positive unpaid badge is also shown as a count chip on the closed trigger. Opening the trigger shows a listbox of option rows; the selected row has a check. Choosing a row calls onChange and closes the list. Shops does not mount it. The staff member-data wallet tab (`TeamMemberWallet`) mounts it once as its **Category** filter (**All categories** plus the seven payment categories), the same job: choose one view of a list. Post/Ask stays a SegmentedControl.
 - **Inputs:** `value`; `options` (`value`, `label`, optional `badge`, optional `badgeAriaLabel`); `onChange(value)`; `ariaLabel` (catalog `forum.modeLabel`).
 - **Returns:** A relative wrapper with the combobox button and, only while open, the listbox.
 
@@ -1800,6 +1800,34 @@ First post free: while the signed-in member is below verified and has no missing
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** `{ days, rows }`. Throws visitor copy `Could not load the payout table. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingPayoutsScreen`.
+
+## Function: searchTeamMembers
+
+- **Purpose:** GET `/team/members?query=` (same-origin Bearer proxy of api `GET /team/members`) and parse `teamMemberSearchResponseSchema.members`. Staff search by name or username for `/moderate/members`. Sends only the Bearer session and the typed text; no body.
+- **Inputs:** Bearer `sessionToken`; trimmed `query`.
+- **Returns / side effects:** Array of `{ id, name, username? }` (rows that fail the schema are dropped), or `null` on 403 so the screen shows the forbidden sentence. Throws visitor copy `Could not search members. Please try again.` on another non-2xx, a network failure, or a body that fails the schema.
+- **Used by:** `TeamMemberSearchScreen`.
+
+## Function: fetchTeamMemberWallet
+
+- **Purpose:** GET `/team/members/{id}/wallet` (same-origin Bearer proxy of api `GET /team/members/:id/wallet`) with `period` (`7`, `30`, `90`, `all`), optional `category` and `direction` (`in` / `out`), and optional `before` cursor; parse `teamWalletResponseSchema`. The api records each read in the access log. Only the listed payment fields survive parsing, so a preimage or any key the api might return never reaches state or the screen.
+- **Inputs:** Bearer `sessionToken`; member `accountId`; `TeamWalletQuery` `{ period, category, direction, before }`.
+- **Returns / side effects:** `{ balance, summary, payments, nextCursor }` (times as epoch ms; unknown categories read as `unknown`), or `null` on 403. Throws visitor copy `Could not load the wallet data. Please try again.` on another non-2xx, a network failure, or a body that fails the schema.
+- **Used by:** `TeamMemberWallet`.
+
+## Function: fetchTeamMemberEvents
+
+- **Purpose:** GET `/team/members/{id}/events` (same-origin Bearer proxy of api `GET /team/members/:id/events`) with an optional `before` cursor; parse `teamEventsResponseSchema`. The api records each read in the access log. Event `props` keep flat values only and drop every key that names a recovery phrase, seed, PRF output, preimage, or private or spending key.
+- **Inputs:** Bearer `sessionToken`; member `accountId`; `before` cursor or `null`.
+- **Returns / side effects:** `{ events, nextCursor }`, newest first, or `null` on 403. Throws visitor copy `Could not load the activity. Please try again.` on another non-2xx, a network failure, or a body that fails the schema.
+- **Used by:** `TeamMemberEvents`.
+
+## Function: fetchTeamAudit
+
+- **Purpose:** GET `/team/audit` (same-origin Bearer proxy of api `GET /team/audit`) with an optional `before` cursor; parse `teamAuditResponseSchema`. The access log of team reads of member data; the api allows founders and initiators only.
+- **Inputs:** Bearer `sessionToken`; `before` cursor or `null`.
+- **Returns / side effects:** `{ entries, nextCursor }`, newest first, or `null` on 403 (a moderator). Throws visitor copy `Could not load the access log. Please try again.` on another non-2xx, a network failure, or a body that fails the schema.
+- **Used by:** `AccessAuditScreen`.
 
 ## Function: fetchFundingApplications
 
@@ -2919,6 +2947,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/funding/payout-days`.
 
+## Function: proxyTeamMembersGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /team/members` (staff member search). Forwards the Authorization header and the query string.
+- **Inputs:** Incoming `Request` (Bearer session; `?query=`).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/team/members`.
+
+## Function: proxyTeamMemberWalletGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /team/members/:accountId/wallet` (staff view of a member's balance, summary, and payments). Forwards the Authorization header and the query string (`period`, `category`, `direction`, `before`).
+- **Inputs:** Incoming `Request` (Bearer session); `accountId` from the route segment (URL-encoded on the api path).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/team/members/[accountId]/wallet`.
+
+## Function: proxyTeamMemberEventsGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /team/members/:accountId/events` (staff view of a member's interaction events). Forwards the Authorization header and the query string (`before`).
+- **Inputs:** Incoming `Request` (Bearer session); `accountId` from the route segment (URL-encoded on the api path).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/team/members/[accountId]/events`.
+
+## Function: proxyTeamAuditGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /team/audit` (access log for founders and initiators). Forwards the Authorization header and the query string (`before`).
+- **Inputs:** Incoming `Request` (Bearer session).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/team/audit`.
+
 ## Function: proxyFundingApplicationsGet
 
 - **Purpose:** Same-origin Bearer proxy helper for api `GET /funding/applications`. Forwards the incoming Authorization header.
@@ -3808,6 +3864,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The dialog. No dismiss control; **Log out** (turn off push for at most five seconds, clear the session, open `/login`) is the only way around it. Pressing **Log out** does not change the dialog; a second press while leaving is ignored.
 - **Used by:** `AppShell` while `needsWalletSetup` holds or a setup pin is set.
 
+## Function: useCursorPages
+
+- **Purpose:** Pages of a list the api returns with a `nextCursor`, newest first. Loads the first page on mount and again whenever `key` changes (a new member, period, or filter), dropping answers for an older key. The next page loads when `sentinelRef` is in view, checked again after every completed load, like the `/wallet` payments list. A second observer callback before the next render does not start the same page twice.
+- **Inputs:** `load(before)` (resolves to a page, or `null` when the api refused the role), or `null` to send nothing; `key`.
+- **Returns / side effects:** `{ status, pages, hasMore, retry, sentinelRef }`. `status` is `loading` (first page), `ready`, `error` (first or next page; loaded pages stay), or `forbidden`. `retry` loads the failed page again.
+- **Used by:** `TeamMemberWallet`, `TeamMemberEvents`, `AccessAuditScreen`.
+
 ## Function: useWalletHistory
 
 - **Purpose:** The `/wallet` payment list: loads `WALLET_HISTORY_PAGE_LIMIT` (20) payments newest first once the wallet is ready, appends the next page on `loadMore` (skipping ids it already has), and reloads every loaded page whenever `useWalletStore.syncCount` changes, which happens after connect and after each SDK `synced` event, so the list does not depend on payment events. Only the latest load writes state. A failed later page stops paging quietly. `?visual=history-empty|history-rows|history-error` pins a fixture list only in a Playwright build.
@@ -4422,7 +4485,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, and a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts`, a labeled **Member data** `ButtonLink` → `/moderate/members`, and a labeled **Access log** `ButtonLink` → `/moderate/audit` (last tool; the api serves the log to founders and initiators only, and a moderator, who shares the initiator rank, sees the forbidden sentence there). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for Open proposals `proposalCount` and Moderators chat group staff-room unread (network for those counts; does not write the home-screen badge).
 - **Returns / side effects:** React element or `null` without a session. Does not fetch `GET /gifts/stats`. Others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, applications, or the group thread itself.
 - **Used by:** `ModeratePage`.
@@ -4469,6 +4532,62 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/payout-days` only when the role is at least moderator.
 - **Used by:** `PayoutsPage`.
+
+## Function: TeamMembersPage
+
+- **Purpose:** Next.js page for `/moderate/members` (signed-in staff member search, Team → Member data). Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `TeamMemberSearchScreen`. JSON lives under `/team/members` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The member search inside fill AppShell.
+- **Used by:** Route `/moderate/members`.
+
+## Function: TeamMemberSearchScreen
+
+- **Purpose:** Client search of the member-data area. Staff (moderator and every higher role) type a name or username; after a 300 ms pause `searchTeamMembers` runs and each match links to `/moderate/members/{id}` (name or **Unnamed**, plus `@username`). An empty field shows the hint and sends nothing. An answer for an older text is dropped. Loading…, no match, and error plus **Try again** are separate. Lower roles, and staff the api refuses (403), see the forbidden sentence and no field. Renders `null` without a session. Renders no back control.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /team/members?query=` only for staff and a non-empty text.
+- **Used by:** `TeamMembersPage`.
+
+## Function: TeamMemberDataPage
+
+- **Purpose:** Next.js page for `/moderate/members/[accountId]` (signed-in staff page of one member's wallet data and activity). Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `TeamMemberDataScreen` with the route `accountId`. JSON lives under `/team/members/:id/wallet` and `/team/members/:id/events`.
+- **Inputs:** Dynamic route params `{ accountId }`.
+- **Returns / side effects:** The member-data screen inside fill AppShell.
+- **Used by:** Route `/moderate/members/[accountId]`.
+
+## Function: TeamMemberDataScreen
+
+- **Purpose:** Client page body of one member's data. Staff see the heading **Member data**, the member's name as a link to `/members/{id}` (from the existing `fetchMember`; left out while it loads, when the member is missing, or when it fails), and a neutral `SegmentedControl` **Wallet** / **Activity** that mounts `TeamMemberWallet` or `TeamMemberEvents`. Lower roles see the forbidden sentence and nothing is fetched. Renders `null` without a session. Renders no back control.
+- **Inputs:** `accountId`; session and account from `useAuthStore`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /forum/members/:id` for the name.
+- **Used by:** `TeamMemberDataPage`.
+
+## Function: TeamMemberWallet
+
+- **Purpose:** Wallet tab of the member-data page. `useCursorPages` over `fetchTeamMemberWallet` for the chosen period (neutral `SegmentedControl` **7 days** / **30 days** / **90 days** / **All**, default 30), direction (neutral `SegmentedControl` **All** / **Received** / **Sent**), and category (`ForumModeSelect` **All categories** plus the seven categories); every change starts again from the first page. Shows the latest reported balance and its time, the summary tiles **Received**, **Sent**, **Fees**, the shares **Spent in the community** (member, shop, 21.gifts, gift) and **Spent outside** (outside 21.gifts, Bitcoin address) of all sent bitcoin, **Sent by category**, then the payments newest first like the `/wallet` payments card: direction, category, pending or failed, amount, fee, counterparty (**From** / **To** a member link or the destination), time, and description or payer note. Every bitcoin amount uses `formatBitcoin` plus `preferredFiatSuffix` with `useLatestRateDay`. A 403 shows the forbidden sentence.
+- **Inputs:** `session`, `accountId`; number format, fiat preference, and catalog from providers.
+- **Returns / side effects:** React element. Fetches `GET /team/members/:id/wallet` pages.
+- **Used by:** `TeamMemberDataScreen`.
+
+## Function: TeamMemberEvents
+
+- **Purpose:** Activity tab of the member-data page. `useCursorPages` over `fetchTeamMemberEvents`; each event shows what the member did in plain words (the raw event name when the app has no label), the time, the page path, and its small values. A value whose name ends in `Sats` is a bitcoin amount and shows the default fiat beside it. Loading…, empty (**No activity yet.**), and error plus **Try again** are separate; a 403 shows the forbidden sentence.
+- **Inputs:** `session`, `accountId`; number format, fiat preference, and catalog from providers.
+- **Returns / side effects:** React element. Fetches `GET /team/members/:id/events` pages.
+- **Used by:** `TeamMemberDataScreen`.
+
+## Function: AccessAuditPage
+
+- **Purpose:** Next.js page for `/moderate/audit` (access log of team reads of member data). Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `AccessAuditScreen`. JSON lives under `/team/audit` because Next.js forbids a `route.ts` beside this page. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The access log inside fill AppShell.
+- **Used by:** Route `/moderate/audit`.
+
+## Function: AccessAuditScreen
+
+- **Purpose:** Client access log. Viewers at least at initiator rank load `fetchTeamAudit` through `useCursorPages`; each row shows **Wallet data** or **Activity**, the time, **Member** and **Opened by** (both links to `/members/{id}`, **Unnamed** without a name). The api allows founders and initiators only; a moderator shares the initiator rank, so the api's 403 shows **This page is for founders and initiators.** Lower roles see the same sentence and nothing is fetched. Loading…, empty, and error plus **Try again** are separate. Renders `null` without a session. Renders no back control.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /team/audit` pages.
+- **Used by:** `AccessAuditPage`.
 
 ## Function: ProposalsPage
 

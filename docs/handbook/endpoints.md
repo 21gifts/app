@@ -758,6 +758,34 @@
 - **Used by:** `fetchFundingPayoutDays` via `FundingPayoutsScreen` on `/moderate/payouts`.
 - **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
+## Endpoint: GET /team/members
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /team/members?query=` (staff search of members by name or username for `/moderate/members`). Lives under `/team` because Next.js forbids a `route.ts` beside the HTML page.
+- **Errors:** Upstream 401 without a Bearer session, 403 below moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `searchTeamMembers` via `TeamMemberSearchScreen`.
+- **Auth:** Bearer session; the api allows moderators, initiators, and founders.
+
+## Endpoint: GET /team/members/[accountId]/wallet
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /team/members/:accountId/wallet` (latest reported balance and its time, the summary for `period`, and payments newest first, filtered by `category` and `direction`, paged by `before`). The api records each read in the access log.
+- **Errors:** Upstream 401 without a Bearer session, 403 below moderator, 404 for an unknown member, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchTeamMemberWallet` via `TeamMemberWallet` on `/moderate/members/[accountId]`.
+- **Auth:** Bearer session; the api allows moderators, initiators, and founders.
+
+## Endpoint: GET /team/members/[accountId]/events
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /team/members/:accountId/events` (the member's interaction events newest first, paged by `before`). The api records each read in the access log.
+- **Errors:** Upstream 401 without a Bearer session, 403 below moderator, 404 for an unknown member, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchTeamMemberEvents` via `TeamMemberEvents` on `/moderate/members/[accountId]`.
+- **Auth:** Bearer session; the api allows moderators, initiators, and founders.
+
+## Endpoint: GET /team/audit
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /team/audit` (access log: who read which member's wallet data or events, and when; newest first, paged by `before`). Lives under `/team` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/audit`.
+- **Errors:** Upstream 401 without a Bearer session, 403 for any role but founder and initiator (a moderator included), 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchTeamAudit` via `AccessAuditScreen` on `/moderate/audit`.
+- **Auth:** Bearer session; the api allows founders and initiators only.
+
 ## Endpoint: GET /funding/applications
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications` (open grant applications for moderators). Lives under `/funding/applications` because Next.js forbids a `route.ts` beside the HTML page at `/grants/applications` (`/moderate/applications` redirects there).

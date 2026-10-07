@@ -3990,8 +3990,8 @@ Staff (moderator) page. The people panel shows **Could not load payouts. Please 
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, applications, or gift stats. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, and **Show payout per person** `ButtonLink` → `/moderate/payouts` (last tool). Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
-- **Actions:** Open **Goals** to `/grants/goals`. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Open **Show payout per person** to `/moderate/payouts`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals, applications, or gift stats itself (Open proposals count comes from `useUnreadCount`).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, **Show payout per person** `ButtonLink` → `/moderate/payouts`, **Member data** `ButtonLink` → `/moderate/members`, and **Access log** `ButtonLink` → `/moderate/audit` (last tool; the api serves the log to founders and initiators only, and a moderator, who shares the initiator rank, sees **This page is for founders and initiators.** there). Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **Actions:** Open **Goals** to `/grants/goals`. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Open **Show payout per person** to `/moderate/payouts`. Open **Member data** to `/moderate/members`. Open **Access log** to `/moderate/audit`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals, applications, or gift stats itself (Open proposals count comes from `useUnreadCount`).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `useUnreadCount`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. This page does not call `GET /gifts/stats`.
 
@@ -4056,6 +4056,168 @@ Staff page while the table is loading. Copy **Loading…**.
 Staff page when the load fails. Copy **Could not load the payout table. Please try again.** and button **Try again**.
 
 ![21.gifts payout per person error](images/moderate-payouts-error.png)
+
+## Screen: /moderate/members
+
+- **URL:** `/moderate/members` — signed-in staff search of the member-data area (Team → Member data). Same onboarding gate as `/moderate` (`OnboardingGate screen="welcome"`). HTML `/moderate/members` is the search, not a GET proxy. JSON is `GET /team/members?query=`. Hub is `/moderate` (**Member data**).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. The wordmark is not that control. One **Menu** sits top-right. No in-card back. Heading **Member data**, a lead that says the access log records each opening of a member's data, and the field **Name or username**. An empty field shows **Type a name or username.** and sends nothing. After a short pause the typed text is searched: **Loading…**, then one row per match (name, or **Unnamed**, and `@username`), each a link to `/moderate/members/{id}`. No match: **No member found.** A failed search: **Could not search members. Please try again.** and **Try again**. Roles below moderator, and staff the api refuses, see the heading plus **This page is for moderators.** and no field.
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. Type a name or username. Open a member. **Try again** after a failed search. Open **Menu**.
+- **Calls:** `TeamMembersPage`, `TeamMemberSearchScreen`, `searchTeamMembers`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. The search runs only when `roleAtLeast(role, 'moderator')`; the api allows moderators, initiators, and founders.
+
+### Variant: default
+
+Staff page before anything is typed. Field **Name or username** and the hint **Type a name or username.**
+
+![21.gifts member data search](images/moderate-members.png)
+
+### Variant: loading
+
+Staff page while the typed text is searched. Copy **Loading…** under the field.
+
+![21.gifts member data search loading](images/moderate-members-loading.png)
+
+### Variant: results
+
+Two matches for "ada": **Ada Lovelace** `@adalove` and **Ada Byron** `@adab`, each a link to that member's data page.
+
+![21.gifts member data search results](images/moderate-members-results.png)
+
+### Variant: empty
+
+The typed text matches nobody. Copy **No member found.**
+
+![21.gifts member data search empty](images/moderate-members-empty.png)
+
+### Variant: error
+
+The search fails. Copy **Could not search members. Please try again.** and **Try again**.
+
+![21.gifts member data search error](images/moderate-members-error.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for moderators.** No field.
+
+![21.gifts member data search forbidden](images/moderate-members-forbidden.png)
+
+## Screen: /moderate/members/[accountId]
+
+- **URL:** `/moderate/members/{id}` — signed-in staff page of one member's wallet data and activity. Same onboarding gate as `/moderate`. HTML is the page, not a GET proxy. JSON is `GET /team/members/{id}/wallet` and `GET /team/members/{id}/events`. Every load is a read the api records in the access log (`/moderate/audit`).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab (usually the search), or `/welcome` when this tab has none, plus wordmark → `/welcome`. One **Menu** sits top-right. No in-card back. Heading **Member data**, then the member's name as a link to `/members/{id}` (from the existing member profile; left out while it loads or when it fails), then the **Wallet** / **Activity** switch. **Wallet** shows the balance the member's wallet last reported with **Reported {time}** (or **This member's wallet has not reported yet.**), the summary tiles **Received**, **Sent**, **Fees**, **Spent in the community** and **Spent outside** (shares of sent bitcoin: member, shop, 21.gifts, and gift stay inside; outside 21.gifts and Bitcoin address leave; the rest is unknown), **Sent by category**, the period switch **7 days** / **30 days** (default) / **90 days** / **All**, then **Payments** with the direction switch **All** / **Received** / **Sent** and the **Category** select (**All categories** or one category). Each payment row shows the direction, category, and pending or failed status, the amount, the fee when there is one, **From {name}** or **To {name}** (a member links to `/members/{id}`; otherwise the destination the wallet reported), the time, and the description or payer note. Every bitcoin amount shows the default fiat beside it. The next page loads when the end of the list is in view. **Activity** lists the member's interaction events newest first in plain words (for example **Opened a page**, **Sent a payment**), with the time, the page path, and the small values the event carried. Loading…, empty, and error plus **Try again** are separate. Roles below moderator see the heading plus **This page is for moderators.** and nothing is fetched.
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. Switch **Wallet** / **Activity**. Choose a period, a direction, or a category; each choice loads again from the first page. Open the member's profile or a counterparty member. **Try again** after a load error. Open **Menu**.
+- **Calls:** `TeamMemberDataPage`, `TeamMemberDataScreen`, `TeamMemberWallet`, `TeamMemberEvents`, `useCursorPages`, `fetchTeamMemberWallet`, `fetchTeamMemberEvents`, `fetchMember`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Fetches only when `roleAtLeast(role, 'moderator')`; the api allows moderators, initiators, and founders and answers 403 otherwise (forbidden sentence).
+
+### Variant: default
+
+Wallet of Ada Lovelace for 30 days: balance ₿21'000 with fiat and **Reported …**, the summary tiles, 60% **Spent in the community** and 30% **Spent outside**, **Sent by category**, and four payments (a received member payment with a note, a pending shop payment with a fee, a failed payment outside 21.gifts, and an unknown one).
+
+![21.gifts member data wallet](images/moderate-member.png)
+
+### Variant: loading
+
+Staff page while the wallet data is loading: the name, the switch, the period and filter controls, and **Loading…**.
+
+![21.gifts member data loading](images/moderate-member-loading.png)
+
+### Variant: error
+
+The wallet data fails to load. Copy **Could not load the wallet data. Please try again.** and **Try again**.
+
+![21.gifts member data error](images/moderate-member-error.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for moderators.** Nothing is fetched.
+
+![21.gifts member data forbidden](images/moderate-member-forbidden.png)
+
+### Variant: no-report
+
+The member's wallet has not reported yet. Copy **This member's wallet has not reported yet.**, **Nothing sent in this period.**, and **No payments in this period.**
+
+![21.gifts member data no report](images/moderate-member-no-report.png)
+
+### Variant: period
+
+After **7 days** is pressed: the summary and payments of the last seven days.
+
+![21.gifts member data seven days](images/moderate-member-period.png)
+
+### Variant: direction
+
+After **Sent** is pressed in the direction switch: only sent payments.
+
+![21.gifts member data sent only](images/moderate-member-direction.png)
+
+### Variant: category-open
+
+After the **Category** select is pressed: the open list with **All categories** checked and the seven categories.
+
+![21.gifts member data category list](images/moderate-member-category-open.png)
+
+### Variant: category
+
+After **Shop** is chosen: only shop payments.
+
+![21.gifts member data shop payments](images/moderate-member-category.png)
+
+### Variant: activity
+
+After **Activity** is pressed: the member's events in plain words with time, path, and values (an amount with fiat).
+
+![21.gifts member data activity](images/moderate-member-activity.png)
+
+### Variant: activity-empty
+
+**Activity** for a member without events. Copy **No activity yet.**
+
+![21.gifts member data activity empty](images/moderate-member-activity-empty.png)
+
+### Variant: activity-error
+
+**Activity** fails to load. Copy **Could not load the activity. Please try again.** and **Try again**.
+
+![21.gifts member data activity error](images/moderate-member-activity-error.png)
+
+## Screen: /moderate/audit
+
+- **URL:** `/moderate/audit` — signed-in access log: every time a team member opened a member's wallet data or activity. Same onboarding gate as `/moderate`. HTML is the log, not a GET proxy. JSON is `GET /team/audit`. Hub is `/moderate` (**Access log**).
+- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. One **Menu** sits top-right. No in-card back. Heading **Access log**, a one-line lead, then one row per opening, newest first: **Wallet data** or **Activity**, the time, **Member** (whose data; link to `/members/{id}`), and **Opened by** (who; link to `/members/{id}`). A missing name reads **Unnamed**. The next page loads when the end of the list is in view. Empty copy **Nobody has opened member data yet.** Loading… or error plus **Try again**. Roles below initiator rank, and moderators (they share that rank, and the api answers 403), see the heading plus **This page is for founders and initiators.**
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. Open a member or a team member. **Try again** after a load error. Open **Menu**.
+- **Calls:** `AccessAuditPage`, `AccessAuditScreen`, `useCursorPages`, `fetchTeamAudit`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Fetches only when `roleAtLeast(role, 'initiator')`; the api allows founders and initiators only.
+
+### Variant: default
+
+Founder view with three rows: Mo opened Ada Lovelace's wallet data, Mo opened her activity, and Fia opened Bob's wallet data.
+
+![21.gifts access log](images/moderate-audit.png)
+
+### Variant: loading
+
+The log while it loads. Copy **Loading…**.
+
+![21.gifts access log loading](images/moderate-audit-loading.png)
+
+### Variant: empty
+
+Nobody opened member data yet. Copy **Nobody has opened member data yet.**
+
+![21.gifts access log empty](images/moderate-audit-empty.png)
+
+### Variant: error
+
+The log fails to load. Copy **Could not load the access log. Please try again.** and **Try again**.
+
+![21.gifts access log error](images/moderate-audit-error.png)
+
+### Variant: forbidden
+
+A moderator (the api answers 403). Copy **This page is for founders and initiators.**
+
+![21.gifts access log forbidden](images/moderate-audit-forbidden.png)
 
 ## Screen: /moderate/hidden
 

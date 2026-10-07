@@ -185,7 +185,15 @@ app/
 │   │   │   ├── applications/page.tsx # GET /moderate/applications — redirect to /grants/applications
 │   │   │   ├── applications/[accountId]/page.tsx # GET /moderate/applications/:id — redirect to /grants/applications/:id
 │   │   │   ├── group/page.tsx        # GET /moderate/group — closed staff room
+│   │   │   ├── members/page.tsx      # GET /moderate/members — staff member search (member data)
+│   │   │   ├── members/[accountId]/page.tsx # GET /moderate/members/:id — wallet data and activity of one member
+│   │   │   ├── audit/page.tsx        # GET /moderate/audit — access log (founders and initiators)
 │   │   │   └── handbook/page.tsx     # GET /moderate/handbook — staff handbook
+│   │   ├── team/
+│   │   │   ├── members/route.ts                     # GET /team/members?query= → api (staff member search)
+│   │   │   ├── members/[accountId]/wallet/route.ts  # GET /team/members/:id/wallet → api
+│   │   │   ├── members/[accountId]/events/route.ts  # GET /team/members/:id/events → api
+│   │   │   └── audit/route.ts                       # GET /team/audit → api (access log)
 │   │   ├── trust-chain/
 │   │   │   ├── page.tsx              # GET /trust-chain — signed-in Trust Chain
 │   │   │   └── trust-chain-loader.tsx
@@ -235,7 +243,12 @@ app/
 │   │   ├── QrScanner.tsx        # Live camera QR reader (BarcodeDetector, else jsqr) for the Send view
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
-│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
+│   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook + Member data + Access log)
+│   │   ├── TeamMemberSearchScreen.tsx # Signed-in /moderate/members search
+│   │   ├── TeamMemberDataScreen.tsx # Signed-in /moderate/members/:id (Wallet / Activity)
+│   │   ├── TeamMemberWallet.tsx  # Member-data wallet tab (balance, summary, filtered payments)
+│   │   ├── TeamMemberEvents.tsx  # Member-data activity tab (interaction events)
+│   │   ├── AccessAuditScreen.tsx # Signed-in /moderate/audit access log
 │   │   ├── GrantsScreen.tsx      # Signed-in /grants (grant card + staff queue link)
 │   │   ├── HiddenNotesScreen.tsx # Signed-in /moderate/hidden list
 │   │   ├── ProposalsScreen.tsx   # Signed-in /moderate/proposals confirm/reject queue
@@ -300,6 +313,7 @@ app/
 │   │   ├── useUnreadCount.ts    # Menu badge unread
 │   │   ├── useWallet.ts         # /wallet balance status, unlock, and retry
 │   │   ├── useWalletHistory.ts  # /wallet payment pages, reloaded on every wallet sync
+│   │   ├── useCursorPages.ts    # Cursor-paged staff lists (member payments, activity, access log)
 │   │   ├── useWalletSetup.ts    # One-time wallet setup dialog view and actions
 │   │   ├── useWalletPay.ts      # In-app pay path of one invoice (unlock, fee, send, 60 s wait)
 │   │   ├── useWalletPhrase.ts   # In-tab PRF recovery phrase
