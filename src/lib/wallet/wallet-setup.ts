@@ -15,7 +15,7 @@ import { useWalletStore } from '@/stores/wallet-store';
 /**
  * How a setup run ended.
  * `done`: the account's wallet is verified. `locked`: the recovery phrase is
- * not in tab memory, so nothing ran; the next unlock or pay prompt starts it.
+ * not in tab memory, so nothing ran; the login that opens the wallet starts it.
  * `failed`: every try failed. `superseded`: the session changed meanwhile.
  */
 export type WalletSetupOutcome = 'done' | 'locked' | 'failed' | 'superseded';
@@ -54,8 +54,8 @@ let running: { session: string | null; run: Promise<WalletSetupOutcome> } | null
 /**
  * Runs the one-time wallet setup in the background, without a dialog and
  * without a passkey prompt of its own: it needs the recovery phrase in tab
- * memory (the sign-up or login prompt, or the prompt of the first unlock or
- * payment, put it there) and otherwise ends `locked`. Each try connects,
+ * memory (the sign-up or login prompt put it there, or the login card's
+ * wallet-opening prompt) and otherwise ends `locked`. Each try connects,
  * sends `PUT /me/wallet` with the identity key, registers the account's
  * username as the wallet's address, and reloads the account. A 409 from the
  * claim means the wallet is already verified and skips straight to the
