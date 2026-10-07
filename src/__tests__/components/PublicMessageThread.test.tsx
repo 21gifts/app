@@ -7,7 +7,6 @@ import {
   deleteMessage,
   fetchComposeTarget,
   NoteDeletedError,
-  fetchGiftStats,
   fetchFxSpot,
   fetchMessagePhoto,
   fetchShopNoteEdits,
@@ -76,7 +75,6 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessage: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchFxSpot: vi
     .fn()
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
@@ -216,7 +214,6 @@ beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
   push.mockReset();
   vi.mocked(fetchReplies).mockResolvedValue([]);
-  vi.mocked(fetchGiftStats).mockResolvedValue({ spendOverTime: [] } as never);
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
   vi.mocked(fetchComposeTarget).mockResolvedValue({
     messageId: 'fee-note',
@@ -1145,8 +1142,8 @@ describe('PublicMessageThread', () => {
     expect(postMessage).not.toHaveBeenCalled();
   });
 
-  it('keeps ₿-only when gift stats fail', async () => {
-    vi.mocked(fetchGiftStats).mockRejectedValue(new Error('offline'));
+  it('keeps ₿-only when the spot rate fails', async () => {
+    vi.mocked(fetchFxSpot).mockRejectedValue(new Error('spot down'));
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');

@@ -13,7 +13,8 @@ export const SPOT_REFRESH_MS = 5 * 60_000;
  * Fetches `GET /fx/spot` on mount and again every {@link SPOT_REFRESH_MS}
  * while mounted, and returns {@link spotRateDay} of its rates. An answer
  * replaces the rate, including an answer without any usable price. A failed
- * request keeps the last rate, so an amount being typed does not lose it.
+ * request keeps the last rate. A refresh does not start while the previous
+ * request is still open, so an older answer cannot replace a newer one.
  * Never throws into the caller, not even when the request throws at once.
  * Drops answers after unmount.
  *
@@ -28,7 +29,12 @@ export function useSpotRate(enabled = true): FiatRateDay | null {
       return;
     }
     let cancelled = false;
+    let inFlight = false;
     const load = (): void => {
+      if (inFlight) {
+        return;
+      }
+      inFlight = true;
       Promise.resolve()
         .then(fetchFxSpot)
         .then((spot) => {
@@ -36,7 +42,10 @@ export function useSpotRate(enabled = true): FiatRateDay | null {
             setRate(spotRateDay(spot.rates));
           }
         })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        .finally(() => {
+          inFlight = false;
+        });
     };
     load();
     const timer = window.setInterval(load, SPOT_REFRESH_MS);

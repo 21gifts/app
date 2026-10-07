@@ -42,7 +42,6 @@ vi.mock('@/lib/api', () => ({
   fetchConversation: vi.fn(),
   postConversationMessage: vi.fn(),
   markConversationRead: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchFxSpot: vi
     .fn()
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
@@ -58,7 +57,6 @@ vi.mock('@/lib/app-badge', () => ({
 import {
   fetchConversation,
   fetchConversationMessagePhoto,
-  fetchGiftStats,
   fetchFxSpot,
   fetchModeratorGroup,
   markConversationRead,
@@ -71,7 +69,6 @@ const groupMock = vi.mocked(fetchModeratorGroup);
 const threadMock = vi.mocked(fetchConversation);
 const postMock = vi.mocked(postConversationMessage);
 const markReadMock = vi.mocked(markConversationRead);
-const giftStatsMock = vi.mocked(fetchGiftStats);
 const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
 const refreshMock = vi.mocked(refreshUnreadAppBadge);
 const photoMock = vi.mocked(fetchConversationMessagePhoto);
@@ -138,8 +135,6 @@ beforeEach(() => {
   threadMock.mockResolvedValue(conversationPage([MESSAGE]));
   markReadMock.mockResolvedValue(undefined);
   refreshMock.mockResolvedValue(undefined);
-  giftStatsMock.mockReset();
-  giftStatsMock.mockResolvedValue({ spendOverTime: [] } as never);
   photoMock.mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }));
   prepareMock.mockResolvedValue({
     ok: true,
@@ -406,8 +401,8 @@ describe('ModeratorGroupScreen', () => {
     expect(await screen.findByText('$0.02')).toBeTruthy();
   });
 
-  it('survives a failing stats fetch', async () => {
-    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('stats down'));
+  it('survives a failing spot rate fetch', async () => {
+    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('spot down'));
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
