@@ -46,7 +46,6 @@ vi.mock('@/lib/api', () => ({
   markConversationRead: vi.fn(),
   postConversationMessage: vi.fn(),
   fetchConversationMessagePhoto: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchFxSpot: vi
     .fn()
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
@@ -66,7 +65,6 @@ import {
   fetchConversation,
   fetchConversationMessagePhoto,
   fetchConversations,
-  fetchGiftStats,
   fetchFxSpot,
   fetchModeratorGroup,
   postConversationInvoice,
@@ -91,7 +89,6 @@ const groupMock = vi.mocked(fetchModeratorGroup);
 const invoiceMock = vi.mocked(postConversationInvoice);
 const markReadMock = vi.mocked(markConversationRead);
 const postMock = vi.mocked(postConversationMessage);
-const giftStatsMock = vi.mocked(fetchGiftStats);
 const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
 const refreshMock = vi.mocked(refreshUnreadAppBadge);
 const photoMock = vi.mocked(fetchConversationMessagePhoto);
@@ -179,8 +176,6 @@ beforeEach(() => {
     unreadMessageCount: 0,
     unread: false,
   });
-  giftStatsMock.mockReset();
-  giftStatsMock.mockResolvedValue({ spendOverTime: [] } as never);
   photoMock.mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }));
   prepareMock.mockResolvedValue({
     ok: true,
@@ -1121,11 +1116,11 @@ describe('InboxLoader', () => {
     expect(await screen.findByText('$0.02')).toBeTruthy();
   });
 
-  it('survives a failing stats fetch', async () => {
+  it('survives a failing spot rate fetch', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
-    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('stats down'));
+    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('spot down'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     expect(await screen.findByText('₿21')).toBeTruthy();

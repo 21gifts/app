@@ -35,7 +35,7 @@ export interface PosHistoryProps {
   history: readonly PosCharge[];
   /** Id of the charge the till shows as open above the list, or `null`. */
   openChargeId: string | null;
-  /** Latest gift-day rate for the fiat beside each amount, or `null`. */
+  /** Current spot rate for the fiat beside each amount, or `null`. */
   rateDay: FiatRateDay | null;
 }
 

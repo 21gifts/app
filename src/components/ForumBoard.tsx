@@ -276,7 +276,7 @@ export interface ForumBoardProps {
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
   /**
-   * Latest gift-day totals for unsent previews (pay sheet, unpaid invoice).
+   * Current spot rate for unsent previews (pay sheet, unpaid invoice).
    * Settled ₿ amounts use the fiat stored on the row. Omit or `null` when
    * stats have not loaded — previews stay ₿-only.
    */

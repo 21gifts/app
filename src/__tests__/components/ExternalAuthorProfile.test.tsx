@@ -38,7 +38,6 @@ vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn(),
   fetchExternalAuthorPosts: vi.fn(),
   fetchExternalAuthorReplies: vi.fn(),
-  fetchGiftStats: vi.fn(),
   fetchFxSpot: vi
     .fn()
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
@@ -55,7 +54,6 @@ import {
   fetchExternalAuthorPosts,
   fetchExternalAuthorProfile,
   fetchExternalAuthorReplies,
-  fetchGiftStats,
   fetchFxSpot,
 } from '@/lib/api';
 import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
@@ -63,7 +61,6 @@ import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 const fetchProfile = vi.mocked(fetchExternalAuthorProfile);
 const fetchPosts = vi.mocked(fetchExternalAuthorPosts);
 const fetchReplies = vi.mocked(fetchExternalAuthorReplies);
-const fetchStats = vi.mocked(fetchGiftStats);
 
 const FEED_NOTE: ForumMessage = {
   id: 'note-1',
@@ -90,7 +87,6 @@ beforeEach(() => {
   vi.mocked(fetchFxSpot)
     .mockReset()
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
-  fetchStats.mockResolvedValue({ spendOverTime: [] } as never);
 });
 
 afterEach(() => {
@@ -99,7 +95,6 @@ afterEach(() => {
   push.mockClear();
   fetchPosts.mockReset();
   fetchReplies.mockReset();
-  fetchStats.mockReset();
 });
 
 describe('ExternalAuthorProfile', () => {

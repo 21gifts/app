@@ -79,7 +79,7 @@ afterEach(() => {
 });
 
 describe('PosScreen', () => {
-  it('shows the default fiat under an open charge when a gift day exists', async () => {
+  it('shows the default fiat under an open charge when a spot rate exists', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
     vi.stubGlobal(
       'fetch',
@@ -1259,7 +1259,7 @@ describe('PosScreen', () => {
       expect(screen.queryByText(/left$/)).toBeNull();
     });
 
-    it('shows a paid charge without fiat when no gift day exists', async () => {
+    it('shows a paid charge without fiat when there is no spot rate', async () => {
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [] })),

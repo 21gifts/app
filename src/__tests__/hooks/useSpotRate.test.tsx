@@ -87,6 +87,32 @@ describe('useSpotRate', () => {
     expect(screen.getByText('null')).toBeTruthy();
   });
 
+  it('does not start a refresh while the previous request is still open', async () => {
+    let resolve!: (value: FxSpot) => void;
+    fetchFxSpotMock.mockReturnValueOnce(
+      new Promise<FxSpot>((r) => {
+        resolve = r;
+      }),
+    );
+    fetchFxSpotMock.mockResolvedValue(spot({ CHF: '81000.00' }));
+    renderWithLocale(<Probe />);
+    await flush();
+    await act(async () => {
+      vi.advanceTimersByTime(SPOT_REFRESH_MS);
+    });
+    expect(fetchFxSpotMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolve(spot({ CHF: '80000.00' }));
+    });
+    expect(screen.getByText('CHF 80000.00 per 100000000')).toBeTruthy();
+    await act(async () => {
+      vi.advanceTimersByTime(SPOT_REFRESH_MS);
+    });
+    await flush();
+    expect(fetchFxSpotMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('CHF 81000.00 per 100000000')).toBeTruthy();
+  });
+
   it('stays null when the first request fails', async () => {
     fetchFxSpotMock.mockRejectedValue(new Error('down'));
     renderWithLocale(<Probe />);

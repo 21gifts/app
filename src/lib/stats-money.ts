@@ -275,13 +275,14 @@ export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): Sho
 }
 
 /**
- * Scales whole sats into a two-decimal fiat amount using one gift day's totals.
+ * Scales whole sats into a two-decimal fiat amount using one rate: the spot
+ * rate, or one gift day's totals on the statistics pages.
  *
  * @param sats - Whole sats to convert (may be 0).
  * @param day - Gift day with `sats > 0`, or `null`.
  * @param code - Selected fiat.
  * @returns Two-decimal string, or `null` when the day or that fiat is missing
- *   or zero (a `"0.00"` gift-day total is not a usable rate).
+ *   or zero (a `"0.00"` price is not a usable rate).
  */
 export function satsToFiatAmount(
   sats: number,
@@ -363,7 +364,7 @@ export type AmountDraft =
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
 /**
- * Inverse of {@link satsToFiatAmount} on the same gift-day totals.
+ * Inverse of {@link satsToFiatAmount} on the same rate.
  *
  * @param amount - Fiat amount (not a grouped string).
  * @param day - Gift day with `sats > 0`, or `null`.

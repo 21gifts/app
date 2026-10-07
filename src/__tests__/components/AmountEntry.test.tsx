@@ -218,7 +218,7 @@ describe('AmountEntry', () => {
     expect(onUnitChange).toHaveBeenCalledWith('fiat');
   });
 
-  it('drops a fiat draft and falls back to bitcoin when the rate goes away', () => {
+  it('keeps a typed fiat draft when the rate goes away', () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, amountUnit: 'fiat' },
@@ -235,9 +235,41 @@ describe('AmountEntry', () => {
     rerender(
       <AmountEntry label="Amount" value="1.00" onValueChange={onValueChange} rateDay={null} />,
     );
-    expect(onValueChange).toHaveBeenLastCalledWith('');
-    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '1.00');
+    expect(screen.getByText('No exchange rate yet')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', true);
+  });
+
+  it('keeps a bitcoin draft when a failed save rolls back to fiat after the rate went away', async () => {
+    let rejectSave: (reason: Error) => void = () => undefined;
+    vi.mocked(setAmountUnit).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectSave = reject;
+        }),
+    );
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+      wrongAccount: false,
+    });
+    const onValueChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <TypingAmount initial="" rateDay={DAY} onValueChange={onValueChange} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1000' } });
+    rerender(<TypingAmount initial="" rateDay={null} onValueChange={onValueChange} />);
+    await act(async () => {
+      rejectSave(new Error('nope'));
+    });
+    expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '1000');
   });
 
   it('disables the fiat without a rate and shows the missing-rate line under bitcoin', () => {
