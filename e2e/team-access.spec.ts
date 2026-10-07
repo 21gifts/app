@@ -2,6 +2,7 @@ import { expect, test, type Request as PlaywrightRequest } from '@playwright/tes
 import {
   TEAM_AUDIT,
   TEAM_MEMBERS,
+  TEAM_RATE_STATS,
   TEAM_WALLET_EMPTY,
   routeTeamMemberData,
   seedTeamViewer,
@@ -154,6 +155,22 @@ test('Function: useCursorPages — a failed page shows Try again and loads on pr
   await expect(page.getByText('Could not load the wallet data. Please try again.')).toBeVisible();
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByText('Spent in the community')).toBeVisible();
+});
+
+test('Function: useLatestRateDayState — the wallet tab shows each amount with its fiat', async ({
+  page,
+}) => {
+  await seedTeamViewer(page, 'moderator');
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(TEAM_RATE_STATS),
+    });
+  });
+  await routeTeamMemberData(page);
+  await page.goto('/moderate/members/acc_ada');
+  await expect(page.getByRole('region', { name: 'Balance' })).toContainText(/₿21.000 · .*\d/);
 });
 
 test('Function: TeamMemberEvents — empty and failed activity', async ({ page }) => {

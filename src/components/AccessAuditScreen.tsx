@@ -79,7 +79,7 @@ export function AccessAuditScreen(): ReactElement | null {
     body = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
   } else if (status === 'error' && pages.length === 0) {
     body = errorBlock;
-  } else if (entries.length === 0) {
+  } else if (entries.length === 0 && !hasMore) {
     body = <p className="text-center text-sm text-app-muted">{t('team.audit.empty')}</p>;
   } else {
     body = (

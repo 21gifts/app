@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TeamMemberWallet } from '@/components/TeamMemberWallet';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import type { TeamWallet } from '@/lib/api-types';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -23,7 +23,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({ fetchTeamMemberWallet: vi.fn() }));
-vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDayState: vi.fn() }));
 
 import { fetchTeamMemberWallet } from '@/lib/api';
 
@@ -137,7 +137,7 @@ class FakeObserver {
 beforeEach(() => {
   vi.clearAllMocks();
   observers = [];
-  vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
+  vi.mocked(useLatestRateDayState).mockReturnValue({ rateDay: RATE_DAY, settled: true });
   walletMock.mockResolvedValue(WALLET);
 });
 
@@ -261,6 +261,49 @@ describe('TeamMemberWallet', () => {
       direction: null,
       before: 'c1',
     });
+  });
+
+  it('keeps Loading until the rate settles, then shows the amounts', async () => {
+    vi.mocked(useLatestRateDayState).mockReturnValue({ rateDay: null, settled: false });
+    const view = renderWithLocale(<TeamMemberWallet session="sess" accountId="acc_1" />);
+    await waitFor(() => expect(walletMock).toHaveBeenCalled());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
+    vi.mocked(useLatestRateDayState).mockReturnValue({ rateDay: null, settled: true });
+    view.rerender(<TeamMemberWallet session="sess" accountId="acc_1" />);
+    expect(screen.getByRole('region', { name: 'Balance' }).textContent).toContain("₿21'000");
+    expect(screen.getByRole('region', { name: 'Balance' }).textContent).not.toContain('·');
+  });
+
+  it('uses the Sent total for the shares and says nothing was sent only when it is zero', async () => {
+    walletMock.mockResolvedValue({
+      ...EMPTY,
+      summary: { inSats: 0, outSats: 500, feeSats: 0, categories: [] },
+    });
+    renderWithLocale(<TeamMemberWallet session="sess" accountId="acc_1" />);
+    const summary = await screen.findByRole('region', { name: 'Summary' });
+    expect(within(summary).queryByText('Nothing sent in this period.')).toBeNull();
+    expect(within(summary).getByText('Spent in the community').nextSibling?.textContent).toBe('0%');
+  });
+
+  it('loads on when a page without payments still has a next page', async () => {
+    vi.stubGlobal('IntersectionObserver', FakeObserver);
+    walletMock
+      .mockResolvedValueOnce({ ...EMPTY, nextCursor: 'c1' })
+      .mockResolvedValueOnce({ ...EMPTY, payments: WALLET.payments.slice(0, 1) });
+    renderWithLocale(<TeamMemberWallet session="sess" accountId="acc_1" />);
+    await screen.findByText("This member's wallet has not reported yet.");
+    expect(screen.queryByText('No payments in this period.')).toBeNull();
+    act(() => {
+      observers[observers.length - 1]?.(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+    });
+    await screen.findByText('Thanks');
   });
 
   it('shows the forbidden sentence on 403', async () => {

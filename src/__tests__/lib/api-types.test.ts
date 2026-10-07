@@ -2042,6 +2042,27 @@ describe('team access schemas', () => {
     ]);
   });
 
+  it('reads an empty counterparty id as no member and keeps the payment', () => {
+    const parsed = teamWalletResponseSchema.parse({
+      balance: null,
+      summary: { inSats: 0, outSats: 0, feeSats: 0, categories: [] },
+      payments: [
+        {
+          id: 'p1',
+          direction: 'out',
+          status: 'completed',
+          amountSats: 1,
+          timestamp: 1_790_000_000_000,
+          category: 'unknown',
+          counterpartyAccountId: '',
+        },
+      ],
+      nextCursor: null,
+    });
+    expect(parsed.payments).toHaveLength(1);
+    expect(parsed.payments[0]?.counterpartyAccountId).toBeNull();
+  });
+
   it('refuses an amount above 21 million bitcoin', () => {
     expect(
       teamWalletResponseSchema.safeParse({

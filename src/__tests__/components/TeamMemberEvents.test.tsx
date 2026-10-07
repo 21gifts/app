@@ -1,11 +1,11 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TeamMemberEvents } from '@/components/TeamMemberEvents';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({ fetchTeamMemberEvents: vi.fn() }));
-vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDayState: vi.fn() }));
 
 import { fetchTeamMemberEvents } from '@/lib/api';
 
@@ -25,12 +25,15 @@ class FakeObserver {
 beforeEach(() => {
   vi.clearAllMocks();
   observers = [];
-  vi.mocked(useLatestRateDay).mockReturnValue({
-    sats: 100_000_000,
-    usd: '60000.00',
-    chf: '50000.00',
-    eur: '55000.00',
-    php: '3400000.00',
+  vi.mocked(useLatestRateDayState).mockReturnValue({
+    rateDay: {
+      sats: 100_000_000,
+      usd: '60000.00',
+      chf: '50000.00',
+      eur: '55000.00',
+      php: '3400000.00',
+    },
+    settled: true,
   });
 });
 
@@ -126,6 +129,21 @@ describe('TeamMemberEvents', () => {
     await screen.findByText('Could not load the activity. Please try again.');
     expect(screen.getByText('Logged in')).toBeTruthy();
     expect(eventsMock).toHaveBeenLastCalledWith('sess', 'acc_1', 'c1');
+  });
+
+  it('keeps Loading until the rate settles', async () => {
+    vi.mocked(useLatestRateDayState).mockReturnValue({ rateDay: null, settled: false });
+    eventsMock.mockResolvedValue({
+      events: [{ name: 'login', at: AT, props: {} }],
+      nextCursor: null,
+    });
+    renderWithLocale(<TeamMemberEvents session="sess" accountId="acc_1" />);
+    await waitFor(() => expect(eventsMock).toHaveBeenCalled());
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByText('Logged in')).toBeNull();
   });
 
   it('shows the forbidden sentence on 403', async () => {

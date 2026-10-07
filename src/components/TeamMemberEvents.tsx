@@ -7,7 +7,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button } from '@/components/ui';
 import { useCursorPages } from '@/hooks/useCursorPages';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { fetchTeamMemberEvents } from '@/lib/api';
 import type { TeamEvents } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
@@ -110,7 +110,7 @@ export function TeamMemberEvents(props: TeamMemberEventsProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled } = useLatestRateDayState();
   const load = useCallback(
     (before: string | null): Promise<TeamEvents | null> =>
       fetchTeamMemberEvents(session, accountId, before),
@@ -135,11 +135,12 @@ export function TeamMemberEvents(props: TeamMemberEventsProps): ReactElement {
   const events = pages.flatMap((page) => page.events);
 
   let body: ReactElement;
-  if (status === 'loading') {
-    body = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
-  } else if (status === 'error' && pages.length === 0) {
+  if (status === 'error' && pages.length === 0) {
     body = errorBlock;
-  } else if (events.length === 0) {
+  } else if (status === 'loading' || !settled) {
+    // An event amount is not shown before the rate fetch settles.
+    body = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
+  } else if (events.length === 0 && !hasMore) {
     body = <p className="text-center text-sm text-app-muted">{t('team.events.empty')}</p>;
   } else {
     body = (

@@ -72,6 +72,29 @@ describe('useCursorPages', () => {
     expect(result.current.hasMore).toBe(false);
   });
 
+  it('reads as loading with no pages on the first render after a key change', async () => {
+    const load = vi.fn(async (): Promise<Page> => ({ rows: ['a'], nextCursor: null }));
+    const seen: { key: string; status: string; pages: number }[] = [];
+    const { rerender } = renderHook(
+      ({ key }) => {
+        const result = useCursorPages<Page>(load, key);
+        seen.push({ key, status: result.status, pages: result.pages.length });
+        return result;
+      },
+      { initialProps: { key: 'k1' } },
+    );
+    await waitFor(() => expect(seen[seen.length - 1]?.status).toBe('ready'));
+    rerender({ key: 'k2' });
+    expect(seen.find((entry) => entry.key === 'k2')).toEqual({
+      key: 'k2',
+      status: 'loading',
+      pages: 0,
+    });
+    await waitFor(() =>
+      expect(seen[seen.length - 1]).toEqual({ key: 'k2', status: 'ready', pages: 1 }),
+    );
+  });
+
   it('reports forbidden when the api refuses the role', async () => {
     const { result } = renderPages(() => Promise.resolve(null));
     await waitFor(() => expect(result.current.status).toBe('forbidden'));

@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
+/** Pages shown while a new key has not loaded yet; one array so effects do not re-run. */
+const NO_PAGES: readonly never[] = [];
+
 /**
  * Load state of a cursor-paged list. `loading` is the first page (nothing is
  * shown yet), `ready` has pages (possibly empty rows), `error` failed to load
@@ -14,7 +17,7 @@ export interface CursorPages<P> {
   /** Load state. */
   status: CursorPagesStatus;
   /** Loaded pages in order; the first page is `pages[0]`. */
-  pages: P[];
+  pages: readonly P[];
   /** True while another page may exist. */
   hasMore: boolean;
   /** Loads the failed page again; the error stays shown until the result arrives. */
@@ -28,6 +31,8 @@ export interface CursorPages<P> {
  *
  * Loads the first page on mount and again whenever `key` changes (a new
  * member, period, or filter), dropping answers that arrive for an older key.
+ * From the first render with a new key the list reads as `loading` with no
+ * pages, so the old pages never show under the new key.
  * The next page loads when `sentinelRef` is in view, checked again after
  * every completed load, like the `/wallet` payments list. A `null` answer
  * means the api refused this role (403). `load` `null` sends nothing.
@@ -43,6 +48,9 @@ export function useCursorPages<P extends { nextCursor: string | null }>(
 ): CursorPages<P> {
   const [status, setStatus] = useState<CursorPagesStatus>('loading');
   const [pages, setPages] = useState<P[]>([]);
+  // The key the stored pages and status belong to. Until the reset effect
+  // runs after a key change, the old pages must not show under the new key.
+  const [pagesKey, setPagesKey] = useState(key);
   // A ref, not state: two observer callbacks before the next render must not
   // both start the same page.
   const busy = useRef(false);
@@ -87,28 +95,32 @@ export function useCursorPages<P extends { nextCursor: string | null }>(
       return;
     }
     generation.current += 1;
+    setPagesKey(key);
     setPages([]);
     setStatus('loading');
     fetchPage(null, generation.current);
   }, [enabled, key, fetchPage]);
 
-  const last = pages[pages.length - 1];
+  const stale = pagesKey !== key;
+  const shownStatus: CursorPagesStatus = stale ? 'loading' : status;
+  const shownPages: readonly P[] = stale ? NO_PAGES : pages;
+  const last = shownPages[shownPages.length - 1];
   const cursor = last === undefined ? null : last.nextCursor;
   const hasMore = cursor !== null;
 
   const loadMore = useCallback((): void => {
-    if (busy.current || status !== 'ready' || cursor === null) {
+    if (busy.current || shownStatus !== 'ready' || cursor === null) {
       return;
     }
     fetchPage(cursor, generation.current);
-  }, [status, cursor, fetchPage]);
+  }, [shownStatus, cursor, fetchPage]);
 
   const retry = useCallback((): void => {
     if (busy.current) {
       return;
     }
-    fetchPage(pages.length === 0 ? null : cursor, generation.current);
-  }, [pages.length, cursor, fetchPage]);
+    fetchPage(shownPages.length === 0 ? null : cursor, generation.current);
+  }, [shownPages.length, cursor, fetchPage]);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -125,7 +137,7 @@ export function useCursorPages<P extends { nextCursor: string | null }>(
     // Re-armed after every completed load (a load always yields a new array,
     // and an error or retry changes the status), so an end of the list that
     // is still in view asks for the next page again.
-  }, [hasMore, loadMore, pages, status]);
+  }, [hasMore, loadMore, shownPages, shownStatus]);
 
-  return { status, pages, hasMore, retry, sentinelRef };
+  return { status: shownStatus, pages: shownPages, hasMore, retry, sentinelRef };
 }

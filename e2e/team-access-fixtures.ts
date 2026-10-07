@@ -251,3 +251,43 @@ export async function routeTeamMemberData(
     });
   }
 }
+
+/** `GET /gifts/stats` with one usable rate day, so amounts show their fiat. */
+export const TEAM_RATE_STATS = {
+  totalSats: 100_000_000,
+  totalBtc: '1.00000000',
+  totalUsd: '100000.00',
+  totalChf: '80000.00',
+  totalEur: '90000.00',
+  totalPhp: '5600000.00',
+  giftCount: 1,
+  recipientCount: 1,
+  firstPaidAt: '2026-06-01T00:00:00.000Z',
+  lastPaidAt: '2026-06-01T00:00:00.000Z',
+  spendOverTime: [
+    {
+      day: '2026-06-01',
+      giftCount: 1,
+      sats: 100_000_000,
+      cumulativeSats: 100_000_000,
+      btc: '1.00000000',
+      cumulativeBtc: '1.00000000',
+      usd: '100000.00',
+      cumulativeUsd: '100000.00',
+      chf: '80000.00',
+      eur: '90000.00',
+      php: '5600000.00',
+      cumulativeChf: '80000.00',
+      cumulativeEur: '90000.00',
+      cumulativePhp: '5600000.00',
+    },
+  ],
+  byRecipient: [],
+  byMonth: [],
+  fx: {
+    quote: 'BTC-USD',
+    dayBasis: 'utc',
+    source: 'coinbase-exchange-daily-close',
+    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+  },
+};

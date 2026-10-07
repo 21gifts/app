@@ -1503,7 +1503,11 @@ export const teamWalletPaymentSchema = z.object({
   timestamp: teamInstantSchema,
   method: z.string().nullable().optional(),
   category: z.enum(TEAM_PAYMENT_CATEGORIES).catch('unknown'),
-  counterpartyAccountId: z.string().min(1).nullable().optional(),
+  /** An empty string reads as `null` (no member), so the payment is kept. */
+  counterpartyAccountId: z.preprocess(
+    (value) => (value === '' ? null : value),
+    z.string().min(1).nullable().optional(),
+  ),
   counterpartyName: z.string().nullable().optional(),
   destination: z.string().nullable().optional(),
   description: z.string().nullable().optional(),

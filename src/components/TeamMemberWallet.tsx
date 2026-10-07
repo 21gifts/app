@@ -10,7 +10,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, SegmentedControl } from '@/components/ui';
 import { useCursorPages } from '@/hooks/useCursorPages';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { fetchTeamMemberWallet } from '@/lib/api';
 import {
   TEAM_PAYMENT_CATEGORIES,
@@ -138,7 +138,7 @@ export function TeamMemberWallet(props: TeamMemberWalletProps): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
+  const { rateDay, settled } = useLatestRateDayState();
   const [period, setPeriod] = useState<TeamWalletPeriod>('30');
   const [direction, setDirection] = useState<DirectionFilter>('all');
   const [category, setCategory] = useState<CategoryFilter>('all');
@@ -165,8 +165,10 @@ export function TeamMemberWallet(props: TeamMemberWalletProps): ReactElement {
   const amount = (sats: number): ReactElement => (
     <Amount sats={sats} rateDay={rateDay} fiat={fiat} numberFormat={numberFormat} />
   );
-  const first = pages[0];
-  const payments: TeamWalletPayment[] = pages.flatMap((page) => page.payments);
+  // An amount is not shown before the rate fetch settles, so it never shows
+  // without its fiat while that fiat is still on the way.
+  const first = settled ? pages[0] : undefined;
+  const payments: TeamWalletPayment[] = settled ? pages.flatMap((page) => page.payments) : [];
   const percent = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 });
   const unnamed = t('moderate.unnamed');
 
@@ -184,7 +186,7 @@ export function TeamMemberWallet(props: TeamMemberWalletProps): ReactElement {
   let overview: ReactElement | null = null;
   if (first !== undefined) {
     const { balance, summary } = first;
-    const sentTotal = summary.categories.reduce((total, row) => total + row.outSats, 0);
+    const sentTotal = summary.outSats;
     const sentByCategory = summary.categories.filter((row) => row.outSats > 0);
     overview = (
       <>
@@ -250,11 +252,11 @@ export function TeamMemberWallet(props: TeamMemberWalletProps): ReactElement {
   }
 
   let list: ReactElement;
-  if (status === 'loading') {
-    list = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
-  } else if (status === 'error' && first === undefined) {
+  if (status === 'error' && pages.length === 0) {
     list = errorBlock;
-  } else if (payments.length === 0) {
+  } else if (status === 'loading' || !settled) {
+    list = <p className="text-center text-sm text-app-muted">{t('moderate.loading')}</p>;
+  } else if (payments.length === 0 && !hasMore) {
     list = <p className="text-center text-sm text-app-muted">{t('team.wallet.empty')}</p>;
   } else {
     list = (

@@ -1,7 +1,7 @@
 import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDay, useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -99,5 +99,42 @@ describe('useLatestRateDay', () => {
     await act(async () => {
       reject(new Error('stats down'));
     });
+  });
+});
+
+/** Mounts {@link useLatestRateDayState} for assertions. */
+function StateProbe(props: { enabled?: boolean }): ReactElement {
+  const { rateDay, settled } = useLatestRateDayState(props.enabled);
+  return <p>{`${settled ? 'settled' : 'pending'}:${rateDay === null ? 'null' : rateDay.sats}`}</p>;
+}
+
+describe('useLatestRateDayState', () => {
+  it('stays pending while the fetch is in flight, then settles with the rate', async () => {
+    let resolve!: (value: { spendOverTime: FiatRateDay[] }) => void;
+    fetchGiftStatsMock.mockReturnValue(
+      new Promise<{ spendOverTime: FiatRateDay[] }>((r) => {
+        resolve = r;
+      }) as never,
+    );
+    renderWithLocale(<StateProbe />);
+    expect(screen.getByText('pending:null')).toBeTruthy();
+    await act(async () => {
+      resolve({ spendOverTime: [RATE_DAY] });
+    });
+    expect(screen.getByText(`settled:${String(RATE_DAY.sats)}`)).toBeTruthy();
+  });
+
+  it('settles without a rate when the fetch fails', async () => {
+    fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
+    renderWithLocale(<StateProbe />);
+    await waitFor(() => {
+      expect(screen.getByText('settled:null')).toBeTruthy();
+    });
+  });
+
+  it('stays pending and fetches nothing while disabled', () => {
+    renderWithLocale(<StateProbe enabled={false} />);
+    expect(screen.getByText('pending:null')).toBeTruthy();
+    expect(fetchGiftStatsMock).not.toHaveBeenCalled();
   });
 });

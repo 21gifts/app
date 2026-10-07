@@ -2363,11 +2363,19 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** That day, or `null` when every day is empty.
 - **Used by:** `useLatestRateDay`, `PublicMessageLoader`, `MemberProfileScreen`.
 
+## Function: useLatestRateDayState
+
+- **Purpose:** Latest gift-day totals for preferred-fiat conversion plus whether the fetch has settled. Fetches `GET /gifts/stats` once on mount via `fetchGiftStats` and keeps `latestRateDay` of `spendOverTime`. `rateDay` is `null` while loading, without a usable rate, or after a failed fetch; `settled` tells loading apart from the other two, so a payment screen waits for the rate before it shows an amount ("Shown amounts"). Drops the response after unmount. `useLatestRateDay` returns its `rateDay`.
+- **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the state stays `{ rateDay: null, settled: false }`.
+- **Returns / side effects:** `{ rateDay, settled }`. Calls `fetchGiftStats` once per mount while enabled.
+- **Used by:** `useLatestRateDay`, `TeamMemberWallet`, `TeamMemberEvents`.
+
 ## Function: useLatestRateDay
 
 - **Purpose:** Latest gift-day totals for preferred-fiat conversion. Fetches `GET /gifts/stats`
   once on mount via `fetchGiftStats` and resolves `latestRateDay` of `spendOverTime`; a failed
-  fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
+  fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount. It is
+  the `rateDay` of `useLatestRateDayState`.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled.
 - **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`, `WalletBalance`, `WalletSend`.
