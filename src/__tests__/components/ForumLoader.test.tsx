@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { ForumLoader } from '@/components/ForumLoader';
+import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import {
@@ -7217,6 +7218,44 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('stores the fiat of the rate the reply amount was read with when a retry follows a refresh', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(fetchFxSpot).mockResolvedValue({
+        asOf: '2026-10-07T00:00:00.000Z',
+        source: 'test',
+        rates: { USD: '100000.00' },
+      });
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, name: null, missing: [] },
+      });
+      invoiceMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+      invoiceMock.mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 2100 });
+      vi.mocked(setName).mockResolvedValue({ ...account, name: 'Ada', missing: [], setup: null });
+      await expandForeignAndPayReply('Hi Bob', '2100');
+      expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+      vi.mocked(fetchFxSpot).mockResolvedValue({
+        asOf: '2026-10-07T00:05:00.000Z',
+        source: 'test',
+        rates: { USD: '200000.00' },
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(SPOT_REFRESH_MS);
+      });
+      fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+      await waitFor(() => {
+        expect(invoiceMock).toHaveBeenCalledTimes(2);
+      });
+      for (const call of invoiceMock.mock.calls) {
+        expect(call).toContainEqual(expect.objectContaining({ amountUsd: '2.10' }));
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('maps a retried paid-reply missing_requirements onto the request error', async () => {
