@@ -12,6 +12,22 @@ vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push } => ({ push }),
 }));
 
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMember: vi.fn(),
   postTrustVerify: vi.fn(),
@@ -68,7 +84,10 @@ beforeEach(() => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  delete document.documentElement.dataset['localSunday'];
+});
 
 function setModerator(overrides: Partial<Account> = {}): void {
   useAuthStore.setState({
@@ -127,6 +146,8 @@ describe('MemberVerifyScreen', () => {
     expect(screen.getByText('You cannot verify this member.')).toBeTruthy();
     expect(screen.getByTestId('state-members-verify-forbidden')).toBeTruthy();
     expect(fetchMember).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
   });
 
   it('shows forbidden when the session has no account and does not fetch', () => {
@@ -134,6 +155,8 @@ describe('MemberVerifyScreen', () => {
     renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
     expect(screen.getByText('You cannot verify this member.')).toBeTruthy();
     expect(fetchMember).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
   });
 
   it('shows forbidden when a moderator views themself', async () => {
@@ -143,6 +166,8 @@ describe('MemberVerifyScreen', () => {
     expect(await screen.findByText('You cannot verify this member.')).toBeTruthy();
     expect(screen.queryByText(QUESTION)).toBeNull();
     expect(postTrustVerify).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
   });
 
   it('shows forbidden when the member role is not basis', async () => {
@@ -152,6 +177,8 @@ describe('MemberVerifyScreen', () => {
     expect(await screen.findByText('You cannot verify this member.')).toBeTruthy();
     expect(screen.queryByText(QUESTION)).toBeNull();
     expect(postTrustVerify).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
   });
 
   it('shows the missing sentence when the stored name is null or only whitespace', async () => {
@@ -162,7 +189,8 @@ describe('MemberVerifyScreen', () => {
       await screen.findByText('Verification needs a stored name that identifies this person.'),
     ).toBeTruthy();
     expect(screen.getByTestId('state-members-verify-unnamed')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Yes, this name identifies them' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
     expect(postTrustVerify).not.toHaveBeenCalled();
     unmount();
 
@@ -171,18 +199,28 @@ describe('MemberVerifyScreen', () => {
     expect(
       await screen.findByText('Verification needs a stored name that identifies this person.'),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Yes, this name identifies them' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
     expect(postTrustVerify).not.toHaveBeenCalled();
   });
 
-  it('shows the question and Carol without posting until confirm is clicked', async () => {
+  it('shows the question and Carol without posting until Yes is clicked', async () => {
     setModerator();
     vi.mocked(fetchMember).mockResolvedValue(profile);
     renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
     expect(await screen.findByText(QUESTION)).toBeTruthy();
     expect(screen.getByText('Carol')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Yes, this name identifies them' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Yes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'No' })).toBeTruthy();
     expect(postTrustVerify).not.toHaveBeenCalled();
+  });
+
+  it('shows the stored name as a link to the member card', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(await screen.findByRole('link')).toBeTruthy();
+    expect(screen.getByRole('link').getAttribute('href')).toBe(`/members/${profile.id}`);
   });
 
   it('shows and posts the untrimmed stored name', async () => {
@@ -194,10 +232,11 @@ describe('MemberVerifyScreen', () => {
       role: 'verified',
     });
     renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
-    expect(
-      await screen.findByText((_, el) => el !== null && el.textContent === '  Carol  '),
-    ).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Yes, this name identifies them' }));
+    const link = await screen.findByRole('link');
+    expect(link.textContent).toBe('  Carol  ');
+    expect(screen.getByRole('button', { name: 'Yes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'No' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => {
       expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id, '  Carol  ');
     });
@@ -212,26 +251,53 @@ describe('MemberVerifyScreen', () => {
       role: 'verified',
     });
     renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Yes, this name identifies them' }));
+    expect(await screen.findByRole('button', { name: 'Yes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'No' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => {
       expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id, 'Carol');
       expect(push).toHaveBeenCalledWith(`/members/${profile.id}`);
     });
   });
 
-  it('keeps confirm and stays on the page when postTrustVerify throws', async () => {
+  it('opens the member card from No without posting', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'No' }));
+    expect(push).toHaveBeenCalledWith(`/members/${profile.id}`);
+    expect(postTrustVerify).not.toHaveBeenCalled();
+  });
+
+  it('keeps Yes and No and stays on the page when postTrustVerify throws', async () => {
     setModerator();
     vi.mocked(fetchMember).mockResolvedValue(profile);
     vi.mocked(postTrustVerify).mockRejectedValue(new Error('fail'));
     renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Yes, this name identifies them' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
     await waitFor(() => {
       expect(screen.getByTestId('state-members-verify-failed').textContent).toBe(
         'Could not update this member. Please try again.',
       );
     });
-    expect(screen.getByRole('button', { name: 'Yes, this name identifies them' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Yes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'No' })).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it('keeps the name and question on Sunday and gates both buttons', async () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(await screen.findByText(QUESTION)).toBeTruthy();
+    expect(screen.getByRole('link')).toBeTruthy();
+    expect(screen.getByText('Writing is paused on Sunday.')).toBeTruthy();
+    const field = document.querySelector('.sunday-write-field');
+    expect(field).not.toBeNull();
+    expect(field?.contains(screen.getByRole('button', { name: 'Yes' }))).toBe(true);
+    expect(field?.contains(screen.getByRole('button', { name: 'No' }))).toBe(true);
+    delete document.documentElement.dataset['localSunday'];
   });
 
   it('ignores a stale member resolve after unmount', async () => {

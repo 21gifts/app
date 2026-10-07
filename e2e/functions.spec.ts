@@ -11288,8 +11288,11 @@ test('Function: MemberVerifyPage — moderator sees the stored-name check', asyn
   await expect(
     page.getByText('Does this stored name match the name that uniquely identifies this person?'),
   ).toBeVisible();
-  await expect(page.getByText('Ada')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Yes, this name identifies them' })).toBeVisible();
+  const ada = page.getByRole('link', { name: 'Ada', exact: true });
+  await expect(ada).toBeVisible();
+  await expect(ada).toHaveAttribute('href', `/members/${memberId}`);
+  await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
 });
 
 test('Function: MemberVerifyScreen — confirm posts and opens the member card', async ({ page }) => {
@@ -11347,7 +11350,8 @@ test('Function: MemberVerifyScreen — confirm posts and opens the member card',
     });
   });
   await page.goto(`/members/${memberId}/verify`);
-  await page.getByRole('button', { name: 'Yes, this name identifies them' }).click();
+  await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Yes', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/members/${memberId}(?:\\?.*)?$`));
 });
 

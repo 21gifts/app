@@ -1120,7 +1120,7 @@ Handbook states: default (About me when set), `note-null`, missing (`view.missin
 
 ### `/members/[accountId]/verify`
 
-Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **Verify**. There is no in-card back. A moderator who is not the subject, and a basis member with a stored name, sees the question, that exact name, and **Yes, this name identifies them**. Confirm posts the untrimmed stored name and then opens `/members/[accountId]`. Chrome back does not post.
+Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` is the only back, `topRight={<SignedInChrome />}`. `OnboardingGate screen="profile"` → `Card xl` `surface={false}` → **h1** **Verify**. There is no in-card back. A moderator who is not the subject, and a basis member with a stored name, sees that exact name as an underlined link to the member card, the question under it, then **Yes** and **No**. **Yes** posts the untrimmed stored name and then opens `/members/[accountId]`. **No** opens the member card and does not post. Sunday hides both buttons. There is no Cancel. Chrome back does not post.
 
 Handbook states: default, unnamed, loading, error, missing, forbidden, sunday, failed.
 

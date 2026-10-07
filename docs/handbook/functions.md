@@ -1934,9 +1934,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: MemberVerifyScreen
 
-- **Purpose:** Client stored-name check. Heading **Verify**. Renders `null` without a session and does not fetch. An id that is not a UUID shows **This profile could not be found.** and does not fetch. A viewer below moderator sees **You cannot verify this member.** and does not fetch. Otherwise `fetchMember` runs. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees the question, that exact name, and **Yes, this name identifies them**. Confirm is the only card action and the only child of `SundayWritingGate`. Chrome back does not post.
+- **Purpose:** Client stored-name check. Heading **Verify**. Renders `null` without a session and does not fetch. An id that is not a UUID shows **This profile could not be found.** and does not fetch. A viewer below moderator sees **You cannot verify this member.** and does not fetch. Otherwise `fetchMember` runs. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees that exact name as an underlined link to the member card, the question under it, then **Yes** and **No**. **Yes** is the only control that posts. **No** opens the member card and does not post. Both buttons are the only children of `SundayWritingGate`; Sunday hides both. There is no Cancel. Chrome back does not post.
 - **Inputs:** Route `accountId`; session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. `postTrustVerify(session, profile.id, identifyingName)` only from the confirm button, with the untrimmed stored name, then `router.push` to `/members/${profile.id}`. A thrown write stays on this page with **Could not update this member. Please try again.**
+- **Returns / side effects:** React element or `null` without a session. `postTrustVerify(session, profile.id, identifyingName)` only from **Yes**, with the untrimmed stored name, then `router.push` to `/members/${profile.id}`. **No** only `router.push` to `/members/${profile.id}` and does not post. A thrown write stays on this page with **Could not update this member. Please try again.**
 - **Used by:** `MemberVerifyPage`.
 
 ## Function: fetchPostStats

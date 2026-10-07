@@ -1,5 +1,7 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -16,9 +18,10 @@ const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
  * Stored-name check for `/members/[accountId]/verify`.
  *
  * Renders nothing without a session. An id that is not a UUID, or a viewer
- * below moderator, does not fetch. Confirm posts `postTrustVerify` with the
- * untrimmed stored name and then opens the member card. Chrome back does not
- * post. The card has no back control.
+ * below moderator, does not fetch. Yes posts `postTrustVerify` with the
+ * untrimmed stored name and then opens the member card. No opens the member
+ * card and does not post. Sunday hides both. Chrome back does not post. The
+ * card has no back control.
  *
  * @param props - Dynamic route `accountId`.
  * @returns The verify card, or `null` without a session.
@@ -157,13 +160,25 @@ export function MemberVerifyScreen({ accountId }: { accountId: string }): ReactE
   const token = session;
   const subjectId = profile.id;
 
+  const leave = (): void => {
+    /* v8 ignore next 3 — the decision buttons are disabled while busy */
+    if (busy) {
+      return;
+    }
+    router.push(`/members/${subjectId}`);
+  };
+
   return frame(
     <div
       className="flex w-full flex-col items-stretch gap-3"
       data-testid="state-members-verify-name"
     >
-      <p className="text-center text-sm text-app-fg">{t('trustChain.verifyName.question')}</p>
-      <p className="text-center text-sm font-medium text-app-fg">{identifyingName}</p>
+      <p className="text-center text-sm font-medium text-app-fg">
+        <Link href={`/members/${subjectId}`} className="underline underline-offset-2">
+          {identifyingName}
+        </Link>
+      </p>
+      <p className="text-center text-sm text-app-muted">{t('trustChain.verifyName.question')}</p>
       {failed ? (
         <p
           role="alert"
@@ -174,30 +189,38 @@ export function MemberVerifyScreen({ accountId }: { accountId: string }): ReactE
         </p>
       ) : null}
       <SundayWritingGate>
-        <Button
-          variant="secondary"
-          disabled={busy}
-          onClick={() => {
-            /* v8 ignore next 3 — the confirm button is disabled while busy */
-            if (busy) {
-              return;
+        <div className="flex w-full flex-col items-stretch gap-3">
+          <Button
+            type="button"
+            disabled={busy}
+            icon={
+              busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
             }
-            setBusy(true);
-            setFailed(false);
-            void (async () => {
-              try {
-                await postTrustVerify(token, subjectId, identifyingName);
-                router.push(`/members/${subjectId}`);
-              } catch {
-                setFailed(true);
-              } finally {
-                setBusy(false);
+            onClick={() => {
+              /* v8 ignore next 3 — the decision buttons are disabled while busy */
+              if (busy) {
+                return;
               }
-            })();
-          }}
-        >
-          {t('trustChain.verifyName.confirm')}
-        </Button>
+              setBusy(true);
+              setFailed(false);
+              void (async () => {
+                try {
+                  await postTrustVerify(token, subjectId, identifyingName);
+                  router.push(`/members/${subjectId}`);
+                } catch {
+                  setFailed(true);
+                } finally {
+                  setBusy(false);
+                }
+              })();
+            }}
+          >
+            {t('trustChain.verifyName.yes')}
+          </Button>
+          <Button type="button" variant="secondary" disabled={busy} onClick={leave}>
+            {t('trustChain.verifyName.no')}
+          </Button>
+        </div>
       </SundayWritingGate>
     </div>,
   );

@@ -1076,7 +1076,8 @@ const en = {
   'trustChain.action.verify': 'Verify',
   'trustChain.verifyName.question':
     'Does this stored name match the name that uniquely identifies this person?',
-  'trustChain.verifyName.confirm': 'Yes, this name identifies them',
+  'trustChain.verifyName.yes': 'Yes',
+  'trustChain.verifyName.no': 'No',
   'trustChain.verifyName.missing': 'Verification needs a stored name that identifies this person.',
   'trustChain.verifyName.forbidden': 'You cannot verify this member.',
   'trustChain.action.propose': 'Propose as moderator',
@@ -2192,7 +2193,8 @@ const de = {
   'trustChain.action.verify': 'Verifizieren',
   'trustChain.verifyName.question':
     'Entspricht dieser hinterlegte Name dem Namen, mit dem diese Person eindeutig identifiziert werden kann?',
-  'trustChain.verifyName.confirm': 'Ja, dieser Name identifiziert die Person',
+  'trustChain.verifyName.yes': 'Ja',
+  'trustChain.verifyName.no': 'Nein',
   'trustChain.verifyName.missing':
     'Zum Verifizieren braucht es einen hinterlegten Namen, mit dem die Person eindeutig identifiziert werden kann.',
   'trustChain.verifyName.forbidden': 'Du kannst dieses Mitglied nicht verifizieren.',
@@ -3281,7 +3283,8 @@ const es = {
   'trustChain.action.verify': 'Verificar',
   'trustChain.verifyName.question':
     '¿Coincide este nombre guardado con el nombre que identifica a esta persona de forma inequívoca?',
-  'trustChain.verifyName.confirm': 'Sí, este nombre la identifica',
+  'trustChain.verifyName.yes': 'Sí',
+  'trustChain.verifyName.no': 'No',
   'trustChain.verifyName.missing':
     'Para verificar hace falta un nombre guardado que identifique a esta persona de forma inequívoca.',
   'trustChain.verifyName.forbidden': 'No puedes verificar a este miembro.',
@@ -4378,7 +4381,8 @@ const fil = {
   'trustChain.action.verify': 'I-verify',
   'trustChain.verifyName.question':
     'Tumutugma ba ang nakaimbak na pangalan sa pangalan na natatanging kumikilala sa taong ito?',
-  'trustChain.verifyName.confirm': 'Oo, ito ang pangalang kumikilala sa kanya',
+  'trustChain.verifyName.yes': 'Oo',
+  'trustChain.verifyName.no': 'Hindi',
   'trustChain.verifyName.missing':
     'Kailangan ng nakaimbak na pangalan na natatanging kumikilala sa taong ito bago ma-verify.',
   'trustChain.verifyName.forbidden': 'Hindi mo ma-verify ang miyembrong ito.',

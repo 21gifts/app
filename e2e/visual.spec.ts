@@ -8378,10 +8378,11 @@ test.describe('onboarding screens', () => {
     await expect(
       page.getByText('Does this stored name match the name that uniquely identifies this person?'),
     ).toBeVisible();
-    await expect(page.getByText('Ada')).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Yes, this name identifies them' }),
-    ).toBeVisible();
+    const ada = page.getByRole('link', { name: 'Ada', exact: true });
+    await expect(ada).toBeVisible();
+    await expect(ada).toHaveAttribute('href', `/members/${memberId}`);
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
     await shotScreen(page, 'screen-members-accountId-verify');
   });
 
@@ -8436,9 +8437,8 @@ test.describe('onboarding screens', () => {
     await expect(
       page.getByText('Verification needs a stored name that identifies this person.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Yes, this name identifies them' })).toHaveCount(
-      0,
-    );
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toHaveCount(0);
     await shotScreen(page, 'state-members-verify-unnamed');
   });
 
@@ -8635,11 +8635,10 @@ test.describe('onboarding screens', () => {
     await expect(
       page.getByText('Does this stored name match the name that uniquely identifies this person?'),
     ).toBeVisible();
-    await expect(page.getByText('Ada')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada', exact: true })).toBeVisible();
     await expect(page.getByText('Writing is paused on Sunday.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Yes, this name identifies them' })).toHaveCount(
-      0,
-    );
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toHaveCount(0);
     await shotScreen(page, 'state-members-verify-sunday');
   });
 
@@ -8698,8 +8697,10 @@ test.describe('onboarding screens', () => {
       await route.fulfill({ status: 409, contentType: 'application/json', body: '{}' });
     });
     await page.goto(`/members/${memberId}/verify`);
-    await page.getByRole('button', { name: 'Yes, this name identifies them' }).click();
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
     await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/members/${memberId}/verify`));
     await shotScreen(page, 'state-members-verify-failed');
   });
