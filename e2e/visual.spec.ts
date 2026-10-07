@@ -19690,7 +19690,7 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-tall-sheet');
   });
 
-  /** Answers the Menu header's totals and the gift-day rate, so every ₿ figure shows its fiat. */
+  /** Answers the Menu header's totals and the spot rate, so every ₿ figure shows its fiat. */
   async function menuTotals(page: Page): Promise<void> {
     await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
       await route.fulfill({
