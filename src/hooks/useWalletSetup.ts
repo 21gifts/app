@@ -14,8 +14,13 @@ const SETUP_FAILED_PINS = new Set([
   'pos-setup-failed',
 ]);
 
+/** Screenshot pin that shows a money screen while the background setup is still due. */
+const SETUP_PENDING_PIN = 'setup-pending';
+
 /** State and action of the inline wallet setup note on money screens. */
 export interface UseWalletSetupResult {
+  /** True while the account still needs the one-time setup (`needsWalletSetup`). */
+  due: boolean;
   /** True when the background setup gave up for this session and is still due. */
   failed: boolean;
   /** Starts the setup again; reloads when the wallet must reload. */
@@ -34,15 +39,18 @@ export function walletSetupPin(): boolean {
 }
 
 /**
- * Whether the background wallet setup gave up for the current session while
- * the account still needs it, and the **Try again** of the inline setup note.
- * The setup itself runs in the background (`listenForWalletSetup`); there is
- * no dialog. A pinned note leaves the action inert.
+ * Whether the one-time wallet setup is still due, whether the background
+ * setup gave up for the current session while the account still needs it,
+ * and the **Try again** of the inline setup note. The setup itself runs in the
+ * background (`listenForWalletSetup`); there is no dialog. In a Playwright
+ * build only, `?visual=setup-pending` pins `due` and a setup-note pin pins
+ * `failed`; a pinned note leaves the action inert.
  *
- * @returns Whether the note shows, and its retry action.
+ * @returns Whether the setup is due, whether the note shows, and its retry action.
  */
 export function useWalletSetup(): UseWalletSetupResult {
   const [pinned] = useState(walletSetupPin);
+  const [pendingPinned] = useState(() => visualPin() === SETUP_PENDING_PIN);
   const failedSession = useWalletStore((state) => state.setupFailedSession);
   const session = useAuthStore((state) => state.session);
   const due = useAuthStore((state) => needsWalletSetup(state.account));
@@ -58,5 +66,9 @@ export function useWalletSetup(): UseWalletSetupResult {
     void retryWalletSetup();
   }, [pinned]);
 
-  return { failed: pinned || (due && failedSession !== null && failedSession === session), retry };
+  return {
+    due: pendingPinned || due,
+    failed: pinned || (due && failedSession !== null && failedSession === session),
+    retry,
+  };
 }

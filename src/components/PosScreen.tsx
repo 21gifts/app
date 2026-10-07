@@ -14,7 +14,6 @@ import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
-import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
@@ -444,14 +443,13 @@ export function PosTill(): ReactElement {
   const { fiat } = useFiatPreference();
   const till = usePosTillState();
   const setup = useWalletSetup();
-  const setupDue = useAuthStore((state) => needsWalletSetup(state.account));
 
   return (
     <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('pos.title')}
       </h1>
-      {till.address !== null && !setupDue && !setup.failed ? (
+      {till.address !== null && !setup.due && !setup.failed ? (
         <div className="flex flex-col items-stretch gap-3 border-t border-app-border pt-6">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
             {t('profile.giftsHeading')}

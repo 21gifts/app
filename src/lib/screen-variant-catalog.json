@@ -258,6 +258,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:setup-pending",
+    "label": "/wallet setup-pending",
+    "visual": "state-wallet-setup-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:history-empty",
     "label": "/wallet history-empty",
     "visual": "state-wallet-history-empty",
@@ -630,6 +636,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:locked-error",
+    "label": "/wallet/payment locked-error",
+    "visual": "state-wallet-payment-locked-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:setup-failed",
+    "label": "/wallet/payment setup-failed",
+    "visual": "state-wallet-payment-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",
@@ -789,6 +807,12 @@
     "id": "/welcome:wallet-buttons-disabled",
     "label": "/welcome wallet-buttons-disabled",
     "visual": "state-welcome-wallet-buttons-disabled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-setup-pending",
+    "label": "/welcome wallet-setup-pending",
+    "visual": "state-welcome-wallet-setup-pending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2571,6 +2595,12 @@
     "id": "/pos:need-wallet",
     "label": "/pos need-wallet",
     "visual": "state-pos-need-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:setup-pending",
+    "label": "/pos setup-pending",
+    "visual": "state-pos-setup-pending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

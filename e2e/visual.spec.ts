@@ -1879,6 +1879,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-setup-failed');
   });
 
+  test('wallet setup-pending', async ({ page }) => {
+    await stubWalletSetupAccount(page);
+    await page.goto('/wallet?visual=setup-pending');
+    await expect(page.getByText('Opening your wallet…')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-setup-pending');
+  });
+
   test('wallet history-empty', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -2034,6 +2044,32 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('alert').filter({ hasText: /phone or browser/ })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-prf-unsupported');
+  });
+
+  test('state-wallet-payment-locked-error', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-locked-error',
+    );
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Something went wrong. Please try again.' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-locked-error');
+  });
+
+  test('state-wallet-payment-setup-failed', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-setup-failed',
+    );
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Your wallet could not be set up yet.' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-setup-failed');
   });
 
   test('state-wallet-payment-copied', async ({ page }) => {
@@ -4126,6 +4162,15 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
     await shotScreen(page, 'state-welcome-wallet-buttons-disabled');
+  });
+
+  test('welcome wallet-setup-pending', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.goto('/welcome?visual=setup-pending');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-wallet-setup-pending');
   });
 
   test('welcome wallet-receive', async ({ page }) => {
@@ -8314,6 +8359,42 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveCount(0);
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-setup-failed');
+  });
+
+  test('pos setup-pending', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos?visual=setup-pending');
+    await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toHaveCount(0);
+    await expect(page.getByText('Your wallet could not be set up yet.')).toHaveCount(0);
+    await expect(page.getByText('No payments yet.')).toBeVisible();
+    await shotScreen(page, 'state-pos-setup-pending');
   });
 
   test('profile fiat', async ({ page }) => {

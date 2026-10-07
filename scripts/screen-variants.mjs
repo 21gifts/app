@@ -374,6 +374,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'setup-pending',
+    image: 'wallet-setup-pending.png',
+    visual: 'state-wallet-setup-pending',
+    needle: "shotScreen(page, 'state-wallet-setup-pending')",
+  },
+  {
+    route: '/wallet',
     id: 'history-empty',
     image: 'wallet-history-empty.png',
     visual: 'state-wallet-history-empty',
@@ -809,6 +816,20 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-wallet-payment-prf-unsupported')",
   },
   {
+    route: '/wallet/payment',
+    id: 'locked-error',
+    image: 'wallet-payment-locked-error.png',
+    visual: 'state-wallet-payment-locked-error',
+    needle: "shotScreen(page, 'state-wallet-payment-locked-error')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'setup-failed',
+    image: 'wallet-payment-setup-failed.png',
+    visual: 'state-wallet-payment-setup-failed',
+    needle: "shotScreen(page, 'state-wallet-payment-setup-failed')",
+  },
+  {
     route: '/wallet/phrase',
     id: 'default',
     image: 'wallet-phrase-add.png',
@@ -996,6 +1017,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-buttons-disabled.png',
     visual: 'state-welcome-wallet-buttons-disabled',
     needle: "shotScreen(page, 'state-welcome-wallet-buttons-disabled')",
+  },
+  {
+    route: '/welcome',
+    id: 'wallet-setup-pending',
+    image: 'welcome-wallet-setup-pending.png',
+    visual: 'state-welcome-wallet-setup-pending',
+    needle: "shotScreen(page, 'state-welcome-wallet-setup-pending')",
   },
   {
     route: '/welcome',
@@ -3096,6 +3124,13 @@ export const SCREEN_VARIANTS = [
     image: 'pos-need-wallet.png',
     visual: 'state-pos-need-wallet',
     needle: 'Set up your wallet first.',
+  },
+  {
+    route: '/pos',
+    id: 'setup-pending',
+    image: 'pos-setup-pending.png',
+    visual: 'state-pos-setup-pending',
+    needle: "shotScreen(page, 'state-pos-setup-pending')",
   },
   {
     route: '/pos',
