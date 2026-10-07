@@ -711,24 +711,9 @@ describe('PayLinkScreen', () => {
     }
   });
 
-  it('shows the viewer fiat under an open till when a gift day exists', async () => {
+  it('shows the viewer fiat under an open till when a spot rate exists', async () => {
     const fixed = 1_700_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(fixed);
-    const day = {
-      day: '2026-09-24',
-      sats: 100_000_000,
-      cumulativeSats: 100_000_000,
-      btc: '1.00000000',
-      cumulativeBtc: '1.00000000',
-      usd: '84000.00',
-      cumulativeUsd: '84000.00',
-      chf: null,
-      eur: null,
-      php: null,
-      cumulativeChf: null,
-      cumulativeEur: null,
-      cumulativePhp: null,
-    };
     mockFetch(async (input) => {
       const url = String(input);
       if (url.includes('/fx/spot')) {
