@@ -25,9 +25,9 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
   /** Balance block state. Entry surface only. */
   wallet?: UseWalletResult;
   /**
-   * Send flow state. Its view opens from Send while the wallet is ready (or
-   * after the unlock Send runs while it is locked) and stays while a send is
-   * in flight, its Sent line shows, or a send alert is up. Entry surface only.
+   * Send flow state. Its view opens from Send while the wallet is ready and
+   * stays while a send is in flight, its Sent line shows, or a send alert is
+   * up. Entry surface only.
    */
   send?: UseWalletSendResult;
 };
