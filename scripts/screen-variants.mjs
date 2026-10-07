@@ -416,6 +416,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-manual-busy',
+    image: 'wallet-send-manual-busy.png',
+    visual: 'state-wallet-send-manual-busy',
+    needle: "shotScreen(page, 'state-wallet-send-manual-busy')",
+  },
+  {
+    route: '/wallet',
     id: 'send-paste-denied',
     image: 'wallet-send-paste-denied.png',
     visual: 'state-wallet-send-paste-denied',
@@ -704,6 +711,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'spark-send',
+    image: 'wallet-payment-spark-send.png',
+    visual: 'state-wallet-payment-spark-send',
+    needle: "shotScreen(page, 'state-wallet-payment-spark-send')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'pending',
     image: 'wallet-payment-pending.png',
     visual: 'state-wallet-payment-pending',
@@ -956,6 +970,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'wallet-buttons-disabled',
+    image: 'welcome-wallet-buttons-disabled.png',
+    visual: 'state-welcome-wallet-buttons-disabled',
+    needle: "shotScreen(page, 'state-welcome-wallet-buttons-disabled')",
+  },
+  {
+    route: '/welcome',
     id: 'wallet-receive',
     image: 'welcome-wallet-receive.png',
     visual: 'state-welcome-wallet-receive',
@@ -988,6 +1009,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-send-manual-alert.png',
     visual: 'state-welcome-wallet-send-manual-alert',
     needle: "shotScreen(page, 'state-welcome-wallet-send-manual-alert')",
+  },
+  {
+    route: '/welcome',
+    id: 'wallet-send-manual-busy',
+    image: 'welcome-wallet-send-manual-busy.png',
+    visual: 'state-welcome-wallet-send-manual-busy',
+    needle: "shotScreen(page, 'state-welcome-wallet-send-manual-busy')",
   },
   {
     route: '/welcome',
@@ -2423,6 +2451,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-menu-header-balance.png',
     visual: 'state-welcome-menu-header-balance',
     needle: "shotScreen(page, 'state-welcome-menu-header-balance')",
+  },
+  {
+    route: '/welcome',
+    id: 'menu-header-no-rate',
+    image: 'welcome-menu-header-no-rate.png',
+    visual: 'state-welcome-menu-header-no-rate',
+    needle: "shotScreen(page, 'state-welcome-menu-header-no-rate')",
   },
   {
     route: '/welcome',
