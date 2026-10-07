@@ -182,7 +182,8 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
             <span className="break-all">{info.lnAddress}</span>
           </Row>
         )}
-        {info.description === undefined || 'text' in title ? null : (
+        {info.description === undefined ||
+        ('text' in title && title.text === info.description) ? null : (
           <Row label={t('wallet.payment.description')}>{info.description}</Row>
         )}
         <Row label={t('wallet.payment.amount')}>{amount(payment.amountSats)}</Row>
