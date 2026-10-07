@@ -746,6 +746,7 @@ export function SegmentedControl<T extends string>(props: {
     label: string;
     badge?: number;
     badgeAriaLabel?: string;
+    disabled?: boolean;
   }[];
   onChange: (value: T) => void;
   ariaLabel: string;
@@ -754,6 +755,8 @@ export function SegmentedControl<T extends string>(props: {
   className?: string;
 }): ReactElement;
 ```
+
+A disabled option stays visible, cannot be selected, and is dimmed (`opacity-50`) in both tones. `AmountEntry` uses it for a fiat without an exchange rate.
 
 Chip: an `aria-hidden` span with `ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-app-btn px-1.5 text-xs font-semibold leading-5 text-app-btn-fg`. Omitted when `badge` is missing or ≤ 0. The option button gets `aria-label` only when `badge` > 0 and `badgeAriaLabel` is non-empty.
 

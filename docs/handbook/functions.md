@@ -840,9 +840,9 @@
 ## Function: SegmentedControl
 
 - **Purpose:** Mutually exclusive option group with `tone` `gift` (compact ₿|USD cells, optional `shell` `app`/`dark`) or `neutral` (full-width pills for staff inbox and profile notifications). Gift hit target is `min-h-11 min-w-11` on mobile and desktop. `shell` is ignored for `neutral`. Neutral `role="group"` is the pill; the forum composer Post/Ask `!grid grid-cols-2 !rounded-2xl` still lays out those option buttons via `className` on the group. The four forum view filters are `ForumModeSelect`, not this control. No `trailing` slot.
-- **Inputs:** `value`, `options` (`value` + `label`, optional `badge` / `badgeAriaLabel`; chip omitted when `badge` is missing or ≤ 0), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className` (on the group).
-- **Returns / side effects:** A `role="group"` track of `type="button"` options with `aria-pressed`. Neutral is that group as the pill (`className` lands there, including the composer Post/Ask `!grid grid-cols-2 !rounded-2xl`). No network.
-- **Used by:** `ForumBoard` (`tone="neutral"`), `PushToggle` (`tone="neutral"`, twice: level + device), `AccountActivityChart` (`tone="gift"`), `StatsDashboard` (`tone="gift" shell="dark"`).
+- **Inputs:** `value`, `options` (`value` + `label`, optional `badge` / `badgeAriaLabel`; chip omitted when `badge` is missing or ≤ 0; optional `disabled`), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className` (on the group).
+- **Returns / side effects:** A `role="group"` track of `type="button"` options with `aria-pressed`. A disabled option renders a native `disabled` button, dimmed with `disabled:opacity-50` in both tones, and pressing it does nothing. Neutral is that group as the pill (`className` lands there, including the composer Post/Ask `!grid grid-cols-2 !rounded-2xl`). No network.
+- **Used by:** `ForumBoard` (`tone="neutral"`), `PushToggle` (`tone="neutral"`, twice: level + device), `AccountActivityChart` (`tone="gift"`), `StatsDashboard` (`tone="gift" shell="dark"`), `AmountEntry` (`tone="gift"`, the fiat option disabled without an exchange rate).
 
 ## Function: ForumModeSelect
 
