@@ -22,7 +22,7 @@ import {
   openConversation,
   postMessage,
   postMessageInvoice,
-    postRepaymentInvoice,
+  postRepaymentInvoice,
   setName,
   WalletRequiredError,
 } from '@/lib/api';
@@ -4457,9 +4457,7 @@ describe('MemberProfileScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Too many payments. Please wait a moment and try again.',
     );
-    repayMock.mockRejectedValueOnce(
-      new Error("The author's wallet cannot receive this Bitcoin payment"),
-    );
+    repayMock.mockRejectedValueOnce(new CannotReceiveError());
     fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe(

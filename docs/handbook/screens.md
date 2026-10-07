@@ -3296,7 +3296,7 @@ Ada's session on someone else's comment. **Send Bitcoin** is open and the amount
 
 ### Variant: donate-invoice
 
-Ada's session after **Continue** on someone else's comment. The card shows **Pay ₿21**, the Bitcoin payment QR code on desktop, and **Pay with Wallet of Satoshi**. The raw invoice is not shown.
+Ada's session after **Continue** on someone else's comment. The card shows **Pay ₿21** and the in-app wallet pay slot; in this build the wallet is not configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** No invoice QR. The raw invoice is not shown.
 
 ![21.gifts habit tracker donate invoice](images/habit-tracker-donate-invoice.png)
 
@@ -3540,7 +3540,7 @@ Same funded credit note as **posts-open-repay-today**, after **Pay today's repay
 
 ### Variant: posts-open-repay-today-invoice
 
-Same note as **posts-open-repay-today**, after **Pay today's repayment** is pressed. The invoice card is open, with **Pay with Wallet of Satoshi**. The amount form is not shown.
+Same note as **posts-open-repay-today**, after **Pay today's repayment** is pressed. The invoice card is open with the in-app wallet pay slot; in this build the wallet is not configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** No invoice QR. The amount form is not shown.
 
 ![21.gifts member posts repay today invoice](images/members-posts-open-repay-today-invoice.png)
 

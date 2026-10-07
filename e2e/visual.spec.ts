@@ -9584,9 +9584,7 @@ test.describe('onboarding screens', () => {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
-          body: JSON.stringify({
-            error: "The author's wallet cannot receive this Bitcoin payment",
-          }),
+          body: JSON.stringify({ error: 'Cannot receive', code: 'cannot_receive' }),
         });
         return;
       }
@@ -9769,7 +9767,9 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    const wallet = page.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    const wallet = page.getByText(
+      'Your 21.gifts wallet is not available here, so this cannot be paid.',
+    );
     await expect(wallet).toBeVisible();
     await wallet.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-repay-today-invoice');
@@ -26958,7 +26958,9 @@ test.describe('habit tracker baselines', () => {
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(
+      page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+    ).toBeVisible();
     await expect(page.getByText('$0.02')).toBeVisible();
     await shotScreen(page, 'state-habit-tracker-donate-invoice');
   });

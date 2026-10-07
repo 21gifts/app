@@ -323,7 +323,9 @@ test('screen /habit-tracker donate-invoice', async ({ page }) => {
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(
+    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toBeVisible();
 });
 
 test('screen /habit-tracker sunday', async ({ page }) => {
@@ -891,7 +893,9 @@ test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', asy
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Pay ₿21')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(
+    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+  ).toBeVisible();
 });
 
 test('Function: HabitTrackerPage — a signed-out visitor reads the public list', async ({

@@ -563,11 +563,11 @@ describe('PublicMessageThread', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
+    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
 
   it('maps a pay missing-requirements miss onto the pay error', async () => {
