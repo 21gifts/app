@@ -1398,3 +1398,235 @@ export const fundingDecisionResultSchema = z.object({
  * Updated account snapshot after a staff funding decision.
  */
 export type FundingDecisionResult = z.infer<typeof fundingDecisionResultSchema>;
+
+/**
+ * Wallet-payment categories the api assigns, in the order the staff filter
+ * lists them. `member`, `shop`, `platform`, and `gift` stay inside the
+ * community; `outside_lightning` and `onchain` leave it.
+ */
+export const TEAM_PAYMENT_CATEGORIES = [
+  'member',
+  'shop',
+  'platform',
+  'gift',
+  'outside_lightning',
+  'onchain',
+  'unknown',
+] as const;
+
+/** One of {@link TEAM_PAYMENT_CATEGORIES}. */
+export type TeamPaymentCategory = (typeof TEAM_PAYMENT_CATEGORIES)[number];
+
+/** Summary windows of `GET /team/members/:id/wallet` (`period` query value). */
+export const TEAM_WALLET_PERIODS = ['7', '30', '90', 'all'] as const;
+
+/** One of {@link TEAM_WALLET_PERIODS}. */
+export type TeamWalletPeriod = (typeof TEAM_WALLET_PERIODS)[number];
+
+/**
+ * Field names that never belong in a staff view: recovery phrase, seed, PRF
+ * output, payment preimage, or any private or spending key. A key that
+ * matches is dropped from event `props` even if the api ever sent one.
+ */
+const SECRET_FIELD_PATTERN = /mnemonic|phrase|seed|prf|preimage|secret|private|spending|xprv|nsec/i;
+
+/**
+ * An instant from the api as epoch ms: a number in ms, a number in seconds
+ * (below 10^11), or an ISO string.
+ */
+const teamInstantSchema = z.union([z.number(), z.string()]).transform((value, ctx) => {
+  if (typeof value === 'number') {
+    return value < 100_000_000_000 ? value * 1000 : value;
+  }
+  const ms = Date.parse(value);
+  if (Number.isNaN(ms)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid instant' });
+    return z.NEVER;
+  }
+  return ms;
+});
+
+/**
+ * An array whose rows are parsed one by one; a row that fails `row` is dropped.
+ *
+ * @param row - Schema of one row.
+ * @returns Array schema that keeps the rows that parse.
+ */
+function keptRowsSchema<T extends z.ZodTypeAny>(
+  row: T,
+): z.ZodType<z.output<T>[], z.ZodTypeDef, unknown> {
+  return z.array(z.unknown()).transform((rows) =>
+    rows.flatMap((value) => {
+      const parsed = row.safeParse(value);
+      return parsed.success ? [parsed.data as z.output<T>] : [];
+    }),
+  );
+}
+
+/** Whole sats, at most 21 million bitcoin. */
+const teamSatsSchema = z.number().int().nonnegative().max(2_100_000_000_000_000);
+
+/**
+ * Runtime schema for one row of `GET /team/members?query=`.
+ */
+export const teamMemberSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().nullable(),
+  username: z.string().nullable().optional(),
+});
+
+/**
+ * Runtime schema for `GET /team/members?query=`. A row that fails
+ * {@link teamMemberSchema} is dropped.
+ */
+export const teamMemberSearchResponseSchema = z.object({
+  members: keptRowsSchema(teamMemberSchema),
+});
+
+/** One member search result. */
+export type TeamMember = z.infer<typeof teamMemberSchema>;
+
+/**
+ * Runtime schema for one wallet payment on `GET /team/members/:id/wallet`.
+ *
+ * Only the listed fields are kept: zod drops every other key, so a preimage
+ * or any other secret the api might send never reaches the screen or state.
+ * `timestamp` is epoch ms after parsing. An unknown category reads as
+ * `unknown`.
+ */
+export const teamWalletPaymentSchema = z.object({
+  id: z.string().min(1),
+  direction: z.enum(['in', 'out']),
+  status: z.enum(['pending', 'completed', 'failed']),
+  amountSats: teamSatsSchema,
+  feeSats: teamSatsSchema.nullable().optional(),
+  timestamp: teamInstantSchema,
+  method: z.string().nullable().optional(),
+  category: z.enum(TEAM_PAYMENT_CATEGORIES).catch('unknown'),
+  counterpartyAccountId: z.string().min(1).nullable().optional(),
+  counterpartyName: z.string().nullable().optional(),
+  destination: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  lnurlComment: z.string().nullable().optional(),
+});
+
+/** One wallet payment in the staff view. */
+export type TeamWalletPayment = z.infer<typeof teamWalletPaymentSchema>;
+
+/**
+ * Runtime schema for one category sum of the wallet summary.
+ */
+export const teamWalletCategorySumSchema = z.object({
+  category: z.enum(TEAM_PAYMENT_CATEGORIES).catch('unknown'),
+  inSats: teamSatsSchema,
+  outSats: teamSatsSchema,
+});
+
+/**
+ * Runtime schema for `GET /team/members/:id/wallet`.
+ *
+ * `balance` is the latest reported balance and its sync time, or `null`
+ * before the member's wallet reported. `summary` covers the requested period.
+ * `payments` is one page, newest first; `nextCursor` is the `before` value of
+ * the next page, or `null` at the end. A payment row that fails
+ * {@link teamWalletPaymentSchema} is dropped.
+ */
+export const teamWalletResponseSchema = z.object({
+  balance: z
+    .object({
+      balanceSats: teamSatsSchema,
+      syncedAt: teamInstantSchema,
+    })
+    .nullable(),
+  summary: z.object({
+    inSats: teamSatsSchema,
+    outSats: teamSatsSchema,
+    feeSats: teamSatsSchema,
+    categories: z.array(teamWalletCategorySumSchema),
+  }),
+  payments: keptRowsSchema(teamWalletPaymentSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+/** One page of a member's wallet data for staff. */
+export type TeamWallet = z.infer<typeof teamWalletResponseSchema>;
+
+/**
+ * Runtime schema for one interaction event on `GET /team/members/:id/events`.
+ *
+ * `at` is epoch ms after parsing. `props` keeps flat string, number, boolean,
+ * and null values only, and drops every key that names a secret
+ * (`SECRET_FIELD_PATTERN`).
+ */
+export const teamMemberEventSchema = z.object({
+  name: z.string().min(1),
+  at: teamInstantSchema,
+  path: z.string().nullable().optional(),
+  props: z
+    .record(z.unknown())
+    .nullable()
+    .optional()
+    .transform((props) => {
+      const kept: Record<string, string | number | boolean | null> = {};
+      for (const [key, value] of Object.entries(props ?? {})) {
+        if (SECRET_FIELD_PATTERN.test(key)) {
+          continue;
+        }
+        if (
+          value === null ||
+          typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean'
+        ) {
+          kept[key] = value;
+        }
+      }
+      return kept;
+    }),
+});
+
+/** One interaction event in the staff view. */
+export type TeamMemberEvent = z.infer<typeof teamMemberEventSchema>;
+
+/**
+ * Runtime schema for `GET /team/members/:id/events`: one page, newest first,
+ * and the `before` cursor of the next page or `null`. A row that fails
+ * {@link teamMemberEventSchema} is dropped.
+ */
+export const teamEventsResponseSchema = z.object({
+  events: keptRowsSchema(teamMemberEventSchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+/** One page of a member's interaction events for staff. */
+export type TeamEvents = z.infer<typeof teamEventsResponseSchema>;
+
+/**
+ * Runtime schema for one access-log row on `GET /team/audit`: who read which
+ * member's `wallet` or `events`, and when (`at`, epoch ms after parsing).
+ * Names are optional so a body with ids only still parses.
+ */
+export const teamAuditEntrySchema = z.object({
+  viewerAccountId: z.string().min(1),
+  viewerName: z.string().nullable().optional(),
+  memberAccountId: z.string().min(1),
+  memberName: z.string().nullable().optional(),
+  what: z.enum(['wallet', 'events']),
+  at: teamInstantSchema,
+});
+
+/** One access-log row. */
+export type TeamAuditEntry = z.infer<typeof teamAuditEntrySchema>;
+
+/**
+ * Runtime schema for `GET /team/audit`: one page, newest first, and the
+ * `before` cursor of the next page or `null`. A row that fails
+ * {@link teamAuditEntrySchema} is dropped.
+ */
+export const teamAuditResponseSchema = z.object({
+  entries: keptRowsSchema(teamAuditEntrySchema),
+  nextCursor: z.string().min(1).nullable(),
+});
+
+/** One page of the access log. */
+export type TeamAudit = z.infer<typeof teamAuditResponseSchema>;

@@ -11,12 +11,16 @@ import { useAuthStore } from '@/stores/auth-store';
  * Signed-in moderation hub of staff tools.
  *
  * Moderators see labeled Goals, Hidden notes, Open proposals, Moderators chat
- * group, Handbook, and Show payout per person. Goals goes to `/grants/goals`.
+ * group, Handbook, Show payout per person, Member data, and Access log. Goals
+ * goes to `/grants/goals`.
  * The Open proposals control goes to
  * `/moderate/proposals` and shows `proposalCount` when greater than zero. The
  * Moderators chat group control goes to `/moderate/group` and shows a
  * staff-room unread count when greater than zero. Handbook goes to
  * `/moderate/handbook`. Show payout per person goes to `/moderate/payouts`.
+ * Member data goes to `/moderate/members`. Access log goes to
+ * `/moderate/audit`; the api serves that log to founders and initiators only,
+ * and a moderator, who shares the initiator rank, sees why it is closed there.
  * Other signed-in visitors see a short forbidden message and no tools list.
  * Does not fetch hidden notes, proposals, gift stats, or the group thread;
  * unread for Open proposals and Moderators chat group comes from
@@ -105,6 +109,16 @@ export function ModerateScreen(): ReactElement | null {
         <li className="flex w-full flex-col items-center gap-3">
           <ButtonLink href="/moderate/payouts" variant="secondary" size="lg">
             {t('moderate.payouts.link')}
+          </ButtonLink>
+        </li>
+        <li className="flex w-full flex-col items-center gap-3">
+          <ButtonLink href="/moderate/members" variant="secondary" size="lg">
+            {t('moderate.memberData.link')}
+          </ButtonLink>
+        </li>
+        <li className="flex w-full flex-col items-center gap-3">
+          <ButtonLink href="/moderate/audit" variant="secondary" size="lg">
+            {t('moderate.audit.link')}
           </ButtonLink>
         </li>
       </ul>

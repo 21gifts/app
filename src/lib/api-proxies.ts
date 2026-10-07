@@ -1354,3 +1354,54 @@ export async function proxyMessagesEditsGet(
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/edits`);
 }
+
+/**
+ * Proxies GET /team/members (staff member search, `?query=`) to the 21.gifts api.
+ *
+ * @param request - Incoming request (Bearer session; query string forwarded).
+ * @returns The proxied upstream response.
+ */
+export async function proxyTeamMembersGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/team/members');
+}
+
+/**
+ * Proxies GET /team/members/:accountId/wallet (staff view of a member's
+ * balance, summary, and payments) to the 21.gifts api.
+ *
+ * @param request - Incoming request (Bearer session; query string forwarded).
+ * @param accountId - Member account id from the route segment.
+ * @returns The proxied upstream response.
+ */
+export async function proxyTeamMemberWalletGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/team/members/${encodeURIComponent(accountId)}/wallet`);
+}
+
+/**
+ * Proxies GET /team/members/:accountId/events (staff view of a member's
+ * interaction events) to the 21.gifts api.
+ *
+ * @param request - Incoming request (Bearer session; query string forwarded).
+ * @param accountId - Member account id from the route segment.
+ * @returns The proxied upstream response.
+ */
+export async function proxyTeamMemberEventsGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/team/members/${encodeURIComponent(accountId)}/events`);
+}
+
+/**
+ * Proxies GET /team/audit (access log for founders and initiators) to the
+ * 21.gifts api.
+ *
+ * @param request - Incoming request (Bearer session; query string forwarded).
+ * @returns The proxied upstream response.
+ */
+export async function proxyTeamAuditGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/team/audit');
+}

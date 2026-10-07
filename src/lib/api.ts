@@ -33,6 +33,10 @@ import {
   fundingApplicationsResponseSchema,
   fundingPayoutDaysResponseSchema,
   fundingDecisionResultSchema,
+  teamAuditResponseSchema,
+  teamEventsResponseSchema,
+  teamMemberSearchResponseSchema,
+  teamWalletResponseSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -69,6 +73,12 @@ import {
   type FundingApplicationDetail,
   type FundingPayoutDays,
   type FundingDecisionResult,
+  type TeamAudit,
+  type TeamEvents,
+  type TeamMember,
+  type TeamPaymentCategory,
+  type TeamWallet,
+  type TeamWalletPeriod,
   type OwnerFunding,
   type PasskeyBegin,
   type PasskeySession,
@@ -3763,4 +3773,185 @@ export async function postLnurlInvoice(
     throw new LnurlRelayError('failed');
   }
   return parsed.data;
+}
+
+const TEAM_MEMBERS_LOAD_ERROR = 'Could not search members. Please try again.';
+const TEAM_WALLET_LOAD_ERROR = 'Could not load the wallet data. Please try again.';
+const TEAM_EVENTS_LOAD_ERROR = 'Could not load the activity. Please try again.';
+const TEAM_AUDIT_LOAD_ERROR = 'Could not load the access log. Please try again.';
+
+/**
+ * Bearer GET of one team-access path. `null` on 403, so the screen can say
+ * the page is not for this role; parsed body on 2xx.
+ *
+ * @param sessionToken - Bearer session.
+ * @param path - Same-origin path with its query string.
+ * @param schema - Body schema.
+ * @param loadError - Visitor copy thrown on every other failure.
+ * @returns The parsed body, or `null` on 403.
+ * @throws Error with `loadError` on another non-2xx, a network failure, or a
+ * body that fails `schema`.
+ */
+async function fetchTeamAccess<T>(
+  sessionToken: string,
+  path: string,
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+  loadError: string,
+): Promise<T | null> {
+  let response: Response;
+  try {
+    response = await fetch(path, { headers: { Authorization: `Bearer ${sessionToken}` } });
+  } catch {
+    throw new Error(loadError);
+  }
+  if (response.status === 403) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(loadError);
+  }
+  try {
+    return schema.parse(await response.json());
+  } catch {
+    throw new Error(loadError);
+  }
+}
+
+/**
+ * Adds `before=<cursor>` to a query when a cursor is given.
+ *
+ * @param params - Query being built.
+ * @param before - Cursor of the next page, or `null` for the first page.
+ */
+function setBeforeCursor(params: URLSearchParams, before: string | null): void {
+  if (before !== null) {
+    params.set('before', before);
+  }
+}
+
+/**
+ * Searches members by name or username for the staff member-data area.
+ *
+ * Hits same-origin `GET /team/members?query=` (Bearer). Sends only the
+ * session and the typed text.
+ *
+ * @param sessionToken - Bearer session.
+ * @param query - Typed name or username; trimmed by the caller.
+ * @returns Matching members, or `null` when the api refuses this role (403).
+ * @throws Error with visitor copy on another failure or an invalid body.
+ */
+export async function searchTeamMembers(
+  sessionToken: string,
+  query: string,
+): Promise<TeamMember[] | null> {
+  const params = new URLSearchParams({ query });
+  const body = await fetchTeamAccess(
+    sessionToken,
+    `/team/members?${params.toString()}`,
+    teamMemberSearchResponseSchema,
+    TEAM_MEMBERS_LOAD_ERROR,
+  );
+  return body === null ? null : body.members;
+}
+
+/** Filters of one {@link fetchTeamMemberWallet} page. */
+export interface TeamWalletQuery {
+  /** Summary and payment window in days, or `all`. */
+  period: TeamWalletPeriod;
+  /** Only this category, or `null` for every category. */
+  category: TeamPaymentCategory | null;
+  /** Only received (`in`) or sent (`out`) payments, or `null` for both. */
+  direction: 'in' | 'out' | null;
+  /** `nextCursor` of the previous page, or `null` for the first page. */
+  before: string | null;
+}
+
+/**
+ * Fetches one page of a member's wallet data for staff: the latest balance,
+ * the period summary, and payments newest first.
+ *
+ * Hits same-origin `GET /team/members/:id/wallet` (Bearer) with `period`,
+ * optional `category`, `direction`, and `before`. The api records this read
+ * in the access log.
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @param query - Period, filters, and page cursor.
+ * @returns The parsed page, or `null` when the api refuses this role (403).
+ * @throws Error with visitor copy on another failure or an invalid body.
+ */
+export async function fetchTeamMemberWallet(
+  sessionToken: string,
+  accountId: string,
+  query: TeamWalletQuery,
+): Promise<TeamWallet | null> {
+  const params = new URLSearchParams({ period: query.period });
+  if (query.category !== null) {
+    params.set('category', query.category);
+  }
+  if (query.direction !== null) {
+    params.set('direction', query.direction);
+  }
+  setBeforeCursor(params, query.before);
+  return fetchTeamAccess(
+    sessionToken,
+    `/team/members/${encodeURIComponent(accountId)}/wallet?${params.toString()}`,
+    teamWalletResponseSchema,
+    TEAM_WALLET_LOAD_ERROR,
+  );
+}
+
+/**
+ * Fetches one page of a member's interaction events for staff, newest first.
+ *
+ * Hits same-origin `GET /team/members/:id/events` (Bearer) with an optional
+ * `before` cursor. The api records this read in the access log.
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @param before - `nextCursor` of the previous page, or `null` for the first.
+ * @returns The parsed page, or `null` when the api refuses this role (403).
+ * @throws Error with visitor copy on another failure or an invalid body.
+ */
+export async function fetchTeamMemberEvents(
+  sessionToken: string,
+  accountId: string,
+  before: string | null,
+): Promise<TeamEvents | null> {
+  const params = new URLSearchParams();
+  setBeforeCursor(params, before);
+  const query = params.toString();
+  return fetchTeamAccess(
+    sessionToken,
+    `/team/members/${encodeURIComponent(accountId)}/events${query === '' ? '' : `?${query}`}`,
+    teamEventsResponseSchema,
+    TEAM_EVENTS_LOAD_ERROR,
+  );
+}
+
+/**
+ * Fetches one page of the access log: which staff member read which
+ * member's wallet data or activity, newest first.
+ *
+ * Hits same-origin `GET /team/audit` (Bearer) with an optional `before`
+ * cursor. The api allows founders and initiators only.
+ *
+ * @param sessionToken - Bearer session.
+ * @param before - `nextCursor` of the previous page, or `null` for the first.
+ * @returns The parsed page, or `null` when the api refuses this role (403).
+ * @throws Error with visitor copy on another failure or an invalid body.
+ */
+export async function fetchTeamAudit(
+  sessionToken: string,
+  before: string | null,
+): Promise<TeamAudit | null> {
+  const params = new URLSearchParams();
+  setBeforeCursor(params, before);
+  const query = params.toString();
+  return fetchTeamAccess(
+    sessionToken,
+    `/team/audit${query === '' ? '' : `?${query}`}`,
+    teamAuditResponseSchema,
+    TEAM_AUDIT_LOAD_ERROR,
+  );
 }
