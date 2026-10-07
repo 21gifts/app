@@ -8,6 +8,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
 import { useWallet } from '@/hooks/useWallet';
 import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
+import { loadSession } from '@/lib/session-storage';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -111,11 +112,14 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
  * read. Received and Given show the default fiat on a small line under the ₿
  * figure (latest gift-day rate; empty only without a usable rate). The photo and the three stats start loading when the signed-in chrome
  * mounts, not when the Menu opens, and are cached for the session; nothing
- * waits for them.
+ * waits for them. Until the account is loaded (a stored session still being
+ * checked right after a page load), the card already has its final size:
+ * a skeleton circle for the photo, skeleton bars for the name and
+ * `@username`, and the stats row's skeletons.
  *
  * @param props - See {@link MenuAccountHeaderProps}.
  * @returns The header card while the Menu is open, or `null` while it is
- *   closed, before the account is loaded, or without a session.
+ *   closed or when signed out (no session and none stored).
  */
 export function MenuAccountHeader({
   onNavigate,
@@ -147,13 +151,22 @@ export function MenuAccountHeader({
     };
   }, [session, accountId]);
 
-  if (account === null || session === null || !open) {
+  if (!open) {
     return null;
   }
-  const stats =
-    cached?.session === session ? cached.stats : loaded?.session === session ? loaded.stats : null;
-  const name = account.name?.trim() ?? '';
-  const username = account.username ?? null;
+  const pending = account === null || session === null;
+  if (pending && loadSession() === null) {
+    return null;
+  }
+  const stats = pending
+    ? null
+    : cached?.session === session
+      ? cached.stats
+      : loaded?.session === session
+        ? loaded.stats
+        : null;
+  const name = account?.name?.trim() ?? '';
+  const username = account?.username ?? null;
   const initial = (name !== '' ? name : (username ?? '')).charAt(0).toUpperCase();
 
   let balance: ReactElement | null = null;
@@ -246,7 +259,12 @@ export function MenuAccountHeader({
   return (
     <div className={`flex flex-col gap-3 rounded-xl bg-app-card-muted p-3${tight ? ' mt-2' : ''}`}>
       <div className="flex min-w-0 items-center gap-3">
-        {stats?.pictureUrl !== null && stats?.pictureUrl !== undefined ? (
+        {pending ? (
+          <span
+            aria-hidden="true"
+            className={`${SKELETON_CLASS} h-10 w-10 shrink-0 rounded-full`}
+          />
+        ) : stats?.pictureUrl !== null && stats?.pictureUrl !== undefined ? (
           // eslint-disable-next-line @next/next/no-img-element -- blob URL from the profile photo
           <img
             src={stats.pictureUrl}
@@ -262,12 +280,25 @@ export function MenuAccountHeader({
           </span>
         )}
         <div className="flex min-w-0 flex-1 flex-col">
-          {name !== '' ? (
-            <span className="truncate text-sm font-semibold text-app-fg">{name}</span>
-          ) : null}
-          {username !== null ? (
-            <span className="truncate text-xs text-app-muted">@{username}</span>
-          ) : null}
+          {pending ? (
+            <>
+              <span aria-hidden="true" className="flex h-5 items-center">
+                <span className={`${SKELETON_CLASS} h-3.5 w-24`} />
+              </span>
+              <span aria-hidden="true" className="flex h-4 items-center">
+                <span className={`${SKELETON_CLASS} h-3 w-16`} />
+              </span>
+            </>
+          ) : (
+            <>
+              {name !== '' ? (
+                <span className="h-5 truncate text-sm font-semibold text-app-fg">{name}</span>
+              ) : null}
+              {username !== null ? (
+                <span className="h-4 truncate text-xs text-app-muted">@{username}</span>
+              ) : null}
+            </>
+          )}
         </div>
         {balance}
       </div>

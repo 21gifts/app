@@ -464,6 +464,32 @@ test('MenuAccountHeader keeps the stats row height while the numbers load', asyn
   expect(after.height).toBe(before.height);
 });
 
+test('the Menu rows stay put when it opens right after a page load', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInWithPasskey(page);
+  // The stored session is still being checked while the Menu opens.
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/\/me$/, async (route) => {
+    await held;
+    await route.fallback();
+  });
+  await page.goto('/settings');
+  await page.getByRole('button', { name: 'Menu' }).click();
+  const menu = page.locator('#signed-in-menu');
+  const home = menu.getByRole('link', { name: 'Home' });
+  await expect(home).toBeVisible();
+  await expect(menu.locator('dl .animate-pulse')).toHaveCount(5);
+  const before = (await home.boundingBox())!;
+  release();
+  await expect(menu.getByText('@ada')).toBeVisible();
+  await page.waitForTimeout(3_000);
+  const after = (await home.boundingBox())!;
+  expect(after.y).toBe(before.y);
+});
+
 for (const width of [320, 375]) {
   test(`the signed-in header fits the back arrow, the wordmark, and Menu at ${width} px`, async ({
     page,

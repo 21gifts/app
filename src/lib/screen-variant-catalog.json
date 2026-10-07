@@ -690,6 +690,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:menu-header-account-loading",
+    "label": "/settings menu-header-account-loading",
+    "visual": "state-settings-menu-header-account-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",

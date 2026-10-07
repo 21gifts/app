@@ -105,17 +105,63 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  localStorage.clear();
   useAuthStore.setState({ session: null, account: null });
 });
 
 describe('MenuAccountHeader', () => {
-  it('renders nothing before the account is loaded', () => {
-    useAuthStore.setState({ session: 'sess-x', account: null });
+  it('renders nothing when signed out', () => {
     const { container } = renderWithLocale(
       <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
     );
     expect(container.innerHTML).toBe('');
     expect(fetchAccountActivity).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['the stored session is still being checked', null],
+    ['the session has no account yet', 'sess-x'],
+  ] as const)(
+    'holds its final size with skeletons while %s, and the account replaces them in place',
+    (_case, session) => {
+      localStorage.setItem('21gifts.session', 'sess-stored');
+      useAuthStore.setState({ session, account: null });
+      const { container } = renderWithLocale(
+        <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
+      );
+      const card = container.firstElementChild as HTMLElement;
+      const avatar = card.querySelector('.rounded-full') as HTMLElement;
+      expect(avatar.className).toContain('h-10 w-10');
+      expect(avatar.className).toContain('animate-pulse');
+      expect(avatar.textContent).toBe('');
+      const identityLines = (): (string | undefined)[] =>
+        Array.from(card.querySelectorAll('.flex-1.flex-col > span')).map(
+          (line) => line.className.match(/\bh-[\d.]+\b/)?.[0],
+        );
+      const pending = identityLines();
+      expect(pending).toEqual(['h-5', 'h-4']);
+      expect(card.querySelectorAll('.flex-1.flex-col .animate-pulse')).toHaveLength(2);
+      expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
+      expect(screen.queryByText(/^@/)).toBeNull();
+      expect(fetchAccountActivity).not.toHaveBeenCalled();
+      act(() => {
+        signIn();
+      });
+      expect(screen.getByText('Ada')).toBeTruthy();
+      expect(screen.getByText('@ada')).toBeTruthy();
+      expect(identityLines()).toEqual(pending);
+      expect(card.querySelectorAll('.flex-1.flex-col .animate-pulse')).toHaveLength(0);
+    },
+  );
+
+  it('holds its space in the compact Menu too, and stays closed while the Menu is', () => {
+    localStorage.setItem('21gifts.session', 'sess-stored');
+    const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight open={false} />);
+    expect(view.container.innerHTML).toBe('');
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight open />);
+    const card = view.container.firstElementChild as HTMLElement;
+    expect(card.className).toContain('mt-2');
+    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
   });
 
   it('shows the initial, name, and @username, and skeletons that become values without changing height', async () => {

@@ -1612,6 +1612,21 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-settings-activate');
   });
 
+  test('settings menu-header-account-loading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    // The stored session is never confirmed, so the Menu opens before the account is known.
+    await page.route(/\/me$/, () => undefined);
+    await page.goto('/settings');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByRole('link', { name: 'Home' })).toBeVisible();
+    await expect(menu.locator('.rounded-full.animate-pulse')).toBeVisible();
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(5);
+    await shotScreen(page, 'state-settings-menu-header-account-loading');
+  });
+
   test('wallet balance-locked', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

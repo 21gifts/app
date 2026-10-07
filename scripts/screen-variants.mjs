@@ -879,6 +879,13 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-settings-activate')",
   },
   {
+    route: '/settings',
+    id: 'menu-header-account-loading',
+    image: 'settings-menu-header-account-loading.png',
+    visual: 'state-settings-menu-header-account-loading',
+    needle: "shotScreen(page, 'state-settings-menu-header-account-loading')",
+  },
+  {
     route: '/setup/name',
     id: 'default',
     image: 'setup-name.png',

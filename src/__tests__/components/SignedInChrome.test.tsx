@@ -12,6 +12,7 @@ import {
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
+import { loadSession } from '@/lib/session-storage';
 import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
 import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
@@ -192,6 +193,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.mocked(loadSession).mockReset();
   delete document.documentElement.dataset['menuSheet'];
   resetViewHistory();
 });
@@ -274,10 +276,20 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
-  it('leaves the account header out before the account is loaded', () => {
-    useAuthStore.setState({ account: null });
+  it('leaves the account header out when signed out', () => {
+    useAuthStore.setState({ session: null, account: null });
+    vi.mocked(loadSession).mockReturnValue(null);
     renderWithLocale(<SignedInChrome />);
     expect(screen.queryByRole('button', { name: 'Account header', hidden: true })).toBeNull();
+  });
+
+  it('keeps the account header and its divider while a stored session is still being checked', () => {
+    useAuthStore.setState({ session: null, account: null });
+    vi.mocked(loadSession).mockReturnValue('sess-stored');
+    renderWithLocale(<SignedInChrome />);
+    const header = screen.getByRole('button', { name: 'Account header', hidden: true });
+    expect(menuPanel().firstElementChild).toBe(header);
+    expect((header.nextElementSibling as HTMLElement).className).toContain('border-t');
   });
 
   it('shows Menu while Log out stays hidden', () => {
