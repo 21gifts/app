@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 
 /**
  * In-app wallet pay slot of the gift pay sheet. The in-app wallet is the only
@@ -90,6 +91,7 @@ async function signInAda(page: Page): Promise<void> {
       body: JSON.stringify(RATE_DAY_STATS),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(RATE_DAY_STATS));
 }
 
 /** One post with one payable reply, and its invoice with or without `sparkInvoice`. */

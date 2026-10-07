@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { cameraStats, stubCamera } from './camera';
+import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 
 const WALLET_RATE_DAY_STATS = {
   totalSats: 100_000_000,
@@ -572,6 +573,7 @@ test('wallet balance-ready pin shows bitcoin and fiat', async ({ page }) => {
       body: JSON.stringify(WALLET_RATE_DAY_STATS),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(WALLET_RATE_DAY_STATS));
   await page.goto('/wallet?visual=balance-ready');
   const region = page.getByRole('region', { name: 'Balance' });
   await expect(region.getByText("₿21'000")).toBeVisible();
@@ -721,6 +723,7 @@ test('Function: useWallet — ready pin shows fixture balance', async ({ page })
       body: JSON.stringify(WALLET_RATE_DAY_STATS),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(WALLET_RATE_DAY_STATS));
   await page.goto('/wallet?visual=balance-ready');
   await expect(page.getByRole('region', { name: 'Balance' }).getByText("₿21'000")).toBeVisible();
 });
@@ -763,6 +766,7 @@ async function stubWalletRate(page: Page): Promise<void> {
       body: JSON.stringify(WALLET_RATE_DAY_STATS),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(WALLET_RATE_DAY_STATS));
 }
 
 /** Opens the Send view from the wallet home. */
@@ -1433,12 +1437,12 @@ test('wallet balance without a usable rate shows only bitcoin and cannot be tapp
   page,
 }) => {
   await signInWalletEligible(page);
-  await page.route('**/gifts/stats**', async (route) => {
+  await page.route('**/fx/spot', async (route) => {
     await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
   });
-  const stats = page.waitForResponse('**/gifts/stats**');
+  const spot = page.waitForResponse('**/fx/spot');
   await page.goto('/wallet?visual=balance-ready');
-  await stats;
+  await spot;
   const region = page.getByRole('region', { name: 'Balance' });
   await expect(region.getByText("₿21'000")).toBeVisible();
   await expect(region.getByRole('button')).toHaveCount(0);
