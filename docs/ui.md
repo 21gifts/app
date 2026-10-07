@@ -253,7 +253,7 @@ Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `₱80.00`
 | 3       | 12        | `p-3` `gap-3`            | Pay sheet padding, field stack                   |
 | 4       | 16        | `p-4` `top-4` `gap-4`    | Note card `px-4 py-3` (y=12)                     |
 | 5       | 20        | `px-5` `right-5` `gap-5` | Marketing horizontal, clustered `sm` IconButtons |
-| 6       | 24        | `px-6` `gap-6` `p-6`     | App page padding (360px and up), card gap        |
+| 6       | 24        | `px-6` `gap-6` `p-6`     | Card gap and padding                             |
 | 8       | 32        | `p-8` `gap-8`            | Card padding                                     |
 | 10      | 40        | `gap-10` `py-10`         | PageChrome gap, footer py                        |
 | 12      | 48        | `mt-12` `gap-12`         | Section rhythm, stats `space-y-12`               |
@@ -429,7 +429,7 @@ flowchart TB
 | Slot       | Unsigned app (`/login`, `/donate`, `/rules` without session, `/messages/[id]`, `/messages/[id]/author`, `/view/*`)                                                                                                                                                                                                                                                  | Signed-in app                                                                                                                                                                                                                                                                                                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `topLeft`  | `ProfileChromeLeft` on `/login`, `/donate`, `/pl`, `/view/*`, unsigned `/rules`, unsigned `/messages/[id]`, and unsigned `/messages/[id]/author`. Wordmark href stays `/` unsigned and `/welcome` when hydrated (`HomeWordmark` or `wordmarkHref`). `/welcome` never shows the arrow, whatever this tab's view stack holds; an ask-wizard step uses that same slot. | `ProfileChromeLeft` supplies one arrow to the previous in-app view, or `/welcome` when this tab has none, followed by the wordmark (`/welcome`, except `/setup/name` and `/setup/username`, where the wordmark is a span). `MessagesChromeLeft` and `WalletChromeLeft` only render `ProfileChromeLeft`. `/setup/rules` portals a non-link wordmark plus one previous-view or previous-chapter arrow. |
-| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                                                                                                                                                                                                                     | `SignedInChrome` (wallet button + Menu; no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                       |
+| `topRight` | `LanguageSwitcher tone="light"`                                                                                                                                                                                                                                                                                                                                     | `SignedInChrome` (Menu only; no wallet button, no ThemeSwitcher, no LanguageSwitcher)                                                                                                                                                                                                                                                                                                                |
 
 **`ProfileChromeLeft`.** One `h-11 w-11` lucide `ArrowLeft` link to the previous in-app view, or `/welcome` when this tab has none, plus the wordmark. `tone="dark"` is the ink marketing header. `hideHistoryArrow` omits the arrow on `/welcome`, whatever the view stack holds. An ask-wizard step temporarily replaces the link with the same chrome button. There is no in-card back.
 
@@ -437,12 +437,12 @@ flowchart TB
 
 **No wallet button in the header.** The signed-in header row holds only the back arrow, the wordmark, and **Menu**. The balance lives in the Menu's account header (`MenuAccountHeader`, see Menu) and on `/wallet`; the forum home and `/wallet` carry the wallet's **Receive** / **Send** footer (`WalletFooterActions`). Below 360px the shell pad is `px-2` and the chrome row `px-3`, so the back arrow, the wordmark, and Menu fit at 320px.
 
-**Signed-in Menu** (`SignedInChrome`). Labeled Menu trigger (lucide `Menu` 14px + catalog `aria.menu`). Rows icon+label, in this order:
+**Signed-in Menu** (`SignedInChrome`). Labeled Menu trigger (lucide `Menu` 14px + catalog `aria.menu`). The panel starts with the account header (`MenuAccountHeader`, see Menu) and a divider, then rows icon+label, in this order:
 
 | Row                  | Icon                          | Href / control                                                            |
 | -------------------- | ----------------------------- | ------------------------------------------------------------------------- |
-| Wallet               | `Wallet`                      | `/wallet` — balance and payments when enabled, Receive and Send           |
 | Home                 | `Home`                        | `/welcome`                                                                |
+| Balance              | `Wallet`                      | `/wallet` — balance and payments when enabled, Receive and Send           |
 | Shops                | `Store`                       | `/shops`                                                                  |
 | Point of sale        | `Banknote`                    | `/pos`                                                                    |
 | Profile              | `User`                        | `/profile`                                                                |
@@ -473,7 +473,7 @@ flowchart LR
   end
   subgraph appShell [App shell — themeable]
     PL[AppShell.topLeft: Wordmark]
-    PR[AppShell.topRight: Wallet button + Menu or Language]
+    PR[AppShell.topRight: Menu or Language]
     BODY[Card / onboarding column / document]
   end
   MH --> MC --> MF
