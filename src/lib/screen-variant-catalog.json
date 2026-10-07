@@ -1512,6 +1512,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-repay-today",
+    "label": "/members/[accountId] posts-open-repay-today",
+    "visual": "state-members-posts-open-repay-today",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-repay-today-error",
+    "label": "/members/[accountId] posts-open-repay-today-error",
+    "visual": "state-members-posts-open-repay-today-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-repay-today-invoice",
+    "label": "/members/[accountId] posts-open-repay-today-invoice",
+    "visual": "state-members-posts-open-repay-today-invoice",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-loan-tag-open",
     "label": "/members/[accountId] posts-open-loan-tag-open",
     "visual": "state-members-posts-open-loan-tag-open",

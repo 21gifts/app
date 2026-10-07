@@ -1837,6 +1837,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'posts-open-repay-today',
+    image: 'members-posts-open-repay-today.png',
+    visual: 'state-members-posts-open-repay-today',
+    needle: 'state /members posts-open-repay-today',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-repay-today-error',
+    image: 'members-posts-open-repay-today-error.png',
+    visual: 'state-members-posts-open-repay-today-error',
+    needle: 'state /members posts-open-repay-today-error',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-repay-today-invoice',
+    image: 'members-posts-open-repay-today-invoice.png',
+    visual: 'state-members-posts-open-repay-today-invoice',
+    needle: 'state /members posts-open-repay-today-invoice',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'posts-open-loan-tag-open',
     image: 'members-posts-open-loan-tag-open.png',
     visual: 'state-members-posts-open-loan-tag-open',

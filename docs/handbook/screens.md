@@ -2311,6 +2311,24 @@ Same member, after **Who gave and who is paid back** is pressed on a filled cred
 
 ![21.gifts member posts credit ledger open](images/members-posts-open-goal-credit-open.png)
 
+### Variant: posts-open-repay-today
+
+Identity card of the signed-in member; posts pressed; the listed post is her own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Pay today's repayment** is visible. The plan stays closed.
+
+![21.gifts member posts repay today](images/members-posts-open-repay-today.png)
+
+### Variant: posts-open-repay-today-error
+
+Same funded credit note as **posts-open-repay-today**, after **Pay today's repayment** is pressed. The POST failed, and the alert **The author's wallet cannot receive this Bitcoin payment** is visible. There is no invoice QR.
+
+![21.gifts member posts repay today error](images/members-posts-open-repay-today-error.png)
+
+### Variant: posts-open-repay-today-invoice
+
+Same note as **posts-open-repay-today**, after **Pay today's repayment** is pressed. The invoice card is open, with **Pay with Wallet of Satoshi**. The amount form is not shown.
+
+![21.gifts member posts repay today invoice](images/members-posts-open-repay-today-invoice.png)
+
 ### Variant: posts-open-photos
 
 Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) above the text, same ForumBoard paint as `/welcome` `photos`.
