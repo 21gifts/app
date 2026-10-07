@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 
 const RATE_DAY_STATS = {
   totalSats: 100_000_000,
@@ -90,6 +91,7 @@ async function signIn(page: Page, overrides: Record<string, unknown> = {}): Prom
       body: JSON.stringify(RATE_DAY_STATS),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(RATE_DAY_STATS));
 }
 
 /** Opens `/wallet` and records every request URL. */
