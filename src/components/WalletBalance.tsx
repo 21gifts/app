@@ -5,6 +5,7 @@ import { useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
@@ -22,6 +23,8 @@ export interface WalletBalanceProps {
   onRetry: () => void;
   /** In `error`, true when this phone or browser cannot hold the wallet (no PRF). */
   prfUnsupported?: boolean;
+  /** In `error`, true when the background wallet setup gave up (inline setup note). */
+  setupFailed?: boolean;
 }
 
 /**
@@ -29,7 +32,8 @@ export interface WalletBalanceProps {
  * ready balance is a large ₿ figure; when the default fiat has a usable rate,
  * tapping it swaps which of ₿ and fiat is the large figure. An error from a
  * passkey without PRF output says that this phone or browser cannot hold a
- * 21.gifts wallet instead of the generic open error.
+ * 21.gifts wallet instead of the generic open error. An error because the
+ * background wallet setup gave up shows the inline setup note instead.
  *
  * @param props - Wallet state and labeled control callbacks.
  * @returns The balance region, or `null` while the wallet feature is disabled.
@@ -40,6 +44,7 @@ export function WalletBalance({
   onUnlock,
   onRetry,
   prfUnsupported = false,
+  setupFailed = false,
 }: WalletBalanceProps): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -96,6 +101,8 @@ export function WalletBalance({
         </button>
       );
     }
+  } else if (setupFailed) {
+    body = <WalletSetupNote />;
   } else {
     body = (
       <>

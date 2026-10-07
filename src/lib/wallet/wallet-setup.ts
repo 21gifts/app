@@ -1,46 +1,40 @@
 import { fetchMe, putWallet } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { getBreezApiKey } from '@/lib/config';
-import { classifyWebAuthnError, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
-import { peekSessionPhrase } from '@/lib/tab-phrase';
-import {
-  canUnlockWallet,
-  rememberPhraseFromPrf,
-  settlePhraseDerivations,
-} from '@/lib/wallet/wallet-phrase';
+import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
+import { canUnlockWallet, settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import { loadWalletSdk } from '@/lib/wallet/wallet-sdk';
 import {
   ensureWalletConnected,
   registerWalletAddress,
   type WalletSdkLoader,
 } from '@/lib/wallet/wallet-service';
-import { base64UrlToBytes } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
-
-/**
- * Step of the one-time wallet setup that is running.
- * `passkey` waits for the device prompt, `connecting` opens the wallet,
- * `claiming` stores its identity key on the account, `registering` registers
- * the account's address, and `refreshing` reloads the account.
- */
-export type WalletSetupStep = 'passkey' | 'connecting' | 'claiming' | 'registering' | 'refreshing';
+import { useWalletStore } from '@/stores/wallet-store';
 
 /**
  * How a setup run ended.
- * `done`: the account's wallet is verified. `cancelled`: the member dismissed
- * the passkey prompt. `noPrf`: the passkey cannot produce the wallet's key.
- * `failed`: any other failure. `superseded`: the session changed meanwhile.
+ * `done`: the account's wallet is verified. `locked`: the recovery phrase is
+ * not in tab memory, so nothing ran; the next unlock or pay prompt starts it.
+ * `failed`: every try failed. `superseded`: the session changed meanwhile.
  */
-export type WalletSetupOutcome = 'done' | 'cancelled' | 'noPrf' | 'failed' | 'superseded';
+export type WalletSetupOutcome = 'done' | 'locked' | 'failed' | 'superseded';
 
 /**
- * True when the signed-in account must set up its in-app wallet before using
- * the app: the wallet is configured, the account requires a wallet and can
+ * Pauses between the tries of one background setup run: the first try starts
+ * at once, each later one after the next pause. After the last pause's try
+ * fails, the run gives up and money screens show the setup note.
+ */
+export const WALLET_SETUP_RETRY_DELAYS_MS: readonly number[] = [2_000, 5_000, 15_000];
+
+/**
+ * True when the signed-in account must set up its in-app wallet before it can
+ * pay from it or be paid to its address: the wallet is configured, the account requires a wallet and can
  * derive it from its passkey, has a username, and its wallet is not verified.
  * Older api bodies without `sparkWalletVerified` never qualify.
  *
  * @param account - Signed-in account, or `null` when logged out.
- * @returns Whether the blocking setup step applies.
+ * @returns Whether the background wallet setup applies.
  */
 export function needsWalletSetup(
   account: Account | null,
@@ -54,86 +48,37 @@ export function needsWalletSetup(
   );
 }
 
-/**
- * Derives the tab phrase with one passkey prompt.
- *
- * @param account - Account whose seed passkey is asked for.
- * @param session - Session that must stay current.
- * @returns `null` when the phrase is in tab memory, otherwise the outcome that ends the run.
- */
-async function unlockForSetup(
-  account: Account & { passkeyCredentialId: string },
-  session: string,
-): Promise<WalletSetupOutcome | null> {
-  let prfFirst: Uint8Array | null;
-  try {
-    prfFirst = await obtainPrfFirstFromGet(
-      Uint8Array.from(base64UrlToBytes(account.passkeyCredentialId)),
-    );
-  } catch (err: unknown) {
-    return classifyWebAuthnError(err) === 'cancel' ? 'cancelled' : 'failed';
-  }
-  if (prfFirst === null) {
-    return 'noPrf';
-  }
-  const remembered = await rememberPhraseFromPrf({
-    prfFirst,
-    credentialId: account.passkeyCredentialId,
-    account,
-    sessionToken: session,
-  });
-  return remembered ? null : 'failed';
-}
-
 /** The setup run in progress in this tab and the session it belongs to; `null` when idle. */
 let running: { session: string | null; run: Promise<WalletSetupOutcome> } | null = null;
 
 /**
- * The run in progress for the current session, if any.
+ * Runs the one-time wallet setup in the background, without a dialog and
+ * without a passkey prompt of its own: it needs the recovery phrase in tab
+ * memory (the sign-up or login prompt, or the prompt of the first unlock or
+ * payment, put it there) and otherwise ends `locked`. Each try connects,
+ * sends `PUT /me/wallet` with the identity key, registers the account's
+ * username as the wallet's address, and reloads the account. A 409 from the
+ * claim means the wallet is already verified and skips straight to the
+ * reload. A failed try is repeated quietly after each pause in
+ * {@link WALLET_SETUP_RETRY_DELAYS_MS}; when the last one fails too, the
+ * wallet store records this session in `setupFailedSession`. Never asks
+ * whether a username is free, never sends or stores the phrase, and never
+ * rejects. A call while a run for the same session is in progress joins that
+ * run instead of starting another, across components and remounts. The
+ * username registered is the one on the account the claim returns, so a
+ * rename in another tab is picked up.
  *
- * @returns That run's promise, or `null`.
- */
-function currentRun(): Promise<WalletSetupOutcome> | null {
-  return running !== null && running.session === useAuthStore.getState().session
-    ? running.run
-    : null;
-}
-
-/**
- * True while a setup run for the current session is in progress in this
- * tab, so a remounted dialog shows progress and joins it instead of starting
- * a second run. A run left over from an earlier session does not count.
- *
- * @returns Whether {@link runWalletSetup} has a run in flight for this session.
- */
-export function walletSetupInFlight(): boolean {
-  return currentRun() !== null;
-}
-
-/**
- * Runs the one-time wallet setup: one passkey prompt when the phrase is not
- * in tab memory, then connect, `PUT /me/wallet` with the identity key,
- * register the account's username as the wallet's address, and reload the
- * account. A 409 from the claim means the wallet is already verified and
- * skips straight to the reload. Never asks whether a username is free and
- * never sends the phrase. Never rejects. A call while a run for the same
- * session is in progress joins that run (its `onStep` is not called) instead
- * of starting another. The username registered is the one on the account the
- * claim returns, so a rename in another tab is picked up.
- *
- * @param onStep - Called as each step starts.
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
  * @returns How the run ended.
  */
 export function runWalletSetup(
-  onStep: (step: WalletSetupStep) => void,
   loadSdk: WalletSdkLoader = loadWalletSdk,
 ): Promise<WalletSetupOutcome> {
-  const joined = currentRun();
-  if (joined !== null) {
-    return joined;
+  const session = useAuthStore.getState().session;
+  if (running !== null && running.session === session) {
+    return running.run;
   }
-  const entry = { session: useAuthStore.getState().session, run: setupOnce(onStep, loadSdk) };
+  const entry = { session, run: setupWithRetries(session, loadSdk) };
   entry.run = entry.run.finally(() => {
     if (running === entry) {
       running = null;
@@ -144,21 +89,107 @@ export function runWalletSetup(
 }
 
 /**
- * One setup run; see {@link runWalletSetup}.
+ * Starts the background setup again after it gave up: clears
+ * `setupFailedSession` and calls {@link runWalletSetup}. Never rejects.
  *
- * @param onStep - Called as each step starts.
+ * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
+ * @returns How the new run ended.
+ */
+export function retryWalletSetup(
+  loadSdk: WalletSdkLoader = loadWalletSdk,
+): Promise<WalletSetupOutcome> {
+  useWalletStore.getState().setSetupFailedSession(null);
+  return runWalletSetup(loadSdk);
+}
+
+/**
+ * Starts {@link runWalletSetup} whenever the signed-in account needs the
+ * setup and the recovery phrase is in tab memory: when the phrase arrives,
+ * when the account changes (a new member's username is saved), and once at
+ * subscribe time. A session whose setup gave up is left alone until
+ * {@link retryWalletSetup}. With no Breez API key, returns a no-op
+ * unsubscribe and adds no listener.
+ *
+ * @param loadSdk - SDK loader forwarded to {@link runWalletSetup}.
+ * @returns Unsubscribe function.
+ */
+export function listenForWalletSetup(loadSdk: WalletSdkLoader = loadWalletSdk): () => void {
+  if (getBreezApiKey() === null) {
+    return () => {
+      // No-op when the wallet is disabled.
+    };
+  }
+  const check = (): void => {
+    const { session, account } = useAuthStore.getState();
+    if (
+      session !== null &&
+      needsWalletSetup(account) &&
+      peekSessionPhrase() !== null &&
+      useWalletStore.getState().setupFailedSession !== session
+    ) {
+      void runWalletSetup(loadSdk);
+    }
+  };
+  window.addEventListener(SESSION_PHRASE_EVENT, check);
+  const unsubscribe = useAuthStore.subscribe(check);
+  check();
+  return () => {
+    window.removeEventListener(SESSION_PHRASE_EVENT, check);
+    unsubscribe();
+  };
+}
+
+/**
+ * Waits `ms` milliseconds.
+ *
+ * @param ms - Pause length.
+ * @returns Resolves after the pause.
+ */
+function pause(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/**
+ * One background run with its retries; see {@link runWalletSetup}.
+ *
+ * @param session - Session the run belongs to, or `null` when logged out.
  * @param loadSdk - SDK loader.
  * @returns How the run ended.
  */
-async function setupOnce(
-  onStep: (step: WalletSetupStep) => void,
+async function setupWithRetries(
+  session: string | null,
   loadSdk: WalletSdkLoader,
 ): Promise<WalletSetupOutcome> {
-  const { session, account } = useAuthStore.getState();
-  if (session === null || !needsWalletSetup(account)) {
-    return 'failed';
+  if (session === null) {
+    return 'superseded';
   }
-  let username = account.username;
+  for (const delay of [...WALLET_SETUP_RETRY_DELAYS_MS, null]) {
+    const outcome = await setupOnce(session, loadSdk);
+    if (outcome !== 'failed') {
+      return outcome;
+    }
+    if (delay === null) {
+      break;
+    }
+    await pause(delay);
+    if (useAuthStore.getState().session !== session) {
+      return 'superseded';
+    }
+  }
+  useWalletStore.getState().setSetupFailedSession(session);
+  return 'failed';
+}
+
+/**
+ * One try of the setup; see {@link runWalletSetup}.
+ *
+ * @param session - Session that must stay current.
+ * @param loadSdk - SDK loader.
+ * @returns How the try ended.
+ */
+async function setupOnce(session: string, loadSdk: WalletSdkLoader): Promise<WalletSetupOutcome> {
   const current = (): boolean => useAuthStore.getState().session === session;
   try {
     if (peekSessionPhrase() === null) {
@@ -167,23 +198,19 @@ async function setupOnce(
       if (!current()) {
         return 'superseded';
       }
-    }
-    if (peekSessionPhrase() === null) {
-      onStep('passkey');
-      const unlocked = await unlockForSetup(account, session);
-      if (!current()) {
-        return 'superseded';
-      }
-      if (unlocked !== null) {
-        return unlocked;
+      if (peekSessionPhrase() === null) {
+        return 'locked';
       }
     }
-    onStep('connecting');
+    const { account } = useAuthStore.getState();
+    if (!needsWalletSetup(account)) {
+      return account?.sparkWalletVerified === true ? 'done' : 'failed';
+    }
+    let username = account.username;
     const identity = (await ensureWalletConnected(loadSdk)).toLowerCase();
     if (!current()) {
       return 'superseded';
     }
-    onStep('claiming');
     let alreadyVerified = false;
     try {
       const claimed = await putWallet(session, identity);
@@ -205,13 +232,11 @@ async function setupOnce(
       return 'superseded';
     }
     if (!alreadyVerified) {
-      onStep('registering');
       await registerWalletAddress(username);
       if (!current()) {
         return 'superseded';
       }
     }
-    onStep('refreshing');
     const next = await fetchMe(session);
     if (!current()) {
       return 'superseded';

@@ -7,6 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { QrCode } from '@/components/QrCode';
+import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useWalletPay } from '@/hooks/useWalletPay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
@@ -80,6 +81,9 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * fiat), and the member's own address and QR when their username gives one;
  * once the balance covers the payment, the slot prepares again and shows the
  * fee and the pay button.
+ * While the one-time wallet setup is still due, **Unlock and pay** is the one
+ * prompt it needs; the setup runs in the background behind the progress line,
+ * and a setup that gave up shows the inline setup note with **Try again**.
  * Without a wallet the member can open here it says so, and a failed prepare
  * offers **Try again**. A passkey without PRF output says that this phone or
  * browser cannot hold a 21.gifts wallet, with **Try again**. It never shows an invoice QR or hands the payment to
@@ -124,6 +128,8 @@ export function WalletPay({
           </Button>
         </>
       );
+    case 'setupFailed':
+      return <WalletSetupNote />;
     case 'prfUnsupported':
       return (
         <>

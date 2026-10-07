@@ -1,143 +1,69 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
-import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
-import {
-  runWalletSetup,
-  walletSetupInFlight,
-  type WalletSetupOutcome,
-} from '@/lib/wallet/wallet-setup';
+import { needsWalletSetup, retryWalletSetup } from '@/lib/wallet/wallet-setup';
+import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 
-/**
- * What the setup dialog shows. `intro` explains the step and offers the
- * button that opens the passkey prompt, `progress` runs the steps, `error`
- * offers a retry, and `noPrf` says that this phone or browser cannot hold a
- * 21.gifts wallet (`wallet.prfUnsupported`).
- */
-export type WalletSetupView = 'intro' | 'progress' | 'error' | 'noPrf';
+/** Screenshot pins that show the setup note on a money screen. */
+const SETUP_FAILED_PINS = new Set([
+  'balance-setup-failed',
+  'wallet-pay-setup-failed',
+  'pos-setup-failed',
+]);
 
-/** State and actions of the one-time wallet setup dialog. */
+/** State and action of the inline wallet setup note on money screens. */
 export interface UseWalletSetupResult {
-  /** What the dialog shows. */
-  view: WalletSetupView;
-  /** Starts the setup (from the intro). */
-  start: () => void;
-  /** Starts the setup again after an error; reloads when the wallet must reload. */
+  /** True when the background setup gave up for this session and is still due. */
+  failed: boolean;
+  /** Starts the setup again; reloads when the wallet must reload. */
   retry: () => void;
 }
 
 /**
- * Screenshot pin for the setup dialog (`?visual=setup-…`), honoured only in a
- * Playwright build (`getE2eNow()` set).
+ * Screenshot pin for the setup note (`?visual=balance-setup-failed`,
+ * `?visual=wallet-pay-setup-failed`, or `?visual=pos-setup-failed`), honoured
+ * only in a Playwright build (`getE2eNow()` set).
  *
- * @returns The pinned view, or `null` for the live flow.
+ * @returns Whether a setup-note pin is set.
  */
-export function walletSetupPin(): WalletSetupView | null {
+export function walletSetupPin(): boolean {
   /* v8 ignore next 3 -- SSR has no window */
   if (typeof window === 'undefined') {
-    return null;
+    return false;
   }
   if (getE2eNow() === null) {
-    return null;
+    return false;
   }
-  switch (new URLSearchParams(window.location.search).get('visual')) {
-    case 'setup-intro':
-      return 'intro';
-    case 'setup-progress':
-      return 'progress';
-    case 'setup-error':
-      return 'error';
-    case 'setup-no-prf':
-      return 'noPrf';
-    default:
-      return null;
-  }
+  return SETUP_FAILED_PINS.has(new URLSearchParams(window.location.search).get('visual') ?? '');
 }
 
 /**
- * Drives the one-time wallet setup. Starts by itself (or joins the run in
- * progress after a remount) when the phrase is already in tab memory or a run
- * is in flight; otherwise waits for {@link UseWalletSetupResult.start}
- * so the passkey prompt follows a tap, and starts by itself when the phrase
- * arrives in tab memory while the intro is shown. A pinned view leaves the actions inert.
+ * Whether the background wallet setup gave up for the current session while
+ * the account still needs it, and the **Try again** of the inline setup note.
+ * The setup itself runs in the background (`listenForWalletSetup`); there is
+ * no dialog. A pinned note leaves the action inert.
  *
- * @returns The current view and the start and retry actions.
+ * @returns Whether the note shows, and its retry action.
  */
 export function useWalletSetup(): UseWalletSetupResult {
   const [pinned] = useState(walletSetupPin);
-  // Taken during the first render so a run that ends before the effect still
-  // reports its outcome to this dialog.
-  const [joined] = useState<Promise<WalletSetupOutcome> | null>(() =>
-    pinned === null && walletSetupInFlight() ? runWalletSetup(() => undefined) : null,
-  );
-  const [view, setView] = useState<WalletSetupView>(() =>
-    pinned === null && (joined !== null || peekSessionPhrase() !== null) ? 'progress' : 'intro',
-  );
-  const inFlight = useRef(false);
-
-  const follow = useCallback((run: Promise<WalletSetupOutcome>): void => {
-    inFlight.current = true;
-    setView('progress');
-    void run.then((outcome) => {
-      inFlight.current = false;
-      if (outcome === 'noPrf') {
-        setView('noPrf');
-      } else if (outcome === 'failed') {
-        setView('error');
-      } else if (outcome === 'cancelled' || outcome === 'superseded') {
-        setView('intro');
-      }
-    });
-  }, []);
-
-  const start = useCallback((): void => {
-    if (pinned !== null || inFlight.current) {
-      return;
-    }
-    follow(runWalletSetup(() => undefined));
-  }, [follow, pinned]);
+  const failedSession = useWalletStore((state) => state.setupFailedSession);
+  const session = useAuthStore((state) => state.session);
+  const due = useAuthStore((state) => needsWalletSetup(state.account));
 
   const retry = useCallback((): void => {
-    if (pinned !== null) {
+    if (pinned) {
       return;
     }
     if (walletNeedsReload()) {
       window.location.reload();
       return;
     }
-    start();
-  }, [pinned, start]);
+    void retryWalletSetup();
+  }, [pinned]);
 
-  useEffect(() => {
-    if (joined !== null) {
-      if (!inFlight.current) {
-        follow(joined);
-      }
-      return;
-    }
-    if (pinned === null && peekSessionPhrase() !== null) {
-      start();
-    }
-  }, [follow, joined, pinned, start]);
-
-  useEffect(() => {
-    if (pinned !== null || view !== 'intro') {
-      return;
-    }
-    // The login may store the phrase just after this dialog mounted; start
-    // then instead of asking for the passkey a second time.
-    const onPhrase = (): void => {
-      if (peekSessionPhrase() !== null) {
-        start();
-      }
-    };
-    window.addEventListener(SESSION_PHRASE_EVENT, onPhrase);
-    return () => {
-      window.removeEventListener(SESSION_PHRASE_EVENT, onPhrase);
-    };
-  }, [pinned, start, view]);
-
-  return { view: pinned ?? view, start, retry };
+  return { failed: pinned || (due && failedSession !== null && failedSession === session), retry };
 }

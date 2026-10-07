@@ -43,10 +43,13 @@ const account = {
   missing: [],
   walletRequired: true,
   passkeyCredentialId: 'credential',
+  sparkPubkey: '02'.padEnd(66, 'a'),
+  sparkWalletVerified: true,
 };
 
 const originalHref = window.location.href;
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
 function setWallet(status: WalletStatus, balanceSats: number | null = null): void {
   useWalletStore.setState({ status, balanceSats, identityPubkey: null });
@@ -60,7 +63,9 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/wallet');
   clearSessionPhrase();
   delete process.env.NEXT_PUBLIC_E2E_NOW;
+  process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
   useAuthStore.setState({ session: 'token', account });
+  useWalletStore.setState({ setupFailedSession: null });
   setWallet('locked');
   vi.mocked(unlockWalletPhrase).mockReset().mockResolvedValue('unlocked');
   vi.mocked(connectWallet).mockReset().mockResolvedValue(undefined);
@@ -75,6 +80,11 @@ afterEach(() => {
     delete process.env.NEXT_PUBLIC_E2E_NOW;
   } else {
     process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
+  if (ORIGINAL_BREEZ === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
   }
 });
 
@@ -97,6 +107,7 @@ describe('useWallet', () => {
     expect(result.current.status).toBe(status);
     expect(result.current.balanceSats).toBe(balanceSats);
     expect(result.current.prfUnsupported).toBe(false);
+    expect(result.current.setupFailed).toBe(false);
   });
 
   it('pins balance-prf-unsupported to the no-PRF error in a Playwright build', () => {
@@ -105,6 +116,16 @@ describe('useWallet', () => {
     const { result } = renderHook(() => useWallet());
     expect(result.current.status).toBe('error');
     expect(result.current.prfUnsupported).toBe(true);
+    expect(result.current.setupFailed).toBe(false);
+  });
+
+  it('pins balance-setup-failed to the setup error', () => {
+    setPlaywrightBuild();
+    window.history.replaceState({}, '', '/wallet?visual=balance-setup-failed');
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('error');
+    expect(result.current.prfUnsupported).toBe(false);
+    expect(result.current.setupFailed).toBe(true);
   });
 
   it('ignores balance-prf-unsupported in a production build', () => {
@@ -314,5 +335,31 @@ describe('useWallet', () => {
     expect(result.current.balanceSats).toBe(21_000);
     expect(result.current.unlock).toBe(unlock);
     expect(result.current.retry).toBe(retry);
+  });
+
+  it('shows connecting while setup is due and the store is not locked', () => {
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    setWallet('ready', 21_000);
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('connecting');
+    expect(result.current.balanceSats).toBeNull();
+    expect(result.current.setupFailed).toBe(false);
+  });
+
+  it('shows the setup error after background setup failed for this session', () => {
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    useWalletStore.setState({ status: 'error', setupFailedSession: 'token' });
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('error');
+    expect(result.current.setupFailed).toBe(true);
+    expect(result.current.prfUnsupported).toBe(false);
+  });
+
+  it('keeps the unlock view while a legacy account is still locked', () => {
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    useWalletStore.setState({ status: 'locked', setupFailedSession: 'token' });
+    const { result } = renderHook(() => useWallet());
+    expect(result.current.status).toBe('locked');
+    expect(result.current.setupFailed).toBe(false);
   });
 });

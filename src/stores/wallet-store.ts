@@ -30,6 +30,11 @@ interface WalletState {
    * The payment list reloads when it changes.
    */
   syncCount: number;
+  /**
+   * Session whose background wallet setup gave up after its retries, or
+   * `null`. Money screens show the setup note while it is the current session.
+   */
+  setupFailedSession: string | null;
   /** Marks the wallet as connecting and clears balance fields. */
   setConnecting(): void;
   /**
@@ -44,6 +49,12 @@ interface WalletState {
   setError(): void;
   /** Returns to the resting status and clears balance fields. */
   reset(): void;
+  /**
+   * Records which session's background wallet setup gave up.
+   *
+   * @param session - That session token, or `null` to clear it.
+   */
+  setSetupFailedSession(session: string | null): void;
 }
 
 /**
@@ -57,6 +68,7 @@ export const useWalletStore = create<WalletState>((set) => ({
   balanceSats: null,
   identityPubkey: null,
   syncCount: 0,
+  setupFailedSession: null,
   setConnecting: () => {
     set({ status: 'connecting', balanceSats: null, identityPubkey: null });
   },
@@ -73,5 +85,8 @@ export const useWalletStore = create<WalletState>((set) => ({
   },
   reset: () => {
     set({ status: restingStatus(), balanceSats: null, identityPubkey: null });
+  },
+  setSetupFailedSession: (session) => {
+    set({ setupFailedSession: session });
   },
 }));
