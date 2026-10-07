@@ -51,12 +51,18 @@ export function canUnlockWallet(
 }
 
 /**
- * Session whose login already used the seed passkey and got no PRF output,
- * so asking that passkey again cannot open the wallet, with the tab-phrase
- * generation at that time (any later remember or clear ends it); `null`
- * otherwise.
+ * Session whose login already used the seed passkey without giving the tab a
+ * phrase: `noPrf` when the passkey gave no PRF output, `failed` when the
+ * phrase could not be derived from it. Asking that passkey again cannot do
+ * better, so {@link unlockWalletPhrase} answers with it. Bound to the
+ * tab-phrase generation at that time (any later remember or clear ends it);
+ * `null` otherwise.
  */
-let seedWithoutPrf: { session: string; generation: number } | null = null;
+let seedAnswered: {
+  session: string;
+  generation: number;
+  result: 'noPrf' | 'failed';
+} | null = null;
 
 /** Phrase derivations still running in this tab. */
 const pendingDerivations = new Set<Promise<boolean>>();
@@ -66,8 +72,9 @@ const pendingDerivations = new Set<Promise<boolean>>();
  * the Breez API key is set, the account is eligible, the credential matches,
  * the session is still current, and the tab phrase was not remembered or
  * cleared during derivation. When the seed passkey itself answered without
- * PRF output, it records that for the session, so {@link unlockWalletPhrase}
- * answers `noPrf` without a second prompt. Never rejects. Never sends the bytes or the
+ * PRF output, or its PRF output could not be turned into a phrase, it records
+ * that for the session, so {@link unlockWalletPhrase} answers `noPrf` or
+ * `failed` without asking the same passkey a second time. Never rejects. Never sends the bytes or the
  * phrase and never stores them persistently (tab memory only). While it runs,
  * {@link settlePhraseDerivations} waits for it.
  *
@@ -108,7 +115,11 @@ async function derivePhrase(source: PhraseSource): Promise<boolean> {
     const { prfFirst, credentialId, account, sessionToken } = source;
     if (prfFirst === null || prfFirst === undefined || prfFirst.byteLength === 0) {
       if (canUnlockWallet(account) && account.passkeyCredentialId === credentialId) {
-        seedWithoutPrf = { session: sessionToken, generation: sessionPhraseGeneration() };
+        seedAnswered = {
+          session: sessionToken,
+          generation: sessionPhraseGeneration(),
+          result: 'noPrf',
+        };
       }
       return false;
     }
@@ -123,6 +134,7 @@ async function derivePhrase(source: PhraseSource): Promise<boolean> {
     try {
       mnemonic = await mnemonicFromPrfFirst(Uint8Array.from(prfFirst));
     } catch {
+      seedAnswered = { session: sessionToken, generation, result: 'failed' };
       return false;
     }
     if (useAuthStore.getState().session !== sessionToken) {
@@ -147,7 +159,8 @@ let unlockInFlight: Promise<WalletUnlockResult> | null = null;
  * further calls join it instead of opening a second prompt. Does not prompt
  * when the phrase is already in tab memory, including after a derivation the
  * login started from its own prompt has finished, and does not prompt when
- * that login already used the seed passkey without PRF output (`noPrf`).
+ * that login already used the seed passkey without giving a phrase (answers
+ * `noPrf` or `failed` as that login did).
  *
  * @returns `'unlocked'` on success, `'cancelled'` when the visitor dismisses
  * the ceremony, `'noPrf'` when the passkey answered without PRF output (this
@@ -175,11 +188,11 @@ async function runUnlockCeremony(): Promise<WalletUnlockResult> {
       return 'failed';
     }
     if (
-      seedWithoutPrf !== null &&
-      seedWithoutPrf.session === session &&
-      seedWithoutPrf.generation === sessionPhraseGeneration()
+      seedAnswered !== null &&
+      seedAnswered.session === session &&
+      seedAnswered.generation === sessionPhraseGeneration()
     ) {
-      return 'noPrf';
+      return seedAnswered.result;
     }
     const prfFirst = await obtainPrfFirstFromGet(
       Uint8Array.from(base64UrlToBytes(account.passkeyCredentialId)),
