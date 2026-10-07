@@ -767,6 +767,14 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'load-error',
+    image: 'wallet-payment-load-error.png',
+    visual: 'state-wallet-payment-load-error',
+    needle: "shotScreen(page, 'state-wallet-payment-load-error')",
+  },
+
+  {
+    route: '/wallet/payment',
     id: 'copied',
     image: 'wallet-payment-copied.png',
     visual: 'state-wallet-payment-copied',

@@ -1940,6 +1940,17 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-missing');
   });
 
+  test('state-wallet-payment-load-error', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-error');
+    await expect(
+      page.getByText('This payment could not be loaded. Please try again.').first(),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-load-error');
+  });
+
   test('state-wallet-payment-loading', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     // The rate read never answers, so the screen stays in its loading state.

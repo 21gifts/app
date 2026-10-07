@@ -594,6 +594,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:load-error",
+    "label": "/wallet/payment load-error",
+    "visual": "state-wallet-payment-load-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:copied",
     "label": "/wallet/payment copied",
     "visual": "state-wallet-payment-copied",

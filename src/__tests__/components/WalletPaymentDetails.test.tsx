@@ -114,6 +114,16 @@ describe('WalletPaymentDetails', () => {
     expect(screen.getByRole('alert').textContent).toBe('This payment could not be found.');
   });
 
+  it('says when the payment could not be loaded and reads it again on Try again', () => {
+    const retry = vi.fn();
+    show({ status: 'error', retry });
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This payment could not be loaded. Please try again.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
   it('shows nothing of a loaded payment until the rate read has settled', () => {
     vi.mocked(useLatestRateDayState).mockReturnValue({
       rateDay: null,

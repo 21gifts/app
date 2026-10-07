@@ -55,7 +55,7 @@ describe('useWalletPayment', () => {
 
   it('is missing without an id or for a payment the wallet does not know, and keeps a shown payment on a later failure', async () => {
     expect(renderHook(() => useWalletPayment(null)).result.current).toEqual({ status: 'missing' });
-    vi.mocked(getWalletPayment).mockRejectedValueOnce(new Error('unknown'));
+    vi.mocked(getWalletPayment).mockRejectedValueOnce(new Error('Not found: payment'));
     const unknown = renderHook(() => useWalletPayment('nope'));
     await waitFor(() => {
       expect(unknown.result.current).toEqual({ status: 'missing' });
@@ -74,6 +74,30 @@ describe('useWalletPayment', () => {
       expect(getWalletPayment).toHaveBeenCalledTimes(3);
     });
     expect(shown.result.current).toEqual({ status: 'ready', payment: PAYMENT });
+  });
+
+  it('is missing for a token payment, and an error with a retry for any other failed read', async () => {
+    vi.mocked(getWalletPayment).mockRejectedValueOnce(new Error('wallet-payment-not-bitcoin'));
+    const token = renderHook(() => useWalletPayment('t1'));
+    await waitFor(() => {
+      expect(token.result.current).toEqual({ status: 'missing' });
+    });
+    token.unmount();
+    vi.mocked(getWalletPayment).mockRejectedValueOnce('offline');
+    const { result } = renderHook(() => useWalletPayment('p1'));
+    await waitFor(() => {
+      expect(result.current.status).toBe('error');
+    });
+    const failed = result.current as Extract<typeof result.current, { status: 'error' }>;
+    vi.mocked(getWalletPayment).mockResolvedValueOnce(PAYMENT);
+    act(() => {
+      failed.retry();
+    });
+    expect(result.current).toEqual({ status: 'loading' });
+    await waitFor(() => {
+      expect(result.current).toEqual({ status: 'ready', payment: PAYMENT });
+    });
+    expect(getWalletPayment).toHaveBeenCalledTimes(3);
   });
 
   it('drops an answer that arrives after unmount', async () => {
@@ -114,6 +138,11 @@ describe('useWalletPayment', () => {
       status: 'missing',
     });
     expect(getWalletPayment).not.toHaveBeenCalled();
+    window.history.replaceState({}, '', '/wallet/payment?visual=history-error');
+    const pinnedError = renderHook(() => useWalletPayment(fixture.id)).result.current;
+    expect(pinnedError.status).toBe('error');
+    (pinnedError as Extract<typeof pinnedError, { status: 'error' }>).retry();
+    expect(getWalletPayment).not.toHaveBeenCalled();
     delete process.env.NEXT_PUBLIC_E2E_NOW;
     vi.mocked(getWalletPayment).mockReturnValue(new Promise(() => undefined));
     expect(renderHook(() => useWalletPayment(fixture.id)).result.current).toEqual({
@@ -129,7 +158,7 @@ describe('useWalletPayment', () => {
     await waitFor(() => {
       expect(result.current).toEqual({ status: 'ready', payment: PAYMENT });
     });
-    vi.mocked(getWalletPayment).mockRejectedValueOnce(new Error('unknown'));
+    vi.mocked(getWalletPayment).mockRejectedValueOnce(new Error('Not found: payment'));
     rerender({ id: 'p2' });
     expect(result.current).toEqual({ status: 'loading' });
     await waitFor(() => {

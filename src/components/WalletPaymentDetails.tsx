@@ -9,7 +9,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
-import { Card, IconButton } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
 import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
@@ -270,7 +270,8 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
  * payment once the wallet is ready; without a wallet here it says the payment
  * could not be found. An
  * on-chain payment links to its transaction on mempool.space through the
- * external-link warning. A missing or unknown id says so.
+ * external-link warning. A missing or unknown id says so; a read that
+ * failed otherwise says so with **Try again**.
  *
  * @returns The payment screen.
  */
@@ -292,6 +293,14 @@ export function WalletPaymentDetails(): ReactElement {
         <p role="alert" className="text-center text-sm text-app-muted">
           {t('wallet.payment.missing')}
         </p>
+      ) : null}
+      {state.status === 'error' ? (
+        <div className="flex flex-col items-center gap-3">
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('wallet.payment.error')}
+          </p>
+          <Button onClick={state.retry}>{t('login.retry')}</Button>
+        </div>
       ) : null}
       {!missing && wallet.status !== 'ready' && wallet.status !== 'disabled' ? (
         <WalletBalance
