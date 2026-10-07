@@ -2724,6 +2724,44 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const teamWalletMatch = pathName.match(/^\/team\/members\/([^/]+)\/(wallet|events)$/);
+  if (
+    method === 'GET' &&
+    (pathName === '/team/members' || pathName === '/team/audit' || teamWalletMatch)
+  ) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    // The access log is for founders and initiators only; a moderator shares
+    // the initiator rank and is still refused.
+    const allowed =
+      pathName === '/team/audit'
+        ? account.role === 'founder' || account.role === 'initiator'
+        : roleAtLeast(account.role, 'moderator');
+    if (!allowed) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    if (pathName === '/team/members') {
+      json(res, 200, { members: [] });
+    } else if (pathName === '/team/audit') {
+      json(res, 200, { entries: [], nextCursor: null });
+    } else if (teamWalletMatch[2] === 'events') {
+      json(res, 200, { events: [], nextCursor: null });
+    } else {
+      json(res, 200, {
+        balance: null,
+        summary: { inSats: 0, outSats: 0, feeSats: 0, categories: [] },
+        payments: [],
+        nextCursor: null,
+      });
+    }
+    return;
+  }
+
   if (method === 'GET' && pathName === '/funding/applications') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

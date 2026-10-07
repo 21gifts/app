@@ -10,6 +10,13 @@ import {
   stubCurrentIphone,
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
+import {
+  TEAM_AUDIT,
+  TEAM_MEMBERS,
+  TEAM_WALLET_EMPTY,
+  routeTeamMemberData,
+  seedTeamViewer,
+} from './team-access-fixtures';
 
 /**
  * Locked pay slot button once its fiat has loaded: the shown amount is not
@@ -21579,6 +21586,14 @@ test.describe('moderate screens', () => {
       'href',
       '/moderate/payouts',
     );
+    await expect(page.getByRole('link', { name: 'Member data' })).toHaveAttribute(
+      'href',
+      '/moderate/members',
+    );
+    await expect(page.getByRole('link', { name: 'Access log' })).toHaveAttribute(
+      'href',
+      '/moderate/audit',
+    );
     await expect(page.getByText('12%')).toHaveCount(0);
     await shotScreen(page, 'screen-moderate');
   });
@@ -21725,6 +21740,258 @@ test.describe('moderate screens', () => {
       page.getByText('Could not load the payout table. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-payouts-error');
+  });
+});
+
+test.describe('team access screens', () => {
+  /** Fiat beside the balance: the shown amount is not ready for a baseline before it. */
+  const BALANCE_WITH_FIAT = /₿21.000 · .*\d/;
+
+  async function routeSearch(
+    page: Page,
+    status: number | 'hang',
+    body: object = {},
+  ): Promise<void> {
+    await page.route('**/team/members?*', async (route) => {
+      if (status === 'hang') {
+        return new Promise(() => undefined);
+      }
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+  }
+
+  async function routeAudit(page: Page, status: number | 'hang', body: object = {}): Promise<void> {
+    await page.route('**/team/audit*', async (route) => {
+      if (status === 'hang') {
+        return new Promise(() => undefined);
+      }
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+  }
+
+  /** Opens Ada's member-data page and waits for the wallet with its fiat. */
+  async function openAdaWallet(page: Page): Promise<void> {
+    await page.goto('/moderate/members/acc_ada');
+    await expect(page.getByRole('link', { name: 'Ada Lovelace, Open profile' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
+  }
+
+  test('screen /moderate/members', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await page.goto('/moderate/members');
+    await expect(page.getByText('Type a name or username.')).toBeVisible();
+    await shotScreen(page, 'screen-moderate-members');
+  });
+
+  test('moderate members loading', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeSearch(page, 'hang');
+    await page.goto('/moderate/members');
+    await page.getByLabel('Name or username').fill('ada');
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await page.getByLabel('Name or username').blur();
+    await shotScreen(page, 'state-moderate-members-loading');
+  });
+
+  test('moderate members results', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeSearch(page, 200, TEAM_MEMBERS);
+    await page.goto('/moderate/members');
+    await page.getByLabel('Name or username').fill('ada');
+    await expect(page.getByText('@adalove')).toBeVisible();
+    await page.getByLabel('Name or username').blur();
+    await shotScreen(page, 'state-moderate-members-results');
+  });
+
+  test('moderate members empty', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeSearch(page, 200, { members: [] });
+    await page.goto('/moderate/members');
+    await page.getByLabel('Name or username').fill('zed');
+    await expect(page.getByText('No member found.')).toBeVisible();
+    await page.getByLabel('Name or username').blur();
+    await shotScreen(page, 'state-moderate-members-empty');
+  });
+
+  test('moderate members error', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeSearch(page, 503);
+    await page.goto('/moderate/members');
+    await page.getByLabel('Name or username').fill('ada');
+    await expect(page.getByText('Could not search members. Please try again.')).toBeVisible();
+    await page.getByLabel('Name or username').blur();
+    await shotScreen(page, 'state-moderate-members-error');
+  });
+
+  test('moderate members forbidden', async ({ page }) => {
+    await seedTeamViewer(page, 'basis');
+    await page.goto('/moderate/members');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-members-forbidden');
+  });
+
+  test('screen /moderate/members/[accountId]', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page);
+    await openAdaWallet(page);
+    await expect(page.getByText('Spent in the community')).toBeVisible();
+    await shotScreen(page, 'screen-moderate-members-accountId');
+  });
+
+  test('moderate member loading', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page, { wallet: 'hang' });
+    await page.goto('/moderate/members/acc_ada');
+    await expect(page.getByRole('link', { name: 'Ada Lovelace, Open profile' })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-member-loading');
+  });
+
+  test('moderate member error', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page, { wallet: 503 });
+    await page.goto('/moderate/members/acc_ada');
+    await expect(page.getByRole('link', { name: 'Ada Lovelace, Open profile' })).toBeVisible();
+    await expect(page.getByText('Could not load the wallet data. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-member-error');
+  });
+
+  test('moderate member forbidden', async ({ page }) => {
+    await seedTeamViewer(page, 'basis');
+    await page.goto('/moderate/members/acc_ada');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-member-forbidden');
+  });
+
+  test('moderate member no-report', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page, { wallet: TEAM_WALLET_EMPTY });
+    await page.goto('/moderate/members/acc_ada');
+    await expect(page.getByRole('link', { name: 'Ada Lovelace, Open profile' })).toBeVisible();
+    await expect(page.getByText("This member's wallet has not reported yet.")).toBeVisible();
+    await expect(page.getByText('No payments in this period.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-member-no-report');
+  });
+
+  test('moderate member period', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page);
+    await openAdaWallet(page);
+    const sevenDays = page.waitForRequest(/\/team\/members\/acc_ada\/wallet\?period=7/);
+    await page.getByRole('button', { name: '7 days' }).click();
+    await sevenDays;
+    await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
+    await expect(page.getByText('Sent · Shop')).toBeVisible();
+    await expect(page.getByText('From Bob')).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-member-period');
+  });
+
+  test('moderate member direction', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page);
+    await openAdaWallet(page);
+    const sent = page.waitForRequest(/direction=out/);
+    await page
+      .getByRole('group', { name: 'Direction' })
+      .getByRole('button', { name: 'Sent' })
+      .click();
+    await sent;
+    await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
+    await expect(page.getByText('To carol@example.com')).toBeVisible();
+    await expect(page.getByText('From Bob')).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-member-direction');
+  });
+
+  test('moderate member category-open', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page);
+    await openAdaWallet(page);
+    await page.getByRole('combobox', { name: 'Category' }).click();
+    await expect(page.getByRole('option', { name: 'All categories' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-member-category-open');
+  });
+
+  test('moderate member category', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page);
+    await openAdaWallet(page);
+    const shop = page.waitForRequest(/category=shop/);
+    await page.getByRole('combobox', { name: 'Category' }).click();
+    await page.getByRole('option', { name: 'Shop' }).click();
+    await shop;
+    await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
+    await expect(page.getByText('Sent · Shop')).toBeVisible();
+    await expect(page.getByText('From Bob')).toHaveCount(0);
+    await shotScreen(page, 'state-moderate-member-category');
+  });
+
+  test('moderate member activity', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page);
+    await openAdaWallet(page);
+    await page.getByRole('button', { name: 'Activity' }).click();
+    await expect(page.getByText('Opened a page')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Activity' })).toContainText(/₿2.000 · .*\d/);
+    await shotScreen(page, 'state-moderate-member-activity');
+  });
+
+  test('moderate member activity-empty', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page, { events: { events: [], nextCursor: null } });
+    await openAdaWallet(page);
+    await page.getByRole('button', { name: 'Activity' }).click();
+    await expect(page.getByText('No activity yet.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-member-activity-empty');
+  });
+
+  test('moderate member activity-error', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeTeamMemberData(page, { events: 503 });
+    await openAdaWallet(page);
+    await page.getByRole('button', { name: 'Activity' }).click();
+    await expect(page.getByText('Could not load the activity. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-member-activity-error');
+  });
+
+  test('screen /moderate/audit', async ({ page }) => {
+    await seedTeamViewer(page, 'founder');
+    await routeAudit(page, 200, TEAM_AUDIT);
+    await page.goto('/moderate/audit');
+    await expect(page.getByText('Wallet data').first()).toBeVisible();
+    await shotScreen(page, 'screen-moderate-audit');
+  });
+
+  test('moderate audit loading', async ({ page }) => {
+    await seedTeamViewer(page, 'founder');
+    await routeAudit(page, 'hang');
+    await page.goto('/moderate/audit');
+    await expect(page.getByRole('heading', { name: 'Access log' })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-audit-loading');
+  });
+
+  test('moderate audit empty', async ({ page }) => {
+    await seedTeamViewer(page, 'initiator');
+    await routeAudit(page, 200, { entries: [], nextCursor: null });
+    await page.goto('/moderate/audit');
+    await expect(page.getByText('Nobody has opened member data yet.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-audit-empty');
+  });
+
+  test('moderate audit error', async ({ page }) => {
+    await seedTeamViewer(page, 'founder');
+    await routeAudit(page, 503);
+    await page.goto('/moderate/audit');
+    await expect(page.getByText('Could not load the access log. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-audit-error');
+  });
+
+  test('moderate audit forbidden', async ({ page }) => {
+    await seedTeamViewer(page, 'moderator');
+    await routeAudit(page, 403);
+    await page.goto('/moderate/audit');
+    await expect(page.getByText('This page is for founders and initiators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-audit-forbidden');
   });
 });
 
