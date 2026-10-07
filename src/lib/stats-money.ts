@@ -226,30 +226,6 @@ export function spotRateDay(
   return FIAT_CODES.some((code) => satsToFiatAmount(SATS_PER_BTC, day, code) !== null) ? day : null;
 }
 
-/**
- * Latest gift day that can convert the preferred currency.
- *
- * Walks newest first. A day with gifts but a null or zero total for `code`
- * is skipped, so one incomplete gift cannot block the till. Returns `null`
- * when no earlier day has that currency either.
- *
- * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
- * @param code - Preferred fiat.
- * @returns That day, or `null`.
- */
-export function latestRateDayFor(
-  series: readonly FiatRateDay[],
-  code: FiatCode,
-): FiatRateDay | null {
-  for (let i = series.length - 1; i >= 0; i -= 1) {
-    const day = series[i];
-    if (day !== undefined && day.sats > 0 && fiatTotalUsable(fiatFieldOnDay(day, code))) {
-      return day;
-    }
-  }
-  return null;
-}
-
 /** The four amounts shown next to a sat amount, or null when that currency has no rate. */
 export interface ShownFiat {
   amountUsd: string | null;

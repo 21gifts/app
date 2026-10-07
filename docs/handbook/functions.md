@@ -2412,19 +2412,19 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `FiatRateDay` with `sats: 100000000` and `usd` / `chf` / `eur` / `php` set to that price or `null`, or `null` when no code has a usable price (missing, `"0"`, or not a number). No I/O.
 - **Used by:** `useSpotRate`.
 
+## Function: useSpotRateState
+
+- **Purpose:** The current spot rate together with whether its first read has settled, for a payment screen that must not show an amount as ready while the rate is still loading (CONTRIBUTING "Shown amounts"). `useSpotRate` returns its `rateDay`. Fetches `GET /fx/spot` via `fetchFxSpot` on mount and every five minutes (`SPOT_REFRESH_MS`); an answer with a usable price replaces the rate, and an answer without any price or a failed request keeps the last one. A refresh does not start while the previous request is open. Never throws. Drops answers after unmount.
+- **Inputs:** Optional `enabled` (default `true`); while false nothing is fetched, `rateDay` is `null`, and `loading` is `true`.
+- **Returns / side effects:** `{ rateDay, loading }`: `rateDay` is `spotRateDay` of the latest usable answer (or `null`), and `loading` turns false once the first read settles, whatever its result. Calls `fetchFxSpot` on mount and on the refresh timer while enabled; clears the timer on unmount.
+- **Used by:** `useSpotRate`, `WalletPaymentDetails`.
+
 ## Function: useSpotRate
 
 - **Purpose:** The current price of 1 BTC for every amount that is entered or converted live: the amount field (₿ ↔ fiat), the point of sale, gift and reaction amounts, the wallet and payment fiat suffixes, and the fiat stored with a new payment. Fetches `GET /fx/spot` via `fetchFxSpot` on mount and again every five minutes (`SPOT_REFRESH_MS`) while mounted, and resolves `spotRateDay` of its rates. An answer with a usable price replaces the rate. An answer without any price (the api has no quote) and a failed request keep the last rate, as the api keeps its last good quote. A refresh does not start while the previous request is still open. Never throws into the caller. Drops answers after unmount. There is no fallback to a gift day: the statistics pages keep each day's own rate from `GET /gifts/stats`, and nothing else uses it.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the hook returns `null`, also after a rate was loaded.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchFxSpot` on mount and on the refresh timer while enabled; clears the timer on unmount.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`, `HeaderWalletButton`, `WalletBalance`, `WalletHistory`, `WalletSend`, `CreditLedger`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`.
-
-## Function: useLatestRateDayState
-
-- **Purpose:** Latest gift-day totals for the preferred fiat, and whether that `GET /gifts/stats` request has settled. A newer day whose total for that currency is missing or zero is skipped. `settled` is false while the request is in flight, so a payment screen does not treat the amount as ready. A settled `null` means the request finished with no usable rate. When `enabled` is false, the fetch is skipped and `settled` is true. Changing the preferred fiat reuses the fetched series. Drops the response after unmount.
-- **Inputs:** Optional `enabled` (default true).
-- **Returns / side effects:** `{ rateDay: FiatRateDay | null, settled: boolean }`. Calls `fetchGiftStats` once per mount while enabled.
-- **Used by:** `useLatestRateDay`, `MemberHabits`, `PayLinkScreen`, `PosTill`, `PosAmount`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`, `MenuAccountHeader`, `WalletBalance`, `WalletHistory`, `WalletSend`, `CreditLedger`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`.
 
 ## Function: shownFiatForSats
 

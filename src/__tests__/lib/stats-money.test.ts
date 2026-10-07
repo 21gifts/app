@@ -10,7 +10,6 @@ import {
   formatUsdTick,
   fiatDraftForSats,
   fiatToSats,
-  latestRateDayFor,
   parseAmountDraft,
   paySatsFromDraft,
   replySatsFromDraft,
@@ -138,23 +137,6 @@ describe('spotRateDay', () => {
   it('returns null when no code has a usable price', () => {
     expect(spotRateDay({})).toBeNull();
     expect(spotRateDay({ USD: '0', EUR: '0.00' })).toBeNull();
-  });
-});
-
-describe('latestRateDayFor', () => {
-  const poisoned = { ...RATE_DAY, sats: 1000, usd: '10.00', chf: null, eur: null, php: null };
-
-  it('skips a newer day that cannot convert the currency', () => {
-    expect(latestRateDayFor([RATE_DAY, poisoned], 'PHP')).toEqual(RATE_DAY);
-    expect(latestRateDayFor([RATE_DAY, poisoned], 'USD')).toEqual(poisoned);
-  });
-
-  it('returns null when no day can convert that currency', () => {
-    expect(latestRateDayFor([poisoned], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, sats: 0, php: '1.00' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, php: '0.00' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([{ ...RATE_DAY, php: 'nope' }], 'PHP')).toBeNull();
-    expect(latestRateDayFor([], 'CHF')).toBeNull();
   });
 });
 

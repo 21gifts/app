@@ -19725,12 +19725,12 @@ test.describe('welcome forum variants', () => {
         body: JSON.stringify(EMPTY_ACTIVITY),
       });
     });
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/fx/spot', async (route) => {
       await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
     });
-    const stats = page.waitForResponse('**/gifts/stats**');
+    const spot = page.waitForResponse('**/fx/spot');
     await page.goto('/welcome?visual=balance-ready');
-    await stats;
+    await spot;
     await page.getByRole('button', { name: 'Menu' }).click();
     const menu = page.locator('#signed-in-menu');
     await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();

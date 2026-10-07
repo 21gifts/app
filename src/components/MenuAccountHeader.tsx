@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
@@ -110,7 +110,7 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
  * or without a wallet. Under it Received, Given, and Posts, always in their
  * final size: a skeleton bar while loading, `–` when a value could not be
  * read. Received and Given show the default fiat on a small line under the ₿
- * figure (latest gift-day rate; empty only without a usable rate). The photo and the three stats start loading when the signed-in chrome
+ * figure (current spot rate; empty only without a usable rate). The photo and the three stats start loading when the signed-in chrome
  * mounts, not when the Menu opens, and are cached for the session; nothing
  * waits for them. Until the account is loaded (a stored session still being
  * checked right after a page load), the card already has its final size:
@@ -137,7 +137,7 @@ export function MenuAccountHeader({
   );
   const accountId = account?.id ?? null;
   const wallet = useWallet();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const [loaded, setLoaded] = useState<{ session: string; stats: MenuStats } | null>(null);
 
   useEffect(() => {
