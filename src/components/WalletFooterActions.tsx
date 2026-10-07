@@ -25,7 +25,8 @@ export interface WalletFooterActionsProps {
  * 18px fade with a light blur lets the page end softly instead of at a hard
  * edge. Below 360px the icons drop and the side padding shrinks so long
  * labels fit at 320px. When they come back after a view closed, the button
- * that opened it takes the focus again. Used by `/wallet` and `/welcome`.
+ * that opened it takes the focus again, or Receive when Send is disabled by
+ * then. Used by `/wallet` and `/welcome`.
  *
  * @param props - Open handlers and whether Send is disabled.
  * @returns The footer registration.
@@ -40,9 +41,14 @@ export function WalletFooterActions({
   const receiveRef = useRef<HTMLButtonElement>(null);
   const sendRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (focus !== null) {
-      (focus === 'receive' ? receiveRef : sendRef).current?.focus({ preventScroll: true });
+    if (focus === null) {
+      return;
     }
+    // A disabled Send cannot take the focus (the wallet stopped being ready
+    // while Send was open), so Receive takes it instead of the page losing it.
+    const send = sendRef.current;
+    const target = focus === 'send' && send !== null && !send.disabled ? send : receiveRef.current;
+    target?.focus({ preventScroll: true });
   }, [focus]);
   const iconClass = 'h-5 w-5 max-[359px]:hidden';
   const buttonClass = 'min-h-14 text-base max-[359px]:px-2';
