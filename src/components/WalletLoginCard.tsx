@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { LoginCard } from '@/components/LoginCard';
+import { LogoutButton } from '@/components/LogoutButton';
 import { useTranslations } from '@/components/LocaleProvider';
 import { visualPin } from '@/lib/visual-pin';
 import { finishWalletOpen } from '@/lib/wallet/wallet-open';
@@ -33,7 +34,9 @@ function pinnedProblem(): 'noPrf' | 'failed' | null {
  * wallet setup runs in the background, without a dialog. When the wallet
  * cannot be opened the session is held back again: a passkey without PRF
  * output shows `wallet.prfUnsupported`, any other failure `login.error`,
- * above **Log in**; a dismissed prompt shows **Log in** alone. In a
+ * above **Log in**; a dismissed prompt shows **Log in** alone. Under the card,
+ * **Log out** (`LogoutButton`, the same control as in the Menu, which is not
+ * shown here) ends the held-back or not-yet-open session. In a
  * Playwright build `?visual=balance-locked-prf-unsupported` and
  * `?visual=balance-locked-error` pin those two alerts.
  *
@@ -42,6 +45,7 @@ function pinnedProblem(): 'noPrf' | 'failed' | null {
 export function WalletLoginCard(): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
+  const lockedSession = useAuthStore((state) => state.lockedSession);
   const [problem, setProblem] = useState<'noPrf' | 'failed' | null>(pinnedProblem);
 
   useEffect(() => {
@@ -70,6 +74,11 @@ export function WalletLoginCard(): ReactElement {
         </p>
       )}
       <LoginCard />
+      {session === null && lockedSession === null ? null : (
+        <div className="w-full max-w-xs">
+          <LogoutButton />
+        </div>
+      )}
     </div>
   );
 }
