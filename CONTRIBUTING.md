@@ -77,6 +77,8 @@ app/
 │   │   │   ├── notification-level/route.ts  # POST /me/notification-level
 │   │   │   ├── wallet-backup-seen/route.ts  # POST /me/wallet-backup-seen
 │   │   │   ├── wallet/route.ts  # PUT /me/wallet (claim the in-app wallet key)
+│   │   │   ├── wallet/report/route.ts  # POST /me/wallet/report (wallet data report)
+│   │   │   ├── events/route.ts  # POST /me/events (interaction log batch)
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
@@ -236,7 +238,8 @@ app/
 │   │   ├── WalletBalance.tsx    # /wallet large balance (connecting / ready with ₿/fiat tap / error or setup note)
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
-│   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners (renders nothing)
+│   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
+│   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
 │   │   ├── WalletPay.tsx        # In-app wallet pay slot of the gift pay sheets (the only way to pay)
 │   │   ├── WalletSend.tsx       # Wallet Send view (full-size camera, Paste, Enter manually, amount, confirm, sent)
 │   │   ├── QrScanner.tsx        # Live camera QR reader (BarcodeDetector, else jsqr) filling the Send camera area
@@ -329,6 +332,7 @@ app/
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
 │   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM + SESSION_PHRASE_EVENT (never localStorage)
+│   │   ├── interaction-log.ts   # Signed-in interaction events: queue, cleaned props, POST /me/events batches
 │   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock, pay, parse)
 │   │   │   ├── wallet-open.ts   # Login-to-open gate, hydration lock, and post-login wallet opening
 │   │   │   ├── wallet-sdk.ts    # Dynamic Breez SDK load + narrow WalletSdk surface
@@ -337,6 +341,7 @@ app/
 │   │   │   ├── wallet-phrase.ts # rememberPhraseFromPrf, unlockWalletPhrase, canUnlockWallet
 │   │   │   ├── payment-display.ts # Payment title, message, and screen link for the list and /wallet/payment
 │   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
+│   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
@@ -397,6 +402,7 @@ app/
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login Log in + Open a new account + signed-in forms
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
+│   ├── data-collection.spec.ts  # POST /me/wallet/report and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
 │   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
@@ -956,6 +962,31 @@ Privacy rules (this app holds wallets):
 
 Any new code that sends data to the error reporter must go through this
 scrubber.
+
+## Wallet data and interaction log
+
+Using the platform is consent to the collection described in the Terms of Use
+("Wallet and data"). The app sends two first-party reports to the api, both
+only for a signed-in member and both through same-origin proxies:
+
+- **Wallet data report** (`reportWallet`, `POST /me/wallet/report`): after
+  every successful wallet read of an unlocked wallet (unlock, each sync, after
+  a payment) and every five minutes while the app is open, the balance and
+  every payment the api has not acknowledged yet, in requests of at most 200
+  payments. The acknowledged cursor lives in tab memory only.
+- **Interaction log** (`logInteraction`, `POST /me/events`): named events
+  (`screen_view`, `post_created`, `gift_sent`, `payment_sent`, `search`, …)
+  with the path without query and a small flat `props` object, sent in
+  batches of at most 50 every ten seconds and when the page is hidden.
+  Visitors without a session are not recorded.
+
+**Hard requirement:** neither report, nor any other request, log, or error
+report, ever carries the recovery phrase, the seed, PRF output, a preimage, or
+any private key. The report payment is built field by field
+(`toWalletReportPayment`) and never copies an SDK object; event props drop
+secret-named keys and secret-shaped values. A change that widens either
+payload adds a unit test proving the new field cannot carry one of these. No
+third-party analytics; error reporting stays errors-only.
 
 ## CI / CD
 

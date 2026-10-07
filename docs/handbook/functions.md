@@ -33,6 +33,7 @@
 - **Purpose:** The QR card on `/pos` only. Centered truncated 21.gifts address, the same Open CryptoPay QR as the profile card including on a smartphone, content-width **Set an amount** linking to `/pos/amount` when no charge is open, otherwise the open charge (countdown, including 0:00, sat amount, default fiat when a spot rate exists, and Cancel) until the server returns no charge. While that charge is open, and for one minute after it ran out (the api still marks a payment confirmed after the end as paid, and shows a paid charge for one minute), it asks `fetchPosState` every three seconds, also after the refresh at expiry returned no charge; a failed poll is dropped and the next one tries again. Cancel stops asking. A charge the api returns as `paid` shows **Paid ✓** (`role="status"`), the sat amount, default fiat when a spot rate exists, and **New payment** linking to `/pos/amount`, without Cancel, countdown, or **Set an amount**; the poll stops. A slower refresh cannot replace a newer create or cancel, and an older till read that answers late cannot replace a newer one (such as a paid charge). No keypad on this card. The wallet does not mount this card. Without a username it shows **Set a username first.** linking to `/profile`. With a username but no verified in-app wallet (`sparkWalletVerified` not true), it shows the `pos.needWallet` link to `/wallet`; if background wallet setup has exhausted its retries, `WalletSetupNote` replaces that link. While setup is due or has failed, the address and QR stay hidden because the address is not registered yet, and **Set an amount** stays hidden; charging needs both a username and a verified wallet.
 - **Inputs:** None. Reads the auth store, till state, and `useWalletSetup` (`due`, `failed`).
 - **Returns / side effects:** React element. Calls `fetchPosState` and `cancelPosCharge`. Once the till has loaded, renders `PosHistory` under the card's other content with the `history` of the latest till answer, so the list changes with every answer the till applies: the poll that sees the charge paid, the reload after Cancel, and the refresh at expiry. A failed setup renders the alert and secondary **Try again** button from `WalletSetupNote`; setup due or failed suppresses the address and QR.
+- **Interaction log:** A paid charge on screen is recorded once per charge as `pos_charge_paid_seen` with its id and amount.
 - **Used by:** `PosScreen`.
 
 ## Function: PosHistory
@@ -61,7 +62,7 @@
 - **Purpose:** `POST /pos/charge` with `{ amountSats }`.
 - **Inputs:** Bearer `sessionToken` and a whole sat amount.
 - **Returns / side effects:** The created charge. Throws `WalletRequiredError` or `CannotReceiveError` on a 400 whose `code` is `wallet_required` or `cannot_receive` (via `throwIfWalletAnswer`), recognised by the body's `code` only; otherwise throws with the API error string or a status fallback.
-- **Used by:** `PosAmount`.
+- **Used by:** `PosAmount`. Records `pos_charge_created` with the charge id and amount.
 
 ## Function: cancelPosCharge
 
@@ -124,6 +125,7 @@
 - **Purpose:** Multipart `POST /forum/messages` with `video` + optional `poster`, optional `goalCurrency` and `goalAmount` (trimmed draft, comma stays; omitted from the form when either is missing, and on replies), optional `placeLat` / `placeLng` / `placeLabel` (only when a pin is set; replies must not send them), and optional `shopUsername` (leading `@` stripped; omitted when blank). Not `goalSats`.
 - **Inputs:** session token, `{ text, video, poster?, goalCurrency?, goalAmount?, place?, shopUsername? }`.
 - **Returns / side effects:** `ForumMessage`. On 400, 404, or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 (the post needs a Bitcoin payment) throws `PostFeeRequiredError` with `Could not post your message`.
+- **Interaction log:** A created note is recorded as `post_created` with its id, `video: true`, and whether it is an Ask. The text is never recorded.
 - **Used by:** `ForumLoader` submit.
 
 ## Function: forumVideoSrc
@@ -1384,6 +1386,7 @@ Optional `firstPostFree` (default false) adds the muted line `forum.firstPostFre
 - **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. Pin rows link with `next/link`, so opening a member or a note keeps the document. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
+- **Interaction log:** An opened `?pin=` is recorded as `shop_opened` with that pin's note id.
 - **Used by:** `ShopsScreen`.
 
 ## Function: fetchPlaces
@@ -1757,6 +1760,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync`, `PushOpenListener`, and `WalletSync` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
 - **Returns / side effects:** The document wrapper for every route.
+- **Root listeners:** `WalletSync` (wallet connection and the wallet data report) and `InteractionLog` (the signed-in interaction log) are mounted beside the other root listeners.
 - **Used by:** All screens.
 
 ## Function: clearSession
@@ -2107,6 +2111,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo?, goalCurrency?, goalAmount?, place?, shopUsername? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`. A non-blank string `takenAt` on a still is included; a blank or missing time is omitted. Optional `goalCurrency` and `goalAmount` go together on a top-level note, never as `goalSats`; omitted on replies and when either is missing. `goalSats` remains a field of the read note. Optional `place` is `{ lat, lng, label }` on a top-level note; omitted when unset. Replies must not send it. Optional `shopUsername` is sent only when the trimmed value without a leading `@` is non-blank.
 - **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data, takenAt? }` photo, optional `photos` array (max 10), optional `inReplyTo` parent id (thread composer only), optional `goalCurrency` and `goalAmount` (together, never `goalSats`), optional `place` (`ForumPlacePin`, top-level only), and optional `shopUsername` (leading `@` stripped; omitted when blank).
 - **Returns / side effects:** `ForumMessage`. Omits `inReplyTo`, `goalCurrency`/`goalAmount`, `place`, and `shopUsername` from the JSON body when absent; omits both Ask fields on replies even if passed. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 throws `PostFeeRequiredError` with the api error string when present, otherwise `A reply needs a Bitcoin payment`. On 404 whose api error is exactly `No account with that username` throws that string; any other 404 throws `NoteDeletedError`.
+- **Interaction log:** A created top-level note is recorded as `post_created` with its id, the number of photos, and whether it is an Ask; a reply as `reply_created` with its id and the parent id. The text is never recorded.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
 
 ## Function: postContact
@@ -3547,6 +3552,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Owner `Account`. Throws on non-2xx.
 - **Used by:** The helper remains. `useWalletPhrase` does not call it.
 
+## Function: postWalletReport
+
+- **Purpose:** `POST /me/wallet/report` with bearer + `{ balanceSats, syncedAt, payments }`.
+- **Inputs:** `sessionToken` and a `WalletReportBody` (balance in whole sats, ISO 8601 read time, at most `WALLET_REPORT_PAGE_SIZE` payments).
+- **Returns / side effects:** The `acknowledgedIds` of the response. Sends only those three fields, whatever else the body object holds. Throws `Could not report wallet data: <status>` on a non-2xx status, and throws when the response has no `acknowledgedIds` list.
+- **Used by:** `reportWallet`.
+
 ## Function: passkeyRenewDebug
 
 - **Purpose:** Read public authenticator facts from a created passkey. PRF bytes, the credential id, and the attestation object are not copied.
@@ -3658,6 +3670,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` with Bearer.
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/me/wallet-backup-seen`.
+
+## Function: proxyMeWalletReportPost
+
+- **Purpose:** Proxies `POST /me/wallet/report` to the api with `proxyApiRequest` (Bearer and JSON body forwarded).
+- **Inputs:** The App Router request.
+- **Returns / side effects:** The upstream response, or 502 when the api cannot be reached.
+- **Used by:** `src/app/me/wallet/report/route.ts`.
+
+## Function: proxyMeEventsPost
+
+- **Purpose:** Proxies `POST /me/events` to the api with `proxyApiRequest` (Bearer and JSON body forwarded).
+- **Inputs:** The App Router request.
+- **Returns / side effects:** The upstream response, or 502 when the api cannot be reached.
+- **Used by:** `src/app/me/events/route.ts`.
 
 ## Function: prfEvalFirstSalt
 
@@ -3939,6 +3965,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `WalletPayment`. Pure.
 - **Used by:** `loadWalletSdk` (`listPayments`).
 
+## Function: toWalletReportPayment
+
+- **Purpose:** Maps one SDK payment to the payment the wallet data report sends: `id`, `direction` (`in` or `out`), `status` (an unknown status counts as completed), whole-sat `amountSats` and `feeSats`, `timestamp` (ISO 8601 from the SDK's epoch seconds), `method` (`lightning`, `spark`, `token`, `onchain` for the SDK's `deposit` and `withdraw`, otherwise `unknown`), and the counterparty data the SDK lists: `paymentHash` (HTLC payment hash), `invoice` (Lightning or Spark request), `destination` (Lightning address, else LNURL domain, else base-chain transaction id, else the receiving node's public key), `description`, and `lnurlComment` (the comment sent, else the payer's note received). Blank texts are `null`.
+- **Inputs:** An SDK payment (`id`, `paymentType`, `status`, `amount`, `fees`, `timestamp`, `method`, optional `details`).
+- **Returns / side effects:** `WalletReportPayment`. Pure. Reads only the fields named above: the HTLC preimage and every other SDK field are never copied.
+- **Used by:** `loadWalletSdk` (`listReportPayments`).
+
 ## Function: ensureWalletConnected
 
 - **Purpose:** Makes sure the wallet is open from the tab phrase and returns its identity public key. Reuses a ready connection and waits for one in flight; otherwise calls `connectWallet`.
@@ -3966,6 +3999,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `id`.
 - **Returns / side effects:** The mapped `WalletPayment`. Rejects with `wallet-connect` while no wallet is connected, and with the SDK's error for an id the wallet does not know. No other network call than the SDK's.
 - **Used by:** `useWalletPayment`.
+
+## Function: listWalletReportPayments
+
+- **Purpose:** Lists the connected wallet's Bitcoin payments, newest first, one page at a time, in the shape the wallet data report sends (`WalletReportPayment`).
+- **Inputs:** `{ offset, limit }`.
+- **Returns / side effects:** `WalletReportPayment[]`. Throws `wallet-connect` without a connection, otherwise the SDK's error.
+- **Used by:** `reportWallet`.
 
 ## Function: needsWalletSetup
 
@@ -4042,6 +4082,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The wallet pay primitive. Prepares a payment on the current connection and returns amount and fee for confirmation; the returned `send` pays it once, gives up waiting after 30 s, and refreshes the balance while its connection is still the current one (a replaced connection reads its own synchronized balance). Nothing is retried. A send after the wallet was disconnected or replaced, or a second call of `send`, reports `failed` without paying. For a base-chain address the result carries `onchain` (`fees` per speed and `spendableFeeSats`, the balance minus the amount) and `send` takes the chosen speed. It never sends without a fresh quote: a speed whose fee is above `spendableFeeSats` is `insufficient`, and a quote within `WALLET_QUOTE_MARGIN_MS` (15 s) of its expiry is `expired`, both without calling the SDK.
 - **Inputs:** `WalletPayRequest`: `{ type: 'input', input, amountSats? }` or `{ type: 'lnurl', request, amountSats, comment? }`.
 - **Returns / side effects:** `confirm` (`amountSats`, `feeSats`, optional `onchain`, `send`), `insufficient` (the balance read before confirmation does not cover amount plus fee, for a base-chain address amount plus the lowest fee, with that fee as `feeSats`, or the SDK says so, without a fee), `belowMinimum` with `minSats` (the SDK refused the amount as below the smallest it sends to this address, `… below the minimum of N sats …`), `failed` (prepare or the balance read failed, or the connection changed during prepare or that read), or `unlock` (no connection). The synced balance read also updates `useWalletStore` while it is the latest read of the current connection; when a newer read already wrote the store, the check uses that newer balance, so it matches the balance shown; while a newer read is still pending, it uses its own read. `send` resolves to `paid`, `insufficient`, `failed` (an error or the 30 s limit), or `expired` (a base-chain quote that ran out, before the SDK or as its answer; nothing was sent). Never rejects.
+- **Interaction log:** A send the SDK reports as sent is recorded as `payment_sent` with the amount, the fee of the chosen speed, and whether it went to a base-chain address.
 - **Used by:** `useWalletPay` (gift pay sheets), `useWalletSend` (`/wallet`).
 
 ## Function: parseWalletInput
@@ -4056,6 +4097,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Runs the in-app wallet payment of one gift-sheet invoice. The wallet pays `sparkInvoice` when the api issued one, otherwise `pr`. A wallet that is unavailable or the account cannot hold reports `unavailable`. Because the wallet is open whenever the member is signed in, there is no passkey or unlock phase: the hook connects and prepares, then always stops at `confirm`, including for a zero fee. While setup is due it reports `preparing`; if setup gives up, it reports `setupFailed` and no payment continues by itself.
 - **Inputs:** `sparkInvoice` (string, `null`, or `undefined`), `pr` (fallback request for the same invoice), and `amountSats` (the exact whole-sat amount the sheet shows). Reads the auth store, `useWalletStore`, and `useWalletSetup`.
 - **Returns / side effects:** `{ view, feeSats, missingSats, pay, retry }`. Views are `unavailable`, `preparing`, `confirm`, `paying`, `insufficient`, `failed`, `setupFailed`, or `unconfirmed`. It prepares only after setup is no longer due, never pays a mismatched or stale request, pays at most once, and never retries a send automatically. `pay` is the only send trigger. An insufficient view polls a synchronized balance every 4 s and prepares again only after the balance covers amount plus known fee; after any send, 60 s without sheet confirmation becomes `unconfirmed`. Retry clears prepared state and reconnects or reloads after a wallet error. Recognized `?visual=wallet-pay-…` values pin deterministic views only through `visualPin` and leave actions inert.
+- **Interaction log:** A send the SDK reports as sent is recorded as `gift_sent` with the amount.
 - **Used by:** `WalletPay`.
 
 ## Function: WalletPay
@@ -4214,10 +4256,45 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletSync
 
-- **Purpose:** Root-mounted effect that keeps the wallet connection synchronized with the tab-memory phrase and runs due wallet setup in the background. It registers the phrase listener first so setup can reuse that connection.
-- **Inputs:** None.
-- **Returns / side effects:** `null`. Subscribes through `listenForWalletPhrase` and `listenForWalletSetup` while mounted, then unsubscribes both on cleanup.
+- **Purpose:** Root-mounted effect that keeps the wallet connection synchronized with the tab-memory phrase, runs due wallet setup in the background, and sends the wallet data report while signed in. It registers the phrase listener first so setup can reuse that connection.
+- **Inputs:** None. Reads `useWalletStore`.
+- **Returns / side effects:** `null`. Subscribes through `listenForWalletPhrase` and `listenForWalletSetup` while mounted, then unsubscribes both on cleanup. After every successful wallet read (`syncCount` changes while `ready`: the login, each SDK sync, and the read after a payment) it calls `reportWallet`. Every `WALLET_REPORT_INTERVAL_MS` (five minutes) while the wallet is `ready` it reads the synchronized balance with `refreshWallet({ ensureSynced: true, ignoreFailure: true })`, which reports again. Unmounting stops the timer and the subscription.
 - **Used by:** `RootLayout`.
+
+## Function: reportWallet
+
+- **Purpose:** Sends the wallet data report of the signed-in member's unlocked wallet to `POST /me/wallet/report`: the balance, the time it was read, and every payment the api has not acknowledged yet, with its current status. The first report in a tab sends the full history; a status change (pending to completed) is sent again.
+- **Inputs:** None. Reads the session from `useAuthStore` and the status, balance, and identity key from `useWalletStore`.
+- **Returns / side effects:** A promise that never rejects. Without a session or a `ready` wallet nothing is sent. It lists every payment with `listWalletReportPayments` in pages of `WALLET_REPORT_PAGE_SIZE` (200) and posts them in requests of at most 200 with `postWalletReport`. The acknowledged ids and their statuses live in tab memory only (no storage of any kind), keyed to the wallet identity: another wallet starts over, and a new tab sends the history again (the api treats repeats as the same payment). A failed list or post stops the report; the next one sends the rest. A report with no unacknowledged payment and the same balance as the last one waits `WALLET_REPORT_QUIET_MS` (60 s) after it. A call while a report runs adds one report after it. After the first listing in a tab, a received payment that is newly completed is recorded once as `payment_received_seen` with its id and amount. The body holds only the fields of `WalletReportPayment`: never the recovery phrase, a key, PRF output, or a preimage.
+- **Used by:** `WalletSync`.
+
+## Function: InteractionLog
+
+- **Purpose:** Root-mounted effect for the first-party interaction log. Renders nothing.
+- **Inputs:** None. Reads `usePathname` and whether `useAuthStore` holds a session.
+- **Returns / side effects:** `null`. Runs `startInteractionLog` while mounted. While signed in it records `screen_view` for every path (query and fragment are never sent), and `profile_opened` with the account id on `/members/:accountId`. Signed out it records nothing.
+- **Used by:** `RootLayout`.
+
+## Function: logInteraction
+
+- **Purpose:** Queues one interaction of the signed-in member for `POST /me/events`: `screen_view`, `post_created`, `reply_created`, `gift_sent`, `payment_sent`, `payment_received_seen`, `pos_charge_created`, `pos_charge_paid_seen`, `wallet_unlocked`, `wallet_locked`, `search`, `shop_opened`, `profile_opened`, `login`, or `signup_completed`.
+- **Inputs:** The event name and optional flat `props` (ids, amounts, counts, flags; the only free text is a search term).
+- **Returns / side effects:** None. Without a session nothing is kept, so anonymous visits are never recorded. The event carries the time (ISO 8601), the current path without query or fragment (the access key of `/view/:viewKey` and `/view-key/:viewKey` is replaced by `[key]`), and the cleaned props: at most 12, keys that are short identifiers and do not name a secret (`mnemonic`, `phrase`, `seed`, `prf`, `preimage`, `secret`, `token`, `password`, `privkey`, `private`, `session`), values that are strings of at most 200 characters, finite numbers, booleans, or `null`, and never a string that looks like a recovery phrase (12 or more words), 64 or more hex digits, or a bearer token. At most 500 events wait; the oldest are dropped first. A full batch of 50 is sent at once.
+- **Used by:** `InteractionLog`, `WalletSync`, `reportWallet`, `payFromWallet`, `useWalletPay`, `usePasskeyLogin`, `postMessage`, `postMessageVideo`, `createPosCharge`, `PosTill`, `searchMentionAccounts`, `PlacesMapScreen`.
+
+## Function: flushInteractions
+
+- **Purpose:** Sends the queued interactions with `POST /me/events` `{ events }` in batches of `INTERACTION_BATCH_SIZE` (50).
+- **Inputs:** Optional `keepalive` (set while the page is hidden or closing, so the request outlives the page).
+- **Returns / side effects:** A promise that never rejects. Without a session the queue is dropped. A failed batch goes back to the front of the queue (still at most 500 events) and the next flush tries again. One flush runs at a time; a second call while one runs returns at once.
+- **Used by:** `logInteraction` (full batch) and `startInteractionLog`.
+
+## Function: startInteractionLog
+
+- **Purpose:** Starts sending the interaction queue while the app is open.
+- **Inputs:** None.
+- **Returns / side effects:** Flushes every `INTERACTION_FLUSH_MS` (10 s), and with `keepalive` when the document becomes hidden or on `pagehide`. Returns the function that stops the timer and removes both listeners.
+- **Used by:** `InteractionLog`.
 
 ## Function: WalletPhraseScreen
 
@@ -4252,6 +4329,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Client hook for passkey login. The api's authentication options already carry `extensions.prf.eval.first`, so the login prompt can return PRF output; the hook adds nothing to the request. Login PRF output is used only when that request's `prf.eval.first` equals the app's own `prfEvalFirstSalt`; a missing, unreadable, or different salt counts as absent. `login` authenticates with an existing passkey. When authenticate returns `NotAllowedError` and `isInAppBrowser()` is false, status becomes `choice` and registration is not started. When authenticate returns `NotAllowedError` while `isInAppBrowser()` is true, status becomes `unsupported` and register is not started. From `choice`, `authenticate` never falls through to register; `register()` (no view key) sets status `name` and starts neither `startPasskeyRegistration` nor `credentials.create`. `submitName` normalizes and, when valid, calls `startPasskeyRegistration(undefined, normalized)` then the existing create ceremony. `register(viewKey)` starts the claim immediately and does not show `name`. User cancel (`NotAllowedError` or `AbortError`) after a named create returns to `name`, not `choice`. After a choice was offered, user cancel (`NotAllowedError` or `AbortError`) on those ceremonies returns to `choice`; direct `authenticate` / `register(viewKey)` from `ViewProfileClaim` never sets that flag, so cancel returns to `idle`. Status `unknown` is authenticate finish `Unknown credential`: the hook calls `signalUnknownCredential` best-effort with the ceremony `rpId` and `credential.id` before showing it, and a later user-cancel returns to `unknown` while that flag is set. On iOS/iPadOS WebKit (including iPadOS desktop-site: Macintosh UA, MacIntel, maxTouchPoints > 1), `credentials.get` / `credentials.create` omit AbortSignal. `cancel` aborts an in-flight WebAuthn prompt and clears the choice flag. `register(viewKey?)` forwards an optional view key for public profile claim; `retry` after `register(viewKey)` resends the same key. `login` never sends a view key. Finish `WrongAccountError` clears the session, sets `wrongAccount`, status `error` with that message, and does not fall through to discoverable registration. `register` requires WebAuthn PRF on create; missing PRF aborts with `wallet.prfUnsupported` and does not finish. Registration and login now hand the PRF output they already hold to `rememberPhraseFromPrf` just before the session is stored with `setAuth` (no extra prompt; what is sent to the api is unchanged); with the wallet configured, a login reports `client.passkey.login.prf` with `prfPresent` as a boolean only; without PRF output nothing happens. `login` / `authenticate` call `clearSessionPhrase`. On iPhone, iPad, or iPod below iOS 18, a named create still does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `iOS <installed> below 18 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `iOS <installed> below 18 at prf.absent`. Both throw `login.iosVersion` instead of a silent cancel or `wallet.prfUnsupported`. On Android below 9, a named create does not finish the account. `NotAllowedError` or `AbortError` from create or from the extra-key read reports `client.passkey.register.ceremony` with `name`, `prfPresent: false`, the begin `challengeId`, `accountId` when `user.id` decodes as a UUID, and message `Android <installed> below 9 at create` or `at prf`, then the browser text when it fits the diagnostic allowlist. A missing extra key reports `client.passkey.register.prf` with `prfPresent: false`, those same ids, and message `Android <installed> below 9 at prf.absent`. Both throw `login.androidVersion` instead of a silent cancel or `wallet.prfUnsupported`. Every failed login posts `client.passkey.login.fail` before the card changes, even when no account id exists: the browser `name`, the allowlisted `message` when that text fits, and the begin `challengeId` when it is 64 hex. That row is written when `credentials.get` throws, when the assertion is missing, and when an in-app browser stops the ceremony first (stage `login` or `authenticate`, message `in-app browser`). A dismissed register that is not an old-iOS or old-Android stop posts `client.passkey.register.fail` with those fields, and `accountId` only when `user.id` decodes as a UUID. A failed login row and a dismissed register that is not an old-iOS or old-Android stop prefix the allowlisted message with `iOS <installed>` or `Android <installed>` when the user agent parses (iOS preferred), including versions new enough to pass the gate. Desktop and a user agent with no version token stay unprefixed. A cancelled named create stays on `name`; claim and paths before the name stay `choice`, `idle`, or `unsupported`. Begin and finish failures keep their own rows and do not need an account id.
 - **Inputs:** None (reads `useAuthStore`; calls `isInAppBrowser` on authenticate `NotAllowedError`, `iosPasskeyBlock` and `androidPasskeyBlock` on register, and `iosInstalledVersion` and `androidInstalledVersion` when a failed attempt is reported).
 - **Returns / side effects:** `{ status, login, register, submitName, authenticate, retry, cancel, error, nameError }` with `status` in `idle | starting | error | unsupported | choice | unknown | name`. `error` is the last `Error.message` when `status === 'error'`, else `null`. `nameError` is `invalid`, `taken`, or `null` while `status === 'name'`, else `null`. After a named create, `retry` returns to the name form and does not start create again. `retry` after `register(viewKey)` sends the same key again. `retry` after `authenticate` repeats authenticate. The single login button repeats login. Calls WebAuthn and the api. Unmount still aborts the controller and clears the choice flag. A successful login or registration starts `rememberPhraseFromPrf` before `setAuth`, so listeners reacting to the new session wait for that derivation. For a new registration, the same sign-up passkey therefore supplies the phrase that background wallet setup uses after the username is saved; there is no extra prompt.
+- **Interaction log:** After the session is stored, a completed registration is recorded as `signup_completed` and a completed login as `login`.
 - **Used by:** `OnboardingGate`, `LoginCard`, `LogoutButton`, and `ViewProfileClaim`.
 
 ## Function: fetchComposeTarget
@@ -4577,7 +4655,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Load username suggestions for an `@` token. Calls same-origin GET `/forum/mentions`, adding `q` only when the prefix is non-empty.
 - **Inputs:** Bearer session and a lowercase prefix (`""` for the first page).
 - **Returns / side effects:** `{ id, username, name }[]`. Throws when the response is not 200 or the body is not that list.
-- **Used by:** `MentionTextarea`, `ShopAccountControl`, and `DailyPaymentAmountsScreen`.
+- **Used by:** `MentionTextarea`, `ShopAccountControl`, and `DailyPaymentAmountsScreen`. A non-empty search is recorded as `search` with the term and the number of results.
 
 ## Function: proxyForumMentionsGet
 
