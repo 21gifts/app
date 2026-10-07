@@ -73,6 +73,14 @@ import {
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 
+/** The pay card's labeled **Send** (the composer's icon Send carries an aria-label instead). */
+function paySend(): HTMLElement | null {
+  return (
+    screen.queryAllByRole('button', { name: 'Send' }).find((b) => !b.hasAttribute('aria-label')) ??
+    null
+  );
+}
+
 const listMock = vi.mocked(fetchConversations);
 const threadMock = vi.mocked(fetchConversation);
 const groupMock = vi.mocked(fetchModeratorGroup);
@@ -2289,7 +2297,10 @@ describe('InboxLoader in-app wallet pay', () => {
     expect(await screen.findByText('Hello')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Pay from wallet' }));
+    await waitFor(() => {
+      expect(paySend()).not.toBeNull();
+    });
+    fireEvent.click(paySend() as HTMLElement);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(send).toHaveBeenCalledTimes(1);

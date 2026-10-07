@@ -343,7 +343,7 @@ describe('useWalletPay one tap unlock and pay', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it('turns neutral 60 s after an automatic send, like Pay from wallet', async () => {
+  it('turns neutral 60 s after an automatic send, like Send', async () => {
     vi.useFakeTimers();
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     lockedWith(send);
@@ -634,7 +634,7 @@ describe('useWalletPay one tap unlock and pay', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
-  it('leaves an already open wallet unchanged: fee ₿0 still waits for Pay from wallet', async () => {
+  it('leaves an already open wallet unchanged: fee ₿0 still waits for Send', async () => {
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
@@ -917,7 +917,7 @@ describe('useWalletPay balance after insufficient', () => {
     expect(result.current.missingSats).toBeNull();
   });
 
-  it('counts the fee of an insufficient send in the missing amount, and waits for Pay from wallet after the top-up', async () => {
+  it('counts the fee of an insufficient send in the missing amount, and waits for Send after the top-up', async () => {
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     setWallet('ready', 10);
     vi.mocked(payFromWallet)

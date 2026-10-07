@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within, waitFor } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
@@ -25,6 +25,14 @@ import {
   resetWallet,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+/** The pay card's labeled **Send** (the composer's icon Send carries an aria-label instead). */
+function paySend(): HTMLElement | null {
+  return (
+    screen.queryAllByRole('button', { name: 'Send' }).find((b) => !b.hasAttribute('aria-label')) ??
+    null
+  );
+}
 
 vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
@@ -3730,7 +3738,9 @@ describe('InboxScreen in-app wallet pay', () => {
   it('pays the gift from a ready wallet, with no invoice QR and no wallet-app button', async () => {
     setWalletUsable('ready');
     renderWithLocale(inbox(SPARK_INVOICE));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    await waitFor(() => {
+      expect(paySend()).not.toBeNull();
+    });
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expectWalletOnly();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
@@ -3739,7 +3749,9 @@ describe('InboxScreen in-app wallet pay', () => {
   it('pays the payment request from the wallet without a sparkInvoice', async () => {
     setWalletUsable('ready');
     renderWithLocale(inbox(null));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    await waitFor(() => {
+      expect(paySend()).not.toBeNull();
+    });
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1test' });
     expectWalletOnly();
   });
@@ -3760,16 +3772,16 @@ describe('InboxScreen in-app wallet pay', () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderWithLocale(inbox(SPARK_INVOICE));
     expect(payFromWallet).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(paySend()).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(paySend()).toBeNull();
   });
 
-  it('unlocks with one tap and stops at the fee and Pay from wallet when the fee is above ₿0', async () => {
+  it('unlocks with one tap and stops at the fee and Send when the fee is above ₿0', async () => {
     unlockSetsReady();
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(payFromWallet).mockResolvedValue({
@@ -3780,7 +3792,9 @@ describe('InboxScreen in-app wallet pay', () => {
     });
     renderWithLocale(inbox(SPARK_INVOICE));
     fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    await waitFor(() => {
+      expect(paySend()).not.toBeNull();
+    });
     expect(screen.getByText(/Fee ₿3/)).toBeTruthy();
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(send).not.toHaveBeenCalled();
