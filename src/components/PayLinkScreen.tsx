@@ -32,21 +32,16 @@ function PayLinkAmount(props: {
   onValueChange: (value: string) => void;
   disabled: boolean;
   onUnitChange: (unit: AmountUnit) => void;
-  onRate: (day: FiatRateDay | null) => void;
+  rateDay: FiatRateDay | null;
 }): ReactElement {
   const { t } = useTranslations();
-  const rateDay = useSpotRate();
-  const { onRate } = props;
-  useEffect(() => {
-    onRate(rateDay);
-  }, [onRate, rateDay]);
   return (
     <AmountEntry
       label={t('pay.amount')}
       placeholder={t('pay.amountPlaceholder')}
       value={props.value}
       disabled={props.disabled}
-      rateDay={rateDay}
+      rateDay={props.rateDay}
       onUnitChange={props.onUnitChange}
       onValueChange={props.onValueChange}
     />
@@ -112,11 +107,13 @@ function openWallet(invoice: string): void {
 }
 
 /** Viewer's fiat for a till amount, or nothing when no spot rate is ready. */
-function ChargeFiat(props: { amountSats: number }): ReactElement | null {
+function ChargeFiat(props: {
+  amountSats: number;
+  rateDay: FiatRateDay | null;
+}): ReactElement | null {
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
-  const rateDay = useSpotRate();
-  const amount = satsToFiatAmount(props.amountSats, rateDay, fiat);
+  const amount = satsToFiatAmount(props.amountSats, props.rateDay, fiat);
   if (amount === null) {
     return null;
   }
@@ -203,8 +200,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const { numberFormat } = useNumberFormat();
   const [unit, setUnit] = useState<AmountUnit>('btc');
   const [now, setNow] = useState(() => Date.now());
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
   const [profile, setProfile] = useState<PayProfile | null>(null);
+  const rateDay = useSpotRate(profile !== null);
   const [invalid, setInvalid] = useState(false);
   const [amount, setAmount] = useState('');
   const [formError, setFormError] = useState<'amount' | 'rate' | 'failed' | null>(null);
@@ -451,7 +448,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
                   {formatBitcoin(activeSats, numberFormat)}
                 </p>
-                <ChargeFiat amountSats={activeSats} />
+                <ChargeFiat amountSats={activeSats} rateDay={rateDay} />
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}
@@ -485,7 +482,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   disabled={posting}
                   onUnitChange={setUnit}
                   onValueChange={setAmount}
-                  onRate={setRateDay}
+                  rateDay={rateDay}
                 />
                 <Button type="submit" className="w-full" disabled={posting}>
                   {t('forum.payContinue')}

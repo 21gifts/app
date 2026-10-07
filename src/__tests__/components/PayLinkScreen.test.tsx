@@ -733,6 +733,10 @@ describe('PayLinkScreen', () => {
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByText('$200.00')).toBeTruthy();
+    const spotCalls = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => String(input).includes('/fx/spot'));
+    expect(spotCalls).toHaveLength(1);
   });
 
   it('returns to the amount form when the till runs out', async () => {
