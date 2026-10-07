@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { AppShellFooter } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -14,6 +14,8 @@ export interface WalletFooterActionsProps {
   onSend: () => void;
   /** Whether Send is disabled. */
   sendDisabled: boolean;
+  /** The button to focus when the buttons come back after a view closed, or `null`. */
+  focus?: 'receive' | 'send' | null;
 }
 
 /**
@@ -22,7 +24,8 @@ export interface WalletFooterActionsProps {
  * the scrollport, so they stay in place while the page scrolls. Above them an
  * 18px fade with a light blur lets the page end softly instead of at a hard
  * edge. Below 360px the icons drop and the side padding shrinks so long
- * labels fit at 320px. Used by `/wallet` and `/welcome`.
+ * labels fit at 320px. When they come back after a view closed, the button
+ * that opened it takes the focus again. Used by `/wallet` and `/welcome`.
  *
  * @param props - Open handlers and whether Send is disabled.
  * @returns The footer registration.
@@ -31,8 +34,16 @@ export function WalletFooterActions({
   onReceive,
   onSend,
   sendDisabled,
+  focus = null,
 }: WalletFooterActionsProps): ReactElement {
   const { t } = useTranslations();
+  const receiveRef = useRef<HTMLButtonElement>(null);
+  const sendRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (focus !== null) {
+      (focus === 'receive' ? receiveRef : sendRef).current?.focus({ preventScroll: true });
+    }
+  }, [focus]);
   const iconClass = 'h-5 w-5 max-[359px]:hidden';
   const buttonClass = 'min-h-14 text-base max-[359px]:px-2';
   return (
@@ -45,6 +56,7 @@ export function WalletFooterActions({
       </div>
       <div className="mx-auto grid w-full max-w-sm grid-cols-2 gap-3 pt-2">
         <Button
+          ref={receiveRef}
           size="lg"
           className={buttonClass}
           icon={<ArrowDownRight aria-hidden="true" className={iconClass} />}
@@ -53,6 +65,7 @@ export function WalletFooterActions({
           {t('wallet.receive')}
         </Button>
         <Button
+          ref={sendRef}
           size="lg"
           className={buttonClass}
           icon={<ArrowUpRight aria-hidden="true" className={iconClass} />}

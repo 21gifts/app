@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { WalletReceive } from '@/components/WalletReceive';
 import { WalletSend } from '@/components/WalletSend';
@@ -23,7 +23,8 @@ export interface WalletPanelViewProps {
 
 /**
  * The open Receive or Send view as the page body (on `/wallet` and over
- * `/welcome`), with an `sr-only` **h1** **Wallet**. The Send input step's
+ * `/welcome`), with an `sr-only` **h1** **Wallet** that takes the focus when
+ * the view opens (the button that opened it is gone). The Send input step's
  * camera fills the page port itself (see {@link WalletSend}).
  *
  * @param props - The open view, send flow, wallet readiness, and the manual-entry sheet.
@@ -37,13 +38,23 @@ export function WalletPanelView({
   onManualEntry,
 }: WalletPanelViewProps): ReactElement | null {
   const { t } = useTranslations();
+  const heading = useRef<HTMLHeadingElement>(null);
+  // The control that opened the view goes away, so focus moves into the view.
+  useEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+  }, [panel]);
+  const title = (
+    <h1 ref={heading} tabIndex={-1} className="sr-only">
+      {t('wallet.title')}
+    </h1>
+  );
   if (panel === 'send') {
     if (send === undefined) {
       return null;
     }
     return (
       <Card surface={false}>
-        <h1 className="sr-only">{t('wallet.title')}</h1>
+        {title}
         <WalletSend
           send={send}
           walletReady={walletReady}
@@ -55,7 +66,7 @@ export function WalletPanelView({
   }
   return (
     <Card surface={false}>
-      <h1 className="sr-only">{t('wallet.title')}</h1>
+      {title}
       <WalletReceive />
     </Card>
   );
