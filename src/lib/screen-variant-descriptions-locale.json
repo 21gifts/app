@@ -2054,6 +2054,21 @@
     "es": "El mismo miembro, después de pulsar Quién aportó y a quién se devuelve en un crédito lleno. Aportado enumera a Bea. Devolución muestra el gráfico y la parte de Bea Pendiente.",
     "fil": "Parehong miyembro, matapos pindutin ang Sino ang nagbigay at sino ang ibabalik sa isang punong utang. Naibigay ay nagtatala kay Bea. Ibabalik ay nagpapakita ng tsart at bahagi ni Bea na Dapat na."
   },
+  "/members/[accountId]:posts-open-repay-today": {
+    "de": "Identitätskarte des angemeldeten Mitglieds; Beiträge gedrückt; der aufgeführte Beitrag ist ihr eigener voller Kredit (accountId stimmt mit dem angemeldeten Konto überein, sats entspricht goalSats). Heutige Rate zahlen ist sichtbar. Der Plan bleibt geschlossen.",
+    "es": "Tarjeta de identidad del miembro con sesión iniciada; Publicaciones pulsado; la publicación listada es su propio crédito lleno (accountId coincide con la cuenta con sesión iniciada, sats es igual a goalSats). Pagar la cuota de hoy está visible. El plan permanece cerrado.",
+    "fil": "Kard ng pagkakakilanlan ng naka-log-in na miyembro; naka-pindot ang Mga tala; ang nakalistang tala ay sarili niyang punong utang (tugma ang accountId sa account na naka-log in, sats ay katumbas ng goalSats). Nakikita ang Bayaran ang hulog ngayon. Sarado pa ang plano."
+  },
+  "/members/[accountId]:posts-open-repay-today-error": {
+    "de": "Dieselbe finanzierte Kredit-Notiz wie posts-open-repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Der POST ist fehlgeschlagen, und der Hinweis Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen ist sichtbar. Es gibt keinen Rechnungs-QR.",
+    "es": "La misma nota de crédito financiado que posts-open-repay-today, después de pulsar Pagar la cuota de hoy. El POST falló, y la alerta La wallet del autor no puede recibir este pago en Bitcoin es visible. No hay código QR de factura.",
+    "fil": "Parehong tala ng pondong utang tulad ng posts-open-repay-today, pagkatapos pindutin ang Bayaran ang hulog ngayon. Nabigo ang POST, at nakikita ang alerto Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito. Walang QR ng resibo."
+  },
+  "/members/[accountId]:posts-open-repay-today-invoice": {
+    "de": "Dieselbe Notiz wie posts-open-repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Die Rechnungskarte ist offen, Mit Wallet of Satoshi zahlen. Das Betragsformular wird nicht angezeigt.",
+    "es": "La misma nota que posts-open-repay-today, después de pulsar Pagar la cuota de hoy. La tarjeta de factura está abierta, Pagar con Wallet of Satoshi. El formulario de importe no se muestra.",
+    "fil": "Parehong tala tulad ng posts-open-repay-today, pagkatapos pindutin ang Bayaran ang hulog ngayon. Bukas ang kahon ng resibo, Magbayad gamit ang Wallet of Satoshi. Hindi ipinapakita ang pormularyo ng halaga."
+  },
   "/welcome:all": {
     "de": "Klick Alle — Bobs unbezahlte Notiz (Does anyone have spare sats this week?) ist sichtbar mit Ada und Carol; Listenreihenfolge neueste zuerst (Ada, Carol, Bob).",
     "es": "Clic Todos — la nota impaga de Bob (Does anyone have spare sats this week?) es visible con Ada y Carol; orden de lista más reciente primero (Ada, Carol, Bob).",
