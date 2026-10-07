@@ -6,8 +6,10 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton } from '@/components/ui';
+import { WalletLoginCard } from '@/components/WalletLoginCard';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
@@ -47,6 +49,8 @@ export function ViewProfileClaim({
   const router = useRouter();
   const { ready } = useHydrateSession();
   const account = useAuthStore((state) => state.account);
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  const walletOpen = useWalletOpen();
   const passkey = usePasskeyLogin();
   const claimAttemptedRef = useRef(false);
   const claimedLoginRef = useRef(false);
@@ -110,6 +114,12 @@ export function ViewProfileClaim({
   }
 
   if (claimedLoginRef.current) {
+    // Logging in here opens the wallet like everywhere else: until it is
+    // open, and while the session is held back after it could not be, the
+    // same login card stands in place, so its alert stays.
+    if ((account !== null && !walletOpen) || lockedSession !== null) {
+      return <WalletLoginCard />;
+    }
     if (account !== null) {
       return null;
     }
