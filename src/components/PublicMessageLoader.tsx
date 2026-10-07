@@ -17,8 +17,8 @@ import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
+import { useActiveSession } from '@/hooks/useActiveSession';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import { useWalletOpen } from '@/hooks/useWalletOpen';
 import {
   fetchForumMessage,
   fetchPublicMessage,
@@ -254,12 +254,14 @@ function PublicThreadCard({
 
 /**
  * Client loader for `/messages/[id]`: validates the UUID, waits for session
- * hydrate, then fetches the note. Any session uses bearer
- * {@link fetchForumMessage} / {@link fetchReplies}. A hidden note is still
+ * hydrate, then fetches the note. A session whose wallet is open (or an
+ * account that cannot hold one) uses bearer {@link fetchForumMessage} /
+ * {@link fetchReplies}; a login whose wallet is still opening counts as
+ * signed out here until it is open. A hidden note is still
  * 404 for a non-moderator (missing). Everyone else uses the public fetch.
  * Opening a reply UUID still shows the parent thread. Unsigned visitors keep
- * the read-only cards. When hydrate is ready and both session and account are
- * set, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
+ * the read-only cards. When hydrate is ready, both session and account are
+ * set, and the wallet is open, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
  * so copy, reply, Gift on a payable nested reply, and staff delete work.
  * Passes optional `seedReply` when the highlighted row is a hidden reply. A
  * signed-in load that reaches ready with a root marks that root's
@@ -273,12 +275,10 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const { t, locale } = useTranslations();
   const { fiat } = useFiatPreference();
   const { ready } = useHydrateSession();
-  const storeSession = useAuthStore((state) => state.session);
-  const account = useAuthStore((state) => state.account);
-  const walletOpen = useWalletOpen();
   // A login whose wallet is still opening counts as signed out here: no
   // signed-in fetch and no notification marked read until it is open.
-  const session = account !== null && !walletOpen ? null : storeSession;
+  const session = useActiveSession();
+  const account = useAuthStore((state) => state.account);
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
   );

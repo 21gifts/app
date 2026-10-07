@@ -10374,6 +10374,67 @@ test('Function: PublicMessageThread — signed-in permalink shows Copy link to t
   await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
 });
 
+test('Function: useActiveSession — an open signed-in session loads the permalink with the bearer route', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const signedNote = {
+    id,
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis',
+    replyCount: 0,
+    accountId: 'acc_e2e',
+  };
+  await seedAdaSession(page);
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(signedNote),
+    });
+  });
+  await page.route(`**/forum/messages/${id}`, async (route) => {
+    if (route.request().url().includes('/replies')) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(signedNote),
+    });
+  });
+  const signedRequests: string[] = [];
+  page.on('request', (req) => {
+    if (req.url().endsWith(`/forum/messages/${id}`)) {
+      signedRequests.push(req.url());
+    }
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
+  // Playwright builds count the wallet as open, so the session is active.
+  expect(signedRequests.length).toBeGreaterThan(0);
+});
+
 test('Function: generateMetadata — public note HTML includes og:title', async ({ request }) => {
   const res = await request.get('/messages/11111111-1111-4111-8111-111111111111');
   expect(await res.text()).toContain('property="og:title"');
