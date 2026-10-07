@@ -23139,7 +23139,8 @@ test.describe('inbox screens', () => {
 
   test('messages thread-wallet-pay-confirm', async ({ page }) => {
     await openInboxWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    // The pay card's labeled Send, not the composer's icon-only Send (aria-label).
+    await expect(page.locator('button:not([aria-label])', { hasText: /^Send$/ })).toBeVisible();
     await shotScreen(page, 'state-messages-thread-wallet-pay-confirm');
   });
 
