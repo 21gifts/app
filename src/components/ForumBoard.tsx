@@ -278,7 +278,7 @@ export interface ForumBoardProps {
   /**
    * Current spot rate for unsent previews (pay sheet, unpaid invoice).
    * Settled ₿ amounts use the fiat stored on the row. Omit or `null` when
-   * stats have not loaded — previews stay ₿-only.
+   * the spot rate has not loaded — previews stay ₿-only.
    */
   rateDay?: FiatRateDay | null;
   /** Selected feed mode. Default in the loader is Active. */

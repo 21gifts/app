@@ -279,7 +279,7 @@ export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): Sho
  * rate, or one gift day's totals on the statistics pages.
  *
  * @param sats - Whole sats to convert (may be 0).
- * @param day - Gift day with `sats > 0`, or `null`.
+ * @param day - Rate with `sats > 0` (the spot rate, or a gift day on the statistics pages), or `null`.
  * @param code - Selected fiat.
  * @returns Two-decimal string, or `null` when the day or that fiat is missing
  *   or zero (a `"0.00"` price is not a usable rate).
@@ -317,7 +317,7 @@ export function satsToFiatAmount(
  * or when no digit count round-trips.
  *
  * @param sats - Whole sats to show.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns A plain dot-decimal string, or `null`.
  */
@@ -367,7 +367,7 @@ const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
  * Inverse of {@link satsToFiatAmount} on the same rate.
  *
  * @param amount - Fiat amount (not a grouped string).
- * @param day - Gift day with `sats > 0`, or `null`.
+ * @param day - Rate with `sats > 0` (the spot rate, or a gift day on the statistics pages), or `null`.
  * @param code - Selected fiat.
  * @returns Whole sats, `0` when `amount` is 0, `1` when a positive amount
  *   rounds to 0, or `null` when the day or that fiat is missing or zero.
@@ -402,7 +402,7 @@ export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCo
  *
  * @param unit - `btc` for digits-only sats, `fiat` for up to eight decimal places.
  * @param draft - Raw field value.
- * @param day - Gift day used for fiat conversion, or `null`.
+ * @param day - Rate used for fiat conversion (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns `empty` when blank, `invalid` when the text is not an amount
  *   or a well-formed amount on a usable total that does not become a safe
@@ -454,7 +454,7 @@ export function parseAmountDraft(
  *
  * @param draft - Raw field value.
  * @param unit - Active typing unit.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats, `empty`, or `invalid`.
  */
@@ -479,7 +479,7 @@ export function replySatsFromDraft(
  *
  * @param draft - Raw field value.
  * @param unit - Active typing unit.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats, or `invalid`.
  */
