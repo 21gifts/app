@@ -339,7 +339,7 @@ test.describe('wallet history', () => {
     );
   });
 
-  test('Function: useLatestRateDayState — the payment screen shows its amounts only with the loaded fiat', async ({
+  test('Function: useSpotRateState — the payment screen shows its amounts only with the loaded fiat', async ({
     page,
   }) => {
     let release: () => void = () => undefined;
@@ -348,7 +348,7 @@ test.describe('wallet history', () => {
     });
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     // After signIn, so this hold wins over its rate answer (the latest route is used first).
-    await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
+    await page.route('**/fx/spot', async (route) => {
       await held;
       await route.fallback();
     });
