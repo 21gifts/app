@@ -93,14 +93,18 @@ describe('WalletLoginCard', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('ignores an outcome after unmount', async () => {
+  it('still holds the session back when the open fails after unmount', async () => {
     const pending = deferredOutcome();
     vi.mocked(finishWalletOpen).mockReturnValue(pending.promise);
-    useAuthStore.setState({ session: 'token', account });
+    useAuthStore.setState({ session: 'token', account, lockedSession: null });
     const { unmount } = renderWithLocale(<WalletLoginCard />);
     unmount();
     await act(async () => pending.resolve('failed'));
-    expect(useAuthStore.getState().session).toBe('token');
+    expect(useAuthStore.getState()).toMatchObject({
+      session: null,
+      account: null,
+      lockedSession: 'token',
+    });
   });
 
   it('ignores an outcome belonging to a replaced session', async () => {
