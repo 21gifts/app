@@ -107,9 +107,9 @@ function hasSeedPasskey(credentialId: string | null | undefined): boolean {
 
 /**
  * Owns recovery-phrase add / show state for the signed-in `/wallet`
- * screen. Shows the 12 words in component state. When the unlocked wallet
+ * screen. Shows the 12 words in component state. When the open wallet
  * already holds them in tab memory, shows those without a passkey prompt.
- * Otherwise derives them from WebAuthn PRF, and the same prompt unlocks the
+ * Otherwise derives them from WebAuthn PRF, and the same prompt opens the
  * wallet. Hiding the words does not lock the wallet.
  *
  * @returns View, status, words, and actions.
@@ -251,7 +251,7 @@ export function useWalletPhrase(): UseWalletPhraseResult {
     setStatus('busy');
     setError(null);
     try {
-      // An unlocked wallet already holds the words in tab memory, also while
+      // An open wallet already holds the words in tab memory, also while
       // the login is still deriving them: show those without a second prompt.
       await settlePhraseDerivations();
       if (abandonStaleSession(token, setError, setStatus)) {

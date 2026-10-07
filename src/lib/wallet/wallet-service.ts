@@ -396,7 +396,7 @@ export interface WalletOnchainFees {
  *   to this address; `minSats` is that smallest amount.
  * - `failed`: prepare or the balance read failed, or the connection changed
  *   during prepare or that read.
- * - `unlock`: no wallet connection; the member has to unlock first.
+ * - `unlock`: no wallet connection yet (the phrase is not in tab memory).
  */
 export type WalletPayResult =
   | {

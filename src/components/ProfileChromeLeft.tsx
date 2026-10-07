@@ -40,7 +40,7 @@ export interface ProfileChromeLeftProps {
  *
  * Back is a link to the previous in-app view, or `/welcome` when this tab has
  * none. A plain click marks that path with {@link markBackNavigation} and the
- * link opens it client-side, so the document and the unlocked wallet in tab
+ * link opens it client-side, so the document and the open wallet in tab
  * memory stay. The first client render matches SSR (`/welcome`, `profile.back`). An
  * ask or shop wizard override replaces the history link with a button. The wordmark is
  * not the back control. `hideHistoryArrow` omits the history arrow; a wizard
