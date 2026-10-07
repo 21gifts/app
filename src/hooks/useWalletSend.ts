@@ -520,11 +520,14 @@ export function useWalletSend(): UseWalletSendResult {
   }, []);
 
   /**
-   * Ends a run whose handler threw unexpectedly with one plain alert on the
-   * input step. The handler already passed its own staleness check, and the
-   * throw reaches this in the next microtask, so no Cancel lands in between.
+   * Ends `run` with one plain alert on the input step when its read rejected
+   * or its handler threw unexpectedly. A run that a Cancel, a new run or a
+   * locked wallet already ended stays ended.
    */
-  const failRun = useCallback((error: WalletSendError): void => {
+  const failRun = useCallback((run: number, error: WalletSendError): void => {
+    if (run !== generation.current || !walletCanSend()) {
+      return;
+    }
     setBusy(false);
     setState({ step: 'input', error });
   }, []);
@@ -602,7 +605,7 @@ export function useWalletSend(): UseWalletSendResult {
           });
         })
         .catch(() => {
-          failRun('failed');
+          failRun(run, 'failed');
         });
     },
     [failRun],
@@ -775,7 +778,7 @@ export function useWalletSend(): UseWalletSendResult {
           },
         )
         .catch(() => {
-          failRun('unreadable');
+          failRun(run, 'unreadable');
         });
       return;
     }
@@ -843,7 +846,7 @@ export function useWalletSend(): UseWalletSendResult {
           setState({ step: 'amount', target, amountError: false });
         })
         .catch(() => {
-          failRun('unreadable');
+          failRun(run, 'unreadable');
         });
     };
     const shop = ownShop(text, window.location.hostname);
@@ -868,7 +871,7 @@ export function useWalletSend(): UseWalletSendResult {
         });
       })
       .catch(() => {
-        failRun('unreadable');
+        failRun(run, 'unreadable');
       });
   }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount, failRun]);
 
