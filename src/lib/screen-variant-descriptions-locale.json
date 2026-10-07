@@ -45,9 +45,9 @@
     "fil": "Naghihintay sa GET /gifts. Teksto Naglo-load…"
   },
   "/members/[accountId]:shop-edit-text": {
-    "de": "Noch einmal weiter. Schritt 3 / 5 · Text ist offen.",
-    "es": "Siguiente otra vez. Paso 3 / 5 · Texto está abierto.",
-    "fil": "Susunod muli. Hakbang 3 / 5 · Bukas ang teksto."
+    "de": "Noch einmal weiter. Schritt 3 von 5 · Text ist offen.",
+    "es": "Siguiente otra vez. Paso 3 de 5 · Texto está abierto.",
+    "fil": "Susunod muli. Hakbang 3 sa 5 · Bukas ang teksto."
   },
   "/contact:default": {
     "de": "Ruhender Verfasser mit Einleitung und Link zu den Regeln.",
@@ -277,7 +277,7 @@
   "/welcome:ask-preview-several": {
     "de": "Schritt 4 von 4 der Anfrage, Einmalig gedrückt, zwei Fotos und keine Bildunterschrift.",
     "es": "Paso 4 de 4 de Pedir, Una vez pulsado, dos fotos y sin pie de foto.",
-    "fil": "Ika-4 na hakbang sa 4 ng Hiling, napindot ang Pang-isahang beses, dalawang litrato at walang paliwanag."
+    "fil": "Ika-4 na hakbang sa 4 ng Hiling, napindot ang Isang beses, dalawang litrato at walang paliwanag."
   },
   "/welcome:composer-video": {
     "de": "MP4-Vorschau im Verfasser und Video entfernen; Textfeld leer.",
@@ -450,9 +450,9 @@
     "fil": "Pampublikong tala sa Aleman. Ang katawan ay ang German fixture; Nakikita ang Isalin."
   },
   "/members/[accountId]:shop-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 / 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer.",
-    "es": "Siguiente otra vez. Paso 4 / 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío.",
-    "fil": "Susunod ulit. Hakbang 4 / 5 · bukas ang User ng 21.gifts. Walang laman ang pangalan ng gumagamit."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · bukas ang User ng 21.gifts. Walang laman ang pangalan ng gumagamit."
   },
   "/grants/apply:location": {
     "de": "Nach Über mich und einem Foto fragt der nächste Schritt nach dem Wohnort.",
@@ -500,14 +500,14 @@
     "fil": "Naka-encode na JPEG na lampas sa 1 MB → Panatilihing wala pang 1 MB ang litrato at wala pang 32 MB ang bidyo."
   },
   "/welcome:shop-edit-text": {
-    "de": "Erneut Weiter. Schritt 3 / 5 · Text ist geöffnet. Der Shop-Text ist bereits ausgefüllt.",
-    "es": "Siguiente otra vez. Paso 3 / 5 · Texto está abierto. El texto de la tienda ya está rellenado.",
-    "fil": "Muli ang Susunod. Hakbang 3 / 5 · Bukas ang Teksto. Napuno na ang teksto ng tindahan."
+    "de": "Erneut Weiter. Schritt 3 von 5 · Text ist geöffnet. Der Shop-Text ist bereits ausgefüllt.",
+    "es": "Siguiente otra vez. Paso 3 de 5 · Texto está abierto. El texto de la tienda ya está rellenado.",
+    "fil": "Muli ang Susunod. Hakbang 3 sa 5 · Bukas ang Teksto. Napuno na ang teksto ng tindahan."
   },
   "/shops:edit-text": {
-    "de": "Erneut Weiter. Schritt 3 / 5 · Text ist geöffnet. Der Shop-Text ist bereits ausgefüllt.",
-    "es": "Siguiente otra vez. Paso 3 / 5 · Texto está abierto. El texto de la tienda ya está rellenado.",
-    "fil": "Muli ang Susunod. Hakbang 3 / 5 · Bukas ang Teksto. Napuno na ang teksto ng tindahan."
+    "de": "Erneut Weiter. Schritt 3 von 5 · Text ist geöffnet. Der Shop-Text ist bereits ausgefüllt.",
+    "es": "Siguiente otra vez. Paso 3 de 5 · Texto está abierto. El texto de la tienda ya está rellenado.",
+    "fil": "Muli ang Susunod. Hakbang 3 sa 5 · Bukas ang Teksto. Napuno na ang teksto ng tindahan."
   },
   "/grants/apply:apply-failed": {
     "de": "Ein fehlgeschlagenes POST zeigt Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
@@ -725,14 +725,14 @@
     "fil": "Parehong alerto na may paliwanag na Caption with an unsupported photo. nasa kompositor pa."
   },
   "/shops:map-edit-text": {
-    "de": "Erneut Weiter. Schritt 3 / 5 · Text ist geöffnet. Die Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
-    "es": "Otra vez Siguiente. El paso 3 / 5 · Texto está abierto. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
-    "fil": "Muli ang Susunod. Bukas ang Hakbang 3 / 5 · Teksto. Napili pa ang mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Erneut Weiter. Schritt 3 von 5 · Text ist geöffnet. Die Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Otra vez Siguiente. El paso 3 de 5 · Texto está abierto. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Muli ang Susunod. Bukas ang Hakbang 3 sa 5 · Teksto. Napili pa ang mapa. Walang pangalawang pamagat na Mapa."
   },
   "/messages/[id]:shop-edit-text": {
-    "de": "Erneut Weiter. Schritt 3 / 5 · Text ist geöffnet. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
-    "es": "Otra vez Siguiente. El paso 3 / 5 · Texto está abierto. El historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Muli ang Susunod. Bukas ang Hakbang 3 / 5 · Teksto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
+    "de": "Erneut Weiter. Schritt 3 von 5 · Text ist geöffnet. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "Otra vez Siguiente. El paso 3 de 5 · Texto está abierto. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Muli ang Susunod. Bukas ang Hakbang 3 sa 5 · Teksto. Sinasabi pa ng kasaysayan na wala pang mga pagbabago."
   },
   "/shops:mention-inserted": {
     "de": "Die Auswahl von @ada aus dieser offenen Liste schreibt @ada  in den Shop-Text und schließt die Liste.",
@@ -745,9 +745,9 @@
     "fil": "Nabigo ang pagkuha. Hindi ma-load ang Trust Chain. Subukan ulit. at Subukan ulit."
   },
   "/profile:replies-open": {
-    "de": "1 Reaktion ist gedrückt und der Feed zeigt Eine Antwort von Ada. Nadel Eine Antwort von Ada.",
-    "es": "1 reacción está pulsada y la lista muestra Una respuesta de Ada. Aguja Una respuesta de Ada.",
-    "fil": "1 reaksyon ang nakapindot at ipinapakita ng listahan ang Isang tugon mula kay Ada. Karayom Isang tugon mula kay Ada."
+    "de": "1 Reaktion ist gedrückt und der Feed zeigt A reply from Ada. Nadel A reply from Ada.",
+    "es": "1 reacción está pulsada y la lista muestra A reply from Ada. Aguja A reply from Ada.",
+    "fil": "1 reaksyon ang nakapindot at ipinapakita ng listahan ang A reply from Ada. Karayom A reply from Ada."
   },
   "/grants/applications:empty": {
     "de": "Personal (Gründer) hat die Liste mit null offenen Bewerbungen geladen. Keine offenen Bewerbungen.",
@@ -897,7 +897,7 @@
   "/welcome:ask-preview-video-text": {
     "de": "Anfragen, Schritt 4 von 4, Einmalig ist gedrückt, ein Video und die Bildunterschrift Need help with a train ticket.",
     "es": "Pedir, paso 4 de 4, Una vez está pulsado, un vídeo y el pie Need help with a train ticket.",
-    "fil": "Hiling, hakbang 4 sa 4, nakapindot ang Isahan, isang bidyo at ang paliwanag Need help with a train ticket."
+    "fil": "Hiling, hakbang 4 sa 4, nakapindot ang Isang beses, isang bidyo at ang paliwanag Need help with a train ticket."
   },
   "/welcome:composer-place": {
     "de": "Ort hinzufügen ist geöffnet und der Kartenschlüssel ist leer, daher zeigt das Feld Die Karte ist nicht verfügbar.",
@@ -905,9 +905,9 @@
     "fil": "Bukas ang Magdagdag ng lugar at walang laman ang susi ng mapa, kaya sinasabi ng panel na Hindi available ang mapa."
   },
   "/profile:posts-open": {
-    "de": "14 Beiträge ist gedrückt und der Feed zeigt Zweiter Beitrag von Ada. Nadel Zweiter Beitrag von Ada.",
-    "es": "14 publicaciones está pulsado y el listado muestra Segunda publicación de Ada. Aguja Segunda publicación de Ada.",
-    "fil": "Nakapindot ang 14 na post at ipinapakita ng feed ang Pangalawang post mula kay Ada. Karayom Pangalawang post mula kay Ada."
+    "de": "14 Beiträge ist gedrückt und der Feed zeigt Second post from Ada. Nadel Second post from Ada.",
+    "es": "14 publicaciones está pulsado y el listado muestra Second post from Ada. Aguja Second post from Ada.",
+    "fil": "Nakapindot ang 14 na post at ipinapakita ng feed ang Second post from Ada. Karayom Second post from Ada."
   },
   "/notifications:error": {
     "de": "Das Laden der Liste ist fehlgeschlagen. Schaltfläche Erneut versuchen. Text Benachrichtigungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -950,9 +950,9 @@
     "fil": "Ang pagpili kay @ada mula sa bukas na listahan ay nagsusulat ng @ada  sa patlang ng reaksyon at isinasara ang listahan."
   },
   "/shops:add-photos": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 1 / 5 · Bilder. Weiter ist die einzige Schaltfläche. Die Geschäftsliste ist leer.",
-    "es": "Añadir una tienda está abierto en el paso 1 / 5 · Fotos. Siguiente es el único botón. La lista de tiendas está vacía.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 1 / 5 · Mga larawan. Ang Susunod ang tanging pindutan. Walang laman ang listahan ng mga tindahan."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 1 von 5 · Bilder. Weiter ist die einzige Schaltfläche. Die Geschäftsliste ist leer.",
+    "es": "Añadir una tienda está abierto en el paso 1 de 5 · Fotos. Siguiente es el único botón. La lista de tiendas está vacía.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 1 sa 5 · Mga larawan. Ang Susunod ang tanging pindutan. Walang laman ang listahan ng mga tindahan."
   },
   "/members/[accountId]:mention-inserted-reply": {
     "de": "Die Auswahl von @ada aus dieser offenen Liste schreibt @ada  in das Reaktionsfeld und schließt die Liste.",
@@ -965,9 +965,9 @@
     "fil": "Ang pagpili kay @ada mula sa bukas na listahan ay nagsusulat ng @ada  sa patlang ng reaksyon at isinasara ang listahan."
   },
   "/moderate/group:default": {
-    "de": "Moderator. Geladener Gruppendiskussionsfaden mit der Nachricht Hallo Mods. Verfasser sichtbar. Kein Ursprungsfilter.",
-    "es": "Moderador. Hilo de grupo cargado con el mensaje Hola mods. Redactor visible. Sin filtro de origen.",
-    "fil": "Tagapamagitan. Nakarga ang talakayan ng grupo na may mensaheng Kumusta mga mod. Nakikita ang kahon ng pagsulat. Walang salaan ng pinagmulan."
+    "de": "Moderator. Geladener Gruppendiskussionsfaden mit der Nachricht Hello mods. Verfasser sichtbar. Kein Ursprungsfilter.",
+    "es": "Moderador. Hilo de grupo cargado con el mensaje Hello mods. Redactor visible. Sin filtro de origen.",
+    "fil": "Tagapamagitan. Nakarga ang talakayan ng grupo na may mensaheng Hello mods. Nakikita ang kahon ng pagsulat. Walang salaan ng pinagmulan."
   },
   "/messages/[id]:mention-inserted": {
     "de": "Die Wahl von @ada in dieser geöffneten Liste schreibt @ada  in das Reaktionsfeld und schließt die Liste.",
@@ -1015,9 +1015,9 @@
     "fil": "Pinindot ang 1 reaksyon. Ipinapakita ng listahan Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
   },
   "/messages/[id]/author:posts-truncated": {
-    "de": "2 Beiträge gedrückt. Eine Notiz, Robin hat eine Notiz geschrieben, und die gedämpfte Zeile Es werden die neuesten 1 von 2 angezeigt.",
-    "es": "Se pulsaron 2 publicaciones. Una nota, Robin escribió una nota, y la línea atenuada Mostrando las últimas 1 de 2.",
-    "fil": "Pinindot ang 2 tala. Isang tala, Sumulat si Robin ng isang tala, at ang naka-mute na linya Ipinapakita ang pinakabagong 1 sa 2."
+    "de": "2 Beiträge gedrückt. Eine Notiz, Robin wrote a note, und die gedämpfte Zeile Es werden die neuesten 1 von 2 angezeigt.",
+    "es": "Se pulsaron 2 publicaciones. Una nota, Robin wrote a note, y la línea atenuada Mostrando las últimas 1 de 2.",
+    "fil": "Pinindot ang 2 tala. Isang tala, Robin wrote a note, at ang naka-mute na linya Ipinapakita ang pinakabagong 1 sa 2."
   },
   "/members/[accountId]:replies-open": {
     "de": "Identitätskarte; Antworten gedrückt; keine angeheftete Profilnotiz-Karte; Antwortkarte Eine Antwort von Carol.",
@@ -1067,7 +1067,7 @@
   "/welcome:popular": {
     "de": "Klick auf Beliebteste — bezahlte Notizen nach sats geordnet (Carol ₿21, dann Ada ₿5). Unbezahlter Bob ist ausgeblendet.",
     "es": "Clic en Más populares — notas pagadas ordenadas por sats (Carol ₿21, luego Ada ₿5). Bob sin pagar está oculto.",
-    "fil": "I-click ang Pinakapopular — bayad na tala na nakaayos ayon sa sats (Carol ₿21, tapos Ada ₿5). Nakatago ang hindi pa bayad na si Bob."
+    "fil": "I-click ang Pinakasikat — bayad na tala na nakaayos ayon sa sats (Carol ₿21, tapos Ada ₿5). Nakatago ang hindi pa bayad na si Bob."
   },
   "/messages/[id]:error": {
     "de": "Das Laden der öffentlichen Nachricht ist fehlgeschlagen. Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
@@ -1090,14 +1090,14 @@
     "fil": "Isang hindi pa bayad na tala sa Lahat na may lugar. Ipinapakita ng kard ang isang MapPin-link Happyland papunta sa /map?pin=m-place."
   },
   "/shops:mention-suggest": {
-    "de": "Shop hinzufügen ist geöffnet bei 3 / 5 · Text. Der Shop-Text enthält @ und die Personenliste ist geöffnet, mit @ada.",
-    "es": "Añadir una tienda está abierto en 3 / 5 · Texto. El texto de la tienda contiene @ y la lista Personas está abierta, con @ada.",
-    "fil": "Bukas ang Magdagdag ng shop sa 3 / 5 · Teksto. Ang Teksto ng shop ay may @ at bukas ang listahan ng Mga tao, na may @ada."
+    "de": "Shop hinzufügen ist geöffnet bei 3 von 5 · Text. Der Shop-Text enthält @ und die Personenliste ist geöffnet, mit @ada.",
+    "es": "Añadir una tienda está abierto en 3 de 5 · Texto. El texto de la tienda contiene @ y la lista Personas está abierta, con @ada.",
+    "fil": "Bukas ang Magdagdag ng shop sa 3 sa 5 · Teksto. Ang Teksto ng shop ay may @ at bukas ang listahan ng Mga tao, na may @ada."
   },
   "/shops:add-text": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 / 5 · Text. Ort wurde übersprungen. Weiter ist die einzige Schaltfläche auf der Karte.",
-    "es": "Añadir una tienda está abierto en el paso 3 / 5 · Texto. Se omitió Lugar. Siguiente es el único botón de la tarjeta.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 / 5 · Teksto. Nilaktawan ang Lugar. Ang Susunod ang tanging pindutan sa kard."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Ort wurde übersprungen. Weiter ist die einzige Schaltfläche auf der Karte.",
+    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Se omitió Lugar. Siguiente es el único botón de la tarjeta.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. Nilaktawan ang Lugar. Ang Susunod ang tanging pindutan sa kard."
   },
   "/moderate/payouts:empty": {
     "de": "Personal-Seite, wenn niemand berechtigt war. In diesen sieben Tagen war niemand berechtigt. Keine Tabelle.",
@@ -1175,9 +1175,9 @@
     "fil": "Bukas na hiwa. Ang pagpili kay @ada mula sa listahang iyon ay nagsusulat ng @ada  sa kahon ng mensahe at isinasara ang listahan."
   },
   "/messages/[id]/author:posts-open": {
-    "de": "Schaltfläche 1 Beitrag gedrückt, mit dem Notiztext Robin hat eine Notiz geschrieben unter der Karte. Der Feed ist schreibgeschützt.",
-    "es": "Botón 1 publicación pulsado, con el texto de la nota Robin escribió una nota debajo de la tarjeta. El flujo es de solo lectura.",
-    "fil": "Naka-pindot ang pindutang 1 tala, na may tekstong tala na Sumulat si Robin ng isang tala sa ilalim ng talaan. Ang listahan ay basahin lamang."
+    "de": "Schaltfläche 1 Beitrag gedrückt, mit dem Notiztext Robin wrote a note unter der Karte. Der Feed ist schreibgeschützt.",
+    "es": "Botón 1 publicación pulsado, con el texto de la nota Robin wrote a note debajo de la tarjeta. El flujo es de solo lectura.",
+    "fil": "Naka-pindot ang pindutang 1 tala, na may tekstong tala na Robin wrote a note sa ilalim ng talaan. Ang listahan ay basahin lamang."
   },
   "/messages/[id]/author:posts-translate-done": {
     "de": "Nach einer erfolgreichen Übersetzung. Das Steuerelement ist Original anzeigen und das deutsche Original wird nicht angezeigt.",
@@ -1285,9 +1285,9 @@
     "fil": "Natukoy ang bayad. Ang sagot ni Ada na This is my answer ay nasa talakayan, at walang laman na muli ang kahon ng pagsulat."
   },
   "/moderate/hidden:default": {
-    "de": "Das Personal (Moderatorin oder Moderator) hat eine Liste mit mindestens einer versteckten Notiz geladen (Autor Bob, Text Versteckte Notiz, Versteckt von Ada).",
-    "es": "El personal (persona moderadora) cargó una lista con al menos una nota oculta (autor Bob, texto Hidden note, Ocultado por Ada).",
-    "fil": "Nag-load ang tauhan (moderator) ng listahan na may hindi bababa sa isang nakatagong tala (may-akda Bob, teksto Nakatagong tala, Itinago ni Ada)."
+    "de": "Das Personal (Moderatorin oder Moderator) hat eine Liste mit mindestens einer versteckten Notiz geladen (Autor Bob, Text Hidden note, Ausgeblendet von Ada).",
+    "es": "El personal (persona moderadora) cargó una lista con al menos una nota oculta (autor Bob, texto Hidden note, Ocultada por Ada).",
+    "fil": "Nag-load ang tauhan (moderator) ng listahan na may hindi bababa sa isang nakatagong tala (may-akda Bob, teksto Hidden note, Itinago ni Ada)."
   },
   "/messages/[id]/author:replies-open": {
     "de": "Die Schaltfläche 1 Reaktion wurde gedrückt, mit dem Notiztext Robin hat eine Reaktion geschrieben unter der Karte. Der Verlauf ist nur lesbar.",
@@ -1315,9 +1315,9 @@
     "fil": "Hiling hakbang 4 ng 4, Isang beses ang pinindot, pagkatapos mabigo ang pagpapadala. Nasa ilalim ng paunang tingin ang Hindi ma-post ang mensahe."
   },
   "/shops:edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 / 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf liegt unter der Karte.",
-    "es": "Siguiente otra vez. El paso 5 / 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial está bajo la tarjeta.",
-    "fil": "Susunod ulit. Bukas ang hakbang 5 / 5 · Buod. Ang I-save ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf liegt unter der Karte.",
+    "es": "Siguiente otra vez. El paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial está bajo la tarjeta.",
+    "fil": "Susunod ulit. Bukas ang hakbang 5 sa 5 · Buod. Ang I-save ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
   },
   "/moderate/proposals:error": {
     "de": "Das Laden der Liste für das Personal (Moderatorin oder Moderator) ist fehlgeschlagen. Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
@@ -1330,14 +1330,14 @@
     "fil": "Pagkatapos ng nabigong pagsasalin ng reaksyong iyon. Ipinapakita ng daloy ang Hindi maisalin ang notang ito. Pakisubukan muli."
   },
   "/shops:mention-suggest-reply": {
-    "de": "Eine Notiz des Ladens ist aufgeklappt, ihr Reaktionsfeld enthält @, und die Liste Personen ist geöffnet. Laden hinzufügen bleibt geschlossen.",
+    "de": "Eine Notiz des Ladens ist aufgeklappt, ihr Reaktionsfeld enthält @, und die Liste Personen ist geöffnet. Shop hinzufügen bleibt geschlossen.",
     "es": "Una nota de la tienda está expandida, su campo de reacción contiene @, y la lista Personas está abierta. Añadir una tienda permanece cerrado.",
     "fil": "Nakabuka ang tala ng tindahan, ang patlang ng reaksyon nito ay naglalaman ng @, at bukas ang listahan ng Mga tao. Sarado pa ang Magdagdag ng shop."
   },
   "/shops:add-user": {
-    "de": "Laden hinzufügen ist geöffnet bei Schritt 4 / 5 · 21.gifts-Nutzer. Der Benutzername ist leer. Weiter ist die einzige Schaltfläche auf der Karte.",
-    "es": "Añadir una tienda está abierto en el paso 4 / 5 · usuario de 21.gifts. El nombre de usuario está vacío. Siguiente es el único botón en la tarjeta.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 / 5 · User ng 21.gifts. Walang laman ang pangalan ng gumagamit. Ang Susunod ang tanging pindutan sa kahon."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 4 von 5 · 21.gifts-Nutzer. Der Benutzername ist leer. Weiter ist die einzige Schaltfläche auf der Karte.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · usuario de 21.gifts. El nombre de usuario está vacío. Siguiente es el único botón en la tarjeta.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts. Walang laman ang pangalan ng gumagamit. Ang Susunod ang tanging pindutan sa kahon."
   },
   "/pos:loading": {
     "de": "Die Anfrage der Kasse ist noch nicht zurück. Überschrift Kasse, die Adresse und die Warteanzeige. Noch kein Betrag festlegen.",
@@ -1415,9 +1415,9 @@
     "fil": "Isinasagawa ang paglakip (hindi pinagana ang pag-post + umiikot na sagisag, wala pang paunang tingin). Ang katutubong tagapili ng file ay palamuti ng OS at hindi isang baryante."
   },
   "/welcome:shop-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 / 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 4 / 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 4 / 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
   },
   "/shops:table-empty": {
     "de": "Tabelle ist ausgewählt und es gibt keine Shop-Notizen. Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Der Verfasser ist verschwunden.",
@@ -1430,14 +1430,14 @@
     "fil": "Napili ang Mapa at nabigo ang mga lugar. Hindi ma-load ang mga lugar. Subukan ulit. at Subukan ulit. Walang pangalawang pamagat na Mapa."
   },
   "/shops:edit-user": {
-    "de": "Erneut Weiter. Schritt 4 / 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 4 / 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 4 / 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
   },
   "/messages/[id]:shop-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 / 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 4 / 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 4 / 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 4 de 5 · Usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 4 sa 5 · User ng 21.gifts ay bukas. Walang laman ang pangalan ng gumagamit. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago."
   },
   "/messages/[id]/author:posts-empty": {
     "de": "0 Beiträge gedrückt. Der Feed zeigt Noch keine Nachrichten — schreiben Sie die erste. Die Schaltfläche 0 Reaktionen bleibt geschlossen.",
@@ -1612,17 +1612,17 @@
   "/welcome:shop-edit": {
     "de": "Eine Moderatorsitzung. Eine Shop-Notiz der obersten Ebene Cafe Luna. Die Fußzeile zeigt Shop-Eintrag bearbeiten nach dem Kopieren. Der Editor ist geschlossen.",
     "es": "Una sesión de moderador. Una nota de tienda de primer nivel Cafe Luna. El pie muestra Editar la entrada de la tienda después de copiar. El editor está cerrado.",
-    "fil": "Session ng tagapamagitan. Isang tala ng tindahan sa pinakamataas na antas Cafe Luna. Ipinapakita ng paanan ang I-edit ang tala ng tindahan pagkatapos kopyahin. Sarado ang editor."
+    "fil": "Session ng tagapamagitan. Isang tala ng tindahan sa pinakamataas na antas Cafe Luna. Ipinapakita ng paanan ang Baguhin ang entry sa shop pagkatapos kopyahin. Sarado ang editor."
   },
   "/welcome:shop-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 / 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Keine, Text Cafe Luna und 21.gifts-Nutzer Keine.",
-    "es": "Siguiente otra vez. Paso 5 / 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
-    "fil": "Susunod ulit. Hakbang 5 / 5 · Buod ay bukas. Niliista ng talaan ang Mga litrato Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Keine, Text Cafe Luna und 21.gifts-Nutzer Keine.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga litrato Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
   },
   "/members/[accountId]:shop-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 / 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Keine, Text Cafe Luna und 21.gifts-Nutzer Keine.",
-    "es": "Siguiente otra vez. Paso 5 / 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
-    "fil": "Susunod ulit. Hakbang 5 / 5 · Buod ay bukas. Niliista ng talaan ang Mga litrato Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Keine, Text Cafe Luna und 21.gifts-Nutzer Keine.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga litrato Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
   },
   "/grants/payments/amounts:duplicate": {
     "de": "Der Gründer fügt eine Adresse hinzu, die Spend bereits auflistet. Hinweis Diese Adresse steht bereits auf der Liste. Nadel Diese Adresse steht bereits auf der Liste.",
@@ -1640,14 +1640,14 @@
     "fil": "Hiling hakbang 2 ng 4 pagkatapos ng mahigit 10 litrato. Nanatili ang unang sampung maliit na larawan, at Pwede kang magdagdag ng hanggang 10 litrato ay nasa ilalim nila."
   },
   "/shops:table-edit-text": {
-    "de": "Erneut Weiter. Schritt 3 / 5 · Text ist geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Ort Happyland und Betreiber @luna bleiben.",
-    "es": "Siguiente otra vez. Paso 3 / 5 · Texto está abierto. El historial sigue diciendo que aún no hay ediciones. Lugar Happyland y operador @luna permanecen.",
-    "fil": "Susunod ulit. Hakbang 3 / 5 · Teksto ay bukas. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago. Lugar Happyland at tagapagpatakbo @luna ay nananatili."
+    "de": "Erneut Weiter. Schritt 3 von 5 · Text ist geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Ort Happyland und Betreiber @luna bleiben.",
+    "es": "Siguiente otra vez. Paso 3 de 5 · Texto está abierto. El historial sigue diciendo que aún no hay ediciones. Lugar Happyland y operador @luna permanecen.",
+    "fil": "Susunod ulit. Hakbang 3 sa 5 · Teksto ay bukas. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago. Lugar Happyland at tagapagpatakbo @luna ay nananatili."
   },
   "/shops:table-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 / 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Ort Happyland und Betreiber @luna bleiben.",
-    "es": "Siguiente otra vez. Paso 5 / 5 · Resumen está abierto. Guardar cambios es el botón de la tarjeta. Lugar Happyland y operador @luna permanecen.",
-    "fil": "Susunod ulit. Hakbang 5 / 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa talaan. Lugar Happyland at tagapagpatakbo @luna ay nananatili."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Ort Happyland und Betreiber @luna bleiben.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón de la tarjeta. Lugar Happyland y operador @luna permanecen.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa talaan. Lugar Happyland at tagapagpatakbo @luna ay nananatili."
   },
   "/members/[accountId]:about-translate-loading": {
     "de": "Dieselbe deutsche Über mich nach Klick auf Übersetzen, während POST /translate hängt. Das Steuerelement ist beschäftigt (aria-busy) mit einem Spinner.",
@@ -1725,14 +1725,14 @@
     "fil": "Ang nabe-verify na username na joey-rosima na may status na none o rejected ay nakakakita ng Mag-apply para sa 21 gifts grant sa halip ng naka-pause na pangungusap."
   },
   "/messages/[id]:shop-edit-summary": {
-    "de": "Weiter erneut. Schritt 5 / 5 · Zusammenfassung ist offen. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
-    "es": "Siguiente otra vez. Paso 5 / 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
-    "fil": "Susunod ulit. Hakbang 5 / 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
+    "de": "Weiter erneut. Schritt 5 von 5 · Zusammenfassung ist offen. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
+    "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
   },
   "/shops:add-place": {
-    "de": "Shop hinzufügen ist offen auf Schritt 2 / 5 · Ort. Einen Ort hinzufügen ist geschlossen. Weiter ist die einzige Schaltfläche auf der Karte. Die Shopliste ist leer.",
-    "es": "Añadir una tienda está abierto en el paso 2 / 5 · Lugar. Añadir un lugar está cerrado. Siguiente es el único botón en la tarjeta. La lista de tiendas está vacía.",
-    "fil": "Magdagdag ng shop ay bukas sa hakbang 2 / 5 · Lugar. Magdagdag ng lugar ay sarado. Susunod ang tanging pindutan sa kard. Walang laman ang listahan ng tindahan."
+    "de": "Shop hinzufügen ist offen auf Schritt 2 von 5 · Ort. Einen Ort hinzufügen ist geschlossen. Weiter ist die einzige Schaltfläche auf der Karte. Die Shopliste ist leer.",
+    "es": "Añadir una tienda está abierto en el paso 2 de 5 · Lugar. Añadir un lugar está cerrado. Siguiente es el único botón en la tarjeta. La lista de tiendas está vacía.",
+    "fil": "Magdagdag ng shop ay bukas sa hakbang 2 sa 5 · Lugar. Magdagdag ng lugar ay sarado. Susunod ang tanging pindutan sa kard. Walang laman ang listahan ng tindahan."
   },
   "/grants:funding-not-verified": {
     "de": "Basis-Inhaber. Förderabschnitt auf /grants. Sie sind noch nicht verifiziert. plus wie die persönliche Verifizierung funktioniert. Keine Bewerben-Schaltfläche.",
@@ -1762,7 +1762,7 @@
   "/shops:table-staff": {
     "de": "Eine Moderatorsitzung. Tabelle ist ausgewählt. Shop-Eintrag bearbeiten steht neben dem Namen Cafe Luna. Ort Happyland und Betreiberin oder Betreiber @luna bleiben.",
     "es": "Una sesión de moderación. Tabla está seleccionada. Editar la entrada de la tienda está junto al nombre Cafe Luna. El lugar Happyland y la operadora o el operador @luna se quedan.",
-    "fil": "Isang sesyon ng moderator. Napili ang Talahanayan. Nakaupo ang I-edit ang tala ng tindahan sa tabi ng pangalang Cafe Luna. Nanatili ang lugar na Happyland at ang operator na @luna."
+    "fil": "Isang sesyon ng moderator. Napili ang Talahanayan. Nakaupo ang Baguhin ang entry sa shop sa tabi ng pangalang Cafe Luna. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/welcome:renew-failed": {
     "de": "Die Verlängerung hat nicht funktioniert. OK bestätigt das und schliesst den Dialog. Die Verlängerung startet nicht erneut. Das Konto hat weiterhin keinen Seed.",
@@ -1775,9 +1775,9 @@
     "fil": "Habang nakabinbin ang DELETE ng sagot, naka-disable ang kumpirmasyon at pagkansela sa sagot na iyon at pumapalit sa tsek ang isang umiikot na tagapaghintay."
   },
   "/shops:add-summary": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 / 5 · Zusammenfassung. Fotos, Ort, Text und die Nutzerin oder der Nutzer wurden übersprungen. Senden ist die einzige Schaltfläche auf der Karte.",
-    "es": "Añadir una tienda está abierto en el paso 5 / 5 · Resumen. Se omitieron las fotos, el lugar, el texto y la usuaria o el usuario. Publicar es el único botón de la ficha.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 / 5 · Buod. Nilaktawan ang mga litrato, lugar, teksto, at ang user. Ang I-post ang tanging pindutan sa kard."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Fotos, Ort, Text und die Nutzerin oder der Nutzer wurden übersprungen. Senden ist die einzige Schaltfläche auf der Karte.",
+    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se omitieron las fotos, el lugar, el texto y la usuaria o el usuario. Publicar es el único botón de la ficha.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Nilaktawan ang mga litrato, lugar, teksto, at ang user. Ang I-post ang tanging pindutan sa kard."
   },
   "/shops:place": {
     "de": "Eine Shop-Notiz mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland zu /map?pin=m-place. Das rohe Token #21GiftsShop bleibt verborgen.",
@@ -2020,9 +2020,9 @@
     "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng pananda, Pangalan ng lugar ay Stall, at Gamitin ang lugar na ito ay nakikita pa. Hindi pa kumpirmado ang pananda."
   },
   "/shops:edit-place": {
-    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 / 5 · Ort ist geöffnet. Das Schließen (X) des Fotoschritts ist verschwunden. Der Pfeil oben links kehrt zum Fotoschritt zurück.",
-    "es": "El mismo moderador pulsó Siguiente. El paso 2 / 5 · Lugar está abierto. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda vuelve al paso de foto.",
-    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 / 5 · Lugar. Wala na ang Isara (X) ng hakbang ng litrato. Ang palaso sa kaliwang itaas ay bumabalik sa hakbang ng litrato."
+    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist geöffnet. Das Schließen (X) des Fotoschritts ist verschwunden. Der Pfeil oben links kehrt zum Fotoschritt zurück.",
+    "es": "El mismo moderador pulsó Siguiente. El paso 2 de 5 · Lugar está abierto. El Cerrar (X) del paso de foto ya no está. La flecha superior izquierda vuelve al paso de foto.",
+    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 sa 5 · Lugar. Wala na ang Isara (X) ng hakbang ng litrato. Ang palaso sa kaliwang itaas ay bumabalik sa hakbang ng litrato."
   },
   "/profile:picture-too-large": {
     "de": "Auswahl eines Fotos, dessen kodiertes JPEG über 1 MB liegt. Hinweis Fotos unter 1 MB halten. Beide Hinzufügen-Schaltflächen bleiben. Nadel state-profile-picture-too-large.",
@@ -2195,9 +2195,9 @@
     "fil": "Nakabukas ang pambaba ng tanawin ng forum sa default na feed na Aktibo. Naka-check ang Aktibo. Wala pang regalo, Lahat, at Pinakasikat ay nakalista sa ilalim. Nakabukas pa ang listahan."
   },
   "/shops:map-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 / 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
-    "es": "Siguiente otra vez. El paso 4 / 5 · usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
-    "fil": "Muli ang Susunod. Bukas ang hakbang 4 / 5 · user ng 21.gifts. Walang laman ang username. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Der Benutzername ist leer. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Siguiente otra vez. El paso 4 de 5 · usuario de 21.gifts está abierto. El nombre de usuario está vacío. El historial sigue diciendo que aún no hay ediciones. El mapa permanece seleccionado. Sin un segundo encabezado Mapa.",
+    "fil": "Muli ang Susunod. Bukas ang hakbang 4 sa 5 · user ng 21.gifts. Walang laman ang username. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/pos:refresh-failed": {
     "de": "Die offene Belastung ist bereits abgelaufen (0:00). Der Sat-Betrag und das Standard-Fiat bleiben. Das Aktualisieren schlägt fehl. Abbrechen bleibt. Hinweis Die Kasse ist gerade nicht erreichbar.",
@@ -2315,14 +2315,14 @@
     "fil": "Pinindot ang 1 post, tapos Panlabas sa talang iyon. Ang pahiwatig ay Sumulat mula sa ibang app, hindi mula sa 21.gifts account. Ipinapakita rito dahil nagpadala ng bitcoin ang taong ito sa isang post."
   },
   "/shops:map-staff": {
-    "de": "Eine Moderatorsitzung. Karte ist ausgewählt. Die Stecknadel ist ein Laden, daher sitzt Ladennotiz bearbeiten neben Ada · Happyland. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
+    "de": "Eine Moderatorsitzung. Karte ist ausgewählt. Die Stecknadel ist ein Laden, daher sitzt Shop-Eintrag bearbeiten neben Ada · Happyland. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
     "es": "Una sesión de moderador. Mapa está seleccionado. El pin es una tienda, así que Editar la entrada de la tienda está junto a Ada · Happyland. Sin clave del mapa, así que el marco permanece vacío. Sin un segundo encabezado Mapa.",
-    "fil": "Isang sesyon ng tagapamagitan. Napili ang Mapa. Ang tuldok ay isang tindahan, kaya nakaupo ang I-edit ang tala ng tindahan sa tabi ng Ada · Happyland. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
+    "fil": "Isang sesyon ng tagapamagitan. Napili ang Mapa. Ang tuldok ay isang tindahan, kaya nakaupo ang Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 / 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Keine, Text Cafe Luna und 21.gifts-Nutzer Keine. Karte bleibt ausgewählt. Keine zweite Karte-Überschrift.",
-    "es": "Siguiente otra vez. Paso 5 / 5 · El resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Ninguno, Texto Cafe Luna y Usuario de 21.gifts Ninguno. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
-    "fil": "Muli ang Susunod. Hakbang 5 / 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Fotos Keine, Ort Keine, Text Cafe Luna und 21.gifts-Nutzer Keine. Karte bleibt ausgewählt. Keine zweite Karte-Überschrift.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · El resumen está abierto. La tarjeta enumera Fotos Ninguna, Lugar Ninguno, Texto Cafe Luna y Usuario de 21.gifts Ninguno. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "fil": "Muli ang Susunod. Hakbang 5 sa 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
   },
   "/grants:no-applications": {
     "de": "Moderator auf /grants, wenn keine Förderbewerbung offen ist. Der Satz Keine offenen Bewerbungen. ist reiner Text, keine Schaltfläche und kein Verweis. Needle state-grants-no-applications.",
@@ -2337,7 +2337,7 @@
   "/shops:edit-save-error": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
     "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
-    "fil": "Nagbukas ang tagapamagitan ng Baguhin ang tala ng tindahan sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang pampatnugot. Nakikita ang alerto Hindi na-save ang entry na ito."
+    "fil": "Nagbukas ang tagapamagitan ng Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang pampatnugot. Nakikita ang alerto Hindi na-save ang entry na ito."
   },
   "/profile:picture-save-error": {
     "de": "PUT /pictures/me antwortet 500, nachdem ein JPEG gewählt wurde. Meldung Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut. Die Profilfoto-Schaltfläche bleibt. Needle state-profile-picture-save-error.",
@@ -2415,9 +2415,9 @@
     "fil": "Binubuksan ng tagapagtatag ang komento gamit ang lapis at pinipindot ang tsek. Tinatanggihan ito ng Spend. Bukas pa ang patlang. Alerto Hindi wasto ang komento. Karayom Hindi wasto ang komento."
   },
   "/shops:table-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 / 5 · 21.gifts-Nutzer ist geöffnet. Das Benutzername-Feld zeigt bereits luna. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Ort Happyland und Betreiberin @luna bleiben.",
-    "es": "Otra vez Siguiente. El paso 4 / 5 · usuario de 21.gifts está abierto. El campo de nombre de usuario ya muestra luna. El historial sigue diciendo que aún no hay ediciones. El lugar Happyland y la operadora @luna permanecen.",
-    "fil": "Muli ang Susunod. Bukas ang Hakbang 4 / 5 · User ng 21.gifts. Ipinapakita na ng patlang ng pangalan ng gumagamit ang luna. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Nanatili ang lugar na Happyland at ang operator na @luna."
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Benutzername-Feld zeigt bereits luna. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Ort Happyland und Betreiberin @luna bleiben.",
+    "es": "Otra vez Siguiente. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo de nombre de usuario ya muestra luna. El historial sigue diciendo que aún no hay ediciones. El lugar Happyland y la operadora @luna permanecen.",
+    "fil": "Muli ang Susunod. Bukas ang Hakbang 4 sa 5 · User ng 21.gifts. Ipinapakita na ng patlang ng pangalan ng gumagamit ang luna. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/welcome:note-video-paused": {
     "de": "Angemeldetes /welcome mit einer Notiz, deren Text A clip lautet und deren Bild ein Video ist. Die Wiedergabe-Schaltfläche und die Vollbild-Schaltfläche sitzen auf diesem Bild. Das Bild ist zentriert.",
@@ -2475,9 +2475,9 @@
     "fil": "Pampublikong permalink ng tala ni Riana Rosello. Ipinapakita ng sagot ni Cyrill ang just for information: plus ang parehong nested na post ng teknikal na tala (litrato, paliwanag, Tagapagtatag, ₿43). Hindi nakikita ang hilaw na URL."
   },
   "/members/[accountId]:shop-edit": {
-    "de": "Eine Moderatorin betrachtet ein anderes Mitglied. Der Beitragsfeed ist geöffnet und enthält einen Ladenbeitrag Cafe Luna. Die Fußzeile zeigt Ladennotiz bearbeiten. Der Editor ist geschlossen. Die Identitätskarte hat keine Bearbeitung.",
+    "de": "Eine Moderatorin betrachtet ein anderes Mitglied. Der Beitragsfeed ist geöffnet und enthält einen Ladenbeitrag Cafe Luna. Die Fußzeile zeigt Shop-Eintrag bearbeiten. Der Editor ist geschlossen. Die Identitätskarte hat keine Bearbeitung.",
     "es": "Una moderadora ve a otra integrante. El feed de publicaciones está abierto y contiene una publicación de tienda Cafe Luna. El pie muestra Editar la entrada de la tienda. El editor está cerrado. La tarjeta de identidad no tiene edición.",
-    "fil": "Isang tagapamagitan na tumitingin sa ibang miyembro. Bukas ang feed ng mga post at may isang post ng tindahan na Cafe Luna. Ipinapakita ng paanan ang I-edit ang tala ng tindahan. Sarado ang editor. Walang pag-edit ang kard ng pagkakakilanlan."
+    "fil": "Isang tagapamagitan na tumitingin sa ibang miyembro. Bukas ang feed ng mga post at may isang post ng tindahan na Cafe Luna. Ipinapakita ng paanan ang Baguhin ang entry sa shop. Sarado ang editor. Walang pag-edit ang kard ng pagkakakilanlan."
   },
   "/welcome:note-truncated": {
     "de": "Angemeldetes /welcome mit einer bezahlten Notiz, deren Text länger als 560 Zeichen ist. Eingeklappte 280-Zeichen-Vorschau, Auslassungspunkte und Mehr anzeigen sind sichtbar; der charakteristische Schluss ist verborgen.",
@@ -2505,9 +2505,9 @@
     "fil": "Naka-sign-in na /welcome na may isang bayad na tala na mas mahaba sa paunang tanaw na 280 karakter at hindi hihigit sa 560 karakter. Nakikita ang buong katawan, kasama ang natatanging dulo. Wala ang Ipakita pa."
   },
   "/welcome:shop-edit-place": {
-    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 / 5 · Ort ist offen. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Der Pfeil oben links kehrt zum Fotoschritt zurück.",
-    "es": "La misma moderación pulsó Siguiente. El paso 2 / 5 · Lugar está abierto. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto ha desaparecido. La flecha superior izquierda vuelve al paso de foto.",
-    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 / 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng larawan. Ang palaso sa itaas-kaliwa ay bumabalik sa hakbang ng larawan."
+    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist offen. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Der Pfeil oben links kehrt zum Fotoschritt zurück.",
+    "es": "La misma moderación pulsó Siguiente. El paso 2 de 5 · Lugar está abierto. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto ha desaparecido. La flecha superior izquierda vuelve al paso de foto.",
+    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 sa 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng larawan. Ang palaso sa itaas-kaliwa ay bumabalik sa hakbang ng larawan."
   },
   "/shops:staff-place-confirm": {
     "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist mit einer Karte offen. Ein Klick hat eine Stecknadel gesetzt, Ortsname ist Happyland, und Diesen Ort verwenden ist noch sichtbar. Die Stecknadel ist noch nicht gespeichert.",
@@ -2515,14 +2515,14 @@
     "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May tuldok mula sa isang klik, ang Pangalan ng lugar ay Happyland, at nakikita pa ang Gamitin ang lugar na ito. Hindi pa naitala ang tuldok."
   },
   "/members/[accountId]:shop-edit-place": {
-    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 / 5 · Ort ist offen. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderación pulsó Siguiente. El paso 2 / 5 · Lugar está abierto. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto ha desaparecido. El lápiz cerrado no cubre este resultado.",
-    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 / 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng larawan. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist offen. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderación pulsó Siguiente. El paso 2 de 5 · Lugar está abierto. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto ha desaparecido. El lápiz cerrado no cubre este resultado.",
+    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 sa 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng larawan. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/messages/[id]:shop-edit-place": {
-    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 / 5 · Ort ist offen. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderación pulsó Siguiente. El paso 2 / 5 · Lugar está abierto. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto ha desaparecido. El lápiz cerrado no cubre este resultado.",
-    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 / 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng larawan. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist offen. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderación pulsó Siguiente. El paso 2 de 5 · Lugar está abierto. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto ha desaparecido. El lápiz cerrado no cubre este resultado.",
+    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 sa 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng larawan. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/pl:charge-failed": {
     "de": "Offene Kasse, Mint fehlgeschlagen. Der Ladenaufkleber, die Restzeit, der Sat-Betrag, die Standard-Fiat des Betrachters daneben, Die Rechnung konnte nicht erstellt werden., und Zahlen. Kein Rechnungs-QR. Zahlen versucht den Mint erneut.",
@@ -2595,9 +2595,9 @@
     "fil": "Ang Burahin ang reaksyon ay nagbubukas ng kumpirmasyong nakasama: Burahin ang reaksyon na ito sa 21.gifts? Kumpirmahin ang pagbura (tsek) at Kanselahin ang pagbura (X) ay icon lamang. Ang kansela ay walang ipinapadalang kahilingan. Nanatili ang magulang na post."
   },
   "/shops:composer-place": {
-    "de": "Einen Laden hinzufügen, dann Weiter, öffnet Schritt 2 / 5 · Ort. Ort hinzufügen ist geöffnet bei einer leeren Ladenliste und der Kartenschlüssel ist leer, daher sagt das Feld Die Karte ist nicht verfügbar. Die Ladenliste ist weiterhin leer.",
-    "es": "Añadir una tienda, luego Siguiente, abre el paso 2 / 5 · Lugar. Añadir un lugar está abierto en una lista de tiendas vacía y la clave del mapa está vacía, así que el recuadro dice El mapa no está disponible. La lista de tiendas sigue vacía.",
-    "fil": "Magdagdag ng shop, tapos Susunod, ay nagbubukas ng hakbang 2 / 5 · Lugar. Bukas ang Magdagdag ng lugar sa walang lamang listahan ng tindahan at walang laman ang susi ng mapa, kaya sinasabi ng panig na Hindi available ang mapa. Walang laman pa rin ang listahan ng tindahan."
+    "de": "Shop hinzufügen, dann Weiter, öffnet Schritt 2 von 5 · Ort. Ort hinzufügen ist geöffnet bei einer leeren Ladenliste und der Kartenschlüssel ist leer, daher sagt das Feld Die Karte ist nicht verfügbar. Die Ladenliste ist weiterhin leer.",
+    "es": "Añadir una tienda, luego Siguiente, abre el paso 2 de 5 · Lugar. Añadir un lugar está abierto en una lista de tiendas vacía y la clave del mapa está vacía, así que el recuadro dice El mapa no está disponible. La lista de tiendas sigue vacía.",
+    "fil": "Magdagdag ng shop, tapos Susunod, ay nagbubukas ng hakbang 2 sa 5 · Lugar. Bukas ang Magdagdag ng lugar sa walang lamang listahan ng tindahan at walang laman ang susi ng mapa, kaya sinasabi ng panig na Hindi available ang mapa. Walang laman pa rin ang listahan ng tindahan."
   },
   "/shops:composer-place-set": {
     "de": "Eine Stecknadel namens Stall wurde bestätigt, dann schloss sich Ort hinzufügen. Dieser Name wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt verfügbar. Die Ladenliste ist weiterhin leer.",
@@ -2615,9 +2615,9 @@
     "fil": "Miyembro. Walang pumipili. Nai-load na listahan na ang huling teksto ay sariling padala ng tumitingin (Bob, Hello team). Paunang tingin Ikaw: Hello team bilang siksik na napunang pildura sa kanan ng tahimik na hilera, hindi tahimik na katawan ng teksto."
   },
   "/shops:table-edit-place": {
-    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 / 5 · Ort ist in der Tabelle geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Foto-Schritts ist weg. Ort Happyland und Betreiber @luna bleiben.",
-    "es": "El mismo moderador pulsó Siguiente. El paso 2 / 5 · Lugar está abierto en la tabla. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de la foto desapareció. El lugar Happyland y el operador @luna permanecen.",
-    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang hakbang 2 / 5 · Lugar sa talahanayan. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng litrato. Nanatili ang lugar na Happyland at ang tagapagpatakbo na @luna."
+    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist in der Tabelle geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Foto-Schritts ist weg. Ort Happyland und Betreiber @luna bleiben.",
+    "es": "El mismo moderador pulsó Siguiente. El paso 2 de 5 · Lugar está abierto en la tabla. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de la foto desapareció. El lugar Happyland y el operador @luna permanecen.",
+    "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang hakbang 2 sa 5 · Lugar sa talahanayan. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng litrato. Nanatili ang lugar na Happyland at ang tagapagpatakbo na @luna."
   },
   "/shops:staff-account-error": {
     "de": "Eine Moderationssitzung. Konto hinzufügen ist auf der Notiz Cafe Luna geöffnet. Benutzername missing wurde gespeichert. Das Speichern lieferte 404, daher ist der Hinweis Kein Konto mit diesem Benutzernamen. sichtbar. Konto speichern bleibt.",
@@ -2652,11 +2652,11 @@
   "/shops:staff-place": {
     "de": "Eine Moderatorsitzung. Eine Shop-Notiz Cafe Luna ohne Stecknadel. Shop-Eintrag bearbeiten steht auf der Notiz. Die Fusszeile der Notiz zeigt Ort hinzufügen und Konto hinzufügen. Der Kartenbereich ist geschlossen. Der Kontenbereich ist geschlossen.",
     "es": "Una sesión de moderador. Una nota de tienda Cafe Luna sin chincheta. Editar la entrada de la tienda está en la nota. El pie de la nota muestra Añadir un lugar y Añadir una cuenta. El área del mapa está cerrada. El área de la cuenta está cerrada.",
-    "fil": "Isang sesyon ng moderator. Isang tala ng tindahan ng Cafe Luna na walang tulos. Nasa tala ang I-edit ang tala ng tindahan. Ipinapakita ng paanan ng tala ang Magdagdag ng lugar at Magdagdag ng account. Nakasara ang lugar ng mapa. Nakasara ang lugar ng account."
+    "fil": "Isang sesyon ng moderator. Isang tala ng tindahan ng Cafe Luna na walang tulos. Nasa tala ang Baguhin ang entry sa shop. Ipinapakita ng paanan ng tala ang Magdagdag ng lugar at Magdagdag ng account. Nakasara ang lugar ng mapa. Nakasara ang lugar ng account."
   },
   "/moderate/hidden:external": {
     "de": "Vom Personal (Moderator) geladene Liste mit einer ausgeblendeten Notiz, die ohne 21.gifts-Konto geschrieben wurde (Autor Robin, Text Hidden external note, das nicht interaktive Abzeichen Extern neben dem Namen, Ausgeblendet von Ada).",
-    "es": "Lista cargada del personal (moderador) con una nota oculta escrita sin una cuenta de 21.gifts (autor Robin, texto Hidden external note, la insignia no interactiva Externo junto al nombre, Ocultado por Ada).",
+    "es": "Lista cargada del personal (moderador) con una nota oculta escrita sin una cuenta de 21.gifts (autor Robin, texto Hidden external note, la insignia no interactiva Externo junto al nombre, Ocultada por Ada).",
     "fil": "Listahan na na-load ng tauhan (moderator) na may isang itinagong tala na isinulat nang walang account sa 21.gifts (may-akda Robin, teksto Hidden external note, ang hindi-interaktibong marka na Panlabas sa tabi ng pangalan, Itinago ni Ada)."
   },
   "/welcome:moderation": {
@@ -2687,7 +2687,7 @@
   "/shops:map-edit-load-failed": {
     "de": "Eine Moderatorin oder ein Moderator hat neben Ada · Happyland auf Shop-Eintrag bearbeiten geklickt. Die Notiz wurde nicht geladen. Der Hinweis Dieser Shop-Eintrag konnte nicht geladen werden ist sichtbar. Der Editor ist nicht geöffnet. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
     "es": "Un moderador pulsó Editar la entrada de la tienda junto a Ada · Happyland. La nota no se cargó. La alerta No se pudo cargar esta entrada es visible. El editor no está abierto. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
-    "fil": "Nag-click ang isang moderator sa I-edit ang tala ng tindahan sa tabi ng Ada · Happyland. Hindi na-load ang tala. Nakikita ang alerto Hindi na-load ang entry na ito. Hindi bukas ang editor. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
+    "fil": "Nag-click ang isang moderator sa Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Hindi na-load ang tala. Nakikita ang alerto Hindi na-load ang entry na ito. Hindi bukas ang editor. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/grants/goals:error": {
     "de": "Angemeldete Seite, wenn GET /funding/goal fehlschlägt. Überschrift und die drei Sätze bleiben. Text Das Shop-Ziel konnte nicht geladen werden. Bitte erneut versuchen. und Schaltfläche Erneut versuchen. Kein Diagramm. Nadel state-grants-goals-error.",
@@ -2907,7 +2907,7 @@
   "/moderate:proposals-unread": {
     "de": "Mitarbeitenden-Zentrale mit einem offenen Vorschlag. Das Steuerelement Offene Vorschläge zeigt 1 und den barrierefreien Namen Offene Vorschläge, 1 ungelesen (moderate.proposals.unread). Ziele, Ausgeblendete Notizen, Moderatoren Chatgruppe, Handbuch und Auszahlung pro Person anzeigen unverändert.",
     "es": "Centro del personal con una propuesta abierta. El control Propuestas abiertas muestra 1 y el nombre accesible Propuestas abiertas, 1 sin leer (moderate.proposals.unread). Metas, Notas ocultas, Chat de moderadores, Manual y Mostrar el pago por persona sin cambios.",
-    "fil": "Hub ng staff na may isang bukas na panukala. Ang control na Mga bukas na panukala ay nagpapakita ng 1 at ang accessible na pangalan Mga bukas na panukala, 1 hindi pa nababasa (moderate.proposals.unread). Mga layunin, Mga nakatagong tala, Chat group ng mga moderator, Handbook, at Ipakita ang bayad bawat tao ay hindi nagbabago."
+    "fil": "Hub ng staff na may isang bukas na panukala. Ang control na Mga bukas na mungkahi ay nagpapakita ng 1 at ang accessible na pangalan Mga bukas na mungkahi, 1 hindi pa nababasa (moderate.proposals.unread). Mga layunin, Mga nakatagong nota, Chat group ng mga moderator, Handbook, at Ipakita ang bayad bawat tao ay hindi nagbabago."
   },
   "/wallet/phrase:prf-unsupported": {
     "de": "PRF fehlt. Hinweis Dieser Browser kann keinen Wiederherstellungssatz erzeugen. Versuchen Sie einen anderen Browser oder ein anderes Gerät. plus Hinweis Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben. und beschriftet Erneut versuchen. Kein Empfangs-QR.",
@@ -2915,9 +2915,9 @@
     "fil": "Walang PRF. Alerto Hindi makagawa ng recovery phrase ang browser na ito. Subukan ang ibang browser o device. dagdag ang pahiwatig Kung magpatuloy ito, subukan ang ibang browser o ang device na ginamit mo sa pag-sign in. at may label na Subukan ulit. Walang QR sa pagtanggap."
   },
   "/shops:map-edit-place": {
-    "de": "Dieselbe Moderatorin hat Weiter gedrückt. Schritt 2 / 5 · Ort ist auf der Karte geöffnet. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Karte bleibt ausgewählt. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
-    "es": "La misma moderadora pulsó Siguiente. El paso 2 / 5 · Lugar está abierto en el mapa. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto desapareció. Mapa sigue seleccionado. No hay clave del mapa, así que el marco se queda vacío. No hay un segundo encabezado Mapa.",
-    "fil": "Pinindot ng parehong moderator ang Susunod. Bukas sa mapa ang Hakbang 2 / 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng litrato. Napili pa rin ang Mapa. Walang susi ng mapa, kaya walang laman ang frame. Walang pangalawang pamagat na Mapa."
+    "de": "Dieselbe Moderatorin hat Weiter gedrückt. Schritt 2 von 5 · Ort ist auf der Karte geöffnet. Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Fotoschritts ist weg. Karte bleibt ausgewählt. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
+    "es": "La misma moderadora pulsó Siguiente. El paso 2 de 5 · Lugar está abierto en el mapa. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de foto desapareció. Mapa sigue seleccionado. No hay clave del mapa, así que el marco se queda vacío. No hay un segundo encabezado Mapa.",
+    "fil": "Pinindot ng parehong moderator ang Susunod. Bukas sa mapa ang Hakbang 2 sa 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng litrato. Napili pa rin ang Mapa. Walang susi ng mapa, kaya walang laman ang frame. Walang pangalawang pamagat na Mapa."
   },
   "/messages/[id]:reply-received": {
     "de": "Nicht angemeldeter Permalink von Cyrills Antwort You got it right. Die übergeordnete Hello from Ada zeigt ₿21'000 · $18.14. Die Antwort zeigt ₿21'000 · $18.14 gesendet und ₿100 · $0.09 erhalten in zwei Zeilen unter einem linken Strich. Nichts auf der Seite ist ₿21'100.",
@@ -2930,9 +2930,9 @@
     "fil": "Isang session ng moderator. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna. May pin at pangalan at pinindot ang Gamitin ang lugar na ito. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. at nananatili ang Gamitin ang lugar na ito."
   },
   "/welcome:shop-edit-open": {
-    "de": "Eine Moderatorin hat Shop-Eintrag bearbeiten auf Cafe Luna angeklickt. Schritt 1 / 5 · Bilder ist geöffnet und Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt wird mit einem nur als Symbol sichtbaren Schließen (X) geschlossen. Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen.",
-    "es": "Una moderadora pulsó Editar la entrada de la tienda en Cafe Luna. El paso 1 / 5 · Fotos está abierto y el Historial dice que aún no hay ediciones. El paso de foto se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible.",
-    "fil": "Nag-click ang isang moderator sa I-edit ang tala ng tindahan sa Cafe Luna. Bukas ang Hakbang 1 / 5 · Mga larawan at sinasabi ng Kasaysayan na wala pang mga pagbabago. Isinasara ang hakbang ng litrato ng isang icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
+    "de": "Eine Moderatorin hat Shop-Eintrag bearbeiten auf Cafe Luna angeklickt. Schritt 1 von 5 · Bilder ist geöffnet und Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt wird mit einem nur als Symbol sichtbaren Schließen (X) geschlossen. Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen.",
+    "es": "Una moderadora pulsó Editar la entrada de la tienda en Cafe Luna. El paso 1 de 5 · Fotos está abierto y el Historial dice que aún no hay ediciones. El paso de foto se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible.",
+    "fil": "Nag-click ang isang moderator sa Baguhin ang entry sa shop sa Cafe Luna. Bukas ang Hakbang 1 sa 5 · Mga larawan at sinasabi ng Kasaysayan na wala pang mga pagbabago. Isinasara ang hakbang ng litrato ng isang icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
   },
   "/welcome:validation-error": {
     "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu. Das Verfassen ist auf 8000 Zeichen begrenzt (wie POST /forum/messages); zu lange Entwürfe zeigen Maximal 8000 Zeichen und werden nicht gesendet.",
@@ -2965,9 +2965,9 @@
     "fil": "Heading na Mga Tindahan, panimula, ang maliit na label na Post / Mapa / Talahanayan na napili ang Post, Magdagdag ng shop (walang kahon ng pagsulat sa sala), isang tala ng tindahan Cafe Luna na may maliit na label na #Tindahan. Ang tindahang may serong sat ay nakalista pa rin. Walang pahiwatig sa mga batas. Hindi nakikita ang hilaw na #21GiftsShop."
   },
   "/shops:edit-open": {
-    "de": "Eine Moderatorin oder ein Moderator hat Ladennotiz bearbeiten bei Cafe Luna angeklickt. Schritt 1 / 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",
-    "es": "Una persona moderadora pulsó Editar la entrada de la tienda en Cafe Luna. El paso 1 / 5 · Fotos está abierto. El paso de fotos se cierra con un Cerrar (X) solo de icono. El nombre accesible es Cancelar. No hay una palabra Cancelar visible. Siguiente está etiquetado. El historial está bajo la tarjeta.",
-    "fil": "Isang moderator ang nag-click ng I-edit ang tala ng tindahan sa Cafe Luna. Bukas ang hakbang 1 / 5 · Mga larawan. Ang hakbang ng larawan ay nagsasara sa icon-lamang na Isara (X). Ang accessible na pangalan ay Kanselahin. Walang nakikitang salitang Kanselahin. May label ang Susunod. Ang kasaysayan ay nasa ilalim ng kard."
+    "de": "Eine Moderatorin oder ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna angeklickt. Schritt 1 von 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",
+    "es": "Una persona moderadora pulsó Editar la entrada de la tienda en Cafe Luna. El paso 1 de 5 · Fotos está abierto. El paso de fotos se cierra con un Cerrar (X) solo de icono. El nombre accesible es Cancelar. No hay una palabra Cancelar visible. Siguiente está etiquetado. El historial está bajo la tarjeta.",
+    "fil": "Isang moderator ang nag-click ng Baguhin ang entry sa shop sa Cafe Luna. Bukas ang hakbang 1 sa 5 · Mga larawan. Ang hakbang ng larawan ay nagsasara sa icon-lamang na Isara (X). Ang accessible na pangalan ay Kanselahin. Walang nakikitang salitang Kanselahin. May label ang Susunod. Ang kasaysayan ay nasa ilalim ng kard."
   },
   "/grants/apply:default": {
     "de": "Verifiziertes Mitglied, Finanzierung keine. Überschrift 21-Förderprogramm. Der pausierte Satz. Link https://21.gifts/statistics. Kein Steuerelement Bewerben. Öffentliche pausierte Screenshots sind unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
@@ -2995,9 +2995,9 @@
     "fil": "Utang, hakbang 6 sa 9, dolyar ng US. Heading Kaya mo bang bayaran ito? Ang pangungusap ay Kaya kong bayaran ang utang ayon sa plano: $33.33 bawat araw sa loob ng 29 araw, tapos $33.43 sa huling araw. Ang pindutan Kaya kong bayaran ito. ang kumpirmasyon. Walang checkbox."
   },
   "/moderate:group-unread": {
-    "de": "Personalhub mit ungelesener Moderatoren Chatgruppe. Das Steuerelement Moderatoren Chatgruppe zeigt 1 und den barrierefreien Namen Moderatoren Chatgruppe, 1 ungelesen (moderate.groupUnread). Ziele, Versteckte Notizen, Offene Vorschläge, Handbuch und Auszahlung pro Person anzeigen unverändert.",
+    "de": "Personalhub mit ungelesener Moderatoren Chatgruppe. Das Steuerelement Moderatoren Chatgruppe zeigt 1 und den barrierefreien Namen Moderatoren Chatgruppe, 1 ungelesen (moderate.groupUnread). Ziele, Ausgeblendete Notizen, Offene Vorschläge, Handbuch und Auszahlung pro Person anzeigen unverändert.",
     "es": "Centro del personal con un Chat de moderadores no leído. El control Chat de moderadores muestra 1 y el nombre accesible Chat de moderadores, 1 no leído (moderate.groupUnread). Objetivos, Notas ocultas, Propuestas abiertas, Manual y Mostrar el pago por persona sin cambios.",
-    "fil": "Hub ng staff na may hindi pa nabasang Chat group ng mga moderator. Ang kontrol na Chat group ng mga moderator ay nagpapakita ng 1 at accessible na pangalan Chat group ng mga moderator, 1 hindi pa nabasa (moderate.groupUnread). Mga layunin, Mga nakatagong tala, Mga bukas na panukala, Handbook, at Ipakita ang bayad bawat tao ay hindi nagbabago."
+    "fil": "Hub ng staff na may hindi pa nabasang Chat group ng mga moderator. Ang kontrol na Chat group ng mga moderator ay nagpapakita ng 1 at accessible na pangalan Chat group ng mga moderator, 1 hindi pa nabasa (moderate.groupUnread). Mga layunin, Mga nakatagong nota, Mga bukas na mungkahi, Handbook, at Ipakita ang bayad bawat tao ay hindi nagbabago."
   },
   "/welcome:photos-and-text": {
     "de": "Bei Alle: Forumszeile von Ada mit zwei Standbildern (Foto von Ada) in ForumPhotoGallery (horizontale Snap-Reihe, data-scroll-x, 88% Peek, Chip 1/2, Punkte) und Bildunterschrift Hello with these photos. unter den Fotos; das Eingabefeld ist leer (Anhängen + Textfeld + Senden).",
@@ -3035,9 +3035,9 @@
     "fil": "Ang base account na joey-rosima, vincent, o jewel-bacolbas ay nakikita ang Hindi ka pa nabe-verify. Anumang ibang base account na ang status ay hindi pending, trial, o admitted ay nakikita ang kard ng paghinto. Ang base account na may isa sa mga status na iyon ay nakikita ang Hindi ka pa nabe-verify."
   },
   "/moderate/group:stipend": {
-    "de": "Moderatorin oder Moderator. Geladener Gruppenthread mit der Nachricht von Rose Otero Tolle Arbeit heute, Moderatoren! und dem bezahlten Stipendium als Fußzeile in dieser Sprechblase (keine eigene Sprechblase): 21.gifts, der ₿-Betrag plus preferred-fiat-Suffix und die Zahlungszeit. Eingabefeld sichtbar.",
-    "es": "Moderación. Hilo de grupo cargado con el mensaje de Rose Otero ¡Gran trabajo hoy, moderadores! y el estipendio pagado como línea de pie dentro de esa burbuja (no una burbuja aparte): 21.gifts, el importe ₿ más el sufijo preferred-fiat y la hora del pago. Cuadro de redacción visible.",
-    "fil": "Moderator. Naka-load na thread ng grupo na may mensahe ni Rose Otero Magaling ang trabaho ngayon, mga moderator! at ang nabayarang stipendyo bilang linya sa paanan sa loob ng bula na iyon (hindi hiwalay na bula): 21.gifts, ang halagang ₿ plus preferred-fiat suffix, at ang oras ng bayad. Nakikita ang kahon ng pagsulat."
+    "de": "Moderatorin oder Moderator. Geladener Gruppenthread mit der Nachricht von Rose Otero Great work today, moderators! und dem bezahlten Stipendium als Fußzeile in dieser Sprechblase (keine eigene Sprechblase): 21.gifts, der ₿-Betrag plus preferred-fiat-Suffix und die Zahlungszeit. Eingabefeld sichtbar.",
+    "es": "Moderación. Hilo de grupo cargado con el mensaje de Rose Otero Great work today, moderators! y el estipendio pagado como línea de pie dentro de esa burbuja (no una burbuja aparte): 21.gifts, el importe ₿ más el sufijo preferred-fiat y la hora del pago. Cuadro de redacción visible.",
+    "fil": "Moderator. Naka-load na thread ng grupo na may mensahe ni Rose Otero Great work today, moderators! at ang nabayarang stipendyo bilang linya sa paanan sa loob ng bula na iyon (hindi hiwalay na bula): 21.gifts, ang halagang ₿ plus preferred-fiat suffix, at ang oras ng bayad. Nakikita ang kahon ng pagsulat."
   },
   "/welcome:expanded-text": {
     "de": "Adas Notiz ist ausgeklappt. Cyrills Antwort ist der Satz You got it right. Sie hat nichts gesendet und nichts empfangen, daher steht unter dem Satz keine Betragszeile. Die Fusszeile der Notiz ist ₿0, weil diese Antwort kein Geschenk hinzugefügt hat. Ada bleibt im Feed, weil sie Moderatorin ist.",
@@ -3062,7 +3062,7 @@
   "/shops:edit-history-error": {
     "de": "Eine Moderatorin hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Historie-Anfrage ist fehlgeschlagen. Der Hinweis Die Historie konnte nicht geladen werden ist sichtbar. Der Fotoschritt bleibt offen und schliesst weiterhin mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen.",
     "es": "Una moderadora abrió Editar la entrada de la tienda en Cafe Luna. Falló la petición del historial. El aviso No se pudo cargar el historial es visible. El paso de fotos sigue abierto y aún se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible.",
-    "fil": "Nagbukas ang isang moderator ng I-edit ang tala ng tindahan sa Cafe Luna. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Bukas pa ang hakbang ng larawan at nagsasara pa rin sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
+    "fil": "Nagbukas ang isang moderator ng Baguhin ang entry sa shop sa Cafe Luna. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Bukas pa ang hakbang ng larawan at nagsasara pa rin sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
   },
   "/welcome:ask-credit-preview-fiat": {
     "de": "Kredit, Schritt 9 von 9, nach einer Anfrage über 1000 US-Dollar und derselben Nachricht. Kredit ist gedrückt. Die Vorschau zeigt ein Darlehen-Etikett, den Dollarbetrag und den täglichen Dollarplan ($33.33 für 29 Tage, dann $33.43 am letzten Tag). Senden ist die einzige Übermittlung. Der Zähler liest 9 von 9.",
@@ -3100,14 +3100,14 @@
     "fil": "Pagkatapos ng Magpatuloy, ang parehong aktibong bayad tulad ng bukas na kaha: ang sticker ng tindahan, limang minuto na natitira, ang naka-lock na halaga ng sat, sa tabi nito ang default na fiat ng tumitingin, at Magbayad. Walang field ng halaga. Sa malapad na screen ipinapakita ang QR ng resibo ng Bitcoin. Ang smartphone ay nagpapakita ng countdown at Magbayad, hindi ang QR."
   },
   "/members/[accountId]:shop-edit-open": {
-    "de": "Dieselbe Moderatorin hat Shop-Eintrag bearbeiten angeklickt. Schritt 1 / 5 · Bilder ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderadora pulsó Editar la entrada de la tienda. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
-    "fil": "Pinindot ng parehong moderator ang I-edit ang tala ng tindahan. Bukas ang Hakbang 1 / 5 · Mga larawan. Sabi ng kasaysayan na wala pang mga pag-edit. Nagsasara ang hakbang ng larawan sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+    "de": "Dieselbe Moderatorin hat Shop-Eintrag bearbeiten angeklickt. Schritt 1 von 5 · Bilder ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora pulsó Editar la entrada de la tienda. El paso 1 de 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
+    "fil": "Pinindot ng parehong moderator ang Baguhin ang entry sa shop. Bukas ang Hakbang 1 sa 5 · Mga larawan. Sabi ng kasaysayan na wala pang mga pag-edit. Nagsasara ang hakbang ng larawan sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/messages/[id]:shop-edit-open": {
-    "de": "Dieselbe Moderatorin hat Shop-Eintrag bearbeiten angeklickt. Schritt 1 / 5 · Bilder ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderadora pulsó Editar la entrada de la tienda. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
-    "fil": "Pinindot ng parehong moderator ang I-edit ang tala ng tindahan. Bukas ang Hakbang 1 / 5 · Mga larawan. Sabi ng kasaysayan na wala pang mga pag-edit. Nagsasara ang hakbang ng larawan sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+    "de": "Dieselbe Moderatorin hat Shop-Eintrag bearbeiten angeklickt. Schritt 1 von 5 · Bilder ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora pulsó Editar la entrada de la tienda. El paso 1 de 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
+    "fil": "Pinindot ng parehong moderator ang Baguhin ang entry sa shop. Bukas ang Hakbang 1 sa 5 · Mga larawan. Sabi ng kasaysayan na wala pang mga pag-edit. Nagsasara ang hakbang ng larawan sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/welcome:goal-fiat": {
     "de": "Bei Alle: eine oberste englische Notiz, definiert als $1.50, mit eingefrorenem ₿1'000 und keinem zweiten Dollarbetrag, weil die Währung der betrachtenden Person die Definitionswährung ist. Beschriftung 0 %. Die Notiz entspricht der Sprache der Oberfläche, daher bietet die Karte kein Übersetzen. Der empfangene Betrag ist ₿0 · $0.00.",
@@ -3180,9 +3180,9 @@
     "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon, nabuksan ang regalo, napunan ang halaga, hindi pa naisumite. Ang panawagan sa kilos ng halaga ay Magpatuloy (forum.payContinue) sa bawat ahente ng gumagamit. Kasalukuyang katumbas sa nais na pera ng fiat (walang tagapili). Walang mali, walang QR ng bayad, wala pang pindutan para magbayad gamit ang pitaka. Ang publikasyon mismo ay hindi nagpapakita ng Magpadala ng Bitcoin."
   },
   "/shops:table-edit-open": {
-    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 / 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland und Betreiber @luna bleiben.",
-    "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Cafe Luna. El paso 1 / 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland y el operador @luna se mantienen.",
-    "fil": "Isang moderator ang nag-click sa I-edit ang tala ng tindahan sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 / 5 · Mga larawan. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland at ang operator na @luna."
+    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 von 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland und Betreiber @luna bleiben.",
+    "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Cafe Luna. El paso 1 de 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland y el operador @luna se mantienen.",
+    "fil": "Isang moderator ang nag-click sa Baguhin ang entry sa shop sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 sa 5 · Mga larawan. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/view/[viewKey]:about-photo": {
     "de": "Gültiger bekannter Schlüssel mit Text und Foto unter Über mich (aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true). Dieselbe schreibgeschützte Karte wie die Standardansicht plus die Überschrift Über mich, die Bio und das Foto (Foto zu Über mich, das ganze Bild, object-contain, max-h-80, kein Zuschnitt zum Ausfüllen). Copy-profile-link bleibt. Keine Bearbeitung.",
@@ -3285,9 +3285,9 @@
     "fil": "Nakargang kard na naka-sign out. Pamagat Profile, pangalan Robin, Panlabas, Beripikadong address sa Nostr robin@nostr.example, Address ng bayad sa profile nila pay@ln.example, susi ng Nostr npub1example, icon lang na Kopyahin. Walang larawan, walang bayad, walang palabas na link, walang talata ng paliwanag, o kontrol sa pagsara. Ang mga nakasarang pindutan ay 1 post at 1 reaksyon; sarado ang feed."
   },
   "/shops:map-edit-open": {
-    "de": "Ein Moderator hat Shop-Eintrag bearbeiten neben Ada · Happyland angetippt. Schritt 1 / 5 · Bilder ist geöffnet. Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Foto-Schritt schließt mit einem nur-Icon Schließen (X). Der barrierefreie Name ist Abbrechen. Das Wort Abbrechen ist nicht sichtbar. Karte bleibt ausgewählt. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
-    "es": "Un moderador pulsó Editar la entrada de la tienda junto a Ada · Happyland. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay palabra visible Cancelar. Mapa sigue seleccionado. Sin clave de mapa, así que el marco permanece vacío. No hay un segundo encabezado Mapa.",
-    "fil": "May moderator na nag-click ng I-edit ang tala ng tindahan sa tabi ni Ada · Happyland. Bukas ang Hakbang 1 / 5 · Mga larawan. Sabi ng kasaysayan, wala pang mga edit. Ang hakbang ng larawan ay nagsasara sa icon lang na Isara (X). Ang accessible na pangalan ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatiling napili ang Mapa. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten neben Ada · Happyland angetippt. Schritt 1 von 5 · Bilder ist geöffnet. Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Foto-Schritt schließt mit einem nur-Icon Schließen (X). Der barrierefreie Name ist Abbrechen. Das Wort Abbrechen ist nicht sichtbar. Karte bleibt ausgewählt. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
+    "es": "Un moderador pulsó Editar la entrada de la tienda junto a Ada · Happyland. El paso 1 de 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay palabra visible Cancelar. Mapa sigue seleccionado. Sin clave de mapa, así que el marco permanece vacío. No hay un segundo encabezado Mapa.",
+    "fil": "May moderator na nag-click ng Baguhin ang entry sa shop sa tabi ni Ada · Happyland. Bukas ang Hakbang 1 sa 5 · Mga larawan. Sabi ng kasaysayan, wala pang mga edit. Ang hakbang ng larawan ay nagsasara sa icon lang na Isara (X). Ang accessible na pangalan ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatiling napili ang Mapa. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/setup/name:default": {
     "de": "Angemeldet, noch kein Name. Ihr Name und das Namensfeld oben, Weiter und beschriftetes Überspringen unten am Bildschirm angeheftet. Ein Menü oben rechts; darin Home, Shops, Kasse, Profil, Grants, Wallet, Wohnzimmerregeln, Trust Chain, Statistik, Benachrichtigungen, Nachrichten, Kontakt, optional App installieren und Abmelden.",
@@ -3330,9 +3330,9 @@
     "fil": "Agad binubuksan ng /members/[accountId]?lang=Kikamba ang ShopStickerOverlay. Ang paunang tingin ay ang sticker na English/Kikamba (Kikamba sa halip na TINATANGGAP DITO / tekstong i-scan sa Filipino). Parehong paligid: Pangalawang wika na nagpapakita ng Kikamba sa itaas ng paunang tingin, PDF ang napili, I-download sa ibaba. Tumutugma ang mga combo sa mobile sa computer. Karayom state-members-sticker-kikamba."
   },
   "/moderate:default": {
-    "de": "Personal- (Moderatoren-)Hub mit Überschrift Moderation, beschriftete Steuerung Ziele → /grants/goals, beschriftete Steuerung Versteckte Notizen → /moderate/hidden, beschriftete Steuerung Offene Vorschläge → /moderate/proposals, Steuerung Moderatoren Chatgruppe → /moderate/group, Steuerung Handbuch → /moderate/handbook und Auszahlung pro Person anzeigen → /moderate/payouts. Kein Ziel-Widget.",
+    "de": "Personal- (Moderatoren-)Hub mit Überschrift Moderation, beschriftete Steuerung Ziele → /grants/goals, beschriftete Steuerung Ausgeblendete Notizen → /moderate/hidden, beschriftete Steuerung Offene Vorschläge → /moderate/proposals, Steuerung Moderatoren Chatgruppe → /moderate/group, Steuerung Handbuch → /moderate/handbook und Auszahlung pro Person anzeigen → /moderate/payouts. Kein Ziel-Widget.",
     "es": "Centro del personal (moderador) con encabezado Moderación, control etiquetado Objetivos → /grants/goals, control etiquetado Notas ocultas → /moderate/hidden, control etiquetado Propuestas abiertas → /moderate/proposals, control Chat de moderadores → /moderate/group, control Manual → /moderate/handbook, y Mostrar el pago por persona → /moderate/payouts. Sin widget de objetivo.",
-    "fil": "Hub ng staff (moderator) na may pamagat na Moderasyon, kontrol na may label na Mga layunin → /grants/goals, kontrol na may label na Mga nakatagong tala → /moderate/hidden, kontrol na may label na Mga bukas na panukala → /moderate/proposals, kontrol na Chat group ng mga moderator → /moderate/group, kontrol na Handbook → /moderate/handbook, at Ipakita ang bayad bawat tao → /moderate/payouts. Walang widget ng layunin."
+    "fil": "Hub ng staff (moderator) na may pamagat na Moderasyon, kontrol na may label na Mga layunin → /grants/goals, kontrol na may label na Mga nakatagong nota → /moderate/hidden, kontrol na may label na Mga bukas na mungkahi → /moderate/proposals, kontrol na Chat group ng mga moderator → /moderate/group, kontrol na Handbook → /moderate/handbook, at Ipakita ang bayad bawat tao → /moderate/payouts. Walang widget ng layunin."
   },
   "/welcome:goal-110": {
     "de": "Bei Alle: oberste Ada-Notiz mit sats: 23100 und goalSats: 21000. Die Anfrage ist in Bitcoin definiert, daher benennt ForumGoalBar Anfragen ₿21'000 · $21.00 (der USD des Betrachters vom Geschenktag-Kurs; diese Fixture speichert keinen Snapshot). Der Notizbetrag ist ₿23'100 · $23.10. Volle orange Spur plus grüner Überlauf (10 % der Spurbreite über den rechten Rand), Beschriftung 110%.",
@@ -3342,7 +3342,7 @@
   "/welcome:ask-credit-amount": {
     "de": "Kredit, Schritt 1 von 9. Um Geld bitten ist ausgewählt. Kredit ist gedrückt unter Einmalig / Täglich (Einmalig gedrückt). Die Überschrift ist Wie viel? 21000 ist in Bitcoin eingegeben, mit dem bevorzugten Fiat-Gegenwert unter dem Feld. Weiter ist aktiv. Es gibt kein Kontrollkästchen und kein Senden auf diesem Schritt. Die Wahl von Spende verlässt diesen Pfad und kehrt zur vierstufigen Anfrage zurück.",
     "es": "Crédito, paso 1 de 9. Pedir dinero está seleccionado. Crédito está pulsado bajo Una vez / Cada día (Una vez pulsado). El encabezado es ¿Cuánto? 21000 está escrito en bitcoin, con el equivalente en fiat preferido bajo el campo. Continuar está habilitado. No hay casilla ni Publicar en este paso. Elegir Donación abandona esta ruta y vuelve al pedido de cuatro pasos.",
-    "fil": "Utang, hakbang 1 ng 9. Nakapili ang Humingi ng pera. Nakapindot ang Utang sa ilalim ng Isahan / Araw-araw (nakapindot ang Isahan). Ang pamagat ay Magkano? 21000 ang naka-type sa bitcoin, kasama ang katumbas sa preferred-fiat sa ilalim ng field. Naka-enable ang Magpatuloy. Walang checkbox at walang I-post sa hakbang na ito. Ang pagpili ng Donasyon ay umaalis sa landas na ito at bumabalik sa apat na hakbang na hiling."
+    "fil": "Utang, hakbang 1 ng 9. Nakapili ang Humingi ng pera. Nakapindot ang Utang sa ilalim ng Isang beses / Araw-araw (nakapindot ang Isang beses). Ang pamagat ay Magkano? 21000 ang naka-type sa bitcoin, kasama ang katumbas sa preferred-fiat sa ilalim ng field. Naka-enable ang Magpatuloy. Walang checkbox at walang I-post sa hakbang na ito. Ang pagpili ng Donasyon ay umaalis sa landas na ito at bumabalik sa apat na hakbang na hiling."
   },
   "/members/[accountId]:posts-open-goal-credit": {
     "de": "Identitätskarte; Beiträge gedrückt; der gelistete Beitrag hat sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in Bitcoin definiert, daher zeigt die Leiste Anfragen ₿21'000 · $21.00, den Notizbetrag ₿10'500 · $10.50, ein Etikett Darlehen und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Beschriftung 50%. Der Beitrag bietet Wer gegeben hat und wer zurückbekommt.",
@@ -3410,9 +3410,9 @@
     "fil": "Naka-sign in na may pangalan (o nilaktawang pangalan) at walang address. Ang Wallet of Satoshi address mo at ang patlang ng address sa itaas, Magpatuloy at may etiketa na Laktawan na nakaangkla sa ibaba ng screen. Isang Menu sa kanang itaas; nandoon ang Tahanan, Mga tindahan, Punto ng benta, Profile, Mga tulong, Pitaka, Mga patakaran sa living room, Kadena ng tiwala, Estadistika, Mga abiso, Mga mensahe, Kontak, opsyonal na I-install ang app, at Mag-log out."
   },
   "/welcome:quoted-note": {
-    "de": "Angemeldeter Gründer Cyrill, Wohnzimmergesetze verworfen, Aktiv. Nur die bezahlte verifizierte 21-sat-Notiz von Riana Rosello steht in der Liste; die Karte ist aufgeklappt. Cyrills Antwort zeigt nur zur Information: und einen verschachtelten technischen-Notiz-Beitrag (Foto, Bildunterschrift beginnend mit Eine kurze technische Notiz, Gründer-Pille, ₿43). Die rohe URL https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec ist nicht sichtbar.",
-    "es": "Fundador Cyrill con sesión iniciada, leyes del salón descartadas, Activo. Solo la nota verificada de 21 sat pagada de Riana Rosello está en la lista; la tarjeta está expandida. La respuesta de Cyrill muestra solo para información: y una publicación anidada de nota técnica (foto, pie que empieza Una nota técnica rápida, píldora Fundador, ₿43). La URL cruda https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec no es visible.",
-    "fil": "Naka-sign in na tagapagtatag na si Cyrill, inalis ang pahiwatig ng mga batas sa living room, Aktibo. Tanging ang nabayarang na-verify na tala na 21-sat ni Riana Rosello ang nasa listahan; naka-expand ang kard. Ang sagot ni Cyrill ay nagpapakita ng para sa impormasyon lang: at isang nested na post ng teknikal na tala (larawan, paliwanag na nagsisimula sa Isang Maikling Teknikal na Tala, pildora ng Tagapagtatag, ₿43). Hindi nakikita ang hilaw na URL na https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec."
+    "de": "Angemeldeter Gründer Cyrill, Wohnzimmergesetze verworfen, Aktiv. Nur die bezahlte verifizierte 21-sat-Notiz von Riana Rosello steht in der Liste; die Karte ist aufgeklappt. Cyrills Antwort zeigt just for information: und einen verschachtelten technischen-Notiz-Beitrag (Foto, Bildunterschrift beginnend mit A Quick Technical Note, Gründer-Pille, ₿43). Die rohe URL https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec ist nicht sichtbar.",
+    "es": "Fundador Cyrill con sesión iniciada, leyes del salón descartadas, Activo. Solo la nota verificada de 21 sat pagada de Riana Rosello está en la lista; la tarjeta está expandida. La respuesta de Cyrill muestra just for information: y una publicación anidada de nota técnica (foto, pie que empieza A Quick Technical Note, píldora Fundador, ₿43). La URL cruda https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec no es visible.",
+    "fil": "Naka-sign in na tagapagtatag na si Cyrill, inalis ang pahiwatig ng mga batas sa living room, Aktibo. Tanging ang nabayarang na-verify na tala na 21-sat ni Riana Rosello ang nasa listahan; naka-expand ang kard. Ang sagot ni Cyrill ay nagpapakita ng just for information: at isang nested na post ng teknikal na tala (larawan, paliwanag na nagsisimula sa A Quick Technical Note, pildora ng Tagapagtatag, ₿43). Hindi nakikita ang hilaw na URL na https://21.gifts/messages/d8cd22dd-d5c4-46a8-82ed-38b4d2f551ec."
   },
   "/members/[accountId]:default": {
     "de": "Mitglieder-Identitätskarte mit Über mich in der Karte, wenn aboutMe gesetzt ist; schreibgeschützter Standort; Nachricht auf der Karte, wenn ein anderes Mitglied ein profileMessage hat. Kein Forumsbeitrag. Eine erfolgreiche leere Reihe und laufende Aktivität zeigen profile.chartEmpty (Noch keine Gaben.); ein fehlgeschlagener Aktivitätsabruf zeigt profile.chartError (Gaben konnten nicht geladen werden.); das Diagramm sagt nie Wird geladen… und hat keine Steuerung zum erneuten Versuch.",
@@ -3452,7 +3452,7 @@
   "/welcome:ask-credit-preview": {
     "de": "Kredit, Schritt 9 von 9, bitcoin, nach der Nachricht Need help with a train ticket. Überschrift Vorschau. Einmalig und Kredit sind gedrückt. Die Karte zeigt die Autorin, die Nachricht und die Zielleiste bei 0 %: Anfragen ₿21'000 · $21.00, ein Darlehen-Etikett und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Senden ist die einzige Übermittlung. Sie sendet goalRepayable: true und goalTermDays: 30 mit dem Anfragebetrag. Der Zähler zeigt 9 von 9.",
     "es": "Crédito, paso 9 de 9, bitcoin, después del mensaje Need help with a train ticket. Encabezado Vista previa. Una vez y Crédito están pulsados. La tarjeta muestra al autor, el mensaje y la barra de meta al 0 %: Pedir ₿21'000 · $21.00, una etiqueta Préstamo y A devolver por día: ₿700 · $0.70 por día durante 30 días. Publicar es el único envío. Envía goalRepayable: true y goalTermDays: 30 con el importe de la petición. El contador muestra 9 de 9.",
-    "fil": "Utang, hakbang 9 ng 9, bitcoin, pagkatapos ng mensahe Need help with a train ticket. Ulo Preview. Isahan at Utang ay nakapindot. Ipinapakita ng tarheta ang may-akda, ang mensahe, at ang bar ng layunin sa 0%: Hiling ₿21'000 · $21.00, isang tatak na Pautang, at Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Ang I-post ang tanging pagpasa. Nagpapadala ito ng goalRepayable: true at goalTermDays: 30 kasama ang halaga ng hiling. Ang panbilang ay nagbabasa 9 ng 9."
+    "fil": "Utang, hakbang 9 ng 9, bitcoin, pagkatapos ng mensahe Need help with a train ticket. Ulo Preview. Isang beses at Utang ay nakapindot. Ipinapakita ng tarheta ang may-akda, ang mensahe, at ang bar ng layunin sa 0%: Hiling ₿21'000 · $21.00, isang tatak na Pautang, at Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Ang I-post ang tanging pagpasa. Nagpapadala ito ng goalRepayable: true at goalTermDays: 30 kasama ang halaga ng hiling. Ang panbilang ay nagbabasa 9 ng 9."
   },
   "/profile:images": {
     "de": "Besitzerkarte mit drei verschiedenen Bildern zugleich. Stub GET /pictures/me mit einem quadratischen Porträt, GET /banners/me mit einer breiten Szene und GET /me/about/photo mit einem dritten Foto. Das breite Bild ist die Kopfzeile der Karte, das Profilfoto ist das runde Bild an der Unterkante, und das Über-mich-Foto bleibt unter der Bio. Seed aboutMe: 'I build on Bitcoin' und aboutMeHasPhoto: true. Alle drei Bilder sind im Sichtbereich.",
