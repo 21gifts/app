@@ -7,6 +7,8 @@ import type { Account } from '@/lib/api-types';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
 vi.mock('@/lib/api', () => ({
   setAmountUnit: vi.fn(),
 }));
@@ -346,6 +348,29 @@ describe('AmountEntry', () => {
     expect(screen.getByLabelText('Amount')).toHaveProperty('value', '21');
     expect(screen.getByLabelText('Amount')).toHaveProperty('disabled', true);
     expect(screen.getByText('$0.02')).toBeTruthy();
+  });
+
+  it('keeps the unit local while a login is still opening its wallet', async () => {
+    vi.mocked(setAmountUnit).mockClear();
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    walletOpen.value = false;
+    const onValueChange = vi.fn();
+    try {
+      renderWithLocale(
+        <AmountEntry label="Amount" value="21" onValueChange={onValueChange} rateDay={DAY} />,
+        'en',
+        'ch',
+        'USD',
+      );
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+      });
+      expect(onValueChange).toHaveBeenCalledWith('0.021');
+      expect(setAmountUnit).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().account?.amountUnit).toBe(account.amountUnit);
+    } finally {
+      walletOpen.value = true;
+    }
   });
 
   it('stores the chosen unit on the signed-in account', async () => {
