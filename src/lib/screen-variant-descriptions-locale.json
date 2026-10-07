@@ -330,9 +330,9 @@
     "fil": "Kawani (moderator) na naghihintay sa GET /trust/proposals. Naglo-load…"
   },
   "/welcome:composer-photo-and-text": {
-    "de": "Vorschau plus Bildunterschrift Bildunterschrift mit ausgewähltem Foto., bereit zum Senden.",
-    "es": "Vista previa más pie de foto Pie de foto con foto seleccionada., lista para publicar.",
-    "fil": "Paunang tingin kasama ang paliwanag na Paliwanag na may napiling larawan., handa nang i-post."
+    "de": "Vorschau plus Bildunterschrift Caption with selected photo., bereit zum Senden.",
+    "es": "Vista previa más pie de foto Caption with selected photo., lista para publicar.",
+    "fil": "Paunang tingin kasama ang paliwanag na Caption with selected photo., handa nang i-post."
   },
   "/grants/apply:admitted": {
     "de": "Ein aufgenommenes Mitglied sieht den Satz zur täglichen 21.gifts-Zuschussauszahlung.",
@@ -490,9 +490,9 @@
     "fil": "Pamagat Mas mabuting huwag, mahinang panimula, at ang listahan ng mas mabuting huwag (minus na glif)."
   },
   "/welcome:composer-video-and-text": {
-    "de": "Videovorschau plus Bildunterschrift Bildunterschrift mit ausgewähltem Video., bereit zum Senden.",
-    "es": "Vista previa de vídeo más pie de foto Pie de foto con vídeo seleccionado., listo para publicar.",
-    "fil": "Paunang tingin sa bidyo kasama ang paliwanag Paliwanag na may napiling bidyo., handa nang I-post."
+    "de": "Videovorschau plus Bildunterschrift Caption with selected video., bereit zum Senden.",
+    "es": "Vista previa de vídeo más pie de foto Caption with selected video., listo para publicar.",
+    "fil": "Paunang tingin sa bidyo kasama ang paliwanag Caption with selected video., handa nang I-post."
   },
   "/welcome:error-too-large": {
     "de": "Kodiertes JPEG über 1 MB → Fotos dürfen höchstens 1 MB, Videos höchstens 32 MB gross sein.",
@@ -595,9 +595,9 @@
     "fil": "Pagkatapos ng POST /translate 502: Hindi maisalin ang notang ito. Pakisubukan muli."
   },
   "/welcome:composer-photos-and-text": {
-    "de": "Zwei JPEG-Vorschauen plus Bildunterschrift Bildunterschrift mit ausgewählten Fotos., bereit zum Senden.",
-    "es": "Dos vistas previas JPEG más pie de foto Pie de foto con fotos seleccionadas., listo para publicar.",
-    "fil": "Dalawang paunang tingin na JPEG kasama ang paliwanag na Paliwanag na may mga napiling litrato., handa nang I-post."
+    "de": "Zwei JPEG-Vorschauen plus Bildunterschrift Caption with selected photos., bereit zum Senden.",
+    "es": "Dos vistas previas JPEG más pie de foto Caption with selected photos., listo para publicar.",
+    "fil": "Dalawang paunang tingin na JPEG kasama ang paliwanag na Caption with selected photos., handa nang I-post."
   },
   "/shops:map-loading": {
     "de": "Karte ist ausgewählt und Orte sind noch nicht eingetroffen. Wird geladen… Keine zweite Überschrift Karte.",
@@ -720,9 +720,9 @@
     "fil": "Hakbang Hiling 2 ng 4 na may isang napiling litrato at Alisin ang litrato. Nanatiling naka-enable ang Magpatuloy."
   },
   "/welcome:error-unsupported-with-text": {
-    "de": "Derselbe Hinweis mit der Beschriftung Beschriftung mit einem nicht unterstützten Foto. noch im Verfasser.",
-    "es": "La misma alerta con el epígrafe Leyenda con una foto no compatible. todavía en el compositor.",
-    "fil": "Parehong alerto na may paliwanag na Paliwanag na may litratong hindi suportado. nasa kompositor pa."
+    "de": "Derselbe Hinweis mit der Beschriftung Caption with an unsupported photo. noch im Verfasser.",
+    "es": "La misma alerta con el epígrafe Caption with an unsupported photo. todavía en el compositor.",
+    "fil": "Parehong alerto na may paliwanag na Caption with an unsupported photo. nasa kompositor pa."
   },
   "/shops:map-edit-text": {
     "de": "Erneut Weiter. Schritt 3 / 5 · Text ist geöffnet. Die Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
@@ -765,14 +765,14 @@
     "fil": "Pamagat Malugod na tinatanggap, mahinang panimula, at ang listahan ng pagtanggap (app-fg na tsek na glip, hindi diin)."
   },
   "/setup/rules:busy": {
-    "de": "POST des letzten Kapitels unterwegs. Einverstanden deaktiviert mit Spinner; Unser Haus weiterhin sichtbar.",
-    "es": "POST del último capítulo en curso. De acuerdo desactivado con un indicador; Nuestra casa sigue visible.",
-    "fil": "POST ng huling kabanata na papunta. Naka-disable ang Sumang-ayon na may spinner; Nakikita pa ang Ang bahay namin."
+    "de": "POST des letzten Kapitels unterwegs. Ich stimme diesen Regeln zu deaktiviert mit Spinner; Unser Haus weiterhin sichtbar.",
+    "es": "POST del último capítulo en curso. Acepto estas reglas desactivado con un indicador; Nuestra casa sigue visible.",
+    "fil": "POST ng huling kabanata na papunta. Naka-disable ang Sumasang-ayon ako sa mga patakarang ito na may spinner; Nakikita pa ang Ang bahay namin."
   },
   "/welcome:preparing-photo-and-text": {
-    "de": "Derselbe Spinner, Beschriftung Beschriftung, während das Foto vorbereitet wird. bereits im Textfeld.",
-    "es": "El mismo indicador, epígrafe Leyenda mientras se prepara la foto. ya en el área de texto.",
-    "fil": "Parehong spinner, paliwanag Paliwanag habang inihanda ang litrato. nasa kahon ng teksto na."
+    "de": "Derselbe Spinner, Beschriftung Caption while the photo is preparing. bereits im Textfeld.",
+    "es": "El mismo indicador, epígrafe Caption while the photo is preparing. ya en el área de texto.",
+    "fil": "Parehong spinner, paliwanag Caption while the photo is preparing. nasa kahon ng teksto na."
   },
   "/moderate/group:translate": {
     "de": "Moderator. Eine eingehende deutsche Nachricht. Übersetzen ist sichtbar. Der deutsche Text bleibt.",
@@ -785,9 +785,9 @@
     "fil": "Hiling hakbang 2 ng 4 pagkatapos ng litratong higit sa 1 MB. Nasa ilalim ng hakbang ang mali. Walang maliit na larawan."
   },
   "/welcome:composer-text-after-remove": {
-    "de": "Nach Foto entfernen bleibt die Beschriftung Beschriftung nach dem Entfernen des Fotos behalten.; Vorschau weg.",
-    "es": "Tras Quitar foto, el epígrafe Leyenda conservada tras quitar la foto. permanece; la vista previa desapareció.",
-    "fil": "Pagkatapos ng Alisin ang litrato, nananatili ang paliwanag Pinanatili ang paliwanag pagkatapos alisin ang litrato.; wala na ang paunang tanaw."
+    "de": "Nach Foto entfernen bleibt die Beschriftung Caption kept after removing photo.; Vorschau weg.",
+    "es": "Tras Quitar foto, el epígrafe Caption kept after removing photo. permanece; la vista previa desapareció.",
+    "fil": "Pagkatapos ng Alisin ang litrato, nananatili ang paliwanag Caption kept after removing photo.; wala na ang paunang tanaw."
   },
   "/members/[accountId]:posts-loading": {
     "de": "Identitätskarte; Beitragszahl gedrückt; Feed zeigt Wird geladen…; keine angeheftete Profilnotiz-Karte.",
@@ -825,9 +825,9 @@
     "fil": "Humingi ng pera, hakbang 4 ng 4, pinindot ang Isang beses, habang isinusumite ang post. Naka-disable pa rin ang pindutan."
   },
   "/welcome:error-too-large-with-text": {
-    "de": "Dieselbe Meldung mit der Bildunterschrift Bildunterschrift mit einem Foto, das zu groß ist. noch im Verfassenfeld.",
-    "es": "La misma alerta con el pie Pie de foto con una foto demasiado grande. todavía en el redactor.",
-    "fil": "Parehong alerto na may paliwanag na Paliwanag na may larawang masyadong malaki. nasa patlang pa ng pagsulat."
+    "de": "Dieselbe Meldung mit der Bildunterschrift Caption with a photo that is too large. noch im Verfassenfeld.",
+    "es": "La misma alerta con el pie Caption with a photo that is too large. todavía en el redactor.",
+    "fil": "Parehong alerto na may paliwanag na Caption with a photo that is too large. nasa patlang pa ng pagsulat."
   },
   "/moderate/group:translate-loading": {
     "de": "Moderator. Übersetzen wurde gedrückt und die Anfrage ist noch nicht zurück. Die Schaltfläche ist beschäftigt.",
@@ -895,9 +895,9 @@
     "fil": "Nabigo ang pagkuha ng profile. Teksto Hindi ma-load ang profile. Subukan ulit. at Subukan ulit."
   },
   "/welcome:ask-preview-video-text": {
-    "de": "Anfragen, Schritt 4 von 4, Einmalig ist gedrückt, ein Video und die Bildunterschrift Brauche Hilfe bei einem Zugticket.",
-    "es": "Pedir, paso 4 de 4, Una vez está pulsado, un vídeo y el pie Necesito ayuda con un billete de tren.",
-    "fil": "Hiling, hakbang 4 sa 4, nakapindot ang Isahan, isang bidyo at ang paliwanag Kailangan ng tulong sa tiket ng tren."
+    "de": "Anfragen, Schritt 4 von 4, Einmalig ist gedrückt, ein Video und die Bildunterschrift Need help with a train ticket.",
+    "es": "Pedir, paso 4 de 4, Una vez está pulsado, un vídeo y el pie Need help with a train ticket.",
+    "fil": "Hiling, hakbang 4 sa 4, nakapindot ang Isahan, isang bidyo at ang paliwanag Need help with a train ticket."
   },
   "/welcome:composer-place": {
     "de": "Ort hinzufügen ist geöffnet und der Kartenschlüssel ist leer, daher zeigt das Feld Die Karte ist nicht verfügbar.",
@@ -950,9 +950,9 @@
     "fil": "Ang pagpili kay @ada mula sa bukas na listahan ay nagsusulat ng @ada  sa patlang ng reaksyon at isinasara ang listahan."
   },
   "/shops:add-photos": {
-    "de": "Geschäft hinzufügen ist geöffnet bei Schritt 1 / 5 · Fotos. Weiter ist die einzige Schaltfläche. Die Geschäftsliste ist leer.",
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 1 / 5 · Bilder. Weiter ist die einzige Schaltfläche. Die Geschäftsliste ist leer.",
     "es": "Añadir una tienda está abierto en el paso 1 / 5 · Fotos. Siguiente es el único botón. La lista de tiendas está vacía.",
-    "fil": "Bukas ang Magdagdag ng tindahan sa hakbang 1 / 5 · Mga litrato. Ang Susunod ang tanging pindutan. Walang laman ang listahan ng mga tindahan."
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 1 / 5 · Mga larawan. Ang Susunod ang tanging pindutan. Walang laman ang listahan ng mga tindahan."
   },
   "/members/[accountId]:mention-inserted-reply": {
     "de": "Die Auswahl von @ada aus dieser offenen Liste schreibt @ada  in das Reaktionsfeld und schließt die Liste.",
@@ -985,14 +985,14 @@
     "fil": "Pagkatapos ng nabigong pagsasalin. Ipinapakita ng listahan ng mga tala Hindi maisalin ang notang ito. Pakisubukan muli."
   },
   "/welcome:ask-preview-several-text": {
-    "de": "Anfragen Schritt 4 von 4, Einmalig gedrückt, zwei Fotos und die Bildunterschrift Brauche Hilfe bei einem Zugticket.",
-    "es": "Pedir paso 4 de 4, Una vez pulsado, dos fotos y el pie de foto Necesito ayuda con un billete de tren.",
-    "fil": "Hiling hakbang 4 sa 4, pinindot ang Isang beses, dalawang litrato at ang kapsyon Kailangan ng tulong sa tiket ng tren."
+    "de": "Anfragen Schritt 4 von 4, Einmalig gedrückt, zwei Fotos und die Bildunterschrift Need help with a train ticket.",
+    "es": "Pedir paso 4 de 4, Una vez pulsado, dos fotos y el pie de foto Need help with a train ticket.",
+    "fil": "Hiling hakbang 4 sa 4, pinindot ang Isang beses, dalawang litrato at ang kapsyon Need help with a train ticket."
   },
   "/welcome:error-too-many-with-text": {
-    "de": "Dieselbe tooMany-Warnung bei 11 Dateien, die Bildunterschrift Bildunterschrift mit zu vielen Fotos. steht noch im Verfasser.",
-    "es": "La misma alerta tooMany de 11 archivos, con el pie de foto Pie de foto con demasiadas fotos. todavía en el redactor.",
-    "fil": "Parehong alerto tooMany ng 11 file, ang kapsyon Kapsyon na may masyadong maraming litrato. ay nasa kahon ng pagsulat pa."
+    "de": "Dieselbe tooMany-Warnung bei 11 Dateien, die Bildunterschrift Caption with too many photos. steht noch im Verfasser.",
+    "es": "La misma alerta tooMany de 11 archivos, con el pie de foto Caption with too many photos. todavía en el redactor.",
+    "fil": "Parehong alerto tooMany ng 11 file, ang kapsyon Caption with too many photos. ay nasa kahon ng pagsulat pa."
   },
   "/members/[accountId]:replies-error": {
     "de": "Identitätskarte; Antworten-Zähler gedrückt; Fehler in der Übersicht und Erneut versuchen; keine angeheftete Profilnotiz-Karte.",
@@ -1092,12 +1092,12 @@
   "/shops:mention-suggest": {
     "de": "Shop hinzufügen ist geöffnet bei 3 / 5 · Text. Der Shop-Text enthält @ und die Personenliste ist geöffnet, mit @ada.",
     "es": "Añadir una tienda está abierto en 3 / 5 · Texto. El texto de la tienda contiene @ y la lista Personas está abierta, con @ada.",
-    "fil": "Bukas ang Magdagdag ng tindahan sa 3 / 5 · Teksto. Ang Teksto ng shop ay may @ at bukas ang listahan ng Mga tao, na may @ada."
+    "fil": "Bukas ang Magdagdag ng shop sa 3 / 5 · Teksto. Ang Teksto ng shop ay may @ at bukas ang listahan ng Mga tao, na may @ada."
   },
   "/shops:add-text": {
     "de": "Shop hinzufügen ist geöffnet bei Schritt 3 / 5 · Text. Ort wurde übersprungen. Weiter ist die einzige Schaltfläche auf der Karte.",
     "es": "Añadir una tienda está abierto en el paso 3 / 5 · Texto. Se omitió Lugar. Siguiente es el único botón de la tarjeta.",
-    "fil": "Bukas ang Magdagdag ng tindahan sa hakbang 3 / 5 · Teksto. Nilaktawan ang Lugar. Ang Susunod ang tanging pindutan sa kard."
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 / 5 · Teksto. Nilaktawan ang Lugar. Ang Susunod ang tanging pindutan sa kard."
   },
   "/moderate/payouts:empty": {
     "de": "Personal-Seite, wenn niemand berechtigt war. In diesen sieben Tagen war niemand berechtigt. Keine Tabelle.",
@@ -1160,9 +1160,9 @@
     "fil": "Parehong pampublikong tala pagkatapos ng Patakbuhin. Wala na ang pindutan ng Patakbuhin. Nanatili sa larawan ang pindutan ng buong screen."
   },
   "/messages/[id]:sunday": {
-    "de": "Geräte-lokaler Sonntag. Hallo von Ada bleibt. Reaktion schreiben ist weg. Am Sonntag ist das Schreiben pausiert.",
-    "es": "Domingo según la hora del dispositivo. Hola de Ada se queda. Escribe una reacción desapareció. El domingo no se puede escribir.",
-    "fil": "Linggo ayon sa oras ng aparato. Nanatili ang Kumusta mula kay Ada. Wala na ang Sumulat ng reaksyon. Linggo, hindi puwedeng magsulat."
+    "de": "Geräte-lokaler Sonntag. Hello from Ada bleibt. Reaktion schreiben ist weg. Am Sonntag ist das Schreiben pausiert.",
+    "es": "Domingo según la hora del dispositivo. Hello from Ada se queda. Escribe una reacción desapareció. El domingo no se puede escribir.",
+    "fil": "Linggo ayon sa oras ng aparato. Nanatili ang Hello from Ada. Wala na ang Sumulat ng reaksyon. Linggo, hindi puwedeng magsulat."
   },
   "/welcome:ask-preview-daily": {
     "de": "Anfragen-Schritt 4 von 4 mit Täglich gedrückt, dasselbe Foto, dieselbe Bildunterschrift und derselbe Zielbalken wie in der einmaligen Vorschau.",
@@ -1210,9 +1210,9 @@
     "fil": "Walang lagdang permanenteng link ng parehong tala na walang pangalan ng lugar. Ang link ng MapPin ay nagpapakita ng 14.60000, 120.98000."
   },
   "/welcome:composer-text": {
-    "de": "Eingetippte Bildunterschrift Bildunterschrift vor dem Anhängen eines Fotos. im Eingabefeld; noch keine Vorschau; Anhängen + Senden inaktiv.",
-    "es": "Pie escrito Pie de foto antes de adjuntar una foto. en el redactor; aún no hay vista previa; adjuntar + publicar inactivo.",
-    "fil": "Nai-type na paliwanag Paliwanag bago maglakip ng litrato. sa kahon ng pagsulat; wala pang paunang tingin; maglakip + mag-post na walang ginagawa."
+    "de": "Eingetippte Bildunterschrift Caption before attaching a photo. im Eingabefeld; noch keine Vorschau; Anhängen + Senden inaktiv.",
+    "es": "Pie escrito Caption before attaching a photo. en el redactor; aún no hay vista previa; adjuntar + publicar inactivo.",
+    "fil": "Nai-type na paliwanag Caption before attaching a photo. sa kahon ng pagsulat; wala pang paunang tingin; maglakip + mag-post na walang ginagawa."
   },
   "/shops:map-empty": {
     "de": "Die Karte ist ausgewählt und es gibt keine Orte. Noch keine Orte. Keine zweite Überschrift Karte. Das Eingabefeld ist verschwunden.",
@@ -1240,9 +1240,9 @@
     "fil": "Pinindot ang Kopyahin. Ang simbolo ay ang tsek at ang naa-access na pangalan ay Nakopya. Ang susi ay npub1example pa rin."
   },
   "/welcome:ask-text-filled": {
-    "de": "Anfragen, Schritt 3 von 4, mit Brauche Hilfe bei einem Zugticket im Nachrichtenfeld. Weiter bleibt aktiviert.",
-    "es": "Pedir, paso 3 de 4, con Necesito ayuda con un billete de tren escrito en el campo de mensaje. Continuar sigue habilitado.",
-    "fil": "Hiling, hakbang 3 ng 4, na may Kailangan ng tulong sa bilyete ng tren na nakasulat sa patlang ng mensahe. Magpatuloy ay nananatiling gumagana."
+    "de": "Anfragen, Schritt 3 von 4, mit Need help with a train ticket im Nachrichtenfeld. Weiter bleibt aktiviert.",
+    "es": "Pedir, paso 3 de 4, con Need help with a train ticket escrito en el campo de mensaje. Continuar sigue habilitado.",
+    "fil": "Hiling, hakbang 3 ng 4, na may Need help with a train ticket na nakasulat sa patlang ng mensahe. Magpatuloy ay nananatiling gumagana."
   },
   "/pos:need-username": {
     "de": "Die Einrichtung ist abgeschlossen und der Benutzername ist leer. Link Zuerst einen Benutzernamen setzen. Kein Adress- und kein Betragsformular.",
@@ -1317,7 +1317,7 @@
   "/shops:edit-summary": {
     "de": "Erneut Weiter. Schritt 5 / 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf liegt unter der Karte.",
     "es": "Siguiente otra vez. El paso 5 / 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial está bajo la tarjeta.",
-    "fil": "Susunod ulit. Bukas ang hakbang 5 / 5 · Buod. Ang I-imbak ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
+    "fil": "Susunod ulit. Bukas ang hakbang 5 / 5 · Buod. Ang I-save ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
   },
   "/moderate/proposals:error": {
     "de": "Das Laden der Liste für das Personal (Moderatorin oder Moderator) ist fehlgeschlagen. Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
@@ -1332,12 +1332,12 @@
   "/shops:mention-suggest-reply": {
     "de": "Eine Notiz des Ladens ist aufgeklappt, ihr Reaktionsfeld enthält @, und die Liste Personen ist geöffnet. Laden hinzufügen bleibt geschlossen.",
     "es": "Una nota de la tienda está expandida, su campo de reacción contiene @, y la lista Personas está abierta. Añadir una tienda permanece cerrado.",
-    "fil": "Nakabuka ang tala ng tindahan, ang patlang ng reaksyon nito ay naglalaman ng @, at bukas ang listahan ng Mga tao. Sarado pa ang Magdagdag ng tindahan."
+    "fil": "Nakabuka ang tala ng tindahan, ang patlang ng reaksyon nito ay naglalaman ng @, at bukas ang listahan ng Mga tao. Sarado pa ang Magdagdag ng shop."
   },
   "/shops:add-user": {
     "de": "Laden hinzufügen ist geöffnet bei Schritt 4 / 5 · 21.gifts-Nutzer. Der Benutzername ist leer. Weiter ist die einzige Schaltfläche auf der Karte.",
     "es": "Añadir una tienda está abierto en el paso 4 / 5 · usuario de 21.gifts. El nombre de usuario está vacío. Siguiente es el único botón en la tarjeta.",
-    "fil": "Bukas ang Magdagdag ng tindahan sa hakbang 4 / 5 · User ng 21.gifts. Walang laman ang pangalan ng gumagamit. Ang Susunod ang tanging pindutan sa kahon."
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 / 5 · User ng 21.gifts. Walang laman ang pangalan ng gumagamit. Ang Susunod ang tanging pindutan sa kahon."
   },
   "/pos:loading": {
     "de": "Die Anfrage der Kasse ist noch nicht zurück. Überschrift Kasse, die Adresse und die Warteanzeige. Noch kein Betrag festlegen.",
@@ -1400,14 +1400,14 @@
     "fil": "Nabigo ang pagkuha ng detalye para sa kawani (founder). Teksto Hindi ma-load ang aplikasyong ito. Subukan ulit. Pindutan Subukan ulit."
   },
   "/messages/[id]:shop-edit": {
-    "de": "Eine Moderationssitzung zu einer Shop-Notiz der obersten Ebene Cafe Luna. Die Fußzeile zeigt Shop-Notiz bearbeiten. Der Editor ist geschlossen.",
-    "es": "Una sesión de moderación en una nota de tienda de primer nivel Cafe Luna. El pie muestra Editar nota de tienda. El editor está cerrado.",
-    "fil": "Isang sesyon ng moderator sa isang tala ng shop sa pinakamataas na antas Cafe Luna. Ipinapakita ng paanan ang I-edit ang tala ng shop. Sarado ang patnugot."
+    "de": "Eine Moderationssitzung zu einer Shop-Notiz der obersten Ebene Cafe Luna. Die Fußzeile zeigt Shop-Eintrag bearbeiten. Der Editor ist geschlossen.",
+    "es": "Una sesión de moderación en una nota de tienda de primer nivel Cafe Luna. El pie muestra Editar la entrada de la tienda. El editor está cerrado.",
+    "fil": "Isang sesyon ng moderator sa isang tala ng shop sa pinakamataas na antas Cafe Luna. Ipinapakita ng paanan ang Baguhin ang entry sa shop. Sarado ang patnugot."
   },
   "/welcome:ask-empty": {
     "de": "Um Geld bitten ist gerade geöffnet. Schritt 1 von 4, Einmalig gedrückt, Betrag leer, Weiter deaktiviert. Noch keine Bitcoin-Zeile.",
     "es": "Pedir dinero acaba de abrirse. Paso 1 de 4, Una vez pulsado, importe vacío, Continuar desactivado. Aún no hay línea de bitcoin.",
-    "fil": "Kaka-bukas lang ng Humingi ng pera. Hakbang 1 ng 4, Minsanan ang napindot, walang laman ang halaga, hindi pinagana ang Magpatuloy. Wala pang linya ng bitcoin."
+    "fil": "Kaka-bukas lang ng Humingi ng pera. Hakbang 1 ng 4, Isang beses ang napindot, walang laman ang halaga, hindi pinagana ang Magpatuloy. Wala pang linya ng bitcoin."
   },
   "/welcome:preparing-photo": {
     "de": "Anhang unterwegs (Senden deaktiviert + Drehsymbol, noch keine Vorschau). Der systemeigene Dateiauswahldialog ist Oberfläche des Betriebssystems und ist keine Variante.",
@@ -1575,9 +1575,9 @@
     "fil": "Parehong post sa Aleman pagkatapos ng matagumpay na pagsasalin. Isinaling nilalaman at Ipakita ang orihinal; hindi ipinapakita ang orihinal na Aleman."
   },
   "/messages/[id]:place": {
-    "de": "Unsignierter Permalink von Adas Notiz Hallo von Ada mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland nach /map?pin=<id>.",
-    "es": "Enlace permanente sin firmar de la nota de Ada Hola desde Ada con un lugar. La tarjeta muestra un enlace MapPin Happyland a /map?pin=<id>.",
-    "fil": "Hindi naka-sign na permalink ng tala ni Ada Kumusta mula kay Ada na may lugar. Ang kard ay nagpapakita ng link na MapPin Happyland papunta sa /map?pin=<id>."
+    "de": "Unsignierter Permalink von Adas Notiz Hello from Ada mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland nach /map?pin=<id>.",
+    "es": "Enlace permanente sin firmar de la nota de Ada Hello from Ada con un lugar. La tarjeta muestra un enlace MapPin Happyland a /map?pin=<id>.",
+    "fil": "Hindi naka-sign na permalink ng tala ni Ada Hello from Ada na may lugar. Ang kard ay nagpapakita ng link na MapPin Happyland papunta sa /map?pin=<id>."
   },
   "/welcome:ask-preview-donation-open": {
     "de": "Dieselbe Vorschau wie bei ask-preview, nachdem die Markierung Spende auf der Karte gedrückt wurde. Die Erklärung ist sichtbar (role=\"status\").",
@@ -1606,12 +1606,12 @@
   },
   "/welcome:posting-photo-and-text": {
     "de": "Beitrag unterwegs: Spinner auf Senden, Composer deaktiviert, Vorschau und Bildunterschrift Caption while the post is in flight. weiterhin angezeigt.",
-    "es": "Publicación en curso: indicador de carga en Publicar, área de composición desactivada, vista previa y pie de foto Pie de foto mientras la publicación está en curso. sigue mostrándose.",
-    "fil": "Padala na ang post: umiikot na pananda sa I-post, hindi pinagana ang lugar ng pagsulat, paunang tingin at paliwanag na Paliwanag habang ipinapadala ang post. ipinapakita pa rin."
+    "es": "Publicación en curso: indicador de carga en Publicar, área de composición desactivada, vista previa y pie de foto Caption while the post is in flight. sigue mostrándose.",
+    "fil": "Padala na ang post: umiikot na pananda sa I-post, hindi pinagana ang lugar ng pagsulat, paunang tingin at paliwanag na Caption while the post is in flight. ipinapakita pa rin."
   },
   "/welcome:shop-edit": {
-    "de": "Eine Moderatorsitzung. Eine Shop-Notiz der obersten Ebene Cafe Luna. Die Fußzeile zeigt Shop-Notiz bearbeiten nach dem Kopieren. Der Editor ist geschlossen.",
-    "es": "Una sesión de moderador. Una nota de tienda de primer nivel Cafe Luna. El pie muestra Editar nota de tienda después de copiar. El editor está cerrado.",
+    "de": "Eine Moderatorsitzung. Eine Shop-Notiz der obersten Ebene Cafe Luna. Die Fußzeile zeigt Shop-Eintrag bearbeiten nach dem Kopieren. Der Editor ist geschlossen.",
+    "es": "Una sesión de moderador. Una nota de tienda de primer nivel Cafe Luna. El pie muestra Editar la entrada de la tienda después de copiar. El editor está cerrado.",
     "fil": "Session ng tagapamagitan. Isang tala ng tindahan sa pinakamataas na antas Cafe Luna. Ipinapakita ng paanan ang I-edit ang tala ng tindahan pagkatapos kopyahin. Sarado ang editor."
   },
   "/welcome:shop-edit-summary": {
@@ -1732,7 +1732,7 @@
   "/shops:add-place": {
     "de": "Shop hinzufügen ist offen auf Schritt 2 / 5 · Ort. Einen Ort hinzufügen ist geschlossen. Weiter ist die einzige Schaltfläche auf der Karte. Die Shopliste ist leer.",
     "es": "Añadir una tienda está abierto en el paso 2 / 5 · Lugar. Añadir un lugar está cerrado. Siguiente es el único botón en la tarjeta. La lista de tiendas está vacía.",
-    "fil": "Magdagdag ng tindahan ay bukas sa hakbang 2 / 5 · Lugar. Magdagdag ng lugar ay sarado. Susunod ang tanging pindutan sa kard. Walang laman ang listahan ng tindahan."
+    "fil": "Magdagdag ng shop ay bukas sa hakbang 2 / 5 · Lugar. Magdagdag ng lugar ay sarado. Susunod ang tanging pindutan sa kard. Walang laman ang listahan ng tindahan."
   },
   "/grants:funding-not-verified": {
     "de": "Basis-Inhaber. Förderabschnitt auf /grants. Sie sind noch nicht verifiziert. plus wie die persönliche Verifizierung funktioniert. Keine Bewerben-Schaltfläche.",
@@ -1760,8 +1760,8 @@
     "fil": "Tauhan (moderator) na na-load ang pila na may hindi bababa sa isang bukas na mungkahi (paksa Rose, Iminungkahi ni Bob, Kumpirmahin bilang moderator, Tanggihan)."
   },
   "/shops:table-staff": {
-    "de": "Eine Moderatorsitzung. Tabelle ist ausgewählt. Shop-Notiz bearbeiten steht neben dem Namen Cafe Luna. Ort Happyland und Betreiberin oder Betreiber @luna bleiben.",
-    "es": "Una sesión de moderación. Tabla está seleccionada. Editar nota de tienda está junto al nombre Cafe Luna. El lugar Happyland y la operadora o el operador @luna se quedan.",
+    "de": "Eine Moderatorsitzung. Tabelle ist ausgewählt. Shop-Eintrag bearbeiten steht neben dem Namen Cafe Luna. Ort Happyland und Betreiberin oder Betreiber @luna bleiben.",
+    "es": "Una sesión de moderación. Tabla está seleccionada. Editar la entrada de la tienda está junto al nombre Cafe Luna. El lugar Happyland y la operadora o el operador @luna se quedan.",
     "fil": "Isang sesyon ng moderator. Napili ang Talahanayan. Nakaupo ang I-edit ang tala ng tindahan sa tabi ng pangalang Cafe Luna. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/welcome:renew-failed": {
@@ -1777,7 +1777,7 @@
   "/shops:add-summary": {
     "de": "Shop hinzufügen ist geöffnet bei Schritt 5 / 5 · Zusammenfassung. Fotos, Ort, Text und die Nutzerin oder der Nutzer wurden übersprungen. Senden ist die einzige Schaltfläche auf der Karte.",
     "es": "Añadir una tienda está abierto en el paso 5 / 5 · Resumen. Se omitieron las fotos, el lugar, el texto y la usuaria o el usuario. Publicar es el único botón de la ficha.",
-    "fil": "Bukas ang Magdagdag ng tindahan sa hakbang 5 / 5 · Buod. Nilaktawan ang mga litrato, lugar, teksto, at ang user. Ang I-post ang tanging pindutan sa kard."
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 / 5 · Buod. Nilaktawan ang mga litrato, lugar, teksto, at ang user. Ang I-post ang tanging pindutan sa kard."
   },
   "/shops:place": {
     "de": "Eine Shop-Notiz mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland zu /map?pin=m-place. Das rohe Token #21GiftsShop bleibt verborgen.",
@@ -1822,7 +1822,7 @@
   "/shops:sunday": {
     "de": "Geräte-lokaler Sonntag. Die Pille Post / Karte / Tabelle bleibt. Shop hinzufügen ist weg. Am Sonntag ist das Schreiben pausiert. Die Notiz Cafe Luna bleibt.",
     "es": "Domingo según la hora del dispositivo. La pastilla Publicación / Mapa / Tabla se queda. Añadir una tienda desaparece. El domingo no se puede escribir. La nota Cafe Luna se queda.",
-    "fil": "Linggo ayon sa oras ng device. Nanatili ang pill na Post / Mapa / Talahanayan. Wala na ang Magdagdag ng tindahan. Linggo, hindi puwedeng magsulat. Nanatili ang tala Cafe Luna."
+    "fil": "Linggo ayon sa oras ng device. Nanatili ang pill na Post / Mapa / Talahanayan. Wala na ang Magdagdag ng shop. Linggo, hindi puwedeng magsulat. Nanatili ang tala Cafe Luna."
   },
   "/members/[accountId]:posts-open-donation-tag-open": {
     "de": "Derselbe Beitrag wie bei posts-open-goal-110, nachdem Spende gedrückt wurde. Eine Zeile unter dem Namen sagt, dass eine Spende ein Geschenk ist und nicht zurückgezahlt wird.",
@@ -2072,7 +2072,7 @@
   "/welcome:ask-credit-amount-daily": {
     "de": "Kredit, Schritt 1 von 9, mit Täglich gedrückt und Kredit gedrückt. 21000 ist in bitcoin eingegeben. Weiter ist aktiviert. Einmalig / Täglich ist noch nicht gespeichert.",
     "es": "Crédito, paso 1 de 9, con Cada día pulsado y Crédito pulsado. 21000 está escrito en bitcoin. Continuar está habilitado. Una vez / Cada día aún no está guardado.",
-    "fil": "Utang, hakbang 1 ng 9, na naka-pindot ang Araw-araw at naka-pindot ang Utang. 21000 ay naka-type sa bitcoin. Naka-enable ang Magpatuloy. Hindi pa naka-imbak ang Minsanan / Araw-araw."
+    "fil": "Utang, hakbang 1 ng 9, na naka-pindot ang Araw-araw at naka-pindot ang Utang. 21000 ay naka-type sa bitcoin. Naka-enable ang Magpatuloy. Hindi pa naka-imbak ang Isang beses / Araw-araw."
   },
   "/shops:composer-place-unlabeled": {
     "de": "Ort hinzufügen ist geöffnet mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und der Ortsname ist noch leer. Diesen Ort verwenden ist sichtbar. Die Ladenliste ist noch leer.",
@@ -2120,7 +2120,7 @@
     "fil": "Utang, hakbang 9 sa 9, pagkatapos mabigo ang I-post. Nanatili ang paunang tanaw, na may Hindi ma-post ang mensahe sa ilalim. Nanatiling nakapindot ang Utang. Ang pamilang ay 9 sa 9."
   },
   "/welcome:error-ask": {
-    "de": "Um Geld bitten, mit Einmalig gedrückt auf der Pille über dem Betrag, Eingabe 0: Fortfahren bleibt deaktiviert (das Feld ist numerisch; 0 ist keine Anfrage in ganzen Sats).",
+    "de": "Um Geld bitten, mit Einmalig gedrückt auf der Pille über dem Betrag, Eingabe 0: Weiter bleibt deaktiviert (das Feld ist numerisch; 0 ist keine Anfrage in ganzen Sats).",
     "es": "Pedir dinero, con Una vez pulsado en la píldora sobre el importe, se escribe 0: Continuar permanece desactivado (el campo es numérico; 0 no es un pedido de sats enteros).",
     "fil": "Humingi ng pera, naka-pindot ang Isang beses sa pildora sa itaas ng halaga, inilalagay ang 0: Nanatiling hindi gumagana ang Magpatuloy (pamilang ang patlang; ang 0 ay hindi isang hiling na buong sat)."
   },
@@ -2316,7 +2316,7 @@
   },
   "/shops:map-staff": {
     "de": "Eine Moderatorsitzung. Karte ist ausgewählt. Die Stecknadel ist ein Laden, daher sitzt Ladennotiz bearbeiten neben Ada · Happyland. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
-    "es": "Una sesión de moderador. Mapa está seleccionado. El pin es una tienda, así que Editar nota de tienda está junto a Ada · Happyland. Sin clave del mapa, así que el marco permanece vacío. Sin un segundo encabezado Mapa.",
+    "es": "Una sesión de moderador. Mapa está seleccionado. El pin es una tienda, así que Editar la entrada de la tienda está junto a Ada · Happyland. Sin clave del mapa, así que el marco permanece vacío. Sin un segundo encabezado Mapa.",
     "fil": "Isang sesyon ng tagapamagitan. Napili ang Mapa. Ang tuldok ay isang tindahan, kaya nakaupo ang I-edit ang tala ng tindahan sa tabi ng Ada · Happyland. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-summary": {
@@ -2335,8 +2335,8 @@
     "fil": "Nakikita ng tagapagtatag sa /grants ang pangalawang kawing na Mga layunin, pangalawang kawing na Teksto ng araw-araw na bayad at Mga halaga ng araw-araw na bayad, at Mga bukas na aplikasyon (2). Needle Teksto ng araw-araw na bayad."
   },
   "/shops:edit-save-error": {
-    "de": "Ein Moderator hat Shop-Notiz bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
-    "es": "Un moderador abrió Editar nota de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
     "fil": "Nagbukas ang tagapamagitan ng Baguhin ang tala ng tindahan sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang pampatnugot. Nakikita ang alerto Hindi na-save ang entry na ito."
   },
   "/profile:picture-save-error": {
@@ -2357,12 +2357,12 @@
   "/welcome:ask-credit-empty": {
     "de": "Kredit, Schritt 1 von 9, bevor ein Betrag eingegeben ist. Kredit und Einmalig sind gedrückt. Das Anfragen-Feld ist leer und Weiter ist deaktiviert. Der Zähler zeigt 1 von 9, nicht 1 von 4.",
     "es": "Crédito, paso 1 de 9, antes de escribir un importe. Crédito y Una vez están pulsados. El campo Pedir está vacío y Continuar está deshabilitado. El contador muestra 1 de 9, no 1 de 4.",
-    "fil": "Utang, hakbang 1 sa 9, bago maglagay ng halaga. Nakapindot ang Utang at Isahang. Walang laman ang patlang na Hiling at hindi pinagana ang Magpatuloy. Ang panbilang ay 1 sa 9, hindi 1 sa 4."
+    "fil": "Utang, hakbang 1 sa 9, bago maglagay ng halaga. Nakapindot ang Utang at Isang beses. Walang laman ang patlang na Hiling at hindi pinagana ang Magpatuloy. Ang panbilang ay 1 sa 9, hindi 1 sa 4."
   },
   "/welcome:ask-credit-empty-daily": {
     "de": "Kredit, Schritt 1 von 9, mit Täglich und Kredit gedrückt und dem Anfragen-Feld noch leer. Weiter ist deaktiviert. Der Zähler zeigt 1 von 9. Einmalig / Täglich ist noch nicht gespeichert.",
     "es": "Crédito, paso 1 de 9, con Cada día y Crédito pulsados y el campo Pedir aún vacío. Continuar está deshabilitado. El contador muestra 1 de 9. Una vez / Cada día aún no está guardado.",
-    "fil": "Utang, hakbang 1 sa 9, nakapindot ang Araw-araw at Utang at walang laman pa ang patlang na Hiling. Hindi pinagana ang Magpatuloy. Ang panbilang ay 1 sa 9. Hindi pa naka-imbak ang Isahang / Araw-araw."
+    "fil": "Utang, hakbang 1 sa 9, nakapindot ang Araw-araw at Utang at walang laman pa ang patlang na Hiling. Hindi pinagana ang Magpatuloy. Ang panbilang ay 1 sa 9. Hindi pa naka-imbak ang Isang beses / Araw-araw."
   },
   "/welcome:reaction-pay": {
     "de": "Die Rechnung wurde ausgestellt. Die Zahlungsseite steht dort, wo das Antwortfeld war. Die Notiz bleibt im Fenster. Die Seite zeigt als Vorschau This is my answer. Das Antwortfeld ist verschwunden.",
@@ -2476,7 +2476,7 @@
   },
   "/members/[accountId]:shop-edit": {
     "de": "Eine Moderatorin betrachtet ein anderes Mitglied. Der Beitragsfeed ist geöffnet und enthält einen Ladenbeitrag Cafe Luna. Die Fußzeile zeigt Ladennotiz bearbeiten. Der Editor ist geschlossen. Die Identitätskarte hat keine Bearbeitung.",
-    "es": "Una moderadora ve a otra integrante. El feed de publicaciones está abierto y contiene una publicación de tienda Cafe Luna. El pie muestra Editar nota de tienda. El editor está cerrado. La tarjeta de identidad no tiene edición.",
+    "es": "Una moderadora ve a otra integrante. El feed de publicaciones está abierto y contiene una publicación de tienda Cafe Luna. El pie muestra Editar la entrada de la tienda. El editor está cerrado. La tarjeta de identidad no tiene edición.",
     "fil": "Isang tagapamagitan na tumitingin sa ibang miyembro. Bukas ang feed ng mga post at may isang post ng tindahan na Cafe Luna. Ipinapakita ng paanan ang I-edit ang tala ng tindahan. Sarado ang editor. Walang pag-edit ang kard ng pagkakakilanlan."
   },
   "/welcome:note-truncated": {
@@ -2532,7 +2532,7 @@
   "/welcome:ask-credit-posting-daily": {
     "de": "Kredit, Schritt 9 von 9, mit Täglich gedrückt, während Senden unterwegs ist. Die Zielleiste zeigt weiterhin den Rückzahlungsplan. Senden ist deaktiviert. Einmalig / Täglich ist nicht gespeichert. Der Zähler zeigt 9 von 9.",
     "es": "Crédito, paso 9 de 9, con Cada día pulsado, mientras Publicar está en curso. La barra de meta sigue mostrando el plan de reembolso. Publicar está desactivado. Una vez / Cada día no está guardado. El contador indica 9 de 9.",
-    "fil": "Utang, hakbang 9 sa 9, naka-pindot ang Araw-araw, habang paparating ang I-post. Ipinapakita pa rin ng baras ng layunin ang plano sa pagbabayad. Hindi gumagana ang I-post. Isahang / Araw-araw ay hindi naka-imbak. Ang panbilang ay 9 sa 9."
+    "fil": "Utang, hakbang 9 sa 9, naka-pindot ang Araw-araw, habang paparating ang I-post. Ipinapakita pa rin ng baras ng layunin ang plano sa pagbabayad. Hindi gumagana ang I-post. Isang beses / Araw-araw ay hindi naka-imbak. Ang panbilang ay 9 sa 9."
   },
   "/welcome:expanded-gifts": {
     "de": "Bei Alle ist Adas Notiz aufgeklappt. Der Faden zeigt eine reine Geschenk-Antwort (senden ₿21) und eine Textantwort mit dem Geschenkbetrag unter dem Text. Das Schreibfeld in der Karte hat weiterhin Reaktion schreiben und Betrag.",
@@ -2597,7 +2597,7 @@
   "/shops:composer-place": {
     "de": "Einen Laden hinzufügen, dann Weiter, öffnet Schritt 2 / 5 · Ort. Ort hinzufügen ist geöffnet bei einer leeren Ladenliste und der Kartenschlüssel ist leer, daher sagt das Feld Die Karte ist nicht verfügbar. Die Ladenliste ist weiterhin leer.",
     "es": "Añadir una tienda, luego Siguiente, abre el paso 2 / 5 · Lugar. Añadir un lugar está abierto en una lista de tiendas vacía y la clave del mapa está vacía, así que el recuadro dice El mapa no está disponible. La lista de tiendas sigue vacía.",
-    "fil": "Magdagdag ng tindahan, tapos Susunod, ay nagbubukas ng hakbang 2 / 5 · Lugar. Bukas ang Magdagdag ng lugar sa walang lamang listahan ng tindahan at walang laman ang susi ng mapa, kaya sinasabi ng panig na Hindi available ang mapa. Walang laman pa rin ang listahan ng tindahan."
+    "fil": "Magdagdag ng shop, tapos Susunod, ay nagbubukas ng hakbang 2 / 5 · Lugar. Bukas ang Magdagdag ng lugar sa walang lamang listahan ng tindahan at walang laman ang susi ng mapa, kaya sinasabi ng panig na Hindi available ang mapa. Walang laman pa rin ang listahan ng tindahan."
   },
   "/shops:composer-place-set": {
     "de": "Eine Stecknadel namens Stall wurde bestätigt, dann schloss sich Ort hinzufügen. Dieser Name wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt verfügbar. Die Ladenliste ist weiterhin leer.",
@@ -2650,8 +2650,8 @@
     "fil": "Naka-hydrate na sesyon ng tagapagtatag o moderator sa isang malambot na itinagong tala. Ipinapakita ng talakayan ang orihinal na nilalaman pati ang Itinago ni {name} ang notang ito noong {time}. Hindi kasama ang Tumugon, Regalo, tanggalin, at ang kahon ng sagot."
   },
   "/shops:staff-place": {
-    "de": "Eine Moderatorsitzung. Eine Shop-Notiz Cafe Luna ohne Stecknadel. Shop-Notiz bearbeiten steht auf der Notiz. Die Fusszeile der Notiz zeigt Ort hinzufügen und Konto hinzufügen. Der Kartenbereich ist geschlossen. Der Kontenbereich ist geschlossen.",
-    "es": "Una sesión de moderador. Una nota de tienda Cafe Luna sin chincheta. Editar nota de tienda está en la nota. El pie de la nota muestra Añadir un lugar y Añadir una cuenta. El área del mapa está cerrada. El área de la cuenta está cerrada.",
+    "de": "Eine Moderatorsitzung. Eine Shop-Notiz Cafe Luna ohne Stecknadel. Shop-Eintrag bearbeiten steht auf der Notiz. Die Fusszeile der Notiz zeigt Ort hinzufügen und Konto hinzufügen. Der Kartenbereich ist geschlossen. Der Kontenbereich ist geschlossen.",
+    "es": "Una sesión de moderador. Una nota de tienda Cafe Luna sin chincheta. Editar la entrada de la tienda está en la nota. El pie de la nota muestra Añadir un lugar y Añadir una cuenta. El área del mapa está cerrada. El área de la cuenta está cerrada.",
     "fil": "Isang sesyon ng moderator. Isang tala ng tindahan ng Cafe Luna na walang tulos. Nasa tala ang I-edit ang tala ng tindahan. Ipinapakita ng paanan ng tala ang Magdagdag ng lugar at Magdagdag ng account. Nakasara ang lugar ng mapa. Nakasara ang lugar ng account."
   },
   "/moderate/hidden:external": {
@@ -2685,8 +2685,8 @@
     "fil": "Tauhan (moderator): Reject POST na isinasagawa sa isang hilera na sila mismo ang nagmungkahi. Teksto Naghihintay ng kumpirmasyon mula sa ibang moderator. Walang pindutan na Kumpirmahin. Naka-disable ang Tanggihan na may umiikot na palatandaan; nakikita pa ang hilera ng mungkahi."
   },
   "/shops:map-edit-load-failed": {
-    "de": "Eine Moderatorin oder ein Moderator hat neben Ada · Happyland auf Shop-Notiz bearbeiten geklickt. Die Notiz wurde nicht geladen. Der Hinweis Dieser Shop-Eintrag konnte nicht geladen werden ist sichtbar. Der Editor ist nicht geöffnet. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
-    "es": "Un moderador pulsó Editar nota de tienda junto a Ada · Happyland. La nota no se cargó. La alerta No se pudo cargar esta entrada es visible. El editor no está abierto. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
+    "de": "Eine Moderatorin oder ein Moderator hat neben Ada · Happyland auf Shop-Eintrag bearbeiten geklickt. Die Notiz wurde nicht geladen. Der Hinweis Dieser Shop-Eintrag konnte nicht geladen werden ist sichtbar. Der Editor ist nicht geöffnet. Karte bleibt ausgewählt. Keine zweite Überschrift Karte.",
+    "es": "Un moderador pulsó Editar la entrada de la tienda junto a Ada · Happyland. La nota no se cargó. La alerta No se pudo cargar esta entrada es visible. El editor no está abierto. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
     "fil": "Nag-click ang isang moderator sa I-edit ang tala ng tindahan sa tabi ng Ada · Happyland. Hindi na-load ang tala. Nakikita ang alerto Hindi na-load ang entry na ito. Hindi bukas ang editor. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/grants/goals:error": {
@@ -2700,9 +2700,9 @@
     "fil": "Tauhan (moderator): Nabigo ang Tanggihan sa isang hilera na sila mismo ang nagmungkahi. Teksto Naghihintay ng kumpirmasyon mula sa ibang moderator. at Hindi ma-update ang miyembrong ito. Subukan ulit. Walang pindutan na Kumpirmahin. Nakikita ang Tanggihan."
   },
   "/welcome:photo-loading": {
-    "de": "Forumszeile für Ada mit der Bildunterschrift Bildunterschrift wartet auf das Laden des Fotos. und hasPhoto, Bilddaten noch nicht geladen, daher kein <img>. Ein fehlgeschlagener Fotoabruf sieht gleich aus (nur-Text-Zeile) — keine eigene Variante.",
-    "es": "Fila del foro de Ada con el pie Leyenda esperando a que se cargue la foto. y hasPhoto, los bytes de la imagen aún no cargados así que no hay <img>. Una obtención fallida de la foto se ve igual (fila solo de texto) — no es una variante aparte.",
-    "fil": "Hilera sa forum para kay Ada na may palabas na Palabas na naghihintay na ma-load ang larawan. at hasPhoto, hindi pa na-load ang mga byte ng larawan kaya walang <img>. Magkapareho ang hitsura ng nabigong pagkuha ng larawan (hilera ng teksto lang) — hindi ito hiwalay na baryante."
+    "de": "Forumszeile für Ada mit der Bildunterschrift Caption waiting for the photo to load. und hasPhoto, Bilddaten noch nicht geladen, daher kein <img>. Ein fehlgeschlagener Fotoabruf sieht gleich aus (nur-Text-Zeile) — keine eigene Variante.",
+    "es": "Fila del foro de Ada con el pie Caption waiting for the photo to load. y hasPhoto, los bytes de la imagen aún no cargados así que no hay <img>. Una obtención fallida de la foto se ve igual (fila solo de texto) — no es una variante aparte.",
+    "fil": "Hilera sa forum para kay Ada na may palabas na Caption waiting for the photo to load. at hasPhoto, hindi pa na-load ang mga byte ng larawan kaya walang <img>. Magkapareho ang hitsura ng nabigong pagkuha ng larawan (hilera ng teksto lang) — hindi ito hiwalay na baryante."
   },
   "/shops:composer-place-set-coords": {
     "de": "Eine namenlose Stecknadel wurde bestätigt, dann schloss sich Ort hinzufügen. 14.50000, 120.90000 wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt verfügbar. Die Shopliste ist weiterhin leer.",
@@ -2930,9 +2930,9 @@
     "fil": "Isang session ng moderator. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna. May pin at pangalan at pinindot ang Gamitin ang lugar na ito. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. at nananatili ang Gamitin ang lugar na ito."
   },
   "/welcome:shop-edit-open": {
-    "de": "Eine Moderatorin hat Shop-Notiz bearbeiten auf Cafe Luna angeklickt. Schritt 1 / 5 · Fotos ist geöffnet und Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt wird mit einem nur als Symbol sichtbaren Schließen (X) geschlossen. Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen.",
-    "es": "Una moderadora pulsó Editar nota de la tienda en Cafe Luna. El paso 1 / 5 · Fotos está abierto y el Historial dice que aún no hay ediciones. El paso de foto se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible.",
-    "fil": "Nag-click ang isang moderator sa I-edit ang tala ng tindahan sa Cafe Luna. Bukas ang Hakbang 1 / 5 · Mga litrato at sinasabi ng Kasaysayan na wala pang mga pagbabago. Isinasara ang hakbang ng litrato ng isang icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
+    "de": "Eine Moderatorin hat Shop-Eintrag bearbeiten auf Cafe Luna angeklickt. Schritt 1 / 5 · Bilder ist geöffnet und Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt wird mit einem nur als Symbol sichtbaren Schließen (X) geschlossen. Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen.",
+    "es": "Una moderadora pulsó Editar la entrada de la tienda en Cafe Luna. El paso 1 / 5 · Fotos está abierto y el Historial dice que aún no hay ediciones. El paso de foto se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible.",
+    "fil": "Nag-click ang isang moderator sa I-edit ang tala ng tindahan sa Cafe Luna. Bukas ang Hakbang 1 / 5 · Mga larawan at sinasabi ng Kasaysayan na wala pang mga pagbabago. Isinasara ang hakbang ng litrato ng isang icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
   },
   "/welcome:validation-error": {
     "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu. Das Verfassen ist auf 8000 Zeichen begrenzt (wie POST /forum/messages); zu lange Entwürfe zeigen Maximal 8000 Zeichen und werden nicht gesendet.",
@@ -2962,11 +2962,11 @@
   "/shops:default": {
     "de": "Überschrift Shops, Einleitung, die Pille Post / Karte / Tabelle mit ausgewähltem Post, Shop hinzufügen (kein Wohnzimmer-Eingabefeld), eine Ladennotiz Cafe Luna mit einer #Shop-Pille. Ein Laden mit null Sats würde trotzdem gelistet. Hinweis zu Gesetzen fehlt. Rohes #21GiftsShop ist nicht sichtbar.",
     "es": "Encabezado Tiendas, entradilla, la pastilla Publicación / Mapa / Tabla con Publicación seleccionada, Añadir una tienda (sin cuadro de redacción de salón), una nota de tienda Cafe Luna con una pastilla #Tienda. Una tienda con cero sats seguiría listada. No hay pista de leyes. El #21GiftsShop en bruto no está visible.",
-    "fil": "Heading na Mga Tindahan, panimula, ang maliit na label na Post / Mapa / Talahanayan na napili ang Post, Magdagdag ng tindahan (walang kahon ng pagsulat sa sala), isang tala ng tindahan Cafe Luna na may maliit na label na #Tindahan. Ang tindahang may serong sat ay nakalista pa rin. Walang pahiwatig sa mga batas. Hindi nakikita ang hilaw na #21GiftsShop."
+    "fil": "Heading na Mga Tindahan, panimula, ang maliit na label na Post / Mapa / Talahanayan na napili ang Post, Magdagdag ng shop (walang kahon ng pagsulat sa sala), isang tala ng tindahan Cafe Luna na may maliit na label na #Tindahan. Ang tindahang may serong sat ay nakalista pa rin. Walang pahiwatig sa mga batas. Hindi nakikita ang hilaw na #21GiftsShop."
   },
   "/shops:edit-open": {
-    "de": "Eine Moderatorin oder ein Moderator hat Ladennotiz bearbeiten bei Cafe Luna angeklickt. Schritt 1 / 5 · Fotos ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",
-    "es": "Una persona moderadora pulsó Editar nota de tienda en Cafe Luna. El paso 1 / 5 · Fotos está abierto. El paso de fotos se cierra con un Cerrar (X) solo de icono. El nombre accesible es Cancelar. No hay una palabra Cancelar visible. Siguiente está etiquetado. El historial está bajo la tarjeta.",
+    "de": "Eine Moderatorin oder ein Moderator hat Ladennotiz bearbeiten bei Cafe Luna angeklickt. Schritt 1 / 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",
+    "es": "Una persona moderadora pulsó Editar la entrada de la tienda en Cafe Luna. El paso 1 / 5 · Fotos está abierto. El paso de fotos se cierra con un Cerrar (X) solo de icono. El nombre accesible es Cancelar. No hay una palabra Cancelar visible. Siguiente está etiquetado. El historial está bajo la tarjeta.",
     "fil": "Isang moderator ang nag-click ng I-edit ang tala ng tindahan sa Cafe Luna. Bukas ang hakbang 1 / 5 · Mga larawan. Ang hakbang ng larawan ay nagsasara sa icon-lamang na Isara (X). Ang accessible na pangalan ay Kanselahin. Walang nakikitang salitang Kanselahin. May label ang Susunod. Ang kasaysayan ay nasa ilalim ng kard."
   },
   "/grants/apply:default": {
@@ -3001,8 +3001,8 @@
   },
   "/welcome:photos-and-text": {
     "de": "Bei Alle: Forumszeile von Ada mit zwei Standbildern (Foto von Ada) in ForumPhotoGallery (horizontale Snap-Reihe, data-scroll-x, 88% Peek, Chip 1/2, Punkte) und Bildunterschrift Hello with these photos. unter den Fotos; das Eingabefeld ist leer (Anhängen + Textfeld + Senden).",
-    "es": "En Todos: fila del foro de Ada con dos fotogramas (Foto de Ada) en ForumPhotoGallery (fila horizontal con encaje, data-scroll-x, vistazo al 88%, ficha 1/2, puntos) y pie Hola con estas fotos. debajo de las fotos; el cuadro de redacción está vacío (adjuntar + área de texto + Publicar).",
-    "fil": "Sa Lahat: hanay ng forum mula kay Ada na may dalawang still (Larawan mula kay Ada) sa ForumPhotoGallery (pahalang na snap na hanay, data-scroll-x, 88% peek, chip na 1/2, mga tuldok) at caption na Kamusta sa mga larawang ito. sa ilalim ng mga larawan; walang laman ang kahon ng pagsulat (maglakip + kahon ng teksto + I-post)."
+    "es": "En Todos: fila del foro de Ada con dos fotogramas (Foto de Ada) en ForumPhotoGallery (fila horizontal con encaje, data-scroll-x, vistazo al 88%, ficha 1/2, puntos) y pie Hello with these photos. debajo de las fotos; el cuadro de redacción está vacío (adjuntar + área de texto + Publicar).",
+    "fil": "Sa Lahat: hanay ng forum mula kay Ada na may dalawang still (Larawan mula kay Ada) sa ForumPhotoGallery (pahalang na snap na hanay, data-scroll-x, 88% peek, chip na 1/2, mga tuldok) at caption na Hello with these photos. sa ilalim ng mga larawan; walang laman ang kahon ng pagsulat (maglakip + kahon ng teksto + I-post)."
   },
   "/profile:banner-crop-saving": {
     "de": "Der Zuschneider für das breite Bild bleibt offen, solange PUT /banners/me nicht geantwortet hat. Diesen Ausschnitt verwenden ist deaktiviert und zeigt einen Spinner. Breites Bild hinzufügen bleibt verborgen. Profilfoto hinzufügen bleibt, deaktiviert, ohne Spinner. Nadel state-profile-banner-crop-saving.",
@@ -3060,8 +3060,8 @@
     "fil": "Ang pagpili ng parisukat na portrait para sa malapad na larawan ay nagbubukas ng 5:2 na tagapag-crop (I-drag ang larawan para piliin ang crop, may etiketa na Gamitin ang crop na ito, X na may accessible na pangalang Kanselahin ang crop). Nakatago ang Magdagdag ng malapad na larawan. Nanatili ang Magdagdag ng larawan ng profile. Karayom state-profile-banner-not-wide."
   },
   "/shops:edit-history-error": {
-    "de": "Eine Moderatorin hat Shop-Notiz bearbeiten bei Cafe Luna geöffnet. Die Historie-Anfrage ist fehlgeschlagen. Der Hinweis Die Historie konnte nicht geladen werden ist sichtbar. Der Fotoschritt bleibt offen und schliesst weiterhin mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen.",
-    "es": "Una moderadora abrió Editar nota de la tienda en Cafe Luna. Falló la petición del historial. El aviso No se pudo cargar el historial es visible. El paso de fotos sigue abierto y aún se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible.",
+    "de": "Eine Moderatorin hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet. Die Historie-Anfrage ist fehlgeschlagen. Der Hinweis Die Historie konnte nicht geladen werden ist sichtbar. Der Fotoschritt bleibt offen und schliesst weiterhin mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen.",
+    "es": "Una moderadora abrió Editar la entrada de la tienda en Cafe Luna. Falló la petición del historial. El aviso No se pudo cargar el historial es visible. El paso de fotos sigue abierto y aún se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible.",
     "fil": "Nagbukas ang isang moderator ng I-edit ang tala ng tindahan sa Cafe Luna. Nabigo ang kahilingan sa kasaysayan. Nakikita ang alerto Hindi na-load ang kasaysayan. Bukas pa ang hakbang ng larawan at nagsasara pa rin sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin."
   },
   "/welcome:ask-credit-preview-fiat": {
@@ -3100,13 +3100,13 @@
     "fil": "Pagkatapos ng Magpatuloy, ang parehong aktibong bayad tulad ng bukas na kaha: ang sticker ng tindahan, limang minuto na natitira, ang naka-lock na halaga ng sat, sa tabi nito ang default na fiat ng tumitingin, at Magbayad. Walang field ng halaga. Sa malapad na screen ipinapakita ang QR ng resibo ng Bitcoin. Ang smartphone ay nagpapakita ng countdown at Magbayad, hindi ang QR."
   },
   "/members/[accountId]:shop-edit-open": {
-    "de": "Dieselbe Moderatorin hat Shop-Notiz bearbeiten angeklickt. Schritt 1 / 5 · Fotos ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderadora pulsó Editar nota de la tienda. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
+    "de": "Dieselbe Moderatorin hat Shop-Eintrag bearbeiten angeklickt. Schritt 1 / 5 · Bilder ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora pulsó Editar la entrada de la tienda. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
     "fil": "Pinindot ng parehong moderator ang I-edit ang tala ng tindahan. Bukas ang Hakbang 1 / 5 · Mga larawan. Sabi ng kasaysayan na wala pang mga pag-edit. Nagsasara ang hakbang ng larawan sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/messages/[id]:shop-edit-open": {
-    "de": "Dieselbe Moderatorin hat Shop-Notiz bearbeiten angeklickt. Schritt 1 / 5 · Fotos ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderadora pulsó Editar nota de la tienda. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
+    "de": "Dieselbe Moderatorin hat Shop-Eintrag bearbeiten angeklickt. Schritt 1 / 5 · Bilder ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora pulsó Editar la entrada de la tienda. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
     "fil": "Pinindot ng parehong moderator ang I-edit ang tala ng tindahan. Bukas ang Hakbang 1 / 5 · Mga larawan. Sabi ng kasaysayan na wala pang mga pag-edit. Nagsasara ang hakbang ng larawan sa icon-lamang na Isara (X). Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/welcome:goal-fiat": {
@@ -3180,9 +3180,9 @@
     "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon, nabuksan ang regalo, napunan ang halaga, hindi pa naisumite. Ang panawagan sa kilos ng halaga ay Magpatuloy (forum.payContinue) sa bawat ahente ng gumagamit. Kasalukuyang katumbas sa nais na pera ng fiat (walang tagapili). Walang mali, walang QR ng bayad, wala pang pindutan para magbayad gamit ang pitaka. Ang publikasyon mismo ay hindi nagpapakita ng Magpadala ng Bitcoin."
   },
   "/shops:table-edit-open": {
-    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 / 5 · Fotos ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland und Betreiber @luna bleiben.",
-    "es": "Un moderador hizo clic en Editar nota de tienda junto a Cafe Luna. El paso 1 / 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland y el operador @luna se mantienen.",
-    "fil": "Isang moderator ang nag-click sa I-edit ang tala ng tindahan sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 / 5 · Mga litrato. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland at ang operator na @luna."
+    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 / 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland und Betreiber @luna bleiben.",
+    "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Cafe Luna. El paso 1 / 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland y el operador @luna se mantienen.",
+    "fil": "Isang moderator ang nag-click sa I-edit ang tala ng tindahan sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 / 5 · Mga larawan. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland at ang operator na @luna."
   },
   "/view/[viewKey]:about-photo": {
     "de": "Gültiger bekannter Schlüssel mit Text und Foto unter Über mich (aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true). Dieselbe schreibgeschützte Karte wie die Standardansicht plus die Überschrift Über mich, die Bio und das Foto (Foto zu Über mich, das ganze Bild, object-contain, max-h-80, kein Zuschnitt zum Ausfüllen). Copy-profile-link bleibt. Keine Bearbeitung.",
@@ -3256,8 +3256,8 @@
   },
   "/messages/[id]:signed-in": {
     "de": "Hydrierte Ada-Sitzung: ein Pfeil oben links (vorherige In-App-Ansicht, oder /welcome, wenn dieser Tab keine hat) + Wortmarke → /welcome. Die Wortmarke ist nicht dieses Steuerelement. Menü oben rechts (Home zuerst). Thread-Karte Hello from Ada, Reagieren, Link kopieren und Reaktion schreiben (automatisch aufgeklappt). Beiträge zeigen weder Geschenk noch einen Umschlag.",
-    "es": "Sesión hidratada de Ada: una flecha arriba a la izquierda (vista previa en la app, o /welcome cuando esta pestaña no tiene ninguna) + isotipo → /welcome. El isotipo no es ese control. Menú arriba a la derecha (Inicio primero). Tarjeta del hilo Hola desde Ada, Reaccionar, copiar enlace y Escribe una reacción (autoexpandido). Las publicaciones no muestran Regalo ni un sobre.",
-    "fil": "Hydrated na session ni Ada: isang arrow sa itaas-kaliwa (nakaraang view sa app, o /welcome kapag wala ito sa tab na ito) + wordmark → /welcome. Hindi iyon ang kontrol ang wordmark. Menu sa itaas-kanan (Home muna). Kard ng thread Kumusta mula kay Ada, Tumugon, kopyahin ang link, at Sumulat ng reaksyon (kusang naka-expand). Ang mga post ay hindi nagpapakita ng Regalo o sobre."
+    "es": "Sesión hidratada de Ada: una flecha arriba a la izquierda (vista previa en la app, o /welcome cuando esta pestaña no tiene ninguna) + isotipo → /welcome. El isotipo no es ese control. Menú arriba a la derecha (Inicio primero). Tarjeta del hilo Hello from Ada, Reaccionar, copiar enlace y Escribe una reacción (autoexpandido). Las publicaciones no muestran Regalo ni un sobre.",
+    "fil": "Hydrated na session ni Ada: isang arrow sa itaas-kaliwa (nakaraang view sa app, o /welcome kapag wala ito sa tab na ito) + wordmark → /welcome. Hindi iyon ang kontrol ang wordmark. Menu sa itaas-kanan (Home muna). Kard ng thread Hello from Ada, Tumugon, kopyahin ang link, at Sumulat ng reaksyon (kusang naka-expand). Ang mga post ay hindi nagpapakita ng Regalo o sobre."
   },
   "/members/[accountId]:overlay-address": {
     "de": "Benannter Besucher mit akzeptierten Wohnzimmerregeln und ohne Wallet of Satoshi address. Beitrag-Feed offen, gelistete Notiz aufgeklappt, Antwort mit sichtbarem Feld Betrag gefüllt, Senden angeklickt. Dialog RequirementsOverlay Wallet of Satoshi address hinterlegen mit dem Profilfeld Lightning Address. Kein Überspringen. Schließen (X) ist vorhanden.",
@@ -3265,9 +3265,9 @@
     "fil": "Pinangalanang bisita na may sang-ayon sa mga patakaran ng living room at walang Wallet of Satoshi address. Bukas ang feed ng mga post, naka-expand ang nakalistang tala, napunan ang sagot na nakikita ang field na Halaga, na-click ang I-post. Diyalogo RequirementsOverlay Idagdag ang Wallet of Satoshi address mo kasama ang field na Lightning Address sa profile. Walang Laktawan. May Isara (X)."
   },
   "/welcome:unpaid": {
-    "de": "Klick auf No gifts yet (Deutsch: Noch ohne Geschenk) — nur geladene Notizen mit genau null Sats erscheinen. Bob ist sichtbar; bezahlte Ada und Carol sind ausgeblendet. Das schließt Notizen ohne Empfangsbrieftasche ein. Die vier Filter sind ein Dropdown; Aktiv wird geschlossen gezeigt; öffnen und No gifts yet wählen. Aktiv bleibt die Voreinstellung.",
-    "es": "Clic en No gifts yet (alemán: Noch ohne Geschenk) — solo aparecen las notas cargadas con exactamente cero sats. Bob es visible; Ada y Carol pagadas están ocultas. Esto incluye notas sin billetera receptora. Los cuatro filtros son un desplegable; Activo se muestra cerrado; ábrelo y elige No gifts yet. Activo sigue siendo el valor predeterminado.",
-    "fil": "I-click ang No gifts yet (Aleman: Noch ohne Geschenk) — tanging naka-load na tala na may eksaktong serong sats ang lumilitaw. Nakikita si Bob; nakatago ang bayad na sina Ada at Carol. Kasama rito ang mga talang walang pitakang tumatanggap. Ang apat na filter ay isang dropdown; Ipinapakita ang Aktibo na nakasara; buksan at piliin ang No gifts yet. Nananatiling default ang Aktibo."
+    "de": "Klick auf Noch ohne Geschenk — nur geladene Notizen mit genau null Sats erscheinen. Bob ist sichtbar; bezahlte Ada und Carol sind ausgeblendet. Das schließt Notizen ohne Empfangsbrieftasche ein. Die vier Filter sind ein Dropdown; Aktiv wird geschlossen gezeigt; öffnen und Noch ohne Geschenk wählen. Aktiv bleibt die Voreinstellung.",
+    "es": "Clic en Aún sin regalos — solo aparecen las notas cargadas con exactamente cero sats. Bob es visible; Ada y Carol pagadas están ocultas. Esto incluye notas sin billetera receptora. Los cuatro filtros son un desplegable; Activo se muestra cerrado; ábrelo y elige Aún sin regalos. Activo sigue siendo el valor predeterminado.",
+    "fil": "I-click ang Wala pang regalo — tanging naka-load na tala na may eksaktong serong sats ang lumilitaw. Nakikita si Bob; nakatago ang bayad na sina Ada at Carol. Kasama rito ang mga talang walang pitakang tumatanggap. Ang apat na filter ay isang dropdown; Ipinapakita ang Aktibo na nakasara; buksan at piliin ang Wala pang regalo. Nananatiling default ang Aktibo."
   },
   "/members/[accountId]:staff-verify-open": {
     "de": "Derselbe Moderator und dasselbe basis-Mitglied nach dem Drücken von Moderatorenfunktionen. Der Aufklapper ist geöffnet und Verifizieren ist sichtbar. Viewport-Aufnahme nach dem Scrollen von Verifizieren in den Blick: die Mitgliedskarte scrollt innerhalb des Seitenrahmens, und eine ganzseitige Naht lässt Verifizieren unterhalb des Falzes. Die geschlossene Aufnahme deckt dieses Ergebnis nicht ab.",
@@ -3285,8 +3285,8 @@
     "fil": "Nakargang kard na naka-sign out. Pamagat Profile, pangalan Robin, Panlabas, Beripikadong address sa Nostr robin@nostr.example, Address ng bayad sa profile nila pay@ln.example, susi ng Nostr npub1example, icon lang na Kopyahin. Walang larawan, walang bayad, walang palabas na link, walang talata ng paliwanag, o kontrol sa pagsara. Ang mga nakasarang pindutan ay 1 post at 1 reaksyon; sarado ang feed."
   },
   "/shops:map-edit-open": {
-    "de": "Ein Moderator hat Shop-Notiz bearbeiten neben Ada · Happyland angetippt. Schritt 1 / 5 · Fotos ist geöffnet. Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Foto-Schritt schließt mit einem nur-Icon Schließen (X). Der barrierefreie Name ist Abbrechen. Das Wort Abbrechen ist nicht sichtbar. Karte bleibt ausgewählt. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
-    "es": "Un moderador pulsó Editar nota de tienda junto a Ada · Happyland. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay palabra visible Cancelar. Mapa sigue seleccionado. Sin clave de mapa, así que el marco permanece vacío. No hay un segundo encabezado Mapa.",
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten neben Ada · Happyland angetippt. Schritt 1 / 5 · Bilder ist geöffnet. Verlauf sagt, dass es noch keine Bearbeitungen gibt. Der Foto-Schritt schließt mit einem nur-Icon Schließen (X). Der barrierefreie Name ist Abbrechen. Das Wort Abbrechen ist nicht sichtbar. Karte bleibt ausgewählt. Kein Kartenschlüssel, daher bleibt der Rahmen leer. Keine zweite Überschrift Karte.",
+    "es": "Un moderador pulsó Editar la entrada de la tienda junto a Ada · Happyland. El paso 1 / 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay palabra visible Cancelar. Mapa sigue seleccionado. Sin clave de mapa, así que el marco permanece vacío. No hay un segundo encabezado Mapa.",
     "fil": "May moderator na nag-click ng I-edit ang tala ng tindahan sa tabi ni Ada · Happyland. Bukas ang Hakbang 1 / 5 · Mga larawan. Sabi ng kasaysayan, wala pang mga edit. Ang hakbang ng larawan ay nagsasara sa icon lang na Isara (X). Ang accessible na pangalan ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatiling napili ang Mapa. Walang susi ng mapa, kaya walang laman ang kuwadro. Walang pangalawang pamagat na Mapa."
   },
   "/setup/name:default": {
@@ -3380,9 +3380,9 @@
     "fil": "Staff (moderator) na bukas ang Menu na may GET /conversations/moderator-group na naka-stub na unread true → Ipinapakita ng Moderasyon ang 1 sa kanan (nav.moderateUnread, accessible name Moderasyon, 1 hindi pa nabasa). Ang Mga abiso at Mga mensahe ay nananatili sa bilang 0. Ang Estadistika ay nasa menu na ng miyembro (walang bilang ng hindi pa nabasa, agad pagkatapos ng Kadena ng tiwala). Ang tanging dagdag ng staff kumpara sa menu-open ay Moderasyon."
   },
   "/messages/[id]:default": {
-    "de": "Gültige bekannte UUID. Der Faden kann nur die Elternnotiz sein, wenn die Antworten leer sind. Karte mit Autorennamen, Zeitstempel, Text (Hallo von Ada), sats über formatBitcoin plus optionale bevorzugte Fiatwährung · formatFiatDisplay des Betrags, der beim Zahlungseingang gespeichert wurde (sonst der Kurs des Gaben-Tags; kein  · —, wenn dieser Kurs unbrauchbar ist), optionales Foto oder Clip-Seitenverhältnis <video>. Anmelde-CTA unter der Karte.",
-    "es": "UUID conocida y válida. El hilo puede ser solo el padre cuando las respuestas están vacías. Tarjeta con nombre de autor, marca de tiempo, texto (Hola desde Ada), sats mediante formatBitcoin más moneda fiduciaria preferida opcional · formatFiatDisplay del importe guardado cuando se hizo el pago (si no, el tipo del día del regalo; no  · — cuando ese tipo no es usable), foto opcional o <video> con proporción de clip. CTA de autenticación debajo de la tarjeta.",
-    "fil": "Wasto at kilalang UUID. Ang talakayan ay maaaring magulang lang kapag walang laman ang mga sagot. Kard na may pangalan ng may-akda, tatak ng oras, teksto (Kumusta mula kay Ada), sats sa pamamagitan ng formatBitcoin plus opsyonal na ninanais na fiat · formatFiatDisplay ng halagang naka-imbak noong ginawa ang bayad (kung hindi, ang rate ng araw ng regalo; walang  · — kapag hindi magamit ang rate na iyon), opsyonal na larawan o <video> na sukat ng clip. CTA ng pagpapatunay sa ilalim ng kard."
+    "de": "Gültige bekannte UUID. Der Faden kann nur die Elternnotiz sein, wenn die Antworten leer sind. Karte mit Autorennamen, Zeitstempel, Text (Hello from Ada), sats über formatBitcoin plus optionale bevorzugte Fiatwährung · formatFiatDisplay des Betrags, der beim Zahlungseingang gespeichert wurde (sonst der Kurs des Gaben-Tags; kein  · —, wenn dieser Kurs unbrauchbar ist), optionales Foto oder Clip-Seitenverhältnis <video>. Anmelde-CTA unter der Karte.",
+    "es": "UUID conocida y válida. El hilo puede ser solo el padre cuando las respuestas están vacías. Tarjeta con nombre de autor, marca de tiempo, texto (Hello from Ada), sats mediante formatBitcoin más moneda fiduciaria preferida opcional · formatFiatDisplay del importe guardado cuando se hizo el pago (si no, el tipo del día del regalo; no  · — cuando ese tipo no es usable), foto opcional o <video> con proporción de clip. CTA de autenticación debajo de la tarjeta.",
+    "fil": "Wasto at kilalang UUID. Ang talakayan ay maaaring magulang lang kapag walang laman ang mga sagot. Kard na may pangalan ng may-akda, tatak ng oras, teksto (Hello from Ada), sats sa pamamagitan ng formatBitcoin plus opsyonal na ninanais na fiat · formatFiatDisplay ng halagang naka-imbak noong ginawa ang bayad (kung hindi, ang rate ng araw ng regalo; walang  · — kapag hindi magamit ang rate na iyon), opsyonal na larawan o <video> na sukat ng clip. CTA ng pagpapatunay sa ilalim ng kard."
   },
   "/grants:default": {
     "de": "Verifizierter Inhaber mit funding.status none. Seiten-h1 21-Förderprogramm, der pausierte Satz Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind., der Link https://21.gifts/statistics und Ziele. Kein Link Über uns und keine Schaltfläche Bewerben. Öffentliche pausierte Bildschirmfotos bleiben unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
@@ -3450,9 +3450,9 @@
     "fil": "Parehong sheet ng bayad na nakunan sa tanawin ng kompyuter at sa mobile. Sa user-agent ng smartphone: ipinapakita ang parehong tarheta ng resibo nang walang nakaangkla na QrCode; nananatili ang pindutan Magbayad na may icon ng Wallet of Satoshi, na may Naghihintay ng bayad… sa ilalim at isang kontrol Isara (X), hindi Bumalik. Ipinapakita ng hakbang ng resibo ang halaga ng sat at ang default na fiat mula sa pinakabagong rate ng araw ng regalo. Sa tanawin ng kompyuter ipinapakita ng senaryong ito ang tarheta ng resibo na QR."
   },
   "/welcome:ask-credit-preview": {
-    "de": "Kredit, Schritt 9 von 9, bitcoin, nach der Nachricht Brauche Hilfe für ein Zugticket. Überschrift Vorschau. Einmalig und Kredit sind gedrückt. Die Karte zeigt die Autorin, die Nachricht und die Zielleiste bei 0 %: Anfragen ₿21'000 · $21.00, ein Darlehen-Etikett und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Senden ist die einzige Übermittlung. Sie sendet goalRepayable: true und goalTermDays: 30 mit dem Anfragebetrag. Der Zähler zeigt 9 von 9.",
-    "es": "Crédito, paso 9 de 9, bitcoin, después del mensaje Necesito ayuda con un billete de tren. Encabezado Vista previa. Una vez y Crédito están pulsados. La tarjeta muestra al autor, el mensaje y la barra de meta al 0 %: Pedir ₿21'000 · $21.00, una etiqueta Préstamo y A devolver por día: ₿700 · $0.70 por día durante 30 días. Publicar es el único envío. Envía goalRepayable: true y goalTermDays: 30 con el importe de la petición. El contador muestra 9 de 9.",
-    "fil": "Utang, hakbang 9 ng 9, bitcoin, pagkatapos ng mensahe Kailangan ng tulong sa tiket ng tren. Ulo Preview. Isahan at Utang ay nakapindot. Ipinapakita ng tarheta ang may-akda, ang mensahe, at ang bar ng layunin sa 0%: Hiling ₿21'000 · $21.00, isang tatak na Pautang, at Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Ang I-post ang tanging pagpasa. Nagpapadala ito ng goalRepayable: true at goalTermDays: 30 kasama ang halaga ng hiling. Ang panbilang ay nagbabasa 9 ng 9."
+    "de": "Kredit, Schritt 9 von 9, bitcoin, nach der Nachricht Need help with a train ticket. Überschrift Vorschau. Einmalig und Kredit sind gedrückt. Die Karte zeigt die Autorin, die Nachricht und die Zielleiste bei 0 %: Anfragen ₿21'000 · $21.00, ein Darlehen-Etikett und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Senden ist die einzige Übermittlung. Sie sendet goalRepayable: true und goalTermDays: 30 mit dem Anfragebetrag. Der Zähler zeigt 9 von 9.",
+    "es": "Crédito, paso 9 de 9, bitcoin, después del mensaje Need help with a train ticket. Encabezado Vista previa. Una vez y Crédito están pulsados. La tarjeta muestra al autor, el mensaje y la barra de meta al 0 %: Pedir ₿21'000 · $21.00, una etiqueta Préstamo y A devolver por día: ₿700 · $0.70 por día durante 30 días. Publicar es el único envío. Envía goalRepayable: true y goalTermDays: 30 con el importe de la petición. El contador muestra 9 de 9.",
+    "fil": "Utang, hakbang 9 ng 9, bitcoin, pagkatapos ng mensahe Need help with a train ticket. Ulo Preview. Isahan at Utang ay nakapindot. Ipinapakita ng tarheta ang may-akda, ang mensahe, at ang bar ng layunin sa 0%: Hiling ₿21'000 · $21.00, isang tatak na Pautang, at Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Ang I-post ang tanging pagpasa. Nagpapadala ito ng goalRepayable: true at goalTermDays: 30 kasama ang halaga ng hiling. Ang panbilang ay nagbabasa 9 ng 9."
   },
   "/profile:images": {
     "de": "Besitzerkarte mit drei verschiedenen Bildern zugleich. Stub GET /pictures/me mit einem quadratischen Porträt, GET /banners/me mit einer breiten Szene und GET /me/about/photo mit einem dritten Foto. Das breite Bild ist die Kopfzeile der Karte, das Profilfoto ist das runde Bild an der Unterkante, und das Über-mich-Foto bleibt unter der Bio. Seed aboutMe: 'I build on Bitcoin' und aboutMeHasPhoto: true. Alle drei Bilder sind im Sichtbereich.",
@@ -3481,7 +3481,7 @@
   },
   "/messages/[id]:external-reply": {
     "de": "Nicht angemeldete Permalink-Karte (PublicThreadCard). Eltern-Ada „Hello from Ada“ plus zwei Antworten von Robin, der kein 21.gifts-Konto hat: eine nur-Geschenk-Antwort (₿69) und eine Textantwort mit https://example.com/hello. Jeder Name ist ein Profil ansehen-Steuerelement nach /messages/<id>/author. Diese Aufnahme bleibt am Faden. Extern bleibt eine nicht interaktive Spanne neben dem Namen (derselbe Platz wie eine Rollenkapsel; keine Schaltfläche, kein Hinweis). Die URL ist als Klartext sichtbar — kein klickbarer Link, kein Autolink, keine eingebettete zitierte Notiz.",
-    "es": "Tarjeta de enlace permanente sin sesión (PublicThreadCard). Padre Ada «Hola desde Ada» más dos respuestas de Robin, que no tiene cuenta de 21.gifts: una respuesta solo de regalo (₿69) y una respuesta de texto con https://example.com/hello. Cada nombre es un control Ver perfil hacia /messages/<id>/author. Esta toma permanece en el hilo. Externo permanece un tramo no interactivo junto al nombre (el mismo hueco que una pastilla de rol; no es un botón, sin pista). La URL se ve como texto plano — no un enlace clicable, sin autovinculo, sin incrustación de nota citada.",
+    "es": "Tarjeta de enlace permanente sin sesión (PublicThreadCard). Padre Ada «Hello from Ada» más dos respuestas de Robin, que no tiene cuenta de 21.gifts: una respuesta solo de regalo (₿69) y una respuesta de texto con https://example.com/hello. Cada nombre es un control Ver perfil hacia /messages/<id>/author. Esta toma permanece en el hilo. Externo permanece un tramo no interactivo junto al nombre (el mismo hueco que una pastilla de rol; no es un botón, sin pista). La URL se ve como texto plano — no un enlace clicable, sin autovinculo, sin incrustación de nota citada.",
     "fil": "Tarheta ng permalink na hindi naka-sign-in (PublicThreadCard). Magulang na si Ada «Hello from Ada» dagdag ang dalawang sagot mula kay Robin, na walang account sa 21.gifts: isang sagot na Regalo lang (₿69) at isang sagot na teksto na may https://example.com/hello. Bawat pangalan ay isang kontrol Tingnan ang profile papunta sa /messages/<id>/author. Ang kuha na ito ay nananatili sa hibla. Panlabas ay nananatiling hindi interactive na span sa tabi ng pangalan (parehong puwang ng isang pilula ng tungkulin; hindi pindutan, walang hint). Ang URL ay nakikita bilang plain na teksto — hindi klikableng link, walang autolink, walang naka-embed na siniping tala."
   },
   "/members/[accountId]:funding-reviewed": {
@@ -3565,9 +3565,9 @@
     "fil": "Kard ng miyembro sa kompyuter pagkatapos pindutin ang Sticker ng tindahan sa ilalim ng QR Open CryptoPay: ShopStickerOverlay (scrim bg-app-overlay, Kard maxWidth=\"xl\", icon lang na Isara) na may pamagat na Sticker ng tindahan, ang panimulang I-print ito para sa bintana ng tindahan. Ang QR code ay nagbabayad kay {handle}., isang saradong menu na Pangalawang wika na nagpapakita ng Wala (Ingles lang), isang paunang tingin ng nai-print na sticker para sa miyembrong ito (kahel na banda na may marka ng Bitcoin at ang tekstong scan sa Ingles lang, walang pamagat sa pangalawang wika, tindahang sari-sari na may palatandaan ng 21.gifts, ang QR ng miyembro na may kahel na markang Open CryptoPay), ang pagpili ng Format ng file PDF | PNG | JPG | SVG (napili ang PDF), at isang may etiketang Kunin. Ang Escape ay nagsasara rin. Ang mga kombinasyon sa telepono (iPhone UA) ay nagbubukas ng parehong diyalogo tulad sa kompyuter. Ang saradong kard ay hindi tumatakip sa resultang ito. Ang mga kuhang ito ay gumagamit ng Ingles na interface. Kung walang kilalang lang, Ingles lang ang sticker."
   },
   "/welcome:expanded": {
-    "de": "Bei Alle ist Reaktionen anzeigen an einer Notiz angetippt — der ₿-Betrag der Notiz und der Text der Reaktionszahl klappen ebenfalls auf — die Karte klappt auf (aria-expanded), die Antwortliste lädt über fetchReplies, und das Antwort-Schreibfeld in der Karte zeigt Reaktion schreiben plus ein Feld Betrag sats. Reine Geschenk-Antworten erscheinen als ₿… senden plus dieselbe optionale preferred-fiat · wie Notizen (eine gespeicherte Zeichenkette unverändert, der Geschenktageskurs wenn das gespeicherte Feld null oder fehlend ist); eine Antwort mit Text und Geschenk zeigt beides. Antwort-Autoren zeigen dieselben Pillen Gründer / Moderator / Initiator / Verifiziert wie Notizen (basis hat keine); ein Klick auf eine Pille schaltet dieselbe kurze Erklärung um. Leerer Antworttext und leerer Betrag stellt 21 sats in Rechnung (Standard des Zahlungsblatts) und öffnet das Zahlungsblatt; eine Antwort mit Text und leerem Betrag ist für ein verifiziertes Mitglied unbezahlt, sonst 1 sat an 21.gifts; ein Betrag von 0 wird als 1 sat berechnet.![21.gifts welcome expanded](images/welcome-expanded.png)",
-    "es": "En Todos, Mostrar reacciones está pulsado en una nota — el importe ₿ de la nota y el texto del recuento de reacciones también se despliegan — la tarjeta se despliega (aria-expanded), la lista de respuestas carga vía fetchReplies, y el cuadro de redacción de respuesta dentro de la tarjeta muestra Escribe una reacción más un campo Importe sats. Las respuestas solo de regalo se muestran como envía ₿… más la misma preferred-fiat · opcional que las notas (una cadena guardada tal cual, el tipo del día de regalo cuando ese campo guardado es null o falta); una respuesta con texto y un regalo muestra ambos. Los autores de respuesta muestran las mismas pastillas Fundador / Moderador / Iniciador / Verificado que las notas (basis no tiene ninguna); pulsar una pastilla alterna la misma explicación breve. Texto de respuesta vacío y un importe vacío factura 21 sats (predeterminado de la hoja de pago) y abre la hoja de pago; una respuesta con texto y un importe vacío queda impagada para un miembro verificado, de lo contrario 1 sat a 21.gifts; un importe de 0 se cobra como 1 sat.![21.gifts welcome expanded](images/welcome-expanded.png)",
-    "fil": "Sa Lahat, napindot ang Ipakita ang mga reaksyon sa isang tala — ang halagang ₿ ng tala at ang teksto ng bilang ng reaksyon ay bumubuka rin — bumubuka ang kard (aria-expanded), naglo-load ang listahan ng sagot sa pamamagitan ng fetchReplies, at ang kahon ng pagsulat ng sagot sa loob ng kard ay nagpapakita ng Sumulat ng reaksyon plus isang field na Halaga sats. Ang mga sagot na regalo lang ay ipinapakita bilang magpadala ng ₿… plus ang parehong opsyonal na preferred-fiat · tulad ng mga tala (isang naka-imbak na string kung ano, ang rate ng araw ng regalo kapag null o wala ang naka-imbak na field); ang sagot na may teksto at regalo ay nagpapakita ng dalawa. Ang mga may-akda ng sagot ay nagpapakita ng parehong mga pildoras Tagapagtatag / Tagapamagitan / Tagapagsimula / Beripikado tulad ng mga tala (wala ang basis); ang pagpindot sa isang pildoras ay nagpapalit ng parehong maikling paliwanag. Walang laman na teksto ng sagot at walang laman na halaga ay singil ng 21 sats (default ng panel ng bayad) at nagbubukas ng panel ng bayad; ang sagot na may teksto at walang laman na halaga ay hindi pa bayad para sa beripikadong miyembro, kung hindi 1 sat sa 21.gifts; ang halagang 0 ay sinisingil bilang 1 sat.![21.gifts welcome expanded](images/welcome-expanded.png)"
+    "de": "Bei Alle ist Reaktionen anzeigen an einer Notiz angetippt — der ₿-Betrag der Notiz und der Text der Reaktionszahl klappen ebenfalls auf — die Karte klappt auf (aria-expanded), die Antwortliste lädt über fetchReplies, und das Antwort-Schreibfeld in der Karte zeigt Reaktion schreiben plus ein Feld Betrag sats. Reine Geschenk-Antworten erscheinen als ₿… senden plus dieselbe optionale preferred-fiat · wie Notizen (eine gespeicherte Zeichenkette unverändert, der Geschenktageskurs wenn das gespeicherte Feld null oder fehlend ist); eine Antwort mit Text und Geschenk zeigt beides. Antwort-Autoren zeigen dieselben Pillen Gründer / Moderator / Initiator / Verifiziert wie Notizen (basis hat keine); ein Klick auf eine Pille schaltet dieselbe kurze Erklärung um. Leerer Antworttext und leerer Betrag stellt 21 sats in Rechnung (Standard des Zahlungsblatts) und öffnet das Zahlungsblatt; eine Antwort mit Text und leerem Betrag ist für ein verifiziertes Mitglied unbezahlt, sonst 1 sat an 21.gifts; ein Betrag von 0 wird als 1 sat berechnet.",
+    "es": "En Todos, Mostrar reacciones está pulsado en una nota — el importe ₿ de la nota y el texto del recuento de reacciones también se despliegan — la tarjeta se despliega (aria-expanded), la lista de respuestas carga vía fetchReplies, y el cuadro de redacción de respuesta dentro de la tarjeta muestra Escribe una reacción más un campo Importe sats. Las respuestas solo de regalo se muestran como envía ₿… más la misma preferred-fiat · opcional que las notas (una cadena guardada tal cual, el tipo del día de regalo cuando ese campo guardado es null o falta); una respuesta con texto y un regalo muestra ambos. Los autores de respuesta muestran las mismas pastillas Fundador / Moderador / Iniciador / Verificado que las notas (basis no tiene ninguna); pulsar una pastilla alterna la misma explicación breve. Texto de respuesta vacío y un importe vacío factura 21 sats (predeterminado de la hoja de pago) y abre la hoja de pago; una respuesta con texto y un importe vacío queda impagada para un miembro verificado, de lo contrario 1 sat a 21.gifts; un importe de 0 se cobra como 1 sat.",
+    "fil": "Sa Lahat, napindot ang Ipakita ang mga reaksyon sa isang tala — ang halagang ₿ ng tala at ang teksto ng bilang ng reaksyon ay bumubuka rin — bumubuka ang kard (aria-expanded), naglo-load ang listahan ng sagot sa pamamagitan ng fetchReplies, at ang kahon ng pagsulat ng sagot sa loob ng kard ay nagpapakita ng Sumulat ng reaksyon plus isang field na Halaga sats. Ang mga sagot na regalo lang ay ipinapakita bilang magpadala ng ₿… plus ang parehong opsyonal na preferred-fiat · tulad ng mga tala (isang naka-imbak na string kung ano, ang rate ng araw ng regalo kapag null o wala ang naka-imbak na field); ang sagot na may teksto at regalo ay nagpapakita ng dalawa. Ang mga may-akda ng sagot ay nagpapakita ng parehong mga pildoras Tagapagtatag / Tagapamagitan / Tagapagsimula / Beripikado tulad ng mga tala (wala ang basis); ang pagpindot sa isang pildoras ay nagpapalit ng parehong maikling paliwanag. Walang laman na teksto ng sagot at walang laman na halaga ay singil ng 21 sats (default ng panel ng bayad) at nagbubukas ng panel ng bayad; ang sagot na may teksto at walang laman na halaga ay hindi pa bayad para sa beripikadong miyembro, kung hindi 1 sat sa 21.gifts; ang halagang 0 ay sinisingil bilang 1 sat."
   },
   "/welcome:menu-open": {
     "de": "Oben rechts ist das Menu geöffnet → Das Menu enthält zuerst Start (Start, Shops, Kasse, Profil, Förderprogramm, Wallet, Wohnzimmerregeln, Trust-Kette, Statistiken, Benachrichtigungen, Nachrichten, Kontakt, optional Installieren, Abmelden, danach eine unauffällige Zeile Version {version} (app.version)). Profil ist eine Zeile (User + Profil; keine gegebenen oder empfangenen Beträge). Benachrichtigungen zeigt rechts nur dann eine Ungelesen-Zahl, wenn unreadCount > 0 (Adas Standardaufnahme ist 0, daher keine Zahl). Nachrichten zeigt rechts nur dann eine Zahl, wenn ungelesene Eingänge > 0; Adas Standardaufnahmen sind 0, daher keine Zahl. Adas Standardaufnahme des Welcome-Menus zeigt Profil ohne Beträge. Wohnzimmerregeln und Kontakt haben jeweils ein Symbol, optional App installieren, wenn ein Installationsangebot vorliegt, Abmelden, danach eine unauffällige Zeile Version {version} (app.version). Sprache, Thema und Zahlenformat liegen auf /profile, nicht in diesem Menu. Der barrierefreie Name des Profil-Links ist Profil. Andere barrierefreie Namen bleiben unverändert. Keine Optionszeilen English / Deutsch / Español / Filipino. Keine native Sprachauswahl.",

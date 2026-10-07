@@ -68,6 +68,18 @@ describe('screenVariantDescription', () => {
     expect(screenVariantDescription('fil', '/:nope', '   ', 'Fallback label')).toBe(
       'Fallback label',
     );
+    expect(
+      screenVariantDescription('en', '/welcome:repay-today', undefined, 'Fallback label'),
+    ).toBe('Fallback label');
+    expect(screenVariantDescription('en', '/welcome:repay-today', '   ', 'Fallback label')).toBe(
+      'Fallback label',
+    );
+    expect(
+      screenVariantDescription('de', '/welcome:repay-today', undefined, 'Fallback label'),
+    ).toBe('Fallback label');
+    expect(screenVariantDescription('de', '/welcome:repay-today', '   ', 'Fallback label')).toBe(
+      'Fallback label',
+    );
   });
 
   it('throws when a non-English locale has no catalog entry', () => {

@@ -68,6 +68,7 @@ describe('HandbookScreensPage', () => {
     expect(screen.getByAltText('/ default')).toBeTruthy();
     const root = document.getElementById('root-default');
     expect(root?.textContent).toContain('/ default');
+    expect(screen.queryByText(/Desktop\/wide layout/)).toBeNull();
   });
 
   it('shows German screen-card descriptions for locale de', async () => {
@@ -90,5 +91,7 @@ describe('HandbookScreensPage', () => {
     renderWithLocale(await HandbookScreensPage(), 'de');
     const root = document.getElementById('root-default');
     expect(root?.textContent).toContain('/ default');
+    expect(screen.queryByText(/Desktop-\/Breitdarstellung/)).toBeNull();
+    expect(screen.queryByText(/Heutige Rate zahlen/)).toBeNull();
   });
 });
