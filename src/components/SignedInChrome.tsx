@@ -69,10 +69,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * screen. Close dismisses this mount only; the introduce CTA skips the overlay
  * once, so the next mount does not show it again.
  *
- * Renders nothing without a session: signed out, or while a stored session
- * is held back until its wallet is open (the login card is on screen).
+ * Renders nothing while a stored session is held back until its wallet is
+ * open (`lockedSession`; the login card is on screen).
  *
- * @returns The signed-in Menu chrome, or `null` without a session.
+ * @returns The signed-in Menu chrome, or `null` while a session is held back.
  */
 export function SignedInChrome(): ReactElement | null {
   const { t } = useTranslations();
@@ -81,6 +81,7 @@ export function SignedInChrome(): ReactElement | null {
   // A stored session still being checked keeps the account header's place; read on every
   // auth change, so the sign-out that clears it also removes the header.
   const storedSession = useAuthStore((state) => (state.account === null ? loadSession() : null));
+  const lockedSession = useAuthStore((state) => state.lockedSession);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
@@ -342,9 +343,9 @@ export function SignedInChrome(): ReactElement | null {
         ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
         : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
-  if (session === null) {
-    // Signed out, or a session held back until its wallet is open: the
-    // login card is on screen, and a signed-out visitor gets no Menu.
+  if (lockedSession !== null) {
+    // A session held back until its wallet is open counts as signed out:
+    // the login card is on screen, and it gets no signed-in Menu.
     return null;
   }
   return (
@@ -554,6 +555,9 @@ export function SignedInChrome(): ReactElement | null {
                   }
                   onClick={() => {
                     setOpen(false);
+                    if (session === null) {
+                      return;
+                    }
                     if (
                       typeof Notification !== 'undefined' &&
                       Notification.permission !== 'granted' &&
