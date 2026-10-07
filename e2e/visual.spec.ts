@@ -26897,8 +26897,7 @@ test.describe('habit tracker baselines', () => {
 
   test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
     await seedHabitAda(page);
-    await page.unroute('**/gifts/stats**');
-    await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+    await page.route('**/fx/spot', () => new Promise(() => undefined));
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
