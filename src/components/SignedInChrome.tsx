@@ -150,7 +150,8 @@ export function SignedInChrome(): ReactElement {
 
   // The open sheet (and a compact wide panel that still does not fit) is the one
   // scrollport, so its own rows scroll and the page behind stays put. The panel
-  // stays mounted while closed, so it binds only while open.
+  // stays mounted while closed, so it binds only while open. Crossing the
+  // breakpoint moves the portal and so replaces the panel node: bind again.
   const sheetScrolls = open && (narrow || tight);
   useLayoutEffect(() => {
     if (!sheetScrolls) {
@@ -164,7 +165,7 @@ export function SignedInChrome(): ReactElement {
       panel.removeAttribute('data-scroll-active');
       panel.removeAttribute('data-scroll-locked');
     };
-  }, [sheetScrolls]);
+  }, [sheetScrolls, narrow]);
 
   useLayoutEffect(() => {
     if (!open || narrow) {

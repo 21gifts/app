@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppShell } from '@/components/AppShell';
+import { AppShell, AppShellContext } from '@/components/AppShell';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
@@ -1167,6 +1167,50 @@ describe('SignedInChrome', () => {
       } else {
         Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDescriptor);
       }
+    }
+  });
+
+  it('binds the new sheet as the scrollport when an open compact menu crosses to narrow', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return { top: 0, bottom: 751, toJSON: () => ({}) } as DOMRect;
+    };
+    const host = document.createElement('div');
+    host.setAttribute('data-menu-sheet-host', '');
+    document.body.append(host);
+    const shell = (frameWidth: number): React.ReactElement => (
+      <AppShellContext.Provider
+        value={
+          { frameWidth, scrollerEl: null } as unknown as NonNullable<
+            React.ContextType<typeof AppShellContext>
+          >
+        }
+      >
+        <SignedInChrome />
+      </AppShellContext.Provider>
+    );
+    try {
+      const { rerender } = renderWithLocale(shell(800));
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const wide = menuPanel();
+      expect(wide.className).toContain('max-h-[calc(var(--app-height)-6rem)]');
+      expect(wide.hasAttribute('data-scroll-active')).toBe(true);
+      rerender(shell(400));
+      const sheet = menuPanel();
+      expect(sheet).not.toBe(wide);
+      expect(host.contains(sheet)).toBe(true);
+      expect(sheet.hasAttribute('data-scroll-active')).toBe(true);
+      expect(wide.hasAttribute('data-scroll-active')).toBe(false);
+    } finally {
+      host.remove();
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
     }
   });
 
