@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
-import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
+import { useEffect, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field } from '@/components/ui';
@@ -30,9 +30,12 @@ type VersionBlock = {
  * `/setup/name`, `/setup/username`, `/setup/rules`,
  * or `/welcome`.
  *
+ * @param props - `footer`: shown under the card only while no login or
+ *   sign-up is running and nobody is signed in (`WalletLoginCard` puts
+ *   **Log out** there, so it cannot race a login in flight).
  * @returns The card element.
  */
-export function LoginCard(): ReactElement {
+export function LoginCard({ footer }: { footer?: ReactNode } = {}): ReactElement {
   const account = useAuthStore((state) => state.account);
   const wrongAccount = useAuthStore((state) => state.wrongAccount);
   const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
@@ -139,7 +142,16 @@ export function LoginCard(): ReactElement {
     );
   }
 
-  return <Card surface={false}>{body}</Card>;
+  const card = <Card surface={false}>{body}</Card>;
+  if (footer === undefined || account !== null || passkey.status === 'starting') {
+    return card;
+  }
+  return (
+    <>
+      {card}
+      {footer}
+    </>
+  );
 }
 
 /**
