@@ -205,8 +205,8 @@ export function PublicMessageThread(props: {
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
   const rateDay = useSpotRate();
-  const rateDayRef = useRef(rateDay);
-  rateDayRef.current = rateDay;
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -612,7 +612,7 @@ export function PublicMessageThread(props: {
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -687,14 +687,14 @@ export function PublicMessageThread(props: {
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       /* v8 ignore next 3 -- pay sheet closed while the reply invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -789,6 +789,8 @@ export function PublicMessageThread(props: {
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -813,7 +815,7 @@ export function PublicMessageThread(props: {
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -958,6 +960,7 @@ export function PublicMessageThread(props: {
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
     const exempt = isReplyPaymentExempt(account, note.accountId);
