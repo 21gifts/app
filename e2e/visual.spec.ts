@@ -23168,6 +23168,25 @@ test.describe('daily payments', () => {
     await shotScreen(page, 'state-grants-payments-amounts-suggest');
   });
 
+  test('state /grants/payments/amounts chosen', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
+    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await expect(page.getByRole('option', { name: 'Cara (@cara)' })).toBeHidden();
+    await expect(page.getByRole('textbox', { name: 'Person' })).toHaveValue('Cara');
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
+    await page.getByRole('textbox', { name: 'Person' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-chosen');
+  });
+
   test('state /grants/payments/amounts pick-person', async ({ page }) => {
     await stubRoster(page);
     await page.goto('/grants/payments/amounts');

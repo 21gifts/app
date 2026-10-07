@@ -3480,6 +3480,12 @@ Founder types a person prefix. The suggestion list shows **Cara (@cara)** and st
 
 ![21.gifts daily payment amounts suggest](images/grants-payments-amounts-suggest.png)
 
+### Variant: chosen
+
+Founder types a person prefix and presses that person. The list closes. The Person field shows the chosen name. There is no alert. Needle `state-grants-payments-amounts-chosen`.
+
+![21.gifts daily payment amounts chosen](images/grants-payments-amounts-chosen.png)
+
 ### Variant: pick-person
 
 Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** Needle `Choose a person.`

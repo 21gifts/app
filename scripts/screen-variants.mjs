@@ -2958,6 +2958,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants/payments/amounts',
+    id: 'chosen',
+    image: 'grants-payments-amounts-chosen.png',
+    visual: 'state-grants-payments-amounts-chosen',
+    needle: 'state-grants-payments-amounts-chosen',
+  },
+  {
+    route: '/grants/payments/amounts',
     id: 'pick-person',
     image: 'grants-payments-amounts-pick-person.png',
     visual: 'state-grants-payments-amounts-pick-person',
