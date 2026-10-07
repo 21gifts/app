@@ -40,4 +40,26 @@ describe('WalletFooterActions', () => {
       false,
     );
   });
+
+  it('focuses the button of the view that just closed', () => {
+    const view = renderWithLocale(
+      <WalletFooterActions
+        onReceive={vi.fn()}
+        onSend={vi.fn()}
+        sendDisabled={false}
+        focus="send"
+      />,
+    );
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Send' }));
+    view.unmount();
+    renderWithLocale(
+      <WalletFooterActions
+        onReceive={vi.fn()}
+        onSend={vi.fn()}
+        sendDisabled={false}
+        focus="receive"
+      />,
+    );
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Receive' }));
+  });
 });

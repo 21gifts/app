@@ -367,4 +367,14 @@ describe('MenuAccountHeader', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:photo');
     second.unmount();
   });
+
+  it('drops the cache when the session ends while no header is mounted', async () => {
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    signIn();
+    const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    await settle();
+    view.unmount();
+    useAuthStore.setState({ session: null, account: null });
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:photo');
+  });
 });

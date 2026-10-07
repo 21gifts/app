@@ -149,6 +149,13 @@ describe('WalletSend input', () => {
     expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
   });
 
+  it('gives the focus back to Enter manually when the sheet closes', () => {
+    renderSend(sendWith({ step: 'input', error: null }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter manually' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Enter manually' }));
+  });
+
   it('submits the typed text from the sheet', () => {
     const send = sendWith({ step: 'input', error: null }, { text: 'lnbc1' });
     renderSend(send, true);

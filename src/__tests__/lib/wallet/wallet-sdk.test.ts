@@ -210,6 +210,22 @@ describe('loadWalletSdk', () => {
     expect(mocks.getPayment).toHaveBeenCalledWith({ paymentId: 'p2' });
   });
 
+  it('getPayment refuses a token payment, whose amount is not in satoshis', async () => {
+    mocks.getPayment.mockResolvedValueOnce({
+      payment: {
+        id: 't1',
+        paymentType: 'receive',
+        status: 'completed',
+        amount: 5n,
+        timestamp: 1_700_000_000,
+        method: 'token',
+      },
+    });
+    const sdk = await loadWalletSdk();
+    const connection = await sdk.connect(MNEMONIC, API_KEY, HOST);
+    await expect(connection.getPayment('t1')).rejects.toThrow('wallet-payment-not-bitcoin');
+  });
+
   it('disconnect forwards to the handle', async () => {
     const sdk = await loadWalletSdk();
     const connection = await sdk.connect(MNEMONIC, API_KEY, HOST);

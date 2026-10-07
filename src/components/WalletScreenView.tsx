@@ -192,6 +192,7 @@ export function WalletScreenView({
         onReceive={panel.openReceive}
         onSend={panel.openSend}
         sendDisabled={panel.sendDisabled}
+        focus={panel.returnFocus}
       />
     </div>
   );

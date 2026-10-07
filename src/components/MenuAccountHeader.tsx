@@ -25,6 +25,22 @@ let cached: { session: string; stats: MenuStats } | null = null;
 /** The load in flight, so two screens mounting at once do not fetch twice. */
 let inflight: { session: string; promise: Promise<MenuStats> } | null = null;
 
+/** Drops the cached photo and numbers (and revokes the photo URL). */
+function dropCache(): void {
+  if (cached !== null && cached.stats.pictureUrl !== null) {
+    URL.revokeObjectURL(cached.stats.pictureUrl);
+  }
+  cached = null;
+}
+
+// A session that ends or changes takes its cache with it, also when no header
+// is mounted at that moment (a logout that leaves the page at once).
+useAuthStore.subscribe((state) => {
+  if (cached !== null && state.session !== cached.session) {
+    dropCache();
+  }
+});
+
 /**
  * Loads the profile photo (`GET /pictures/me`), given and received totals
  * (`GET /me/activity`), and the post count (`GET /forum/members/:id`). A
@@ -117,13 +133,6 @@ export function MenuAccountHeader({
   const [loaded, setLoaded] = useState<{ session: string; stats: MenuStats } | null>(null);
 
   useEffect(() => {
-    // A session that ends or changes takes its cached photo and numbers with it.
-    if (cached !== null && cached.session !== session) {
-      if (cached.stats.pictureUrl !== null) {
-        URL.revokeObjectURL(cached.stats.pictureUrl);
-      }
-      cached = null;
-    }
     if (session === null || accountId === null || cached?.session === session) {
       return;
     }

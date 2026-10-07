@@ -31,7 +31,8 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
  * Loads one payment of the connected wallet by id once the wallet is ready,
  * and again after each wallet sync, so a pending payment updates in place. A
  * missing id or a payment the wallet does not know is `missing`; a later read
- * of the same id that fails keeps the payment already shown. The state belongs
+ * of the same id that fails keeps the payment already shown, and a wallet that
+ * stops being ready drops it back to `loading`. The state belongs
  * to one id: another id starts at `loading` and never shows the previous
  * payment. Under the `?visual=history-rows` pin (Playwright builds only) it
  * shows the fixture payment with that id.
@@ -57,6 +58,8 @@ export function useWalletPayment(id: string | null): WalletPaymentState {
       return;
     }
     if (!ready) {
+      // A payment read while the wallet was open is not shown once it locks or fails.
+      setLoaded({ id, state: { status: 'loading' } });
       return;
     }
     let live = true;

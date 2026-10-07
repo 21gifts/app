@@ -130,7 +130,8 @@ function StepBox({
  * goes into the field as if typed and is submitted once; a clipboard that is
  * refused or empty shows a short alert over the camera, which keeps running.
  * Enter manually opens a bottom sheet over the camera with the field and
- * Continue; its Close (`X`) or Back returns to the camera. A text that cannot
+ * Continue; its Close (`X`) or Back returns to the camera, and Enter manually
+ * takes the focus again. A text that cannot
  * be read always ends in one alert: over the camera with **Try again**, which
  * clears it and starts the camera again, or in the open sheet under the field.
  * The camera runs only while the input step is idle, shows no alert, and the
@@ -159,6 +160,15 @@ export function WalletSend({
   const [scanned, setScanned] = useState<string | null>(null);
   const scanSubmitted = useRef(false);
   const [clipboardError, setClipboardError] = useState<'denied' | 'empty' | null>(null);
+  /** Enter manually, which takes the focus back when the sheet closes. */
+  const manualButton = useRef<HTMLButtonElement>(null);
+  const sheetWasOpen = useRef(manualEntry);
+  useEffect(() => {
+    if (sheetWasOpen.current && !manualEntry) {
+      manualButton.current?.focus({ preventScroll: true });
+    }
+    sheetWasOpen.current = manualEntry;
+  }, [manualEntry]);
   /** Bumped whenever a pending clipboard read must no longer take effect. */
   const pasteRun = useRef(0);
   useEffect(
@@ -394,6 +404,7 @@ export function WalletSend({
                   {t('wallet.sendPaste')}
                 </Button>
                 <Button
+                  ref={manualButton}
                   variant="overlay"
                   className={FLOAT_CLASS}
                   disabled={busy}

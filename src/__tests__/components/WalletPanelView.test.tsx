@@ -51,4 +51,17 @@ describe('WalletPanelView', () => {
     expect(screen.queryByText('Send stub')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Wallet' })).toBeNull();
   });
+
+  it('moves the focus to the view heading when it opens', () => {
+    renderWithLocale(
+      <WalletPanelView
+        panel="receive"
+        send={undefined}
+        walletReady
+        manualEntry={false}
+        onManualEntry={vi.fn()}
+      />,
+    );
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Wallet' }));
+  });
 });
