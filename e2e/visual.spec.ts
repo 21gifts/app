@@ -17365,7 +17365,7 @@ test.describe('welcome forum variants', () => {
     await page.goto(`/welcome?visual=${visual}`);
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    await expect(page.getByText(/^Pay ₿700\b/)).toBeVisible();
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Pay ₿700\b/ })).toBeVisible();
   }
 
   test('state /welcome repay-wallet-pay-preparing', async ({ page }) => {
@@ -23405,7 +23405,7 @@ test.describe('inbox screens', () => {
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Send' }).click();
-    await expect(page.getByText(/^Pay ₿21\b/)).toBeVisible();
+    await expect(page.getByRole('paragraph').filter({ hasText: /^Pay ₿21\b/ })).toBeVisible();
   }
 
   test('messages thread-wallet-pay-preparing', async ({ page }) => {
