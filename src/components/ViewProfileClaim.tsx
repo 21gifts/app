@@ -36,10 +36,10 @@ function isAlreadyClaimedError(message: string | null): boolean {
  * cannot hold a 21.gifts wallet instead of the generic claim error.
  *
  * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
- * @returns Yellow activate banner, in-app escape card, spinner, error copy,
- *   `WalletLoginCard` after **Log in instead** (once that login is no longer
- *   running) until the wallet is open (and while that session is held back),
- *   or `null` when claimed.
+ * @returns Yellow activate banner, in-app escape card, spinner, error copy
+ *   (also for a failed **Log in instead** over a held-back session),
+ *   `WalletLoginCard` after a successful **Log in instead** until the wallet
+ *   is open (and while that session is held back), or `null` when claimed.
  */
 export function ViewProfileClaim({
   viewKey,
