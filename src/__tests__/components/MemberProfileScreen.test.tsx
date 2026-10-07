@@ -563,7 +563,9 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
     fireEvent.click(screen.getByText('Moderator functions'));
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, this name identifies them' }));
     await waitFor(() => {
+      expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id, 'Carol');
       expect(screen.getByText('ada@21.gifts')).toBeTruthy();
     });
     expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();

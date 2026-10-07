@@ -5089,22 +5089,22 @@ describe('fetchTrustProposals', () => {
 describe('postTrustVerify', () => {
   const result = { id: 'acc_1', name: 'Carol', role: 'verified' as const };
 
-  it('posts Bearer JSON { accountId } and returns the snapshot', async () => {
+  it('posts Bearer JSON { accountId, confirmedName } and returns the snapshot', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: result });
-    await expect(postTrustVerify('sess', 'acc_1')).resolves.toEqual(result);
+    await expect(postTrustVerify('sess', 'acc_1', 'Carol')).resolves.toEqual(result);
     expect(fetchMock).toHaveBeenCalledWith('/trust/verify', {
       method: 'POST',
       headers: {
         Authorization: 'Bearer sess',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ accountId: 'acc_1' }),
+      body: JSON.stringify({ accountId: 'acc_1', confirmedName: 'Carol' }),
     });
   });
 
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 403, body: {} });
-    await expect(postTrustVerify('sess', 'acc_1')).rejects.toThrow(
+    await expect(postTrustVerify('sess', 'acc_1', 'Carol')).rejects.toThrow(
       'Could not update this member. Please try again.',
     );
   });

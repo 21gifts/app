@@ -1155,6 +1155,7 @@ export async function fetchTrustChain(sessionToken: string, around?: string): Pr
  * @param path - Same-origin proxy path.
  * @param sessionToken - Bearer session.
  * @param accountId - Subject account id.
+ * @param extra - Optional Verify-only `{ confirmedName }`. Omitted, the body is `{ accountId }`.
  * @returns Parsed {@link TrustActionResult}.
  * @throws Error with visitor-facing copy on any failure.
  */
@@ -1162,6 +1163,7 @@ async function postTrustAction(
   path: string,
   sessionToken: string,
   accountId: string,
+  extra?: { confirmedName: string },
 ): Promise<TrustActionResult> {
   try {
     const response = await fetch(path, {
@@ -1171,7 +1173,7 @@ async function postTrustAction(
         'Content-Type': 'application/json',
         ...deviceTimeZoneHeader(),
       },
-      body: JSON.stringify({ accountId }),
+      body: JSON.stringify(extra === undefined ? { accountId } : { accountId, ...extra }),
     });
     if (!response.ok) {
       throw new Error(TRUST_ACTION_ERROR);
@@ -1187,14 +1189,16 @@ async function postTrustAction(
  *
  * @param sessionToken - Bearer session of a moderator.
  * @param accountId - Subject account id.
+ * @param confirmedName - Stored name that uniquely identifies the person.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
  */
 export async function postTrustVerify(
   sessionToken: string,
   accountId: string,
+  confirmedName: string,
 ): Promise<TrustActionResult> {
-  return postTrustAction('/trust/verify', sessionToken, accountId);
+  return postTrustAction('/trust/verify', sessionToken, accountId, { confirmedName });
 }
 
 /**

@@ -79,6 +79,7 @@ export function MemberTrustActions({
   const account = useAuthStore((state) => state.account);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [confirmingVerify, setConfirmingVerify] = useState(false);
 
   if (session === null || account === null) {
     return null;
@@ -92,6 +93,8 @@ export function MemberTrustActions({
 
   const alreadyOnChain = roleAtLeast(profile.role, 'moderator');
   const showVerify = profile.role === 'basis';
+  const identifyingName =
+    typeof profile.name === 'string' && profile.name.trim() !== '' ? profile.name : null;
   const showPropose = profile.role === 'verified' && profile.trust.proposedBy === null;
   const proposedBy = profile.trust.proposedBy;
   const showConfirm =
@@ -145,15 +148,53 @@ export function MemberTrustActions({
         ) : (
           <SundayWritingGate>
             {showVerify ? (
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() => {
-                  run(() => postTrustVerify(session, profile.id), { role: 'verified' });
-                }}
-              >
-                {t('trustChain.action.verify')}
-              </Button>
+              identifyingName === null ? (
+                <p
+                  className="text-center text-sm text-app-muted"
+                  data-testid="state-members-staff-verify-unnamed"
+                >
+                  {t('trustChain.verifyName.missing')}
+                </p>
+              ) : confirmingVerify ? (
+                <div
+                  className="flex w-full flex-col items-stretch gap-3"
+                  data-testid="state-members-staff-verify-name"
+                >
+                  <p className="text-sm text-app-fg text-center">
+                    {t('trustChain.verifyName.question')}
+                  </p>
+                  <p className="text-sm font-medium text-app-fg text-center">{identifyingName}</p>
+                  <Button
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => {
+                      run(() => postTrustVerify(session, profile.id, identifyingName), {
+                        role: 'verified',
+                      });
+                    }}
+                  >
+                    {t('trustChain.verifyName.confirm')}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setConfirmingVerify(false);
+                    }}
+                  >
+                    {t('trustChain.verifyName.cancel')}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    setConfirmingVerify(true);
+                  }}
+                >
+                  {t('trustChain.action.verify')}
+                </Button>
+              )
             ) : null}
             {showPropose ? (
               <Button

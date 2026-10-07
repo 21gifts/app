@@ -1920,6 +1920,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:staff-verify-name",
+    "label": "/members/[accountId] staff-verify-name",
+    "visual": "state-members-staff-verify-name",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:staff-verify-unnamed",
+    "label": "/members/[accountId] staff-verify-unnamed",
+    "visual": "state-members-staff-verify-unnamed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:sunday",
     "label": "/members/[accountId] sunday",
     "visual": "state-members-accountId-sunday",

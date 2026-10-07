@@ -88,6 +88,11 @@ function openStaffFunctions(): void {
   fireEvent.click(screen.getByText('Moderator functions'));
 }
 
+function confirmStoredName(): void {
+  fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Yes, this name identifies them' }));
+}
+
 function expectStaffRegionAbsent(): void {
   expect(screen.queryByTestId('state-members-staff-verify')).toBeNull();
   expect(screen.queryByTestId('staff-functions')).toBeNull();
@@ -131,6 +136,51 @@ describe('MemberTrustActions', () => {
     openStaffFunctions();
     expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Appoint as moderator' })).toBeNull();
+  });
+
+  it('shows the stored name after Verify and does not post yet', () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<MemberTrustActions profile={profile} />);
+    openStaffFunctions();
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    expect(postTrustVerify).not.toHaveBeenCalled();
+    expect(screen.getByTestId('state-members-staff-verify-name')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Does this stored name match the name that uniquely identifies this person?',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText('Carol')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Yes, this name identifies them' })).toBeTruthy();
+  });
+
+  it('returns to Verify on cancel without posting', () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<MemberTrustActions profile={profile} />);
+    openStaffFunctions();
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(postTrustVerify).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
+    expect(screen.queryByTestId('state-members-staff-verify-name')).toBeNull();
+  });
+
+  it('hides Verify when the stored name is missing or blank', () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    const { unmount } = renderWithLocale(
+      <MemberTrustActions profile={{ ...profile, name: null }} />,
+    );
+    openStaffFunctions();
+    expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+    expect(screen.getByTestId('state-members-staff-verify-unnamed').textContent).toBe(
+      'Verification needs a stored name that identifies this person.',
+    );
+    unmount();
+
+    renderWithLocale(<MemberTrustActions profile={{ ...profile, name: '   ' }} />);
+    openStaffFunctions();
+    expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+    expect(screen.getByTestId('state-members-staff-verify-unnamed')).toBeTruthy();
   });
 
   it('shows Verify and Appoint for a founder viewing a basis member', () => {
@@ -228,7 +278,7 @@ describe('MemberTrustActions', () => {
     vi.mocked(postTrustVerify).mockRejectedValue(new Error('fail'));
     renderWithLocale(<MemberTrustActions profile={profile} />);
     openStaffFunctions();
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    confirmStoredName();
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe(
         'Could not update this member. Please try again.',
@@ -249,7 +299,10 @@ describe('MemberTrustActions', () => {
     vi.mocked(fetchMember).mockResolvedValue({ ...profile, role: 'verified' });
     renderWithLocale(<MemberTrustActions profile={profile} />);
     openStaffFunctions();
-    const button = screen.getByRole('button', { name: 'Verify' }) as HTMLButtonElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    const button = screen.getByRole('button', {
+      name: 'Yes, this name identifies them',
+    }) as HTMLButtonElement;
     fireEvent.click(button);
     await waitFor(() => {
       expect(button.disabled).toBe(true);
@@ -274,9 +327,9 @@ describe('MemberTrustActions', () => {
     const onUpdated = vi.fn();
     renderWithLocale(<MemberTrustActions profile={profile} onUpdated={onUpdated} />);
     openStaffFunctions();
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    confirmStoredName();
     await waitFor(() => {
-      expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id);
+      expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id, 'Carol');
       expect(fetchMember).toHaveBeenCalledWith('sess', profile.id);
       expect(onUpdated).toHaveBeenCalledWith(updated);
       expect(refresh).toHaveBeenCalled();
@@ -294,7 +347,7 @@ describe('MemberTrustActions', () => {
     const onUpdated = vi.fn();
     renderWithLocale(<MemberTrustActions profile={profile} onUpdated={onUpdated} />);
     openStaffFunctions();
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    confirmStoredName();
     await waitFor(() => {
       expect(fetchMember).toHaveBeenCalled();
       expect(refresh).toHaveBeenCalled();
@@ -313,7 +366,7 @@ describe('MemberTrustActions', () => {
     const onUpdated = vi.fn();
     renderWithLocale(<MemberTrustActions profile={profile} onUpdated={onUpdated} />);
     openStaffFunctions();
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    confirmStoredName();
     await waitFor(() => {
       expect(fetchMember).toHaveBeenCalledWith('sess', profile.id);
       expect(refresh).toHaveBeenCalled();

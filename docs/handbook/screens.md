@@ -2717,6 +2717,18 @@ Same moderator and basis member after pressing **Moderator functions**. The disc
 
 ![21.gifts member staff verify open](images/members-staff-verify-open.png)
 
+### Variant: staff-verify-name
+
+Same moderator and basis member after pressing **Moderator functions** and **Verify**. The disclosure stays expanded. Question **Does this stored name match the name that uniquely identifies this person?**, the stored name **Ada**, and **Yes, this name identifies them** (`data-testid="state-members-staff-verify-name"`). Viewport capture after scrolling the confirm block into view: the member card scrolls inside the page frame, and a full-page stitch leaves the confirm block below the fold. The closed shot and the open Verify shot do not cover this result.
+
+![21.gifts member staff verify name](images/members-staff-verify-name.png)
+
+### Variant: staff-verify-unnamed
+
+Same moderator viewing another **basis** member with no stored name. After pressing **Moderator functions**, **Verification needs a stored name that identifies this person.** is visible (`data-testid="state-members-staff-verify-unnamed"`). **Verify** is not present.
+
+![21.gifts member staff verify unnamed](images/members-staff-verify-unnamed.png)
+
 ### Variant: sunday
 
 Device-local Sunday. **Moderator functions** is open. **Verify** is gone. **Writing is paused on Sunday.**

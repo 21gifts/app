@@ -1745,8 +1745,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: postTrustVerify
 
-- **Purpose:** POST `/trust/verify` with `{ accountId }` so a moderator verifies a basis member.
-- **Inputs:** Bearer `sessionToken`, subject `accountId`.
+- **Purpose:** POST `/trust/verify` with `{ accountId, confirmedName }` so a moderator verifies a basis member.
+- **Inputs:** Bearer `sessionToken`, subject `accountId`, `confirmedName`.
 - **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
 - **Used by:** `MemberTrustActions`.
 

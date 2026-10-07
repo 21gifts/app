@@ -2313,6 +2313,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'staff-verify-name',
+    image: 'members-staff-verify-name.png',
+    visual: 'state-members-staff-verify-name',
+    needle: 'state-members-staff-verify-name',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'staff-verify-unnamed',
+    image: 'members-staff-verify-unnamed.png',
+    visual: 'state-members-staff-verify-unnamed',
+    needle: 'state-members-staff-verify-unnamed',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'sunday',
     image: 'members-accountId-sunday.png',
     visual: 'state-members-accountId-sunday',
