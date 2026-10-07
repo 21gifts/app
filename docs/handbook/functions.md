@@ -3023,7 +3023,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: proxyTrustVerifyPost
 
 - **Purpose:** Same-origin Bearer proxy helper for api `POST /trust/verify`.
-- **Inputs:** Incoming `Request` (JSON `{ accountId }`).
+- **Inputs:** Incoming `Request` (JSON `{ accountId, confirmedName }`).
 - **Returns / side effects:** Upstream `Response`.
 - **Used by:** Route POST `/trust/verify`.
 

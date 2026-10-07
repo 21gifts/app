@@ -685,7 +685,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /trust/verify` with `{ accountId, confirmedName }`. The proxy forwards the JSON body unchanged.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
-- **Used by:** `postTrustVerify` in `MemberTrustActions`.
+- **Used by:** `postTrustVerify` in `MemberVerifyScreen`.
 - **Auth:** Bearer (moderator).
 
 ## Endpoint: POST /trust/propose-moderator
