@@ -614,7 +614,7 @@ const en = {
   'walletSetup.noPrfTitle': 'No wallet on this phone or browser',
   'setup.usernameFrozen':
     'Your username can no longer be changed because your wallet address uses it.',
-  'wallet.payFromWallet': 'Pay from wallet',
+  'wallet.payFromWallet': 'Send',
   'wallet.payFee': 'Fee {amount}',
   'wallet.payUnlockAndPay': 'Unlock and pay {amount}',
   'wallet.payPreparing': 'Checking your wallet…',
@@ -1854,7 +1854,7 @@ const de = {
   'walletSetup.noPrfTitle': 'Keine Wallet auf diesem Telefon oder Browser',
   'setup.usernameFrozen':
     'Ihr Benutzername kann nicht mehr geändert werden, weil Ihre Wallet-Adresse ihn verwendet.',
-  'wallet.payFromWallet': 'Aus der Wallet zahlen',
+  'wallet.payFromWallet': 'Senden',
   'wallet.payFee': 'Gebühr {amount}',
   'wallet.payUnlockAndPay': 'Entsperren und {amount} zahlen',
   'wallet.payPreparing': 'Wallet wird geprüft…',
@@ -3112,7 +3112,7 @@ const es = {
   'walletSetup.noPrfTitle': 'No hay wallet en este teléfono o navegador',
   'setup.usernameFrozen':
     'Tu nombre de usuario ya no se puede cambiar porque la dirección de tu wallet lo usa.',
-  'wallet.payFromWallet': 'Pagar desde la wallet',
+  'wallet.payFromWallet': 'Enviar',
   'wallet.payFee': 'Comisión {amount}',
   'wallet.payUnlockAndPay': 'Desbloquear y pagar {amount}',
   'wallet.payPreparing': 'Revisando tu wallet…',
@@ -4349,7 +4349,7 @@ const fil = {
   'walletSetup.noPrfTitle': 'Walang wallet sa phone o browser na ito',
   'setup.usernameFrozen':
     'Hindi na mababago ang username mo dahil ginagamit ito ng address ng wallet mo.',
-  'wallet.payFromWallet': 'Magbayad mula sa wallet',
+  'wallet.payFromWallet': 'Ipadala',
   'wallet.payFee': 'Bayad sa serbisyo {amount}',
   'wallet.payUnlockAndPay': 'I-unlock at magbayad ng {amount}',
   'wallet.payPreparing': 'Tinitingnan ang wallet mo…',

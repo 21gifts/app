@@ -38,7 +38,7 @@ export const WALLET_PAY_BALANCE_POLL_MS = 4_000;
  * - `unlock`: one tap opens the wallet with one passkey prompt and pays when
  *   the fee is ₿0; a fee above ₿0 stops at `confirm`.
  * - `preparing`: the wallet opens or reads amount and fee.
- * - `confirm`: fee shown, **Pay from wallet** pays.
+ * - `confirm`: fee shown, **Send** pays.
  * - `paying`: the payment is sent or was sent; the sheet's long-poll waits.
  * - `insufficient`: the balance does not cover the payment; the slot reads the
  *   synced balance every {@link WALLET_PAY_BALANCE_POLL_MS} and prepares again

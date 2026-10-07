@@ -10737,7 +10737,7 @@ describe('ForumLoader in-app wallet pay', () => {
     const replyCard = await clickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
@@ -10759,7 +10759,7 @@ describe('ForumLoader in-app wallet pay', () => {
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(document.querySelector('[data-reply-pay-page]')).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
@@ -10780,7 +10780,7 @@ describe('ForumLoader in-app wallet pay', () => {
     fireEvent.change(await screen.findByLabelText('Your reaction'), { target: { value: 'Hi' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(await screen.findByRole('button', { name: /^Pay ₿1 and post/ })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(invoiceMock).toHaveBeenCalledWith(
       'sess',
       'fee-note',
@@ -10934,7 +10934,7 @@ describe('ForumLoader in-app wallet pay', () => {
     renderWithLocale(<ForumLoader />);
     await revealAll();
     fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
   });
@@ -10946,7 +10946,7 @@ describe('ForumLoader in-app wallet pay', () => {
     renderWithLocale(<ForumLoader />);
     await revealAll();
     fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1repay' });
     expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
@@ -10959,7 +10959,7 @@ describe('ForumLoader in-app wallet pay', () => {
     await revealAll();
     fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
     expect(await screen.findByText(WALLET_UNAVAILABLE)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 });

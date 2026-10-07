@@ -118,12 +118,12 @@ describe('WalletPay', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('shows the fee with its fiat line before Pay from wallet', () => {
+  it('shows the fee with its fiat line before Send', () => {
     const hook = hookWith('confirm', 0);
     renderPay();
     expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
     expect(screen.getByText(/\$0\.00/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay from wallet' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(hook.pay).toHaveBeenCalledTimes(1);
   });
 
@@ -140,7 +140,7 @@ describe('WalletPay', () => {
     );
     const button = screen.getByRole('button', { name: /^Pay ₿21 and post/ });
     expect(button.textContent).toBe('Pay ₿21 and post · $0.02');
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(button);
     expect(hook.pay).toHaveBeenCalledTimes(1);
     cleanup();

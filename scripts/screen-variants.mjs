@@ -2450,7 +2450,7 @@ export const SCREEN_VARIANTS = [
     id: 'wallet-pay-confirm',
     image: 'welcome-wallet-pay-confirm.png',
     visual: 'state-welcome-wallet-pay-confirm',
-    needle: 'Pay from wallet',
+    needle: "shotScreen(page, 'state-welcome-wallet-pay-confirm')",
   },
   {
     route: '/welcome',

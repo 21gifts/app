@@ -185,7 +185,7 @@ test('wallet pay: key unset shows only the unavailable wallet sentence', async (
   await expect(sheet.getByRole('status')).toHaveText(UNAVAILABLE);
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Unlock and pay/ })).toHaveCount(0);
   expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
 });
@@ -203,7 +203,7 @@ test('wallet pay: a confirm pin works without a sparkInvoice', async ({ page }) 
   await signInAda(page);
   await stubPayableReply(page, null);
   await openPaySheet(page, 'wallet-pay-confirm');
-  await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
 });
 
@@ -225,7 +225,7 @@ test('wallet pay: locked wallet offers one Unlock and pay button and nothing els
     'Unlock and pay ₿21 · $0.02',
   );
   await expect(sheet.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
-  await expect(sheet.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
@@ -250,16 +250,16 @@ test('wallet pay: preparing pin shows Checking your wallet…', async ({ page })
   );
 });
 
-test('wallet pay: confirm pin shows the fee with fiat and Pay from wallet', async ({ page }) => {
+test('wallet pay: confirm pin shows the fee with fiat and Send', async ({ page }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);
   await openPaySheet(page, 'wallet-pay-confirm');
   const sheet = page.locator('[data-pay-sheet]');
   await expect(sheet.getByText(/Fee ₿0/)).toBeVisible();
   await expect(sheet.getByText('$0.00')).toBeVisible();
-  await expect(sheet.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
-  await sheet.getByRole('button', { name: 'Pay from wallet' }).click();
-  await expect(sheet.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await sheet.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
 });
 
 test('wallet pay: paying pin shows Paying from your wallet… while waiting', async ({ page }) => {
@@ -293,7 +293,7 @@ test('wallet pay: insufficient pin says how much is still missing in ₿ and fia
   const sheet = page.locator('[data-pay-sheet]');
   await expect(sheet.getByText(/^Still missing: ₿21/)).toHaveText('Still missing: ₿21 · $0.02');
   await expect(sheet.getByText(/^alice@/)).toBeVisible();
-  await expect(sheet.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
 });
 
 test('wallet pay: unconfirmed pin shows the neutral sentence', async ({ page }) => {
@@ -306,13 +306,11 @@ test('wallet pay: unconfirmed pin shows the neutral sentence', async ({ page }) 
   await expect(page.locator('[data-pay-sheet]').getByRole('alert')).toHaveCount(0);
 });
 
-test('Function: WalletPay — confirm pin shows Pay from wallet and no wallet app link', async ({
-  page,
-}) => {
+test('Function: WalletPay — confirm pin shows Send and no wallet app link', async ({ page }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);
   await openPaySheet(page, 'wallet-pay-confirm');
-  await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
 });
 
@@ -357,7 +355,7 @@ test('Function: WalletPay — insufficient pin shows the missing amount above th
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
 
-test('Function: WalletPay — the posting fee confirm says Pay ₿1 and post, a gift keeps Pay from wallet', async ({
+test('Function: WalletPay — the posting fee confirm says Pay ₿1 and post, a gift keeps Send', async ({
   page,
 }) => {
   await signInAda(page);
@@ -388,12 +386,12 @@ test('Function: WalletPay — the posting fee confirm says Pay ₿1 and post, a 
   await expect(sheet.getByRole('button', { name: /^Pay ₿1 and post/ })).toHaveText(
     /^Pay ₿1 and post · \$\d/,
   );
-  await expect(sheet.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Close' }).click();
   await expect(sheet).toHaveCount(0);
   await openPaySheet(page, 'wallet-pay-confirm');
   await expect(
-    page.locator('[data-pay-sheet]').getByRole('button', { name: 'Pay from wallet' }),
+    page.locator('[data-pay-sheet]').getByRole('button', { name: 'Send', exact: true }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: /and post/ })).toHaveCount(0);
 });

@@ -7577,17 +7577,17 @@ describe('ForumBoard in-app wallet pay', () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderWithLocale(cardBoard(SPARK_INVOICE));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expectWalletOnly();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay from wallet' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it('says Pay and post on the posting fee, and keeps Pay from wallet on other invoices', async () => {
+  it('says Pay and post on the posting fee, and keeps Send on other invoices', async () => {
     setWalletUsable('ready');
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
@@ -7616,12 +7616,12 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     const button = await screen.findByRole('button', { name: /^Pay ₿21 and post/ });
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(button);
     expect(send).toHaveBeenCalledTimes(1);
     cleanup();
     renderWithLocale(cardBoard(SPARK_INVOICE));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /and post/ })).toBeNull();
   });
 
@@ -7641,17 +7641,17 @@ describe('ForumBoard in-app wallet pay', () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderWithLocale(cardBoard(SPARK_INVOICE));
     expect(payFromWallet).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expectWalletOnly();
   });
 
-  it('unlocks with one tap and stops at the fee and Pay from wallet when the fee is above ₿0', async () => {
+  it('unlocks with one tap and stops at the fee and Send when the fee is above ₿0', async () => {
     unlockSetsReady();
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(payFromWallet).mockResolvedValue({
@@ -7662,7 +7662,7 @@ describe('ForumBoard in-app wallet pay', () => {
     });
     renderWithLocale(cardBoard(SPARK_INVOICE));
     fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(screen.getByText(/Fee ₿3/)).toBeTruthy();
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(send).not.toHaveBeenCalled();
@@ -7672,7 +7672,7 @@ describe('ForumBoard in-app wallet pay', () => {
   it('pays the payment request from the wallet without a sparkInvoice', async () => {
     setWalletUsable('ready');
     renderWithLocale(cardBoard(null));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
     expectWalletOnly();
   });
@@ -7681,7 +7681,7 @@ describe('ForumBoard in-app wallet pay', () => {
     setWalletUsable('disabled');
     renderWithLocale(cardBoard(SPARK_INVOICE));
     expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expectWalletOnly();
     expect(payFromWallet).not.toHaveBeenCalled();
   });
@@ -7713,7 +7713,7 @@ describe('ForumBoard in-app wallet pay', () => {
         replies={[{ ...SAMPLE, id: 'r1' }]}
       />,
     );
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expectWalletOnly();
   });
 
@@ -7749,7 +7749,7 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     expect(document.querySelector('[data-reply-pay-page]')).toBeTruthy();
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 });
