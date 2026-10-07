@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -19,6 +20,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
+vi.mock('@/components/WalletLoginCard', () => ({
+  WalletLoginCard: () => <p>wallet-login-card</p>,
+}));
 const hydrateReady = { current: true };
 vi.mock('@/hooks/useHydrateSession', () => ({
   useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady.current }),
@@ -186,6 +192,43 @@ describe('ViewProfileClaim', () => {
     rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
     expect(screen.getByText('This profile already has a passkey. Log in instead.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+  });
+
+  it('opens the wallet through the login card after login-instead, and keeps it while held back', () => {
+    mockPasskey('error', 'This profile already has a passkey');
+    const { rerender } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+    mockPasskey('idle');
+    walletOpen.value = false;
+    try {
+      act(() => {
+        useAuthStore.setState({ session: 'tok', account: { id: 'acc' } as Account });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.getByText('wallet-login-card')).toBeTruthy();
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: 'tok' });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.getByText('wallet-login-card')).toBeTruthy();
+      walletOpen.value = true;
+      act(() => {
+        useAuthStore.setState({
+          session: 'tok',
+          account: { id: 'acc' } as Account,
+          lockedSession: null,
+        });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.queryByText('wallet-login-card')).toBeNull();
+    } finally {
+      walletOpen.value = true;
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: null });
+      });
+    }
   });
 
   it('shows a spinner while login-instead is starting', () => {
