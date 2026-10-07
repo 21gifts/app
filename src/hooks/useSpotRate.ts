@@ -19,7 +19,8 @@ export const SPOT_REFRESH_MS = 5 * 60_000;
  * Never throws into the caller, not even when the request throws at once.
  * Drops answers after unmount.
  *
- * @param enabled - When false, skip the fetch and stay `null`. Default true.
+ * @param enabled - When false, skip the fetch and return `null`, also after a
+ *   rate was loaded. Default true.
  * @returns The current rate, or `null` without a usable price.
  */
 export function useSpotRate(enabled = true): FiatRateDay | null {
@@ -57,5 +58,5 @@ export function useSpotRate(enabled = true): FiatRateDay | null {
     };
   }, [enabled]);
 
-  return rate;
+  return enabled ? rate : null;
 }

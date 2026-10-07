@@ -109,8 +109,6 @@ function nextKeypadDraft(
   return `${current}${key}`;
 }
 
-const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
-
 /** Shared across fields so a slower save cannot overwrite a later choice. */
 let unitRequest = 0;
 let unitRequestOpen = false;
@@ -360,7 +358,8 @@ export function AmountEntry({
     const previousDraft = value;
     const previousUnit = shownUnit;
     const converted = draftForUnit(previousUnit, next, value, rateDay, fiat);
-    if (value.trim() !== '' && converted === '') {
+    // A fiat draft that cannot be converted may still switch to bitcoin; it starts empty.
+    if (value.trim() !== '' && converted === '' && next !== 'btc') {
       return;
     }
     draftRef.current = converted;
@@ -439,18 +438,15 @@ export function AmountEntry({
     const fiatAmount = satsToFiatAmount(lockedSats, rateDay, fiat);
     counter =
       fiatAmount === null ? t('amount.noRate') : formatFiatDisplay(fiatAmount, fiat, numberFormat);
+  } else if (!fiatReady) {
+    counter = t('amount.noRate');
   } else if (value.trim() !== '') {
     const parsed = parseAmountDraft(entryUnit, value, rateDay, fiat);
-    if (entryUnit === 'btc' && parsed.kind === 'sats') {
-      const fiatAmount = satsToFiatAmount(parsed.sats, rateDay, fiat);
+    if (parsed.kind === 'sats') {
       counter =
-        fiatAmount === null
-          ? t('amount.noRate')
-          : formatFiatDisplay(fiatAmount, fiat, numberFormat);
-    } else if (entryUnit === 'fiat' && parsed.kind === 'sats') {
-      counter = formatBitcoin(parsed.sats, numberFormat);
-    } else if (entryUnit === 'fiat' && FIAT_DRAFT.test(value.trim())) {
-      counter = t('amount.noRate');
+        entryUnit === 'btc'
+          ? formatFiatDisplay(satsToFiatAmount(parsed.sats, rateDay, fiat), fiat, numberFormat)
+          : formatBitcoin(parsed.sats, numberFormat);
     }
   }
   const extra = className === undefined || className === '' ? '' : ` ${className}`;

@@ -127,6 +127,15 @@ describe('useSpotRate', () => {
     expect(screen.getByText('null')).toBeTruthy();
   });
 
+  it('returns null while disabled, also after a rate was loaded', async () => {
+    fetchFxSpotMock.mockResolvedValue(spot({ CHF: '80000.00' }));
+    const { rerender } = renderWithLocale(<Probe />);
+    await flush();
+    expect(screen.getByText('CHF 80000.00 per 100000000')).toBeTruthy();
+    rerender(<Probe enabled={false} />);
+    expect(screen.getByText('null')).toBeTruthy();
+  });
+
   it('drops an answer after unmount and stops asking', async () => {
     let resolve!: (value: FxSpot) => void;
     fetchFxSpotMock.mockReturnValue(
