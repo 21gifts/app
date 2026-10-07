@@ -85,7 +85,7 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * browser cannot hold a 21.gifts wallet, with **Try again**. It never shows an invoice QR or hands the payment to
  * another wallet.
  *
- * @param props - Requests, shown amount, and rate day.
+ * @param props - Requests, shown amount, and spot rate.
  * @returns The pay slot.
  */
 export function WalletPay({
