@@ -40,6 +40,9 @@ const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
  * A reload releases only actions that had already reached the server when
  * that reload started, and a request is ignored when the visit changed,
  * including when the same account comes back.
+ * The archive confirmation stays open until a reload releases an archive
+ * that had already reached the server when that reload started. It stays
+ * open when that post fails or that reload fails.
  * Does not log invoices, addresses, notes, or comment text.
  *
  * @returns The habit-tracker body.
@@ -129,8 +132,12 @@ export function MemberHabits(): ReactElement {
         setData(next);
         setLoading(false);
         // Releases actions that had already reached the server when this load started.
-        for (const id of releaseConfirmedPosts(postedKeys.current, confirmed)) {
+        const released = releaseConfirmedPosts(postedKeys.current, confirmed);
+        for (const id of released.closeIds) {
           cancelEdit(id);
+        }
+        for (const id of released.archiveIds) {
+          clearArchiveConfirm(id);
         }
         listSettled.current = true;
       },
@@ -184,7 +191,11 @@ export function MemberHabits(): ReactElement {
       setData(next);
       setError(false);
       // A rating or a comment does not close an open edit. Try again does.
-      releaseConfirmedPosts(postedKeys.current, confirmed);
+      // The archive confirmation closes only for an archive this load already saw.
+      const released = releaseConfirmedPosts(postedKeys.current, confirmed);
+      for (const id of released.archiveIds) {
+        clearArchiveConfirm(id);
+      }
       listSettled.current = true;
       return true;
     } catch {
@@ -271,6 +282,15 @@ export function MemberHabits(): ReactElement {
       delete next[habitId];
       return next;
     });
+  }
+
+  function clearArchiveConfirm(habitId: string): void {
+    setConfirmArchiveId((current) => (current === habitId ? null : current));
+  }
+
+  function archiveUnresolved(habitId: string): boolean {
+    const key = JSON.stringify({ action: 'archive', id: habitId });
+    return inFlightKeys.current.has(key) || postedKeys.current.has(key);
   }
 
   async function onLog(habitId: string, period: string, status: HabitStatus): Promise<void> {
@@ -481,10 +501,12 @@ export function MemberHabits(): ReactElement {
                       confirmLabel={t('habit.archiveConfirmAction')}
                       cancelLabel={t('habit.archiveCancel')}
                       onConfirm={() => {
-                        setConfirmArchiveId(null);
                         void submit({ action: 'archive', id: habit.id }, false);
                       }}
                       onCancel={() => {
+                        if (archiveUnresolved(habit.id)) {
+                          return;
+                        }
                         setConfirmArchiveId(null);
                       }}
                     />
@@ -767,8 +789,12 @@ function statusCopy(
 }
 
 /** Drops actions that had already reached the server when this load started. Edit and archive ids close. An add does not. */
-function releaseConfirmedPosts(keys: Set<string>, confirmed: Set<string>): string[] {
+function releaseConfirmedPosts(
+  keys: Set<string>,
+  confirmed: Set<string>,
+): { closeIds: string[]; archiveIds: string[] } {
   const closeIds: string[] = [];
+  const archiveIds: string[] = [];
   for (const stored of [...keys]) {
     if (!confirmed.has(stored)) {
       continue;
@@ -779,11 +805,14 @@ function releaseConfirmedPosts(keys: Set<string>, confirmed: Set<string>): strin
         parsed.action === 'edit' || parsed.action === 'archive' ? parsed.id : undefined;
       if (typeof closeEdit === 'string') {
         closeIds.push(closeEdit);
+        if (parsed.action === 'archive') {
+          archiveIds.push(closeEdit);
+        }
       }
     }
     keys.delete(stored);
   }
-  return closeIds;
+  return { closeIds, archiveIds };
 }
 
 function lightningInvoicePr(body: unknown, amountSats: number): string {

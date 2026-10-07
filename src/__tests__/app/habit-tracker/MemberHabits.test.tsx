@@ -1468,6 +1468,168 @@ describe('MemberHabits', () => {
     });
   });
 
+  it('keeps the archive confirmation until a reload confirms that save', async () => {
+    let posts = 0;
+    let gets = 0;
+    let releasePost: (value: Response) => void = () => undefined;
+    let releaseRefresh: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        gets += 1;
+        if (gets === 1) {
+          return Promise.resolve(json(payload()));
+        }
+        return new Promise<Response>((resolve) => {
+          releaseRefresh = resolve;
+        });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel archive' }));
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+
+    await act(async () => {
+      releasePost(json({ ok: true }));
+    });
+    await waitFor(() => {
+      expect(gets).toBe(2);
+    });
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+    expect(posts).toBe(1);
+
+    await act(async () => {
+      releaseRefresh(json(payload()));
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Confirm archive' })).toBeNull();
+    });
+  });
+
+  it('keeps the archive confirmation when Try again starts before that save reaches the server', async () => {
+    let posts = 0;
+    let gets = 0;
+    let releasePost: (value: Response) => void = () => undefined;
+    let releaseRetry: (value: Response) => void = () => undefined;
+    let releaseRefresh: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          const parsed = JSON.parse(String(init.body)) as { action?: string };
+          if (parsed.action !== 'archive') {
+            return Promise.resolve(json({ error: 'down' }, 500));
+          }
+          posts += 1;
+          return new Promise<Response>((resolve) => {
+            releasePost = resolve;
+          });
+        }
+        gets += 1;
+        if (gets === 1) {
+          return Promise.resolve(json(payload()));
+        }
+        if (gets === 2) {
+          return new Promise<Response>((resolve) => {
+            releaseRetry = resolve;
+          });
+        }
+        return new Promise<Response>((resolve) => {
+          releaseRefresh = resolve;
+        });
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(periodControl('2026-10-04', 'Achieved'));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(gets).toBe(2);
+    });
+
+    await act(async () => {
+      releasePost(json({ ok: true }));
+    });
+    expect(posts).toBe(1);
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+
+    await act(async () => {
+      releaseRetry(json(payload()));
+    });
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+    expect(posts).toBe(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => {
+      expect(gets).toBe(3);
+    });
+    expect(posts).toBe(1);
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+
+    await act(async () => {
+      releaseRefresh(json(payload()));
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Confirm archive' })).toBeNull();
+    });
+    expect(posts).toBe(1);
+  });
+
+  it('keeps the archive confirmation when the save fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          return json({ error: 'down' }, 500);
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel archive' }));
+    expect(screen.queryByRole('button', { name: 'Confirm archive' })).toBeNull();
+  });
+
   it('keeps another habit open while one archive confirms', async () => {
     let posts = 0;
     vi.stubGlobal(
