@@ -5,6 +5,7 @@ import {
   disconnectWallet,
   ensureWalletConnected,
   listenForWalletPhrase,
+  getWalletPayment,
   listWalletPayments,
   parseWalletInput,
   payFromWallet,
@@ -52,6 +53,7 @@ function createFakeSdk(overrides?: {
     addEventListener: ReturnType<typeof vi.fn>;
     registerAddress: ReturnType<typeof vi.fn>;
     listPayments: ReturnType<typeof vi.fn>;
+    getPayment: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   };
   connect: ReturnType<typeof vi.fn>;
@@ -75,6 +77,7 @@ function createFakeSdk(overrides?: {
     ),
     registerAddress: vi.fn(async () => undefined),
     listPayments: vi.fn(async () => []),
+    getPayment: vi.fn(),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
@@ -994,6 +997,22 @@ describe('listWalletPayments', () => {
     await connectWallet(loadSdk);
     await expect(listWalletPayments({ offset: 20, limit: 20 })).resolves.toEqual([row]);
     expect(connection.listPayments).toHaveBeenCalledWith({ offset: 20, limit: 20 });
+  });
+});
+
+describe('getWalletPayment', () => {
+  it('rejects without a connection', async () => {
+    await expect(getWalletPayment('p1')).rejects.toThrow('wallet-connect');
+  });
+
+  it('reads the payment from the connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    const row = { id: 'p1', direction: 'sent' };
+    connection.getPayment.mockResolvedValueOnce(row);
+    await connectWallet(loadSdk);
+    await expect(getWalletPayment('p1')).resolves.toBe(row);
+    expect(connection.getPayment).toHaveBeenCalledWith('p1');
   });
 });
 

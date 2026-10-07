@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletSend } from '@/components/WalletSend';
 import { useLatestRateDay } from '@/hooks/useLatestRateDay';
@@ -64,8 +65,42 @@ function sendWith(
   };
 }
 
-function renderSend(send: UseWalletSendResult): void {
-  renderWithLocale(<WalletSend send={send} />);
+/**
+ * {@link WalletSend} with the manual-entry sheet state its page holds.
+ *
+ * @param props - Send flow, readiness, and whether the sheet starts open.
+ * @returns The send view.
+ */
+function SendHarness({
+  send,
+  walletReady,
+  manual = false,
+}: {
+  send: UseWalletSendResult;
+  walletReady?: boolean;
+  manual?: boolean;
+}): ReactElement {
+  const [manualEntry, setManualEntry] = useState(manual);
+  return (
+    <WalletSend
+      send={send}
+      {...(walletReady === undefined ? {} : { walletReady })}
+      manualEntry={manualEntry}
+      onManualEntry={setManualEntry}
+    />
+  );
+}
+
+function renderSend(send: UseWalletSendResult, manual = false): void {
+  renderWithLocale(<SendHarness send={send} manual={manual} />);
+}
+
+/** Stubs `navigator.clipboard.readText`. */
+function stubClipboard(readText: () => Promise<string>): void {
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { readText: vi.fn(readText) },
+  });
 }
 
 beforeEach(() => {
@@ -73,37 +108,75 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'token', account: null });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe('WalletSend input', () => {
-  it('is a named region with the paste field and a disabled Continue while blank', () => {
+  it('is a full-size camera layer with Paste and Enter manually, and no field until asked', () => {
+    renderSend(sendWith({ step: 'input', error: null }));
+    const layer = screen.getByRole('region', { name: 'Send Bitcoin' });
+    expect(layer.hasAttribute('data-port-fill')).toBe(true);
+    expect(layer.className).toContain('absolute inset-0');
+    expect(layer.className).toContain('bg-black');
+    expect(within(layer).getByRole('button', { name: 'Camera stub' })).toBeTruthy();
+    for (const name of ['Paste', 'Enter manually']) {
+      const button = within(layer).getByRole('button', { name });
+      expect(button.className).toContain('bg-black/55');
+      expect(button.className).toContain('min-h-12');
+    }
+    expect(screen.queryByLabelText('Payment request or address')).toBeNull();
+    expect(screen.queryByText('Send Bitcoin')).toBeNull();
+  });
+
+  it('opens the manual sheet with the field and a disabled Continue while blank, and its Close returns to the camera', () => {
     const send = sendWith({ step: 'input', error: null });
     renderSend(send);
-    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Enter manually' }));
     const field = screen.getByLabelText('Payment request or address');
     expect(field.getAttribute('placeholder')).toBe('Paste a Bitcoin payment request or address');
+    expect(document.activeElement).toBe(field);
     expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+    expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Paste' })).toBeNull();
     fireEvent.change(field, { target: { value: 'lnbc1' } });
     expect(send.setText).toHaveBeenCalledWith('lnbc1');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByLabelText('Payment request or address')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
   });
 
-  it('submits the text', () => {
+  it('submits the typed text from the sheet', () => {
     const send = sendWith({ step: 'input', error: null }, { text: 'lnbc1' });
-    renderSend(send);
+    renderSend(send, true);
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(send.submitInput).toHaveBeenCalledTimes(1);
   });
 
-  it('disables the field and Continue while busy', () => {
-    renderSend(sendWith({ step: 'input', error: null }, { text: 'lnbc1', busy: true }));
+  it('disables the field and Continue in the sheet while busy', () => {
+    renderSend(sendWith({ step: 'input', error: null }, { text: 'lnbc1', busy: true }), true);
     expect((screen.getByLabelText('Payment request or address') as HTMLInputElement).disabled).toBe(
       true,
     );
     expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
       true,
     );
+  });
+
+  it('shows a spinner over the camera area and disables the floating buttons while busy', () => {
+    const { container } = renderWithLocale(
+      <SendHarness send={sendWith({ step: 'input', error: null }, { busy: true })} />,
+    );
+    expect(container.querySelector('[data-port-fill] .animate-spin')).not.toBeNull();
+    expect((screen.getByRole('button', { name: 'Paste' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(
+      (screen.getByRole('button', { name: 'Enter manually' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it.each([
@@ -115,88 +188,167 @@ describe('WalletSend input', () => {
     ['notPayable', 'This address cannot receive a payment.'],
     ['notFound', 'This address was not found.'],
     ['relayUnreachable', "The receiver's server did not answer. Please try again later."],
-  ] as const)('shows the %s alert', (error, text) => {
-    renderSend(sendWith({ step: 'input', error }));
-    expect(screen.getByRole('alert').textContent).toBe(text);
+    ['notReady', 'Your wallet is not ready yet. Please try again in a moment.'],
+    ['unreadable', 'This could not be read. Please try again.'],
+  ] as const)('shows the %s alert over the camera area with Try again', (error, text) => {
+    const send = sendWith({ step: 'input', error });
+    renderSend(send);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(text);
+    expect(alert.className).toContain('text-white');
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(send.setText).toHaveBeenCalledWith('');
+  });
+
+  it('shows the alert under the field while the sheet is open', () => {
+    renderSend(sendWith({ step: 'input', error: 'invalid' }, { text: 'nope' }), true);
+    const alert = screen.getByRole('alert');
+    expect(alert.className).toContain('text-app-danger');
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  it('shows only the alert, without the camera, while the wallet is not ready', () => {
+    renderWithLocale(
+      <SendHarness send={sendWith({ step: 'input', error: 'notReady' })} walletReady={false} />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your wallet is not ready yet. Please try again in a moment.',
+    );
+    expect(document.querySelector('[data-port-fill]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Paste' })).toBeNull();
+    expect(screen.getByText('Send Bitcoin')).toBeTruthy();
+  });
+});
+
+describe('WalletSend paste', () => {
+  it('puts the clipboard text into the field and submits it once, like a scan', async () => {
+    stubClipboard(() => Promise.resolve('lnbc1pasted'));
+    const send = sendWith({ step: 'input', error: null });
+    const view = renderWithLocale(<SendHarness send={send} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+    });
+    expect(send.setText).toHaveBeenCalledWith('lnbc1pasted');
+    expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
+    view.rerender(<SendHarness send={{ ...send, text: 'lnbc1pasted' }} />);
+    expect(send.submitInput).toHaveBeenCalledTimes(1);
+    view.rerender(<SendHarness send={{ ...send, text: 'lnbc1pasted' }} />);
+    expect(send.submitInput).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [
+      'denied',
+      () => Promise.reject(new Error('denied')),
+      'Pasting was not allowed. Use Enter manually instead.',
+    ],
+    ['empty', () => Promise.resolve('  '), 'The clipboard is empty.'],
+  ] as const)(
+    'shows a short alert over the running camera when the clipboard is %s',
+    async (_label, readText, text) => {
+      vi.useFakeTimers();
+      stubClipboard(readText);
+      const send = sendWith({ step: 'input', error: null });
+      renderSend(send);
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+      });
+      expect(screen.getByRole('alert').textContent).toBe(text);
+      expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
+      expect(send.setText).not.toHaveBeenCalled();
+      act(() => {
+        vi.advanceTimersByTime(4_000);
+      });
+      expect(screen.queryByRole('alert')).toBeNull();
+    },
+  );
+
+  it('clears the clipboard alert when Enter manually opens the sheet', async () => {
+    stubClipboard(() => Promise.resolve(''));
+    renderSend(sendWith({ step: 'input', error: null }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+    });
+    expect(screen.getByRole('alert')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Enter manually' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
 
 describe('WalletSend camera', () => {
-  it('shows the camera above the paste field while the input step is idle', () => {
+  it('runs the camera inside the full-size layer while the input step is idle', () => {
     renderSend(sendWith({ step: 'input', error: null }));
     const camera = screen.getByRole('button', { name: 'Camera stub' });
-    const field = screen.getByLabelText('Payment request or address');
-    expect(camera.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+    expect(camera.closest('[data-port-fill]')).not.toBeNull();
   });
 
   it('puts the scanned text into the field as a paste and submits it once', () => {
     const send = sendWith({ step: 'input', error: null });
-    const view = renderWithLocale(<WalletSend send={send} />);
+    const view = renderWithLocale(<SendHarness send={send} />);
     fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
     expect(send.setText).toHaveBeenCalledWith('lnbc1scanned');
     expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
     expect(send.submitInput).not.toHaveBeenCalled();
     const pasted = { ...send, text: 'lnbc1scanned' };
-    view.rerender(<WalletSend send={pasted} />);
+    view.rerender(<SendHarness send={pasted} />);
     expect(send.submitInput).toHaveBeenCalledTimes(1);
-    view.rerender(<WalletSend send={{ ...pasted, busy: true }} />);
+    view.rerender(<SendHarness send={{ ...pasted, busy: true }} />);
     expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
-    view.rerender(<WalletSend send={pasted} />);
+    view.rerender(<SendHarness send={pasted} />);
     expect(send.submitInput).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
   });
 
   it('keeps the camera off after a scan until the flow moves on or the field is edited', () => {
     const send = sendWith({ step: 'input', error: null });
-    const view = renderWithLocale(<WalletSend send={send} />);
+    const view = renderWithLocale(<SendHarness send={send} />);
     fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
     const pasted = { ...send, text: 'lnbc1scanned' };
-    view.rerender(<WalletSend send={pasted} />);
-    view.rerender(<WalletSend send={{ ...pasted }} />);
+    view.rerender(<SendHarness send={pasted} />);
+    view.rerender(<SendHarness send={{ ...pasted }} />);
     expect(send.submitInput).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
-    view.rerender(<WalletSend send={{ ...pasted, text: 'lnbc1scanned2' }} />);
+    view.rerender(<SendHarness send={{ ...pasted, text: 'lnbc1scanned2' }} />);
     expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
     expect(send.submitInput).toHaveBeenCalledTimes(1);
   });
 
   it('starts the camera again when the input step returns after a scan', () => {
     const send = sendWith({ step: 'input', error: null });
-    const view = renderWithLocale(<WalletSend send={send} />);
+    const view = renderWithLocale(<SendHarness send={send} />);
     fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
-    view.rerender(<WalletSend send={{ ...send, text: 'lnbc1scanned' }} />);
-    view.rerender(<WalletSend send={{ ...send, text: 'lnbc1scanned', state: LNURL_STATE }} />);
-    view.rerender(<WalletSend send={{ ...send, text: 'lnbc1scanned' }} />);
+    view.rerender(<SendHarness send={{ ...send, text: 'lnbc1scanned' }} />);
+    view.rerender(<SendHarness send={{ ...send, text: 'lnbc1scanned', state: LNURL_STATE }} />);
+    view.rerender(<SendHarness send={{ ...send, text: 'lnbc1scanned' }} />);
     expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
     expect(send.submitInput).toHaveBeenCalledTimes(1);
   });
 
   it('waits for the field to hold the scanned text before submitting', () => {
     const send = sendWith({ step: 'input', error: null }, { text: 'typed' });
-    const view = renderWithLocale(<WalletSend send={send} />);
+    const view = renderWithLocale(<SendHarness send={send} />);
     fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
-    view.rerender(<WalletSend send={{ ...send, text: 'other' }} />);
+    view.rerender(<SendHarness send={{ ...send, text: 'other' }} />);
     expect(send.submitInput).not.toHaveBeenCalled();
   });
 
   it('stops the camera while busy, while an alert shows, and outside the input step', () => {
     const view = renderWithLocale(
-      <WalletSend send={sendWith({ step: 'input', error: null }, { busy: true })} />,
+      <SendHarness send={sendWith({ step: 'input', error: null }, { busy: true })} />,
     );
     expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
-    view.rerender(<WalletSend send={sendWith({ step: 'input', error: 'invalid' })} />);
+    view.rerender(<SendHarness send={sendWith({ step: 'input', error: 'invalid' })} />);
     expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
     for (const state of [
       LNURL_STATE,
       { step: 'confirm', recipient: 'bob@pay.example', amountSats: 21, feeSats: 0 },
       { step: 'sent', amountSats: 21, recipient: 'bob@pay.example' },
     ] as const) {
-      view.rerender(<WalletSend send={sendWith(state)} />);
+      view.rerender(<SendHarness send={sendWith(state)} />);
       expect(screen.queryByRole('button', { name: 'Camera stub' })).toBeNull();
     }
-    view.rerender(<WalletSend send={sendWith({ step: 'input', error: null })} />);
+    view.rerender(<SendHarness send={sendWith({ step: 'input', error: null })} />);
     expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
   });
 });
@@ -335,7 +487,7 @@ function onchainState(
 describe('WalletSend base-chain address', () => {
   it('asks for an amount without bounds or a message, and names the SDK minimum', () => {
     const { rerender } = renderWithLocale(
-      <WalletSend
+      <SendHarness
         send={sendWith({ step: 'amount', target: ONCHAIN_TARGET, amountError: false })}
       />,
     );
@@ -343,7 +495,7 @@ describe('WalletSend base-chain address', () => {
     expect(screen.queryByText(/^Between /)).toBeNull();
     expect(screen.queryByLabelText('Message (optional)')).toBeNull();
     rerender(
-      <WalletSend
+      <SendHarness
         send={sendWith({
           step: 'amount',
           target: { ...ONCHAIN_TARGET, minSats: 294 },
@@ -476,7 +628,7 @@ describe('WalletSend confirm and sent', () => {
       { step: 'confirm', recipient: 'r', amountSats: 1, feeSats: 0 },
       { busy: true, sending: true },
     );
-    const { container } = renderWithLocale(<WalletSend send={send} />);
+    const { container } = renderWithLocale(<SendHarness send={send} />);
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
     expect(container.querySelector('.animate-spin')).not.toBeNull();
     const cancel = screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement;
@@ -489,7 +641,7 @@ describe('WalletSend confirm and sent', () => {
 
   it('shows the check, the sent amount with fiat and recipient, and Done returns to input', () => {
     const send = sendWith({ step: 'sent', amountSats: 2_100, recipient: 'bob@pay.example' });
-    const { container } = renderWithLocale(<WalletSend send={send} />);
+    const { container } = renderWithLocale(<SendHarness send={send} />);
     expect(container.querySelector('svg.text-app-success')).not.toBeNull();
     const status = screen.getByRole('status');
     expect(within(status).getByText("Sent ₿2'100").className).toContain('text-5xl');

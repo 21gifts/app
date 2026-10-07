@@ -1,6 +1,6 @@
 'use client';
 
-import { CircleCheck, Loader2, X } from 'lucide-react';
+import { CircleCheck, ClipboardPaste, Keyboard, Loader2, X } from 'lucide-react';
 import {
   useEffect,
   useRef,
@@ -44,7 +44,17 @@ export interface WalletSendProps {
    * is ready again. Default `true`.
    */
   walletReady?: boolean;
+  /** Whether the input step shows its manual-entry sheet over the camera. */
+  manualEntry: boolean;
+  /** Opens or closes the manual-entry sheet. */
+  onManualEntry: (open: boolean) => void;
 }
+
+/** Floating camera control: an `overlay` pill of at least 48px with a 20px icon. */
+const FLOAT_CLASS = 'min-h-12 text-base';
+
+/** How long a clipboard alert stays over the camera. */
+const CLIPBOARD_ALERT_MS = 4000;
 
 const LARGE_AMOUNT_CLASS =
   'text-center text-5xl font-semibold tracking-tight tabular-nums lining-nums text-app-fg sm:text-6xl';
@@ -58,6 +68,8 @@ const ERROR_KEYS: Record<WalletSendError, MessageKey> = {
   unsupported: 'wallet.sendUnsupported',
   insufficient: 'wallet.payInsufficient',
   failed: 'wallet.sendFailed',
+  notReady: 'wallet.sendNotReady',
+  unreadable: 'wallet.sendUnreadable',
 };
 
 /** Speeds of a payment to a base-chain address, fastest first, with their labels. */
@@ -101,8 +113,8 @@ function StepBox({
 }
 
 /**
- * Send view on `/wallet`, opened from the wallet home with Send: paste a
- * Bitcoin payment request or address, enter an amount when the receiver asks
+ * Send view on `/wallet` and over `/welcome`, opened with Send: scan, paste,
+ * or type a Bitcoin payment request or address, enter an amount when the receiver asks
  * for one, confirm amount, fee, and recipient, then send. A base-chain Bitcoin
  * address (or a `bitcoin:` URI that offers only one) asks for an amount, then
  * confirms with the chosen fee and the total in emphasized text right under the
@@ -110,19 +122,33 @@ function StepBox({
  * line that this network fee is much higher than the fee of other payments; a
  * speed the balance does not cover is disabled. While an expired quote is
  * renewed, Cancel stays usable; it is disabled only while a payment is sent.
- * The input step opens with the camera QR
- * scanner above the field; a decoded text goes into the field as if pasted and
- * Continue runs on it. The camera runs only while the input step is idle and
- * shows no alert, so a code that was just refused is not read again at once;
- * editing the field clears the alert and starts the camera again. After a scan
- * the camera stays off until the submit moves on (busy, another step, or an
- * alert) or the field is edited, so the same code is never submitted twice. While the
- * wallet is not ready, an input step with an alert shows only that alert.
+ * The input step is a full-size camera: the region itself becomes a layer
+ * marked `data-port-fill` that fills the visible page port edge to edge (the AppShell scrollport becomes
+ * its containing block, see `globals.css`), with the hint over the top of the
+ * picture. **Paste** and **Enter manually** float as `overlay` pills over its
+ * lower part. A decoded QR text, or the text Paste reads from the clipboard,
+ * goes into the field as if typed and is submitted once; a clipboard that is
+ * refused or empty shows a short alert over the camera, which keeps running.
+ * Enter manually opens a bottom sheet over the camera with the field and
+ * Continue; its Close (`X`) or Back returns to the camera. A text that cannot
+ * be read always ends in one alert: over the camera with **Try again**, which
+ * clears it and starts the camera again, or in the open sheet under the field.
+ * The camera runs only while the input step is idle, shows no alert, and the
+ * sheet is closed, so a code that was just refused is not read again at once.
+ * After a scan or paste the camera stays off until the submit moves on (busy,
+ * another step, or an alert) or the text changes, so the same code is never
+ * submitted twice. While the wallet is not ready, an input step with an alert
+ * shows only that alert.
  *
- * @param props - Send flow and whether the wallet is ready.
+ * @param props - Send flow, whether the wallet is ready, and the manual-entry sheet.
  * @returns The send region.
  */
-export function WalletSend({ send, walletReady = true }: WalletSendProps): ReactElement {
+export function WalletSend({
+  send,
+  walletReady = true,
+  manualEntry,
+  onManualEntry,
+}: WalletSendProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -132,6 +158,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
   const [amountUnit, setAmountUnit] = useState<AmountUnit>(accountUnit);
   const [scanned, setScanned] = useState<string | null>(null);
   const scanSubmitted = useRef(false);
+  const [clipboardError, setClipboardError] = useState<'denied' | 'empty' | null>(null);
   /** The input alert, or `'step'` once the flow has left the input step. */
   const inputError = send.state.step === 'input' ? send.state.error : 'step';
   const { state, busy, text, submitInput } = send;
@@ -157,6 +184,40 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
       submitInput();
     }
   }, [scanned, text, busy, inputError, submitInput]);
+
+  useEffect(() => {
+    if (clipboardError === null) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setClipboardError(null);
+    }, CLIPBOARD_ALERT_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [clipboardError]);
+
+  /** Puts a scanned or pasted text into the field and submits it once. */
+  const takeText = (value: string): void => {
+    scanSubmitted.current = false;
+    send.setText(value);
+    setScanned(value);
+  };
+  const paste = async (): Promise<void> => {
+    setClipboardError(null);
+    let value: string;
+    try {
+      value = await navigator.clipboard.readText();
+    } catch {
+      setClipboardError('denied');
+      return;
+    }
+    if (value.trim() === '') {
+      setClipboardError('empty');
+      return;
+    }
+    takeText(value);
+  };
 
   const fiatOf = (sats: number): ReactElement | null =>
     preferredFiatSuffix(sats, rateDay, fiat, numberFormat);
@@ -209,6 +270,7 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
   );
 
   let body: ReactElement;
+  const camera = state.step === 'input' && (walletReady || state.error === null);
   if (state.step === 'input' && !walletReady && state.error !== null) {
     body = (
       <p role="alert" className="text-center text-sm text-app-danger">
@@ -221,40 +283,112 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
       setAmountDraft('');
       send.submitInput();
     };
+    const cameraOn = !manualEntry && !busy && scanned === null && state.error === null;
     body = (
-      <form onSubmit={onSubmit} className="flex w-full flex-col items-stretch gap-3">
-        {busy || scanned !== null || state.error !== null ? null : (
-          <QrScanner
-            onResult={(value) => {
-              scanSubmitted.current = false;
-              send.setText(value);
-              setScanned(value);
-            }}
-          />
+      <>
+        {cameraOn ? <QrScanner onResult={takeText} /> : null}
+        {busy && !manualEntry ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 aria-hidden="true" className="h-10 w-10 animate-spin text-white" />
+          </div>
+        ) : null}
+        {manualEntry ? (
+          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-app-card p-4 pt-12 text-app-fg shadow-lg">
+            <div className="absolute left-2 top-2">
+              <IconButton
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label={t('wallet.sendCancel')}
+                onClick={() => {
+                  onManualEntry(false);
+                }}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
+            <form onSubmit={onSubmit} className="flex w-full flex-col items-stretch gap-3">
+              <Field
+                label={t('wallet.sendLabel')}
+                placeholder={t('wallet.sendPlaceholder')}
+                value={send.text}
+                disabled={busy}
+                autoFocus
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                onChange={(event) => {
+                  send.setText(event.target.value);
+                }}
+              />
+              {state.error === null ? null : (
+                <p role="alert" className="text-center text-sm text-app-danger">
+                  {t(ERROR_KEYS[state.error])}
+                </p>
+              )}
+              <div className="flex justify-center">
+                <Button type="submit" disabled={busy || send.text.trim() === ''} icon={spinner}>
+                  {t('wallet.sendContinue')}
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <>
+            {state.error === null ? null : (
+              <div className="absolute inset-x-0 top-1/3 flex -translate-y-1/2 flex-col items-center gap-4 px-8">
+                <p role="alert" className="text-center text-lg font-medium text-white">
+                  {t(ERROR_KEYS[state.error])}
+                </p>
+                <Button
+                  variant="overlay"
+                  className={FLOAT_CLASS}
+                  onClick={() => {
+                    send.setText('');
+                  }}
+                >
+                  {t('login.retry')}
+                </Button>
+              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-3 px-4">
+              {clipboardError === null ? null : (
+                <p
+                  role="alert"
+                  className="rounded-2xl bg-black/55 px-4 py-2 text-center text-sm text-white backdrop-blur-md"
+                >
+                  {t(clipboardError === 'denied' ? 'wallet.pasteDenied' : 'wallet.pasteEmpty')}
+                </p>
+              )}
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button
+                  variant="overlay"
+                  className={FLOAT_CLASS}
+                  disabled={busy}
+                  icon={<ClipboardPaste aria-hidden="true" className="h-5 w-5" />}
+                  onClick={() => {
+                    void paste();
+                  }}
+                >
+                  {t('wallet.sendPaste')}
+                </Button>
+                <Button
+                  variant="overlay"
+                  className={FLOAT_CLASS}
+                  disabled={busy}
+                  icon={<Keyboard aria-hidden="true" className="h-5 w-5" />}
+                  onClick={() => {
+                    setClipboardError(null);
+                    onManualEntry(true);
+                  }}
+                >
+                  {t('wallet.sendEnterManually')}
+                </Button>
+              </div>
+            </div>
+          </>
         )}
-        <Field
-          label={t('wallet.sendLabel')}
-          placeholder={t('wallet.sendPlaceholder')}
-          value={send.text}
-          disabled={busy}
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          onChange={(event) => {
-            send.setText(event.target.value);
-          }}
-        />
-        {state.error === null ? null : (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t(ERROR_KEYS[state.error])}
-          </p>
-        )}
-        <div className="flex justify-center">
-          <Button type="submit" disabled={busy || send.text.trim() === ''} icon={spinner}>
-            {t('wallet.sendContinue')}
-          </Button>
-        </div>
-      </form>
+      </>
     );
   } else if (state.step === 'amount') {
     const target = state.target;
@@ -432,11 +566,18 @@ export function WalletSend({ send, walletReady = true }: WalletSendProps): React
   return (
     <section
       aria-label={t('wallet.sendHeading')}
-      className="flex w-full flex-col items-stretch gap-3"
+      {...(camera ? { 'data-port-fill': '' } : {})}
+      className={
+        camera
+          ? 'absolute inset-0 overflow-hidden rounded-b-[calc(1.5rem-1px)] bg-black text-white'
+          : 'flex w-full flex-col items-stretch gap-3'
+      }
     >
-      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-        {t('wallet.sendHeading')}
-      </p>
+      {camera ? null : (
+        <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+          {t('wallet.sendHeading')}
+        </p>
+      )}
       {body}
     </section>
   );

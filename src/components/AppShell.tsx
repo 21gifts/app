@@ -69,7 +69,7 @@ export { AppShellContext };
  * frame; wordmark and Menu live in that frame’s first row. The frame
  * (`data-app-frame`) publishes its content-box width as `frameWidth`.
  * `[data-menu-scrim-host]` sits on that frame. `[data-menu-sheet-host]`
- * (`px-8`, the page inset) and `[data-scroll-page]` sit inside the one
+ * (`px-5`, the page inset) and `[data-scroll-page]` sit inside the one
  * `[data-scrollport]`. `<main>` has
  * no `overflow-hidden`. The document does not scroll. The scrollport
  * scrolls vertically only. Sideways movement stays inside `[data-scroll-x]`.
@@ -144,7 +144,7 @@ export function AppShell({
   return (
     <AppShellContext.Provider value={ctx}>
       <main
-        className={`relative flex h-[var(--app-height)] flex-col overscroll-y-none px-6 max-[359px]:px-3 py-4${extra}`}
+        className={`relative flex h-[var(--app-height)] flex-col overscroll-y-none px-3 max-[359px]:px-2 py-2${extra}`}
       >
         <section
           ref={setFrameEl}
@@ -154,7 +154,7 @@ export function AppShell({
           <div data-menu-scrim-host className="contents" />
           <div
             data-app-chrome
-            className="relative z-40 flex flex-none items-center justify-between gap-2 px-8 pt-6 pb-2 max-[359px]:px-4"
+            className="relative z-40 flex flex-none items-center justify-between gap-2 px-5 pt-4 pb-1 max-[359px]:px-3"
           >
             <div ref={setTopLeftEl} className="flex min-w-0 items-center gap-2 empty:hidden">
               {showPageTopLeft ? topLeft : null}
@@ -166,28 +166,28 @@ export function AppShell({
           {showPasskeyRenew ? <PasskeyRenewNotice /> : null}
           {showWalletSetup ? <WalletSetupNotice /> : null}
           <DailyPayoutStoppedNotice />
-          <header ref={setHeaderEl} className="flex-none empty:hidden px-8" />
+          <header ref={setHeaderEl} className="flex-none empty:hidden px-5" />
           <Scrollport
             scrollRef={(node) => {
               setScrollerEl(node);
             }}
             className="w-full flex-1"
           >
-            <div data-menu-sheet-host className="px-8" />
+            <div data-menu-sheet-host className="px-5" />
             {align === 'center' ? (
               <div
                 data-scroll-page
-                className="shell-safe-center flex min-h-full min-w-0 flex-col items-center px-8 py-6"
+                className="shell-safe-center flex min-h-full min-w-0 flex-col items-center px-5 py-4"
               >
                 {children}
               </div>
             ) : (
-              <div data-scroll-page className="flex w-full min-w-0 flex-col items-center px-8 py-6">
+              <div data-scroll-page className="flex w-full min-w-0 flex-col items-center px-5 py-4">
                 {children}
               </div>
             )}
           </Scrollport>
-          <footer ref={setFooterEl} className="flex-none px-8 pb-8 empty:hidden" />
+          <footer ref={setFooterEl} className="flex-none px-5 pb-5 empty:hidden" />
         </section>
       </main>
     </AppShellContext.Provider>

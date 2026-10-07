@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => {
     addEventListener: vi.fn(),
     registerLightningAddress: vi.fn(),
     listPayments: vi.fn(),
+    getPayment: vi.fn(),
     checkLightningAddressAvailable: vi.fn(),
     disconnect: vi.fn(),
     connect: vi.fn(),
@@ -64,6 +65,7 @@ beforeEach(() => {
     addEventListener: mocks.addEventListener,
     registerLightningAddress: mocks.registerLightningAddress,
     listPayments: mocks.listPayments,
+    getPayment: mocks.getPayment,
     checkLightningAddressAvailable: mocks.checkLightningAddressAvailable,
     disconnect: mocks.disconnect,
   });
@@ -168,9 +170,12 @@ describe('loadWalletSdk', () => {
         id: 'p1',
         direction: 'received',
         amountSats: 21_000,
+        feesSats: 0,
         timestamp: 1_700_000_000_000,
         status: 'completed',
+        method: 'lightning',
         senderComment: 'Thanks',
+        info: {},
       },
     ]);
     expect(mocks.listPayments).toHaveBeenCalledWith({
@@ -179,6 +184,30 @@ describe('loadWalletSdk', () => {
       sortAscending: false,
       assetFilter: { type: 'bitcoin' },
     });
+  });
+
+  it('getPayment reads one payment by id and maps it', async () => {
+    mocks.getPayment.mockResolvedValueOnce({
+      payment: {
+        id: 'p2',
+        paymentType: 'send',
+        status: 'pending',
+        amount: 1_500n,
+        fees: 2n,
+        timestamp: 1_700_000_000,
+        method: 'spark',
+      },
+    });
+    const sdk = await loadWalletSdk();
+    const connection = await sdk.connect(MNEMONIC, API_KEY, HOST);
+    await expect(connection.getPayment('p2')).resolves.toMatchObject({
+      id: 'p2',
+      direction: 'sent',
+      feesSats: 2,
+      status: 'pending',
+      method: 'spark',
+    });
+    expect(mocks.getPayment).toHaveBeenCalledWith({ paymentId: 'p2' });
   });
 
   it('disconnect forwards to the handle', async () => {
@@ -760,10 +789,128 @@ describe('toWalletPayment', () => {
       id: 'p',
       direction: 'sent',
       amountSats: 5_000,
+      feesSats: 0,
       timestamp: 1_700_000_000_000,
       status: 'completed',
+      method: 'other',
       senderComment: null,
+      info: {},
     });
+  });
+
+  it('maps the fees and the known methods; token and unknown methods are other', () => {
+    expect(toWalletPayment({ ...base, fees: 3n }).feesSats).toBe(3);
+    expect(toWalletPayment({ ...base, fees: 4 }).feesSats).toBe(4);
+    for (const method of ['lightning', 'spark', 'deposit', 'withdraw'] as const) {
+      expect(toWalletPayment({ ...base, method }).method).toBe(method);
+    }
+    expect(toWalletPayment({ ...base, method: 'token' }).method).toBe('other');
+    expect(toWalletPayment({ ...base, method: 'unknown' }).method).toBe('other');
+  });
+
+  it('reads a Lightning send: description, invoice, hash, preimage, node, address, and comment', () => {
+    expect(
+      toWalletPayment({
+        ...base,
+        details: {
+          type: 'lightning',
+          description: '  Coffee  ',
+          invoice: 'lnbc1',
+          destinationPubkey: '02ab',
+          htlcDetails: { paymentHash: 'aa', preimage: 'bb' },
+          lnurlPayInfo: { lnAddress: 'bob@example.com', comment: '  thanks  ' },
+        },
+      }).info,
+    ).toEqual({
+      description: 'Coffee',
+      invoice: 'lnbc1',
+      paymentHash: 'aa',
+      preimage: 'bb',
+      destinationPubkey: '02ab',
+      lnAddress: 'bob@example.com',
+      lnurlComment: 'thanks',
+    });
+  });
+
+  it('leaves out a blank description and comment and a missing preimage', () => {
+    expect(
+      toWalletPayment({
+        ...base,
+        details: {
+          type: 'lightning',
+          description: '   ',
+          htlcDetails: { paymentHash: 'aa' },
+          lnurlPayInfo: { comment: '  ' },
+        },
+      }).info,
+    ).toEqual({ paymentHash: 'aa' });
+  });
+
+  it('reads a Spark invoice and its description', () => {
+    expect(
+      toWalletPayment({
+        ...base,
+        details: { type: 'spark', invoiceDetails: { description: 'Gift', invoice: 'spark1x' } },
+      }).info,
+    ).toEqual({ description: 'Gift', invoice: 'spark1x' });
+    expect(
+      toWalletPayment({
+        ...base,
+        details: { type: 'spark', invoiceDetails: { invoice: 'spark1y' } },
+      }).info,
+    ).toEqual({ invoice: 'spark1y' });
+  });
+
+  it('reads the transaction of a deposit and a withdrawal', () => {
+    expect(
+      toWalletPayment({ ...base, details: { type: 'deposit', txId: 'tx1', vout: 0 } }).info,
+    ).toEqual({ txId: 'tx1', vout: 0 });
+    expect(toWalletPayment({ ...base, details: { type: 'withdraw', txId: 'tx2' } }).info).toEqual({
+      txId: 'tx2',
+    });
+  });
+
+  it('reads a zap request: sender, trimmed message, and the zapped note', () => {
+    const zap = (event: unknown): ReturnType<typeof toWalletPayment>['info']['zap'] =>
+      toWalletPayment({
+        ...base,
+        paymentType: 'receive',
+        details: {
+          type: 'lightning',
+          lnurlReceiveMetadata: { nostrZapRequest: JSON.stringify(event) },
+        },
+      }).info.zap;
+    expect(
+      zap({
+        kind: 9734,
+        pubkey: 'ab',
+        content: '  Great photo!  ',
+        tags: [['p', 'cd'], ['e'], ['e', 'ef']],
+      }),
+    ).toEqual({ senderPubkey: 'ab', content: 'Great photo!', noteId: 'ef' });
+    expect(zap({ kind: 9734, pubkey: 'ab', content: 7, tags: 'x' })).toEqual({
+      senderPubkey: 'ab',
+      content: '',
+      noteId: null,
+    });
+    expect(zap({ kind: 9734, pubkey: 'ab', tags: ['e', 'x'] })?.noteId).toBeNull();
+  });
+
+  it('leaves out a zap request that is malformed JSON, not an object, the wrong kind, or without a sender', () => {
+    for (const raw of [
+      '{not json',
+      '"text"',
+      'null',
+      '{"kind":1,"pubkey":"ab"}',
+      '{"kind":9734}',
+    ]) {
+      expect(
+        toWalletPayment({
+          ...base,
+          details: { type: 'lightning', lnurlReceiveMetadata: { nostrZapRequest: raw } },
+        }).info.zap,
+      ).toBeUndefined();
+    }
   });
 
   it('maps a numeric amount and keeps pending and failed', () => {

@@ -167,6 +167,7 @@ describe('WalletScreen', () => {
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Enter manually' }));
     expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
   });
 

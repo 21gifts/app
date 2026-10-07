@@ -1,0 +1,297 @@
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MenuAccountHeader } from '@/components/MenuAccountHeader';
+import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
+import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
+import type { Account, AccountActivity, MemberProfile } from '@/lib/api-types';
+import type { FiatRateDay } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    onClick,
+    className,
+  }: {
+    href: string;
+    children: ReactNode;
+    onClick?: () => void;
+    className?: string;
+  }) => (
+    <a
+      href={href}
+      className={className}
+      onClick={(event) => {
+        event.preventDefault();
+        onClick?.();
+      }}
+    >
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
+vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/lib/api', () => ({
+  fetchAccountActivity: vi.fn(),
+  fetchMember: vi.fn(),
+  fetchProfilePhoto: vi.fn(),
+}));
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
+const ACTIVITY = {
+  donatedSats: 2_100,
+  receivedSats: 21_000,
+  donatedOverTime: [],
+  receivedOverTime: [],
+} as unknown as AccountActivity;
+
+const MEMBER = { postCount: 7 } as MemberProfile;
+
+let sessionCount = 0;
+
+/** A fresh session, so the per-session cache of an earlier test never applies. */
+function signIn(account: Partial<Account> = {}): string {
+  sessionCount += 1;
+  const session = `sess-${sessionCount}`;
+  useAuthStore.setState({
+    session,
+    account: { id: 'acc_1', name: 'Ada', username: 'ada', ...account } as Account,
+  });
+  return session;
+}
+
+function walletWith(
+  status: UseWalletResult['status'],
+  balanceSats: number | null = null,
+): UseWalletResult {
+  return { status, balanceSats, unlock: vi.fn(), retry: vi.fn(), prfUnsupported: false };
+}
+
+/** Lets the settled fetches reach the component. */
+async function settle(): Promise<void> {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
+function statRow(): HTMLElement {
+  return document.querySelector('dl') as HTMLElement;
+}
+
+beforeEach(() => {
+  vi.mocked(useWallet).mockReturnValue(walletWith('disabled'));
+  vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
+  vi.mocked(fetchAccountActivity).mockReset().mockResolvedValue(ACTIVITY);
+  vi.mocked(fetchMember).mockReset().mockResolvedValue(MEMBER);
+  vi.mocked(fetchProfilePhoto).mockReset().mockRejectedValue(new Error('none'));
+  Object.assign(URL, {
+    createObjectURL: vi.fn(() => 'blob:photo'),
+    revokeObjectURL: vi.fn(),
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  useAuthStore.setState({ session: null, account: null });
+});
+
+describe('MenuAccountHeader', () => {
+  it('renders nothing before the account is loaded', () => {
+    useAuthStore.setState({ session: 'sess-x', account: null });
+    const { container } = renderWithLocale(
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} />,
+    );
+    expect(container.innerHTML).toBe('');
+    expect(fetchAccountActivity).not.toHaveBeenCalled();
+  });
+
+  it('shows the initial, name, and @username, and skeletons that become values without changing height', async () => {
+    const session = signIn();
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.getByText('@ada')).toBeTruthy();
+    expect(screen.getByText('A').getAttribute('aria-hidden')).toBe('true');
+    const loadingLines = Array.from(statRow().querySelectorAll('dd > span')).map(
+      (line) => line.className.match(/\bh-[\d.]+\b/)?.[0],
+    );
+    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
+    await settle();
+    expect(fetchAccountActivity).toHaveBeenCalledWith(session);
+    expect(fetchMember).toHaveBeenCalledWith(session, 'acc_1');
+    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(0);
+    const loadedLines = Array.from(statRow().querySelectorAll('dd > span')).map(
+      (line) => line.className.match(/\bh-[\d.]+\b/)?.[0],
+    );
+    expect(loadedLines).toEqual(loadingLines);
+    const cells = statRow().querySelectorAll(':scope > div');
+    expect(within(cells[0] as HTMLElement).getByText('Received')).toBeTruthy();
+    expect(within(cells[0] as HTMLElement).getByText("₿21'000")).toBeTruthy();
+    expect(within(cells[0] as HTMLElement).getByText('$21.00')).toBeTruthy();
+    expect(within(cells[1] as HTMLElement).getByText('Given')).toBeTruthy();
+    expect(within(cells[1] as HTMLElement).getByText("₿2'100")).toBeTruthy();
+    expect(within(cells[1] as HTMLElement).getByText('$2.10')).toBeTruthy();
+    expect(within(cells[2] as HTMLElement).getByText('Posts')).toBeTruthy();
+    expect(within(cells[2] as HTMLElement).getByText('7')).toBeTruthy();
+  });
+
+  it('reuses the loaded stats on the next mount in the same session', async () => {
+    signIn();
+    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    first.unmount();
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(0);
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(fetchAccountActivity).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares one load between two mounts at once', async () => {
+    signIn();
+    renderWithLocale(
+      <>
+        <MenuAccountHeader onNavigate={vi.fn()} tight={false} />
+        <MenuAccountHeader onNavigate={vi.fn()} tight />
+      </>,
+    );
+    await settle();
+    expect(fetchAccountActivity).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByText('7')).toHaveLength(2);
+  });
+
+  it('shows a dash for values that could not be read, without fiat, and tries again on the next mount', async () => {
+    signIn();
+    vi.mocked(fetchAccountActivity).mockRejectedValue(new Error('down'));
+    vi.mocked(fetchMember).mockResolvedValue(null);
+    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    expect(within(statRow()).getAllByText('–')).toHaveLength(3);
+    expect(within(statRow()).queryByText(/\$/)).toBeNull();
+    first.unmount();
+    vi.mocked(fetchAccountActivity).mockResolvedValue(ACTIVITY);
+    vi.mocked(fetchMember).mockRejectedValue(new Error('down'));
+    const second = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    expect(fetchAccountActivity).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("₿21'000")).toBeTruthy();
+    second.unmount();
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    expect(fetchAccountActivity).toHaveBeenCalledTimes(3);
+  });
+
+  it('drops a load that settles after unmount', async () => {
+    signIn();
+    let finish: (value: AccountActivity) => void = () => undefined;
+    vi.mocked(fetchAccountActivity).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    view.unmount();
+    finish(ACTIVITY);
+    await settle();
+    expect(screen.queryByText('7')).toBeNull();
+  });
+
+  it('shows the profile photo, and replaces the cached one when a new session loads', async () => {
+    signIn();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    expect(screen.getByRole('img', { name: 'Profile photo' }).getAttribute('src')).toBe(
+      'blob:photo',
+    );
+    first.unmount();
+    signIn();
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:photo');
+  });
+
+  it('ignores a photo answer that is not an image and falls back to the username initial', async () => {
+    signIn({ name: '  ' });
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'text/html' }));
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByText('A')).toBeTruthy();
+    expect(screen.getByText('@ada')).toBeTruthy();
+  });
+
+  it('shows an empty initial without name or username', () => {
+    signIn({ name: null, username: null });
+    const { container } = renderWithLocale(
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} />,
+    );
+    expect(container.querySelector('span[aria-hidden="true"].rounded-full')?.textContent).toBe('');
+    expect(screen.queryByText(/^@/)).toBeNull();
+  });
+
+  it('shows the ready balance with fiat as a link to /wallet that closes the Menu', async () => {
+    signIn();
+    vi.mocked(useWallet).mockReturnValue(walletWith('ready', 21_000));
+    const onNavigate = vi.fn();
+    renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} />);
+    await settle();
+    const link = screen.getByRole('link');
+    expect(link.getAttribute('href')).toBe('/wallet');
+    expect(within(link).getByText("₿21'000")).toBeTruthy();
+    expect(within(link).getByText('$21.00')).toBeTruthy();
+    fireEvent.click(link);
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the balance fiat line empty without a usable rate', async () => {
+    signIn();
+    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    vi.mocked(useWallet).mockReturnValue(walletWith('ready', 21_000));
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    await settle();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
+  it.each([
+    ['connecting', null],
+    ['ready', null],
+  ] as const)(
+    'shows a balance skeleton while the wallet is %s without a balance',
+    (status, balance) => {
+      signIn();
+      vi.mocked(useWallet).mockReturnValue(walletWith(status, balance));
+      renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+      const pending = screen.getByRole('status', { name: 'Opening your wallet…' });
+      expect(pending.querySelectorAll('.animate-pulse')).toHaveLength(2);
+    },
+  );
+
+  it.each(['locked', 'error', 'disabled'] as const)(
+    'shows no balance while the wallet is %s',
+    (status) => {
+      signIn();
+      vi.mocked(useWallet).mockReturnValue(walletWith(status));
+      renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+      expect(screen.queryByRole('link')).toBeNull();
+      expect(screen.queryByRole('status')).toBeNull();
+    },
+  );
+
+  it('adds top spacing in the compact Menu', () => {
+    signIn();
+    const { container } = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight />);
+    expect((container.firstElementChild as HTMLElement).className).toContain('mt-2');
+  });
+});

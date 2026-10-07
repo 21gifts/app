@@ -69,12 +69,55 @@ export interface WalletPayment {
   direction: WalletPaymentDirection;
   /** Amount in whole satoshis, without fees. */
   amountSats: number;
+  /** Fees in whole satoshis: paid on top of a send, deducted from a received deposit. */
+  feesSats: number;
   /** Epoch ms when the payment was created. */
   timestamp: number;
   /** Whether the payment settled, is still open, or failed. */
   status: 'completed' | 'pending' | 'failed';
+  /** How the payment moved. */
+  method: WalletPaymentMethod;
   /** Note the payer attached to a received payment, or `null`. */
   senderComment: string | null;
+  /** Method details the payment screen shows; absent fields were not reported by the SDK. */
+  info: WalletPaymentInfo;
+}
+
+/** How a payment moved: Lightning, a Spark transfer, or on-chain in or out. */
+export type WalletPaymentMethod = 'lightning' | 'spark' | 'deposit' | 'withdraw' | 'other';
+
+/** A Nostr zap request (NIP-57 kind 9734) attached to a received Lightning payment. */
+export interface WalletPaymentZap {
+  /** Hex public key of the zapper. */
+  senderPubkey: string;
+  /** The zapper's message, trimmed; empty when none. */
+  content: string;
+  /** Hex id of the zapped note, or `null`. */
+  noteId: string | null;
+}
+
+/** Method details of one payment. */
+export interface WalletPaymentInfo {
+  /** Invoice description or the Spark invoice's description. */
+  description?: string;
+  /** BOLT11 invoice or Spark invoice. */
+  invoice?: string;
+  /** Lightning payment hash (hex). */
+  paymentHash?: string;
+  /** Lightning preimage (hex), the proof of payment once settled. */
+  preimage?: string;
+  /** Node the Lightning invoice belongs to (hex). */
+  destinationPubkey?: string;
+  /** Lightning address that was paid. */
+  lnAddress?: string;
+  /** Comment sent along with a Lightning-address payment. */
+  lnurlComment?: string;
+  /** Zap request of a received zap. */
+  zap?: WalletPaymentZap;
+  /** On-chain transaction id. */
+  txId?: string;
+  /** Output index of a deposit. */
+  vout?: number;
 }
 
 /**
@@ -99,15 +142,131 @@ export interface SdkPaymentLike {
   status: string;
   /** Amount in satoshis (the SDK uses `bigint`). */
   amount: bigint | number;
+  /** Fees in satoshis. */
+  fees?: bigint | number;
   /** Creation time in epoch seconds. */
   timestamp: number;
-  /** Method-specific details; only the received-payment note is read. */
-  details?: { type: string; lnurlReceiveMetadata?: { senderComment?: string } } | undefined;
+  /** `lightning`, `spark`, `token`, `deposit`, `withdraw`, or `unknown`. */
+  method?: string;
+  /** Method-specific details. */
+  details?: SdkPaymentDetailsLike | undefined;
+}
+
+/** The parts of the SDK's payment details (lightning, spark, deposit, withdraw) the app reads. */
+export interface SdkPaymentDetailsLike {
+  /** Detail variant. */
+  type: string;
+  /** Lightning invoice description. */
+  description?: string;
+  /** Lightning invoice. */
+  invoice?: string;
+  /** Node the Lightning invoice belongs to. */
+  destinationPubkey?: string;
+  /** Lightning HTLC: payment hash and, once settled, the preimage. */
+  htlcDetails?: { paymentHash: string; preimage?: string };
+  /** Spark invoice and its description. */
+  invoiceDetails?: { description?: string; invoice: string };
+  /** Lightning-address send: the address and the comment sent along. */
+  lnurlPayInfo?: { lnAddress?: string; comment?: string };
+  /** Lightning-address receive: the payer note and a zap request. */
+  lnurlReceiveMetadata?: { senderComment?: string; nostrZapRequest?: string };
+  /** On-chain transaction id. */
+  txId?: string;
+  /** Output index of a deposit. */
+  vout?: number;
 }
 
 /**
- * Maps an SDK payment to the {@link WalletPayment} the history list renders.
- * A blank note counts as no note.
+ * Reads a zap request (NIP-57 kind 9734) from its JSON.
+ *
+ * @param raw - The zap request JSON the SDK stored.
+ * @returns The zapper, message, and zapped note, or `null` when it is not a zap request.
+ */
+function parseZap(raw: string | undefined): WalletPaymentZap | null {
+  if (raw === undefined) {
+    return null;
+  }
+  let event: unknown;
+  try {
+    event = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof event !== 'object' || event === null) {
+    return null;
+  }
+  const { kind, pubkey, content, tags } = event as Record<string, unknown>;
+  if (kind !== 9734 || typeof pubkey !== 'string') {
+    return null;
+  }
+  const note = (Array.isArray(tags) ? tags : []).find(
+    (tag: unknown): tag is [string, string] =>
+      Array.isArray(tag) && tag[0] === 'e' && typeof tag[1] === 'string',
+  );
+  return {
+    senderPubkey: pubkey,
+    content: typeof content === 'string' ? content.trim() : '',
+    noteId: note === undefined ? null : note[1],
+  };
+}
+
+/**
+ * Collects the details the payment screen shows.
+ *
+ * @param details - SDK payment details.
+ * @returns The present fields.
+ */
+function paymentInfo(details: SdkPaymentDetailsLike | undefined): WalletPaymentInfo {
+  const info: WalletPaymentInfo = {};
+  if (details === undefined) {
+    return info;
+  }
+  const description = (details.description ?? details.invoiceDetails?.description)?.trim();
+  if (description !== undefined && description !== '') {
+    info.description = description;
+  }
+  const invoice = details.invoice ?? details.invoiceDetails?.invoice;
+  if (invoice !== undefined) {
+    info.invoice = invoice;
+  }
+  if (details.htlcDetails !== undefined) {
+    info.paymentHash = details.htlcDetails.paymentHash;
+    if (details.htlcDetails.preimage !== undefined) {
+      info.preimage = details.htlcDetails.preimage;
+    }
+  }
+  if (details.destinationPubkey !== undefined) {
+    info.destinationPubkey = details.destinationPubkey;
+  }
+  if (details.lnurlPayInfo?.lnAddress !== undefined) {
+    info.lnAddress = details.lnurlPayInfo.lnAddress;
+  }
+  const comment = details.lnurlPayInfo?.comment?.trim();
+  if (comment !== undefined && comment !== '') {
+    info.lnurlComment = comment;
+  }
+  const zap = parseZap(details.lnurlReceiveMetadata?.nostrZapRequest);
+  if (zap !== null) {
+    info.zap = zap;
+  }
+  if (details.txId !== undefined) {
+    info.txId = details.txId;
+  }
+  if (details.vout !== undefined) {
+    info.vout = details.vout;
+  }
+  return info;
+}
+
+const METHODS: readonly WalletPaymentMethod[] = ['lightning', 'spark', 'deposit', 'withdraw'];
+
+/**
+ * Maps an SDK payment to the {@link WalletPayment} the history list and the
+ * payment screen render: fees, method (`token` and unknown methods are
+ * `other`), and the method details (description, invoice, payment hash and
+ * preimage, node, paid Lightning address and comment, a parsed zap request,
+ * transaction id and output). A blank note, description, or comment counts as
+ * none; a zap request that is not valid kind-9734 JSON is left out.
  *
  * @param payment - Payment from the SDK's `listPayments`.
  * @returns The mapped payment.
@@ -123,10 +282,13 @@ export function toWalletPayment(payment: SdkPaymentLike): WalletPayment {
     id: payment.id,
     direction: payment.paymentType === 'send' ? 'sent' : 'received',
     amountSats: Number(payment.amount),
+    feesSats: Number(payment.fees ?? 0),
     timestamp: payment.timestamp * 1000,
     status:
       payment.status === 'pending' || payment.status === 'failed' ? payment.status : 'completed',
+    method: METHODS.find((method) => method === payment.method) ?? 'other',
     senderComment: comment === '' ? null : comment,
+    info: paymentInfo(details),
   };
 }
 
@@ -164,6 +326,13 @@ export interface WalletConnection {
    * @returns The payments on that page.
    */
   listPayments(page: WalletPaymentPage): Promise<WalletPayment[]>;
+  /**
+   * Reads one payment by its SDK id.
+   *
+   * @param id - SDK payment id.
+   * @returns The payment.
+   */
+  getPayment(id: string): Promise<WalletPayment>;
   /**
    * Reads a pasted payment request or address with the SDK's `parse`.
    *
@@ -579,6 +748,10 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             assetFilter: { type: 'bitcoin' },
           });
           return response.payments.map(toWalletPayment);
+        },
+        async getPayment(id: string): Promise<WalletPayment> {
+          const response = await handle.getPayment({ paymentId: id });
+          return toWalletPayment(response.payment);
         },
         async parse(input: string): Promise<WalletTarget> {
           const parsed = (await handle.parse(input)) as ParsedInput;
