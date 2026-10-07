@@ -1334,13 +1334,13 @@ Optional `firstPostFree` (default false) adds the muted line `forum.firstPostFre
 
 - **Purpose:** Money on a reply. What the author sent and what later arrived stay two lines and are never added. A gift-only reply (`text === ''` and `sats > 0`) is `forum.giftReply`. A reply with text and sats, and no later receipt, is the bare formatted amount under the body. When `receivedSats` is greater than zero, that receipt is `forum.receivedOnReply` on its own line. A text reply that also sent sats labels that line `forum.sentOnReply`, and the two lines share a left rule. Zero or a missing receipt draws no received line. Nothing to show returns null.
 - **Inputs:** `text`, `sats`, optional `receivedSats`, `rateDay`, `fiat`, `numberFormat`, optional `sent` fiat fields for `sats`, optional `received` fiat fields for `receivedSats`.
-- **Returns / side effects:** React element, or null when both amounts are absent. No network. Bitcoin via `formatBitcoin`. Fiat via `preferredFiatSuffix` (stored string, otherwise the gift-day rate).
+- **Returns / side effects:** React element, or null when both amounts are absent. No network. Bitcoin via `formatBitcoin`. Fiat via `preferredFiatSuffix` (stored string, otherwise the spot rate).
 - **Used by:** `ForumBoard` on every nested reply, and `PublicThreadCard` in `PublicMessageLoader` when the unsigned card is a reply with `receivedSats` greater than zero.
 
 ## Function: ForumPaySheet
 
 - **Purpose:** The amount form and invoice card already used for a payable forum reply. A habit comment uses this same sheet: Amount, Continue, then the confirmation and the in-app wallet pay slot (`WalletPay`). It does not show the raw invoice or an invoice QR. Close stays on the page.
-- **Inputs:** `messageId`, the pay draft, busy, error, invoice, waiting flag, draft and unit callbacks, submit, cancel, the gift-day rate, optional `ratePending` (default false; Continue does not submit while it is true), and a click handler so the sheet does not toggle the card under it.
+- **Inputs:** `messageId`, the pay draft, busy, error, invoice, waiting flag, draft and unit callbacks, submit, cancel, the spot rate, optional `ratePending` (default false; Continue does not submit while it is true), and a click handler so the sheet does not toggle the card under it.
 - **Returns / side effects:** The in-card sheet (`data-pay-sheet`). Continue calls `onPaySubmit` only when it is not busy and `ratePending` is false. After mint the card mounts `WalletPay` with the invoice's `sparkInvoice`, `pr`, and `amountSats`. No network of its own.
 - **Used by:** `ForumBoard` and `HabitComments`.
 
@@ -2424,7 +2424,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The current spot rate together with whether its first read has settled, for a payment screen that must not show an amount as ready while the rate is still loading (CONTRIBUTING "Shown amounts"). `useSpotRate` returns its `rateDay`. Fetches `GET /fx/spot` via `fetchFxSpot` on mount and every five minutes (`SPOT_REFRESH_MS`); an answer with a usable price replaces the rate, and an answer without any price or a failed request keeps the last one. A refresh does not start while the previous request is open. Never throws. Drops answers after unmount.
 - **Inputs:** Optional `enabled` (default `true`); while false nothing is fetched, `rateDay` is `null`, and `loading` is `true`.
 - **Returns / side effects:** `{ rateDay, loading }`: `rateDay` is `spotRateDay` of the latest usable answer (or `null`), and `loading` turns false once the first read settles, whatever its result. Calls `fetchFxSpot` on mount and on the refresh timer while enabled; clears the timer on unmount.
-- **Used by:** `useSpotRate`, `WalletPaymentDetails`.
+- **Used by:** `useSpotRate`, `WalletPaymentDetails`, `MemberHabits`.
 
 ## Function: useSpotRate
 
