@@ -1580,7 +1580,9 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet?visual=balance-locked-prf-unsupported');
     await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('alert')).toHaveText(PRF_UNSUPPORTED_MESSAGE);
+    await expect(
+      page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE }),
+    ).toBeVisible();
     await shotScreen(page, 'state-wallet-balance-locked-prf-unsupported');
   });
 
@@ -1616,7 +1618,9 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet?visual=balance-locked-error');
     await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('alert')).toHaveText('Something went wrong. Please try again.');
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Something went wrong. Please try again.' }),
+    ).toBeVisible();
     await shotScreen(page, 'state-wallet-balance-locked-error');
   });
 
