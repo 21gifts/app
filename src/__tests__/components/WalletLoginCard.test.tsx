@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/components/LoginCard', () => ({ LoginCard: () => <p>login card</p> }));
+vi.mock('@/components/LogoutButton', () => ({ LogoutButton: () => <button>Log out</button> }));
 vi.mock('@/lib/wallet/wallet-open', () => ({ finishWalletOpen: vi.fn() }));
 
 const account = { id: 'account' } as Account;
@@ -42,6 +43,16 @@ describe('WalletLoginCard', () => {
     expect(screen.getByText('login card')).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(finishWalletOpen).not.toHaveBeenCalled();
+  });
+
+  it('offers Log out under the card while a session is held back or not open yet', () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'stored' });
+    const { unmount } = renderWithLocale(<WalletLoginCard />);
+    expect(screen.getByRole('button', { name: 'Log out' })).toBeTruthy();
+    unmount();
+    useAuthStore.setState({ session: null, account: null, lockedSession: null });
+    renderWithLocale(<WalletLoginCard />);
+    expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
   });
 
   it('keeps an opened session active', async () => {

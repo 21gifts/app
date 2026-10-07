@@ -29,6 +29,7 @@ import { LogoutButton } from '@/components/LogoutButton';
 import { MenuAccountHeader } from '@/components/MenuAccountHeader';
 import { PwaInstall } from '@/components/PwaInstall';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { getAppVersion } from '@/lib/config';
 import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { enablePush, resyncPushSubscription } from '@/lib/push';
@@ -69,19 +70,35 @@ import { useAuthStore } from '@/stores/auth-store';
  * screen. Close dismisses this mount only; the introduce CTA skips the overlay
  * once, so the next mount does not show it again.
  *
- * Renders nothing while a stored session is held back until its wallet is
- * open (`lockedSession`; the login card is on screen).
+ * Renders nothing, and starts none of the Menu's reads, while the login card
+ * is on screen: a stored session held back until its wallet is open
+ * (`lockedSession`), or a session whose wallet is not open in this tab yet
+ * (`useWalletOpen`). Both count as signed out.
  *
- * @returns The signed-in Menu chrome, or `null` while a session is held back.
+ * @returns The signed-in Menu chrome, or `null` while the wallet is not open.
  */
 export function SignedInChrome(): ReactElement | null {
+  const account = useAuthStore((state) => state.account);
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  const walletOpen = useWalletOpen();
+  if (lockedSession !== null || (account !== null && !walletOpen)) {
+    return null;
+  }
+  return <SignedInMenu />;
+}
+
+/**
+ * The signed-in Menu chrome itself; see {@link SignedInChrome}.
+ *
+ * @returns The header wallet button and the Menu.
+ */
+function SignedInMenu(): ReactElement {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   // A stored session still being checked keeps the account header's place; read on every
   // auth change, so the sign-out that clears it also removes the header.
   const storedSession = useAuthStore((state) => (state.account === null ? loadSession() : null));
-  const lockedSession = useAuthStore((state) => state.lockedSession);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
@@ -343,11 +360,6 @@ export function SignedInChrome(): ReactElement | null {
         ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
         : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
-  if (lockedSession !== null) {
-    // A session held back until its wallet is open counts as signed out:
-    // the login card is on screen, and it gets no signed-in Menu.
-    return null;
-  }
   return (
     <div className="flex items-center">
       <div ref={setRootEl} className="relative">

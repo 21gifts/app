@@ -9,7 +9,9 @@ import { disablePush } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Quiet log-out control used inside the signed-in Menu dropdown, not as a free top-right action.
+ * Quiet log-out control used inside the signed-in Menu dropdown, not as a
+ * free top-right action, and under the in-place login card
+ * (`WalletLoginCard`) while a session is held back or not open yet.
  *
  * @returns Full-width Menu-row icon+text log-out control.
  */
