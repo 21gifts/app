@@ -359,6 +359,13 @@
 - **Used by:** `postNotificationLevel`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/heart-notifications
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/heart-notifications`. JSON body `{ enabled: boolean }` returns the owner Account (`notifyHearts`).
+- **Errors:** Upstream 401, 400 invalid body, or 502 if the api is unreachable.
+- **Used by:** `postHeartNotifications`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/amount-unit
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/amount-unit`. JSON body `{ unit: "btc"|"fiat" }` returns the owner Account. The same unit again is still 200.

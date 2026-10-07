@@ -911,6 +911,11 @@ describe('notificationSchema', () => {
     expect(notificationSchema.parse(row)).toEqual(row);
   });
 
+  it('accepts heart', () => {
+    const row = { ...base, type: 'heart' as const, text: '1' };
+    expect(notificationSchema.parse(row)).toEqual(row);
+  });
+
   it('accepts moderator_appointed', () => {
     const row = {
       ...base,
@@ -1501,6 +1506,14 @@ describe('accountSchema', () => {
 
   it('accepts a missing notificationLevel and defaults the helper to all', () => {
     expect(accountNotificationLevel(accountSchema.parse(account))).toBe('all');
+  });
+
+  it('accepts a missing notifyHearts so older api bodies still parse', () => {
+    expect(accountSchema.parse(account).notifyHearts).toBeUndefined();
+  });
+
+  it('accepts notifyHearts false', () => {
+    expect(accountSchema.parse({ ...account, notifyHearts: false }).notifyHearts).toBe(false);
   });
 
   it('accepts all, active, and mentions notification levels', () => {

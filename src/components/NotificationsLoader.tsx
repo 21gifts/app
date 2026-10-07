@@ -73,7 +73,7 @@ function notificationOpenPath(row: Notification): string {
  * Client loader for the signed-in notifications list on `/notifications`.
  *
  * Reads the session from the auth store and fetches notifications (posts, replies,
- * payments, moderator appointment, and moderator proposal). After a successful
+ * payments, hearts, moderator appointment, and moderator proposal). After a successful
  * list fetch, marks all as read fire-and-forget and refreshes the home-screen
  * badge to remaining inbox unread plus staff-room unread (`0` or `1`;
  * notifications are treated as 0; visiting this screen does not force the badge

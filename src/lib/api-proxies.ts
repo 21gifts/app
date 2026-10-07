@@ -433,6 +433,16 @@ export function proxyMeNotificationLevelPost(request: Request): Promise<Response
 }
 
 /**
+ * Proxies POST /me/heart-notifications to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ enabled }`).
+ * @returns The upstream response.
+ */
+export function proxyMeHeartNotificationsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/heart-notifications');
+}
+
+/**
  * Proxies POST /me/amount-unit to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ unit }`).

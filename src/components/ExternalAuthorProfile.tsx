@@ -22,6 +22,7 @@ import type {
   ExternalAuthorProfile as ExternalAuthorProfileData,
   ForumMessage,
 } from '@/lib/api-types';
+import { useHeartTip } from '@/lib/heart-tip';
 
 /** Copied-icon flash duration, matching {@link ForumBoard}. */
 const COPY_RESET_MS = 1200;
@@ -141,6 +142,7 @@ export function ExternalAuthorProfile({
   const { t } = useTranslations();
   const router = useRouter();
   const rateDay = useSpotRate();
+  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: true });
   const [profile, setProfile] = useState<ExternalAuthorProfileData | null>(null);
   const [copied, setCopied] = useState(false);
   const [activity, setActivity] = useState<'posts' | 'replies' | null>(null);
@@ -404,6 +406,8 @@ export function ExternalAuthorProfile({
               readOnly
               composerHidden
               modeSelector={false}
+              onHeartTip={onHeartTip}
+              heartTipViews={heartTipViews}
               onToggleExpand={(noteId) => {
                 if (activity === 'posts') {
                   router.push(`/messages/${noteId}`);
