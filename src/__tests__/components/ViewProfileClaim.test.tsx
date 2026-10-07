@@ -231,6 +231,37 @@ describe('ViewProfileClaim', () => {
     }
   });
 
+  it.each([
+    ['error', 'Network down', 'Try again'],
+    ['unknown', null, 'Try again'],
+  ] as const)(
+    'shows the claim alert, not the held-back login card, when login-instead ends in %s',
+    (status, error, retryLabel) => {
+      mockPasskey('error', 'This profile already has a passkey');
+      const { rerender } = renderWithLocale(
+        <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+      mockPasskey(status, error);
+      try {
+        act(() => {
+          useAuthStore.setState({ session: null, account: null, lockedSession: 'tok' });
+        });
+        rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+        expect(screen.getByRole('alert')).toBeTruthy();
+        expect(screen.queryByText('wallet-login-card')).toBeNull();
+        const spy = status === 'error' ? retrySpy : authenticateSpy;
+        const before = spy.mock.calls.length;
+        fireEvent.click(screen.getByRole('button', { name: retryLabel }));
+        expect(spy).toHaveBeenCalledTimes(before + 1);
+      } finally {
+        act(() => {
+          useAuthStore.setState({ session: null, account: null, lockedSession: null });
+        });
+      }
+    },
+  );
+
   it('keeps the spinner, not the held-back login card, while login-instead is starting', () => {
     mockPasskey('error', 'This profile already has a passkey');
     const { rerender, container } = renderWithLocale(
