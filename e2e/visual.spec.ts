@@ -1970,6 +1970,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-error');
   });
 
+  test('state-wallet-payment-prf-unsupported', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-prf-unsupported',
+    );
+    await expect(page.getByRole('alert').filter({ hasText: /phone or browser/ })).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-prf-unsupported');
+  });
+
   test('state-wallet-payment-copied', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -2112,6 +2122,28 @@ test.describe('screen baselines', () => {
     await expect(page.locator('video')).toHaveCount(0);
     await field.blur();
     await shotScreen(page, 'state-wallet-send-manual');
+  });
+
+  test('wallet send-manual-alert', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-invalid');
+    await expectPinnedSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const sheetAlert = page.getByText('This is not a Bitcoin payment request or address.');
+    await expect(sheetAlert).toHaveClass(/text-app-danger/);
+    await page.getByPlaceholder('Paste a Bitcoin payment request or address').blur();
+    await shotScreen(page, 'state-wallet-send-manual-alert');
+  });
+
+  test('welcome wallet-send-manual-alert', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-invalid');
+    await openWelcomeSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const sheetAlert = page.getByText('This is not a Bitcoin payment request or address.');
+    await expect(sheetAlert).toHaveClass(/text-app-danger/);
+    await page.getByPlaceholder('Paste a Bitcoin payment request or address').blur();
+    await shotScreen(page, 'state-welcome-wallet-send-manual-alert');
   });
 
   test('wallet send-paste-denied', async ({ page }) => {
@@ -19444,6 +19476,44 @@ test.describe('welcome forum variants', () => {
     await expect(page.locator('#signed-in-menu')).not.toHaveClass(/\bfixed\b/);
     await expect(page.getByRole('link', { name: 'Home' })).toBeInViewport();
     await shotScreen(page, 'state-welcome-menu-tall-sheet');
+  });
+
+  test('welcome menu-header-balance', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome?visual=balance-ready');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-header-balance');
+  });
+
+  test('welcome menu-header-connecting', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome?visual=balance-connecting');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByRole('status', { name: 'Opening your wallet…' })).toBeVisible();
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-header-connecting');
+  });
+
+  test('welcome menu-header-failed', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route(/\/me\/activity$/, async (route) => {
+      await route.fulfill({ status: 500, body: '' });
+    });
+    await page.route(/\/forum\/members\/[^/?]+$/, async (route) => {
+      await route.fulfill({ status: 500, body: '' });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const stats = page.locator('#signed-in-menu dl');
+    await expect(stats.getByText('–')).toHaveCount(3);
+    await shotScreen(page, 'state-welcome-menu-header-failed');
   });
 
   test('welcome menu-header-loading', async ({ page }) => {

@@ -311,6 +311,12 @@ The Send view after **Enter manually**: the sheet over the bottom of the camera 
 
 ![21.gifts wallet send manual entry](images/wallet-send-manual.png)
 
+### Variant: send-manual-alert
+
+The manual-entry sheet with an alert (pin `?visual=send-invalid`, then **Enter manually**): **This is not a Bitcoin payment request or address.** in the danger colour under the field instead of over the camera; the other input alerts take the same place.
+
+![21.gifts wallet send manual alert](images/wallet-send-manual-alert.png)
+
 ### Variant: send-paste-denied
 
 The Send view after **Paste** when the browser refuses the clipboard: the small alert **Pasting was not allowed. Use Enter manually instead.** above the floating buttons, over the camera, which keeps running.
@@ -629,6 +635,12 @@ The same while the wallet is opening (pin `?visual=balance-connecting`): the spi
 The same when the wallet could not be opened (pin `?visual=balance-error`): **Your wallet could not be opened. Please try again.** and **Try again**.
 
 ![21.gifts wallet payment error](images/wallet-payment-error.png)
+
+### Variant: prf-unsupported
+
+The same on a phone or browser that cannot hold the wallet (pin `?visual=balance-prf-unsupported`): the wallet's no-PRF sentence instead of the generic error.
+
+![21.gifts wallet payment no PRF](images/wallet-payment-prf-unsupported.png)
 
 ## Screen: /wallet/phrase
 
@@ -1008,6 +1020,12 @@ The same Send view when the camera is blocked: **Camera access was blocked. Allo
 The Send view after **Enter manually**: the sheet over the bottom of the camera area with the Close (`X`), `bob@example.com` typed into **Payment request or address**, and **Continue**.
 
 ![21.gifts welcome send manual entry](images/welcome-wallet-send-manual.png)
+
+### Variant: wallet-send-manual-alert
+
+The `/wallet` variant `send-manual-alert` over the forum home: the manual-entry sheet with the input alert under the field.
+
+![21.gifts welcome wallet send manual alert](images/welcome-wallet-send-manual-alert.png)
 
 ### Variant: wallet-send-paste-denied
 
@@ -2420,6 +2438,24 @@ Open **Menu** on a wide frame shorter than the compact menu even with its top on
 The same open Menu while the account header's numbers are still on their way: **Received**, **Given**, and **Posts** keep their labels, and each value line shows a grey skeleton bar of the same height as the number that replaces it, so nothing moves when the numbers arrive. The photo slot shows the initial meanwhile.
 
 ![21.gifts welcome menu header loading](images/welcome-menu-header-loading.png)
+
+### Variant: menu-header-balance
+
+The open Menu with the wallet open (pin `?visual=balance-ready`): the account header shows the balance **₿21'000** with its fiat small in the top-right corner, a link to `/wallet`.
+
+![21.gifts welcome menu header balance](images/welcome-menu-header-balance.png)
+
+### Variant: menu-header-connecting
+
+The open Menu while the wallet opens (pin `?visual=balance-connecting`): two skeleton bars hold the balance corner (`role="status"`, **Opening your wallet…**).
+
+![21.gifts welcome menu header connecting](images/welcome-menu-header-connecting.png)
+
+### Variant: menu-header-failed
+
+The open Menu when the totals and the post count could not be read: **Received**, **Given**, and **Posts** each show `–`, at the same height as a number.
+
+![21.gifts welcome menu header failed](images/welcome-menu-header-failed.png)
 
 ### Variant: menu-sheet-end
 

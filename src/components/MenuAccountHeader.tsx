@@ -98,7 +98,8 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
  * waits for them.
  *
  * @param props - See {@link MenuAccountHeaderProps}.
- * @returns The header card, or `null` before the account is loaded.
+ * @returns The header card while the Menu is open, or `null` while it is
+ *   closed, before the account is loaded, or without a session.
  */
 export function MenuAccountHeader({
   onNavigate,

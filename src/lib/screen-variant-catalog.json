@@ -300,6 +300,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-manual-alert",
+    "label": "/wallet send-manual-alert",
+    "visual": "state-wallet-send-manual-alert",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-paste-denied",
     "label": "/wallet send-paste-denied",
     "visual": "state-wallet-send-paste-denied",
@@ -612,6 +618,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:prf-unsupported",
+    "label": "/wallet/payment prf-unsupported",
+    "visual": "state-wallet-payment-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",
@@ -783,6 +795,12 @@
     "id": "/welcome:wallet-send-manual",
     "label": "/welcome wallet-send-manual",
     "visual": "state-welcome-wallet-send-manual",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-manual-alert",
+    "label": "/welcome wallet-send-manual-alert",
+    "visual": "state-welcome-wallet-send-manual-alert",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2001,6 +2019,24 @@
     "id": "/welcome:menu-header-loading",
     "label": "/welcome menu-header-loading",
     "visual": "state-welcome-menu-header-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-balance",
+    "label": "/welcome menu-header-balance",
+    "visual": "state-welcome-menu-header-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-connecting",
+    "label": "/welcome menu-header-connecting",
+    "visual": "state-welcome-menu-header-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-failed",
+    "label": "/welcome menu-header-failed",
+    "visual": "state-welcome-menu-header-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
