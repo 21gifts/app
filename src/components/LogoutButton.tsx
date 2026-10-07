@@ -11,7 +11,9 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Quiet log-out control used inside the signed-in Menu dropdown, not as a
  * free top-right action, and under the in-place login card
- * (`WalletLoginCard`) while a session is held back.
+ * (`WalletLoginCard`) while a session is held back. A held-back session ends
+ * at once and push is switched off for it in the background; a signed-in
+ * session first switches push off (at most 5 s), then ends.
  *
  * @returns Full-width Menu-row icon+text log-out control.
  */
@@ -25,17 +27,28 @@ export function LogoutButton(): ReactElement {
     <button
       type="button"
       onClick={() => {
+        passkey.cancel();
+        const { session, lockedSession } = useAuthStore.getState();
+        const token = session ?? lockedSession;
+        const stopPush = (pushToken: string): Promise<void> =>
+          Promise.race([
+            disablePush(pushToken).catch(() => undefined),
+            new Promise<void>((resolve) => {
+              window.setTimeout(resolve, 5000);
+            }),
+          ]);
+        if (session === null && lockedSession !== null) {
+          // A held-back session has nothing signed in to keep: end it at
+          // once, so a new login on the card cannot be wiped by a late
+          // clear; push is switched off for it in the background.
+          clearAuth();
+          router.replace('/login');
+          void stopPush(lockedSession);
+          return;
+        }
         void (async () => {
-          passkey.cancel();
-          const { session, lockedSession } = useAuthStore.getState();
-          const token = session ?? lockedSession;
           if (token !== null) {
-            await Promise.race([
-              disablePush(token).catch(() => undefined),
-              new Promise<void>((resolve) => {
-                window.setTimeout(resolve, 5000);
-              }),
-            ]);
+            await stopPush(token);
           }
           clearAuth();
           router.replace('/login');
