@@ -6,6 +6,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
+import { useActiveSession } from '@/hooks/useActiveSession';
 import { setAmountUnit } from '@/lib/api';
 import type { AmountUnit } from '@/lib/api-types';
 import { separatorsFor } from '@/lib/number-format';
@@ -234,7 +235,8 @@ export function AmountEntry({
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
   const decimal = separatorsFor(numberFormat).decimal;
-  const session = useAuthStore((state) => state.session);
+  // A login still opening its wallet counts as signed out: the unit stays local.
+  const session = useActiveSession();
   const account = useAuthStore((state) => state.account);
   const setAccount = useAuthStore((state) => state.setAccount);
   const [localUnit, setLocalUnit] = useState<AmountUnit>('btc');
