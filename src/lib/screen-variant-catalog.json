@@ -2040,6 +2040,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-header-photo",
+    "label": "/welcome menu-header-photo",
+    "visual": "state-welcome-menu-header-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:menu-sheet-end",
     "label": "/welcome menu-sheet-end",
     "visual": "state-welcome-menu-sheet-end",

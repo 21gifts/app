@@ -2454,6 +2454,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'menu-header-photo',
+    image: 'welcome-menu-header-photo.png',
+    visual: 'state-welcome-menu-header-photo',
+    needle: "shotScreen(page, 'state-welcome-menu-header-photo')",
+  },
+  {
+    route: '/welcome',
     id: 'menu-sheet-end',
     image: 'welcome-menu-sheet-end.png',
     visual: 'state-welcome-menu-sheet-end',

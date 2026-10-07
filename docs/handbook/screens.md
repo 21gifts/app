@@ -2457,6 +2457,12 @@ The open Menu when the totals and the post count could not be read: **Received**
 
 ![21.gifts welcome menu header failed](images/welcome-menu-header-failed.png)
 
+### Variant: menu-header-photo
+
+The open Menu for a member with a profile photo: the round photo replaces the initial at the start of the account header.
+
+![21.gifts welcome menu header photo](images/welcome-menu-header-photo.png)
+
 ### Variant: menu-sheet-end
 
 The open Menu scrolled to its end. On a phone the Menu is a sheet that stops above the bottom of the page frame and scrolls inside its own border, so the last rows (**Log out** and the **Version {version}** line) come into view while the page behind stays put; on a desktop the panel is short enough to show whole.

@@ -19516,6 +19516,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-header-failed');
   });
 
+  test('welcome menu-header-photo', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route(/\/pictures\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg')),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const photo = page.locator('#signed-in-menu').getByRole('img', { name: 'Profile photo' });
+    await expect(photo).toBeVisible();
+    await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.complete)).toBe(true);
+    await shotScreen(page, 'state-welcome-menu-header-photo');
+  });
+
   test('welcome menu-header-loading', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
