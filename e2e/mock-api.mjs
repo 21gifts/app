@@ -2117,6 +2117,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/heart-notifications') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with an enabled boolean' });
+      return;
+    }
+    if (typeof parsed?.enabled !== 'boolean') {
+      json(res, 400, { error: 'Expected a JSON body with an enabled boolean' });
+      return;
+    }
+    account.notifyHearts = parsed.enabled;
+    json(res, 200, account);
+    return;
+  }
+
   if (method === 'GET' && pathName === '/gifts') {
     const day = url.searchParams.get('day');
     if (day === '2026-06-01') {

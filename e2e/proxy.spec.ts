@@ -67,6 +67,7 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/me/username')).status()).toBe(401);
   expect((await request.post('/me/location')).status()).toBe(401);
   expect((await request.post('/me/notification-level')).status()).toBe(401);
+  expect((await request.post('/me/heart-notifications')).status()).toBe(401);
   expect((await request.post('/me/amount-unit')).status()).toBe(401);
   expect((await request.post('/me/locale')).status()).toBe(401);
   expect((await request.post('/me/fiat')).status()).toBe(401);

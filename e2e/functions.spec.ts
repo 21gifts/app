@@ -2996,6 +2996,12 @@ test('Function: proxyMeNotificationLevelPost — POST /me/notification-level wit
   expect((await request.post('/me/notification-level')).status()).toBe(401);
 });
 
+test('Function: proxyMeHeartNotificationsPost — POST /me/heart-notifications without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/heart-notifications')).status()).toBe(401);
+});
+
 test('Function: proxyMeAmountUnitPost — POST /me/amount-unit without bearer is 401', async ({
   request,
 }) => {
@@ -11461,6 +11467,121 @@ test('Function: postNotificationLevel — profile shows All Active Mentions', as
     'aria-pressed',
     'true',
   );
+});
+
+test('Function: postHeartNotifications — profile Hearts Off posts the switch', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/profile');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  if (await intro.isVisible()) {
+    await page.getByRole('button', { name: 'Close' }).click();
+  }
+  const hearts = page.getByRole('group', { name: 'Hearts' });
+  await expect(hearts.getByRole('button', { name: 'On' })).toHaveAttribute('aria-pressed', 'true');
+  const posted = page.waitForResponse((response) => {
+    if (response.request().method() !== 'POST') {
+      return false;
+    }
+    return new URL(response.url()).pathname === '/me/heart-notifications';
+  });
+  await hearts.getByRole('button', { name: 'Off' }).click();
+  expect((await posted).status()).toBe(200);
+  await expect(hearts.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: sendHeartTip — signed-out heart does not mint', async ({ page }) => {
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-ada',
+            name: 'Ada',
+            text: 'Hello from the active list.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+  await expect(page.getByText('Hello from the active list.')).toBeVisible();
+  let invoiced = false;
+  page.on('request', (req) => {
+    if (req.method() === 'POST' && req.url().includes('/invoice')) {
+      invoiced = true;
+    }
+  });
+  await page.getByRole('button', { name: 'Send 1 sat' }).first().click();
+  expect(invoiced).toBe(false);
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText('A Bitcoin balance is required for this.', { exact: true }),
+  ).toHaveCount(0);
+  await expect(page).toHaveURL(/\/welcome/);
+});
+
+test('Function: useHeartTip — signed-out board shows the heart', async ({ page }) => {
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-ada',
+            name: 'Ada',
+            text: 'Hello from the active list.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+  await expect(page.getByText('Hello from the active list.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send 1 sat' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Send 1 sat' }).first().click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('button', { name: 'Send 1 sat' }).first()).toBeVisible();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
 });
 
 test('Function: accountNotificationLevel — profile selects All when the field is omitted', async ({
