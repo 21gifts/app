@@ -129,6 +129,8 @@ export function MemberHabits(): ReactElement {
     const actor = useAuthStore.getState().session;
     const generation = listGeneration.current + 1;
     listGeneration.current = generation;
+    // Another save must not replace this reload while it is still loading.
+    listSettled.current = false;
     try {
       const next = await fetchMemberHabits(actor);
       if (
@@ -150,6 +152,7 @@ export function MemberHabits(): ReactElement {
         return false;
       }
       setError(true);
+      listSettled.current = true;
       return false;
     }
   }
@@ -186,7 +189,6 @@ export function MemberHabits(): ReactElement {
       if (!listed) {
         return false;
       }
-      postedKeys.current.delete(key);
       // A confirmed list can show a different rating, edit, or archive.
       // An add that already reached the server must not be created again.
       for (const stored of [...postedKeys.current]) {
