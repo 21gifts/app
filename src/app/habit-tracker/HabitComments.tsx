@@ -54,6 +54,12 @@ type HabitCommentsProps = {
 export function HabitComments(props: HabitCommentsProps): ReactElement {
   const { t } = useTranslations();
   const [confirmingCommentId, setConfirmingCommentId] = useState<string | null>(null);
+  const [confirmSession, setConfirmSession] = useState(props.session);
+  // Cleared in this render, so the previous account's confirm is not painted.
+  if (confirmSession !== props.session) {
+    setConfirmSession(props.session);
+    setConfirmingCommentId(null);
+  }
   const {
     habit,
     account,

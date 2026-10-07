@@ -33,8 +33,8 @@ const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
  * Loads from same-origin `GET /habits` and writes through `POST /habits`.
  * A failed reload keeps a list already on screen. The full-screen error is
  * only when nothing has loaded. Internal notes render only for the owner.
- * A session change closes an open edit and an archive confirmation and clears
- * the new-habit draft and unsent comments before paint.
+ * A session change closes an open edit, an archive confirmation, a comment
+ * deletion confirm, and the new-habit draft and unsent comments before paint.
  * The same gift body is not posted again while that request is still waiting.
  * A confirmed add may be sent again. It is not reserved for the whole session.
  * A reload releases only actions that had already reached the server when

@@ -23,6 +23,7 @@ const owner = {
 };
 
 const viewer = { ...owner, id: 'acc-viewer', role: 'basis' as const, name: 'Bea' };
+const nextInitiator = { ...owner, id: 'acc-next', name: 'Cara' };
 
 function period(day: string, status: 'achieved' | 'partial' | 'missed' | null) {
   return {
@@ -2427,6 +2428,37 @@ describe('MemberHabits', () => {
     });
     expect(screen.queryByText('draft-secret')).toBeNull();
     expect(screen.queryByText(/Internal notes:/)).toBeNull();
+  });
+
+  it('closes an open comment deletion when the session changes', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Delete comment' })[0] as HTMLButtonElement,
+    );
+    expect(screen.getByRole('button', { name: 'Confirm deletion' })).toBeTruthy();
+
+    useAuthStore.setState({ session: 'next', account: nextInitiator });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Confirm deletion' })).toBeNull();
+    });
+    expect(screen.getAllByRole('button', { name: 'Delete comment' }).length).toBeGreaterThan(0);
+
+    useAuthStore.setState({ session: 'tok', account: owner });
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Confirm deletion' })).toBeNull();
+    });
+    expect(screen.getAllByRole('button', { name: 'Delete comment' }).length).toBeGreaterThan(0);
   });
 
   it('clears the new-habit draft and unsent comments when the session changes', async () => {
