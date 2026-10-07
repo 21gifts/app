@@ -11,9 +11,10 @@ export const SPOT_REFRESH_MS = 5 * 60_000;
  * Current price of 1 BTC for preferred-fiat conversion, or `null`.
  *
  * Fetches `GET /fx/spot` on mount and again every {@link SPOT_REFRESH_MS}
- * while mounted, and returns {@link spotRateDay} of its rates. An answer
- * replaces the rate, including an answer without any usable price. A failed
- * request keeps the last rate. A refresh does not start while the previous
+ * while mounted, and returns {@link spotRateDay} of its rates. An answer with
+ * a usable price replaces the rate. An answer without any price (the api has
+ * no quote) and a failed request keep the last rate, as the api itself keeps
+ * its last good quote. A refresh does not start while the previous
  * request is still open, so an older answer cannot replace a newer one.
  * Never throws into the caller, not even when the request throws at once.
  * Drops answers after unmount.
@@ -38,8 +39,9 @@ export function useSpotRate(enabled = true): FiatRateDay | null {
       Promise.resolve()
         .then(fetchFxSpot)
         .then((spot) => {
-          if (!cancelled) {
-            setRate(spotRateDay(spot.rates));
+          const next = spotRateDay(spot.rates);
+          if (!cancelled && next !== null) {
+            setRate(next);
           }
         })
         .catch(() => undefined)
