@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PosAmount, PosScreen, resetPosTillWriteForTests } from '@/components/PosScreen';
 import { fetchFxSpot } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -21,6 +22,7 @@ vi.mock('@/hooks/useWalletSetup', async () => {
 
 const push = vi.fn();
 const replace = vi.fn();
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof replace } => ({ push, replace }),
 }));
@@ -1319,8 +1321,14 @@ describe('PosScreen', () => {
         'fetch',
         vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
       );
+      vi.mocked(logInteraction).mockClear();
       renderWithLocale(<PosScreen />);
       expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
+      expect(logInteraction).toHaveBeenCalledTimes(1);
+      expect(logInteraction).toHaveBeenCalledWith('pos_charge_paid_seen', {
+        chargeId: 'c1',
+        amountSats: 21,
+      });
       expect(screen.getAllByText('₿21')).toHaveLength(2);
       expect(await screen.findAllByText('$0.02')).toHaveLength(2);
       const history = screen.getByRole('region', { name: 'History' });

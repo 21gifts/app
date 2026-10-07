@@ -298,6 +298,134 @@ export function toWalletPayment(payment: SdkPaymentLike): WalletPayment {
 }
 
 /**
+ * One wallet payment in the shape the wallet data report sends to the api.
+ * It carries only data the SDK lists about a payment: never a preimage,
+ * key, or anything of the recovery phrase.
+ */
+export interface WalletReportPayment {
+  /** SDK payment id. */
+  id: string;
+  /** `in` for a received payment, `out` for a sent one. */
+  direction: 'in' | 'out';
+  /** Whether the payment settled, is still open, or failed. */
+  status: 'completed' | 'pending' | 'failed';
+  /** Amount in whole satoshis, without fees. */
+  amountSats: number;
+  /** Fee in whole satoshis. */
+  feeSats: number;
+  /** Creation time, ISO 8601. */
+  timestamp: string;
+  /** How the payment moved: `lightning`, `spark`, `onchain`, `token`, or `unknown`. */
+  method: 'lightning' | 'spark' | 'onchain' | 'token' | 'unknown';
+  /** Payment hash of a Lightning or Spark HTLC payment, or `null`. */
+  paymentHash: string | null;
+  /** Lightning or Spark payment request, or `null`. */
+  invoice: string | null;
+  /** Lightning address, LNURL domain, node key, or base-chain transaction id, or `null`. */
+  destination: string | null;
+  /** Description of the paid request, or `null`. */
+  description: string | null;
+  /** Comment sent with, or received with, an LNURL payment, or `null`. */
+  lnurlComment: string | null;
+}
+
+/** Narrow view of the SDK's HTLC details that {@link toWalletReportPayment} reads. */
+interface SdkHtlcLike {
+  paymentHash?: string;
+}
+
+/**
+ * Narrow view of an SDK payment that {@link toWalletReportPayment} reads.
+ * Fields the SDK sends but this view leaves out (preimages among them) are
+ * never copied.
+ */
+export interface SdkReportPaymentLike {
+  /** SDK payment id. */
+  id: string;
+  /** `receive` or `send`. */
+  paymentType: string;
+  /** `completed`, `pending`, or `failed`. */
+  status: string;
+  /** Amount in satoshis (the SDK uses `bigint`). */
+  amount: bigint | number;
+  /** Fees in satoshis (the SDK uses `bigint`). */
+  fees: bigint | number;
+  /** Creation time in epoch seconds. */
+  timestamp: number;
+  /** SDK payment method. */
+  method: string;
+  /** Method-specific details. */
+  details?:
+    | {
+        type: string;
+        description?: string;
+        invoice?: string;
+        destinationPubkey?: string;
+        txId?: string;
+        htlcDetails?: SdkHtlcLike;
+        invoiceDetails?: { description?: string; invoice?: string };
+        lnurlPayInfo?: { lnAddress?: string; domain?: string; comment?: string };
+        lnurlReceiveMetadata?: { senderComment?: string };
+      }
+    | undefined;
+}
+
+/**
+ * Text of an optional SDK string, or `null` when it is missing or blank.
+ *
+ * @param value - SDK value.
+ * @returns The trimmed text, or `null`.
+ */
+function textOrNull(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+/**
+ * Maps an SDK payment to the {@link WalletReportPayment} the wallet data
+ * report sends. Only the fields named there are read; the HTLC preimage and
+ * every other SDK field are left out. `deposit` and `withdraw` are the
+ * base-chain method `onchain`.
+ *
+ * @param payment - Payment from the SDK's `listPayments`.
+ * @returns The payment as the report sends it.
+ */
+export function toWalletReportPayment(payment: SdkReportPaymentLike): WalletReportPayment {
+  const details = payment.details;
+  const method: WalletReportPayment['method'] =
+    payment.method === 'deposit' || payment.method === 'withdraw'
+      ? 'onchain'
+      : payment.method === 'lightning' || payment.method === 'spark' || payment.method === 'token'
+        ? payment.method
+        : 'unknown';
+  const lnurl = details?.lnurlPayInfo;
+  return {
+    id: payment.id,
+    direction: payment.paymentType === 'send' ? 'out' : 'in',
+    status:
+      payment.status === 'pending' || payment.status === 'failed' ? payment.status : 'completed',
+    amountSats: Number(payment.amount),
+    feeSats: Number(payment.fees),
+    timestamp: new Date(payment.timestamp * 1000).toISOString(),
+    method,
+    paymentHash: textOrNull(details?.htlcDetails?.paymentHash),
+    invoice: textOrNull(details?.invoice) ?? textOrNull(details?.invoiceDetails?.invoice),
+    destination:
+      textOrNull(lnurl?.lnAddress) ??
+      textOrNull(lnurl?.domain) ??
+      textOrNull(details?.txId) ??
+      textOrNull(details?.destinationPubkey),
+    description:
+      textOrNull(details?.description) ?? textOrNull(details?.invoiceDetails?.description),
+    lnurlComment:
+      textOrNull(lnurl?.comment) ?? textOrNull(details?.lnurlReceiveMetadata?.senderComment),
+  };
+}
+
+/**
  * A live SDK connection.
  */
 export interface WalletConnection {
@@ -338,6 +466,14 @@ export interface WalletConnection {
    * @returns The payment.
    */
   getPayment(id: string): Promise<WalletPayment>;
+  /**
+   * Lists Bitcoin payments newest first in the shape the wallet data report
+   * sends (token payments are left out, since their amounts are not satoshis).
+   *
+   * @param page - Offset and limit.
+   * @returns The payments on that page.
+   */
+  listReportPayments(page: WalletPaymentPage): Promise<WalletReportPayment[]>;
   /**
    * Reads a pasted payment request or address with the SDK's `parse`.
    *
@@ -761,6 +897,15 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             throw new Error('wallet-payment-not-bitcoin');
           }
           return toWalletPayment(response.payment);
+        },
+        async listReportPayments(page: WalletPaymentPage): Promise<WalletReportPayment[]> {
+          const response = await handle.listPayments({
+            offset: page.offset,
+            limit: page.limit,
+            sortAscending: false,
+            assetFilter: { type: 'bitcoin' },
+          });
+          return response.payments.map(toWalletReportPayment);
         },
         async parse(input: string): Promise<WalletTarget> {
           const parsed = (await handle.parse(input)) as ParsedInput;

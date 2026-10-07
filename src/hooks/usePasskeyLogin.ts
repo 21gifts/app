@@ -25,6 +25,7 @@ import {
   requestOptionsFromJSON,
 } from '@/lib/webauthn-browser';
 import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
+import { logInteraction } from '@/lib/interaction-log';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Exact api 409 when the chosen username is taken during register. */
@@ -741,6 +742,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
+      logInteraction('signup_completed');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);
@@ -841,6 +843,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
+      logInteraction('login');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);

@@ -1,4 +1,5 @@
 import { getBreezApiKey } from '@/lib/config';
+import { logInteraction } from '@/lib/interaction-log';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
 import {
   loadWalletSdk,
@@ -7,6 +8,7 @@ import {
   type WalletPayment,
   type WalletPaymentPage,
   type WalletPayRequest,
+  type WalletReportPayment,
   type WalletSdk,
   type WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
@@ -356,6 +358,24 @@ export async function getWalletPayment(id: string): Promise<WalletPayment> {
   return conn.getPayment(id);
 }
 
+/**
+ * Lists the connected wallet's Bitcoin payments, newest first, in the shape
+ * the wallet data report sends.
+ *
+ * @param page - Offset and limit.
+ * @returns The payments on that page.
+ * @throws Error `wallet-connect` without a connection; otherwise the SDK's error.
+ */
+export async function listWalletReportPayments(
+  page: WalletPaymentPage,
+): Promise<WalletReportPayment[]> {
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.listReportPayments(page);
+}
+
 /** How long a send may take before the app stops waiting for the SDK. */
 export const WALLET_SEND_TIMEOUT_MS = 30_000;
 
@@ -572,6 +592,13 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
         WALLET_SEND_TIMEOUT_MS,
       );
       result = done === null ? { kind: 'failed' } : { kind: 'paid' };
+      if (done !== null) {
+        logInteraction('payment_sent', {
+          amountSats,
+          feeSats: quote === undefined ? feeSats : quote.fees[speed],
+          onchain: quote !== undefined,
+        });
+      }
     } catch (err: unknown) {
       if (quote !== undefined && isQuoteExpired(err)) {
         result = { kind: 'expired' };

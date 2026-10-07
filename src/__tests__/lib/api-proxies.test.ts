@@ -11,6 +11,8 @@ import {
   proxyAuthPasskeySeedBeginPost,
   proxyAuthPasskeySeedFinishPost,
   proxyMeWalletBackupSeenPost,
+  proxyMeWalletReportPost,
+  proxyMeEventsPost,
   proxyMeWalletPut,
   proxyLnurlpayRegisterPost,
   proxyLnurlpayRecoverPost,
@@ -159,6 +161,37 @@ describe('api proxy wrappers', () => {
       new Request('http://localhost/me/wallet-backup-seen', { method: 'POST' }),
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-backup-seen');
+  });
+
+  it('proxyMeWalletReportPost hits POST /me/wallet/report with the body', async () => {
+    const fetchMock = stubApi();
+    const body = JSON.stringify({ balanceSats: 1, syncedAt: 'now', payments: [] });
+    await proxyMeWalletReportPost(
+      new Request('http://localhost/me/wallet/report', {
+        method: 'POST',
+        headers: { authorization: 'Bearer sess', 'content-type': 'application/json' },
+        body,
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/wallet/report');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
+    expect((init.headers as Headers).get('authorization')).toBe('Bearer sess');
+  });
+
+  it('proxyMeEventsPost hits POST /me/events with the body', async () => {
+    const fetchMock = stubApi();
+    const body = JSON.stringify({ events: [] });
+    await proxyMeEventsPost(
+      new Request('http://localhost/me/events', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body,
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/events');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
   });
 
   it('proxyMeWalletPut hits PUT /me/wallet with the body', async () => {

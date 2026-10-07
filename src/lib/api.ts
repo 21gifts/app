@@ -81,7 +81,9 @@ import {
   type ForumGoalCurrency,
   type ViewProfile,
 } from '@/lib/api-types';
+import { logInteraction } from '@/lib/interaction-log';
 import type { Locale } from '@/lib/locale';
+import type { WalletReportPayment } from '@/lib/wallet/wallet-sdk';
 import { MissingRequirementsError, parseMissingRequirements } from '@/lib/missing-requirements';
 import { shortLinkPath } from '@/lib/short-link';
 import type { FiatCode } from '@/lib/stats-money';
@@ -2432,7 +2434,17 @@ export async function postMessage(
   if (!response.ok) {
     throw new Error('Could not post your message');
   }
-  return forumMessageSchema.parse(await response.json());
+  const created = forumMessageSchema.parse(await response.json());
+  if (inReplyTo === undefined) {
+    logInteraction('post_created', {
+      messageId: created.id,
+      photos: stills.length,
+      ask: input.goalAmount !== undefined,
+    });
+  } else {
+    logInteraction('reply_created', { messageId: created.id, parentId: inReplyTo });
+  }
+  return created;
 }
 
 /**
@@ -2526,7 +2538,13 @@ export async function postMessageVideo(
   if (!response.ok) {
     throw new Error('Could not post your message');
   }
-  return forumMessageSchema.parse(await response.json());
+  const created = forumMessageSchema.parse(await response.json());
+  logInteraction('post_created', {
+    messageId: created.id,
+    video: true,
+    ask: input.goalAmount !== undefined,
+  });
+  return created;
 }
 
 /**
@@ -3639,6 +3657,53 @@ export async function postWalletBackupSeen(sessionToken: string): Promise<Accoun
     throw new Error('Could not save wallet backup');
   }
   return accountSchema.parse(await response.json());
+}
+
+/** Body of `POST /me/wallet/report`: the balance and payments the api has not acknowledged. */
+export type WalletReportBody = {
+  /** Balance in whole satoshis at `syncedAt`. */
+  balanceSats: number;
+  /** When the wallet read that balance, ISO 8601. */
+  syncedAt: string;
+  /** Payments the api has not acknowledged yet, at most {@link WALLET_REPORT_PAGE_SIZE}. */
+  payments: WalletReportPayment[];
+};
+
+/** Most payments one wallet data report carries. */
+export const WALLET_REPORT_PAGE_SIZE = 200;
+
+const walletReportResponseSchema = z.object({ acknowledgedIds: z.array(z.string()) });
+
+/**
+ * Sends the wallet's balance and the payments the api has not acknowledged.
+ * The body holds only the fields of {@link WalletReportBody}: never the
+ * recovery phrase, a key, PRF output, or a preimage.
+ *
+ * @param sessionToken - Bearer session.
+ * @param body - Balance, sync time, and at most {@link WALLET_REPORT_PAGE_SIZE} payments.
+ * @returns The payment ids the api acknowledged.
+ * @throws Error on a non-2xx status or a body without `acknowledgedIds`.
+ */
+export async function postWalletReport(
+  sessionToken: string,
+  body: WalletReportBody,
+): Promise<string[]> {
+  const response = await fetch('/me/wallet/report', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      balanceSats: body.balanceSats,
+      syncedAt: body.syncedAt,
+      payments: body.payments,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Could not report wallet data: ${response.status}`);
+  }
+  return walletReportResponseSchema.parse(await response.json()).acknowledgedIds;
 }
 
 /** Safe browser report body for `POST /me/passkey-renew/report`. */

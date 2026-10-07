@@ -30,6 +30,10 @@ const conversationPhotos = new Map();
 const aboutMePhotos = new Map();
 /** @type {Map<string, { hash: string, text: string }>} keyed `${messageId}\0${target}` */
 const messageTranslations = new Map();
+/** accountId → wallet data reports received (`POST /me/wallet/report`). */
+const walletReports = new Map();
+/** accountId → interaction events received (`POST /me/events`). */
+const interactionEvents = new Map();
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
 const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'];
@@ -2537,6 +2541,84 @@ const server = http.createServer(async (req, res) => {
     account.sparkPubkey = parsed.sparkPubkey;
     account.sparkWalletVerified = false;
     json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/wallet/report') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid JSON' });
+      return;
+    }
+    if (
+      typeof body?.balanceSats !== 'number' ||
+      body.balanceSats < 0 ||
+      typeof body.syncedAt !== 'string' ||
+      !Array.isArray(body.payments) ||
+      body.payments.length > 200
+    ) {
+      json(res, 400, { error: 'Invalid report' });
+      return;
+    }
+    const rows = walletReports.get(account.id) ?? [];
+    rows.push(body);
+    walletReports.set(account.id, rows);
+    json(res, 200, {
+      acknowledgedIds: body.payments
+        .map((payment) => payment?.id)
+        .filter((id) => typeof id === 'string'),
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/events') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid JSON' });
+      return;
+    }
+    if (!Array.isArray(body?.events) || body.events.length > 50) {
+      json(res, 400, { error: 'Invalid events' });
+      return;
+    }
+    const rows = interactionEvents.get(account.id) ?? [];
+    rows.push(...body.events);
+    interactionEvents.set(account.id, rows);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (method === 'GET' && (pathName === '/e2e/events' || pathName === '/e2e/wallet-reports')) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(
+      res,
+      200,
+      pathName === '/e2e/events'
+        ? { events: interactionEvents.get(account.id) ?? [] }
+        : { reports: walletReports.get(account.id) ?? [] },
+    );
     return;
   }
 

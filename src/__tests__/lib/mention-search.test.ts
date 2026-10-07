@@ -1,6 +1,9 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { logInteraction } from '@/lib/interaction-log';
 import { searchMentionAccounts } from '@/lib/mention-search';
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 
 interface FakeResponse {
   ok: boolean;
@@ -35,12 +38,14 @@ describe('searchMentionAccounts', () => {
     expect(fetchMock).toHaveBeenCalledWith('/forum/mentions', {
       headers: { Authorization: 'Bearer sess' },
     });
+    expect(logInteraction).not.toHaveBeenCalled();
     const prefix = stubFetch({
       ok: true,
       status: 200,
       body: { accounts: [] },
     });
     await expect(searchMentionAccounts('sess', 'a b')).resolves.toEqual([]);
+    expect(logInteraction).toHaveBeenCalledWith('search', { query: 'a b', results: 0 });
     expect(prefix).toHaveBeenCalledWith('/forum/mentions?q=a%20b', {
       headers: { Authorization: 'Bearer sess' },
     });

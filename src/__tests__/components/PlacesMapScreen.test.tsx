@@ -4,6 +4,9 @@ import { PlacesMapScreen } from '@/components/PlacesMapScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { ForumPlaceRow } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
+import { logInteraction } from '@/lib/interaction-log';
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 
 vi.mock('@/lib/api', () => ({
   fetchPlaces: vi.fn(),
@@ -108,6 +111,7 @@ describe('PlacesMapScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(logInteraction).toHaveBeenCalledWith('shop_opened', { placeId: 'm-pin' });
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('min-w-0');
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('max-w-full');
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain(

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { throwIfWalletAnswer } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 
 /**
  * One point-of-sale charge. `paid` once the api saw the payment; `paidAt` is
@@ -47,7 +48,7 @@ export async function fetchPosState(sessionToken: string): Promise<PosState> {
 }
 
 /**
- * Open a charge for an exact sat amount.
+ * Open a charge for an exact sat amount, and record `pos_charge_created`.
  *
  * @param sessionToken - Bearer session.
  * @param amountSats - Whole sats.
@@ -79,6 +80,10 @@ export async function createPosCharge(
     throw new Error(message);
   }
   const parsed = z.object({ charge: posChargeSchema }).parse(body);
+  logInteraction('pos_charge_created', {
+    chargeId: parsed.charge.id,
+    amountSats: parsed.charge.amountSats,
+  });
   return parsed.charge;
 }
 

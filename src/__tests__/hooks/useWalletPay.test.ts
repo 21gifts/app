@@ -13,6 +13,7 @@ import {
   type WalletPayResult,
   type WalletSendResult,
 } from '@/lib/wallet/wallet-service';
+import { logInteraction } from '@/lib/interaction-log';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
@@ -22,6 +23,7 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
   refreshWallet: vi.fn(),
 }));
 
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 vi.mock('@/lib/wallet/wallet-sdk', () => ({ walletNeedsReload: vi.fn(() => false) }));
 
 const account = {
@@ -68,6 +70,7 @@ beforeEach(() => {
   vi.mocked(connectWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(refreshWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
+  vi.mocked(logInteraction).mockClear();
 });
 
 afterEach(() => {
@@ -637,6 +640,8 @@ describe('useWalletPay sending', () => {
     });
     expect(result.current.view).toBe('unconfirmed');
     expect(send).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 });
   });
 
   it('after a failed send waits 60 s on the long-poll, then says not confirmed yet, without retrying', async () => {
@@ -659,6 +664,7 @@ describe('useWalletPay sending', () => {
     expect(result.current.view).toBe('unconfirmed');
     expect(send).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(logInteraction).not.toHaveBeenCalled();
   });
 
   it('shows insufficient balance when the send says so', async () => {
@@ -669,6 +675,7 @@ describe('useWalletPay sending', () => {
       result.current.pay();
     });
     expect(result.current.view).toBe('insufficient');
+    expect(logInteraction).not.toHaveBeenCalled();
   });
 
   it('drops the wait when the sheet closes before the timer fires', async () => {

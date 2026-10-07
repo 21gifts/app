@@ -15,6 +15,7 @@ import { Button, ButtonLink, Card } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
@@ -228,6 +229,14 @@ function usePosTillState(): PosTillState {
       setWatchUntil(null);
     }
   }, [paid]);
+
+  const paidId = paid?.id ?? null;
+  const paidSats = paid?.amountSats ?? 0;
+  useEffect(() => {
+    if (paidId !== null) {
+      logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats });
+    }
+  }, [paidId, paidSats]);
 
   useEffect(() => {
     // While a charge is open, and for a minute after it ran out, ask the api
