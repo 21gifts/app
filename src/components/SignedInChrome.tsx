@@ -75,6 +75,9 @@ export function SignedInChrome(): ReactElement {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
+  // A stored session still being checked keeps the account header's place; read on every
+  // auth change, so the sign-out that clears it also removes the header.
+  const storedSession = useAuthStore((state) => (state.account === null ? loadSession() : null));
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
@@ -372,7 +375,7 @@ export function SignedInChrome(): ReactElement {
                 }
                 {...(sheetScrolls ? { 'data-scrollport': '' } : {})}
               >
-                {account !== null || loadSession() !== null ? (
+                {account !== null || storedSession !== null ? (
                   <>
                     <MenuAccountHeader
                       tight={tight}
