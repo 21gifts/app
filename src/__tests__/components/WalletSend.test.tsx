@@ -271,6 +271,18 @@ describe('WalletSend paste', () => {
     },
   );
 
+  it('clears a clipboard alert when the camera reads a code', async () => {
+    stubClipboard(() => Promise.resolve('  '));
+    const send = sendWith({ step: 'input', error: null });
+    renderWithLocale(<SendHarness send={send} />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+    });
+    expect(screen.getByRole('alert').textContent).toBe('The clipboard is empty.');
+    fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('drops a clipboard read still pending when the camera reads a code first', async () => {
     let finish: (value: string) => void = () => undefined;
     stubClipboard(

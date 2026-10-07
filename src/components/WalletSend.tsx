@@ -222,10 +222,12 @@ export function WalletSend({
 
   /**
    * Puts a scanned or pasted text into the field and submits it once. A
-   * clipboard read still pending is dropped, so a scan wins over it.
+   * clipboard read still pending, or its alert, is dropped, so a scan wins
+   * over it and only the read's own alert can follow.
    */
   const takeText = (value: string): void => {
     pasteRun.current += 1;
+    setClipboardError(null);
     scanSubmitted.current = false;
     send.setText(value);
     setScanned(value);
