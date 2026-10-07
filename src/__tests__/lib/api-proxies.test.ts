@@ -100,6 +100,10 @@ import {
   proxyFundingTrialPost,
   proxyViewAboutPhotoGet,
   proxyViewGet,
+  proxyTeamAuditGet,
+  proxyTeamMemberEventsGet,
+  proxyTeamMembersGet,
+  proxyTeamMemberWalletGet,
 } from '@/lib/api-proxies';
 
 afterEach(() => {
@@ -1146,5 +1150,51 @@ describe('api proxy wrappers', () => {
       target: 'de',
     });
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer tok');
+  });
+});
+
+describe('team access proxies', () => {
+  it('proxyTeamMembersGet hits GET /team/members and keeps the query', async () => {
+    const fetchMock = stubApi();
+    await proxyTeamMembersGet(
+      new Request('http://localhost/team/members?query=ada', {
+        headers: { authorization: 'Bearer tok' },
+      }),
+    );
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(url.pathname).toBe('/team/members');
+    expect(url.search).toBe('?query=ada');
+    expect(init.method).toBe('GET');
+    expect(init.body).toBeUndefined();
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer tok');
+  });
+
+  it('proxyTeamMemberWalletGet hits GET /team/members/:id/wallet with the filters', async () => {
+    const fetchMock = stubApi();
+    await proxyTeamMemberWalletGet(
+      new Request('http://localhost/team/members/acc%2F1/wallet?period=7&category=shop'),
+      'acc/1',
+    );
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toBe('/team/members/acc%2F1/wallet');
+    expect(url.search).toBe('?period=7&category=shop');
+  });
+
+  it('proxyTeamMemberEventsGet hits GET /team/members/:id/events', async () => {
+    const fetchMock = stubApi();
+    await proxyTeamMemberEventsGet(
+      new Request('http://localhost/team/members/acc_1/events?before=c1'),
+      'acc_1',
+    );
+    const url = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(url.pathname).toBe('/team/members/acc_1/events');
+    expect(url.search).toBe('?before=c1');
+  });
+
+  it('proxyTeamAuditGet hits GET /team/audit', async () => {
+    const fetchMock = stubApi();
+    await proxyTeamAuditGet(new Request('http://localhost/team/audit'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/team/audit');
   });
 });

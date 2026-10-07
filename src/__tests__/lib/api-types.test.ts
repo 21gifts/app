@@ -42,6 +42,10 @@ import {
   pushSubscriptionResponseSchema,
   vapidPublicSchema,
   viewProfileSchema,
+  teamAuditResponseSchema,
+  teamEventsResponseSchema,
+  teamMemberSearchResponseSchema,
+  teamWalletResponseSchema,
 } from '@/lib/api-types';
 
 const account = {
@@ -1945,5 +1949,175 @@ describe('lnurlInvoiceSchema', () => {
   it('parses { pr } and rejects an empty pr', () => {
     expect(lnurlInvoiceSchema.parse({ pr: 'lnbc1' })).toEqual({ pr: 'lnbc1' });
     expect(() => lnurlInvoiceSchema.parse({ pr: '' })).toThrow();
+  });
+});
+
+describe('team access schemas', () => {
+  const SECRETS = [
+    'preimage',
+    'paymentPreimage',
+    'seed',
+    'mnemonic',
+    'recoveryPhrase',
+    'prfOutput',
+    'privateKey',
+    'spendingKey',
+    'secret',
+  ];
+
+  it('keeps only the listed payment fields, so no preimage or key reaches the screen', () => {
+    const secretFields = Object.fromEntries(SECRETS.map((key) => [key, 'f'.repeat(64)]));
+    const parsed = teamWalletResponseSchema.parse({
+      balance: { balanceSats: 21_000, syncedAt: '2026-10-01T10:00:00.000Z', ...secretFields },
+      summary: {
+        inSats: 3,
+        outSats: 2,
+        feeSats: 1,
+        categories: [{ category: 'shop', inSats: 0, outSats: 2 }],
+        ...secretFields,
+      },
+      payments: [
+        {
+          id: 'pay_1',
+          direction: 'out',
+          status: 'completed',
+          amountSats: 2,
+          feeSats: 1,
+          timestamp: 1_790_000_000,
+          method: 'lightning',
+          category: 'shop',
+          counterpartyAccountId: 'acc_shop',
+          counterpartyName: 'Shop',
+          destination: 'shop@21.gifts',
+          description: 'Coffee',
+          lnurlComment: 'Thanks',
+          paymentHash: 'a'.repeat(64),
+          ...secretFields,
+        },
+      ],
+      nextCursor: null,
+    });
+    const text = JSON.stringify(parsed);
+    for (const key of [...SECRETS, 'paymentHash']) {
+      expect(text).not.toContain(`"${key}"`);
+    }
+    expect(text).not.toContain('f'.repeat(64));
+    expect(parsed.balance?.syncedAt).toBe(Date.parse('2026-10-01T10:00:00.000Z'));
+    expect(parsed.payments[0]?.timestamp).toBe(1_790_000_000_000);
+  });
+
+  it('reads an unknown category as unknown and drops a row that fails', () => {
+    const parsed = teamWalletResponseSchema.parse({
+      balance: null,
+      summary: {
+        inSats: 0,
+        outSats: 0,
+        feeSats: 0,
+        categories: [{ category: 'lottery', inSats: 0, outSats: 0 }],
+      },
+      payments: [
+        {
+          id: 'p1',
+          direction: 'in',
+          status: 'pending',
+          amountSats: 1,
+          timestamp: 1_790_000_000_000,
+          category: 'lottery',
+        },
+        { id: 'p2', direction: 'in', status: 'pending', amountSats: -1, timestamp: 1 },
+        {
+          id: 'p3',
+          direction: 'in',
+          status: 'pending',
+          amountSats: 1,
+          timestamp: 'not a time',
+          category: 'gift',
+        },
+      ],
+      nextCursor: 'c1',
+    });
+    expect(parsed.summary.categories[0]?.category).toBe('unknown');
+    expect(parsed.payments.map((payment) => [payment.id, payment.category])).toEqual([
+      ['p1', 'unknown'],
+    ]);
+  });
+
+  it('refuses an amount above 21 million bitcoin', () => {
+    expect(
+      teamWalletResponseSchema.safeParse({
+        balance: { balanceSats: 2_100_000_000_000_001, syncedAt: 1 },
+        summary: { inSats: 0, outSats: 0, feeSats: 0, categories: [] },
+        payments: [],
+        nextCursor: null,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('drops event props that name a secret and props that are not flat values', () => {
+    const parsed = teamEventsResponseSchema.parse({
+      events: [
+        {
+          name: 'payment_sent',
+          at: '2026-10-01T10:00:00.000Z',
+          path: '/wallet',
+          props: {
+            amountSats: 21,
+            paymentId: 'pay_1',
+            ok: true,
+            none: null,
+            nested: { a: 1 },
+            ...Object.fromEntries(SECRETS.map((key) => [key, 'f'.repeat(64)])),
+          },
+        },
+        { name: 'login', at: 1_790_000_000_000 },
+        { name: '', at: 1 },
+      ],
+      nextCursor: null,
+    });
+    expect(parsed.events).toEqual([
+      {
+        name: 'payment_sent',
+        at: Date.parse('2026-10-01T10:00:00.000Z'),
+        path: '/wallet',
+        props: { amountSats: 21, paymentId: 'pay_1', ok: true, none: null },
+      },
+      { name: 'login', at: 1_790_000_000_000, props: {} },
+    ]);
+  });
+
+  it('parses members and access-log rows and drops the rows that fail', () => {
+    expect(
+      teamMemberSearchResponseSchema.parse({
+        members: [{ id: 'acc_1', name: null }, { name: 'no id' }],
+      }).members,
+    ).toEqual([{ id: 'acc_1', name: null }]);
+    expect(
+      teamAuditResponseSchema.parse({
+        entries: [
+          {
+            viewerAccountId: 'acc_mod',
+            viewerName: 'Mo',
+            memberAccountId: 'acc_1',
+            memberName: null,
+            what: 'wallet',
+            at: 1_790_000_000,
+          },
+          { viewerAccountId: 'acc_mod', memberAccountId: 'acc_1', what: 'other', at: 1 },
+        ],
+        nextCursor: 'c9',
+      }),
+    ).toEqual({
+      entries: [
+        {
+          viewerAccountId: 'acc_mod',
+          viewerName: 'Mo',
+          memberAccountId: 'acc_1',
+          memberName: null,
+          what: 'wallet',
+          at: 1_790_000_000_000,
+        },
+      ],
+      nextCursor: 'c9',
+    });
   });
 });

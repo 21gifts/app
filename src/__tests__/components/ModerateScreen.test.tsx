@@ -150,6 +150,8 @@ describe('ModerateScreen', () => {
     expect(screen.queryByRole('link', { name: 'Moderators chat group' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Handbook' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Show payout per person' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Member data' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Access log' })).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -202,7 +204,21 @@ describe('ModerateScreen', () => {
       expect(
         screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href'),
       ).toBe('/moderate/payouts');
+      expect(screen.getByRole('link', { name: 'Member data' }).getAttribute('href')).toBe(
+        '/moderate/members',
+      );
       expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['founder', 'initiator', 'moderator'] as const)(
+    'shows Access log to a %s',
+    (role) => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role } });
+      renderWithLocale(<ModerateScreen />);
+      expect(screen.getByRole('link', { name: 'Access log' }).getAttribute('href')).toBe(
+        '/moderate/audit',
+      );
     },
   );
 

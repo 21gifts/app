@@ -112,7 +112,12 @@ import {
   startPasskeyAuthentication,
   startPasskeyRegistration,
   startPasskeySeed,
+  fetchTeamAudit,
+  fetchTeamMemberEvents,
+  fetchTeamMemberWallet,
+  searchTeamMembers,
 } from '@/lib/api';
+import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 
 const account = {
@@ -6005,5 +6010,145 @@ describe('postLnurlInvoice', () => {
     await expect(relayReason(postLnurlInvoice('sess', 'bob@example.com', 21_000))).resolves.toBe(
       'failed',
     );
+  });
+});
+
+describe('team access fetchers', () => {
+  const PHRASE =
+    'abandon ability able about above absent absorb abstract absurd abuse access accident';
+  const WALLET = {
+    balance: { balanceSats: 21_000, syncedAt: 1_790_000_000_000 },
+    summary: { inSats: 30_000, outSats: 9_000, feeSats: 10, categories: [] },
+    payments: [],
+    nextCursor: null,
+  };
+
+  afterEach(() => {
+    clearSessionPhrase();
+  });
+
+  it('searchTeamMembers sends the typed text and returns the members', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { members: [{ id: 'acc_ada', name: 'Ada', username: 'ada' }, { id: 7 }] },
+    });
+    await expect(searchTeamMembers('sess', 'Ada L')).resolves.toEqual([
+      { id: 'acc_ada', name: 'Ada', username: 'ada' },
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith('/team/members?query=Ada+L', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('fetchTeamMemberWallet sends period, filters, and cursor', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: WALLET });
+    await expect(
+      fetchTeamMemberWallet('sess', 'acc/1', {
+        period: '7',
+        category: 'shop',
+        direction: 'out',
+        before: 'c1',
+      }),
+    ).resolves.toEqual(WALLET);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/team/members/acc%2F1/wallet?period=7&category=shop&direction=out&before=c1',
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('fetchTeamMemberWallet leaves out empty filters', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: WALLET });
+    await fetchTeamMemberWallet('sess', 'acc_1', {
+      period: 'all',
+      category: null,
+      direction: null,
+      before: null,
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/team/members/acc_1/wallet?period=all');
+  });
+
+  it('fetchTeamMemberEvents and fetchTeamAudit add the cursor only when given', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { events: [], entries: [], nextCursor: null },
+    });
+    await fetchTeamMemberEvents('sess', 'acc_1', null);
+    await fetchTeamMemberEvents('sess', 'acc_1', 'c2');
+    await fetchTeamAudit('sess', null);
+    await fetchTeamAudit('sess', 'c3');
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      '/team/members/acc_1/events',
+      '/team/members/acc_1/events?before=c2',
+      '/team/audit',
+      '/team/audit?before=c3',
+    ]);
+  });
+
+  it('returns null on 403 so the screen can say the page is not for this role', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
+    await expect(searchTeamMembers('sess', 'a')).resolves.toBeNull();
+    await expect(
+      fetchTeamMemberWallet('sess', 'acc_1', {
+        period: '30',
+        category: null,
+        direction: null,
+        before: null,
+      }),
+    ).resolves.toBeNull();
+    await expect(fetchTeamMemberEvents('sess', 'acc_1', null)).resolves.toBeNull();
+    await expect(fetchTeamAudit('sess', null)).resolves.toBeNull();
+  });
+
+  it('throws visitor copy on another status, an invalid body, or a network failure', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(searchTeamMembers('sess', 'a')).rejects.toThrow(
+      'Could not search members. Please try again.',
+    );
+    await expect(fetchTeamAudit('sess', null)).rejects.toThrow(
+      'Could not load the access log. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { events: 'nope' } });
+    await expect(fetchTeamMemberEvents('sess', 'acc_1', null)).rejects.toThrow(
+      'Could not load the activity. Please try again.',
+    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    await expect(
+      fetchTeamMemberWallet('sess', 'acc_1', {
+        period: '30',
+        category: null,
+        direction: null,
+        before: null,
+      }),
+    ).rejects.toThrow('Could not load the wallet data. Please try again.');
+  });
+
+  it('sends no body and nothing from the recovery phrase in tab memory', async () => {
+    rememberSessionPhrase(PHRASE);
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...WALLET, members: [], events: [], entries: [] },
+    });
+    await searchTeamMembers('sess', 'ada');
+    await fetchTeamMemberWallet('sess', 'acc_1', {
+      period: '30',
+      category: null,
+      direction: null,
+      before: null,
+    });
+    await fetchTeamMemberEvents('sess', 'acc_1', null);
+    await fetchTeamAudit('sess', null);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    for (const [url, init] of fetchMock.mock.calls as [string, RequestInit][]) {
+      expect(init.body).toBeUndefined();
+      expect(init.method).toBeUndefined();
+      expect(Object.keys(init.headers as Record<string, string>)).toEqual(['Authorization']);
+      const sent = `${url} ${JSON.stringify(init)}`;
+      for (const word of PHRASE.split(' ')) {
+        expect(sent).not.toContain(word);
+      }
+    }
   });
 });
