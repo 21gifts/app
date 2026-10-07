@@ -1284,9 +1284,13 @@ export function MemberProfileScreen({
     onPaySubmit: handlePaySubmit,
     onPayCancel: handlePayCancel,
     viewerAccountId: account?.id ?? null,
-    onRepay: (messageId: string): void => {
-      startRepaymentRef.current(messageId);
-    },
+    ...(factsOnly
+      ? {}
+      : {
+          onRepay: (messageId: string): void => {
+            startRepaymentRef.current(messageId);
+          },
+        }),
     expandedId,
     onToggleExpand: handleToggleExpand,
     replies: expandedId === null ? null : replies,

@@ -4174,6 +4174,18 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByRole('button', { name: "Pay today's repayment" })).toBeNull();
   });
 
+  it("does not show Pay today's repayment on the author's own profile facts", async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    renderWithLocale(
+      <MemberProfileScreen factsOnly profile={profileWithNote} received={[]} donated={[]} />,
+    );
+    await openPostsShowingNote(fundedCredit());
+    expect(screen.queryByRole('button', { name: "Pay today's repayment" })).toBeNull();
+  });
+
   it('pays today repayment and opens requirements when the author is missing one', async () => {
     useAuthStore.setState({
       session: 'sess',
