@@ -4096,7 +4096,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: WalletFooterActions
 
 - **Purpose:** The wallet's two large labeled buttons in the shell footer (`AppShellFooter`, outside the scrollport, so they stay while the page scrolls): **Receive** on the left (`wallet.receive`, lucide `ArrowDownRight`, pointing in) and **Send** on the right (`wallet.sendButton`, lucide `ArrowUpRight`), equal `Button size="lg"` (`min-h-14 text-base`) in a `max-w-sm` two-column grid with `pt-2`. Above them an `aria-hidden`, `pointer-events-none` 18px fade with a light blur (`-inset-x-5 bottom-full h-[18px] bg-gradient-to-t from-app-card to-transparent backdrop-blur-[1.5px]`, masked to fade out) lets the page end softly. Below 360px the icons hide and the side padding is `px-2`, so long translations fit at 320px.
-- **Inputs:** `onReceive`, `onSend`, `sendDisabled`, and optional `focus` (`receive` | `send` | `null`): when the buttons come back after a view closed, that button takes the focus.
+- **Inputs:** `onReceive`, `onSend`, `sendDisabled`, and optional `focus` (`receive` | `send` | `null`): when the buttons come back after a view closed, that button takes the focus, or **Receive** when **Send** is disabled by then (the wallet stopped being ready while Send was open).
 - **Returns / side effects:** The footer registration. No network.
 - **Used by:** `WalletScreenView`, `WelcomeScreen`.
 

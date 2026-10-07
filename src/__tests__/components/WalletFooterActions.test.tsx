@@ -62,4 +62,12 @@ describe('WalletFooterActions', () => {
     );
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Receive' }));
   });
+
+  it('focuses Receive when Send is disabled by the time Send closed, and keeps it when Send comes back', () => {
+    const props = { onReceive: vi.fn(), onSend: vi.fn(), focus: 'send' as const };
+    const view = renderWithLocale(<WalletFooterActions {...props} sendDisabled />);
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Receive' }));
+    view.rerender(<WalletFooterActions {...props} sendDisabled={false} />);
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Receive' }));
+  });
 });
