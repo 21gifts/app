@@ -1272,6 +1272,41 @@ describe('MemberHabits', () => {
     expect(bodies[1]).toMatchObject({ action: 'edit', name: 'Run' });
   });
 
+  it('keeps another habit open while one archive confirms', async () => {
+    let posts = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          return json({ ok: true });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const editName = screen.getAllByLabelText('Name')[0];
+    if (!(editName instanceof HTMLInputElement)) {
+      throw new Error('missing edit name');
+    }
+    fireEvent.change(editName, { target: { value: 'Kept' } });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[1] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+    expect(editName.value).toBe('Kept');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+  });
+
   it('does not replace a reload that a save already started', async () => {
     let posts = 0;
     let gets = 0;

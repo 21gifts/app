@@ -224,7 +224,7 @@ export function MemberHabits(): ReactElement {
   }
 
   function cancelEdit(habitId: string): void {
-    setEditingHabitId(null);
+    setEditingHabitId((current) => (current === habitId ? null : current));
     setEditByHabitId((current) => {
       const next = { ...current };
       delete next[habitId];
