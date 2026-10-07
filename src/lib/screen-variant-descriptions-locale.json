@@ -1297,7 +1297,7 @@
   "/welcome:reaction-pay-kept": {
     "de": "Dieselbe Seite. Der Satz ist eine Vorschau, kein deaktiviertes Feld Ihre Reaktion, und es gibt kein Feld Betrag.",
     "es": "La misma página. La frase es una vista previa, no un campo Tu reacción desactivado, y no hay campo Importe.",
-    "fil": "Ang parehong pahina. Ang pangungusap ay isang paunang tingin, hindi isang hindi pinaganang patlang Ang iyong reaksyon, at walang patlang na Halaga."
+    "fil": "Ang parehong pahina. Ang pangungusap ay isang paunang tingin, hindi isang hindi pinaganang patlang Iyong reaksyon, at walang patlang na Halaga."
   },
   "/members/[accountId]:posts-open-loan-tag-open": {
     "de": "Derselbe Beitrag wie posts-open-goal-credit, nachdem Darlehen gedrückt wurde. Eine Zeile unter dem Namen sagt, dass ein Darlehen zurückgezahlt wird.",
