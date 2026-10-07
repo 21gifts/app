@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { cameraStats, stubCamera } from './camera';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
+import { PRF_UNSUPPORTED_MESSAGE } from './no-prf';
 
 const WALLET_RATE_DAY_STATS = {
   totalSats: 100_000_000,
@@ -41,7 +42,7 @@ const WALLET_RATE_DAY_STATS = {
   },
 };
 
-/** Sign in an account that can unlock the in-app wallet (new balance tests only). */
+/** Sign in an account whose in-app wallet belongs to its seed passkey. */
 async function signInWalletEligible(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -71,6 +72,13 @@ async function signInWalletEligible(page: Page): Promise<void> {
         walletBackupSeenAt: 1,
         passkeyCredentialId: 'cred-seed',
       }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
     });
   });
 }
@@ -493,6 +501,177 @@ test('Function: WalletScreen — wallet heading is Wallet', async ({ page }) => 
   await expect(page).toHaveURL(/\/(wallet|login)/);
 });
 
+test('Function: WalletLoginCard — a locked wallet logs in in place without redirecting', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/wallet\?visual=balance-locked$/);
+});
+
+test('Function: useWalletOpen — Playwright builds count the signed-in wallet as open', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toHaveCount(0);
+});
+
+test('Function: walletGateApplies — the balance-locked pin applies the wallet gate', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+});
+
+test('Function: isWalletOpen — an unpinned Playwright wallet opens without a tab phrase', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toBeVisible();
+});
+
+test('Function: hydratesLocked — a held session gates wallet but leaves welcome as the guest forum', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+
+  await page.goto('/welcome?visual=balance-locked');
+  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Log in', exact: true })).toBeVisible();
+});
+
+/**
+ * Signs in a wallet account whose passkey gives no PRF output, with the
+ * login answering for another passkey than the seed, and counts the passkey
+ * prompts in `sessionStorage` (`e2e.credentialGets`).
+ */
+async function stubLoginWithoutPrf(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    sessionStorage.setItem('e2e.credentialGets', '0');
+    const pk = globalThis.PublicKeyCredential as unknown as {
+      parseRequestOptionsFromJSON?: unknown;
+    };
+    if (typeof pk === 'function' || (typeof pk === 'object' && pk !== null)) {
+      Object.defineProperty(pk, 'parseRequestOptionsFromJSON', {
+        value: undefined,
+        configurable: true,
+      });
+    }
+    const rawId = new Uint8Array(16).fill(5).buffer;
+    const assertion = {
+      id: 'BQUFBQUFBQUFBQUFBQUFBQ',
+      rawId,
+      type: 'public-key',
+      getClientExtensionResults: () => ({}),
+      response: {
+        clientDataJSON: new Uint8Array([123]).buffer,
+        authenticatorData: new Uint8Array([3]).buffer,
+        signature: new Uint8Array([4]).buffer,
+        userHandle: null,
+      },
+    };
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: async () => {
+          throw new DOMException('Not used here', 'NotAllowedError');
+        },
+        get: async (options?: CredentialRequestOptions) => {
+          const count = Number(sessionStorage.getItem('e2e.credentialGets') ?? '0') + 1;
+          sessionStorage.setItem('e2e.credentialGets', String(count));
+          // The credential ids each prompt asks for, as byte lists.
+          const asked = (options?.publicKey?.allowCredentials ?? []).map((cred) =>
+            Array.from(new Uint8Array(cred.id as ArrayBuffer)),
+          );
+          sessionStorage.setItem(`e2e.credentialGet${count}`, JSON.stringify(asked));
+          return assertion;
+        },
+      },
+    });
+  });
+  await signInWalletEligible(page);
+  const account = {
+    id: 'acc_e2e',
+    linkingKey: `02${'a'.repeat(62)}`,
+    role: 'basis',
+    name: 'Ada',
+    username: 'ada',
+    location: null,
+    lightningAddress: null,
+    lightningAddressVerified: false,
+    forumLawsDismissed: false,
+    createdAt: 1_700_000_000,
+    rulesAgreedAt: 1,
+    viewKey: 'a'.repeat(64),
+    aboutMe: null,
+    aboutMeHasPhoto: false,
+    setup: null,
+    missing: [],
+    walletRequired: true,
+    walletBackupSeenAt: 1,
+    // A real seed credential id (base64url), which the second prompt decodes.
+    passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
+  };
+  await page.route('**/auth/passkey/authenticate/begin', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        challengeId: 'ch-auth',
+        options: { challenge: 'aa', rpId: 'localhost', allowCredentials: [] },
+      }),
+    });
+  });
+  await page.route('**/auth/passkey/authenticate/finish', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ token: 'sess-e2e', account }),
+    });
+  });
+}
+
+/** Number of passkey prompts so far (see {@link stubLoginWithoutPrf}). */
+async function credentialGets(page: Page): Promise<number> {
+  return page.evaluate(() => Number(sessionStorage.getItem('e2e.credentialGets') ?? '0'));
+}
+
+test('Function: finishWalletOpen — after Log in, a passkey without PRF holds the session back', async ({
+  page,
+}) => {
+  await stubLoginWithoutPrf(page);
+  await page.goto('/wallet?visual=balance-locked');
+  const logIn = page.getByRole('button', { name: 'Log in', exact: true });
+  await expect(logIn).toBeVisible();
+  expect(await credentialGets(page)).toBe(0);
+  await logIn.click();
+  // Another passkey than the seed signed in without PRF output, so opening
+  // the wallet asks the seed passkey once, gets none either, and holds the
+  // session back with the sentence.
+  await expect(page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE })).toBeVisible();
+  await expect(logIn).toBeVisible();
+  await expect(page).toHaveURL(/\/wallet\?visual=balance-locked$/);
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+  expect(await credentialGets(page)).toBe(2);
+});
+
+test('Function: visualPin — an unknown pin is ignored', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=nope');
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toHaveCount(0);
+});
+
 test('Function: WalletPhraseScreen — phrase page is not the receive page', async ({ page }) => {
   await page.goto('/wallet/phrase');
   await expect(page).toHaveURL(/\/(wallet\/phrase|login)/);
@@ -535,25 +714,70 @@ test('wallet key unset shows no balance region', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toHaveCount(0);
   await expect(page.getByText('Advanced functions')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
 });
 
-test('wallet balance-locked pin shows unlock control', async ({ page }) => {
+test('balance-locked pin shows the login card in place of the wallet', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet?visual=balance-locked');
-  const region = page.getByRole('region', { name: 'Balance' });
-  await expect(region).toBeVisible();
-  await expect(region.getByText('Unlock your wallet to see your Bitcoin balance.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
-  // Locked, Send runs the same unlock first; the pinned unlock is inert, so nothing opens.
-  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
-  await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Unlock wallet' }).click();
-  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  // A held-back session counts as signed out: no signed-in Menu next to the card.
+  await expect(page.getByRole('button', { name: /^Menu/ })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/wallet\?visual=balance-locked$/);
+});
+
+test('Function: LogoutButton — logs a held-back session out from the login card', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked');
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
+});
+
+test('the login card on /setup/rules keeps the one top-left back arrow', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/setup/rules?visual=balance-locked');
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.locator('[data-app-chrome]').getByRole('link', { name: /^Back/ })).toHaveCount(
+    1,
+  );
+  await expect(page.getByRole('link', { name: /^Back/ })).toHaveCount(1);
+});
+
+test('balance-locked-prf-unsupported pin says this phone cannot hold a wallet', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked-prf-unsupported');
+  await expect(
+    page.getByRole('alert').filter({
+      hasText:
+        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+});
+
+test('balance-locked-error pin shows the login error above Log in', async ({ page }) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-locked-error');
+  const alert = page.getByRole('alert').filter({ hasText: /\S/ });
+  const login = page.getByRole('button', { name: 'Log in', exact: true });
+  await expect(alert).toHaveText('Something went wrong. Please try again.');
+  await expect(login).toBeVisible();
+  const alertBox = await alert.boundingBox();
+  const loginBox = await login.boundingBox();
+  expect(alertBox).not.toBeNull();
+  expect(loginBox).not.toBeNull();
+  expect((alertBox?.y ?? 0) + (alertBox?.height ?? 0)).toBeLessThanOrEqual(loginBox?.y ?? 0);
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
 });
 
 test('wallet balance-connecting pin shows pending status', async ({ page }) => {
@@ -745,17 +969,27 @@ test('Function: walletNeedsReload — error pin keeps Try again in place', async
   await expect(page).toHaveURL(/\/wallet\?visual=balance-error/);
 });
 
-test('Function: unlockWalletPhrase — locked pin shows Unlock wallet', async ({ page }) => {
-  await signInWalletEligible(page);
+test('Function: unlockWalletPhrase — a login with another passkey asks the seed passkey once', async ({
+  page,
+}) => {
+  await stubLoginWithoutPrf(page);
   await page.goto('/wallet?visual=balance-locked');
-  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+  await page.getByRole('button', { name: 'Log in', exact: true }).click();
+  await expect(page.getByRole('alert').filter({ hasText: PRF_UNSUPPORTED_MESSAGE })).toBeVisible();
+  // The login prompt, then exactly one prompt from the unlock, for the seed
+  // credential (`AQIDBAUGBwgJCgsMDQ4PEA` is the bytes 1 to 16).
+  expect(await credentialGets(page)).toBe(2);
+  expect(await page.evaluate(() => sessionStorage.getItem('e2e.credentialGet2'))).toBe(
+    JSON.stringify([Array.from({ length: 16 }, (_, i) => i + 1)]),
+  );
 });
 
-test('Function: canUnlockWallet — locked pin for eligible account', async ({ page }) => {
+test('Function: canUnlockWallet — eligible account is open in an unpinned Playwright build', async ({
+  page,
+}) => {
   await signInWalletEligible(page);
-  await page.goto('/wallet?visual=balance-locked');
-  await expect(page.getByRole('region', { name: 'Balance' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toBeVisible();
 });
 
 async function stubWalletRate(page: Page): Promise<void> {
@@ -782,10 +1016,10 @@ test('wallet key unset shows no send region', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
 });
 
-test('wallet balance pins other than ready show no send region', async ({ page }) => {
+test('wallet locked pin shows no send region', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet?visual=balance-locked');
-  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
 });
 
@@ -1418,7 +1652,7 @@ test('wallet Receive shows the QR, the address, Copy, and Set an amount; Back re
 }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await signInWalletEligible(page);
-  await page.goto('/wallet?visual=balance-locked');
+  await page.goto('/wallet?visual=balance-ready');
   await page.getByRole('button', { name: 'Receive' }).click();
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
   await expect(page.getByText('ada@21.gifts')).toBeVisible();
@@ -1429,8 +1663,8 @@ test('wallet Receive shows the QR, the address, Copy, and Set an amount; Back re
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('ada@21.gifts');
   await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible({ timeout: 5_000 });
   await page.getByRole('link', { name: 'Back to the forum' }).click();
-  await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
-  await expect(page).toHaveURL(/\/wallet\?visual=balance-locked$/);
+  await expect(page.getByRole('region', { name: 'Balance' })).toBeVisible();
+  await expect(page).toHaveURL(/\/wallet\?visual=balance-ready$/);
 });
 
 test('wallet balance without a usable rate shows only bitcoin and cannot be tapped', async ({

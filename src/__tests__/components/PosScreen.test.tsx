@@ -8,6 +8,9 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 const setup = vi.hoisted(() => ({ failed: false, retry: vi.fn() }));
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
+// A member on the till has the wallet open, so the account's amount unit applies.
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => true }));
+
 vi.mock('@/hooks/useWalletSetup', async () => {
   const { needsWalletSetup } = await import('@/lib/wallet/wallet-setup');
   // `due` follows the signed-in account, as the real hook does.

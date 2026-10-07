@@ -2544,6 +2544,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos/amount:fiat",
+    "label": "/pos/amount fiat",
+    "visual": "state-pos-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos/amount:fiat-no-rate",
+    "label": "/pos/amount fiat-no-rate",
+    "visual": "state-pos-amount-fiat-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos/amount:cannot-convert",
+    "label": "/pos/amount cannot-convert",
+    "visual": "state-pos-cannot-convert",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos/amount:create-outside",
     "label": "/pos/amount create-outside",
     "visual": "state-pos-create-outside",
