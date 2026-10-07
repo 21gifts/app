@@ -1,7 +1,6 @@
 'use client';
 
 import { Gift, Send, Trash2 } from 'lucide-react';
-import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
 import {
   ForumPaySheet,
@@ -199,14 +198,6 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
             </IconButton>
           </div>
         </SundayWritingGate>
-      ) : null}
-      {session === null ? (
-        <Link
-          href="/login"
-          className="text-sm font-medium text-app-fg underline underline-offset-2"
-        >
-          {t('habit.login')}
-        </Link>
       ) : null}
     </div>
   );

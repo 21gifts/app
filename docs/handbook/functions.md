@@ -4813,7 +4813,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HabitComments
 
-- **Purpose:** Public comments on one habit. An empty list says there are no comments yet. A signed-out visitor gets **Sign in to comment**. A signed-in account gets **Write a comment** and **Post** inside `SundayWritingGate`. Delete is the same inline confirm as a forum note and only when the account is at least initiator, also inside that gate, and sends `Time-Zone`. **Send Bitcoin** on someone else's comment uses `ForumPaySheet` inside the zap gate and sends `Time-Zone`. Archived habits keep this block.
+- **Purpose:** Public comments on one habit. An empty list says there are no comments yet. A signed-out visitor uses the header **Log in** and gets no second sign-in link. A signed-in account gets **Write a comment** and **Post** inside `SundayWritingGate`. Delete is the same inline confirm as a forum note and only when the account is at least initiator, also inside that gate, and sends `Time-Zone`. **Send Bitcoin** on someone else's comment uses `ForumPaySheet` inside the zap gate and sends `Time-Zone`. Archived habits keep this block.
 - **Inputs:** The habit, the viewer account and session, the comment draft, and the pay-sheet state owned by `MemberHabits`.
 - **Returns / side effects:** The comment block. Posts nothing itself; `MemberHabits` posts comment, deleteComment, and invoice.
 - **Used by:** `MemberHabits`.

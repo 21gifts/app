@@ -87,12 +87,10 @@ afterEach(() => {
 });
 
 describe('HabitComments', () => {
-  it('offers login and hides the composer when signed out', () => {
+  it('hides the composer and offers no second sign-in link when signed out', () => {
     renderComments({ account: null, session: null });
     expect(screen.getByText('No comments yet.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Sign in to comment' }).getAttribute('href')).toBe(
-      '/login',
-    );
+    expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Post' })).toBeNull();
   });
 

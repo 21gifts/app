@@ -178,9 +178,7 @@ describe('MemberHabits', () => {
     expect(screen.queryByText(/secret/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Achieved' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
-    const signIn = screen.getAllByRole('link', { name: 'Sign in to comment' });
-    expect(signIn).toHaveLength(3);
-    expect(signIn[0]?.getAttribute('href')).toBe('/login');
+    expect(screen.queryByRole('link', { name: 'Sign in to comment' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add habit' })).toBeNull();
     expect(screen.queryByLabelText('Write a comment')).toBeNull();
     expect(screen.queryByText(/Monday at 16:00/)).toBeNull();
