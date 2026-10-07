@@ -29,15 +29,17 @@ export interface UseWalletPanelResult {
   shown: WalletPanel;
   /** Opens Receive. */
   openReceive: () => void;
-  /**
-   * Opens Send while the wallet is ready. While it is locked, runs the
-   * existing unlock first and opens Send once the wallet is ready.
-   */
+  /** Opens Send while the wallet is ready. */
   openSend: () => void;
   /** The footer button to focus when the page comes back (the view that just closed), or `null`. */
   returnFocus: 'receive' | 'send' | null;
-  /** Whether Send cannot be pressed now (no send flow, or the wallet is neither ready nor locked). */
+  /** Whether Send cannot be pressed now (no send flow, or the wallet is not ready). */
   sendDisabled: boolean;
+  /**
+   * Whether Receive cannot be pressed now: the one-time wallet setup is still
+   * due or gave up, so the account's address is not registered yet.
+   */
+  receiveDisabled: boolean;
   /** Whether the Send input step shows its manual-entry sheet over the camera. */
   manualEntry: boolean;
   /** Opens or closes the manual-entry sheet. */
@@ -77,9 +79,9 @@ function isSendPinned(send: UseWalletSendResult): boolean {
 
 /**
  * Which wallet view (Receive or Send) shows over a page, shared by `/wallet`
- * and `/welcome`. Send opens only while the wallet is ready; pressed while
- * the wallet is locked, it runs the existing unlock and opens once the wallet
- * is ready (an unlock that fails or is dismissed opens nothing). The Send
+ * and `/welcome`. Send opens only while the wallet is ready (a signed-in
+ * member's wallet is open, so there is no unlock step), and Receive waits
+ * until the account's address is registered (`canReceive`). The Send
  * view stays while a send is in flight, its Sent line shows, or a send alert
  * is up. Leaving the Sent line (Done or Back) returns to the page, and a
  * chosen Send view closes when the wallet stops being ready. Both adjust
@@ -99,10 +101,8 @@ export function useWalletPanel({
 }: UseWalletPanelOptions): UseWalletPanelResult {
   const status: WalletStatus | undefined = wallet?.status;
   const walletReady = status === 'ready';
-  const unlock = wallet?.unlock;
   const [panel, setPanel] = useState<WalletPanel>('none');
   const [manual, setManual] = useState(false);
-  const [sendAfterUnlock, setSendAfterUnlock] = useState(false);
   const sendStep = send?.state.step;
   const [seen, setSeen] = useState({ sendStep, status });
   if (seen.sendStep !== sendStep || seen.status !== status) {
@@ -114,17 +114,6 @@ export function useWalletPanel({
     }
     if ((seen.sendStep === 'sent' && sendStep !== 'sent') || (!walletReady && panel === 'send')) {
       setPanel('none');
-    }
-    if (sendAfterUnlock) {
-      if (walletReady) {
-        setSendAfterUnlock(false);
-        setManual(false);
-        setPanel('send');
-      } else if (status !== 'connecting' && status !== 'locked') {
-        setSendAfterUnlock(false);
-      } else if (seen.status === 'connecting' && status === 'locked') {
-        setSendAfterUnlock(false);
-      }
     }
   }
   const shown: WalletPanel =
@@ -167,7 +156,6 @@ export function useWalletPanel({
 
   const openReceive = useCallback((): void => {
     remember();
-    setSendAfterUnlock(false);
     setManual(false);
     setPanel('receive');
   }, [remember]);
@@ -178,15 +166,10 @@ export function useWalletPanel({
     }
     remember();
     setManual(false);
-    if (status === 'locked' && unlock !== undefined) {
-      setSendAfterUnlock(true);
-      unlock();
-      return;
-    }
     if (walletReady) {
       setPanel('send');
     }
-  }, [send, status, unlock, walletReady, remember]);
+  }, [send, walletReady, remember]);
 
   useEffect(() => {
     if (openPinnedSend && visualPin()?.startsWith('send-') === true) {
@@ -221,7 +204,6 @@ export function useWalletPanel({
       send.abandon();
     }
     savedScroll.current = 0;
-    setSendAfterUnlock(false);
     setManual(false);
     setPanel('none');
   };
@@ -231,7 +213,8 @@ export function useWalletPanel({
     returnFocus: shown === 'none' ? lastView : null,
     openReceive,
     openSend,
-    sendDisabled: send === undefined || !(walletReady || status === 'locked'),
+    sendDisabled: send === undefined || !walletReady,
+    receiveDisabled: wallet !== undefined && !wallet.canReceive,
     manualEntry,
     setManualEntry: setManual,
     stepBack,

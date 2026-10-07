@@ -1,33 +1,19 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WALLET_VISUAL_FIXTURE_SATS, useWallet } from '@/hooks/useWallet';
-import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
-import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
+import type { Account } from '@/lib/api-types';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { connectWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
-vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
-  return {
-    ...actual,
-    unlockWalletPhrase: vi.fn(),
-  };
-});
+vi.mock('@/lib/wallet/wallet-service', () => ({ connectWallet: vi.fn() }));
+vi.mock('@/lib/wallet/wallet-sdk', () => ({ walletNeedsReload: vi.fn(() => false) }));
 
-vi.mock('@/lib/wallet/wallet-service', () => ({
-  connectWallet: vi.fn(),
-}));
-
-vi.mock('@/lib/wallet/wallet-sdk', () => ({
-  walletNeedsReload: vi.fn(() => false),
-}));
-
-const account = {
+const account: Account = {
   id: 'acc_1',
   linkingKey: null,
-  role: 'basis' as const,
+  role: 'basis',
   name: 'Ada',
   username: 'ada',
   location: null,
@@ -61,305 +47,147 @@ function setPlaywrightBuild(): void {
 
 beforeEach(() => {
   window.history.replaceState({}, '', '/wallet');
-  clearSessionPhrase();
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
-  useAuthStore.setState({ session: 'token', account });
+  useAuthStore.setState({ session: 'token', account, lockedSession: null });
   useWalletStore.setState({ setupFailedSession: null });
   setWallet('locked');
-  vi.mocked(unlockWalletPhrase).mockReset().mockResolvedValue('unlocked');
   vi.mocked(connectWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
 afterEach(() => {
   cleanup();
-  clearSessionPhrase();
   window.history.replaceState({}, '', originalHref);
-  if (ORIGINAL_E2E_NOW === undefined) {
-    delete process.env.NEXT_PUBLIC_E2E_NOW;
-  } else {
-    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
-  }
-  if (ORIGINAL_BREEZ === undefined) {
-    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
-  } else {
-    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
-  }
+  if (ORIGINAL_E2E_NOW === undefined) delete process.env.NEXT_PUBLIC_E2E_NOW;
+  else process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  if (ORIGINAL_BREEZ === undefined) delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  else process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
 });
 
-describe('useWallet', () => {
-  it.each([
-    ['balance-locked', 'locked', null],
-    ['balance-connecting', 'connecting', null],
-    ['balance-ready', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-    ['balance-error', 'error', null],
-    ['history-empty', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-    ['history-rows', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-    ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-    ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-    ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-    ['send-alert-locked', 'locked', null],
-  ] as const)('pins %s to %s', (visual, status, balanceSats) => {
+const PINS = [
+  ['balance-connecting', 'connecting', null],
+  ['balance-ready', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['history-empty', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['history-rows', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['balance-error', 'error', null],
+  ['balance-setup-failed', 'error', null],
+  ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['send-alert-locked', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+] as const;
+
+describe('useWallet visual pins', () => {
+  it.each(PINS)('pins %s to %s in a Playwright build', (visual, status, balanceSats) => {
     setPlaywrightBuild();
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
     const { result } = renderHook(() => useWallet());
     expect(result.current.status).toBe(status);
     expect(result.current.balanceSats).toBe(balanceSats);
-    expect(result.current.prfUnsupported).toBe(false);
-    expect(result.current.setupFailed).toBe(false);
+    expect(result.current.setupFailed).toBe(visual === 'balance-setup-failed');
+    expect(result.current.canReceive).toBe(visual !== 'balance-setup-failed');
   });
 
-  it('pins balance-prf-unsupported to the no-PRF error in a Playwright build', () => {
-    setPlaywrightBuild();
-    window.history.replaceState({}, '', '/wallet?visual=balance-prf-unsupported');
-    const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('error');
-    expect(result.current.prfUnsupported).toBe(true);
-    expect(result.current.setupFailed).toBe(false);
-  });
-
-  it('pins balance-setup-failed to the setup error', () => {
-    setPlaywrightBuild();
-    window.history.replaceState({}, '', '/wallet?visual=balance-setup-failed');
-    const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('error');
-    expect(result.current.prfUnsupported).toBe(false);
-    expect(result.current.setupFailed).toBe(true);
-  });
-
-  it('ignores balance-prf-unsupported in a production build', () => {
-    window.history.replaceState({}, '', '/wallet?visual=balance-prf-unsupported');
-    setWallet('ready', 42);
-    const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('ready');
-    expect(result.current.balanceSats).toBe(42);
-    expect(result.current.prfUnsupported).toBe(false);
-  });
-
-  it('ignores visual pins outside a Playwright build', async () => {
-    window.history.replaceState({}, '', '/wallet?visual=balance-ready');
-    setWallet('disabled');
-    const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('disabled');
-    expect(result.current.balanceSats).toBeNull();
-    await act(async () => {
-      result.current.unlock();
-      await Promise.resolve();
-    });
-    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
-  });
-
-  it('ignores a Playwright build without a visual value', () => {
-    setPlaywrightBuild();
+  it.each(PINS.map(([visual]) => visual))('ignores %s in a production build', (visual) => {
+    window.history.replaceState({}, '', `/wallet?visual=${visual}`);
     setWallet('disabled');
     const { result } = renderHook(() => useWallet());
     expect(result.current.status).toBe('disabled');
   });
 
-  it('ignores an unrelated visual value', () => {
+  it('ignores a missing or unrelated visual value', () => {
     setPlaywrightBuild();
+    setWallet('disabled');
+    expect(renderHook(() => useWallet()).result.current.status).toBe('disabled');
+    cleanup();
     window.history.replaceState({}, '', '/wallet?visual=unrelated');
-    setWallet('ready', 42);
-    const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('ready');
-    expect(result.current.balanceSats).toBe(42);
+    expect(renderHook(() => useWallet()).result.current.status).toBe('disabled');
   });
 
-  it('stays disabled when the store is disabled', () => {
-    setWallet('disabled', 42);
-    const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('disabled');
-    expect(result.current.balanceSats).toBeNull();
-  });
-
-  it('stays disabled when the account cannot unlock', () => {
-    useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
-    setWallet('ready', 42);
-    const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('disabled');
-    expect(result.current.balanceSats).toBeNull();
-  });
-
-  it('shows connecting during unlock and returns to locked after success', async () => {
-    let finish: ((result: 'unlocked') => void) | undefined;
-    vi.mocked(unlockWalletPhrase).mockReturnValueOnce(
-      new Promise<'unlocked'>((resolve) => {
-        finish = resolve;
-      }),
-    );
-    const { result } = renderHook(() => useWallet());
-    act(() => result.current.unlock());
-    expect(result.current.status).toBe('connecting');
-    await act(async () => {
-      finish?.('unlocked');
-      await Promise.resolve();
-    });
-    expect(result.current.status).toBe('locked');
-  });
-
-  it('returns to locked after a cancelled unlock', async () => {
-    vi.mocked(unlockWalletPhrase).mockResolvedValueOnce('cancelled');
-    const { result } = renderHook(() => useWallet());
-    await act(async () => {
-      result.current.unlock();
-      await Promise.resolve();
-    });
-    expect(result.current.status).toBe('locked');
-  });
-
-  it('shows an error after a failed unlock', async () => {
-    vi.mocked(unlockWalletPhrase).mockResolvedValueOnce('failed');
-    const { result } = renderHook(() => useWallet());
-    await act(async () => {
-      result.current.unlock();
-      await Promise.resolve();
-    });
-    expect(result.current.status).toBe('error');
-    expect(result.current.prfUnsupported).toBe(false);
-  });
-
-  it('shows the no-PRF error when the passkey gives no PRF output', async () => {
-    vi.mocked(unlockWalletPhrase).mockResolvedValueOnce('noPrf');
-    const { result } = renderHook(() => useWallet());
-    await act(async () => {
-      result.current.unlock();
-      await Promise.resolve();
-    });
-    expect(result.current.status).toBe('error');
-    expect(result.current.prfUnsupported).toBe(true);
-    vi.mocked(unlockWalletPhrase).mockResolvedValueOnce('unlocked');
-    await act(async () => {
-      result.current.unlock();
-      await Promise.resolve();
-    });
-    expect(result.current.prfUnsupported).toBe(false);
-  });
-
-  it('runs only one unlock ceremony after a double click', async () => {
-    let finish: ((result: 'unlocked') => void) | undefined;
-    vi.mocked(unlockWalletPhrase).mockReturnValueOnce(
-      new Promise<'unlocked'>((resolve) => {
-        finish = resolve;
-      }),
-    );
-    const { result } = renderHook(() => useWallet());
-    act(() => {
-      result.current.unlock();
-      result.current.unlock();
-    });
-    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
-    await act(async () => {
-      finish?.('unlocked');
-      await Promise.resolve();
-    });
-  });
-
-  it('retries by unlocking when tab memory has no phrase', async () => {
-    const { result } = renderHook(() => useWallet());
-    await act(async () => {
-      result.current.retry();
-      await Promise.resolve();
-    });
-    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
-    expect(connectWallet).not.toHaveBeenCalled();
-  });
-
-  it('retries by connecting when tab memory has a phrase', () => {
-    rememberSessionPhrase(
-      'abandon ability able about above absent absorb abstract absurd abuse access accident',
-    );
-    const { result } = renderHook(() => useWallet());
-    act(() => result.current.retry());
-    expect(connectWallet).toHaveBeenCalledTimes(1);
-    expect(unlockWalletPhrase).not.toHaveBeenCalled();
-  });
-
-  it('retries by reloading when the SDK failed to load', () => {
-    rememberSessionPhrase(
-      'abandon ability able about above absent absorb abstract absurd abuse access accident',
-    );
-    vi.mocked(walletNeedsReload).mockReturnValue(true);
-    const previous = window.location;
-    const reload = vi.fn();
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: {
-        href: previous.href,
-        search: previous.search,
-        reload,
-      },
-    });
-    const { result } = renderHook(() => useWallet());
-    act(() => result.current.retry());
-    Object.defineProperty(window, 'location', { configurable: true, value: previous });
-    expect(reload).toHaveBeenCalledTimes(1);
-    expect(connectWallet).not.toHaveBeenCalled();
-    expect(unlockWalletPhrase).not.toHaveBeenCalled();
-  });
-
-  it('retries by connecting when the SDK does not need a reload', () => {
-    rememberSessionPhrase(
-      'abandon ability able about above absent absorb abstract absurd abuse access accident',
-    );
-    vi.mocked(walletNeedsReload).mockReturnValue(false);
-    const { result } = renderHook(() => useWallet());
-    act(() => result.current.retry());
-    expect(connectWallet).toHaveBeenCalledTimes(1);
-    expect(unlockWalletPhrase).not.toHaveBeenCalled();
-  });
-
-  it('does not unlock or connect under a visual pin', () => {
+  it('leaves retry inert while pinned', () => {
     setPlaywrightBuild();
     window.history.replaceState({}, '', '/wallet?visual=balance-error');
-    rememberSessionPhrase(
-      'abandon ability able about above absent absorb abstract absurd abuse access accident',
-    );
     const { result } = renderHook(() => useWallet());
-    act(() => {
-      result.current.unlock();
-      result.current.retry();
-    });
-    expect(unlockWalletPhrase).not.toHaveBeenCalled();
+    act(() => result.current.retry());
+    expect(walletNeedsReload).not.toHaveBeenCalled();
     expect(connectWallet).not.toHaveBeenCalled();
   });
+});
 
-  it('follows the store from connecting to ready with its balance', () => {
-    setWallet('connecting');
+describe('useWallet live state', () => {
+  it('is disabled when the store is disabled or the account cannot hold a wallet', () => {
+    setWallet('disabled', 42);
+    let view = renderHook(() => useWallet());
+    expect(view.result.current).toMatchObject({
+      status: 'disabled',
+      balanceSats: null,
+      setupFailed: false,
+      canReceive: true,
+    });
+    view.unmount();
+    useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
+    setWallet('ready', 42);
+    view = renderHook(() => useWallet());
+    expect(view.result.current.status).toBe('disabled');
+  });
+
+  it('maps an unstarted store to connecting and follows later store state', () => {
     const { result } = renderHook(() => useWallet());
-    const unlock = result.current.unlock;
     const retry = result.current.retry;
     expect(result.current.status).toBe('connecting');
     act(() => setWallet('ready', 21_000));
     expect(result.current.status).toBe('ready');
     expect(result.current.balanceSats).toBe(21_000);
-    expect(result.current.unlock).toBe(unlock);
     expect(result.current.retry).toBe(retry);
   });
 
-  it('shows connecting while setup is due and the store is not locked', () => {
+  it('shows connecting and disables Receive while setup is due', () => {
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     setWallet('ready', 21_000);
     const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('connecting');
-    expect(result.current.balanceSats).toBeNull();
-    expect(result.current.setupFailed).toBe(false);
+    expect(result.current).toMatchObject({
+      status: 'connecting',
+      balanceSats: null,
+      setupFailed: false,
+      canReceive: false,
+    });
   });
 
-  it('shows the setup error after background setup failed for this session', () => {
+  it('shows the setup error and disables Receive after setup failed', () => {
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     useWalletStore.setState({ status: 'error', setupFailedSession: 'token' });
     const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('error');
-    expect(result.current.setupFailed).toBe(true);
-    expect(result.current.prfUnsupported).toBe(false);
+    expect(result.current).toMatchObject({
+      status: 'error',
+      balanceSats: null,
+      setupFailed: true,
+      canReceive: false,
+    });
   });
 
-  it('keeps the unlock view while a legacy account is still locked', () => {
-    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
-    useWalletStore.setState({ status: 'locked', setupFailedSession: 'token' });
+  it('retries by connecting when no reload is required', () => {
     const { result } = renderHook(() => useWallet());
-    expect(result.current.status).toBe('locked');
-    expect(result.current.setupFailed).toBe(false);
+    act(() => result.current.retry());
+    expect(walletNeedsReload).toHaveBeenCalledTimes(1);
+    expect(connectWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads instead of connecting when the wallet SDK requires it', () => {
+    vi.mocked(walletNeedsReload).mockReturnValue(true);
+    const previous = window.location;
+    const reload = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { href: previous.href, search: previous.search, reload },
+    });
+    try {
+      const { result } = renderHook(() => useWallet());
+      act(() => result.current.retry());
+      expect(reload).toHaveBeenCalledTimes(1);
+      expect(connectWallet).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(window, 'location', { configurable: true, value: previous });
+    }
   });
 });

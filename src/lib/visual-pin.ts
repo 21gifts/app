@@ -2,9 +2,10 @@ import { getE2eNow } from '@/lib/config';
 
 /**
  * Name of the `?visual=` screenshot pin, honoured only in a Playwright build
- * (`getE2eNow()` set).
+ * (`getE2eNow()` set). The wallet balance, panel, payment, send, pay slot,
+ * setup note, and login gate pins are read through this one check.
  *
- * @returns The pin name, or `null` (always `null` in a deployed build).
+ * @returns The pin name, or `null` (always `null` in a deployed build and during SSR).
  */
 export function visualPin(): string | null {
   /* v8 ignore next 3 -- SSR has no window */

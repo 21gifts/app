@@ -180,9 +180,7 @@ export function WalletScreenView({
             <WalletBalance
               status={wallet.status}
               balanceSats={wallet.balanceSats}
-              onUnlock={wallet.unlock}
               onRetry={wallet.retry}
-              prfUnsupported={wallet.prfUnsupported}
               setupFailed={wallet.setupFailed}
             />
           </div>
@@ -193,6 +191,7 @@ export function WalletScreenView({
         onReceive={panel.openReceive}
         onSend={panel.openSend}
         sendDisabled={panel.sendDisabled}
+        receiveDisabled={panel.receiveDisabled}
         focus={panel.returnFocus}
       />
     </div>

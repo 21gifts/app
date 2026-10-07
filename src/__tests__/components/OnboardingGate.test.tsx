@@ -7,12 +7,17 @@ import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const walletOpen = vi.hoisted(() => ({ value: true }));
 const replace = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { replace: typeof replace } => ({ replace }),
 }));
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
+vi.mock('@/components/WalletLoginCard', () => ({
+  WalletLoginCard: () => <p>wallet-login-card</p>,
+}));
 vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
@@ -65,6 +70,7 @@ const complete = {
 
 beforeEach(() => {
   replace.mockClear();
+  walletOpen.value = true;
   vi.mocked(loadSession).mockReturnValue(null);
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status: 'idle',
@@ -77,7 +83,7 @@ beforeEach(() => {
     error: null,
     nameError: null,
   });
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, lockedSession: null });
 });
 
 afterEach(() => {
@@ -93,6 +99,64 @@ describe('OnboardingGate', () => {
     );
     expect(screen.getByText('login-ui')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('keeps the login screen unaffected by a held-back session', () => {
+    useAuthStore.setState({ lockedSession: 'stored' });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('login-ui')).toBeTruthy();
+    expect(screen.queryByText('wallet-login-card')).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('keeps the login screen behavior when an active account wallet is not open yet', () => {
+    walletOpen.value = false;
+    useAuthStore.setState({ session: 'tok', account });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('login-ui')).toBeTruthy();
+    expect(screen.queryByText('wallet-login-card')).toBeNull();
+    expect(replace).toHaveBeenCalledWith('/setup/name');
+  });
+
+  it('shows the wallet login on a signed-in screen for a held-back session without redirecting', () => {
+    useAuthStore.setState({ lockedSession: 'stored' });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(screen.queryByText('profile-ui')).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('shows the wallet login for an account whose phrase is not open, then shows children', () => {
+    walletOpen.value = false;
+    useAuthStore.setState({ session: 'tok', account: complete });
+    const view = renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+
+    walletOpen.value = true;
+    view.rerender(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('profile-ui')).toBeTruthy();
+    expect(screen.queryByText('wallet-login-card')).toBeNull();
   });
 
   it('sends a signed-in visitor from login to the name screen', () => {
@@ -228,6 +292,18 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     expect(screen.getByText('welcome-ui')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('renders the guest welcome view when a stored session is held back', () => {
+    useAuthStore.setState({ lockedSession: 'stored' });
+    renderWithLocale(
+      <OnboardingGate screen="welcome" allowGuest>
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('welcome-ui')).toBeTruthy();
+    expect(screen.queryByText('wallet-login-card')).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
 

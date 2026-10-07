@@ -8,32 +8,28 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
+import type { WalletViewStatus } from '@/hooks/useWallet';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
-import type { WalletStatus } from '@/stores/wallet-store';
 
 /** Props for {@link WalletBalance}. */
 export interface WalletBalanceProps {
   /** Wallet state to render. */
-  status: WalletStatus;
+  status: WalletViewStatus;
   /** Current whole-sat balance, or `null` before it is available. */
   balanceSats: number | null;
-  /** Called by the labeled unlock control. */
-  onUnlock: () => void;
   /** Called by the labeled retry control. */
   onRetry: () => void;
-  /** In `error`, true when this phone or browser cannot hold the wallet (no PRF). */
-  prfUnsupported?: boolean;
   /** In `error`, true when the background wallet setup gave up (inline setup note). */
   setupFailed?: boolean;
 }
 
 /**
- * Wallet balance block for locked, connecting, ready, and error states. The
- * ready balance is a large ₿ figure; when the default fiat has a usable rate,
- * tapping it swaps which of ₿ and fiat is the large figure. An error from a
- * passkey without PRF output says that this phone or browser cannot hold a
- * 21.gifts wallet instead of the generic open error. An error because the
- * background wallet setup gave up shows the inline setup note instead.
+ * Wallet balance block for connecting, ready, and error states. There is no
+ * locked state: a signed-in member's wallet is open in this tab. The ready
+ * balance is a large ₿ figure; when the default fiat has a usable rate,
+ * tapping it swaps which of ₿ and fiat is the large figure. An error offers
+ * **Try again**; an error because the background wallet setup gave up shows
+ * the inline setup note instead.
  *
  * @param props - Wallet state and labeled control callbacks.
  * @returns The balance region, or `null` while the wallet feature is disabled.
@@ -41,9 +37,7 @@ export interface WalletBalanceProps {
 export function WalletBalance({
   status,
   balanceSats,
-  onUnlock,
   onRetry,
-  prfUnsupported = false,
   setupFailed = false,
 }: WalletBalanceProps): ReactElement | null {
   const { t } = useTranslations();
@@ -57,16 +51,7 @@ export function WalletBalance({
   }
 
   let body: ReactElement | null;
-  if (status === 'locked') {
-    body = (
-      <>
-        <p className="text-center text-sm text-app-muted">{t('wallet.locked')}</p>
-        <Button variant="primary" onClick={onUnlock}>
-          {t('wallet.unlock')}
-        </Button>
-      </>
-    );
-  } else if (status === 'connecting') {
+  if (status === 'connecting') {
     body = (
       <>
         <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
@@ -107,7 +92,7 @@ export function WalletBalance({
     body = (
       <>
         <p role="alert" className="text-center text-sm text-app-danger">
-          {t(prfUnsupported ? 'wallet.prfUnsupported' : 'wallet.balanceError')}
+          {t('wallet.balanceError')}
         </p>
         <Button onClick={onRetry}>{t('login.retry')}</Button>
       </>

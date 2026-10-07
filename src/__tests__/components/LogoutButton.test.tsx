@@ -42,6 +42,7 @@ beforeEach(() => {
   });
   useAuthStore.setState({
     session: 'tok',
+    lockedSession: null,
     account: {
       id: 'acc_1',
       linkingKey: null,
@@ -94,6 +95,25 @@ describe('LogoutButton', () => {
     });
     expect(disablePush).toHaveBeenCalledWith('tok');
     expect(useAuthStore.getState().account).toBeNull();
+    expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('disables push with a held-back session token', async () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'stored' });
+    renderWithLocale(<LogoutButton />);
+    fireEvent.click(screen.getByRole('button', { name: /log out/i }));
+    await waitFor(() => expect(clearSession).toHaveBeenCalled());
+    expect(disablePush).toHaveBeenCalledWith('stored');
+    expect(useAuthStore.getState().lockedSession).toBeNull();
+    expect(replace).toHaveBeenCalledWith('/login');
+  });
+
+  it('clears immediately when there is no active or held-back token', async () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: null });
+    renderWithLocale(<LogoutButton />);
+    fireEvent.click(screen.getByRole('button', { name: /log out/i }));
+    await waitFor(() => expect(clearSession).toHaveBeenCalled());
+    expect(disablePush).not.toHaveBeenCalled();
     expect(replace).toHaveBeenCalledWith('/login');
   });
 });

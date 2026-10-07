@@ -13,12 +13,11 @@ const showPhrase = vi.fn();
 const retry = vi.fn();
 const { walletState, useWalletMock } = vi.hoisted(() => {
   const state: UseWalletResult = {
-    status: 'locked',
+    status: 'connecting',
     balanceSats: null,
-    unlock: vi.fn(),
     retry: vi.fn(),
-    prfUnsupported: false,
     setupFailed: false,
+    canReceive: true,
   };
   return { walletState: state, useWalletMock: vi.fn((): UseWalletResult => state) };
 });
@@ -49,9 +48,10 @@ afterEach(() => {
   phraseState.view = 'activate';
   phraseState.words = [];
   phraseState.status = 'idle';
-  walletState.status = 'locked';
+  walletState.status = 'connecting';
   walletState.balanceSats = null;
   walletState.setupFailed = false;
+  walletState.canReceive = true;
   useWalletMock.mockClear();
 });
 

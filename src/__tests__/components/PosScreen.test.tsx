@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const setup = vi.hoisted(() => ({ failed: false, retry: vi.fn() }));
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
 vi.mock('@/hooks/useWalletSetup', () => ({
   useWalletSetup: () => setup,
@@ -43,6 +44,8 @@ const ACCOUNT = {
   lightningAddress: null,
   lightningAddressVerified: false,
   sparkWalletVerified: true,
+  walletRequired: true,
+  passkeyCredentialId: 'credential',
   forumLawsDismissed: false,
   createdAt: 1,
   rulesAgreedAt: 1_700_000_001,
@@ -70,6 +73,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 beforeEach(() => {
+  process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
   setup.failed = false;
   setup.retry.mockReset();
   useAuthStore.setState({ session: 'tok', account: ACCOUNT });
@@ -83,6 +87,8 @@ afterEach(() => {
   useAuthStore.setState({ session: null, account: null });
   vi.mocked(fetchGiftStats).mockReset();
   vi.mocked(fetchGiftStats).mockResolvedValue({ spendOverTime: [] } as never);
+  if (ORIGINAL_BREEZ === undefined) delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  else process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
   vi.unstubAllGlobals();
 });
 
@@ -665,6 +671,13 @@ describe('PosScreen', () => {
       expect(link.getAttribute('href')).toBe('/wallet');
       expect(screen.queryByRole('link', { name: 'Set a username first.' })).toBeNull();
       expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+      if (sparkWalletVerified === false) {
+        expect(screen.queryByText('alice@21.gifts')).toBeNull();
+        expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
+      } else {
+        expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+        expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
+      }
     }
   });
 
@@ -680,8 +693,19 @@ describe('PosScreen', () => {
       'Your wallet could not be set up yet.',
     );
     expect(screen.queryByRole('link', { name: 'Set up your wallet first.' })).toBeNull();
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(setup.retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the address and QR whenever setup reports failure', async () => {
+    setup.failed = true;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
+    renderWithLocale(<PosScreen />);
+    await screen.findByRole('heading', { name: 'Point of sale' });
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
   });
 
   it('does not ask for the wallet when the account has no username', async () => {

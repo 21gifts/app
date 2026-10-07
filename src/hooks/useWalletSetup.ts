@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { getE2eNow } from '@/lib/config';
+import { visualPin } from '@/lib/visual-pin';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { needsWalletSetup, retryWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
@@ -30,14 +30,7 @@ export interface UseWalletSetupResult {
  * @returns Whether a setup-note pin is set.
  */
 export function walletSetupPin(): boolean {
-  /* v8 ignore next 3 -- SSR has no window */
-  if (typeof window === 'undefined') {
-    return false;
-  }
-  if (getE2eNow() === null) {
-    return false;
-  }
-  return SETUP_FAILED_PINS.has(new URLSearchParams(window.location.search).get('visual') ?? '');
+  return SETUP_FAILED_PINS.has(visualPin() ?? '');
 }
 
 /**

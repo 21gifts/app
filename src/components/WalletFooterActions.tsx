@@ -14,6 +14,8 @@ export interface WalletFooterActionsProps {
   onSend: () => void;
   /** Whether Send is disabled. */
   sendDisabled: boolean;
+  /** Whether Receive is disabled (the account's address is not registered yet). */
+  receiveDisabled?: boolean;
   /** The button to focus when the buttons come back after a view closed, or `null`. */
   focus?: 'receive' | 'send' | null;
 }
@@ -26,15 +28,18 @@ export interface WalletFooterActionsProps {
  * edge. Below 360px the icons drop and the side padding shrinks so long
  * labels fit at 320px. When they come back after a view closed, the button
  * that opened it takes the focus again, or Receive when Send is disabled by
- * then. Used by `/wallet` and `/welcome`.
+ * then. Receive is disabled while the account's address is not registered
+ * yet (the one-time wallet setup is due or gave up). Used by `/wallet` and
+ * `/welcome`.
  *
- * @param props - Open handlers and whether Send is disabled.
+ * @param props - Open handlers and whether Send or Receive is disabled.
  * @returns The footer registration.
  */
 export function WalletFooterActions({
   onReceive,
   onSend,
   sendDisabled,
+  receiveDisabled = false,
   focus = null,
 }: WalletFooterActionsProps): ReactElement {
   const { t } = useTranslations();
@@ -66,6 +71,7 @@ export function WalletFooterActions({
           size="lg"
           className={buttonClass}
           icon={<ArrowDownRight aria-hidden="true" className={iconClass} />}
+          disabled={receiveDisabled}
           onClick={onReceive}
         >
           {t('wallet.receive')}

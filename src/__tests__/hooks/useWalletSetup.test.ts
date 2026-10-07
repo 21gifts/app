@@ -92,10 +92,13 @@ describe('walletSetupPin', () => {
     expect(walletSetupPin()).toBe(false);
   });
 
-  it('ignores setup pins in a production build', () => {
-    window.history.replaceState({}, '', '/wallet?visual=balance-setup-failed');
-    expect(walletSetupPin()).toBe(false);
-  });
+  it.each(['balance-setup-failed', 'wallet-pay-setup-failed', 'pos-setup-failed'])(
+    'ignores %s in a production build',
+    (visual) => {
+      window.history.replaceState({}, '', `/wallet?visual=${visual}`);
+      expect(walletSetupPin()).toBe(false);
+    },
+  );
 });
 
 describe('useWalletSetup', () => {

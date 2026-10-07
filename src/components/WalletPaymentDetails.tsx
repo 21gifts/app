@@ -265,9 +265,10 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
  * the technical details with Copy (transaction and output, payment request,
  * payment hash, proof of payment, payment id). Nothing shows until the rate
  * read has settled, so no amount appears without its fiat while the rate is
- * still loading. Opened directly while the wallet is not open, it shows the
- * wallet's own unlock, opening, or error state (`WalletBalance`) and loads the
- * payment once the wallet is ready; without a wallet here it says the payment
+ * still loading. While the wallet is still connecting, could not be opened,
+ * or its one-time setup gave up, it shows that state (`WalletBalance`) and
+ * loads the payment once the wallet is ready (a session whose wallet is not
+ * open sees the login card in place, from `OnboardingGate`); without a wallet here it says the payment
  * could not be found. An
  * on-chain payment links to its transaction on mempool.space through the
  * external-link warning. A missing or unknown id says so; a read that
@@ -306,9 +307,8 @@ export function WalletPaymentDetails(): ReactElement {
         <WalletBalance
           status={wallet.status}
           balanceSats={null}
-          onUnlock={wallet.unlock}
           onRetry={wallet.retry}
-          prfUnsupported={wallet.prfUnsupported}
+          setupFailed={wallet.setupFailed}
         />
       ) : null}
     </Card>
