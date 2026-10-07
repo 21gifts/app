@@ -71,23 +71,19 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
 
 /**
  * Pay slot of an invoice pay sheet. The member pays from the in-app wallet
- * only. A locked wallet shows one button, **Unlock and pay** with the amount:
- * one passkey prompt, then it pays at once when the fee is ₿0, or shows the
- * fee and **Send** when it is higher. An open wallet shows the fee
- * from the prepare response, then **Send**. While and after sending it says so; the
- * sheet's own long-poll closes it on confirmation. On the posting fee that
- * button says **Pay {amount} and post**. Too little balance shows an alert,
- * how much is still missing (amount plus the known fee minus the balance, with
- * fiat), and the member's own address and QR when their username gives one;
- * once the balance covers the payment, the slot prepares again and shows the
- * fee and the pay button.
- * While the one-time wallet setup is still due, **Unlock and pay** is the one
- * prompt it needs; the setup runs in the background behind the progress line,
- * and a setup that gave up shows the inline setup note with **Try again**.
- * Without a wallet the member can open here it says so, and a failed prepare
- * offers **Try again**. A passkey without PRF output says that this phone or
- * browser cannot hold a 21.gifts wallet, with **Try again**. It never shows an invoice QR or hands the payment to
- * another wallet.
+ * only, which is open whenever the member is signed in. It shows the fee from
+ * the prepare response, then **Send**;
+ * on the posting fee that button says **Pay {amount} and post**. While and
+ * after sending it says so; the sheet's own long-poll closes it on
+ * confirmation. Too little balance shows an alert, how much is still missing
+ * (amount plus the known fee minus the balance, with fiat), and the member's
+ * own address and QR when their username gives one; once the balance covers
+ * the payment, the slot prepares again and shows the fee and the pay button.
+ * While the one-time wallet setup is still due, the progress line shows until
+ * it is done, and a setup that gave up shows the inline setup note with
+ * **Try again**. Without a wallet the member can use here it says so, and a
+ * failed prepare offers **Try again**. It never shows an invoice QR or hands
+ * the payment to another wallet.
  *
  * @param props - Requests, shown amount, and spot rate.
  * @returns The pay slot.
@@ -102,11 +98,7 @@ export function WalletPay({
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const { view, feeSats, missingSats, unlock, pay, retry } = useWalletPay(
-    sparkInvoice,
-    pr,
-    amountSats,
-  );
+  const { view, feeSats, missingSats, pay, retry } = useWalletPay(sparkInvoice, pr, amountSats);
   const username = useAuthStore((state) => state.account?.username ?? null);
   const hasAddress = giftsLightningAddress(username) !== null;
 
@@ -130,26 +122,6 @@ export function WalletPay({
       );
     case 'setupFailed':
       return <WalletSetupNote />;
-    case 'prfUnsupported':
-      return (
-        <>
-          <p role="alert" className="px-6 text-center text-sm text-app-danger">
-            {t('wallet.prfUnsupported')}
-          </p>
-          <Button type="button" variant="secondary" onClick={retry}>
-            {t('wallet.payRetry')}
-          </Button>
-        </>
-      );
-    case 'unlock':
-      return (
-        <Button type="button" variant="primary" onClick={unlock}>
-          <span className="text-center">
-            {t('wallet.payUnlockAndPay', { amount: formatBitcoin(amountSats, numberFormat) })}
-            {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
-          </span>
-        </Button>
-      );
     case 'preparing':
     case 'paying':
       return (

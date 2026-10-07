@@ -25,7 +25,8 @@ export function LogoutButton(): ReactElement {
       onClick={() => {
         void (async () => {
           passkey.cancel();
-          const token = useAuthStore.getState().session;
+          const { session, lockedSession } = useAuthStore.getState();
+          const token = session ?? lockedSession;
           if (token !== null) {
             await Promise.race([
               disablePush(token).catch(() => undefined),

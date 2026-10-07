@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { fetchMe, WrongAccountError } from '@/lib/api';
 import { clearSession, loadSession } from '@/lib/session-storage';
+import { hydratesLocked } from '@/lib/wallet/wallet-open';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -19,6 +20,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
     fetchMe: vi.fn(),
   };
 });
+vi.mock('@/lib/wallet/wallet-open', () => ({ hydratesLocked: vi.fn() }));
 
 const account = {
   id: 'acc_1',
@@ -46,8 +48,9 @@ function Probe(): ReactElement {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useAuthStore.setState({ session: null, account: null, wrongAccount: false });
+  useAuthStore.setState({ session: null, account: null, lockedSession: null, wrongAccount: false });
   vi.mocked(loadSession).mockReturnValue(null);
+  vi.mocked(hydratesLocked).mockReturnValue(false);
 });
 
 afterEach(() => {
@@ -300,6 +303,22 @@ describe('useHydrateSession', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().session).toBe('tok');
     });
+    expect(useAuthStore.getState().lockedSession).toBeNull();
+    expect(hydratesLocked).toHaveBeenCalledWith(account);
+  });
+
+  it('holds back a valid persisted token when its wallet is closed', async () => {
+    vi.mocked(loadSession).mockReturnValue('tok');
+    vi.mocked(fetchMe).mockResolvedValue(account);
+    vi.mocked(hydratesLocked).mockReturnValue(true);
+
+    renderWithLocale(<Probe />);
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().lockedSession).toBe('tok');
+    });
+    expect(useAuthStore.getState().session).toBeNull();
+    expect(useAuthStore.getState().account).toBeNull();
   });
 
   it('clears a stale persisted token', async () => {
