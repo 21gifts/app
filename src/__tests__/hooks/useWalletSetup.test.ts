@@ -116,6 +116,26 @@ describe('useWalletSetup', () => {
     expect(result.current.failed).toBe(expected);
   });
 
+  it.each([
+    ['unverified account', account(), true],
+    ['verified account', account({ sparkWalletVerified: true }), false],
+    ['logged out', null, false],
+  ] as const)('sets due for %s', (_label, currentAccount, expected) => {
+    useAuthStore.setState({ account: currentAccount });
+    const { result } = renderHook(() => useWalletSetup());
+    expect(result.current.due).toBe(expected);
+  });
+
+  it('pins due with setup-pending in a Playwright build only', () => {
+    window.history.replaceState({}, '', '/wallet?visual=setup-pending');
+    useAuthStore.setState({ account: account({ sparkWalletVerified: true }) });
+    expect(renderHook(() => useWalletSetup()).result.current.due).toBe(false);
+    setPlaywrightBuild();
+    const { result } = renderHook(() => useWalletSetup());
+    expect(result.current.due).toBe(true);
+    expect(result.current.failed).toBe(false);
+  });
+
   it('reports a pinned note even without a due setup', () => {
     setPlaywrightBuild();
     window.history.replaceState({}, '', '/wallet?visual=pos-setup-failed');

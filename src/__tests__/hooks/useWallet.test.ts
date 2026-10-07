@@ -76,6 +76,7 @@ const PINS = [
   ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['send-alert-not-ready', 'connecting', null],
+  ['setup-pending', 'connecting', null],
 ] as const;
 
 describe('useWallet visual pins', () => {
@@ -86,7 +87,9 @@ describe('useWallet visual pins', () => {
     expect(result.current.status).toBe(status);
     expect(result.current.balanceSats).toBe(balanceSats);
     expect(result.current.setupFailed).toBe(visual === 'balance-setup-failed');
-    expect(result.current.canReceive).toBe(visual !== 'balance-setup-failed');
+    expect(result.current.canReceive).toBe(
+      visual !== 'balance-setup-failed' && visual !== 'setup-pending',
+    );
   });
 
   it.each(PINS.map(([visual]) => visual))('ignores %s in a production build', (visual) => {

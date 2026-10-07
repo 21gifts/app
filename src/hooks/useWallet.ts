@@ -6,7 +6,6 @@ import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { connectWallet } from '@/lib/wallet/wallet-service';
-import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
@@ -50,6 +49,7 @@ function visualStatus(): WalletViewStatus | null {
   switch (visual) {
     case 'balance-connecting':
     case 'send-alert-not-ready':
+    case 'setup-pending':
       return 'connecting';
     case 'balance-ready':
     case 'history-empty':
@@ -72,7 +72,8 @@ function visualStatus(): WalletViewStatus | null {
  * shows `connecting` until the wallet is verified, or `error` with
  * `setupFailed` once the setup gave up, and **Receive** stays disabled
  * (`canReceive`). Visual pins (`?visual=balance-…`, `?visual=history-…`,
- * `?visual=send-alert-not-ready` as connecting, and the other
+ * `?visual=send-alert-not-ready` and `?visual=setup-pending` as connecting,
+ * the latter with **Receive** disabled, and the other
  * `?visual=send-…` pins as ready) are honoured only in a Playwright build
  * (`getE2eNow()` set) and leave retry inert while pinned.
  *
@@ -102,14 +103,14 @@ export function useWallet(): UseWalletResult {
       balanceSats: pinnedStatus === 'ready' ? WALLET_VISUAL_FIXTURE_SATS : null,
       retry,
       setupFailed: pinnedStatus === 'error' && setup.failed,
-      canReceive: !setup.failed,
+      canReceive: !setup.failed && !setup.due,
     };
   }
   const base = { balanceSats: null, retry, setupFailed: false, canReceive: true };
   if (storeStatus === 'disabled' || !canUnlockWallet(account)) {
     return { ...base, status: 'disabled' };
   }
-  if (needsWalletSetup(account)) {
+  if (setup.due) {
     return setup.failed
       ? { ...base, status: 'error', setupFailed: true, canReceive: false }
       : { ...base, status: 'connecting', canReceive: false };
