@@ -36,7 +36,8 @@ function pinnedProblem(): 'noPrf' | 'failed' | null {
  * output shows `wallet.prfUnsupported`, any other failure `login.error`,
  * above **Log in**; a dismissed prompt shows **Log in** alone. Under the card,
  * **Log out** (`LogoutButton`, the same control as in the Menu, which is not
- * shown here) ends the held-back or not-yet-open session. In a
+ * shown here) ends a held-back session; it is not offered while a fresh
+ * login is still opening its wallet. In a
  * Playwright build `?visual=balance-locked-prf-unsupported` and
  * `?visual=balance-locked-error` pin those two alerts.
  *
@@ -74,7 +75,7 @@ export function WalletLoginCard(): ReactElement {
         </p>
       )}
       <LoginCard />
-      {session === null && lockedSession === null ? null : (
+      {lockedSession === null ? null : (
         <div className="w-full max-w-xs">
           <LogoutButton />
         </div>

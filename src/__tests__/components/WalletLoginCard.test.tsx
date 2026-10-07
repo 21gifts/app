@@ -45,12 +45,17 @@ describe('WalletLoginCard', () => {
     expect(finishWalletOpen).not.toHaveBeenCalled();
   });
 
-  it('offers Log out under the card while a session is held back or not open yet', () => {
+  it('offers Log out only while a session is held back, not while a login is opening', () => {
     useAuthStore.setState({ session: null, account: null, lockedSession: 'stored' });
     const { unmount } = renderWithLocale(<WalletLoginCard />);
     expect(screen.getByRole('button', { name: 'Log out' })).toBeTruthy();
     unmount();
     useAuthStore.setState({ session: null, account: null, lockedSession: null });
+    const second = renderWithLocale(<WalletLoginCard />);
+    expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
+    second.unmount();
+    vi.mocked(finishWalletOpen).mockReturnValue(new Promise(() => undefined));
+    useAuthStore.setState({ session: 'token', account, lockedSession: null });
     renderWithLocale(<WalletLoginCard />);
     expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
   });
