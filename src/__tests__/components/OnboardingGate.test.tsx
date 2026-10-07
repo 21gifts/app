@@ -101,28 +101,34 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('keeps the login screen unaffected by a held-back session', () => {
+  it('shows the wallet login on the login screen for a held-back session', () => {
     useAuthStore.setState({ lockedSession: 'stored' });
     renderWithLocale(
       <OnboardingGate screen="login">
         <p>login-ui</p>
       </OnboardingGate>,
     );
-    expect(screen.getByText('login-ui')).toBeTruthy();
-    expect(screen.queryByText('wallet-login-card')).toBeNull();
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(screen.queryByText('login-ui')).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('keeps the login screen behavior when an active account wallet is not open yet', () => {
+  it('keeps a fresh login on the login screen until its wallet is open, then sends it on', () => {
     walletOpen.value = false;
     useAuthStore.setState({ session: 'tok', account });
-    renderWithLocale(
+    const view = renderWithLocale(
       <OnboardingGate screen="login">
         <p>login-ui</p>
       </OnboardingGate>,
     );
-    expect(screen.getByText('login-ui')).toBeTruthy();
-    expect(screen.queryByText('wallet-login-card')).toBeNull();
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+    walletOpen.value = true;
+    view.rerender(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
     expect(replace).toHaveBeenCalledWith('/setup/name');
   });
 

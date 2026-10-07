@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
+import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { setAccountFiat, setAccountLocale } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { LOCALE_COOKIE, type Locale } from '@/lib/locale';
@@ -85,7 +86,10 @@ function rememberField(updated: Account, field: 'locale' | 'fiat'): boolean {
 /**
  * Reconciles signed-in language and currency preferences with the account.
  * Missing account keys are left alone for compatibility with older api
- * responses. Each account id runs at most once for this page lifetime.
+ * responses. Each account id runs at most once for this page lifetime. A
+ * session whose wallet is not open in this tab yet (`useWalletOpen`) counts
+ * as signed out, so nothing is read or written for it until the login opens
+ * the wallet.
  * The generation baseline is captured once while signed out and again on
  * logout. Later signed-out renders do not move it. A late response merges
  * only its own field and stops if the session is gone.
@@ -94,8 +98,10 @@ function rememberField(updated: Account, field: 'locale' | 'fiat'): boolean {
  */
 export function AccountPreferenceSync(): null {
   const { ready } = useHydrateSession();
-  const session = useAuthStore((state) => state.session);
+  const storeSession = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  // A session whose wallet is not open in this tab yet counts as signed out.
+  const session = useWalletOpen() ? storeSession : null;
   const { locale: screenLocale } = useTranslations();
   const { fiat, setFiat } = useFiatPreference();
   const router = useRouter();

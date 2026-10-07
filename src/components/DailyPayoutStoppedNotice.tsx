@@ -5,6 +5,7 @@ import { FundingPausedCopy } from '@/components/FundingPausedCopy';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ButtonLink } from '@/components/ui';
 import { grantApplicationStillOpen, grantApplicationsPaused } from '@/lib/grant-applications';
+import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -12,15 +13,17 @@ import { useAuthStore } from '@/stores/auth-store';
  * `dailyPayoutStoppedNotice === true`. While applications are paused, shows
  * paused copy except for usernames in `GRANT_APPLICATION_STILL_OPEN_USERNAMES`,
  * who still see the Apply link. That link is not the apply walk. Otherwise
- * links to `/grants/apply`.
+ * links to `/grants/apply`. Nothing shows while the account's wallet is not
+ * open in this tab (`useWalletOpen`): that session counts as signed out.
  *
- * @returns The banner, or `null` when the flag is not strictly true.
+ * @returns The banner, or `null` when the flag is not strictly true or the wallet is not open.
  */
 export function DailyPayoutStoppedNotice(): ReactElement | null {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
+  const walletOpen = useWalletOpen();
 
-  if (account?.funding?.dailyPayoutStoppedNotice !== true) {
+  if (!walletOpen || account?.funding?.dailyPayoutStoppedNotice !== true) {
     return null;
   }
 
