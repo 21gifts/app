@@ -271,6 +271,25 @@ describe('WalletSend paste', () => {
     },
   );
 
+  it('drops a clipboard read still pending when the camera reads a code first', async () => {
+    let finish: (value: string) => void = () => undefined;
+    stubClipboard(
+      () =>
+        new Promise<string>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const send = sendWith({ step: 'input', error: null });
+    renderWithLocale(<SendHarness send={send} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Camera stub' }));
+    expect(send.setText).toHaveBeenCalledWith('lnbc1scanned');
+    await act(async () => {
+      finish('lnbc1late');
+    });
+    expect(send.setText).toHaveBeenCalledTimes(1);
+  });
+
   it('drops a clipboard read that settles after the sheet opened or the view closed', async () => {
     let finish: (value: string) => void = () => undefined;
     let fail: (reason: Error) => void = () => undefined;
