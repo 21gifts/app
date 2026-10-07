@@ -12603,3 +12603,62 @@ test('Function: pageFrameProblems — login at phone width stays inside the wind
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems).toEqual([]);
 });
+
+test('Function: ReplyDirectionAmounts — sent and received stay apart', async ({ page }) => {
+  await seedAdaSession(page);
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id,
+            name: 'Ada',
+            text: 'The note that was paid',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21000,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 1,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            name: 'Ada',
+            text: 'A written reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            receivedSats: 100,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  await expect(page.getByText('A written reply')).toBeVisible();
+  await expect(page.getByText("sent \u20BF21'000")).toBeVisible();
+  await expect(page.getByText('received \u20BF100')).toBeVisible();
+  await expect(page.getByText("\u20BF21'100")).toHaveCount(0);
+});

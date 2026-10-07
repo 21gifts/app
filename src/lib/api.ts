@@ -1775,24 +1775,35 @@ export async function fetchForumMessage(
 /**
  * Fetches one public forum message without a session (HTML note page).
  * Optional `sinceSats` waits on the api until the note has more sats (pay poll).
+ * Optional `sinceReceivedSats` waits until a reply has more received sats.
  *
  * @param id - Forum message UUID.
- * @param opts - Optional `sinceSats` query and `AbortSignal` for the fetch.
+ * @param opts - Optional `sinceSats` / `sinceReceivedSats` query and
+ * `AbortSignal` for the fetch.
  * @returns The {@link ForumMessage}, or `null` when the id is unknown (404) or
  * the request was aborted.
  * @throws Error with visitor-facing copy on other failures or schema mismatch.
  */
 export async function fetchPublicMessage(
   id: string,
-  opts?: { sinceSats?: number; signal?: AbortSignal },
+  opts?: { sinceSats?: number; sinceReceivedSats?: number; signal?: AbortSignal },
 ): Promise<ForumMessage | null> {
   try {
     const sinceSats = opts?.sinceSats;
+    const sinceReceivedSats = opts?.sinceReceivedSats;
     const path = `/public-messages/${encodeURIComponent(id)}`;
-    const url =
-      sinceSats !== undefined && Number.isInteger(sinceSats) && sinceSats >= 0
-        ? `${path}?sinceSats=${sinceSats}`
-        : path;
+    const query: string[] = [];
+    if (sinceSats !== undefined && Number.isInteger(sinceSats) && sinceSats >= 0) {
+      query.push(`sinceSats=${sinceSats}`);
+    }
+    if (
+      sinceReceivedSats !== undefined &&
+      Number.isInteger(sinceReceivedSats) &&
+      sinceReceivedSats >= 0
+    ) {
+      query.push(`sinceReceivedSats=${sinceReceivedSats}`);
+    }
+    const url = query.length === 0 ? path : `${path}?${query.join('&')}`;
     const signal = opts?.signal;
     const response = signal !== undefined ? await fetch(url, { signal }) : await fetch(url);
     if (response.status === 404) {

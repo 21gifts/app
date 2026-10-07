@@ -1124,6 +1124,44 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse({ ...base, amountUsd: '5.00' }).amountUsd).toBe('5.00');
     expect(() => forumMessageSchema.parse({ ...base, amountUsd: '5' })).toThrow();
   });
+
+  it('keeps receivedSats and received fiat on a reply payload', () => {
+    const parsed = forumMessageSchema.parse({
+      ...base,
+      parentId: 'parent-1',
+      receivedSats: 21,
+      receivedAmountUsd: '0.02',
+      receivedAmountChf: '0.01',
+      receivedAmountEur: '0.02',
+      receivedAmountPhp: '1.20',
+    });
+    expect(parsed.receivedSats).toBe(21);
+    expect(parsed.receivedAmountUsd).toBe('0.02');
+    expect(parsed.receivedAmountChf).toBe('0.01');
+    expect(parsed.receivedAmountEur).toBe('0.02');
+    expect(parsed.receivedAmountPhp).toBe('1.20');
+  });
+
+  it('leaves receivedSats and received fiat undefined when omitted', () => {
+    const parsed = forumMessageSchema.parse(base);
+    expect(parsed.receivedSats).toBeUndefined();
+    expect(parsed.receivedAmountUsd).toBeUndefined();
+    expect(parsed.receivedAmountChf).toBeUndefined();
+    expect(parsed.receivedAmountEur).toBeUndefined();
+    expect(parsed.receivedAmountPhp).toBeUndefined();
+  });
+
+  it('keeps receivedSats 0', () => {
+    expect(forumMessageSchema.parse({ ...base, receivedSats: 0 }).receivedSats).toBe(0);
+  });
+
+  it('rejects a negative receivedSats', () => {
+    expect(() => forumMessageSchema.parse({ ...base, receivedSats: -1 })).toThrow();
+  });
+
+  it('rejects a non-integer receivedSats', () => {
+    expect(() => forumMessageSchema.parse({ ...base, receivedSats: 1.5 })).toThrow();
+  });
 });
 
 describe('forumMessageSchema place', () => {

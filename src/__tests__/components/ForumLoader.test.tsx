@@ -9172,11 +9172,16 @@ it('hides reply deletion for ordinary members', async () => {
 });
 
 it('pays a payable reply and polls that reply id', async () => {
-  const payableReply: ForumMessage = { ...NESTED_REPLY, payable: true, sats: 5 };
+  const payableReply: ForumMessage = {
+    ...NESTED_REPLY,
+    payable: true,
+    sats: 5,
+    parentId: 'm1',
+  };
   fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
   repliesMock.mockResolvedValue([payableReply]);
   invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
-  publicFetchMock.mockResolvedValue({ ...payableReply, sats: 26 });
+  publicFetchMock.mockResolvedValue({ ...payableReply, sats: 5, receivedSats: 21 });
   renderWithLocale(<ForumLoader />);
   await waitFor(() => expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy());
   await revealAll();
@@ -9195,14 +9200,63 @@ it('pays a payable reply and polls that reply id', async () => {
     expect(publicFetchMock).toHaveBeenCalledWith(
       'r1',
       expect.objectContaining({
-        sinceSats: 5,
+        sinceReceivedSats: 0,
         signal: expect.any(AbortSignal),
       }),
     );
   });
+  expect(publicFetchMock).not.toHaveBeenCalledWith(
+    'r1',
+    expect.objectContaining({ sinceSats: expect.anything() }),
+  );
   await waitFor(() => {
     expect(within(replyCard).queryByLabelText('Amount')).toBeNull();
   });
+  expect(within(replyCard).getByText('sent ₿5')).toBeTruthy();
+  expect(within(replyCard).getByText('received ₿21')).toBeTruthy();
+  expect(within(replyCard).queryByText('₿26')).toBeNull();
+  expect(within(replyCard).queryByText('send ₿5')).toBeNull();
+});
+
+it('keeps a reply pay sheet until receivedSats rises', async () => {
+  const payableReply: ForumMessage = {
+    ...NESTED_REPLY,
+    payable: true,
+    sats: 5,
+    parentId: 'm1',
+  };
+  fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
+  repliesMock.mockResolvedValue([payableReply]);
+  invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+  publicFetchMock.mockResolvedValue({ ...payableReply, sats: 5 });
+  renderWithLocale(<ForumLoader />);
+  await waitFor(() => expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy());
+  await revealAll();
+  await screen.findByText('Hello from Ada');
+  fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+  await screen.findByText('A reply');
+  const replyCard = document.querySelector('[data-reply-id="r1"]') as HTMLElement;
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+  fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+  vi.useFakeTimers();
+  fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  expect(publicFetchMock).toHaveBeenCalledWith(
+    'r1',
+    expect.objectContaining({
+      sinceReceivedSats: 0,
+      signal: expect.any(AbortSignal),
+    }),
+  );
+  expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
+  publicFetchMock.mockResolvedValue({ ...payableReply, sats: 5, receivedSats: 21 });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2000);
+  });
+  expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
 });
 
 it('keeps a reply pay sheet when Active hides the parent note', async () => {
