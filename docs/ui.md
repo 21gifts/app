@@ -422,7 +422,7 @@ flowchart TB
 **`AppShell` slots.** `AppShell` always draws the page frame: a viewport-height `<main>` with one `rounded-3xl` `<section>`. Chrome (wordmark + header wallet button and Menu / language) is that frame’s first row (`[data-app-chrome]`). `fill` and `flow` share this geometry (`h-[var(--app-height)]`, frame `grow shrink basis-0 self-stretch` not `flex-1`, one inner `[data-scrollport]`). `mode` stays on the API so call sites compile. `PageChrome` still passes `mode="flow"`. Card never hosts page chrome. `surface={false}` is the page-body column (no radius/border/bg/shadow/`p-8`). Default Card is still a nested visual panel for overlays and notes. Never `justify-center` on `<main>` or the overflow scroller. The center wrapper sets `justify-content: center` and then `safe center`, so content that fits stays centered, and where `safe` is supported a thread taller than the frame starts at the top and remains scrollable. Onboarding CTAs register via `AppShellFooter` (and headings via `AppShellHeader`) instead of stretching the form column. Child `AppShellTopLeft` registration wins over the page `topLeft` prop.
 
 ```
-[ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Menu | Language ]
+[ topLeft: Wordmark | Back+Wordmark ]     [ topRight: Wallet button + Menu | Language ]
 [                         children                                      ]
 ```
 
@@ -473,7 +473,7 @@ flowchart LR
   end
   subgraph appShell [App shell — themeable]
     PL[AppShell.topLeft: Wordmark]
-    PR[AppShell.topRight: Menu or Language]
+    PR[AppShell.topRight: Wallet button + Menu or Language]
     BODY[Card / onboarding column / document]
   end
   MH --> MC --> MF
@@ -842,7 +842,7 @@ NumberFormatSwitcher is **app + Profile only**. Anatomy = PushToggle section: up
 
 ### Signed-in Menu
 
-See Layout and chrome. Trigger stays labeled. The Profile row shows no amounts. Notifications unread count only when greater than zero. Messages unread count only when greater than zero. Menu has no language, theme, or number format.
+See Layout and chrome. Trigger stays labeled. **Wallet** is the first row, before **Home**. The header wallet button (`HeaderWalletButton`) sits just left of the trigger. The Profile row shows no amounts. Notifications unread count only when greater than zero. Messages unread count only when greater than zero. Menu has no language, theme, or number format.
 
 ### Banner (living-room laws)
 
@@ -1101,7 +1101,7 @@ Handbook states: default (home without a configured wallet), balance-locked, bal
 
 Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `SettingsScreen`: `Card surface={false}` with **h1** **Settings** (`settings.heading`, same classes as `/moderate`), then a `section` labelled by its **h2** **Wallet** (`wallet.title`, the small uppercase label classes of `wallet.balanceHeading`). With a non-empty `passkeyCredentialId`: one labeled secondary `ButtonLink size="lg"` **Recovery phrase** (`settings.recoveryPhrase`). Missing or empty id: the muted `text-sm` hint `wallet.addPhraseHint`, then a labeled primary `ButtonLink size="lg"` **Add recovery phrase** (`wallet.addPhrase`). Both open `/wallet/phrase` client-side; its top-left arrow comes back here. No passkey prompt on this page.
 
-Handbook states: default (Recovery phrase), activate (hint and Add recovery phrase).
+Handbook states: default (Recovery phrase), activate (hint and Add recovery phrase), and the signed-in header wallet button states `header-wallet-balance`, `header-wallet-locked`, `header-wallet-balance-320`, and `header-wallet-locked-320`.
 
 ### `/pos`
 
@@ -1280,7 +1280,7 @@ WCAG 2.2 AA.
 - **Target 2.5.8.** Labeled buttons and `IconButton` `md`/`lg` ≥ 44×44 **painted**. In-card `sm` stays 24px paint with `::before` slop (`content-['']` + `-inset-2.5`). Clustered `sm` rows use `gap-5` so 44px hits touch and do not overlap.
 - **Non-text 1.4.11.** Focus ring 2px `app-focus`, offset 2px. Do not use orange rings.
 - **Reduced motion 2.3.3.** Global CSS in `globals.css`. Keep `scrollIntoView` auto; no theme fade.
-- **Focus order:** chrome is the back arrow **then** the wordmark, then switchers or the main title → fields → primary action → Menu. `/welcome` has no arrow, so its chrome starts at the wordmark. Menu open: focus stays on trigger; Escape closes.
+- **Focus order:** chrome is the back arrow **then** the wordmark, then switchers or the main title → fields → primary action → the header wallet button (signed-in, when shown) → Menu. `/welcome` has no arrow, so its chrome starts at the wordmark. Menu open: focus stays on trigger; Escape closes.
 - **`aria-label`:** required on every `IconButton`; catalog key, all four locales. Decorative glyphs `aria-hidden`.
 - **Color not the only encoding:** profile Given/Received have text labels; forum payable replies are a Gift button plus amount, not color; errors have text; role badges have text + optional hint; push On/Off text plus selected fill, not fill-vs-outline bell.
 - **QR:** `role="img"` + catalog label (`QrCode`). QR plates stay white. Member pay sheets show no invoice QR at all; the public pay link omits its invoice QR on a smartphone (`isSmartphoneUserAgent`, not viewport).
