@@ -145,6 +145,28 @@ html:not([data-local-sunday='1']) .sunday-write-notice {
     scroll-behavior: auto !important;
   }
 }
+
+@keyframes forum-heart-plus-one {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-1.25rem);
+  }
+}
+
+.forum-heart-plus-one {
+  pointer-events: none;
+  animation: forum-heart-plus-one 700ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forum-heart-plus-one {
+    animation: none !important;
+  }
+}
 body {
   position: fixed;
   top: var(--app-offset-top, 0px);

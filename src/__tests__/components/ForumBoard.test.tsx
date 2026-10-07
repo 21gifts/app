@@ -7708,4 +7708,147 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
+
+  it('shows Send 1 sat on a post and on a reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        readOnly
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Bob',
+            accountId: 'acc-bob',
+            parentId: 'm1',
+            payable: false,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Send 1 sat' })).toHaveLength(2);
+  });
+
+  it('hides Send 1 sat on the viewer own post and reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-ada"
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Ada',
+            accountId: 'acc-ada',
+            parentId: 'm1',
+            payable: true,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send 1 sat' })).toBeNull();
+  });
+
+  it('does not hide Send 1 sat when only viewerAccountId matches the author', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Ada',
+            accountId: 'acc-ada',
+            parentId: 'm1',
+            payable: true,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Send 1 sat' })).toHaveLength(2);
+  });
+
+  it('shows the balance sentence without +1 when needsBalance', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-viewer"
+        heartTipViews={{
+          m1: { pressed: false, plusOne: false, alert: 'needsBalance' },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('A Bitcoin balance is required for this.');
+    expect(screen.queryByText('+1')).toBeNull();
+  });
+
+  it('shows +1 when the heart is paid', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-viewer"
+        heartTipViews={{
+          m1: { pressed: true, plusOne: true, alert: null },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('+1')).toBeTruthy();
+  });
 });

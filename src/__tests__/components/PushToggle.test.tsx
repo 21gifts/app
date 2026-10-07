@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PushToggle } from '@/components/PushToggle';
-import { postNotificationLevel } from '@/lib/api';
+import { postHeartNotifications, postNotificationLevel } from '@/lib/api';
 import type { Account, NotificationLevel } from '@/lib/api-types';
 import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
@@ -16,6 +16,7 @@ vi.mock('@/lib/push', () => ({
 
 vi.mock('@/lib/api', () => ({
   postNotificationLevel: vi.fn(),
+  postHeartNotifications: vi.fn(),
 }));
 
 const VIEW_KEY = 'a'.repeat(64);
@@ -72,6 +73,10 @@ beforeEach(() => {
   vi.mocked(postNotificationLevel).mockImplementation(async (_session, level) =>
     accountWithLevel(level),
   );
+  vi.mocked(postHeartNotifications).mockImplementation(async (_session, enabled) => ({
+    ...ACCOUNT,
+    notifyHearts: enabled,
+  }));
   stubPushApis();
 });
 
@@ -432,5 +437,29 @@ describe('PushToggle', () => {
     renderWithLocale(<PushToggle />);
     expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('selects Hearts On when notifyHearts is omitted', () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    expect(within(hearts).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('posts enabled false when Hearts is turned off', async () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledWith('tok', false);
+    });
+    expect(useAuthStore.getState().account?.notifyHearts).toBe(false);
+    expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
   });
 });

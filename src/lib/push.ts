@@ -21,6 +21,8 @@ export function pushTagForNotification(row: {
       return `forum_mention:${row.replyId}`;
     case 'zap':
       return `zap:${row.replyId}`;
+    case 'heart':
+      return `heart:${row.replyId}`;
     case 'moderator_appointed':
       return `moderator_appointed:${row.parentId}`;
     default:

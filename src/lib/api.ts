@@ -907,6 +907,30 @@ export async function postNotificationLevel(
 }
 
 /**
+ * Sets whether the signed-in account is notified of received hearts.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param enabled - `true` to notify, `false` to stop.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function postHeartNotifications(session: string, enabled: boolean): Promise<Account> {
+  const response = await fetch('/me/heart-notifications', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ enabled }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save the heart setting.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Sets the signed-in account amount unit.
  *
  * @param session - A bearer token from a completed challenge.
@@ -2553,13 +2577,16 @@ export async function fetchComposeTarget(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional NIP-57 comment shown as the gift reply body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
+ * @param heart - When true, the body includes `heart: true` (a 1-sat heart with
+ *   no comment). Omitted by existing callers.
  * @returns `{ pr, amountSats }` for the in-app wallet. The body may also carry
  *   `sparkInvoice`, which the in-app wallet pays instead of `pr`.
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
  * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
- * @throws Error with collapsed visitor copy on 400/429/503 (and other
+ * @throws Error with collapsed visitor copy on 400/403/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
- * {@link messageInvoiceSchema}.
+ * {@link messageInvoiceSchema}. A 403 `SUNDAY_REST` keeps that code in the
+ * thrown message so a heart click can show the Sunday copy.
  */
 export async function postMessageInvoice(
   sessionToken: string,
@@ -2572,6 +2599,7 @@ export async function postMessageInvoice(
     amountEur: string | null;
     amountPhp: string | null;
   },
+  heart?: boolean,
 ): Promise<MessageInvoice> {
   const response = await fetch(`/messages/${encodeURIComponent(messageId)}/invoice`, {
     method: 'POST',
@@ -2584,10 +2612,11 @@ export async function postMessageInvoice(
       sats,
       ...(text === undefined || text === '' ? {} : { text }),
       ...(shown === undefined ? {} : shown),
+      ...(heart === true ? { heart: true } : {}),
     }),
   });
   await throwIfWalletAnswer(response);
-  if (response.status === 400 || response.status === 429) {
+  if (response.status === 400 || response.status === 403 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
   }

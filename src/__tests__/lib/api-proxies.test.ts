@@ -32,6 +32,7 @@ import {
   proxyMeFiatPost,
   proxyMeLocalePost,
   proxyMeNotificationLevelPost,
+  proxyMeHeartNotificationsPost,
   proxyMeLocationPost,
   proxyMeAboutPhotoGet,
   proxyProfilePhotoGet,
@@ -408,6 +409,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/notification-level');
+  });
+
+  it('proxyMeHeartNotificationsPost hits POST /me/heart-notifications', async () => {
+    const fetchMock = stubApi();
+    await proxyMeHeartNotificationsPost(
+      new Request('http://localhost/me/heart-notifications', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/heart-notifications');
   });
 
   it('proxyMeAmountUnitPost hits POST /me/amount-unit', async () => {

@@ -122,6 +122,11 @@ export const accountSchema = z.object({
    */
   notificationLevel: z.enum(['all', 'active', 'mentions']).optional(),
   /**
+   * True when the owner wants a notification for each received heart. Optional
+   * so older api bodies still parse; missing means true in the UI.
+   */
+  notifyHearts: z.boolean().optional(),
+  /**
    * Typing unit for amount fields (`btc` or `fiat`). Optional so older api
    * bodies still parse. Missing means bitcoin in the UI.
    */
@@ -187,6 +192,8 @@ export const accountSchema = z.object({
  * `notificationLevel` is `all` (every living-room post, reply, and gift),
  * `active` (posts with gifts), or `mentions` (replies to the owner, gifts
  * they receive, and @username marks). Omitted on older api builds; treat as `all`.
+ * `notifyHearts` is true when the owner wants a notification for each received
+ * heart. Omitted on older api builds; treat as true.
  * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
  * builds; treat as `btc`.
  * `locale` is the stored UI language and `fiat` is the stored preferred
@@ -1095,11 +1102,12 @@ export type ConversationInvoice = z.infer<typeof conversationInvoiceSchema>;
  * Runtime schema for one notification from `GET /notifications`.
  *
  * `type` is `forum_post` (new living-room post), `forum_reply`, `zap`
- * (payment), `moderator_appointed` (the session was appointed moderator), or
- * `moderator_proposal` (a staff member proposed a moderator). Unknown `type`
- * values fail parse. `text` may be empty when a post or reply is photo-only,
- * when a zap has no amount string, or when a moderator appointment or
- * proposal has no body. `parentId` / `replyId` are a forum note id except on
+ * (payment), `heart` (a 1-sat heart), `moderator_appointed` (the session was
+ * appointed moderator), or `moderator_proposal` (a staff member proposed a
+ * moderator). Unknown `type` values fail parse. `text` may be empty when a
+ * post or reply is photo-only, when a zap has no amount string, when a heart
+ * carries no extra body, or when a moderator appointment or proposal has no
+ * body. `parentId` / `replyId` are a forum note id except on
  * `moderator_appointed` and `moderator_proposal`, where they are the subject
  * account id. `readAt` is `null` until the session marks the row read.
  */
@@ -1109,6 +1117,7 @@ export const notificationSchema = z.object({
     'forum_post',
     'forum_reply',
     'zap',
+    'heart',
     'moderator_appointed',
     'moderator_proposal',
     'forum_mention',
@@ -1130,8 +1139,8 @@ export const notificationListSchema = z.object({
 });
 
 /**
- * One notification from the api (post, reply, zap, moderator appointment, or
- * moderator proposal).
+ * One notification from the api (post, reply, zap, heart, moderator
+ * appointment, or moderator proposal).
  */
 export type Notification = z.infer<typeof notificationSchema>;
 

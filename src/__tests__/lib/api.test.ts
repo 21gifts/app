@@ -97,6 +97,7 @@ import {
   postRepaymentInvoice,
   postMessageVideo,
   postNotificationLevel,
+  postHeartNotifications,
   setAccountFiat,
   setAccountLocale,
   setAmountUnit,
@@ -899,6 +900,30 @@ describe('postNotificationLevel', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(postNotificationLevel('sess', 'active')).rejects.toThrow();
+  });
+});
+
+describe('postHeartNotifications', () => {
+  it('posts enabled and returns the validated account', async () => {
+    const updated = { ...account, notifyHearts: false };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(postHeartNotifications('sess', false)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/heart-notifications', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ enabled: false }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(postHeartNotifications('sess', true)).rejects.toThrow(
+      'Could not save the heart setting.',
+    );
   });
 });
 
@@ -2179,6 +2204,19 @@ describe('postMessageInvoice', () => {
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
       sats: 21,
       ...shown,
+    });
+  });
+
+  it('sends heart true when the heart flag is set', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc1', amountSats: 1 },
+    });
+    await postMessageInvoice('sess', 'm1', 1, undefined, undefined, true);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 1,
+      heart: true,
     });
   });
 

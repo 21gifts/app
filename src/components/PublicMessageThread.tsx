@@ -22,6 +22,7 @@ import {
   WalletRequiredError,
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
+import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -171,6 +172,7 @@ export function PublicMessageThread(props: {
   const { root, highlightId, seedReply, onRootDeleted } = props;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -1118,6 +1120,9 @@ export function PublicMessageThread(props: {
         payInvoice={payInvoice}
         payWaiting={payWaiting}
         onPayOpen={handlePayOpen}
+        heartViewerId={account?.id ?? null}
+        onHeartTip={onHeartTip}
+        heartTipViews={heartTipViews}
         onPayDraftChange={(value: string): void => {
           setPayDraft(value);
           setPayError(null);

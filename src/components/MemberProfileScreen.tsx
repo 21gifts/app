@@ -45,6 +45,7 @@ import {
 import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
@@ -233,6 +234,7 @@ export function MemberProfileScreen({
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -1305,6 +1307,9 @@ export function MemberProfileScreen({
     replyFormError,
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
+    heartViewerId: account?.id ?? null,
+    onHeartTip,
+    heartTipViews,
   };
 
   const activityMessages = activity === 'posts' ? (posts ?? []) : (activityReplies ?? []);

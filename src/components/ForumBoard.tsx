@@ -6,6 +6,7 @@ import {
   ArrowUp,
   Check,
   Gift,
+  Heart,
   ImagePlus,
   Link2,
   Loader2,
@@ -78,11 +79,21 @@ import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
+import type { HeartTipAlert, HeartTipView } from '@/lib/heart-tip';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 
 export type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
+/** Catalog key for each {@link HeartTipAlert}. */
+const HEART_TIP_ALERT_KEY: Record<HeartTipAlert, MessageKey> = {
+  sunday: 'sunday.zappingPaused',
+  needsBalance: 'forum.heartNeedsBalance',
+  rateLimit: 'forum.payErrorRateLimit',
+  authorWallet: 'forum.payErrorAuthorWallet',
+  request: 'forum.payErrorRequest',
+  payFailed: 'wallet.payFailed',
+};
 
 /** Top-level compose mode: messenger post or Ask wizard. */
 export type ForumComposeIntent = 'post' | 'ask';
@@ -388,6 +399,18 @@ export interface ForumBoardProps {
   shopNoteEdit?: boolean;
   /** Apply a saved shop-note body to the listed row. */
   onShopNoteUpdated?: (message: ForumMessage) => void;
+  /**
+   * Signed-in account id, used to hide the 1-sat heart on the viewer's own
+   * note. Default null. Only {@link ForumHeartControl} reads it.
+   */
+  heartViewerId?: string | null;
+  /**
+   * Sends a 1-sat heart. Omit to keep the button from paying; click still
+   * stops the card from expanding.
+   */
+  onHeartTip?: (messageId: string) => void;
+  /** Per-message heart visuals from `useHeartTip`. Default none. */
+  heartTipViews?: Readonly<Record<string, HeartTipView>>;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -422,6 +445,77 @@ function fallbackCopy(text: string): boolean {
   }
   ta.remove();
   return ok;
+}
+
+/**
+ * 1-sat heart in a note or reply action row. Hidden on a deleted note and on
+ * the viewer's own note. Click stops the card from expanding.
+ *
+ * @param props - Message id, author id, deleted stamp, heartViewerId, visual state, click.
+ * @returns The heart control, or `null` when it must not show.
+ */
+function ForumHeartControl({
+  messageId,
+  accountId,
+  deletedAt,
+  heartViewerId,
+  view,
+  onHeartTip,
+}: {
+  messageId: string;
+  accountId: string | undefined;
+  deletedAt: string | undefined;
+  heartViewerId: string | null;
+  view: HeartTipView | undefined;
+  onHeartTip: ((id: string) => void) | undefined;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  if (deletedAt !== undefined || heartViewerId === accountId) {
+    return null;
+  }
+  const pressed = view !== undefined && view.pressed;
+  const plusOne = view !== undefined && view.plusOne;
+  const filled = pressed || plusOne;
+  const alert = view === undefined ? null : view.alert;
+  return (
+    <>
+      <span className="relative inline-flex">
+        <IconButton
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-label={t('forum.heart')}
+          title={t('forum.heart')}
+          className={filled ? 'scale-110 text-app-accent' : undefined}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (onHeartTip !== undefined) {
+              onHeartTip(messageId);
+            }
+          }}
+        >
+          <Heart
+            aria-hidden="true"
+            className="h-4 w-4 shrink-0"
+            fill={filled ? 'currentColor' : 'none'}
+          />
+        </IconButton>
+        {plusOne ? (
+          <span
+            className="forum-heart-plus-one absolute inset-x-0 -top-3 text-center text-xs font-semibold text-app-accent"
+            aria-hidden="true"
+          >
+            +1
+          </span>
+        ) : null}
+      </span>
+      {alert !== null ? (
+        <p role="alert" className="text-xs text-app-danger">
+          {t(HEART_TIP_ALERT_KEY[alert])}
+        </p>
+      ) : null}
+    </>
+  );
 }
 
 /**
@@ -492,7 +586,10 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * and the two lines share a left rule. The amounts are not added),
  * copy-link control, `ForumGoalBar` on a top-level note
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
- * expands the reply composer; omitted when `deletedAt` is set), payable-reply
+ * expands the reply composer; omitted when `deletedAt` is set), a 1-sat heart
+ * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
+ * when `heartViewerId !== accountId` (shown signed-out and when `payable` is
+ * false; omitted on the viewer's own note), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
  * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
@@ -615,6 +712,9 @@ export function ForumBoard({
   onShopAccountUpdated,
   shopNoteEdit = false,
   onShopNoteUpdated,
+  heartViewerId = null,
+  onHeartTip,
+  heartTipViews,
 }: ForumBoardProps): ReactElement {
   const hideCompose = composerHidden || readOnly;
   const { t, locale } = useTranslations();
@@ -1214,6 +1314,14 @@ export function ForumBoard({
                 </div>
                 <div className="ml-auto flex flex-wrap items-center gap-5">
                   <div id={`note-translate-${message.id}`} className="contents" />
+                  <ForumHeartControl
+                    messageId={message.id}
+                    accountId={message.accountId}
+                    deletedAt={message.deletedAt}
+                    heartViewerId={heartViewerId}
+                    view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
+                    onHeartTip={onHeartTip}
+                  />
                   {/* Signed-out forum is readOnly and still shows React. The author feed sets both flags. */}
                   {message.parentId === undefined &&
                   message.deletedAt === undefined &&
@@ -1532,6 +1640,16 @@ export function ForumBoard({
                             />
                             <div className="mt-2 flex flex-wrap items-center gap-5">
                               <div id={`note-translate-${reply.id}`} className="contents" />
+                              <ForumHeartControl
+                                messageId={reply.id}
+                                accountId={reply.accountId}
+                                deletedAt={reply.deletedAt}
+                                heartViewerId={heartViewerId}
+                                view={
+                                  heartTipViews === undefined ? undefined : heartTipViews[reply.id]
+                                }
+                                onHeartTip={onHeartTip}
+                              />
                               {reply.deletedAt === undefined && reply.payable && !readOnly ? (
                                 <SundayWritingGate notice="zap">
                                   <IconButton

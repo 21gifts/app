@@ -71,6 +71,7 @@ import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
+import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
@@ -363,6 +364,7 @@ export function ForumLoader({
 } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -2903,6 +2905,9 @@ export function ForumLoader({
           setPayBusy(false);
         }}
         viewerAccountId={account?.id ?? null}
+        heartViewerId={account?.id ?? null}
+        onHeartTip={onHeartTip}
+        heartTipViews={heartTipViews}
         onRepay={(messageId) => {
           startRepaymentRef.current(messageId);
         }}
