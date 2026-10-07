@@ -1181,9 +1181,10 @@ describe('fetchFxSpot', () => {
     expect(fetchMock).toHaveBeenCalledWith('/fx/spot');
   });
 
-  it('accepts an answer without any price', async () => {
-    stubFetch({ ok: true, status: 200, body: { ...spot, rates: {} } });
-    await expect(fetchFxSpot()).resolves.toEqual({ ...spot, rates: {} });
+  it('accepts the answer without a quote', async () => {
+    const none = { asOf: null, source: null, rates: {} };
+    stubFetch({ ok: true, status: 200, body: none });
+    await expect(fetchFxSpot()).resolves.toEqual(none);
   });
 
   it('throws visitor copy on a non-ok response', async () => {

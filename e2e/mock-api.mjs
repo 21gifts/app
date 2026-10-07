@@ -2205,9 +2205,9 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (method === 'GET' && pathName === '/fx/spot') {
-    // No rate by default, like an api that cannot price yet; specs that need
-    // one answer this route themselves (e2e/fx-spot.ts).
-    json(res, 200, { asOf: '2026-06-01T00:00:00.000Z', source: 'e2e', rates: {} });
+    // No quote by default, the api's answer before its first price; specs that
+    // need a rate answer this route themselves (e2e/fx-spot.ts).
+    json(res, 200, { asOf: null, source: null, rates: {} });
     return;
   }
 

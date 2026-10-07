@@ -4623,7 +4623,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: fetchFxSpot
 
-- **Purpose:** Loads the current price of 1 BTC in USD, CHF, EUR, and PHP from same-origin `GET /fx/spot` with no Authorization. The body is `{ asOf, source, rates }`; `rates` may leave out a code the api could not price, and an empty `rates` is valid.
+- **Purpose:** Loads the current price of 1 BTC in USD, CHF, EUR, and PHP from same-origin `GET /fx/spot` with no Authorization. The body is `{ asOf, source, rates }`; `rates` leaves out a code the api could not price. Without any quote the api answers `asOf` and `source` `null` and `rates` `{}`, which is "no rate".
 - **Inputs:** None. `fetch('/fx/spot')` with no Authorization.
 - **Returns / side effects:** `FxSpot` parsed by `fxSpotSchema` (each price a decimal string such as `"62345.12"`). Throws **Could not load the exchange rate. Please try again.** on a non-OK response, a network failure, or a body that fails the schema.
 - **Used by:** `useSpotRate`.

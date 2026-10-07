@@ -347,10 +347,11 @@ const spotPriceSchema = z.string().regex(/^\d+(\.\d+)?$/);
 /**
  * Runtime schema for the payload of `GET /fx/spot`: the current price of
  * 1 BTC in each fiat the api could price. A missing code has no rate now.
+ * Without any quote the api answers `asOf` and `source` `null` and empty `rates`.
  */
 export const fxSpotSchema = z.object({
-  asOf: z.string(),
-  source: z.string(),
+  asOf: z.string().nullable(),
+  source: z.string().nullable(),
   rates: z
     .object({
       USD: spotPriceSchema,
