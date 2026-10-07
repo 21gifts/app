@@ -4482,7 +4482,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Parse `docs/handbook/screens.md` into a map of catalog topic id → English description. Under each `## Screen:` / `### Variant:`, collect paragraphs (excluding image-only lines), unwrap `**bold**` and `` `code` ``, join with a blank line; skip empty strings.
 - **Inputs:** Raw screens handbook markdown string.
 - **Returns / side effects:** `ReadonlyMap<string, string>` keyed as `<path>:<variantId>`. No network.
-- **Used by:** `screenVariantDescription` and `HandbookScreensPage` (`loadScreenTopics`).
+- **Used by:** `HandbookScreensPage` (`loadScreenTopics`) and the screen-description tests.
 
 ## Function: screenVariantDescription
 
