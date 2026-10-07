@@ -16,7 +16,6 @@ import { loadSession } from '@/lib/session-storage';
 import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
 import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
-import { useWalletStore } from '@/stores/wallet-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
   FORUM_HOME_EVENT,
@@ -72,6 +71,8 @@ vi.mock('@/lib/session-storage', () => ({
 vi.mock('@/lib/pwa-install', () => ({
   shouldOfferIosInstall: vi.fn(() => false),
 }));
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
 vi.mock('@/lib/push', () => ({
   isIosSafari: vi.fn(() => false),
   isStandaloneDisplay: vi.fn(() => false),
@@ -171,6 +172,7 @@ beforeEach(() => {
   });
   useAuthStore.setState({
     session: 'tok',
+    lockedSession: null,
     account: {
       id: 'acc_1',
       linkingKey: null,
@@ -249,20 +251,27 @@ function follows(earlier: Node, later: Node): boolean {
 }
 
 describe('SignedInChrome', () => {
-  it('shows no wallet control outside the Menu', () => {
-    const account = useAuthStore.getState().account!;
-    useAuthStore.setState({
-      account: { ...account, walletRequired: true, passkeyCredentialId: 'credential' },
-    });
-    useWalletStore.setState({ status: 'ready', balanceSats: 21_000 });
+  it('renders no Menu, and reads nothing, while the wallet is not open yet', () => {
+    walletOpen.value = false;
     try {
-      renderWithLocale(<SignedInChrome />);
-      expect(screen.queryAllByRole('link').filter((link) => !menuPanel().contains(link))).toEqual(
-        [],
-      );
+      const { container } = renderWithLocale(<SignedInChrome />);
+      expect(container.innerHTML).toBe('');
+      expect(resyncPushSubscription).not.toHaveBeenCalled();
     } finally {
-      useWalletStore.getState().reset();
+      walletOpen.value = true;
     }
+  });
+
+  it('renders no Menu while a session is held back', () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'stored' });
+    const { container } = renderWithLocale(<SignedInChrome />);
+    expect(container.innerHTML).toBe('');
+    expect(screen.queryByRole('button', { name: /Menu/ })).toBeNull();
+  });
+
+  it('shows no wallet control outside the Menu', () => {
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryAllByRole('link').filter((link) => !menuPanel().contains(link))).toEqual([]);
   });
 
   it('starts the Menu with the account header and a divider, mounted while closed, and its link closes the Menu', () => {
@@ -467,7 +476,7 @@ describe('SignedInChrome', () => {
     cleanup();
     vi.mocked(enablePush).mockClear();
     vi.mocked(resyncPushSubscription).mockClear();
-    useAuthStore.setState({ session: null, account: null });
+    useAuthStore.setState({ session: null, account: null, lockedSession: null });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();

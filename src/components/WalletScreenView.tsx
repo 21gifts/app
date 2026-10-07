@@ -37,9 +37,9 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
  * payment list, with Receive and Send side by side in the shell footer
  * (`WalletFooterActions`, Receive on the left). Recovery-phrase access lives
  * on `/settings`. The views and their Back steps come from `useWalletPanel`,
- * shared with `/welcome`: Send opens the send flow while the wallet is ready
- * (while it is locked, after the existing unlock); Receive opens the address,
- * QR, and Set an amount. The Send view stays while a send is in flight, its
+ * shared with `/welcome`: Send opens the send flow while the wallet is ready;
+ * Receive, once the account's address is registered, opens the address, QR,
+ * and Set an amount. The Send view stays while a send is in flight, its
  * Sent line shows, or a send alert is up, and Done returns home. Back first
  * closes the manual-entry sheet or an open send step (or is held while a send
  * is in flight), then returns from Send or Receive to home. The 12 words and

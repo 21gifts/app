@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
-import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
@@ -10,11 +9,6 @@ import {
   resetWallet,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
-
-vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
-  return { ...actual, unlockWalletPhrase: vi.fn() };
-});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -139,48 +133,6 @@ describe('ForumReplyPayPage in-app wallet', () => {
     expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
     expect(screen.queryByRole('img')).toBeNull();
-  });
-
-  function unlockSetsReady(): void {
-    setWalletUsable('locked');
-    vi.mocked(unlockWalletPhrase)
-      .mockReset()
-      .mockImplementation(async () => {
-        setWalletUsable('ready');
-        return 'unlocked';
-      });
-  }
-
-  it('unlocks and pays with one tap and one passkey prompt when the fee is ₿0', async () => {
-    unlockSetsReady();
-    const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
-    renderPage(SPARK_INVOICE);
-    expect(payFromWallet).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
-    expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
-    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
-    expect(payFromWallet).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-  });
-
-  it('unlocks with one tap and stops at the fee and Send when the fee is above ₿0', async () => {
-    unlockSetsReady();
-    const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 21,
-      feeSats: 3,
-      send,
-    });
-    renderPage(SPARK_INVOICE);
-    fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
-    expect(screen.getByText(/Fee ₿3/)).toBeTruthy();
-    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
-    expect(send).not.toHaveBeenCalled();
   });
 
   it('says the wallet is not available when it is not configured, and offers nothing else', () => {

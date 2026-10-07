@@ -84,16 +84,15 @@ const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
 function walletResult(
   status: UseWalletResult['status'],
-  prfUnsupported = false,
   setupFailed = false,
+  canReceive = true,
 ): UseWalletResult {
   return {
     status,
     balanceSats: status === 'ready' ? 21_000 : null,
-    unlock: vi.fn(),
     retry: vi.fn(),
-    prfUnsupported,
     setupFailed,
+    canReceive,
   };
 }
 
@@ -169,7 +168,6 @@ describe('WalletScreenView', () => {
   });
 
   it.each([
-    ['locked', 'Unlock your wallet to see your Bitcoin balance.'],
     ['connecting', 'Opening your wallet…'],
     ['ready', "₿21'000$21.00"],
     ['error', 'Your wallet could not be opened. Please try again.'],
@@ -191,19 +189,9 @@ describe('WalletScreenView', () => {
     },
   );
 
-  it('passes the no-PRF error to the balance', () => {
-    setWalletAccount();
-    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('error', true)} />);
-    expect(screen.getByRole('region', { name: 'Balance' }).textContent).toContain(
-      'This phone or browser cannot hold a 21.gifts wallet.',
-    );
-  });
-
   it('passes the setup failure to the balance', () => {
     setWalletAccount();
-    renderWithLocale(
-      <WalletScreenView {...ENTRY_PROPS} wallet={walletResult('error', false, true)} />,
-    );
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('error', true)} />);
     expect(screen.getByRole('alert').textContent).toContain('Your wallet could not be set up yet.');
   });
 
@@ -229,7 +217,7 @@ describe('WalletScreenView', () => {
 
   it('shows the payment list only while the wallet is ready, between balance and Send', () => {
     setWalletAccount();
-    for (const status of ['disabled', 'locked', 'connecting', 'error'] as const) {
+    for (const status of ['disabled', 'connecting', 'error'] as const) {
       const view = renderWithLocale(
         <WalletScreenView {...ENTRY_PROPS} wallet={walletResult(status)} />,
       );
@@ -267,13 +255,11 @@ describe('WalletScreenView', () => {
     expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
   });
 
-  it('enables Send while the wallet is ready or locked and a send flow exists; Receive always works', () => {
+  it('enables Send only while the wallet is ready and a send flow exists', () => {
     setWalletAccount();
     const cases = [
       ['ready', true, true],
       ['ready', false, false],
-      ['locked', true, true],
-      ['locked', false, false],
       ['connecting', true, false],
       ['error', true, false],
     ] as const;
@@ -295,6 +281,17 @@ describe('WalletScreenView', () => {
     }
   });
 
+  it('disables Receive while the account cannot receive', () => {
+    setWalletAccount();
+    renderWithLocale(
+      <WalletScreenView {...ENTRY_PROPS} wallet={walletResult('connecting', false, false)} />,
+    );
+    const receive = screen.getByRole('button', { name: 'Receive' }) as HTMLButtonElement;
+    expect(receive.disabled).toBe(true);
+    fireEvent.click(receive);
+    expect(screen.queryByText('ada@21.gifts')).toBeNull();
+  });
+
   it('ignores balance state on the phrase surface', () => {
     renderWithLocale(
       <WalletScreenView
@@ -307,7 +304,7 @@ describe('WalletScreenView', () => {
         showPhrase={vi.fn()}
         hidePhrase={vi.fn()}
         retry={vi.fn()}
-        wallet={walletResult('locked')}
+        wallet={walletResult('connecting')}
       />,
     );
     expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
@@ -733,20 +730,6 @@ function rerenderEntry(
 }
 
 describe('WalletScreenView Send', () => {
-  it('runs the unlock when Send is pressed while locked, and opens Send once the wallet is ready', () => {
-    const send = idleSend();
-    const locked = walletResult('locked');
-    const view = renderWithLocale(
-      <WalletScreenView {...ENTRY_PROPS} wallet={locked} send={send} />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(locked.unlock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
-    rerenderEntry(view, 'connecting', send);
-    rerenderEntry(view, 'ready', send);
-    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
-  });
-
   it('Back closes the manual sheet first, then returns home', () => {
     const send = idleSend();
     renderEntry('ready', send);
@@ -809,7 +792,7 @@ describe('WalletScreenView Send', () => {
 
   it('pins the Send view while a send runs, Sent shows, or an alert is up, even when not ready', () => {
     const busy = idleSend({ state: CONFIRM_STATE, busy: true, cancel: vi.fn(() => true) });
-    renderEntry('locked', busy);
+    renderEntry('connecting', busy);
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
     const historyBack = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
     pressBack();
@@ -822,7 +805,7 @@ describe('WalletScreenView Send', () => {
     );
     expect(screen.getByRole('status').textContent).toContain("Sent ₿2'100");
     cleanup();
-    renderEntry('locked', idleSend({ state: { step: 'input', error: 'failed' } }));
+    renderEntry('connecting', idleSend({ state: { step: 'input', error: 'failed' } }));
     expect(screen.getByRole('alert').textContent).toBe(
       'The payment could not be sent. Check your balance before you try again.',
     );
@@ -832,7 +815,7 @@ describe('WalletScreenView Send', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
     expect(screen.queryByText('Camera stub')).toBeNull();
     cleanup();
-    renderEntry('locked', idleSend());
+    renderEntry('connecting', idleSend());
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
     expect(historyBack).not.toHaveBeenCalled();
   });
@@ -869,10 +852,10 @@ describe('WalletScreenView Send', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
     const before = cameraRenders.count;
-    rerenderEntry(view, 'locked', idleSend());
+    rerenderEntry(view, 'connecting', idleSend());
     expect(cameraRenders.count).toBe(before);
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('Opening your wallet…');
     rerenderEntry(view, 'ready', idleSend());
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
   });
@@ -891,8 +874,8 @@ describe('WalletScreenView Send', () => {
 });
 
 describe('WalletScreenView Receive', () => {
-  it('opens Receive from home even while the wallet is locked, and Back returns home', () => {
-    renderEntry('locked', idleSend());
+  it('opens Receive from home while the wallet is connecting, and Back returns home', () => {
+    renderEntry('connecting', idleSend());
     fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
     expect(screen.getByText('ada@21.gifts')).toBeTruthy();
     expect(screen.queryByRole('region', { name: 'Balance' })).toBeNull();
@@ -900,6 +883,6 @@ describe('WalletScreenView Receive', () => {
     pressBack();
     expect(historyBack).not.toHaveBeenCalled();
     expect(screen.queryByText('ada@21.gifts')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Unlock wallet' })).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('Opening your wallet…');
   });
 });

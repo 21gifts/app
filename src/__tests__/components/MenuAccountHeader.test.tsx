@@ -77,7 +77,7 @@ function walletWith(
   status: UseWalletResult['status'],
   balanceSats: number | null = null,
 ): UseWalletResult {
-  return { status, balanceSats, unlock: vi.fn(), retry: vi.fn(), prfUnsupported: false };
+  return { status, balanceSats, retry: vi.fn(), setupFailed: false, canReceive: true };
 }
 
 /** Lets the settled fetches reach the component. */
@@ -336,16 +336,13 @@ describe('MenuAccountHeader', () => {
     },
   );
 
-  it.each(['locked', 'error', 'disabled'] as const)(
-    'shows no balance while the wallet is %s',
-    (status) => {
-      signIn();
-      vi.mocked(useWallet).mockReturnValue(walletWith(status));
-      renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-      expect(screen.queryByRole('link')).toBeNull();
-      expect(screen.queryByRole('status')).toBeNull();
-    },
-  );
+  it.each(['error', 'disabled'] as const)('shows no balance while the wallet is %s', (status) => {
+    signIn();
+    vi.mocked(useWallet).mockReturnValue(walletWith(status));
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
 
   it('adds top spacing in the compact Menu', () => {
     signIn();
