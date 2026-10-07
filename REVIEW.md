@@ -44,9 +44,12 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 
 - New or changed copy uses a catalog key in the same PR — no hard-coded UI
   strings (except the documented exceptions in `CONTRIBUTING.md`: legal body
-  copy (English), handbook markdown bodies and handbook chapter-navigation
-  labels (English), product tokens, switcher endonyms, stats body copy
-  (English), document/social metadata (English)).
+  copy (English), handbook markdown bodies for Functions and Endpoints,
+  handbook chapter-navigation labels (English), product tokens, switcher
+  endonyms, stats body copy (English), document/social metadata (English)).
+  Screen-card descriptions are not that exception: English stays in
+  `docs/handbook/screens.md`; German, Spanish, and Filipino live in
+  `src/lib/screen-variant-descriptions-locale.json`.
 - The four catalogs have the **same key set**, and every value is non-empty
   after trim. `npm run typecheck` fails on a missing key.
   `src/__tests__/lib/messages.test.ts` fails on a divergent key set or an

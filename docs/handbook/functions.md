@@ -4373,8 +4373,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: HandbookScreensPage
 
-- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics (with English descriptions from `screens.md` via `parseScreenVariantDescriptions`) and renders the compact-card `HandbookImageViewer`.
-- **Inputs:** None.
+- **Purpose:** Next.js page for `/handbook/screens`. Loads screen-variant topics and renders the compact-card `HandbookImageViewer`. English card text comes from `screens.md`. German, Spanish, and Filipino come from the screen-card locale file for the request locale.
+- **Inputs:** Request locale from `getRequestLocale` (cookie `locale`, otherwise `Accept-Language`).
 - **Returns / side effects:** The screens handbook screen inside `MarketingLayout`.
 - **Used by:** Route `/handbook/screens`.
 
@@ -4482,6 +4482,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Parse `docs/handbook/screens.md` into a map of catalog topic id → English description. Under each `## Screen:` / `### Variant:`, collect paragraphs (excluding image-only lines), unwrap `**bold**` and `` `code` ``, join with a blank line; skip empty strings.
 - **Inputs:** Raw screens handbook markdown string.
 - **Returns / side effects:** `ReadonlyMap<string, string>` keyed as `<path>:<variantId>`. No network.
+- **Used by:** `HandbookScreensPage` (`loadScreenTopics`) and the screen-description tests.
+
+## Function: screenVariantDescription
+
+- **Purpose:** Screen-card description for one catalog id in the request locale. English is the paragraph from `docs/handbook/screens.md`. German, Spanish, and Filipino come from the screen-card locale file. A missing or blank English paragraph shows the catalog label in every locale.
+- **Inputs:** Locale (`en`, `de`, `es`, or `fil`), catalog id (`<path>:<variant>`), the English paragraph when present, and the catalog label.
+- **Returns / side effects:** Locale text, unchanged English, or the catalog label. Throws when `de`, `es`, or `fil` has no non-blank text for that id. No network. No English fallback.
 - **Used by:** `HandbookScreensPage` (`loadScreenTopics`).
 
 ## Function: topicImageSrc
