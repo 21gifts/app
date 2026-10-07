@@ -2162,7 +2162,7 @@ describe('ForumBoard', () => {
     expect(screen.getAllByText('CHF 0.02').length).toBeGreaterThan(0);
   });
 
-  it('keeps ₿-only when the preferred fiat has no rate on that gift day', () => {
+  it('keeps ₿-only when the preferred fiat has no rate', () => {
     renderWithLocale(
       <ForumBoard
         messages={[FIVE_SATS]}

@@ -364,52 +364,8 @@ test('the top-left arrow from a place on the shops map returns to the posts', as
   expect(await sameDocument(page)).toBe('same');
 });
 
-/** Latest gift day used for the fiat line: ₿1 = $100,000. */
-async function fulfillRateDay(page: Page): Promise<void> {
-  await page.route('**/gifts/stats**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        totalSats: 100_000_000,
-        totalBtc: '1.00000000',
-        totalUsd: '100000.00',
-        totalChf: '80000.00',
-        totalEur: '90000.00',
-        totalPhp: '5600000.00',
-        giftCount: 1,
-        recipientCount: 1,
-        firstPaidAt: '2026-01-06T00:00:00.000Z',
-        lastPaidAt: '2026-01-06T00:00:00.000Z',
-        spendOverTime: [
-          {
-            day: '2026-01-06',
-            giftCount: 1,
-            sats: 100_000_000,
-            cumulativeSats: 100_000_000,
-            btc: '1.00000000',
-            cumulativeBtc: '1.00000000',
-            usd: '100000.00',
-            cumulativeUsd: '100000.00',
-            chf: '80000.00',
-            eur: '90000.00',
-            php: '5600000.00',
-            cumulativeChf: '80000.00',
-            cumulativeEur: '90000.00',
-            cumulativePhp: '5600000.00',
-          },
-        ],
-        byRecipient: [],
-        byMonth: [],
-        fx: {
-          quote: 'BTC-USD',
-          dayBasis: 'utc',
-          source: 'coinbase-exchange-daily-close',
-          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-        },
-      }),
-    });
-  });
+/** Spot rate used for the fiat line: ₿1 = $100,000. */
+async function fulfillSpotRate(page: Page): Promise<void> {
   await fulfillSpot(page);
 }
 
@@ -417,7 +373,7 @@ test('Function: MenuAccountHeader shows the ready balance with fiat, the name, a
   page,
 }) => {
   await signInWithPasskey(page);
-  await fulfillRateDay(page);
+  await fulfillSpotRate(page);
   await page.goto('/settings?visual=balance-ready');
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
   // No wallet control in the header row any more; the balance lives in the Menu.
