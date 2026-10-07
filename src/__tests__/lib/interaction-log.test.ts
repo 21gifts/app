@@ -287,9 +287,9 @@ describe('session binding and batch size', () => {
     ).toEqual(['login']);
   });
 
-  it('keeps each request body under the keepalive limit', async () => {
+  it.each(['x', 'あ'])('keeps each request body under the keepalive limit (%s)', async (char) => {
     const props = Object.fromEntries(
-      Array.from({ length: 12 }, (_, i) => [`k${String(i)}`, 'x'.repeat(200)]),
+      Array.from({ length: 12 }, (_, i) => [`k${String(i)}`, char.repeat(200)]),
     );
     for (let i = 0; i < 49; i += 1) {
       mod.logInteraction('search', props);
@@ -298,7 +298,7 @@ describe('session binding and batch size', () => {
     expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
     expect(posted()).toHaveLength(49);
     for (const request of requests()) {
-      expect(request.body.length).toBeLessThanOrEqual(61_000);
+      expect(new TextEncoder().encode(request.body).length).toBeLessThanOrEqual(61_000);
     }
   });
 });

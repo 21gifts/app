@@ -85,6 +85,9 @@ const KEYED_PATHS = ['/view/', '/view-key/'];
  */
 const MAX_BATCH_BYTES = 60_000;
 
+/** Measures request bodies in UTF-8 bytes, as the browser counts them. */
+const encoder = new TextEncoder();
+
 /** Events waiting to be sent. */
 const queue: InteractionEvent[] = [];
 
@@ -210,7 +213,8 @@ export function logInteraction(name: InteractionName, props: InteractionProps = 
 
 /**
  * Takes the next batch off the queue: at most {@link INTERACTION_BATCH_SIZE}
- * events and at most {@link MAX_BATCH_BYTES} of JSON, and always at least one.
+ * events and at most {@link MAX_BATCH_BYTES} UTF-8 bytes of JSON, and always
+ * at least one.
  *
  * @returns The batch.
  */
@@ -218,7 +222,7 @@ function nextBatch(): InteractionEvent[] {
   let count = 0;
   let bytes = 0;
   for (const event of queue) {
-    bytes += JSON.stringify(event).length + 1;
+    bytes += encoder.encode(JSON.stringify(event)).length + 1;
     if (count === INTERACTION_BATCH_SIZE || (count > 0 && bytes > MAX_BATCH_BYTES)) {
       break;
     }

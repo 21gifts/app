@@ -4284,7 +4284,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: flushInteractions
 
-- **Purpose:** Sends the queued interactions with `POST /me/events` `{ events }` in batches of at most `INTERACTION_BATCH_SIZE` (50) events and 60 000 bytes of JSON, each request with `keepalive`, so a request in flight when the page closes is still delivered (the browser caps a keepalive body at 64 KiB).
+- **Purpose:** Sends the queued interactions with `POST /me/events` `{ events }` in batches of at most `INTERACTION_BATCH_SIZE` (50) events and 60 000 UTF-8 bytes of JSON, each request with `keepalive`, so a request in flight when the page closes is still delivered (the browser caps a keepalive body at 64 KiB).
 - **Inputs:** None. Reads the session from `useAuthStore`.
 - **Returns / side effects:** A promise that never rejects. Events go out only with the session they were recorded under: without a session, or with another one, the queue is dropped, and a flush stops after the batch in flight when another member signs in. A failed batch goes back to the front of the queue (still at most 500 events) and the next flush tries again; a failed batch of a member who is no longer signed in is dropped. One flush runs at a time; a second call while one runs returns at once.
 - **Used by:** `logInteraction` (full batch) and `startInteractionLog`.
