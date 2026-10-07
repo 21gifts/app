@@ -9,26 +9,18 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Card, IconButton } from '@/components/ui';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
-import { encodeBech32 } from '@/lib/lnurl';
 import type { MessageKey } from '@/lib/messages';
-import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import { paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
-
-/**
- * NIP-19 form of a 32-byte hex Nostr key or id (`npub…`, `note…`).
- *
- * @param prefix - Bech32 prefix.
- * @param hex - Hex value.
- * @returns The encoded string.
- */
-function nip19(prefix: 'npub' | 'note', hex: string): string {
-  const bytes = Uint8Array.from(hex.match(/../g) ?? [], (pair) => parseInt(pair, 16));
-  return encodeBech32(prefix, bytes);
-}
 
 /**
  * Keeps both ends of a long value.
@@ -114,13 +106,12 @@ const STATUS: Record<WalletPayment['status'], { key: MessageKey; className: stri
   failed: { key: 'wallet.failed', className: 'bg-app-danger/10 text-app-danger' },
 };
 
-/** The loaded payment. */
-function PaymentView(props: { payment: WalletPayment }): ReactElement {
-  const { payment } = props;
+/** The loaded payment, shown once the rate read has settled. */
+function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | null }): ReactElement {
+  const { payment, rateDay } = props;
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
   const [leaving, setLeaving] = useState(false);
   const received = payment.direction === 'received';
   const Icon = received ? ArrowDownLeft : ArrowUpRight;
@@ -189,9 +180,6 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
             <span className="break-all">{info.lnAddress}</span>
           </Row>
         )}
-        {info.zap === undefined ? null : (
-          <CopyRow label={t('wallet.payment.from')} value={nip19('npub', info.zap.senderPubkey)} />
-        )}
         {info.description === undefined || 'text' in title ? null : (
           <Row label={t('wallet.payment.description')}>{info.description}</Row>
         )}
@@ -222,9 +210,7 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
             <CopyRow label={t('wallet.payment.txid')} value={info.txId} />
           )}
           {info.vout === undefined ? null : (
-            <Row label={t('wallet.payment.output')}>
-              <span className="font-mono text-xs">{info.vout}</span>
-            </Row>
+            <CopyRow label={t('wallet.payment.output')} value={String(info.vout)} />
           )}
           {info.invoice === undefined ? null : (
             <CopyRow label={t('wallet.payment.invoice')} value={info.invoice} />
@@ -237,9 +223,6 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
           )}
           {info.destinationPubkey === undefined || received ? null : (
             <CopyRow label={t('wallet.payment.node')} value={info.destinationPubkey} />
-          )}
-          {info.zap === undefined || info.zap.noteId === null ? null : (
-            <CopyRow label={t('wallet.payment.post')} value={nip19('note', info.zap.noteId)} />
           )}
           <CopyRow label={t('wallet.payment.id')} value={payment.id} />
         </dl>
@@ -279,8 +262,10 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
  * direction, title, signed amount with the default fiat, status (with a hint
  * for a pending or failed send), the message, a summary list (date, type,
  * counterparty, description, amount, fee, total, what arrived on-chain), and
- * the technical details with Copy (transaction and output, invoice, payment
- * hash, proof of payment, recipient node, zapped post, payment id). An
+ * the technical details with Copy (transaction and output, payment request,
+ * payment hash, proof of payment, recipient node, payment id). Nothing shows
+ * until the rate read has settled, so no amount appears without its fiat
+ * while the rate is still loading. An
  * on-chain payment links to its transaction on mempool.space through the
  * external-link warning. A missing or unknown id says so.
  *
@@ -290,10 +275,13 @@ export function WalletPaymentDetails(): ReactElement {
   const { t } = useTranslations();
   const id = useSearchParams().get('id');
   const state = useWalletPayment(id);
+  const rate = useLatestRateDayState();
   return (
     <Card surface={false}>
       <h1 className="sr-only">{t('wallet.payment.heading')}</h1>
-      {state.status === 'ready' ? <PaymentView payment={state.payment} /> : null}
+      {state.status === 'ready' && !rate.loading ? (
+        <PaymentView payment={state.payment} rateDay={rate.rateDay} />
+      ) : null}
       {state.status === 'missing' ? (
         <p role="alert" className="text-center text-sm text-app-muted">
           {t('wallet.payment.missing')}

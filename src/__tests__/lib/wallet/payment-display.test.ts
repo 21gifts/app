@@ -34,7 +34,7 @@ describe('paymentTitle', () => {
   it('prefers a zap, then the paid address, then the description', () => {
     expect(
       paymentTitle(payment({ info: { zap: ZAP, lnAddress: 'bob@x', description: 'd' } })),
-    ).toEqual({ key: 'wallet.payment.zapOnPost' });
+    ).toEqual({ key: 'wallet.payment.giftOnPost' });
     expect(paymentTitle(payment({ info: { lnAddress: 'bob@x', description: 'd' } }))).toEqual({
       text: 'bob@x',
     });

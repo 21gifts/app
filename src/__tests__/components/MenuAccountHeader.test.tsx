@@ -112,7 +112,7 @@ describe('MenuAccountHeader', () => {
   it('renders nothing before the account is loaded', () => {
     useAuthStore.setState({ session: 'sess-x', account: null });
     const { container } = renderWithLocale(
-      <MenuAccountHeader onNavigate={vi.fn()} tight={false} />,
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
     );
     expect(container.innerHTML).toBe('');
     expect(fetchAccountActivity).not.toHaveBeenCalled();
@@ -120,7 +120,7 @@ describe('MenuAccountHeader', () => {
 
   it('shows the initial, name, and @username, and skeletons that become values without changing height', async () => {
     const session = signIn();
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('@ada')).toBeTruthy();
     expect(screen.getByText('A').getAttribute('aria-hidden')).toBe('true');
@@ -149,10 +149,10 @@ describe('MenuAccountHeader', () => {
 
   it('reuses the loaded stats on the next mount in the same session', async () => {
     signIn();
-    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     first.unmount();
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(0);
     expect(screen.getByText('7')).toBeTruthy();
     expect(fetchAccountActivity).toHaveBeenCalledTimes(1);
@@ -162,8 +162,8 @@ describe('MenuAccountHeader', () => {
     signIn();
     renderWithLocale(
       <>
-        <MenuAccountHeader onNavigate={vi.fn()} tight={false} />
-        <MenuAccountHeader onNavigate={vi.fn()} tight />
+        <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />
+        <MenuAccountHeader onNavigate={vi.fn()} tight open />
       </>,
     );
     await settle();
@@ -175,19 +175,19 @@ describe('MenuAccountHeader', () => {
     signIn();
     vi.mocked(fetchAccountActivity).mockRejectedValue(new Error('down'));
     vi.mocked(fetchMember).mockResolvedValue(null);
-    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(within(statRow()).getAllByText('–')).toHaveLength(3);
     expect(within(statRow()).queryByText(/\$/)).toBeNull();
     first.unmount();
     vi.mocked(fetchAccountActivity).mockResolvedValue(ACTIVITY);
     vi.mocked(fetchMember).mockRejectedValue(new Error('down'));
-    const second = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    const second = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(fetchAccountActivity).toHaveBeenCalledTimes(2);
     expect(screen.getByText("₿21'000")).toBeTruthy();
     second.unmount();
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(fetchAccountActivity).toHaveBeenCalledTimes(3);
   });
@@ -200,7 +200,7 @@ describe('MenuAccountHeader', () => {
         finish = resolve;
       }),
     );
-    const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     view.unmount();
     finish(ACTIVITY);
     await settle();
@@ -210,14 +210,14 @@ describe('MenuAccountHeader', () => {
   it('shows the profile photo, and replaces the cached one when a new session loads', async () => {
     signIn();
     vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
-    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(screen.getByRole('img', { name: 'Profile photo' }).getAttribute('src')).toBe(
       'blob:photo',
     );
     first.unmount();
     signIn();
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:photo');
   });
@@ -225,7 +225,7 @@ describe('MenuAccountHeader', () => {
   it('ignores a photo answer that is not an image and falls back to the username initial', async () => {
     signIn({ name: '  ' });
     vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'text/html' }));
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(screen.queryByRole('img')).toBeNull();
     expect(screen.getByText('A')).toBeTruthy();
@@ -235,7 +235,7 @@ describe('MenuAccountHeader', () => {
   it('shows an empty initial without name or username', () => {
     signIn({ name: null, username: null });
     const { container } = renderWithLocale(
-      <MenuAccountHeader onNavigate={vi.fn()} tight={false} />,
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
     );
     expect(container.querySelector('span[aria-hidden="true"].rounded-full')?.textContent).toBe('');
     expect(screen.queryByText(/^@/)).toBeNull();
@@ -245,7 +245,7 @@ describe('MenuAccountHeader', () => {
     signIn();
     vi.mocked(useWallet).mockReturnValue(walletWith('ready', 21_000));
     const onNavigate = vi.fn();
-    renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} />);
+    renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} open />);
     await settle();
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toBe('/wallet');
@@ -259,7 +259,7 @@ describe('MenuAccountHeader', () => {
     signIn();
     vi.mocked(useLatestRateDay).mockReturnValue(null);
     vi.mocked(useWallet).mockReturnValue(walletWith('ready', 21_000));
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(screen.queryByText(/\$/)).toBeNull();
   });
@@ -272,7 +272,7 @@ describe('MenuAccountHeader', () => {
     (status, balance) => {
       signIn();
       vi.mocked(useWallet).mockReturnValue(walletWith(status, balance));
-      renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+      renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
       const pending = screen.getByRole('status', { name: 'Opening your wallet…' });
       expect(pending.querySelectorAll('.animate-pulse')).toHaveLength(2);
     },
@@ -283,7 +283,7 @@ describe('MenuAccountHeader', () => {
     (status) => {
       signIn();
       vi.mocked(useWallet).mockReturnValue(walletWith(status));
-      renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} />);
+      renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
       expect(screen.queryByRole('link')).toBeNull();
       expect(screen.queryByRole('status')).toBeNull();
     },
@@ -291,7 +291,51 @@ describe('MenuAccountHeader', () => {
 
   it('adds top spacing in the compact Menu', () => {
     signIn();
-    const { container } = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight />);
+    const { container } = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight open />);
     expect((container.firstElementChild as HTMLElement).className).toContain('mt-2');
+  });
+
+  it('loads while the Menu is closed but renders nothing until it opens', async () => {
+    signIn();
+    const view = renderWithLocale(
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />,
+    );
+    expect(view.container.innerHTML).toBe('');
+    await settle();
+    expect(fetchAccountActivity).toHaveBeenCalledTimes(1);
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(screen.getByText('7')).toBeTruthy();
+  });
+
+  it('creates no photo URL when the stats read failed', async () => {
+    signIn();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.mocked(fetchMember).mockRejectedValue(new Error('down'));
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    await settle();
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    expect(screen.queryByRole('img')).toBeNull();
+  });
+
+  it('keeps the newer session when an older load settles last', async () => {
+    let finishOld: (value: AccountActivity) => void = () => undefined;
+    vi.mocked(fetchAccountActivity).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishOld = resolve;
+      }),
+    );
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    signIn();
+    const old = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    old.unmount();
+    signIn();
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    await settle();
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    finishOld(ACTIVITY);
+    await settle();
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+    expect(screen.getByRole('img', { name: 'Profile photo' })).toBeTruthy();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeLnurl, encodeBech32, encodeLnurl } from '@/lib/lnurl';
+import { decodeLnurl, encodeLnurl } from '@/lib/lnurl';
 
 const ADA = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
 
@@ -33,15 +33,5 @@ describe('decodeLnurl', () => {
     expect(decodeLnurl('lnurl1qqqqqb')).toBeNull();
     expect(decodeLnurl('lnurl1qqqqqq')).toBeNull();
     expect(decodeLnurl(encodeLnurl(''))).toBeNull();
-  });
-});
-
-describe('encodeBech32', () => {
-  it('encodes raw bytes lowercase with any prefix (NIP-19 npub)', () => {
-    const hex = '3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d';
-    const bytes = Uint8Array.from(hex.match(/../g) ?? [], (pair) => parseInt(pair, 16));
-    expect(encodeBech32('npub', bytes)).toBe(
-      'npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6',
-    );
   });
 });

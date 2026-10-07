@@ -871,6 +871,8 @@ describe('toWalletPayment', () => {
   });
 
   it('reads a zap request: sender, trimmed message, and the zapped note', () => {
+    const key = 'ab'.repeat(32);
+    const note = 'ef'.repeat(32);
     const zap = (event: unknown): ReturnType<typeof toWalletPayment>['info']['zap'] =>
       toWalletPayment({
         ...base,
@@ -883,20 +885,20 @@ describe('toWalletPayment', () => {
     expect(
       zap({
         kind: 9734,
-        pubkey: 'ab',
+        pubkey: key,
         content: '  Great photo!  ',
-        tags: [['p', 'cd'], ['e'], ['e', 'ef']],
+        tags: [['p', 'cd'], ['e'], ['e', 'not-hex'], ['e', note]],
       }),
-    ).toEqual({ senderPubkey: 'ab', content: 'Great photo!', noteId: 'ef' });
-    expect(zap({ kind: 9734, pubkey: 'ab', content: 7, tags: 'x' })).toEqual({
-      senderPubkey: 'ab',
+    ).toEqual({ senderPubkey: key, content: 'Great photo!', noteId: note });
+    expect(zap({ kind: 9734, pubkey: key, content: 7, tags: 'x' })).toEqual({
+      senderPubkey: key,
       content: '',
       noteId: null,
     });
-    expect(zap({ kind: 9734, pubkey: 'ab', tags: ['e', 'x'] })?.noteId).toBeNull();
+    expect(zap({ kind: 9734, pubkey: key, tags: ['e', 'x'] })?.noteId).toBeNull();
   });
 
-  it('leaves out a zap request that is malformed JSON, not an object, the wrong kind, or without a sender', () => {
+  it('leaves out a zap request that is malformed JSON, not an object, the wrong kind, or without a 64-hex sender', () => {
     for (const raw of [
       '{not json',
       '"text"',

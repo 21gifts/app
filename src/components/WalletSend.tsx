@@ -159,9 +159,22 @@ export function WalletSend({
   const [scanned, setScanned] = useState<string | null>(null);
   const scanSubmitted = useRef(false);
   const [clipboardError, setClipboardError] = useState<'denied' | 'empty' | null>(null);
+  /** Bumped whenever a pending clipboard read must no longer take effect. */
+  const pasteRun = useRef(0);
+  useEffect(
+    () => () => {
+      pasteRun.current += 1;
+    },
+    [],
+  );
   /** The input alert, or `'step'` once the flow has left the input step. */
   const inputError = send.state.step === 'input' ? send.state.error : 'step';
   const { state, busy, text, submitInput } = send;
+  useEffect(() => {
+    if (manualEntry || inputError !== null) {
+      pasteRun.current += 1;
+    }
+  }, [manualEntry, inputError]);
   const spinner = busy ? (
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
   ) : undefined;
@@ -205,11 +218,19 @@ export function WalletSend({
   };
   const paste = async (): Promise<void> => {
     setClipboardError(null);
+    pasteRun.current += 1;
+    const run = pasteRun.current;
     let value: string;
     try {
       value = await navigator.clipboard.readText();
     } catch {
-      setClipboardError('denied');
+      if (run === pasteRun.current) {
+        setClipboardError('denied');
+      }
+      return;
+    }
+    // A read that settles after the sheet opened, the step moved on, or the view closed is dropped.
+    if (run !== pasteRun.current) {
       return;
     }
     if (value.trim() === '') {
