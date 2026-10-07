@@ -183,6 +183,7 @@ export function MenuAccountHeader({
         onClick={onNavigate}
         className="flex shrink-0 flex-col items-end whitespace-nowrap rounded-lg px-1 no-underline transition hover:bg-app-hover"
       >
+        <span className="sr-only">{t('wallet.balanceHeading')}</span>
         <span className="h-6 text-base font-semibold tabular-nums lining-nums text-app-fg">
           {formatBitcoin(wallet.balanceSats, numberFormat)}
         </span>
