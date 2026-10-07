@@ -254,6 +254,22 @@
 - **Used by:** `postWalletBackupSeen`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet/report
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/report`. Sends the unlocked wallet's balance (`balanceSats`, `syncedAt`) and the payments the api has not acknowledged yet (`payments`, at most 200 per request, each with `id`, `direction`, `status`, `amountSats`, `feeSats`, `timestamp`, `method`, `paymentHash`, `invoice`, `destination`, `description`, `lnurlComment`). Never a recovery phrase, key, PRF output, or preimage.
+- **Returns:** Upstream `{ acknowledgedIds }`.
+- **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
+- **Used by:** `postWalletReport` (from `reportWallet`).
+- **Auth:** Bearer.
+
+## Endpoint: POST /me/events
+
+- **Purpose:** Same-origin proxy of api `POST /me/events`. Sends a batch of at most 50 interaction events of the signed-in member, each `{ name, at, path, props }`.
+- **Returns:** The upstream status.
+- **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
+- **Used by:** `flushInteractions`.
+- **Auth:** Bearer.
+
 ## Endpoint: PUT /me/wallet
 
 - **Purpose:** Same-origin proxy of api `PUT /me/wallet`. Claims the in-app wallet's identity public key for the account. Write-once after the wallet is verified.
