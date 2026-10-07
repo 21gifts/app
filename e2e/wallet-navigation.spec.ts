@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { fulfillSpot } from './fx-spot';
 
 /**
- * The unlocked wallet keeps its recovery phrase in tab memory only, so a
+ * The open wallet keeps its recovery phrase in tab memory only, so a
  * document load locks it. These specs open the wallet's passkey step once,
  * then leave and return through the top-left arrow and through the Menu. The
  * document must stay the same (a marker on `window` survives) and the device
@@ -166,7 +166,7 @@ test('Function: markBackNavigation keeps the document and asks for no passkey ac
   expect(await passkeyPrompts(page)).toBe(1);
 });
 
-test('Function: SignedInChrome Home clears the back history and keeps the wallet unlocked', async ({
+test('Function: SignedInChrome Home clears the back history and keeps the wallet open', async ({
   page,
 }) => {
   await signInWithPasskey(page);

@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import type { Account } from '@/lib/api-types';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -27,6 +28,9 @@ vi.mock('next/link', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: () => void } => ({ push: () => undefined }),
 }));
+
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
 
 vi.mock('@/lib/api', () => ({
   fetchForumMessage: vi.fn(),
@@ -229,6 +233,32 @@ describe('ForumQuotedBody', () => {
       expect(translateConversation).not.toHaveBeenCalled();
     },
   );
+
+  it('loads a missing quote publicly while a login is still opening its wallet', async () => {
+    useAuthStore.setState({ session: 'tok', account: { id: 'acc' } as Account });
+    walletOpen.value = false;
+    fetchMessage.mockResolvedValue({ ...quotedNote, text: 'Nested' });
+    try {
+      renderWithLocale(
+        <ForumQuotedBody
+          text={`hello ${QUOTED_URL}`}
+          knownNotes={[]}
+          excludeId={PARENT_ID}
+          rateDay={null}
+          fiat="USD"
+          translate={false}
+        />,
+      );
+      await waitFor(() => {
+        expect(fetchMessage).toHaveBeenCalledWith(QUOTED_ID);
+      });
+      expect(fetchForum).not.toHaveBeenCalled();
+    } finally {
+      walletOpen.value = true;
+      cleanup();
+      useAuthStore.setState({ session: null, account: null });
+    }
+  });
 
   it('loads a missing quote with the session and passes marks through', async () => {
     useAuthStore.setState({ session: 'tok', account: null });
