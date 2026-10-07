@@ -55,15 +55,14 @@ function loadStats(session: string, accountId: string): Promise<MenuStats> {
     if (current) {
       inflight = null;
     }
-    // Only the session's current, complete load is kept; anything else is shown once without a photo.
-    if (!current || activity.status === 'rejected' || member.status === 'rejected') {
+    // Only the current, complete load of the session that is still signed in is kept;
+    // anything else is shown once without a photo.
+    const signedIn = useAuthStore.getState().session === session;
+    if (!current || !signedIn || activity.status === 'rejected' || member.status === 'rejected') {
       return stats;
     }
     if (picture.status === 'fulfilled' && picture.value.type.startsWith('image/')) {
       stats.pictureUrl = URL.createObjectURL(picture.value);
-    }
-    if (cached !== null && cached.stats.pictureUrl !== null) {
-      URL.revokeObjectURL(cached.stats.pictureUrl);
     }
     cached = { session, stats };
     return stats;
@@ -117,6 +116,13 @@ export function MenuAccountHeader({
   const [loaded, setLoaded] = useState<{ session: string; stats: MenuStats } | null>(null);
 
   useEffect(() => {
+    // A session that ends or changes takes its cached photo and numbers with it.
+    if (cached !== null && cached.session !== session) {
+      if (cached.stats.pictureUrl !== null) {
+        URL.revokeObjectURL(cached.stats.pictureUrl);
+      }
+      cached = null;
+    }
     if (session === null || accountId === null || cached?.session === session) {
       return;
     }
