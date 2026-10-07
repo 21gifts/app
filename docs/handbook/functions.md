@@ -1748,7 +1748,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** POST `/trust/verify` with `{ accountId, confirmedName }` so a moderator verifies a basis member.
 - **Inputs:** Bearer `sessionToken`, subject `accountId`, `confirmedName`.
 - **Returns / side effects:** `{ id, name, role }`. Throws visitor copy on any failure.
-- **Used by:** `MemberTrustActions`.
+- **Used by:** `MemberVerifyScreen`.
 
 ## Function: postTrustPropose
 
@@ -1920,10 +1920,24 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: MemberTrustActions
 
-- **Purpose:** Staff-only Verify / Propose / Confirm / Appoint controls on another member's identity card. The controls are children of the closed `StaffFunctions` disclosure; they are not painted until it is opened.
+- **Purpose:** Staff-only Trust Chain controls on another member's identity card. **Verify** is a `ButtonLink` to `/members/[accountId]/verify` and does not post from this card. Propose, Confirm, and Appoint stay one-click buttons that post from the card. The controls are children of the closed `StaffFunctions` disclosure; they are not painted until it is opened.
 - **Inputs:** `profile`, optional `onUpdated`. Hidden unless the signed-in account is a moderator and not the subject.
-- **Returns / side effects:** POST then re-fetch member; `data-testid="state-members-staff-verify"` when shown. The action buttons mount only after the disclosure is opened.
+- **Returns / side effects:** Propose / Confirm / Appoint POST then re-fetch member; `data-testid="state-members-staff-verify"` when shown. The Verify link and the remaining action buttons mount only after the disclosure is opened.
 - **Used by:** `MemberProfileScreen`.
+
+## Function: MemberVerifyPage
+
+- **Purpose:** Next.js page for `/members/[accountId]/verify`. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="profile"` around `MemberVerifyScreen`. The card has no back control. There is no `route.ts` beside this page.
+- **Inputs:** Dynamic `accountId`.
+- **Returns / side effects:** The stored-name check inside fill AppShell. Member HTTP stays on the existing `fetchMember` client.
+- **Used by:** Route `/members/[accountId]/verify`.
+
+## Function: MemberVerifyScreen
+
+- **Purpose:** Client stored-name check. Heading **Verify**. Renders `null` without a session and does not fetch. An id that is not a UUID shows **This profile could not be found.** and does not fetch. A viewer below moderator sees **You cannot verify this member.** and does not fetch. Otherwise `fetchMember` runs. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees the question, that exact name, and **Yes, this name identifies them**. Confirm is the only card action and the only child of `SundayWritingGate`. Chrome back does not post.
+- **Inputs:** Route `accountId`; session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. `postTrustVerify(session, profile.id, identifyingName)` only from the confirm button, with the untrimmed stored name, then `router.push` to `/members/${profile.id}`. A thrown write stays on this page with **Could not update this member. Please try again.**
+- **Used by:** `MemberVerifyPage`.
 
 ## Function: fetchPostStats
 

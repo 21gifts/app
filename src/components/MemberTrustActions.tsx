@@ -6,14 +6,8 @@ import { useState, type ReactElement } from 'react';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { StaffFunctions } from '@/components/StaffFunctions';
-import { Button } from '@/components/ui';
-import {
-  fetchMember,
-  postTrustAppoint,
-  postTrustConfirm,
-  postTrustPropose,
-  postTrustVerify,
-} from '@/lib/api';
+import { Button, ButtonLink } from '@/components/ui';
+import { fetchMember, postTrustAppoint, postTrustConfirm, postTrustPropose } from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -60,8 +54,9 @@ async function runTrustAction(
  *
  * Hidden when signed out, when the viewer is below the moderator rank, or when
  * the subject is the viewer. Founders may appoint; moderators
- * verify, propose, or confirm. Subjects already at the moderator rank see a
- * link to the public chain instead of buttons.
+ * propose or confirm, and Verify is a link to the stored-name subpage.
+ * Subjects already at the moderator rank see a link to the public chain
+ * instead of write controls.
  *
  * @param props - Subject profile and optional update callback.
  * @returns The action card, or `null` when the viewer cannot act.
@@ -79,7 +74,6 @@ export function MemberTrustActions({
   const account = useAuthStore((state) => state.account);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [confirmingVerify, setConfirmingVerify] = useState(false);
 
   if (session === null || account === null) {
     return null;
@@ -93,8 +87,6 @@ export function MemberTrustActions({
 
   const alreadyOnChain = roleAtLeast(profile.role, 'moderator');
   const showVerify = profile.role === 'basis';
-  const identifyingName =
-    typeof profile.name === 'string' && profile.name.trim() !== '' ? profile.name : null;
   const showPropose = profile.role === 'verified' && profile.trust.proposedBy === null;
   const proposedBy = profile.trust.proposedBy;
   const showConfirm =
@@ -148,53 +140,9 @@ export function MemberTrustActions({
         ) : (
           <SundayWritingGate>
             {showVerify ? (
-              identifyingName === null ? (
-                <p
-                  className="text-center text-sm text-app-muted"
-                  data-testid="state-members-staff-verify-unnamed"
-                >
-                  {t('trustChain.verifyName.missing')}
-                </p>
-              ) : confirmingVerify ? (
-                <div
-                  className="flex w-full flex-col items-stretch gap-3"
-                  data-testid="state-members-staff-verify-name"
-                >
-                  <p className="text-sm text-app-fg text-center">
-                    {t('trustChain.verifyName.question')}
-                  </p>
-                  <p className="text-sm font-medium text-app-fg text-center">{identifyingName}</p>
-                  <Button
-                    variant="secondary"
-                    disabled={busy}
-                    onClick={() => {
-                      run(() => postTrustVerify(session, profile.id, identifyingName), {
-                        role: 'verified',
-                      });
-                    }}
-                  >
-                    {t('trustChain.verifyName.confirm')}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setConfirmingVerify(false);
-                    }}
-                  >
-                    {t('trustChain.verifyName.cancel')}
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() => {
-                    setConfirmingVerify(true);
-                  }}
-                >
-                  {t('trustChain.action.verify')}
-                </Button>
-              )
+              <ButtonLink variant="secondary" href={`/members/${profile.id}/verify`}>
+                {t('trustChain.action.verify')}
+              </ButtonLink>
             ) : null}
             {showPropose ? (
               <Button

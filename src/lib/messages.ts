@@ -1077,8 +1077,8 @@ const en = {
   'trustChain.verifyName.question':
     'Does this stored name match the name that uniquely identifies this person?',
   'trustChain.verifyName.confirm': 'Yes, this name identifies them',
-  'trustChain.verifyName.cancel': 'Cancel',
   'trustChain.verifyName.missing': 'Verification needs a stored name that identifies this person.',
+  'trustChain.verifyName.forbidden': 'You cannot verify this member.',
   'trustChain.action.propose': 'Propose as moderator',
   'trustChain.action.confirm': 'Confirm as moderator',
   'trustChain.action.reject': 'Reject',
@@ -2193,9 +2193,9 @@ const de = {
   'trustChain.verifyName.question':
     'Entspricht dieser hinterlegte Name dem Namen, mit dem diese Person eindeutig identifiziert werden kann?',
   'trustChain.verifyName.confirm': 'Ja, dieser Name identifiziert die Person',
-  'trustChain.verifyName.cancel': 'Abbrechen',
   'trustChain.verifyName.missing':
     'Zum Verifizieren braucht es einen hinterlegten Namen, mit dem die Person eindeutig identifiziert werden kann.',
+  'trustChain.verifyName.forbidden': 'Du kannst dieses Mitglied nicht verifizieren.',
   'trustChain.action.propose': 'Als Moderator vorschlagen',
   'trustChain.action.confirm': 'Als Moderator bestätigen',
   'trustChain.action.reject': 'Ablehnen',
@@ -3282,9 +3282,9 @@ const es = {
   'trustChain.verifyName.question':
     '¿Coincide este nombre guardado con el nombre que identifica a esta persona de forma inequívoca?',
   'trustChain.verifyName.confirm': 'Sí, este nombre la identifica',
-  'trustChain.verifyName.cancel': 'Cancelar',
   'trustChain.verifyName.missing':
     'Para verificar hace falta un nombre guardado que identifique a esta persona de forma inequívoca.',
+  'trustChain.verifyName.forbidden': 'No puedes verificar a este miembro.',
   'trustChain.action.propose': 'Proponer como moderador',
   'trustChain.action.confirm': 'Confirmar como moderador',
   'trustChain.action.reject': 'Rechazar',
@@ -4379,9 +4379,9 @@ const fil = {
   'trustChain.verifyName.question':
     'Tumutugma ba ang nakaimbak na pangalan sa pangalan na natatanging kumikilala sa taong ito?',
   'trustChain.verifyName.confirm': 'Oo, ito ang pangalang kumikilala sa kanya',
-  'trustChain.verifyName.cancel': 'Kanselahin',
   'trustChain.verifyName.missing':
     'Kailangan ng nakaimbak na pangalan na natatanging kumikilala sa taong ito bago ma-verify.',
+  'trustChain.verifyName.forbidden': 'Hindi mo ma-verify ang miyembrong ito.',
   'trustChain.action.propose': 'Ipanukala bilang moderator',
   'trustChain.action.confirm': 'Kumpirmahin bilang moderator',
   'trustChain.action.reject': 'Tanggihan',

@@ -1,0 +1,229 @@
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemberVerifyScreen } from '@/components/MemberVerifyScreen';
+import { fetchMember, postTrustVerify } from '@/lib/api';
+import type { Account, MemberProfile } from '@/lib/api-types';
+import { useAuthStore } from '@/stores/auth-store';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
+
+const push = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof push } => ({ push }),
+}));
+
+vi.mock('@/lib/api', () => ({
+  fetchMember: vi.fn(),
+  postTrustVerify: vi.fn(),
+}));
+
+const NULL_TRUST = {
+  verifiedBy: null,
+  proposedBy: null,
+  confirmedBy: null,
+  appointedBy: null,
+};
+
+const account: Account = {
+  id: '11111111-1111-4111-8111-111111111111',
+  linkingKey: null,
+  role: 'basis',
+  name: 'Ada',
+  location: null,
+  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddressVerified: false,
+  forumLawsDismissed: true,
+  createdAt: 1,
+  rulesAgreedAt: 1,
+  viewKey: 'a'.repeat(64),
+  setup: null,
+  missing: [],
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+};
+
+const profile: MemberProfile = {
+  id: '22222222-2222-4222-8222-222222222222',
+  name: 'Carol',
+  location: null,
+  role: 'basis',
+  lightningAddress: 'carol@walletofsatoshi.com',
+  createdAt: '2026-01-15T12:00:00.000Z',
+  profileMessage: null,
+  postCount: 0,
+  replyCount: 0,
+  trust: NULL_TRUST,
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+};
+
+const QUESTION = 'Does this stored name match the name that uniquely identifies this person?';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  push.mockClear();
+  useAuthStore.setState({
+    session: 'sess',
+    account,
+  });
+});
+
+afterEach(cleanup);
+
+function setModerator(overrides: Partial<Account> = {}): void {
+  useAuthStore.setState({
+    session: 'sess',
+    account: { ...account, role: 'moderator', ...overrides },
+  });
+}
+
+describe('MemberVerifyScreen', () => {
+  it('renders nothing without a session and does not fetch', () => {
+    useAuthStore.setState({ session: null, account: { ...account, role: 'moderator' } });
+    const { container } = renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(container.firstChild).toBeNull();
+    expect(fetchMember).not.toHaveBeenCalled();
+  });
+
+  it('shows missing for an id that is not a UUID and does not fetch', () => {
+    setModerator();
+    renderWithLocale(<MemberVerifyScreen accountId="not-a-uuid" />);
+    expect(screen.getByText('This profile could not be found.')).toBeTruthy();
+    expect(screen.getByTestId('state-members-verify-missing')).toBeTruthy();
+    expect(fetchMember).not.toHaveBeenCalled();
+  });
+
+  it('shows Loading… while fetchMember is deferred', () => {
+    setModerator();
+    vi.mocked(fetchMember).mockImplementation(() => new Promise(() => undefined));
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.getByTestId('state-members-verify-loading')).toBeTruthy();
+  });
+
+  it('shows the profile error and retries a failed load', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockRejectedValueOnce(new Error('boom'));
+    vi.mocked(fetchMember).mockResolvedValueOnce(profile);
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Could not load this profile. Please try again.');
+    expect(screen.getByTestId('state-members-verify-error')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(fetchMember).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows missing when fetchMember returns null', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue(null);
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(await screen.findByText('This profile could not be found.')).toBeTruthy();
+    expect(screen.getByTestId('state-members-verify-missing')).toBeTruthy();
+  });
+
+  it('shows forbidden for a viewer below moderator and does not fetch', () => {
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(screen.getByText('You cannot verify this member.')).toBeTruthy();
+    expect(screen.getByTestId('state-members-verify-forbidden')).toBeTruthy();
+    expect(fetchMember).not.toHaveBeenCalled();
+  });
+
+  it('shows forbidden when a moderator views themself', async () => {
+    setModerator({ id: profile.id });
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(await screen.findByText('You cannot verify this member.')).toBeTruthy();
+    expect(screen.queryByText(QUESTION)).toBeNull();
+    expect(postTrustVerify).not.toHaveBeenCalled();
+  });
+
+  it('shows forbidden when the member role is not basis', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue({ ...profile, role: 'verified' });
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(await screen.findByText('You cannot verify this member.')).toBeTruthy();
+    expect(screen.queryByText(QUESTION)).toBeNull();
+    expect(postTrustVerify).not.toHaveBeenCalled();
+  });
+
+  it('shows the missing sentence when the stored name is null or only whitespace', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue({ ...profile, name: null });
+    const { unmount } = renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(
+      await screen.findByText('Verification needs a stored name that identifies this person.'),
+    ).toBeTruthy();
+    expect(screen.getByTestId('state-members-verify-unnamed')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Yes, this name identifies them' })).toBeNull();
+    expect(postTrustVerify).not.toHaveBeenCalled();
+    unmount();
+
+    vi.mocked(fetchMember).mockResolvedValue({ ...profile, name: '   ' });
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(
+      await screen.findByText('Verification needs a stored name that identifies this person.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Yes, this name identifies them' })).toBeNull();
+    expect(postTrustVerify).not.toHaveBeenCalled();
+  });
+
+  it('shows the question and Carol without posting until confirm is clicked', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(await screen.findByText(QUESTION)).toBeTruthy();
+    expect(screen.getByText('Carol')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Yes, this name identifies them' })).toBeTruthy();
+    expect(postTrustVerify).not.toHaveBeenCalled();
+  });
+
+  it('shows and posts the untrimmed stored name', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue({ ...profile, name: '  Carol  ' });
+    vi.mocked(postTrustVerify).mockResolvedValue({
+      id: profile.id,
+      name: '  Carol  ',
+      role: 'verified',
+    });
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    expect(
+      await screen.findByText((_, el) => el !== null && el.textContent === '  Carol  '),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, this name identifies them' }));
+    await waitFor(() => {
+      expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id, '  Carol  ');
+    });
+  });
+
+  it('posts the stored name then opens the member card', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    vi.mocked(postTrustVerify).mockResolvedValue({
+      id: profile.id,
+      name: profile.name,
+      role: 'verified',
+    });
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, this name identifies them' }));
+    await waitFor(() => {
+      expect(postTrustVerify).toHaveBeenCalledWith('sess', profile.id, 'Carol');
+      expect(push).toHaveBeenCalledWith(`/members/${profile.id}`);
+    });
+  });
+
+  it('keeps confirm and stays on the page when postTrustVerify throws', async () => {
+    setModerator();
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    vi.mocked(postTrustVerify).mockRejectedValue(new Error('fail'));
+    renderWithLocale(<MemberVerifyScreen accountId={profile.id} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, this name identifies them' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('state-members-verify-failed').textContent).toBe(
+        'Could not update this member. Please try again.',
+      );
+    });
+    expect(screen.getByRole('button', { name: 'Yes, this name identifies them' })).toBeTruthy();
+    expect(push).not.toHaveBeenCalled();
+  });
+});

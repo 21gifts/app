@@ -8317,7 +8317,7 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     const disclosure = page.getByText('Moderator functions');
     await disclosure.click();
-    const verify = page.getByRole('button', { name: 'Verify' });
+    const verify = page.getByRole('link', { name: 'Verify' });
     await expect(verify).toBeVisible();
     await expect(page.getByTestId('staff-functions')).toHaveJSProperty('open', true);
     await verify.scrollIntoViewIfNeeded();
@@ -8326,7 +8326,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-staff-verify-open', false);
   });
 
-  test('state /members staff-verify-name', async ({ page }) => {
+  test('state /members/[accountId]/verify default', async ({ page }) => {
     const staffId = '11111111-1111-4111-8111-111111111111';
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
@@ -8373,36 +8373,19 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
-    await page.goto(`/members/${memberId}`);
-    const disclosure = page.getByText('Moderator functions');
-    await disclosure.click();
-    const verify = page.getByRole('button', { name: 'Verify' });
-    await expect(verify).toBeVisible();
-    await verify.click();
-    const confirm = page.getByTestId('state-members-staff-verify-name');
-    await expect(confirm).toBeVisible();
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByRole('heading', { name: 'Verify' })).toBeVisible();
     await expect(
-      confirm.getByText(
-        'Does this stored name match the name that uniquely identifies this person?',
-      ),
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
     ).toBeVisible();
-    await expect(confirm.getByText('Ada')).toBeVisible();
+    await expect(page.getByText('Ada')).toBeVisible();
     await expect(
-      confirm.getByRole('button', { name: 'Yes, this name identifies them' }),
+      page.getByRole('button', { name: 'Yes, this name identifies them' }),
     ).toBeVisible();
-    await expect(page.getByTestId('staff-functions')).toHaveJSProperty('open', true);
-    await confirm.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-members-staff-verify-name', false);
+    await shotScreen(page, 'screen-members-accountId-verify');
   });
 
-  test('state /members staff-verify-unnamed', async ({ page }) => {
+  test('state /members/[accountId]/verify unnamed', async ({ page }) => {
     const staffId = '11111111-1111-4111-8111-111111111111';
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.addInitScript(() => {
@@ -8449,25 +8432,276 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
-    await page.goto(`/members/${memberId}`);
-    const disclosure = page.getByText('Moderator functions');
-    await disclosure.click();
+    await page.goto(`/members/${memberId}/verify`);
     await expect(
       page.getByText('Verification needs a stored name that identifies this person.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
-    const unnamed = page.getByTestId('state-members-staff-verify-unnamed');
-    await expect(unnamed).toBeVisible();
-    await expect(page.getByTestId('staff-functions')).toHaveJSProperty('open', true);
-    await unnamed.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-members-staff-verify-unnamed', false);
+    await expect(page.getByRole('button', { name: 'Yes, this name identifies them' })).toHaveCount(
+      0,
+    );
+    await shotScreen(page, 'state-members-verify-unnamed');
+  });
+
+  test('state /members/[accountId]/verify loading', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, () => new Promise(() => undefined));
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByRole('heading', { name: 'Verify' })).toBeVisible();
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.getByTestId('state-members-verify-loading')).toBeVisible();
+    await shotScreen(page, 'state-members-verify-loading');
+  });
+
+  test('state /members/[accountId]/verify error', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByText('Could not load this profile. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-members-verify-error');
+  });
+
+  test('state /members/[accountId]/verify missing', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/members/not-a-uuid/verify');
+    await expect(page.getByText('This profile could not be found.')).toBeVisible();
+    await shotScreen(page, 'state-members-verify-missing');
+  });
+
+  test('state /members/[accountId]/verify forbidden', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'verified',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByText('You cannot verify this member.')).toBeVisible();
+    await expect(
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+    ).toHaveCount(0);
+    await shotScreen(page, 'state-members-verify-forbidden');
+  });
+
+  test('state /members/[accountId]/verify sunday', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+    ).toBeVisible();
+    await expect(page.getByText('Ada')).toBeVisible();
+    await expect(page.getByText('Writing is paused on Sunday.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes, this name identifies them' })).toHaveCount(
+      0,
+    );
+    await shotScreen(page, 'state-members-verify-sunday');
+  });
+
+  test('state /members/[accountId]/verify failed', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.route('**/trust/verify', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({ status: 409, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await page.getByRole('button', { name: 'Yes, this name identifies them' }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/members/${memberId}/verify`));
+    await shotScreen(page, 'state-members-verify-failed');
   });
 
   test('state /members sunday', async ({ page }) => {

@@ -1920,18 +1920,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/members/[accountId]:staff-verify-name",
-    "label": "/members/[accountId] staff-verify-name",
-    "visual": "state-members-staff-verify-name",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/members/[accountId]:staff-verify-unnamed",
-    "label": "/members/[accountId] staff-verify-unnamed",
-    "visual": "state-members-staff-verify-unnamed",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/members/[accountId]:sunday",
     "label": "/members/[accountId] sunday",
     "visual": "state-members-accountId-sunday",
@@ -2013,6 +2001,54 @@
     "id": "/members/[accountId]:shop-edit-summary",
     "label": "/members/[accountId] shop-edit-summary",
     "visual": "state-members-shop-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:default",
+    "label": "/members/[accountId]/verify default",
+    "visual": "screen-members-accountId-verify",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:unnamed",
+    "label": "/members/[accountId]/verify unnamed",
+    "visual": "state-members-verify-unnamed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:loading",
+    "label": "/members/[accountId]/verify loading",
+    "visual": "state-members-verify-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:error",
+    "label": "/members/[accountId]/verify error",
+    "visual": "state-members-verify-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:missing",
+    "label": "/members/[accountId]/verify missing",
+    "visual": "state-members-verify-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:forbidden",
+    "label": "/members/[accountId]/verify forbidden",
+    "visual": "state-members-verify-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:sunday",
+    "label": "/members/[accountId]/verify sunday",
+    "visual": "state-members-verify-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]/verify:failed",
+    "label": "/members/[accountId]/verify failed",
+    "visual": "state-members-verify-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
