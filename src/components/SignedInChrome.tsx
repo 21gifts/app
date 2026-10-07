@@ -373,6 +373,7 @@ export function SignedInChrome(): ReactElement {
                   <>
                     <MenuAccountHeader
                       tight={tight}
+                      open={open}
                       onNavigate={() => {
                         setOpen(false);
                       }}

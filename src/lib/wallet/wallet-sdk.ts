@@ -176,8 +176,12 @@ export interface SdkPaymentDetailsLike {
   vout?: number;
 }
 
+/** A 32-byte value in lowercase hex: a Nostr public key or event id. */
+const HEX_32 = /^[0-9a-f]{64}$/;
+
 /**
- * Reads a zap request (NIP-57 kind 9734) from its JSON.
+ * Reads a zap request (NIP-57 kind 9734) from its JSON. A public key or zapped
+ * note id that is not 64 lowercase hex characters is not accepted.
  *
  * @param raw - The zap request JSON the SDK stored.
  * @returns The zapper, message, and zapped note, or `null` when it is not a zap request.
@@ -196,12 +200,12 @@ function parseZap(raw: string | undefined): WalletPaymentZap | null {
     return null;
   }
   const { kind, pubkey, content, tags } = event as Record<string, unknown>;
-  if (kind !== 9734 || typeof pubkey !== 'string') {
+  if (kind !== 9734 || typeof pubkey !== 'string' || !HEX_32.test(pubkey)) {
     return null;
   }
   const note = (Array.isArray(tags) ? tags : []).find(
     (tag: unknown): tag is [string, string] =>
-      Array.isArray(tag) && tag[0] === 'e' && typeof tag[1] === 'string',
+      Array.isArray(tag) && tag[0] === 'e' && typeof tag[1] === 'string' && HEX_32.test(tag[1]),
   );
   return {
     senderPubkey: pubkey,

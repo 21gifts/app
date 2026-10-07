@@ -990,7 +990,7 @@
 
 ## Function: AppShellFooter
 
-- **Purpose:** Registers flex-none footer content (CTAs) into the nearest `AppShell` page frame (DOM portal into the shell `<footer>` host; `pb-8` on that host). Without an `AppShell` ancestor, renders children inline.
+- **Purpose:** Registers flex-none footer content (CTAs) into the nearest `AppShell` page frame (DOM portal into the shell `<footer>` host; `px-5 pb-5` on that host). Without an `AppShell` ancestor, renders children inline.
 - **Inputs:** `children` (typically Continue / Skip / Agree buttons).
 - **Returns / side effects:** Portal into the shell footer host when present; otherwise the children. Layout only.
 - **Used by:**
@@ -2419,6 +2419,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** That day, or `null` when no day can convert the currency. No I/O.
 - **Used by:** `useLatestRateDayState`, `PublicMessageLoader`, `PublicMessageThread`, `MemberProfileScreen`.
 
+## Function: useLatestRateDayState
+
+- **Purpose:** The latest gift-day rate together with whether its read has settled, for a payment screen that must not show an amount as ready while the rate is still loading (CONTRIBUTING "Shown amounts"). `useLatestRateDay` returns its `rateDay`.
+- **Inputs:** Optional `enabled` (default `true`); while false nothing is fetched and `loading` stays `true`.
+- **Returns / side effects:** `{ rateDay, loading }`: `GET /gifts/stats` once on mount, then `latestRateDay` of `spendOverTime` (or `null` when no day has a usable rate or the read failed) with `loading: false`. A result after unmount is dropped.
+- **Used by:** `useLatestRateDay`, `WalletPaymentDetails`.
+
 ## Function: useLatestRateDay
 
 - **Purpose:** Latest gift-day totals for preferred-fiat conversion. Returns the `rateDay` from `useLatestRateDayState`, which skips a newer day that cannot convert the preferred currency. A failed fetch or no usable day yet resolves `null`. Changing the preferred fiat reuses the fetched series. Drops the response after unmount.
@@ -2777,16 +2784,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** The address, or `null` when the build sets no platform username. No I/O.
 - **Used by:** The landing `Home` page, which shows the `#project` donate section only when this is not `null`.
 
-## Function: encodeBech32
-
-- **Purpose:** BIP-173 bech32 (not bech32m) of raw bytes, lowercase, without the 90-character limit: the shared encoder behind `encodeLnurl` and the NIP-19 `npub…` and `note…` values on the payment screen.
-- **Inputs:** `hrp` (lowercase prefix) and `bytes`.
-- **Returns / side effects:** `<hrp>1…` with the bech32 checksum. Pure; no network.
-- **Used by:** `encodeLnurl`, `WalletPaymentDetails`.
-
 ## Function: encodeLnurl
 
-- **Purpose:** BIP-173 bech32-encode a cleartext URL with HRP `lnurl` (through `encodeBech32`) and return it uppercase, for an Open CryptoPay `lightning` query parameter.
+- **Purpose:** BIP-173 bech32-encode a cleartext URL with HRP `lnurl` and return it uppercase, for an Open CryptoPay `lightning` query parameter.
 - **Inputs:** `url` string.
 - **Returns / side effects:** Uppercase `LNURL1…`. No I/O.
 - **Used by:** `openCryptoPayQrValue`.
@@ -3969,7 +3969,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletHistory
 
-- **Purpose:** Payments card on the `/wallet` home under the balance card while the wallet is ready. Each row is a `next/link` to its `/wallet/payment` screen (`paymentHref`) with a chevron on the right: the received or sent icon; the title (`paymentTitle`: **Zap on your post**, the paid Lightning address, the description, **On-chain deposit** / **On-chain withdrawal**, else **Received** / **Sent**), truncated; the amount signed `+` or `−` (a failed one struck through and muted); under it the date and time, then **Pending** or **Failed** (failed in the danger colour) when not settled, and the default fiat on the right; and a third line with the message (`paymentMessage`: payer note, zap message, or the comment sent to a Lightning address), truncated. Empty: **No payments yet.** Error: one sentence and **Try again**; the error stays shown until the reload's result arrives. Nothing renders during the first load.
+- **Purpose:** Payments card on the `/wallet` home under the balance card while the wallet is ready. Each row is a `next/link` to its `/wallet/payment` screen (`paymentHref`) with a chevron on the right: the received or sent icon; the title (`paymentTitle`: **Gift on your post** for a zap, the paid Lightning address, the description, **On-chain deposit** / **On-chain withdrawal**, else **Received** / **Sent**), truncated; the amount signed `+` or `−` (a failed one struck through and muted); under it the date and time, then **Pending** or **Failed** (failed in the danger colour) when not settled, and the default fiat on the right; and a third line with the message (`paymentMessage`: payer note, zap message, or the comment sent to a Lightning address), truncated. Empty: **No payments yet.** Error: one sentence and **Try again**; the error stays shown until the reload's result arrives. Nothing renders during the first load.
 - **Inputs:** None (reads `useWalletHistory`, the latest rate day, fiat and number format).
 - **Returns / side effects:** The card, or `null`. The next page loads when the end of the list is in view (`IntersectionObserver`), checked again after every completed load and after an error and retry.
 - **Used by:** `WalletScreenView`.
@@ -4112,11 +4112,11 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The one reader of the `?visual=` screenshot pin. Honoured only in a Playwright build (`getE2eNow()` set); every deployed build gets `null`.
 - **Inputs:** None. Reads `window.location.search`.
 - **Returns / side effects:** The pin name, or `null` (also during server rendering). No network.
-- **Used by:** `useWallet`, `useWalletSend`, `useWalletPanel`.
+- **Used by:** `useWallet`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `paymentHref`.
 
 ## Function: paymentTitle
 
-- **Purpose:** What a payment is called in the list and on its screen: **Zap on your post** for a zap, else the paid Lightning address, else the invoice description, else **On-chain deposit** / **On-chain withdrawal**, else **Received** / **Sent**.
+- **Purpose:** What a payment is called in the list and on its screen: **Gift on your post** for a zap (no Nostr jargon on screen), else the paid Lightning address, else the invoice description, else **On-chain deposit** / **On-chain withdrawal**, else **Received** / **Sent**.
 - **Inputs:** A `WalletPayment`.
 - **Returns / side effects:** `{ text }` (literal) or `{ key }` (catalog key to translate). Pure.
 - **Used by:** `WalletHistory`, `WalletPaymentDetails`.
@@ -4144,8 +4144,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletPaymentDetails
 
-- **Purpose:** The `/wallet/payment?id=…` screen (`useSearchParams`, so the page wraps it in `Suspense`). `Card surface={false}` with an `sr-only` **h1** **Payment**. Ready: a centred head with the direction icon in a round `bg-app-card-muted` badge, the title (`paymentTitle`), the amount large (`text-3xl` semibold) signed `+` / `−` (failed: struck through and muted), the default fiat under it (absent only without a usable rate), a status pill (**Completed** success, **Pending** notice, **Failed** danger) and, for a pending send, **Still on its way. The amount stays reserved until it arrives or comes back.**, for a failed send **Nothing left your wallet.**; then the message block (`paymentMessage`) when there is one; then a bordered summary list: **Date** (long date and short time in the UI language), **Type** (Instant payment for Lightning, Spark transfer, On-chain deposit, On-chain withdrawal, Payment), **To** (paid Lightning address), **From** (the zapper as NIP-19 `npub`, with Copy), **Description** (only when the title is not already the description), **Amount**, **Fee** (**Free** at ₿0; hidden for a fee-less receive and for a failed payment), **Total** (sends with a fee), and **Arrived on-chain** (a deposit with a claim fee); every ₿ figure there carries the default fiat. Then a **Details** section (`h2`) with a bordered list of technical values, each shortened to its first 10 and last 6 characters with an icon-only Copy (`IconButton` ghost, accessible name **Copy {label}**, a check mark and a polite **Copied** for two seconds; a refused clipboard keeps the icon): **Transaction** and **Output**, **Invoice**, **Payment hash**, **Proof of payment** (preimage), **Recipient node** (sends only), **Post** (the zapped note as `note1…`), and **Payment ID**. An on-chain payment also has **View on mempool.space**, which opens `https://mempool.space/tx/<txid>` only after `ExternalLinkWarning` is confirmed (`openInSystemBrowser`). Missing: `role="alert"` **This payment could not be found.** Loading shows nothing yet.
-- **Inputs:** None (the `id` query parameter, `useWalletPayment`, the latest rate day, fiat and number format, the UI language).
+- **Purpose:** The `/wallet/payment?id=…` screen (`useSearchParams`, so the page wraps it in `Suspense`). `Card surface={false}` with an `sr-only` **h1** **Payment**. Ready: a centred head with the direction icon in a round `bg-app-card-muted` badge, the title (`paymentTitle`), the amount large (`text-3xl` semibold) signed `+` / `−` (failed: struck through and muted), the default fiat under it (absent only without a usable rate), a status pill (**Completed** success, **Pending** notice, **Failed** danger) and, for a pending send, **Still on its way. The amount stays reserved until it arrives or comes back.**, for a failed send **Nothing left your wallet.**; then the message block (`paymentMessage`) when there is one; then a bordered summary list: **Date** (long date and short time in the UI language), **Type** (Instant payment for Lightning, Spark transfer, On-chain deposit, On-chain withdrawal, Payment), **To** (paid Lightning address), **Description** (only when the title is not already the description), **Amount**, **Fee** (**Free** at ₿0; hidden for a fee-less receive and for a failed payment), **Total** (sends with a fee), and **Arrived on-chain** (a deposit with a claim fee); every ₿ figure there carries the default fiat. Then a **Details** section (`h2`) with a bordered list of technical values, each shortened to its first 10 and last 6 characters with an icon-only Copy (`IconButton` ghost, accessible name **Copy {label}**, a check mark and a polite **Copied** for two seconds; a refused clipboard keeps the icon): **Transaction** and **Output**, **Payment request** (the invoice), **Payment hash**, **Proof of payment** (preimage), **Recipient node** (sends only), and **Payment ID**. The zapper's key and the zapped note are not shown (`docs/ui.md`: no keys, npub, or zap jargon on screen). An on-chain payment also has **View on mempool.space**, which opens `https://mempool.space/tx/<txid>` only after `ExternalLinkWarning` is confirmed (`openInSystemBrowser`). Missing: `role="alert"` **This payment could not be found.** Nothing shows while the payment or the rate (`useLatestRateDayState`) is still loading, so no ₿ figure appears without its fiat.
+- **Inputs:** None (the `id` query parameter, `useWalletPayment`, `useLatestRateDayState`, fiat and number format, the UI language).
 - **Returns / side effects:** The screen. Writes to the clipboard only on Copy; leaves the site only after the warning.
 - **Used by:** `WalletPaymentPage`.
 

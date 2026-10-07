@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { FiatRateDay } from '@/lib/stats-money';
@@ -12,7 +12,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => new URLSearchParams('id=p1'),
 }));
-vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDayState: vi.fn() }));
 vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
 
@@ -58,7 +58,9 @@ function row(label: string): HTMLElement {
 }
 
 beforeEach(() => {
-  vi.mocked(useLatestRateDay).mockReset().mockReturnValue(RATE_DAY);
+  vi.mocked(useLatestRateDayState)
+    .mockReset()
+    .mockReturnValue({ rateDay: RATE_DAY, settled: true, loading: false });
   vi.mocked(openInSystemBrowser).mockReset();
 });
 
@@ -84,16 +86,29 @@ describe('WalletPaymentDetails', () => {
     expect(screen.getByRole('alert').textContent).toBe('This payment could not be found.');
   });
 
-  it('shows a received zap: title, signed amount with fiat, message, sender npub, and the zapped post', () => {
+  it('shows nothing of a loaded payment until the rate read has settled', () => {
+    vi.mocked(useLatestRateDayState).mockReturnValue({
+      rateDay: null,
+      settled: false,
+      loading: true,
+    });
     showPayment(fixture(ZAP));
-    expect(screen.getByText('Zap on your post')).toBeTruthy();
+    expect(screen.queryByText("+₿2'100")).toBeNull();
+    expect(screen.queryByText('Date')).toBeNull();
+  });
+
+  it('shows a received zap as a gift on the post: signed amount with fiat and the message, without a key or note id', () => {
+    showPayment(fixture(ZAP));
+    expect(screen.getByText('Gift on your post')).toBeTruthy();
     expect(screen.getByText("+₿2'100")).toBeTruthy();
     expect(screen.getByText('$2.10', { selector: 'p' })).toBeTruthy();
     expect(screen.getByText('Completed').className).toContain('text-app-success');
     expect(screen.getByText('Great photo!')).toBeTruthy();
     expect(row('Type').textContent).toBe('Instant payment');
-    expect(row('From').textContent).toMatch(/^npub1\w{5}…\w{6}/);
-    expect(row('Post').textContent).toMatch(/^note1\w{5}…\w{6}/);
+    expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('Post', { selector: 'dt' })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/npub1|note1|Zap/);
+    expect(row('Payment request').textContent).toMatch(/^lnbc/);
     expect(row('Amount').textContent).toBe("₿2'100 · $2.10");
     // A fee-less receive has no fee row, and a received payment shows no recipient node.
     expect(screen.queryByText('Fee', { selector: 'dt' })).toBeNull();
@@ -152,6 +167,7 @@ describe('WalletPaymentDetails', () => {
     expect(row('Fee').textContent).toContain('₿254');
     expect(row('Arrived on-chain').textContent).toContain("₿44'000");
     expect(row('Output').textContent).toBe('1');
+    expect(screen.getByRole('button', { name: 'Copy Output' })).toBeTruthy();
     expect(row('Transaction').textContent).toContain('…');
     const link = screen.getByRole('link', { name: 'View on mempool.space' });
     const url = link.getAttribute('href') as string;
@@ -175,7 +191,11 @@ describe('WalletPaymentDetails', () => {
   });
 
   it('shows the description row when the title is not the description, and the other method, without a rate', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    vi.mocked(useLatestRateDayState).mockReturnValue({
+      rateDay: null,
+      settled: true,
+      loading: false,
+    });
     showPayment({
       ...fixture(DEPOSIT),
       method: 'other',

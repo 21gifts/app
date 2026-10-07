@@ -306,6 +306,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-paste-empty",
+    "label": "/wallet send-paste-empty",
+    "visual": "state-wallet-send-paste-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-camera-denied",
     "label": "/wallet send-camera-denied",
     "visual": "state-wallet-send-camera-denied",
@@ -570,6 +576,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:copied",
+    "label": "/wallet/payment copied",
+    "visual": "state-wallet-payment-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:external-link",
+    "label": "/wallet/payment external-link",
+    "visual": "state-wallet-payment-external-link",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",
@@ -741,6 +759,240 @@
     "id": "/welcome:wallet-send-manual",
     "label": "/welcome wallet-send-manual",
     "visual": "state-welcome-wallet-send-manual",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-paste-denied",
+    "label": "/welcome wallet-send-paste-denied",
+    "visual": "state-welcome-wallet-send-paste-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-paste-empty",
+    "label": "/welcome wallet-send-paste-empty",
+    "visual": "state-welcome-wallet-send-paste-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera-unavailable",
+    "label": "/welcome wallet-send-camera-unavailable",
+    "visual": "state-welcome-wallet-send-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount",
+    "label": "/welcome wallet-send-amount",
+    "visual": "state-welcome-wallet-send-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-fiat",
+    "label": "/welcome wallet-send-amount-fiat",
+    "visual": "state-welcome-wallet-send-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm",
+    "label": "/welcome wallet-send-confirm",
+    "visual": "state-welcome-wallet-send-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-sent",
+    "label": "/welcome wallet-send-sent",
+    "visual": "state-welcome-wallet-send-sent",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-unsupported",
+    "label": "/welcome wallet-send-unsupported",
+    "visual": "state-welcome-wallet-send-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-not-ready",
+    "label": "/welcome wallet-send-not-ready",
+    "visual": "state-welcome-wallet-send-not-ready",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-unreadable",
+    "label": "/welcome wallet-send-unreadable",
+    "visual": "state-welcome-wallet-send-unreadable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-invalid",
+    "label": "/welcome wallet-send-invalid",
+    "visual": "state-welcome-wallet-send-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-failed",
+    "label": "/welcome wallet-send-failed",
+    "visual": "state-welcome-wallet-send-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-alert-locked",
+    "label": "/welcome wallet-send-alert-locked",
+    "visual": "state-welcome-wallet-send-alert-locked",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-insufficient",
+    "label": "/welcome wallet-send-insufficient",
+    "visual": "state-welcome-wallet-send-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-error",
+    "label": "/welcome wallet-send-amount-error",
+    "visual": "state-welcome-wallet-send-amount-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-request",
+    "label": "/welcome wallet-send-amount-request",
+    "visual": "state-welcome-wallet-send-amount-request",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-no-comment",
+    "label": "/welcome wallet-send-amount-no-comment",
+    "visual": "state-welcome-wallet-send-amount-no-comment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-min",
+    "label": "/welcome wallet-send-amount-min",
+    "visual": "state-welcome-wallet-send-amount-min",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-sending",
+    "label": "/welcome wallet-send-confirm-sending",
+    "visual": "state-welcome-wallet-send-confirm-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-fixed",
+    "label": "/welcome wallet-send-confirm-fixed",
+    "visual": "state-welcome-wallet-send-confirm-fixed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-shop",
+    "label": "/welcome wallet-send-confirm-shop",
+    "visual": "state-welcome-wallet-send-confirm-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-member",
+    "label": "/welcome wallet-send-confirm-member",
+    "visual": "state-welcome-wallet-send-confirm-member",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-onchain",
+    "label": "/welcome wallet-send-amount-onchain",
+    "visual": "state-welcome-wallet-send-amount-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-onchain-min",
+    "label": "/welcome wallet-send-amount-onchain-min",
+    "visual": "state-welcome-wallet-send-amount-onchain-min",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain",
+    "label": "/welcome wallet-send-confirm-onchain",
+    "visual": "state-welcome-wallet-send-confirm-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-fast",
+    "label": "/welcome wallet-send-confirm-onchain-fast",
+    "visual": "state-welcome-wallet-send-confirm-onchain-fast",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-slow",
+    "label": "/welcome wallet-send-confirm-onchain-slow",
+    "visual": "state-welcome-wallet-send-confirm-onchain-slow",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-low",
+    "label": "/welcome wallet-send-confirm-onchain-low",
+    "visual": "state-welcome-wallet-send-confirm-onchain-low",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-renewed",
+    "label": "/welcome wallet-send-confirm-onchain-renewed",
+    "visual": "state-welcome-wallet-send-confirm-onchain-renewed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-renewing",
+    "label": "/welcome wallet-send-confirm-onchain-renewing",
+    "visual": "state-welcome-wallet-send-confirm-onchain-renewing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-sending",
+    "label": "/welcome wallet-send-confirm-onchain-sending",
+    "visual": "state-welcome-wallet-send-confirm-onchain-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-input-busy",
+    "label": "/welcome wallet-send-input-busy",
+    "visual": "state-welcome-wallet-send-input-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-busy",
+    "label": "/welcome wallet-send-amount-busy",
+    "visual": "state-welcome-wallet-send-amount-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-error",
+    "label": "/welcome wallet-send-error",
+    "visual": "state-welcome-wallet-send-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-not-payable",
+    "label": "/welcome wallet-send-not-payable",
+    "visual": "state-welcome-wallet-send-not-payable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-not-found",
+    "label": "/welcome wallet-send-not-found",
+    "visual": "state-welcome-wallet-send-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-relay-unreachable",
+    "label": "/welcome wallet-send-relay-unreachable",
+    "visual": "state-welcome-wallet-send-relay-unreachable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-comment-long",
+    "label": "/welcome wallet-send-comment-long",
+    "visual": "state-welcome-wallet-send-comment-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive-copied",
+    "label": "/welcome wallet-receive-copied",
+    "visual": "state-welcome-wallet-receive-copied",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -104,7 +104,9 @@ export function useWalletPanel({
   const [seen, setSeen] = useState({ sendStep, status });
   if (seen.sendStep !== sendStep || seen.status !== status) {
     setSeen({ sendStep, status });
-    if (seen.sendStep !== sendStep) {
+    // The sheet closes with a step change, and when the wallet stops being ready (the Send view
+    // then shows only its alert), so Back never takes an invisible step.
+    if (seen.sendStep !== sendStep || !walletReady) {
       setManual(false);
     }
     if ((seen.sendStep === 'sent' && sendStep !== 'sent') || (!walletReady && panel === 'send')) {
@@ -158,6 +160,7 @@ export function useWalletPanel({
 
   const openReceive = useCallback((): void => {
     remember();
+    setSendAfterUnlock(false);
     setManual(false);
     setPanel('receive');
   }, [remember]);

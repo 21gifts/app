@@ -290,7 +290,7 @@ Pinned fixture (`?visual=history-empty`, Playwright builds only). Ready balance,
 
 ### Variant: history-rows
 
-Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Zap on your post** `+₿2'100` with **Great photo!**, **Gift to @alice** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Posting fee** `−₿1`. Each row shows its date and time and the default fiat.
+Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Gift on your post** `+₿2'100` with **Great photo!**, **Gift to @alice** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Posting fee** `−₿1`. Each row shows its date and time and the default fiat.
 ![21.gifts wallet history rows](images/wallet-history-rows.png)
 
 ### Variant: history-error
@@ -316,6 +316,12 @@ The Send view after **Enter manually**: the sheet over the bottom of the camera 
 The Send view after **Paste** when the browser refuses the clipboard: the small alert **Pasting was not allowed. Use Enter manually instead.** above the floating buttons, over the camera, which keeps running.
 
 ![21.gifts wallet send paste denied](images/wallet-send-paste-denied.png)
+
+### Variant: send-paste-empty
+
+The Send view after **Paste** with an empty clipboard: the small alert **The clipboard is empty.** above the floating buttons, over the camera, which keeps running.
+
+![21.gifts wallet send paste empty](images/wallet-send-paste-empty.png)
 
 ### Variant: send-camera-denied
 
@@ -542,13 +548,13 @@ Pinned fixture (`?visual=send-comment-long`, Playwright builds only). The amount
 ## Screen: /wallet/payment
 
 - **URL:** `/wallet/payment?id=<payment id>` — one payment of the signed-in member's wallet, opened from a row of the **Payments** list on `/wallet`.
-- **What the user sees:** The same frame as `/wallet`: one top-left arrow (back to the list, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a zap on your post, the paid Lightning address, the description, the on-chain direction, or Received / Sent), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address), **From** (the zapper's `npub`, with Copy), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Under **Details**, the technical values are shortened in the middle, each with a Copy icon: **Transaction** and **Output**, **Invoice**, **Payment hash**, **Proof of payment**, **Recipient node** (sends only), **Post** (the zapped note), and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
+- **What the user sees:** The same frame as `/wallet`: one top-left arrow (back to the list, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, the paid Lightning address, the description, the on-chain direction, or Received / Sent), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Under **Details**, the technical values are shortened in the middle, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, **Recipient node** (sends only), and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows until the payment and the rate are loaded, so no amount appears without its fiat. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
 - **Actions:** Copy a technical value; open the transaction on mempool.space after the warning; return to the list with the top-left arrow; open **Menu** (see **Signed-in header**).
-- **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `encodeBech32`, `ExternalLinkWarning`, `openInSystemBrowser`, `useLatestRateDay`.
+- **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `ExternalLinkWarning`, `openInSystemBrowser`, `useLatestRateDayState`.
 
 ### Variant: default
 
-Pinned fixture (`?visual=history-rows` with the zap's id, Playwright builds only). A received zap: **Zap on your post**, **+₿2'100** with **$2.10**, **Completed**, the message **Great photo!**, **Type** Instant payment, **From** the zapper's `npub`, **Amount**, no fee row, and under **Details** the invoice, payment hash, proof of payment, the zapped **Post** (`note1…`), and the payment id.
+Pinned fixture (`?visual=history-rows` with the zap's id, Playwright builds only). A received zap: **Gift on your post**, **+₿2'100** with **$2.10**, **Completed**, the message **Great photo!**, **Type** Instant payment, **Amount**, no fee row, and under **Details** the payment request, payment hash, proof of payment, and the payment id.
 
 ![21.gifts wallet payment zap](images/wallet-payment.png)
 
@@ -587,6 +593,18 @@ An on-chain withdrawal: **On-chain withdrawal**, **−₿40'000**, **Fee** ₿1'
 An id the wallet does not know: only **This payment could not be found.**
 
 ![21.gifts wallet payment not found](images/wallet-payment-missing.png)
+
+### Variant: copied
+
+The deposit after **Copy** on **Payment ID**: that row's icon turns into a green check for two seconds (and a screen reader hears **Copied**).
+
+![21.gifts wallet payment copied](images/wallet-payment-copied.png)
+
+### Variant: external-link
+
+The deposit after **View on mempool.space**: the **Open external link?** dialog over the screen, with **Open link** and **Close**; only **Open link** leaves 21.gifts.
+
+![21.gifts wallet payment external link](images/wallet-payment-external-link.png)
 
 ## Screen: /wallet/phrase
 
@@ -966,6 +984,240 @@ The same Send view when the camera is blocked: **Camera access was blocked. Allo
 The Send view after **Enter manually**: the sheet over the bottom of the camera area with the Close (`X`), `bob@example.com` typed into **Payment request or address**, and **Continue**.
 
 ![21.gifts welcome send manual entry](images/welcome-wallet-send-manual.png)
+
+### Variant: wallet-send-paste-denied
+
+The `/wallet` variant `send-paste-denied` in the Send view a `?visual=send-input` pin opens over the forum home: the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send paste denied](images/welcome-wallet-send-paste-denied.png)
+
+### Variant: wallet-send-paste-empty
+
+The `/wallet` variant `send-paste-empty` in the Send view a `?visual=send-input` pin opens over the forum home: the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send paste empty](images/welcome-wallet-send-paste-empty.png)
+
+### Variant: wallet-send-camera-unavailable
+
+The `/wallet` variant `send-camera-unavailable` in the Send view a `?visual=send-input` pin opens over the forum home: the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send camera unavailable](images/welcome-wallet-send-camera-unavailable.png)
+
+### Variant: wallet-send-amount
+
+The `/wallet` variant `send-amount` in the Send view the `?visual=send-amount` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount](images/welcome-wallet-send-amount.png)
+
+### Variant: wallet-send-amount-fiat
+
+The `/wallet` variant `send-amount-fiat` in the Send view the `?visual=send-amount-fiat` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount fiat](images/welcome-wallet-send-amount-fiat.png)
+
+### Variant: wallet-send-confirm
+
+The `/wallet` variant `send-confirm` in the Send view the `?visual=send-confirm` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm](images/welcome-wallet-send-confirm.png)
+
+### Variant: wallet-send-sent
+
+The `/wallet` variant `send-sent` in the Send view the `?visual=send-sent` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send sent](images/welcome-wallet-send-sent.png)
+
+### Variant: wallet-send-unsupported
+
+The `/wallet` variant `send-unsupported` in the Send view the `?visual=send-unsupported` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send unsupported](images/welcome-wallet-send-unsupported.png)
+
+### Variant: wallet-send-not-ready
+
+The `/wallet` variant `send-not-ready` in the Send view the `?visual=send-not-ready` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send not ready](images/welcome-wallet-send-not-ready.png)
+
+### Variant: wallet-send-unreadable
+
+The `/wallet` variant `send-unreadable` in the Send view the `?visual=send-unreadable` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send unreadable](images/welcome-wallet-send-unreadable.png)
+
+### Variant: wallet-send-invalid
+
+The `/wallet` variant `send-invalid` in the Send view the `?visual=send-invalid` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send invalid](images/welcome-wallet-send-invalid.png)
+
+### Variant: wallet-send-failed
+
+The `/wallet` variant `send-failed` in the Send view the `?visual=send-failed` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send failed](images/welcome-wallet-send-failed.png)
+
+### Variant: wallet-send-alert-locked
+
+The `/wallet` variant `send-alert-locked` in the Send view the `?visual=send-alert-locked` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send alert locked](images/welcome-wallet-send-alert-locked.png)
+
+### Variant: wallet-send-insufficient
+
+The `/wallet` variant `send-insufficient` in the Send view the `?visual=send-insufficient` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send insufficient](images/welcome-wallet-send-insufficient.png)
+
+### Variant: wallet-send-amount-error
+
+The `/wallet` variant `send-amount-error` in the Send view the `?visual=send-amount-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount error](images/welcome-wallet-send-amount-error.png)
+
+### Variant: wallet-send-amount-request
+
+The `/wallet` variant `send-amount-request` in the Send view the `?visual=send-amount-request` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount request](images/welcome-wallet-send-amount-request.png)
+
+### Variant: wallet-send-amount-no-comment
+
+The `/wallet` variant `send-amount-no-comment` in the Send view the `?visual=send-amount-no-comment` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount no comment](images/welcome-wallet-send-amount-no-comment.png)
+
+### Variant: wallet-send-amount-min
+
+The `/wallet` variant `send-amount-min` in the Send view the `?visual=send-amount-min` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount min](images/welcome-wallet-send-amount-min.png)
+
+### Variant: wallet-send-confirm-sending
+
+The `/wallet` variant `send-confirm-sending` in the Send view the `?visual=send-confirm-sending` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm sending](images/welcome-wallet-send-confirm-sending.png)
+
+### Variant: wallet-send-confirm-fixed
+
+The `/wallet` variant `send-confirm-fixed` in the Send view the `?visual=send-confirm-fixed` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm fixed](images/welcome-wallet-send-confirm-fixed.png)
+
+### Variant: wallet-send-confirm-shop
+
+The `/wallet` variant `send-confirm-shop` in the Send view the `?visual=send-confirm-shop` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm shop](images/welcome-wallet-send-confirm-shop.png)
+
+### Variant: wallet-send-confirm-member
+
+The `/wallet` variant `send-confirm-member` in the Send view the `?visual=send-confirm-member` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm member](images/welcome-wallet-send-confirm-member.png)
+
+### Variant: wallet-send-amount-onchain
+
+The `/wallet` variant `send-amount-onchain` in the Send view the `?visual=send-amount-onchain` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount onchain](images/welcome-wallet-send-amount-onchain.png)
+
+### Variant: wallet-send-amount-onchain-min
+
+The `/wallet` variant `send-amount-onchain-min` in the Send view the `?visual=send-amount-onchain-min` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount onchain min](images/welcome-wallet-send-amount-onchain-min.png)
+
+### Variant: wallet-send-confirm-onchain
+
+The `/wallet` variant `send-confirm-onchain` in the Send view the `?visual=send-confirm-onchain` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain](images/welcome-wallet-send-confirm-onchain.png)
+
+### Variant: wallet-send-confirm-onchain-fast
+
+The `/wallet` variant `send-confirm-onchain-fast` in the Send view the `?visual=send-confirm-onchain-fast` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain fast](images/welcome-wallet-send-confirm-onchain-fast.png)
+
+### Variant: wallet-send-confirm-onchain-slow
+
+The `/wallet` variant `send-confirm-onchain-slow` in the Send view the `?visual=send-confirm-onchain-slow` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain slow](images/welcome-wallet-send-confirm-onchain-slow.png)
+
+### Variant: wallet-send-confirm-onchain-low
+
+The `/wallet` variant `send-confirm-onchain-low` in the Send view the `?visual=send-confirm-onchain-low` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain low](images/welcome-wallet-send-confirm-onchain-low.png)
+
+### Variant: wallet-send-confirm-onchain-renewed
+
+The `/wallet` variant `send-confirm-onchain-renewed` in the Send view the `?visual=send-confirm-onchain-renewed` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain renewed](images/welcome-wallet-send-confirm-onchain-renewed.png)
+
+### Variant: wallet-send-confirm-onchain-renewing
+
+The `/wallet` variant `send-confirm-onchain-renewing` in the Send view the `?visual=send-confirm-onchain-renewing` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain renewing](images/welcome-wallet-send-confirm-onchain-renewing.png)
+
+### Variant: wallet-send-confirm-onchain-sending
+
+The `/wallet` variant `send-confirm-onchain-sending` in the Send view the `?visual=send-confirm-onchain-sending` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain sending](images/welcome-wallet-send-confirm-onchain-sending.png)
+
+### Variant: wallet-send-input-busy
+
+The `/wallet` variant `send-input-busy` in the Send view the `?visual=send-input-busy` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send input busy](images/welcome-wallet-send-input-busy.png)
+
+### Variant: wallet-send-amount-busy
+
+The `/wallet` variant `send-amount-busy` in the Send view the `?visual=send-amount-busy` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount busy](images/welcome-wallet-send-amount-busy.png)
+
+### Variant: wallet-send-error
+
+The `/wallet` variant `send-error` in the Send view the `?visual=send-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send error](images/welcome-wallet-send-error.png)
+
+### Variant: wallet-send-not-payable
+
+The `/wallet` variant `send-not-payable` in the Send view the `?visual=send-not-payable` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send not payable](images/welcome-wallet-send-not-payable.png)
+
+### Variant: wallet-send-not-found
+
+The `/wallet` variant `send-not-found` in the Send view the `?visual=send-not-found` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send not found](images/welcome-wallet-send-not-found.png)
+
+### Variant: wallet-send-relay-unreachable
+
+The `/wallet` variant `send-relay-unreachable` in the Send view the `?visual=send-relay-unreachable` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send relay unreachable](images/welcome-wallet-send-relay-unreachable.png)
+
+### Variant: wallet-send-comment-long
+
+The `/wallet` variant `send-comment-long` in the Send view the `?visual=send-comment-long` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send comment long](images/welcome-wallet-send-comment-long.png)
+
+### Variant: wallet-receive-copied
+
+The `/wallet` variant `receive-copied` after **Receive** over the forum home (pin `?visual=balance-ready`): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet receive copied](images/welcome-wallet-receive-copied.png)
 
 ### Variant: home-from-menu
 

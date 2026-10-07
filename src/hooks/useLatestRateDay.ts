@@ -7,10 +7,12 @@ import { latestRateDayFor, type FiatRateDay } from '@/lib/stats-money';
 
 /** Gift-day rate plus whether that request has finished. */
 export interface LatestRateDayState {
-  /** Latest usable day, or `null` when there is none. */
+  /** Latest usable day, or `null` when there is none (or while loading). */
   rateDay: FiatRateDay | null;
   /** True when no fetch is in flight. A disabled hook is settled immediately. */
   settled: boolean;
+  /** True until the read has settled (or while disabled), so a payment screen can wait for it. */
+  loading: boolean;
 }
 
 /**
@@ -22,11 +24,13 @@ export interface LatestRateDayState {
  * `settled` stays false until that request resolves or fails, so a payment
  * screen can refuse to treat the amount as ready while the rate is still
  * loading. A settled `null` means the request finished with no usable rate.
- * Never throws into the caller. Drops the response after unmount via a
+ * `loading` is the reverse view for
+ * a payment screen that must wait: true until the read has settled, and also
+ * while disabled. Never throws into the caller. Drops the response after unmount via a
  * cancelled flag. Changing the preferred fiat reuses the fetched series.
  *
  * @param enabled - When false, skip the fetch. Default true.
- * @returns The latest rate day and whether the request has settled.
+ * @returns The latest rate day, whether the request has settled, and whether it is still loading.
  */
 export function useLatestRateDayState(enabled = true): LatestRateDayState {
   const { fiat } = useFiatPreference();
@@ -59,7 +63,7 @@ export function useLatestRateDayState(enabled = true): LatestRateDayState {
   }, [enabled]);
 
   const rateDay = !enabled || series === null ? null : latestRateDayFor(series, fiat);
-  return { rateDay, settled };
+  return { rateDay, settled, loading: !enabled || !settled };
 }
 
 /**

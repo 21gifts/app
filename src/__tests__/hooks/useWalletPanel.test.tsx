@@ -240,6 +240,37 @@ describe('useWalletPanel locked wallet', () => {
   });
 });
 
+describe('useWalletPanel manual entry and pending unlock', () => {
+  it('closes the sheet when the wallet stops being ready, so Back takes no invisible step', () => {
+    const send = sendWith({ step: 'input', error: 'notReady' });
+    const { result, rerender } = renderPanel({ send, wallet: walletWith('ready') });
+    act(() => {
+      result.current.setManualEntry(true);
+    });
+    expect(result.current.manualEntry).toBe(true);
+    rerender({ send, wallet: walletWith('connecting') });
+    expect(result.current.manualEntry).toBe(false);
+    act(() => {
+      result.current.stepBack();
+    });
+    expect(send.setText).toHaveBeenCalledWith('');
+  });
+
+  it('drops a pending unlock-then-Send when Receive is chosen meanwhile', () => {
+    const send = sendWith();
+    const { result, rerender } = renderPanel({ send, wallet: walletWith('locked') });
+    act(() => {
+      result.current.openSend();
+    });
+    rerender({ send, wallet: walletWith('connecting') });
+    act(() => {
+      result.current.openReceive();
+    });
+    rerender({ send, wallet: walletWith('ready') });
+    expect(result.current.shown).toBe('receive');
+  });
+});
+
 describe('useWalletPanel manual entry', () => {
   it('shows the sheet only on the Send input step; Back and a step change close it', () => {
     const send = sendWith();

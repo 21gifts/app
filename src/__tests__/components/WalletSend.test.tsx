@@ -263,6 +263,40 @@ describe('WalletSend paste', () => {
     },
   );
 
+  it('drops a clipboard read that settles after the sheet opened or the view closed', async () => {
+    let finish: (value: string) => void = () => undefined;
+    let fail: (reason: Error) => void = () => undefined;
+    stubClipboard(
+      vi
+        .fn()
+        .mockReturnValueOnce(
+          new Promise<string>((resolve) => {
+            finish = resolve;
+          }),
+        )
+        .mockReturnValueOnce(
+          new Promise<string>((_resolve, reject) => {
+            fail = reject;
+          }),
+        ),
+    );
+    const send = sendWith({ step: 'input', error: null });
+    const view = renderWithLocale(<SendHarness send={send} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter manually' }));
+    await act(async () => {
+      finish('lnbc1late');
+    });
+    expect(send.setText).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Paste' }));
+    view.unmount();
+    await act(async () => {
+      fail(new Error('denied'));
+    });
+    expect(send.setText).not.toHaveBeenCalled();
+  });
+
   it('clears the clipboard alert when Enter manually opens the sheet', async () => {
     stubClipboard(() => Promise.resolve(''));
     renderSend(sendWith({ step: 'input', error: null }));

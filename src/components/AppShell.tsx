@@ -226,7 +226,7 @@ export function AppShellHeader(props: { children: ReactNode }): ReactElement | n
 }
 
 /**
- * Registers a flex-none footer slot (`pb-8` on the shell footer). Without an
+ * Registers a flex-none footer slot (`pb-5` on the shell footer). Without an
  * {@link AppShell} ancestor, renders children inline.
  *
  * @param props - Footer content (typically CTAs).
