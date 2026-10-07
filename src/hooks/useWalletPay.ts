@@ -12,6 +12,7 @@ import {
   refreshWallet,
   type WalletSendResult,
 } from '@/lib/wallet/wallet-service';
+import { logInteraction } from '@/lib/interaction-log';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -194,26 +195,32 @@ export function useWalletPay(
     };
   }, [input, amountSats]);
 
-  const sendPrepared = useCallback((send: () => Promise<WalletSendResult>, run: number): void => {
-    const balanceBefore = useWalletStore.getState().balanceSats;
-    setPhase('paying');
-    void send().then((result) => {
-      if (run !== generation.current) {
-        return;
-      }
-      if (result.kind === 'insufficient') {
-        insufficientBalance.current = balanceBefore;
-        setPhase('insufficient');
-        return;
-      }
-      timer.current = setTimeout(() => {
-        timer.current = null;
-        if (run === generation.current) {
-          setPhase('unconfirmed');
+  const sendPrepared = useCallback(
+    (send: () => Promise<WalletSendResult>, run: number, sats: number): void => {
+      const balanceBefore = useWalletStore.getState().balanceSats;
+      setPhase('paying');
+      void send().then((result) => {
+        if (run !== generation.current) {
+          return;
         }
-      }, WALLET_PAY_CONFIRM_WAIT_MS);
-    });
-  }, []);
+        if (result.kind === 'insufficient') {
+          insufficientBalance.current = balanceBefore;
+          setPhase('insufficient');
+          return;
+        }
+        if (result.kind === 'paid') {
+          logInteraction('gift_sent', { amountSats: sats });
+        }
+        timer.current = setTimeout(() => {
+          timer.current = null;
+          if (run === generation.current) {
+            setPhase('unconfirmed');
+          }
+        }, WALLET_PAY_CONFIRM_WAIT_MS);
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!canPay || status !== 'ready' || phase !== 'idle') {
@@ -304,7 +311,7 @@ export function useWalletPay(
       return;
     }
     sendRef.current = null;
-    sendPrepared(prepared.send, generation.current);
+    sendPrepared(prepared.send, generation.current, prepared.amountSats);
   }, [pinned, canPay, phase, input, amountSats, sendPrepared]);
 
   const retry = useCallback((): void => {

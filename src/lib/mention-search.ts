@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logInteraction } from '@/lib/interaction-log';
 
 const mentionSearchSchema = z.object({
   accounts: z.array(
@@ -13,7 +14,8 @@ const mentionSearchSchema = z.object({
 /**
  * Username suggestions for an `@` token in a forum composer.
  *
- * Omits `q` when `query` is empty so the api returns the first page.
+ * Omits `q` when `query` is empty so the api returns the first page. A
+ * non-empty search is recorded as `search` with the term and the result count.
  *
  * @param sessionToken - Bearer session.
  * @param query - Lowercase username prefix, or `""` for the first page.
@@ -31,5 +33,9 @@ export async function searchMentionAccounts(
   if (!response.ok) {
     throw new Error(`Failed to search mentions: ${String(response.status)}`);
   }
-  return mentionSearchSchema.parse(await response.json()).accounts;
+  const accounts = mentionSearchSchema.parse(await response.json()).accounts;
+  if (query !== '') {
+    logInteraction('search', { query, results: accounts.length });
+  }
+  return accounts;
 }

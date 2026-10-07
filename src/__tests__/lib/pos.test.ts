@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 import {
   cancelPosCharge,
   createPosCharge,
@@ -8,6 +9,8 @@ import {
   fetchPosState,
   fetchShopChargeInvoice,
 } from '@/lib/pos';
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 
 const CHARGE = {
   id: 'c1',
@@ -43,6 +46,10 @@ describe('pos client', () => {
     const read = { ...CHARGE, paidAt: null };
     await expect(fetchPosState('tok')).resolves.toEqual({ charge: read, history: [read] });
     await expect(createPosCharge('tok', 21)).resolves.toEqual(read);
+    expect(logInteraction).toHaveBeenCalledWith('pos_charge_created', {
+      chargeId: 'c1',
+      amountSats: 21,
+    });
     await expect(cancelPosCharge('tok')).resolves.toBeUndefined();
   });
 
