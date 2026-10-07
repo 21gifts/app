@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fulfillSpot } from './fx-spot';
 
 /**
  * The unlocked wallet keeps its recovery phrase in tab memory only, so a
@@ -409,6 +410,7 @@ async function fulfillRateDay(page: Page): Promise<void> {
       }),
     });
   });
+  await fulfillSpot(page);
 }
 
 test('Function: MenuAccountHeader shows the ready balance with fiat, the name, and the stats, and its balance opens the wallet without a document load', async ({

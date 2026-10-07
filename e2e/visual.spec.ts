@@ -10,6 +10,7 @@ import {
   stubCurrentIphone,
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
+import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 
 /**
  * Locked pay slot button once its fiat has loaded: the shown amount is not
@@ -289,6 +290,7 @@ async function fulfillRateDay(page: Page): Promise<void> {
       body: JSON.stringify(RATE_DAY_STATS),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(RATE_DAY_STATS));
 }
 
 const EMPTY_ACTIVITY = {
@@ -1733,12 +1735,12 @@ test.describe('screen baselines', () => {
 
   test('wallet balance-ready-no-rate', async ({ page }) => {
     await seedWalletSend(page);
-    await page.route('**/gifts/stats**', async (route) => {
+    await page.route('**/fx/spot', async (route) => {
       await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
     });
-    const stats = page.waitForResponse('**/gifts/stats**');
+    const spot = page.waitForResponse('**/fx/spot');
     await page.goto('/wallet?visual=balance-ready');
-    await stats;
+    await spot;
     const balance = page.getByRole('region', { name: 'Balance' });
     await expect(balance.getByText("₿21'000")).toBeVisible();
     await expect(balance.getByRole('button')).toHaveCount(0);
@@ -7704,6 +7706,141 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByText('No PHP exchange rate yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-no-rate');
+  });
+
+  test('pos amount fiat with a spot rate', async ({ page }) => {
+    await fulfillSpot(page, { CHF: '80000.00' });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'CHF',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos/amount');
+    const chf = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'CHF' });
+    await expect(chf).toHaveAttribute('aria-pressed', 'true');
+    for (const digit of '68') {
+      await page.getByRole('button', { name: digit, exact: true }).click();
+    }
+    await expect(page.getByText("₿85'000")).toBeVisible();
+    await shotScreen(page, 'state-pos-amount-fiat');
+  });
+
+  test('pos amount fiat without a rate', async ({ page }) => {
+    await fulfillSpot(page, {});
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'CHF',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos/amount');
+    const chf = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'CHF' });
+    await expect(chf).toBeDisabled();
+    for (const digit of '68') {
+      await page.getByRole('button', { name: digit, exact: true }).click();
+    }
+    await expect(page.getByText('No exchange rate yet')).toBeVisible();
+    await shotScreen(page, 'state-pos-amount-fiat-no-rate');
+  });
+
+  test('pos cannot convert', async ({ page }) => {
+    await fulfillSpot(page, { CHF: '80000.00' });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          fiat: 'CHF',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos/amount');
+    const chf = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'CHF' });
+    await expect(chf).toHaveAttribute('aria-pressed', 'true');
+    for (const digit of '9999999999999') {
+      await page.getByRole('button', { name: digit, exact: true }).click();
+    }
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(
+      page.getByText('This amount cannot be converted to bitcoin. Enter it in ₿.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-pos-cannot-convert');
   });
 
   test('pos create outside', async ({ page }) => {
@@ -19859,6 +19996,7 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
+    await fulfillSpot(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
@@ -25439,6 +25577,12 @@ test.describe('moderate group screens', () => {
         }),
       });
     });
+    await fulfillSpot(
+      page,
+      spotRatesFromStats({
+        spendOverTime: [{ sats: 6158, usd: '5.00', chf: '4.00', eur: '4.50', php: '280.00' }],
+      }),
+    );
     await page.goto('/moderate/group');
     await expect(page.getByText('Great work today, moderators!')).toBeVisible();
     await expect(page.getByRole('note', { name: /21\.gifts/ })).toContainText('$5.00');

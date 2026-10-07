@@ -2204,6 +2204,13 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/fx/spot') {
+    // No rate by default, like an api that cannot price yet; specs that need
+    // one answer this route themselves (e2e/fx-spot.ts).
+    json(res, 200, { asOf: '2026-06-01T00:00:00.000Z', source: 'e2e', rates: {} });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/shops/activity') {
     const endMs = Date.parse(`${new Date(Date.now()).toISOString().slice(0, 10)}T00:00:00.000Z`);
     const days = Array.from({ length: 30 }, (_, i) => ({

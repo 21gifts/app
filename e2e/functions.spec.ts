@@ -4,6 +4,7 @@ import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
+import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -424,7 +425,7 @@ async function openPayLinkInvoice(page: Page): Promise<void> {
 const PAY_LINK_LNURL =
   'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
 
-async function stubGiftStats(page: Page, body: unknown): Promise<void> {
+async function stubGiftStats(page: Page, body: object): Promise<void> {
   await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -432,6 +433,7 @@ async function stubGiftStats(page: Page, body: unknown): Promise<void> {
       body: JSON.stringify(body),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(body as Parameters<typeof spotRatesFromStats>[0]));
 }
 
 const EMPTY_ACTIVITY = {
@@ -5569,6 +5571,12 @@ test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ requ
   expect(((await res.json()) as { giftCount: number }).giftCount).toBe(0);
 });
 
+test('Function: proxyFxSpotGet — GET /fx/spot has no rate on the stub', async ({ request }) => {
+  const res = await request.get('/fx/spot');
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { rates: Record<string, string> }).rates).toEqual({});
+});
+
 test('Function: fetchPostStats — stats page shows notes and replies as posts', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.route('**/messages/stats', async (route) => {
@@ -6005,7 +6013,7 @@ test('Function: forumFiatGoalPercent — a fiat ask percent uses the payment sum
   await expect(page.getByText('$1.50')).toBeVisible();
 });
 
-test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 sats', async ({
+test('Function: spotRateDay — pay sheet shows a live USD equivalent for 21 sats', async ({
   page,
 }) => {
   await stubGiftStats(page, POPULATED_STATS);
@@ -9086,6 +9094,111 @@ test('Function: cancelPosCharge — cancel returns the amount form', async ({ pa
   await page.goto('/pos');
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+});
+
+/** Signs Ada in for the till: CHF, fiat entry, a verified wallet, and charges recorded. */
+async function seedChfTill(page: Page): Promise<{ created: number[] }> {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        sparkWalletVerified: true,
+        fiat: 'CHF',
+        amountUnit: 'fiat',
+      }),
+    });
+  });
+  const created: number[] = [];
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+      created.push(amountSats);
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: {
+            id: 'pos-chf',
+            amountSats,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  return { created };
+}
+
+test('Function: useSpotRate — the till in CHF charges the sats of the spot rate', async ({
+  page,
+}) => {
+  await fulfillSpot(page, SPOT_RATES);
+  const till = await seedChfTill(page);
+  await page.goto('/pos/amount');
+  const unit = page.getByRole('group', { name: 'Bitcoin or fiat' });
+  await expect(unit.getByRole('button', { name: 'CHF' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '6', exact: true }).click();
+  await page.getByRole('button', { name: '8', exact: true }).click();
+  await expect(page.getByText("₿85'000")).toBeVisible();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  expect(till.created).toEqual([85_000]);
+});
+
+test('Function: AmountEntry — without a CHF rate the till disables CHF and charges ₿', async ({
+  page,
+}) => {
+  await fulfillSpot(page, { USD: '100000.00' });
+  const till = await seedChfTill(page);
+  await page.goto('/pos/amount');
+  const unit = page.getByRole('group', { name: 'Bitcoin or fiat' });
+  await expect(unit.getByRole('button', { name: 'CHF' })).toBeDisabled();
+  await expect(unit.getByRole('button', { name: '₿' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '6', exact: true }).click();
+  await page.getByRole('button', { name: '8', exact: true }).click();
+  await expect(page.getByText('No exchange rate yet')).toBeVisible();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  await expect(page.getByText('Enter a whole number.')).toHaveCount(0);
+  expect(till.created).toEqual([68]);
+});
+
+test('Function: fetchFxSpot — the till asks GET /fx/spot for the current price', async ({
+  page,
+}) => {
+  await seedChfTill(page);
+  const spot = page.waitForResponse((res) => new URL(res.url()).pathname === '/fx/spot');
+  await page.goto('/pos/amount');
+  const body = (await (await spot).json()) as { rates: Record<string, string> };
+  expect(body.rates).toEqual({});
+  await expect(
+    page.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', { name: 'CHF' }),
+  ).toBeDisabled();
 });
 
 test('Function: PosAmount — amount page has the keypad and no QR', async ({ page }) => {
@@ -13014,6 +13127,7 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
       }),
     });
   });
+  await fulfillSpot(page);
   await page.route(`**/public-messages/${id}`, async (route) => {
     await route.fulfill({
       status: 200,

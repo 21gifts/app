@@ -3050,6 +3050,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos/amount',
+    id: 'fiat',
+    image: 'pos-amount-fiat.png',
+    visual: 'state-pos-amount-fiat',
+    needle: 'pos amount fiat with a spot rate',
+  },
+  {
+    route: '/pos/amount',
+    id: 'fiat-no-rate',
+    image: 'pos-amount-fiat-no-rate.png',
+    visual: 'state-pos-amount-fiat-no-rate',
+    needle: 'pos amount fiat without a rate',
+  },
+  {
+    route: '/pos/amount',
+    id: 'cannot-convert',
+    image: 'pos-cannot-convert.png',
+    visual: 'state-pos-cannot-convert',
+    needle: 'This amount cannot be converted to bitcoin. Enter it in ₿.',
+  },
+  {
+    route: '/pos/amount',
     id: 'create-outside',
     image: 'pos-create-outside.png',
     visual: 'state-pos-create-outside',
