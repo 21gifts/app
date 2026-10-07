@@ -8,7 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, Card } from '@/components/ui';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { formatBitcoin } from '@/lib/stats-money';
@@ -26,7 +26,7 @@ export function WalletHistory(): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const { status, payments, hasMore, loadMore, retry } = useWalletHistory();
   const sentinel = useRef<HTMLLIElement>(null);
 

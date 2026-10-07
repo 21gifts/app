@@ -158,12 +158,15 @@ export function formatUsdTick(
   return formatFiatTick(usd, 'USD', style);
 }
 
-/** One gift-day row used to scale sats into CHF/EUR/USD/PHP. */
+/**
+ * Sats and their price in CHF/EUR/USD/PHP, used to scale sats into fiat:
+ * one gift day's totals, or the current spot price of 1 BTC ({@link spotRateDay}).
+ */
 export interface FiatRateDay {
-  /** Gift sats on that UTC day (must be greater than 0). */
+  /** Sats priced by the fiat fields (must be greater than 0). */
   sats: number;
-  /** USD total for that day. */
-  usd: string;
+  /** USD total, or `null` when there is no USD price. */
+  usd: string | null;
   /** CHF total, or `null` when unsummed. */
   chf: string | null;
   /** EUR total, or `null` when unsummed. */
@@ -185,20 +188,26 @@ function fiatFieldOnDay(day: FiatRateDay, code: FiatCode): string | null {
   }
 }
 
+/** Sats in one bitcoin, the amount a spot price is quoted for. */
+const SATS_PER_BTC = 100_000_000;
+
 /**
- * Latest spend-over-time day that has gifts, for sats→fiat scaling.
+ * The current price of 1 BTC as a rate for sats→fiat scaling.
  *
- * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
- * @returns Last day with `sats > 0`, or `null`.
+ * @param rates - `GET /fx/spot` prices of 1 BTC by code. A missing code has no rate.
+ * @returns A rate of 100'000'000 sats, or `null` when no code has a usable price.
  */
-export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | null {
-  for (let i = series.length - 1; i >= 0; i -= 1) {
-    const day = series[i];
-    if (day !== undefined && day.sats > 0) {
-      return day;
-    }
-  }
-  return null;
+export function spotRateDay(
+  rates: Partial<Record<FiatCode, string | undefined>>,
+): FiatRateDay | null {
+  const day: FiatRateDay = {
+    sats: SATS_PER_BTC,
+    usd: rates.USD ?? null,
+    chf: rates.CHF ?? null,
+    eur: rates.EUR ?? null,
+    php: rates.PHP ?? null,
+  };
+  return FIAT_CODES.some((code) => satsToFiatAmount(SATS_PER_BTC, day, code) !== null) ? day : null;
 }
 
 /** The four amounts shown next to a sat amount, or null when that currency has no rate. */
@@ -210,10 +219,10 @@ export interface ShownFiat {
 }
 
 /**
- * The fiat the payer sees for these sats, using the same day as the preview.
+ * The fiat the payer sees for these sats, using the same rate as the preview.
  *
  * @param sats - Whole sats about to be paid.
- * @param rateDay - Latest gift day, or null when no rate is on screen.
+ * @param rateDay - Current spot rate, or null when no rate is on screen.
  * @returns Four strings or nulls. Null is stored as empty, not filled in later.
  */
 export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): ShownFiat {

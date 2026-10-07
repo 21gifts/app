@@ -5,7 +5,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import type { MessageKey } from '@/lib/messages';
@@ -30,7 +30,7 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat: visitorFiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const [ledger, setLedger] = useState<RepaymentLedger | null>(null);
   useEffect(() => {
     let cancel = false;
@@ -195,7 +195,7 @@ function rowAmount(
   row: RepaymentLine,
   fiat: FiatCode | null,
   visitorFiat: FiatCode,
-  rateDay: ReturnType<typeof useLatestRateDay>,
+  rateDay: ReturnType<typeof useSpotRate>,
   numberFormat: NumberFormatStyle,
 ): ReactElement | null {
   if (fiat !== null && row.amount !== null) {

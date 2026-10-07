@@ -47,6 +47,9 @@ vi.mock('@/lib/api', () => ({
   postConversationMessage: vi.fn(),
   fetchConversationMessagePhoto: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   CONVERSATION_LIVE_POLL_MS: 5_000,
   CannotReceiveError: class CannotReceiveError extends Error {},
@@ -64,6 +67,7 @@ import {
   fetchConversationMessagePhoto,
   fetchConversations,
   fetchGiftStats,
+  fetchFxSpot,
   fetchModeratorGroup,
   postConversationInvoice,
   markConversationRead,
@@ -156,6 +160,9 @@ function conversationPage(
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   vi.clearAllMocks();
   push.mockReset();
   searchParams.delete('c');
@@ -1103,17 +1110,11 @@ describe('InboxLoader', () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
-    giftStatsMock.mockResolvedValue({
-      spendOverTime: [
-        {
-          sats: 100_000_000,
-          usd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-        },
-      ],
-    } as never);
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     expect(await screen.findByText('₿21')).toBeTruthy();
@@ -1124,12 +1125,12 @@ describe('InboxLoader', () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([THREAD]);
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
-    giftStatsMock.mockRejectedValueOnce(new Error('stats down'));
+    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('stats down'));
     renderWithLocale(<InboxLoader />);
     expect(await screen.findByText('Hello')).toBeTruthy();
     expect(await screen.findByText('₿21')).toBeTruthy();
     await waitFor(() => {
-      expect(giftStatsMock).toHaveBeenCalled();
+      expect(fetchFxSpot).toHaveBeenCalled();
     });
     expect(screen.queryByText('$0.02')).toBeNull();
   });

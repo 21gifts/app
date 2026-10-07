@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import {
   CannotReceiveError,
@@ -125,7 +125,7 @@ export function InboxLoader(): ReactElement | null {
   const { fiat } = useFiatPreference();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const openId = searchParams.get('c');
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [error, setError] = useState(false);

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletScreenView } from '@/components/WalletScreenView';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import type { UseWalletResult } from '@/hooks/useWallet';
 import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 import { WALLET_VISUAL_FIXTURE_MNEMONIC } from '@/hooks/useWalletPhrase';
@@ -42,8 +42,8 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-vi.mock('@/hooks/useLatestRateDay', () => ({
-  useLatestRateDay: vi.fn(),
+vi.mock('@/hooks/useSpotRate', () => ({
+  useSpotRate: vi.fn(),
 }));
 
 const { cameraRenders } = vi.hoisted(() => ({ cameraRenders: { count: 0 } }));
@@ -68,7 +68,7 @@ const RATE_DAY: FiatRateDay = {
 };
 
 beforeEach(() => {
-  vi.mocked(useLatestRateDay).mockReset().mockReturnValue(RATE_DAY);
+  vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
 });
 
 afterEach(() => {

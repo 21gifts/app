@@ -2,13 +2,13 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletSend } from '@/components/WalletSend';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import type { UseWalletSendResult, WalletSendState } from '@/hooks/useWalletSend';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
 
 vi.mock('@/components/QrScanner', () => ({
   QrScanner: ({ onResult }: { onResult: (text: string) => void }) => (
@@ -105,7 +105,7 @@ function stubClipboard(readText: () => Promise<string>): void {
 }
 
 beforeEach(() => {
-  vi.mocked(useLatestRateDay).mockReset().mockReturnValue(RATE_DAY);
+  vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
   useAuthStore.setState({ session: 'token', account: null });
 });
 
@@ -482,7 +482,7 @@ describe('WalletSend amount', () => {
   });
 
   it('shows the bounds in bitcoin only without a usable rate', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    vi.mocked(useSpotRate).mockReturnValue(null);
     renderSend(sendWith(LNURL_STATE));
     expect(screen.getByText("Between ₿10 and ₿1'000")).toBeTruthy();
   });
@@ -652,7 +652,7 @@ describe('WalletSend base-chain address', () => {
   });
 
   it('shows only bitcoin without a usable rate', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    vi.mocked(useSpotRate).mockReturnValue(null);
     renderSend(sendWith(onchainState()));
     expect(screen.getByRole('button', { name: /^Slow/ }).textContent).toBe('Slow₿710');
     expect(screen.getByText(/^Fee /).textContent).toBe("Fee ₿1'420");
@@ -688,7 +688,7 @@ describe('WalletSend confirm and sent', () => {
   });
 
   it('shows only the bitcoin figures without a usable rate', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    vi.mocked(useSpotRate).mockReturnValue(null);
     renderSend(
       sendWith({ step: 'confirm', recipient: 'bob@pay.example', amountSats: 2_100, feeSats: 3 }),
     );
