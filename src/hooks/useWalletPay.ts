@@ -200,6 +200,10 @@ export function useWalletPay(
       const balanceBefore = useWalletStore.getState().balanceSats;
       setPhase('paying');
       void send().then((result) => {
+        if (result.kind === 'paid') {
+          // Recorded even when the sheet closed meanwhile: the gift went out.
+          logInteraction('gift_sent', { amountSats: sats });
+        }
         if (run !== generation.current) {
           return;
         }
@@ -207,9 +211,6 @@ export function useWalletPay(
           insufficientBalance.current = balanceBefore;
           setPhase('insufficient');
           return;
-        }
-        if (result.kind === 'paid') {
-          logInteraction('gift_sent', { amountSats: sats });
         }
         timer.current = setTimeout(() => {
           timer.current = null;

@@ -77,6 +77,19 @@ async function receivedEvents(request: APIRequestContext, token: string): Promis
 }
 
 /**
+ * Fires `pagehide`, which sends whatever the interaction log has queued. The
+ * view is queued once the session has hydrated, so callers repeat this while
+ * they poll.
+ *
+ * @param page - The page.
+ */
+async function hidePage(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('pagehide'));
+  });
+}
+
+/**
  * Opens `/wallet` signed in, in a build without a wallet key, and checks that
  * the wallet never loads and no wallet report is sent.
  *
@@ -169,11 +182,11 @@ test.describe('POST /me/events', () => {
     const token = await newMember(request);
     await signIn(page, token);
     await page.goto(`/members/${MEMBER_ID}?from=test#top`);
-    await page.evaluate(() => {
-      window.dispatchEvent(new Event('pagehide'));
-    });
     await expect
-      .poll(async () => (await receivedEvents(request, token)).map((event) => event.name))
+      .poll(async () => {
+        await hidePage(page);
+        return (await receivedEvents(request, token)).map((event) => event.name);
+      })
       .toEqual(expect.arrayContaining(['screen_view', 'profile_opened']));
     const events = await receivedEvents(request, token);
     const opened = events.find((event) => event.name === 'profile_opened');
@@ -245,10 +258,12 @@ test.describe('POST /me/events', () => {
       }
     });
     await page.goto(`/rules?phrase=${encodeURIComponent(MNEMONIC)}`);
-    await page.evaluate(() => {
-      window.dispatchEvent(new Event('pagehide'));
-    });
-    await expect.poll(() => bodies.length).toBeGreaterThan(0);
+    await expect
+      .poll(async () => {
+        await hidePage(page);
+        return bodies.length;
+      })
+      .toBeGreaterThan(0);
     for (const body of bodies) {
       expect(body).not.toContain('abandon');
       expect(body).not.toContain(token);

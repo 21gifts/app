@@ -92,7 +92,7 @@ describe('logInteraction', () => {
           },
         ],
       }),
-      keepalive: false,
+      keepalive: true,
     });
   });
 
@@ -237,13 +237,79 @@ describe('flushInteractions', () => {
   });
 });
 
+describe('session binding and batch size', () => {
+  it('drops events of another member before queuing a new one', async () => {
+    mod.logInteraction('login');
+    useAuthStore.setState({ session: 'other' });
+    mod.logInteraction('screen_view');
+    await mod.flushInteractions();
+    expect(requests().map((request) => request.headers['Authorization'])).toEqual(['Bearer other']);
+    expect(posted().map((event) => event.name)).toEqual(['screen_view']);
+  });
+
+  it('never sends queued events with a session they were not recorded under', async () => {
+    mod.logInteraction('login');
+    useAuthStore.setState({ session: 'other' });
+    await mod.flushInteractions();
+    useAuthStore.setState({ session: 'sess' });
+    await mod.flushInteractions();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('stops after the batch in flight when another member signs in, and drops it on failure', async () => {
+    let fail: () => void = () => undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = () => {
+            reject(new Error('offline'));
+          };
+        }),
+    );
+    for (let i = 0; i < 49; i += 1) {
+      mod.logInteraction('screen_view');
+    }
+    const first = mod.flushInteractions();
+    useAuthStore.setState({ session: 'other' });
+    mod.logInteraction('login');
+    fail();
+    await first;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await mod.flushInteractions();
+    expect(requests().map((request) => request.headers['Authorization'])).toEqual([
+      'Bearer sess',
+      'Bearer other',
+    ]);
+    expect(
+      posted()
+        .slice(49)
+        .map((event) => event.name),
+    ).toEqual(['login']);
+  });
+
+  it('keeps each request body under the keepalive limit', async () => {
+    const props = Object.fromEntries(
+      Array.from({ length: 12 }, (_, i) => [`k${String(i)}`, 'x'.repeat(200)]),
+    );
+    for (let i = 0; i < 49; i += 1) {
+      mod.logInteraction('search', props);
+    }
+    await mod.flushInteractions();
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
+    expect(posted()).toHaveLength(49);
+    for (const request of requests()) {
+      expect(request.body.length).toBeLessThanOrEqual(61_000);
+    }
+  });
+});
+
 describe('startInteractionLog', () => {
-  it('flushes on the timer and keeps the request alive when the page hides', async () => {
+  it('flushes on the timer and when the page hides, each request kept alive', async () => {
     vi.useFakeTimers();
     const stop = mod.startInteractionLog();
     mod.logInteraction('screen_view');
     await vi.advanceTimersByTimeAsync(mod.INTERACTION_FLUSH_MS);
-    expect(requests().map((request) => request.keepalive)).toEqual([false]);
+    expect(requests().map((request) => request.keepalive)).toEqual([true]);
     mod.logInteraction('screen_view');
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
     document.dispatchEvent(new Event('visibilitychange'));
@@ -255,7 +321,7 @@ describe('startInteractionLog', () => {
     mod.logInteraction('screen_view');
     window.dispatchEvent(new Event('pagehide'));
     await vi.advanceTimersByTimeAsync(0);
-    expect(requests().map((request) => request.keepalive)).toEqual([false, true, true]);
+    expect(requests().map((request) => request.keepalive)).toEqual([true, true, true]);
     stop();
     mod.logInteraction('screen_view');
     window.dispatchEvent(new Event('pagehide'));

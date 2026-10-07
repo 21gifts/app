@@ -104,14 +104,26 @@ describe('PlacesMapScreen', () => {
     expect(fetchPlacesMock).not.toHaveBeenCalled();
   });
 
+  it('records an opened shop pin once, and no other pin', async () => {
+    vi.mocked(logInteraction).mockClear();
+    window.history.replaceState(null, '', '/map?pin=m-pin');
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(vi.mocked(logInteraction).mock.calls).toEqual([['shop_opened', { placeId: 'm-pin' }]]);
+  });
+
   it('lists pins, coordinates, and the selected pin', async () => {
+    vi.mocked(logInteraction).mockClear();
     window.history.replaceState(null, '', '/map?pin=m-pin');
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockResolvedValue([ROW, { ...ROW, id: 'm-2', label: null, lat: 1, lng: 2 }]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
-    expect(logInteraction).toHaveBeenCalledWith('shop_opened', { placeId: 'm-pin' });
+    expect(logInteraction).not.toHaveBeenCalledWith('shop_opened', expect.anything());
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('min-w-0');
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('max-w-full');
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain(

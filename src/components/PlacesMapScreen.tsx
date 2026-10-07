@@ -151,11 +151,15 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const authFailedRef = useRef(false);
 
+  const openedShop =
+    pinId !== null && places?.some((row) => row.id === pinId && row.shop === true) === true
+      ? pinId
+      : null;
   useEffect(() => {
-    if (pinId !== null) {
-      logInteraction('shop_opened', { placeId: pinId });
+    if (openedShop !== null) {
+      logInteraction('shop_opened', { placeId: openedShop });
     }
-  }, [pinId]);
+  }, [openedShop]);
 
   useEffect(() => {
     const host = window as GoogleWindow;
