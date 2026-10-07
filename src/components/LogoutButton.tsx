@@ -11,7 +11,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Quiet log-out control used inside the signed-in Menu dropdown, not as a
  * free top-right action, and under the in-place login card
- * (`WalletLoginCard`) while a session is held back or not open yet.
+ * (`WalletLoginCard`) while a session is held back.
  *
  * @returns Full-width Menu-row icon+text log-out control.
  */

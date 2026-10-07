@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletLoginCard } from '@/components/WalletLoginCard';
@@ -6,7 +7,14 @@ import { finishWalletOpen, type WalletOpenOutcome } from '@/lib/wallet/wallet-op
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('@/components/LoginCard', () => ({ LoginCard: () => <p>login card</p> }));
+vi.mock('@/components/LoginCard', () => ({
+  LoginCard: ({ footer }: { footer?: ReactNode }) => (
+    <>
+      <p>login card</p>
+      {footer}
+    </>
+  ),
+}));
 vi.mock('@/components/LogoutButton', () => ({ LogoutButton: () => <button>Log out</button> }));
 vi.mock('@/lib/wallet/wallet-open', () => ({ finishWalletOpen: vi.fn() }));
 
@@ -91,6 +99,29 @@ describe('WalletLoginCard', () => {
     renderWithLocale(<WalletLoginCard />);
     await waitFor(() => expect(useAuthStore.getState().lockedSession).toBe('token'));
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows the alert on a card that mounts after the open failed for that session', async () => {
+    const pending = deferredOutcome();
+    vi.mocked(finishWalletOpen).mockReturnValue(pending.promise);
+    useAuthStore.setState({ session: 'tok-remount-late', account, lockedSession: null });
+    const first = renderWithLocale(<WalletLoginCard />);
+    first.unmount();
+    await act(async () => pending.resolve('noPrf'));
+    renderWithLocale(<WalletLoginCard />);
+    expect(screen.getByRole('alert').textContent).toContain('cannot hold a 21.gifts wallet');
+  });
+
+  it('shows the alert on a second card for the same session after the first one held it back', async () => {
+    const pending = deferredOutcome();
+    vi.mocked(finishWalletOpen).mockReturnValue(pending.promise);
+    useAuthStore.setState({ session: 'tok-remount-early', account, lockedSession: null });
+    const first = renderWithLocale(<WalletLoginCard />);
+    first.unmount();
+    renderWithLocale(<WalletLoginCard />);
+    await act(async () => pending.resolve('failed'));
+    expect(useAuthStore.getState().lockedSession).toBe('tok-remount-early');
+    expect((await screen.findByRole('alert')).textContent).toContain('Something went wrong');
   });
 
   it('still holds the session back when the open fails after unmount', async () => {
