@@ -8,6 +8,22 @@ import type { Account, DailyRoster } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchDailyRoster: vi.fn(),
   saveDailyRosterComment: vi.fn(),
@@ -62,9 +78,8 @@ const ROSTER: DailyRoster = {
   paymentsEnabled: true,
   defaultAmountUsd: 4,
   recipients: [
-    { address: 'Ada@WalletOfSatoshi.com', amountUsd: 1 },
-    { address: 'bob@example.com', amountUsd: 0.1 },
-    { address: 'nolocal', amountUsd: 0.2 },
+    { address: 'ada@walletofsatoshi.com', amountUsd: 1, accountId: 'acc_ada', name: 'Ada' },
+    { address: 'bob@example.com', amountUsd: 0.3, accountId: null, name: null },
   ],
 };
 
@@ -88,15 +103,13 @@ async function renderComment(): Promise<void> {
 
 async function renderAmounts(): Promise<void> {
   renderWithLocale(<DailyPaymentAmountsScreen />);
-  expect(await screen.findByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
+  expect(await screen.findByRole('button', { name: 'Edit Ada' })).toBeTruthy();
 }
 
 /** A save disables every control until the mocked request resolves. */
 async function settleAmounts(): Promise<void> {
   await waitFor(() => {
-    expect(screen.getByRole('button', { name: 'Edit Ada@w...' }).hasAttribute('disabled')).toBe(
-      false,
-    );
+    expect(screen.getByRole('button', { name: 'Edit Ada' }).hasAttribute('disabled')).toBe(false);
   });
 }
 
@@ -109,7 +122,7 @@ const pages = [
   {
     Screen: DailyPaymentAmountsScreen,
     heading: 'Daily payment amounts',
-    ready: 'Edit Ada@w...',
+    ready: 'Edit Ada',
   },
 ] as const;
 
@@ -202,7 +215,11 @@ describe('daily payment subpages', () => {
     expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull();
     expect(screen.queryByText('Comment')).toBeNull();
     expect(screen.queryByText('Edit comment')).toBeNull();
-    expect(screen.queryByText('Ada@w...')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ada' })).toBeNull();
+    expect(screen.queryByText('Unnamed')).toBeNull();
+    expect(screen.queryByText('ada@w...')).toBeNull();
+    expect(screen.queryByText('ada@walletofsatoshi.com')).toBeNull();
+    expect(screen.queryByText('bob@example.com')).toBeNull();
     expect(screen.queryByRole('button', { name: 'On' })).toBeNull();
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.getByRole('button', { name: 'Edit comment' })).toBeTruthy();
@@ -214,9 +231,11 @@ describe('daily payment subpages', () => {
     expect(screen.queryByText('Daily gift')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit comment' })).toBeNull();
     expect(screen.getByText('$1.00')).toBeTruthy();
-    expect(screen.getByText('Ada@w...')).toBeTruthy();
-    expect(screen.getByText('bob@example.com')).toBeTruthy();
-    expect(screen.getByText('nolocal')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada' }).getAttribute('href')).toBe('/members/acc_ada');
+    expect(screen.getByText('Unnamed')).toBeTruthy();
+    expect(screen.queryByText('ada@w...')).toBeNull();
+    expect(screen.queryByText('ada@walletofsatoshi.com')).toBeNull();
+    expect(screen.queryByText('bob@example.com')).toBeNull();
     expect(screen.getByText('$1.30')).toBeTruthy();
     expect(
       screen.getByText(
@@ -227,27 +246,43 @@ describe('daily payment subpages', () => {
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Update')).toBeNull();
     expect(screen.queryByText('Delete')).toBeNull();
-    expect(screen.queryByText('Edit Ada@w...')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Delete Ada@w...' })).toBeTruthy();
+    expect(screen.queryByText('Edit Ada')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit Ada' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete Ada' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit Unnamed' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete Unnamed' })).toBeTruthy();
   });
 
-  it('renders lookalike Wallet of Satoshi domains in full', async () => {
+  it('does not render a Lightning address, including a non-Wallet of Satoshi address', async () => {
     fetchMock.mockResolvedValueOnce({
       comment: 'Daily gift',
       paymentsEnabled: true,
       defaultAmountUsd: 4,
       recipients: [
-        { address: 'ada@notwalletofsatoshi.com', amountUsd: 1 },
-        { address: 'ada@walletofsatoshi.com.evil', amountUsd: 2 },
+        {
+          address: 'ada@notwalletofsatoshi.com',
+          amountUsd: 1,
+          accountId: 'acc_ada',
+          name: 'Ada',
+        },
+        {
+          address: 'ada@walletofsatoshi.com.evil',
+          amountUsd: 2,
+          accountId: null,
+          name: null,
+        },
       ],
     });
     renderWithLocale(<DailyPaymentAmountsScreen />);
-    expect(await screen.findByText('ada@notwalletofsatoshi.com')).toBeTruthy();
-    expect(screen.getByText('ada@walletofsatoshi.com.evil')).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Ada' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada' }).getAttribute('href')).toBe('/members/acc_ada');
+    expect(screen.getByText('Unnamed')).toBeTruthy();
+    expect(screen.queryByText('ada@notwalletofsatoshi.com')).toBeNull();
+    expect(screen.queryByText('ada@walletofsatoshi.com.evil')).toBeNull();
     expect(screen.queryByText('ada@w...')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Edit ada@notwalletofsatoshi.com' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Edit ada@walletofsatoshi.com.evil' })).toBeTruthy();
+    expect(screen.queryByText('ada@walletofsatoshi.com')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit Ada' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit Unnamed' })).toBeTruthy();
   });
 
   it('saves the comment and shows a mapped, unknown, or non-error failure', async () => {
@@ -318,7 +353,7 @@ describe('daily payment subpages', () => {
     fireEvent.change(usd, { target: { value: ' 1.5 ' } });
     addMock.mockResolvedValueOnce({
       ...ROSTER,
-      recipients: [{ address: 'new@example.com', amountUsd: 1.5 }],
+      recipients: [{ address: 'new@example.com', amountUsd: 1.5, accountId: null, name: null }],
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(addMock).toHaveBeenCalledWith('sess', 'new@example.com', 1.5);
@@ -327,8 +362,8 @@ describe('daily payment subpages', () => {
 
   it('keeps an open amount editor open when a recipient is added', async () => {
     await renderAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
-    const amount = screen.getByRole('textbox', { name: 'USD Ada@w...' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
+    const amount = screen.getByRole('textbox', { name: 'USD Ada' });
     fireEvent.change(amount, { target: { value: '4.25' } });
     fireEvent.change(screen.getByRole('textbox', { name: 'Address' }), {
       target: { value: 'new@example.com' },
@@ -338,31 +373,31 @@ describe('daily payment subpages', () => {
     });
     addMock.mockResolvedValueOnce({
       ...ROSTER,
-      recipients: [...ROSTER.recipients, { address: 'new@example.com', amountUsd: 1 }],
+      recipients: [
+        ...ROSTER.recipients,
+        { address: 'new@example.com', amountUsd: 1, accountId: null, name: null },
+      ],
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(addMock).toHaveBeenCalledWith('sess', 'new@example.com', 1);
-    expect(await screen.findByRole('textbox', { name: 'USD Ada@w...' })).toHaveProperty(
-      'value',
-      '4.25',
-    );
+    expect(await screen.findByRole('textbox', { name: 'USD Ada' })).toHaveProperty('value', '4.25');
   });
 
   it('updates and deletes a recipient', async () => {
     await renderAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Cancel')).toBeNull();
-    const amount = screen.getByRole('textbox', { name: 'USD Ada@w...' });
+    const amount = screen.getByRole('textbox', { name: 'USD Ada' });
     fireEvent.change(amount, { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(updateMock).not.toHaveBeenCalled();
     expect(screen.getByRole('alert').textContent).toBe('The address or the amount is not valid.');
     fireEvent.change(amount, { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(updateMock).toHaveBeenCalledWith('sess', 'Ada@WalletOfSatoshi.com', 2);
+    expect(updateMock).toHaveBeenCalledWith('sess', 'ada@walletofsatoshi.com', 2);
     await settleAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete bob@example.com' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Unnamed' }));
     expect(deleteMock).toHaveBeenCalledWith('sess', 'bob@example.com');
   });
 
@@ -399,7 +434,7 @@ describe('daily payment subpages', () => {
           resolveSave = resolve;
         }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true);
@@ -414,15 +449,15 @@ describe('daily payment subpages', () => {
 
   it('cancels an amount edit without saving', async () => {
     await renderAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'USD Ada@w...' }), {
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD Ada' }), {
       target: { value: '9' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(updateMock).not.toHaveBeenCalled();
-    expect(screen.queryByRole('textbox', { name: 'USD Ada@w...' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'USD Ada' })).toBeNull();
     expect(screen.getByText('$1.00')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit Ada' })).toBeTruthy();
   });
 
   it('cancels a comment edit without saving', async () => {

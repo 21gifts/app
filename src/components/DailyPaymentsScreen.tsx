@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -30,25 +31,6 @@ const SAVE_ERROR_KEYS = [
 ] as const satisfies readonly MessageKey[];
 
 type SaveErrorKey = (typeof SAVE_ERROR_KEYS)[number];
-
-/**
- * Wallet of Satoshi addresses render as `local@w...`. Any other string is unchanged.
- *
- * @param address - Lightning address as stored.
- * @returns The label shown in the roster.
- */
-function displayAddress(address: string): string {
-  const at = address.lastIndexOf('@');
-  if (at < 0) {
-    return address;
-  }
-  const local = address.slice(0, at);
-  const domain = address.slice(at + 1);
-  if (domain.toLowerCase() === 'walletofsatoshi.com') {
-    return `${local}@w...`;
-  }
-  return address;
-}
 
 /**
  * Parse a typed USD amount. Numeric strings are not accepted by the api, so
@@ -515,16 +497,23 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
         ) : (
           <ul aria-label={t('funding.daily.recipients')} className="flex w-full flex-col gap-3">
             {roster.recipients.map((row) => {
-              const display = displayAddress(row.address);
+              const label = row.name !== null && row.name !== '' ? row.name : t('moderate.unnamed');
               const rowEditing = editingAddress === row.address;
               return (
                 <li
                   key={row.address}
                   className="flex w-full flex-col gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
                 >
-                  <span className="truncate text-sm text-app-fg" title={row.address}>
-                    {display}
-                  </span>
+                  {row.accountId !== null ? (
+                    <Link
+                      href={`/members/${row.accountId}`}
+                      className="block truncate text-sm font-medium text-app-fg underline underline-offset-2"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <span className="block truncate text-sm text-app-fg">{label}</span>
+                  )}
                   {rowEditing ? (
                     <form
                       className="flex w-full items-end gap-2"
@@ -539,7 +528,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         value={amountDraft}
                         inputMode="decimal"
                         disabled={pending}
-                        aria-label={`${t('funding.daily.usd')} ${display}`}
+                        aria-label={`${t('funding.daily.usd')} ${label}`}
                         onChange={(event) => {
                           setAmountDraft(event.target.value);
                         }}
@@ -576,7 +565,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         type="button"
                         variant="secondary"
                         size="md"
-                        aria-label={`${t('funding.daily.edit')} ${display}`}
+                        aria-label={`${t('funding.daily.edit')} ${label}`}
                         disabled={pending}
                         onClick={() => {
                           setAmountDraft(String(row.amountUsd));
@@ -590,7 +579,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         type="button"
                         variant="secondary"
                         size="md"
-                        aria-label={`${t('funding.daily.delete')} ${display}`}
+                        aria-label={`${t('funding.daily.delete')} ${label}`}
                         disabled={pending}
                         onClick={() => {
                           void load.runSave(() => deleteDailyRosterRecipient(session, row.address));

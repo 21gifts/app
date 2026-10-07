@@ -5,8 +5,8 @@ const ROSTER = {
   paymentsEnabled: true,
   defaultAmountUsd: 1,
   recipients: [
-    { address: 'ada@walletofsatoshi.com', amountUsd: 1 },
-    { address: 'bob@example.com', amountUsd: 0.3 },
+    { address: 'ada@walletofsatoshi.com', amountUsd: 1, accountId: 'acc_ada', name: 'Ada' },
+    { address: 'bob@example.com', amountUsd: 0.3, accountId: null, name: null },
   ],
 };
 
@@ -14,7 +14,12 @@ const EMPTY_ROSTER = {
   comment: '',
   paymentsEnabled: true,
   defaultAmountUsd: 1,
-  recipients: [] as Array<{ address: string; amountUsd: number }>,
+  recipients: [] as Array<{
+    address: string;
+    amountUsd: number;
+    accountId: string | null;
+    name: string | null;
+  }>,
 };
 
 async function seedAdaSession(
@@ -123,7 +128,11 @@ test('Function: DailyPaymentCommentPage — the comment route shows only the tex
   await page.goto('/grants/payments/comment');
   await expect(page.getByRole('heading', { name: 'Daily payment text' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'On' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Ada' })).toHaveCount(0);
+  await expect(page.getByText('Unnamed')).toHaveCount(0);
   await expect(page.getByText('ada@w...')).toHaveCount(0);
+  await expect(page.getByText('ada@walletofsatoshi.com')).toHaveCount(0);
+  await expect(page.getByText('bob@example.com')).toHaveCount(0);
 });
 
 test('Function: DailyPaymentCommentScreen — a moderator on the comment URL does not load the roster', async ({
@@ -170,7 +179,11 @@ test('Function: DailyPaymentAmountsPage — founder opens /grants/payments/amoun
   await expect(
     page.getByText('Everyone in the grant program receives $1.00 by default.'),
   ).toBeVisible();
-  await expect(page.getByText('ada@w...')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ada' })).toHaveAttribute('href', '/members/acc_ada');
+  await expect(page.getByText('Unnamed')).toBeVisible();
+  await expect(page.getByText('ada@w...')).toHaveCount(0);
+  await expect(page.getByText('ada@walletofsatoshi.com')).toHaveCount(0);
+  await expect(page.getByText('bob@example.com')).toHaveCount(0);
   await expect(page.getByText('Daily gift')).toHaveCount(0);
 });
 
@@ -186,7 +199,11 @@ test('Function: fetchDailyRoster — an initiator loads the roster', async ({ pa
   await page.goto('/grants/payments/comment');
   await expect(page.getByText('Daily gift')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ada' })).toHaveCount(0);
+  await expect(page.getByText('Unnamed')).toHaveCount(0);
   await expect(page.getByText('ada@w...')).toHaveCount(0);
+  await expect(page.getByText('ada@walletofsatoshi.com')).toHaveCount(0);
+  await expect(page.getByText('bob@example.com')).toHaveCount(0);
 });
 
 test('Function: saveDailyRosterComment — Save posts the comment JSON', async ({ page }) => {
@@ -277,7 +294,9 @@ test('Function: addDailyRosterRecipient — Add posts address and amount', async
     const body = route.request().postDataJSON() as { address: string; amountUsd: number };
     await fulfillRoster(route, {
       ...EMPTY_ROSTER,
-      recipients: [{ address: body.address, amountUsd: body.amountUsd }],
+      recipients: [
+        { address: body.address, amountUsd: body.amountUsd, accountId: null, name: null },
+      ],
     });
   });
   await page.goto('/grants/payments/amounts');
@@ -300,8 +319,8 @@ test('Function: updateDailyRosterRecipient — Update posts the stored address',
     await fulfillRoster(route, ROSTER);
   });
   await page.goto('/grants/payments/amounts');
-  await page.getByRole('button', { name: 'Edit ada@w...' }).click();
-  await page.getByRole('textbox', { name: 'USD ada@w...' }).fill('2');
+  await page.getByRole('button', { name: 'Edit Ada' }).click();
+  await page.getByRole('textbox', { name: 'USD Ada' }).fill('2');
   const posted = page.waitForRequest(
     (req) =>
       req.method() === 'POST' &&
@@ -331,8 +350,9 @@ test('Function: deleteDailyRosterRecipient — Delete posts the stored address',
       req.method() === 'POST' &&
       new URL(req.url()).pathname === '/funding/daily-roster/recipients/delete',
   );
-  await page.getByRole('button', { name: 'Delete bob@example.com' }).click();
+  await page.getByRole('button', { name: 'Delete Unnamed' }).click();
   expect((await posted).postDataJSON()).toEqual({ address: 'bob@example.com' });
+  await expect(page.getByText('Unnamed')).toHaveCount(0);
   await expect(page.getByText('bob@example.com')).toHaveCount(0);
 });
 

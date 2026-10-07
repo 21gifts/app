@@ -22833,8 +22833,8 @@ test.describe('daily payments', () => {
     paymentsEnabled: true,
     defaultAmountUsd: 1,
     recipients: [
-      { address: 'ada@walletofsatoshi.com', amountUsd: 1 },
-      { address: 'bob@example.com', amountUsd: 0.3 },
+      { address: 'ada@walletofsatoshi.com', amountUsd: 1, accountId: 'acc_ada', name: 'Ada' },
+      { address: 'bob@example.com', amountUsd: 0.3, accountId: null, name: null },
     ],
   };
 
@@ -22886,7 +22886,11 @@ test.describe('daily payments', () => {
     await expect(page.getByText('Daily gift')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
     await expect(page.getByText('Everyone in the grant program receives')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Ada' })).toHaveCount(0);
+    await expect(page.getByText('Unnamed')).toHaveCount(0);
     await expect(page.getByText('ada@w...')).toHaveCount(0);
+    await expect(page.getByText('ada@walletofsatoshi.com')).toHaveCount(0);
+    await expect(page.getByText('bob@example.com')).toHaveCount(0);
     await shotScreen(page, 'screen-grants-payments-comment');
   });
 
@@ -22982,7 +22986,14 @@ test.describe('daily payments', () => {
     await page.goto('/grants/payments/amounts');
     await expect(page.getByRole('heading', { name: 'Daily payment amounts' })).toBeVisible();
     await expect(page.getByText('Everyone in the grant program receives')).toBeVisible();
-    await expect(page.getByText('ada@w...')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
+    await expect(page.getByText('Unnamed')).toBeVisible();
+    await expect(page.getByText('ada@w...')).toHaveCount(0);
+    await expect(page.getByText('ada@walletofsatoshi.com')).toHaveCount(0);
+    await expect(page.getByText('bob@example.com')).toHaveCount(0);
     await expect(page.getByText('Daily gift')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Edit comment' })).toHaveCount(0);
     await shotScreen(page, 'screen-grants-payments-amounts');
@@ -23089,7 +23100,7 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('That recipient is not on the list.')).toBeVisible();
     await shotScreen(page, 'state-grants-payments-amounts-unknown');
@@ -23101,10 +23112,10 @@ test.describe('daily payments', () => {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'USD ada@w...' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'USD Ada' })).toBeVisible();
     await shotScreen(page, 'state-grants-payments-amounts-save-error');
   });
 
@@ -23115,7 +23126,7 @@ test.describe('daily payments', () => {
       () => new Promise(() => undefined),
     );
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Add' })).toBeDisabled();
@@ -23125,8 +23136,8 @@ test.describe('daily payments', () => {
   test('state /grants/payments/amounts editing', async ({ page }) => {
     await stubRoster(page);
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
-    await expect(page.getByRole('textbox', { name: 'USD ada@w...' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
+    await expect(page.getByRole('textbox', { name: 'USD Ada' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeEnabled();
     await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
