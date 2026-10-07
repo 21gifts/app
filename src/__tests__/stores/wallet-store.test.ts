@@ -11,6 +11,7 @@ afterEach(() => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
   }
   useWalletStore.getState().reset();
+  useWalletStore.getState().setSetupFailedSession(null);
 });
 
 describe('useWalletStore', () => {
@@ -80,5 +81,14 @@ describe('useWalletStore', () => {
     delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
     useWalletStore.getState().reset();
     expect(useWalletStore.getState().status).toBe('disabled');
+  });
+
+  it('records and clears the session whose setup failed', () => {
+    useWalletStore.getState().setSetupFailedSession('session-1');
+    expect(useWalletStore.getState().setupFailedSession).toBe('session-1');
+    useWalletStore.getState().reset();
+    expect(useWalletStore.getState().setupFailedSession).toBe('session-1');
+    useWalletStore.getState().setSetupFailedSession(null);
+    expect(useWalletStore.getState().setupFailedSession).toBeNull();
   });
 });

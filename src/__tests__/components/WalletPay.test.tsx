@@ -8,6 +8,10 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useWalletPay', () => ({ useWalletPay: vi.fn() }));
 
+vi.mock('@/components/WalletSetupNote', () => ({
+  WalletSetupNote: () => <p role="alert">setup failed</p>,
+}));
+
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
   usd: '100000.00',
@@ -83,6 +87,14 @@ describe('WalletPay', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(hook.retry).toHaveBeenCalledTimes(1);
     expect(hook.unlock).not.toHaveBeenCalled();
+  });
+
+  it('renders the inline setup note when background setup failed', () => {
+    const hook = hookWith('setupFailed');
+    renderPay();
+    expect(screen.getByRole('alert').textContent).toBe('setup failed');
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(hook.retry).not.toHaveBeenCalled();
   });
 
   it('offers Unlock and pay with the amount and its fiat as the only button', () => {

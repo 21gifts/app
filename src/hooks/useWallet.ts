@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { peekSessionPhrase } from '@/lib/tab-phrase';
 import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { connectWallet } from '@/lib/wallet/wallet-service';
+import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
@@ -27,6 +29,11 @@ export interface UseWalletResult {
    * this phone or browser cannot hold the wallet.
    */
   prfUnsupported: boolean;
+  /**
+   * True while `status` is `error` because the background wallet setup gave
+   * up; the balance shows the inline setup note instead of the open error.
+   */
+  setupFailed: boolean;
 }
 
 function visualStatus(): WalletStatus | null {
@@ -44,6 +51,7 @@ function visualStatus(): WalletStatus | null {
       return 'ready';
     case 'balance-error':
     case 'balance-prf-unsupported':
+    case 'balance-setup-failed':
       return 'error';
     default:
       return visual?.startsWith('send-') === true ? 'ready' : null;
@@ -53,7 +61,11 @@ function visualStatus(): WalletStatus | null {
 /**
  * Selects the wallet balance state and exposes guarded unlock and retry actions.
  * An unlock whose passkey gives no PRF output shows `error` with
- * `prfUnsupported`. Visual pins (`?visual=balance-…`, `?visual=send-alert-locked` as locked, and
+ * `prfUnsupported`. For an account whose one-time wallet setup is still due,
+ * **Unlock wallet** is the passkey prompt the setup needs: once the phrase is
+ * in tab memory the setup runs in the background and the balance shows
+ * `connecting` until the wallet is verified, or `error` with `setupFailed`
+ * once the setup gave up. Visual pins (`?visual=balance-…`, `?visual=send-alert-locked` as locked, and
  * `?visual=history-…` and the other `?visual=send-…` pins as ready) are
  * honoured only in a Playwright build (`getE2eNow()` set) and leave unlock and
  * retry inert while pinned.
@@ -69,6 +81,7 @@ export function useWallet(): UseWalletResult {
   const unlockInFlight = useRef(false);
   const pinnedStatus = visualStatus();
   const pinnedPrf = pinnedStatus === 'error' && visualPin() === 'balance-prf-unsupported';
+  const setup = useWalletSetup();
 
   const unlock = useCallback((): void => {
     if (pinnedStatus !== null || unlockInFlight.current) {
@@ -111,28 +124,23 @@ export function useWallet(): UseWalletResult {
       unlock,
       retry,
       prfUnsupported: pinnedPrf,
+      setupFailed: pinnedStatus === 'error' && setup.failed,
     };
   }
+  const idle = { balanceSats: null, unlock, retry, prfUnsupported: false, setupFailed: false };
   if (storeStatus === 'disabled' || !canUnlockWallet(account)) {
-    return { status: 'disabled', balanceSats: null, unlock, retry, prfUnsupported: false };
+    return { ...idle, status: 'disabled' };
   }
   if (unlocking) {
-    return { status: 'connecting', balanceSats: null, unlock, retry, prfUnsupported: false };
+    return { ...idle, status: 'connecting' };
   }
   if (storeStatus === 'locked' && unlockFailure !== null) {
-    return {
-      status: 'error',
-      balanceSats: null,
-      unlock,
-      retry,
-      prfUnsupported: unlockFailure === 'noPrf',
-    };
+    return { ...idle, status: 'error', prfUnsupported: unlockFailure === 'noPrf' };
   }
-  return {
-    status: storeStatus,
-    balanceSats: storeBalanceSats,
-    unlock,
-    retry,
-    prfUnsupported: false,
-  };
+  if (storeStatus !== 'locked' && needsWalletSetup(account)) {
+    return setup.failed
+      ? { ...idle, status: 'error', setupFailed: true }
+      : { ...idle, status: 'connecting' };
+  }
+  return { ...idle, status: storeStatus, balanceSats: storeBalanceSats };
 }
