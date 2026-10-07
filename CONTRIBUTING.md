@@ -417,7 +417,7 @@ update stuff
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
   `process.env` directly in components. Accessors throw on missing values; no
   silent fallbacks.
-- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
 
 ### Styling
 
@@ -544,7 +544,7 @@ A stack of labeled moderator or founder actions on a member card is not shown as
 
 ### Amount entry (hard requirement)
 
-Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state. In the inbox composer the message, attach, and send stay on one row. The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
+Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` is not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. Fiat mode is its own screenshot state. In the inbox composer the message, attach, and send stay on one row. The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
 
 ### Shown amounts (hard requirement)
 
