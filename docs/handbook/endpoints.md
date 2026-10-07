@@ -723,6 +723,48 @@
 - **Used by:** `fetchFundingApplications` via `FundingApplicationsScreen` on `/grants/applications`. `ModerateScreen` on `/moderate` does not call this GET.
 - **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
+## Endpoint: GET /funding/daily-roster
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, `defaultAmountUsd`, and recipient rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML pages at `/grants/payments/comment` and `/grants/payments/amounts`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not an initiator or founder, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchDailyRoster` via `DailyPaymentCommentScreen` on `/grants/payments/comment` and `DailyPaymentAmountsScreen` on `/grants/payments/amounts`.
+- **Auth:** Bearer session. The api allows an initiator or founder only. The app does not fetch this roster for other signed-in roles (forbidden copy, no request).
+
+## Endpoint: POST /funding/daily-roster/comment
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/comment` with `{ comment }`.
+- **Errors:** Upstream 400 `Invalid comment`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `saveDailyRosterComment` in `DailyPaymentCommentScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/payments
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/payments` with `{ enabled }` (boolean). Sets the daily payments switch only.
+- **Errors:** Upstream 400 `Invalid payments switch`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `saveDailyRosterPayments` in `DailyPaymentAmountsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/recipients
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ address, amountUsd }`. Appends one daily recipient.
+- **Errors:** Upstream 400 `Invalid address or amount` or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `addDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/recipients/update
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients/update` with `{ address, amountUsd }`. Changes one daily amount.
+- **Errors:** Upstream 400 `Unknown address` or `Invalid address or amount`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `updateDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/recipients/delete
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients/delete` with `{ address }`. Removes one daily recipient.
+- **Errors:** Upstream 400 `Unknown address`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `deleteDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
 ## Endpoint: GET /funding/applications/[accountId]
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications/:accountId` (staff review payload: account, grant, living-room posts).

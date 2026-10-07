@@ -635,6 +635,10 @@ export type ForumPlaceRow = ForumPlacePin & {
  * frozen two-decimal snapshots of that goal, optional, each a string or null.
  * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
  * that row's `sats`, optional so an older payload still parses.
+ * On a reply `sats` is the amount sent with the reply, and `receivedSats` is
+ * later payments onto that reply. Absent means none yet. Top-level notes omit
+ * the keys. The `receivedAmount*` fields are the fiat stored for `receivedSats`,
+ * same shape as `amountUsd` / `amountChf` / `amountEur` / `amountPhp`.
  * Gift-only replies may have empty `text` when `sats > 0`.
  * `deletedAt` / `deletedBy` are set on staff GET of a soft-hidden row; live
  * payloads omit them.
@@ -654,6 +658,11 @@ export const forumMessageSchema = z
     amountChf: fiatAmountSchema.optional(),
     amountEur: fiatAmountSchema.optional(),
     amountPhp: fiatAmountSchema.optional(),
+    receivedSats: z.number().int().nonnegative().optional(),
+    receivedAmountUsd: fiatAmountSchema.optional(),
+    receivedAmountChf: fiatAmountSchema.optional(),
+    receivedAmountEur: fiatAmountSchema.optional(),
+    receivedAmountPhp: fiatAmountSchema.optional(),
     goalSats: z.number().int().positive().optional(),
     goalCurrency: z.enum(FORUM_GOAL_CURRENCIES).optional(),
     goalAmount: z.string().regex(FORUM_GOAL_AMOUNT_RE).optional(),
@@ -1320,3 +1329,25 @@ export const fundingDecisionResultSchema = z.object({
  * Updated account snapshot after a staff funding decision.
  */
 export type FundingDecisionResult = z.infer<typeof fundingDecisionResultSchema>;
+
+/**
+ * Runtime schema for the daily payout roster (`GET /funding/daily-roster`
+ * and the matching POST success bodies).
+ */
+export const dailyRosterSchema = z.object({
+  comment: z.string(),
+  paymentsEnabled: z.boolean(),
+  /** USD spend pays an unlisted admitted or trial grant. Not a listed row. */
+  defaultAmountUsd: z.number().finite(),
+  recipients: z.array(
+    z.object({
+      address: z.string(),
+      amountUsd: z.number(),
+    }),
+  ),
+});
+
+/**
+ * Daily payout comment, payments switch, unlisted grant default, and recipient list.
+ */
+export type DailyRoster = z.infer<typeof dailyRosterSchema>;

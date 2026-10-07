@@ -45,6 +45,7 @@ describe('ForumReplyPayPage', () => {
     expect(root).toBeTruthy();
     expect(root?.hasAttribute('data-pay-sheet')).toBe(true);
     expect(screen.getByText('Hi Bob')).toBeTruthy();
+    expect(screen.getByText('Hi Bob').className).toContain('pl-12');
     expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
     expect(screen.getByText('$0.02')).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();

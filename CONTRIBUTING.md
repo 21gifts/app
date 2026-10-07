@@ -1,5 +1,7 @@
 # Contributing to 21.gifts app
 
+[REVIEW.md](REVIEW.md) is binding for every change and for every review of a change. Read it and this file at the base revision of the pull request. A pull request that changes either file does not replace that base text for the rest of its diff. The review does not change files.
+
 This repository carries only frontend-specific code and docs. Protocol-level
 documentation (concept, architecture, decisions) lives in
 [`21gifts/api`](https://github.com/21gifts/api) —
@@ -365,7 +367,7 @@ app/
 ├── entrypoint.sh
 ├── README.md
 ├── CONTRIBUTING.md
-├── Review.md                 # PR review checklist
+├── REVIEW.md                 # PR review checklist
 ├── SECURITY.md
 └── LICENSE
 ```
@@ -415,7 +417,7 @@ update stuff
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
   `process.env` directly in components. Accessors throw on missing values; no
   silent fallbacks.
-- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
 
 ### Styling
 
@@ -530,7 +532,7 @@ links stay labeled. Shop wizard **Add a shop**, step **Next**, summary
 step's Close (X) is icon-only, accessible name Cancel, the same dismiss as
 pay-sheet Close, and it is not a second back arrow.
 
-Reviewers follow `Review.md` and `docs/ui.md`.
+Reviewers follow `REVIEW.md` and `docs/ui.md`.
 
 ### One back (hard requirement)
 
@@ -542,7 +544,7 @@ A stack of labeled moderator or founder actions on a member card is not shown as
 
 ### Amount entry (hard requirement)
 
-Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. Fiat mode is its own screenshot state. In the inbox composer the message, attach, and send stay on one row. The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
+Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` is not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. Fiat mode is its own screenshot state. In the inbox composer the message, attach, and send stay on one row. The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
 
 ### Shown amounts (hard requirement)
 
@@ -550,7 +552,7 @@ Every place that shows a bitcoin amount also shows that amount in the visitor's 
 
 Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
 
-The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the latest gift-day rate (`useLatestRateDay`). A missing or unusable rate is the only reason the fiat line is absent. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `Review.md`.
+The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the latest gift-day rate (`useLatestRateDay`). A missing or unusable rate is the only reason the fiat line is absent. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `REVIEW.md`.
 
 ### Payment QR vs deep links (hard requirement)
 
@@ -576,7 +578,7 @@ smartphone.
 Mounting any of those invoice QRs on a smartphone UA is an undeclared
 deviation and is rejected. Hiding a profile, member, public view, or
 point of sale QR on a smartphone UA is also rejected. Reviewers
-follow `Review.md`.
+follow `REVIEW.md`.
 
 ### Handbook (hard requirement)
 

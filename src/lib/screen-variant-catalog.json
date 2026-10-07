@@ -2022,6 +2022,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants:daily-payments",
+    "label": "/grants daily-payments",
+    "visual": "state-grants-daily-payments",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/grants/goals:default",
     "label": "/grants/goals default",
     "visual": "screen-grants-goals",
@@ -2037,6 +2043,138 @@
     "id": "/grants/goals:error",
     "label": "/grants/goals error",
     "visual": "state-grants-goals-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:default",
+    "label": "/grants/payments/comment default",
+    "visual": "screen-grants-payments-comment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:empty",
+    "label": "/grants/payments/comment empty",
+    "visual": "state-grants-payments-comment-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:loading",
+    "label": "/grants/payments/comment loading",
+    "visual": "state-grants-payments-comment-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:error",
+    "label": "/grants/payments/comment error",
+    "visual": "state-grants-payments-comment-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:forbidden",
+    "label": "/grants/payments/comment forbidden",
+    "visual": "state-grants-payments-comment-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:invalid",
+    "label": "/grants/payments/comment invalid",
+    "visual": "state-grants-payments-comment-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:save-error",
+    "label": "/grants/payments/comment save-error",
+    "visual": "state-grants-payments-comment-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:pending",
+    "label": "/grants/payments/comment pending",
+    "visual": "state-grants-payments-comment-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/comment:editing",
+    "label": "/grants/payments/comment editing",
+    "visual": "state-grants-payments-comment-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:default",
+    "label": "/grants/payments/amounts default",
+    "visual": "screen-grants-payments-amounts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:empty",
+    "label": "/grants/payments/amounts empty",
+    "visual": "state-grants-payments-amounts-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:loading",
+    "label": "/grants/payments/amounts loading",
+    "visual": "state-grants-payments-amounts-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:error",
+    "label": "/grants/payments/amounts error",
+    "visual": "state-grants-payments-amounts-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:forbidden",
+    "label": "/grants/payments/amounts forbidden",
+    "visual": "state-grants-payments-amounts-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:invalid",
+    "label": "/grants/payments/amounts invalid",
+    "visual": "state-grants-payments-amounts-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:off",
+    "label": "/grants/payments/amounts off",
+    "visual": "state-grants-payments-amounts-off",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:invalid-switch",
+    "label": "/grants/payments/amounts invalid-switch",
+    "visual": "state-grants-payments-amounts-invalid-switch",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:duplicate",
+    "label": "/grants/payments/amounts duplicate",
+    "visual": "state-grants-payments-amounts-duplicate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:unknown",
+    "label": "/grants/payments/amounts unknown",
+    "visual": "state-grants-payments-amounts-unknown",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:save-error",
+    "label": "/grants/payments/amounts save-error",
+    "visual": "state-grants-payments-amounts-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:pending",
+    "label": "/grants/payments/amounts pending",
+    "visual": "state-grants-payments-amounts-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/amounts:editing",
+    "label": "/grants/payments/amounts editing",
+    "visual": "state-grants-payments-amounts-editing",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3252,6 +3390,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:expanded-received",
+    "label": "/welcome expanded-received",
+    "visual": "state-welcome-expanded-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:expanded-donated",
+    "label": "/welcome expanded-donated",
+    "visual": "state-welcome-expanded-donated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:expanded-text",
+    "label": "/welcome expanded-text",
+    "visual": "state-welcome-expanded-text",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:expanded-received-only",
+    "label": "/welcome expanded-received-only",
+    "visual": "state-welcome-expanded-received-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:expanded-external",
     "label": "/welcome expanded-external",
     "visual": "state-welcome-expanded-external",
@@ -3969,6 +4131,12 @@
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply-received",
+    "label": "/messages/[id] reply-received",
+    "visual": "state-messages-id-reply-received",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

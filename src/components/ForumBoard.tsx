@@ -39,6 +39,7 @@ import {
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
+import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
 import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PlaceField } from '@/components/PlaceField';
@@ -667,9 +668,12 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
  * feed) or empty/loading/error, per-card expand for oldest-first replies +
  * reply composer (amount and the bitcoin/fiat switch on one line, text and
- * send on the next; gift-only rows use `forum.giftReply`
- * + `formatBitcoin(sats, numberFormat)`, text-plus-gift shows the amount
- * under the body), copy-link control, `ForumGoalBar` on a top-level note
+ * send on the next; reply money is `ReplyDirectionAmounts`: gift-only rows
+ * use `forum.giftReply`, text-plus-gift shows the bare amount under the
+ * body, and a later receipt is `forum.receivedOnReply` on its own line.
+ * A text reply that also sent sats labels that line `forum.sentOnReply`
+ * and the two lines share a left rule. The amounts are not added),
+ * copy-link control, `ForumGoalBar` on a top-level note
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
  * expands the reply composer; omitted when `deletedAt` is set), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
@@ -1640,20 +1644,6 @@ export function ForumBoard({
                                 {t('forum.via.nostrHint')}
                               </p>
                             ) : null}
-                            {reply.text === '' && reply.sats > 0 ? (
-                              <p className="mt-1 text-sm tabular-nums lining-nums text-app-fg">
-                                {t('forum.giftReply', {
-                                  amount: formatBitcoin(reply.sats, numberFormat),
-                                })}
-                                {preferredFiatSuffix(
-                                  reply.sats,
-                                  rateDay,
-                                  fiat,
-                                  numberFormat,
-                                  reply,
-                                )}
-                              </p>
-                            ) : null}
                             {reply.text !== '' ? (
                               <div className="mt-1">
                                 {reply.via === 'nostr' ? (
@@ -1693,18 +1683,21 @@ export function ForumBoard({
                                 )}
                               </div>
                             ) : null}
-                            {reply.text !== '' && reply.sats > 0 ? (
-                              <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
-                                {formatBitcoin(reply.sats, numberFormat)}
-                                {preferredFiatSuffix(
-                                  reply.sats,
-                                  rateDay,
-                                  fiat,
-                                  numberFormat,
-                                  reply,
-                                )}
-                              </p>
-                            ) : null}
+                            <ReplyDirectionAmounts
+                              text={reply.text}
+                              sats={reply.sats}
+                              receivedSats={reply.receivedSats}
+                              rateDay={rateDay ?? null}
+                              fiat={fiat}
+                              numberFormat={numberFormat}
+                              sent={reply}
+                              received={{
+                                amountUsd: reply.receivedAmountUsd,
+                                amountChf: reply.receivedAmountChf,
+                                amountEur: reply.receivedAmountEur,
+                                amountPhp: reply.receivedAmountPhp,
+                              }}
+                            />
                             <div className="mt-2 flex flex-wrap items-center gap-5">
                               <div id={`note-translate-${reply.id}`} className="contents" />
                               {reply.deletedAt === undefined && reply.payable && !readOnly ? (

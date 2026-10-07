@@ -31,6 +31,7 @@ import {
   fundingApplicationsResponseSchema,
   fundingPayoutDaysResponseSchema,
   fundingDecisionResultSchema,
+  dailyRosterSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -66,6 +67,7 @@ import {
   type FundingApplicationDetail,
   type FundingPayoutDays,
   type FundingDecisionResult,
+  type DailyRoster,
   type OwnerFunding,
   type PasskeyBegin,
   type PasskeySession,
@@ -1287,6 +1289,70 @@ const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Plea
 const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
 const FUNDING_PAYOUT_DAYS_LOAD_ERROR = 'Could not load the payout table. Please try again.';
 const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
+const FUNDING_DAILY_ROSTER_LOAD_ERROR = 'Could not load daily payments. Please try again.';
+const FUNDING_DAILY_ROSTER_SAVE_ERROR = 'funding.daily.saveError';
+
+/** Exact api English mapped to catalog keys so the UI never shows that English. */
+const DAILY_ROSTER_API_SAVE_ERRORS: Record<string, string> = {
+  'Invalid comment': 'funding.daily.invalidComment',
+  'Invalid payments switch': 'funding.daily.invalidSwitch',
+  'Invalid address or amount': 'funding.daily.invalidRow',
+  'Address already listed': 'funding.daily.duplicate',
+  'Unknown address': 'funding.daily.unknown',
+};
+
+const DAILY_ROSTER_SAVE_KEYS = new Set([
+  'funding.daily.invalidComment',
+  'funding.daily.invalidSwitch',
+  'funding.daily.invalidRow',
+  'funding.daily.duplicate',
+  'funding.daily.unknown',
+  FUNDING_DAILY_ROSTER_SAVE_ERROR,
+]);
+
+/**
+ * Maps an api `{ error }` string to a daily-roster save catalog key.
+ *
+ * @param raw - Api English, or `null` when the body is not that envelope.
+ * @returns A `funding.daily.*` key. Never the raw api English.
+ */
+function dailyRosterSaveErrorKey(raw: string | null): string {
+  if (raw === null) {
+    return FUNDING_DAILY_ROSTER_SAVE_ERROR;
+  }
+  return DAILY_ROSTER_API_SAVE_ERRORS[raw] ?? FUNDING_DAILY_ROSTER_SAVE_ERROR;
+}
+
+/**
+ * Posts a daily-roster mutation and parses the returned {@link DailyRoster}.
+ *
+ * @param path - Same-origin proxy path.
+ * @param session - Bearer session.
+ * @param body - JSON body for the proxy.
+ * @returns The updated roster.
+ * @throws Error whose message is a `funding.daily.*` catalog key.
+ */
+async function postDailyRoster(path: string, session: string, body: unknown): Promise<DailyRoster> {
+  try {
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      throw new Error(dailyRosterSaveErrorKey(await readApiError(response)));
+    }
+    return dailyRosterSchema.parse(await response.json());
+  } catch (err) {
+    if (err instanceof Error && DAILY_ROSTER_SAVE_KEYS.has(err.message)) {
+      throw err;
+    }
+    throw new Error(FUNDING_DAILY_ROSTER_SAVE_ERROR);
+  }
+}
 
 /**
  * Applies for the 21 gifts grant (verified and above).
@@ -1473,6 +1539,139 @@ export async function postFundingReject(
   accountId: string,
 ): Promise<FundingDecisionResult> {
   return postFundingAction('/funding/reject', sessionToken, accountId);
+}
+
+/**
+ * Fetches the daily payout roster for founder and initiator editors.
+ *
+ * Hits same-origin `GET /funding/daily-roster` (Bearer). Next.js forbids a
+ * `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`,
+ * so the proxy lives at this path.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @returns The parsed {@link DailyRoster}.
+ * @throws Error `'funding.daily.forbidden'` on 403 with api `Forbidden`.
+ * @throws Error with visitor-facing copy on 401, other 403, 503, other non-2xx, a
+ * network failure, or a body that fails {@link dailyRosterSchema}.
+ */
+export async function fetchDailyRoster(session: string): Promise<DailyRoster> {
+  try {
+    const response = await fetch('/funding/daily-roster', {
+      headers: { Authorization: `Bearer ${session}` },
+    });
+    if (!response.ok) {
+      if (response.status === 403 && (await readApiError(response)) === 'Forbidden') {
+        throw new Error('funding.daily.forbidden');
+      }
+      throw new Error(FUNDING_DAILY_ROSTER_LOAD_ERROR);
+    }
+    return dailyRosterSchema.parse(await response.json());
+  } catch (err) {
+    if (err instanceof Error && err.message === 'funding.daily.forbidden') {
+      throw err;
+    }
+    throw new Error(FUNDING_DAILY_ROSTER_LOAD_ERROR);
+  }
+}
+
+/**
+ * Saves the daily payout comment.
+ *
+ * Hits same-origin `POST /funding/daily-roster/comment` with `{ comment }`.
+ *
+ * @param session - Bearer session.
+ * @param comment - Comment text as typed.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid comment` to `funding.daily.invalidComment`.
+ */
+export async function saveDailyRosterComment(
+  session: string,
+  comment: string,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/comment', session, { comment });
+}
+
+/**
+ * Sets whether daily payments are on.
+ *
+ * Hits same-origin `POST /funding/daily-roster/payments` with `{ enabled }`.
+ *
+ * @param session - Bearer session.
+ * @param enabled - `true` to turn payments on, `false` to turn them off.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid payments switch` to `funding.daily.invalidSwitch`.
+ */
+export async function saveDailyRosterPayments(
+  session: string,
+  enabled: boolean,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/payments', session, { enabled });
+}
+
+/**
+ * Adds a recipient to the daily payout roster.
+ *
+ * Hits same-origin `POST /funding/daily-roster/recipients` with
+ * `{ address, amountUsd }`.
+ *
+ * @param session - Bearer session.
+ * @param address - Recipient address.
+ * @param amountUsd - Daily amount in USD.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid address or amount` and `Address already listed`.
+ */
+export async function addDailyRosterRecipient(
+  session: string,
+  address: string,
+  amountUsd: number,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/recipients', session, { address, amountUsd });
+}
+
+/**
+ * Updates one daily-payout recipient amount.
+ *
+ * Hits same-origin `POST /funding/daily-roster/recipients/update` with
+ * `{ address, amountUsd }`.
+ *
+ * @param session - Bearer session.
+ * @param address - Recipient address already on the list.
+ * @param amountUsd - New daily amount in USD.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid address or amount` and `Unknown address`.
+ */
+export async function updateDailyRosterRecipient(
+  session: string,
+  address: string,
+  amountUsd: number,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/recipients/update', session, {
+    address,
+    amountUsd,
+  });
+}
+
+/**
+ * Removes a recipient from the daily payout roster.
+ *
+ * Hits same-origin `POST /funding/daily-roster/recipients/delete` with
+ * `{ address }`.
+ *
+ * @param session - Bearer session.
+ * @param address - Recipient address to remove.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Unknown address`.
+ */
+export async function deleteDailyRosterRecipient(
+  session: string,
+  address: string,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/recipients/delete', session, { address });
 }
 
 /**
@@ -1775,24 +1974,35 @@ export async function fetchForumMessage(
 /**
  * Fetches one public forum message without a session (HTML note page).
  * Optional `sinceSats` waits on the api until the note has more sats (pay poll).
+ * Optional `sinceReceivedSats` waits until a reply has more received sats.
  *
  * @param id - Forum message UUID.
- * @param opts - Optional `sinceSats` query and `AbortSignal` for the fetch.
+ * @param opts - Optional `sinceSats` / `sinceReceivedSats` query and
+ * `AbortSignal` for the fetch.
  * @returns The {@link ForumMessage}, or `null` when the id is unknown (404) or
  * the request was aborted.
  * @throws Error with visitor-facing copy on other failures or schema mismatch.
  */
 export async function fetchPublicMessage(
   id: string,
-  opts?: { sinceSats?: number; signal?: AbortSignal },
+  opts?: { sinceSats?: number; sinceReceivedSats?: number; signal?: AbortSignal },
 ): Promise<ForumMessage | null> {
   try {
     const sinceSats = opts?.sinceSats;
+    const sinceReceivedSats = opts?.sinceReceivedSats;
     const path = `/public-messages/${encodeURIComponent(id)}`;
-    const url =
-      sinceSats !== undefined && Number.isInteger(sinceSats) && sinceSats >= 0
-        ? `${path}?sinceSats=${sinceSats}`
-        : path;
+    const query: string[] = [];
+    if (sinceSats !== undefined && Number.isInteger(sinceSats) && sinceSats >= 0) {
+      query.push(`sinceSats=${sinceSats}`);
+    }
+    if (
+      sinceReceivedSats !== undefined &&
+      Number.isInteger(sinceReceivedSats) &&
+      sinceReceivedSats >= 0
+    ) {
+      query.push(`sinceReceivedSats=${sinceReceivedSats}`);
+    }
+    const url = query.length === 0 ? path : `${path}?${query.join('&')}`;
     const signal = opts?.signal;
     const response = signal !== undefined ? await fetch(url, { signal }) : await fetch(url);
     if (response.status === 404) {

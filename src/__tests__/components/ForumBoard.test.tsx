@@ -5644,6 +5644,252 @@ describe('ForumBoard', () => {
     expect(screen.queryByText(/^CHF /)).toBeNull();
   });
 
+  it('shows send and received as separate lines on a gift-only reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-gift',
+            name: 'Bob',
+            text: '',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            receivedSats: 100,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText("send ₿21'000")).toBeTruthy();
+    expect(screen.getByText('received ₿100')).toBeTruthy();
+  });
+
+  it('shows stored sent and received fiat on a text reply without mixing them', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        rateDay={{
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        }}
+        replies={[
+          {
+            id: 'r-both',
+            name: 'Bob',
+            text: 'Thanks',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            amountUsd: '18.14',
+            receivedSats: 100,
+            receivedAmountUsd: '0.09',
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    const sent = screen.getByText("sent ₿21'000");
+    expect(sent.closest('div')?.className).toContain('border-l-2');
+    expect(screen.getAllByText('$18.14')).toHaveLength(1);
+    const received = screen.getByText('received ₿100');
+    expect(received.closest('div')).toBe(sent.closest('div'));
+    expect(screen.getByText('$0.09')).toBeTruthy();
+    expect(screen.queryByText("₿21'000")).toBeNull();
+    expect(screen.queryByText("₿21'100")).toBeNull();
+    expect(screen.queryByText('$21.00')).toBeNull();
+    expect(screen.queryByText('$0.10')).toBeNull();
+  });
+
+  it('labels sent and received in German without adding them', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-de',
+            name: 'Bob',
+            text: 'Stimmt',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            receivedSats: 100,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+      'de',
+    );
+    expect(screen.getByText("₿21'000 gesendet")).toBeTruthy();
+    expect(screen.getByText('₿100 erhalten')).toBeTruthy();
+    expect(screen.queryByText("₿21'100")).toBeNull();
+  });
+
+  it('shows only the received line when the reply sent nothing', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-in',
+            name: 'Bob',
+            text: 'Thanks',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            receivedSats: 100,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('received ₿100')).toBeTruthy();
+    expect(screen.queryByText(/sent /)).toBeNull();
+    expect(screen.queryByText("₿21'100")).toBeNull();
+  });
+
+  it('omits the received line when receivedSats is absent', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-none',
+            name: 'Bob',
+            text: 'Thanks',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText(/received ₿/)).toBeNull();
+  });
+
+  it('omits the received line when receivedSats is 0', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            id: 'r-zero',
+            name: 'Bob',
+            text: 'Thanks',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 21000,
+            receivedSats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText(/received ₿/)).toBeNull();
+    expect(screen.queryByText('received ₿0')).toBeNull();
+  });
+
   it('renders reply text with the gift amount underneath', () => {
     renderWithLocale(
       <ForumBoard

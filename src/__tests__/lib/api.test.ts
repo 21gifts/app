@@ -3006,6 +3006,42 @@ describe('fetchPublicMessage', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(4, '/public-messages/uuid');
   });
 
+  it('appends sinceReceivedSats=0 when sinceReceivedSats is 0', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(fetchPublicMessage('uuid', { sinceReceivedSats: 0 })).resolves.toEqual(
+      forumMessage,
+    );
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid?sinceReceivedSats=0');
+  });
+
+  it('does not append sinceReceivedSats for a non-integer', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await fetchPublicMessage('uuid', { sinceReceivedSats: 1.5 });
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid');
+  });
+
+  it('does not append sinceReceivedSats for a negative integer', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await fetchPublicMessage('uuid', { sinceReceivedSats: -1 });
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid');
+  });
+
+  it('appends sinceSats first when both since queries are valid', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await expect(
+      fetchPublicMessage('uuid', { sinceSats: 21, sinceReceivedSats: 0 }),
+    ).resolves.toEqual(forumMessage);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/public-messages/uuid?sinceSats=21&sinceReceivedSats=0',
+    );
+  });
+
+  it('omits sinceSats when only sinceReceivedSats is valid', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
+    await fetchPublicMessage('uuid', { sinceReceivedSats: 21 });
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/uuid?sinceReceivedSats=21');
+  });
+
   it('passes signal to fetch when provided', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
     const controller = new AbortController();

@@ -755,7 +755,11 @@ describe('MemberProfileScreen', () => {
       { ...activityReply, id: '77777777-7777-4777-8777-777777777777', text: 'Another reply.' },
     ]);
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
-    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...payableActivity, sats: 21 });
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...payableActivity,
+      sats: 0,
+      receivedSats: 21,
+    });
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profileWithNote, replyCount: 1 }}
@@ -769,8 +773,48 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(fetchPublicMessage).toHaveBeenCalled();
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        payableActivity.id,
+        expect.objectContaining({ sinceReceivedSats: 0 }),
+      );
     });
+    await waitFor(() => {
+      expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
+    });
+  });
+
+  it('keeps a replies-feed Gift sheet until receivedSats rises', async () => {
+    const payableActivity = { ...activityReply, payable: true, sats: 0 };
+    vi.mocked(fetchMemberReplies).mockResolvedValue([payableActivity]);
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
+    vi.mocked(fetchPublicMessage).mockResolvedValueOnce({ ...payableActivity, sats: 0 });
+    vi.mocked(fetchPublicMessage).mockResolvedValueOnce({
+      ...payableActivity,
+      sats: 0,
+      receivedSats: 21,
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 reaction' }));
+    expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
+    const replyCard = screen.getByText('A reply from Carol.').closest('li') as HTMLElement;
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Send Bitcoin' }));
+    vi.useFakeTimers();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
   });
 
   it('does not refetch replies when reopening an in-flight feed', async () => {
@@ -1421,15 +1465,29 @@ describe('MemberProfileScreen', () => {
 
   it('uses visible reactions-feed sats for Gift, not a stale expanded copy', async () => {
     vi.mocked(fetchReplies).mockResolvedValue([
-      { ...PAYABLE_NESTED, payable: true, sats: 0, parentId: activityReply.parentId },
+      {
+        ...PAYABLE_NESTED,
+        payable: true,
+        sats: 0,
+        parentId: activityReply.parentId,
+        receivedSats: 0,
+      },
     ]);
     vi.mocked(fetchMemberReplies).mockResolvedValue([
-      { ...PAYABLE_NESTED, payable: true, sats: 21, parentId: activityReply.parentId },
+      {
+        ...PAYABLE_NESTED,
+        payable: true,
+        sats: 21,
+        parentId: activityReply.parentId,
+        receivedSats: 21,
+      },
     ]);
     vi.mocked(fetchPublicMessage).mockResolvedValue({
       ...PAYABLE_NESTED,
       payable: true,
-      sats: 42,
+      sats: 21,
+      parentId: activityReply.parentId,
+      receivedSats: 42,
     });
     renderWithLocale(
       <MemberProfileScreen
@@ -1447,8 +1505,15 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalledWith(
         PAYABLE_NESTED.id,
-        expect.objectContaining({ sinceSats: 21 }),
+        expect.objectContaining({ sinceReceivedSats: 21 }),
       );
+    });
+    expect(fetchPublicMessage).not.toHaveBeenCalledWith(
+      PAYABLE_NESTED.id,
+      expect.objectContaining({ sinceSats: expect.anything() }),
+    );
+    await waitFor(() => {
+      expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
     });
   });
 

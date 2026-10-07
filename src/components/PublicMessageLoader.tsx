@@ -13,6 +13,7 @@ import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
@@ -185,16 +186,34 @@ function PublicThreadCard({
           {note.place.label ?? `${note.place.lat.toFixed(5)}, ${note.place.lng.toFixed(5)}`}
         </Link>
       ) : null}
-      <p
-        className={
-          fiatSuffix === null
-            ? 'text-sm font-medium text-app-fg'
-            : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
-        }
-      >
-        {formatBitcoin(note.sats, numberFormat)}
-        {fiatSuffix}
-      </p>
+      {note.parentId !== undefined && (note.receivedSats ?? 0) > 0 ? (
+        <ReplyDirectionAmounts
+          text={note.text}
+          sats={note.sats}
+          receivedSats={note.receivedSats}
+          rateDay={rateDay}
+          fiat={fiat}
+          numberFormat={numberFormat}
+          sent={note}
+          received={{
+            amountUsd: note.receivedAmountUsd,
+            amountChf: note.receivedAmountChf,
+            amountEur: note.receivedAmountEur,
+            amountPhp: note.receivedAmountPhp,
+          }}
+        />
+      ) : (
+        <p
+          className={
+            fiatSuffix === null
+              ? 'text-sm font-medium text-app-fg'
+              : 'text-sm font-medium tabular-nums lining-nums text-app-fg'
+          }
+        >
+          {formatBitcoin(note.sats, numberFormat)}
+          {fiatSuffix}
+        </p>
+      )}
       {note.parentId === undefined && typeof note.goalSats === 'number' && note.goalSats > 0 ? (
         <ForumGoalBar
           sats={note.sats}

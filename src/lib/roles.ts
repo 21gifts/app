@@ -4,7 +4,9 @@
  *
  * Numeric ranks: basis 0, verified 1, moderator 2, initiator 2, founder 3.
  * Viewer permission checks use {@link roleAtLeast}; an equality test on the
- * viewer's role is a defect. Do not write "moderator or initiator" or
+ * viewer's role is a defect. The named exception is
+ * {@link canEditDailyPayoutRoster}, which is true only for `initiator` and
+ * `founder`. Do not write "moderator or initiator" or
  * „Moderator oder Initiator“; permission checks name the minimum rank only.
  */
 export const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'] as const;
@@ -68,4 +70,18 @@ export function isReplyPaymentExempt(
     return false;
   }
   return roleAtLeast(account.role, 'verified');
+}
+
+/**
+ * True when the signed-in account may edit the daily payout roster.
+ *
+ * False for `null` and `undefined`. True only for `initiator` and `founder`.
+ * This is not {@link roleAtLeast}: initiator and moderator share rank 2, and
+ * this page is closed to moderators.
+ *
+ * @param role - Viewer role, or missing when the account snapshot is absent.
+ * @returns Whether the viewer may edit the daily payout roster.
+ */
+export function canEditDailyPayoutRoster(role: Role | null | undefined): boolean {
+  return role === 'initiator' || role === 'founder';
 }

@@ -380,6 +380,7 @@ export function PublicMessageThread(props: {
     messageId: string,
     baselineSats: number,
     replyParentId: string | null = null,
+    baselineReceivedSats?: number,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -414,16 +415,23 @@ export function PublicMessageThread(props: {
       }
       for (;;) {
         try {
-          const next = await fetchPublicMessage(messageId, {
-            sinceSats: baselineSats,
-            signal,
-          });
+          const next = await fetchPublicMessage(
+            messageId,
+            typeof baselineReceivedSats === 'number'
+              ? { sinceReceivedSats: baselineReceivedSats, signal }
+              : { sinceSats: baselineSats, signal },
+          );
           /* v8 ignore start -- poll aborted or superseded before the body is applied */
           if (generation !== payPollGeneration.current || signal.aborted) {
             return;
           }
           /* v8 ignore stop */
-          if (next !== null && next.sats > baselineSats) {
+          if (
+            next !== null &&
+            (typeof baselineReceivedSats === 'number'
+              ? (next.receivedSats ?? 0) > baselineReceivedSats
+              : next.sats > baselineSats)
+          ) {
             let ownContent = !composePay;
             if (composePay) {
               try {
@@ -831,7 +839,11 @@ export function PublicMessageThread(props: {
           };
           setPayInvoice(minted);
           setPayBusy(false);
-          startPayPoll(messageId, baselineSats);
+          if (listed.parentId) {
+            startPayPoll(messageId, baselineSats, null, listed.receivedSats ?? 0);
+          } else {
+            startPayPoll(messageId, baselineSats);
+          }
         } catch (err) {
           /* v8 ignore next 3 -- pay sheet closed while the invoice request failed */
           if (generation !== payPollGeneration.current) {
