@@ -409,6 +409,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-manual-alert',
+    image: 'wallet-send-manual-alert.png',
+    visual: 'state-wallet-send-manual-alert',
+    needle: "shotScreen(page, 'state-wallet-send-manual-alert')",
+  },
+  {
+    route: '/wallet',
     id: 'send-paste-denied',
     image: 'wallet-send-paste-denied.png',
     visual: 'state-wallet-send-paste-denied',
@@ -773,6 +780,13 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-wallet-payment-error')",
   },
   {
+    route: '/wallet/payment',
+    id: 'prf-unsupported',
+    image: 'wallet-payment-prf-unsupported.png',
+    visual: 'state-wallet-payment-prf-unsupported',
+    needle: "shotScreen(page, 'state-wallet-payment-prf-unsupported')",
+  },
+  {
     route: '/wallet/phrase',
     id: 'default',
     image: 'wallet-phrase-add.png',
@@ -967,6 +981,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-send-manual.png',
     visual: 'state-welcome-wallet-send-manual',
     needle: "shotScreen(page, 'state-welcome-wallet-send-manual')",
+  },
+  {
+    route: '/welcome',
+    id: 'wallet-send-manual-alert',
+    image: 'welcome-wallet-send-manual-alert.png',
+    visual: 'state-welcome-wallet-send-manual-alert',
+    needle: "shotScreen(page, 'state-welcome-wallet-send-manual-alert')",
   },
   {
     route: '/welcome',
@@ -2395,6 +2416,27 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-menu-header-loading.png',
     visual: 'state-welcome-menu-header-loading',
     needle: "shotScreen(page, 'state-welcome-menu-header-loading')",
+  },
+  {
+    route: '/welcome',
+    id: 'menu-header-balance',
+    image: 'welcome-menu-header-balance.png',
+    visual: 'state-welcome-menu-header-balance',
+    needle: "shotScreen(page, 'state-welcome-menu-header-balance')",
+  },
+  {
+    route: '/welcome',
+    id: 'menu-header-connecting',
+    image: 'welcome-menu-header-connecting.png',
+    visual: 'state-welcome-menu-header-connecting',
+    needle: "shotScreen(page, 'state-welcome-menu-header-connecting')",
+  },
+  {
+    route: '/welcome',
+    id: 'menu-header-failed',
+    image: 'welcome-menu-header-failed.png',
+    visual: 'state-welcome-menu-header-failed',
+    needle: "shotScreen(page, 'state-welcome-menu-header-failed')",
   },
   {
     route: '/welcome',
