@@ -548,7 +548,7 @@ Pinned fixture (`?visual=send-comment-long`, Playwright builds only). The amount
 ## Screen: /wallet/payment
 
 - **URL:** `/wallet/payment?id=<payment id>` — one payment of the signed-in member's wallet, opened from a row of the **Payments** list on `/wallet`.
-- **What the user sees:** The same frame as `/wallet`: one top-left arrow (back to the list, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, the paid Lightning address, the description, the on-chain direction, or Received / Sent), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Under **Details**, the technical values are shortened in the middle, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, **Recipient node** (sends only), and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows until the payment and the rate are loaded, so no amount appears without its fiat. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
+- **What the user sees:** The same frame as `/wallet`: one top-left arrow (back to the list, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, the paid Lightning address, the description, the on-chain direction, or Received / Sent), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Under **Details**, the technical values are shortened in the middle, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows until the payment and the rate are loaded, so no amount appears without its fiat. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
 - **Actions:** Copy a technical value; open the transaction on mempool.space after the warning; return to the list with the top-left arrow; open **Menu** (see **Signed-in header**).
 - **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `ExternalLinkWarning`, `openInSystemBrowser`, `useLatestRateDayState`.
 
@@ -560,7 +560,7 @@ Pinned fixture (`?visual=history-rows` with the zap's id, Playwright builds only
 
 ### Variant: address-send
 
-A payment to the Lightning address **bob@example.com** with the comment **Thanks for dinner**: **−₿10'000**, **To** bob@example.com, **Fee** ₿3, **Total** ₿10'003 (each with fiat), and the **Recipient node** among the details.
+A payment to the Lightning address **bob@example.com** with the comment **Thanks for dinner**: **−₿10'000**, **To** bob@example.com, **Fee** ₿3, **Total** ₿10'003 (each with fiat),.
 
 ![21.gifts wallet payment Lightning-address send](images/wallet-payment-address-send.png)
 
@@ -605,6 +605,30 @@ The deposit after **Copy** on **Payment ID**: that row's icon turns into a green
 The deposit after **View on mempool.space**: the **Open external link?** dialog over the screen, with **Open link** and **Close**; only **Open link** leaves 21.gifts.
 
 ![21.gifts wallet payment external link](images/wallet-payment-external-link.png)
+
+### Variant: loading
+
+The screen while the rate is still on its way (the payment itself is known): only the frame and the top-left arrow, no amount yet, so no ₿ figure ever shows without its fiat.
+
+![21.gifts wallet payment loading](images/wallet-payment-loading.png)
+
+### Variant: locked
+
+Opened directly (a reload, a new tab) while the wallet is locked (pin `?visual=balance-locked`, Playwright builds only): the wallet's own locked state, **Unlock your wallet to see your Bitcoin balance.** and **Unlock wallet**; once the wallet is open the payment loads.
+
+![21.gifts wallet payment locked](images/wallet-payment-locked.png)
+
+### Variant: connecting
+
+The same while the wallet is opening (pin `?visual=balance-connecting`): the spinner and **Opening your wallet…**.
+
+![21.gifts wallet payment connecting](images/wallet-payment-connecting.png)
+
+### Variant: error
+
+The same when the wallet could not be opened (pin `?visual=balance-error`): **Your wallet could not be opened. Please try again.** and **Try again**.
+
+![21.gifts wallet payment error](images/wallet-payment-error.png)
 
 ## Screen: /wallet/phrase
 

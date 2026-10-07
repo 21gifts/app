@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { visualPin } from '@/lib/visual-pin';
 import { WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
 import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
@@ -31,8 +31,10 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
  * Loads one payment of the connected wallet by id once the wallet is ready,
  * and again after each wallet sync, so a pending payment updates in place. A
  * missing id or a payment the wallet does not know is `missing`; a later read
- * that fails keeps a payment already shown. Under the `?visual=history-rows`
- * pin (Playwright builds only) it shows the fixture payment with that id.
+ * of the same id that fails keeps the payment already shown. The state belongs
+ * to one id: another id starts at `loading` and never shows the previous
+ * payment. Under the `?visual=history-rows` pin (Playwright builds only) it
+ * shows the fixture payment with that id.
  *
  * @param id - SDK payment id, or `null` when the address has none.
  * @returns The payment state.
@@ -40,15 +42,18 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
 export function useWalletPayment(id: string | null): WalletPaymentState {
   const ready = useWalletStore((state) => state.status === 'ready');
   const syncCount = useWalletStore((state) => state.syncCount);
-  const [pinned] = useState(() => pinnedPayment(id));
-  const [state, setState] = useState<WalletPaymentState>({ status: 'loading' });
+  const pinned = useMemo(() => pinnedPayment(id), [id]);
+  const [loaded, setLoaded] = useState<{ id: string | null; state: WalletPaymentState }>({
+    id,
+    state: { status: 'loading' },
+  });
 
   useEffect(() => {
     if (pinned !== null) {
       return;
     }
     if (id === null) {
-      setState({ status: 'missing' });
+      setLoaded({ id, state: { status: 'missing' } });
       return;
     }
     if (!ready) {
@@ -58,12 +63,16 @@ export function useWalletPayment(id: string | null): WalletPaymentState {
     getWalletPayment(id).then(
       (payment) => {
         if (live) {
-          setState({ status: 'ready', payment });
+          setLoaded({ id, state: { status: 'ready', payment } });
         }
       },
       () => {
         if (live) {
-          setState((current) => (current.status === 'ready' ? current : { status: 'missing' }));
+          setLoaded((current) =>
+            current.id === id && current.state.status === 'ready'
+              ? current
+              : { id, state: { status: 'missing' } },
+          );
         }
       },
     );
@@ -72,5 +81,8 @@ export function useWalletPayment(id: string | null): WalletPaymentState {
     };
   }, [pinned, id, ready, syncCount]);
 
-  return pinned ?? state;
+  if (pinned !== null) {
+    return pinned;
+  }
+  return loaded.id === id ? loaded.state : { status: 'loading' };
 }

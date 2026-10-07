@@ -338,4 +338,33 @@ describe('MenuAccountHeader', () => {
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
     expect(screen.getByRole('img', { name: 'Profile photo' })).toBeTruthy();
   });
+
+  it('keeps nothing from a load that settles after sign-out, and drops the cache when the session changes', async () => {
+    let finish: (value: AccountActivity) => void = () => undefined;
+    vi.mocked(fetchAccountActivity).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    signIn();
+    const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    act(() => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+    finish(ACTIVITY);
+    await settle();
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    view.unmount();
+
+    signIn();
+    const second = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    await settle();
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    act(() => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:photo');
+    second.unmount();
+  });
 });

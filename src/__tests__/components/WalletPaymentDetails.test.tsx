@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
 import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { FiatRateDay } from '@/lib/stats-money';
@@ -15,6 +16,14 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDayState: vi.fn() }));
 vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
+vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
+vi.mock('@/components/WalletBalance', () => ({
+  WalletBalance: ({ status, onUnlock }: { status: string; onUnlock: () => void }) => (
+    <button type="button" onClick={onUnlock}>
+      Wallet {status}
+    </button>
+  ),
+}));
 
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
@@ -42,6 +51,10 @@ const FAILED = '24c8b87e';
 const DEPOSIT = '9bc2f53d';
 const WITHDRAW = '71a0b382';
 
+function walletWith(status: UseWalletResult['status']): UseWalletResult {
+  return { status, balanceSats: null, unlock: vi.fn(), retry: vi.fn(), prfUnsupported: false };
+}
+
 function show(state: WalletPaymentState): void {
   vi.mocked(useWalletPayment).mockReturnValue(state);
   renderWithLocale(<WalletPaymentDetails />);
@@ -62,6 +75,7 @@ beforeEach(() => {
     .mockReset()
     .mockReturnValue({ rateDay: RATE_DAY, settled: true, loading: false });
   vi.mocked(openInSystemBrowser).mockReset();
+  vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
 });
 
 afterEach(() => {
@@ -79,6 +93,20 @@ describe('WalletPaymentDetails', () => {
     );
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByText('Date')).toBeNull();
+  });
+
+  it('shows the wallet state while the wallet is not open, and says not found without a wallet here', () => {
+    const locked = walletWith('locked');
+    vi.mocked(useWallet).mockReturnValue(locked);
+    show({ status: 'loading' });
+    fireEvent.click(screen.getByRole('button', { name: 'Wallet locked' }));
+    expect(locked.unlock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+    cleanup();
+    vi.mocked(useWallet).mockReturnValue(walletWith('disabled'));
+    show({ status: 'loading' });
+    expect(screen.getByRole('alert').textContent).toBe('This payment could not be found.');
+    expect(screen.queryByRole('button', { name: /^Wallet / })).toBeNull();
   });
 
   it('says when the payment could not be found', () => {
@@ -117,7 +145,7 @@ describe('WalletPaymentDetails', () => {
     expect(screen.queryByText('View on mempool.space')).toBeNull();
   });
 
-  it('shows a Lightning-address send: To, the comment, fee and total with fiat, and the recipient node', () => {
+  it('shows a Lightning-address send: To, the comment, and fee and total with fiat, without the node key', () => {
     showPayment(fixture(ADDRESS_SEND));
     expect(screen.getAllByText('bob@example.com')).toHaveLength(2);
     expect(screen.getByText("−₿10'000")).toBeTruthy();
@@ -125,14 +153,14 @@ describe('WalletPaymentDetails', () => {
     expect(row('To').textContent).toBe('bob@example.com');
     expect(row('Fee').textContent).toBe('₿3 · $0.00');
     expect(row('Total').textContent).toBe("₿10'003 · $10.00");
-    expect(row('Recipient node').textContent).toMatch(/^0[23]/);
+    expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Description', { selector: 'dt' })).toBeNull();
   });
 
   it('shows Free for a fee-less send and a received payment note', () => {
     showPayment(fixture(SPARK_SEND));
     expect(screen.getByText('Gift to @alice')).toBeTruthy();
-    expect(row('Type').textContent).toBe('Spark transfer');
+    expect(row('Type').textContent).toBe('Wallet transfer');
     expect(row('Fee').textContent).toBe('Free');
     expect(screen.queryByText('Total', { selector: 'dt' })).toBeNull();
     cleanup();

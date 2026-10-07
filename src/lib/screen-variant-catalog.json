@@ -588,6 +588,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:loading",
+    "label": "/wallet/payment loading",
+    "visual": "state-wallet-payment-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:locked",
+    "label": "/wallet/payment locked",
+    "visual": "state-wallet-payment-locked",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:connecting",
+    "label": "/wallet/payment connecting",
+    "visual": "state-wallet-payment-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:error",
+    "label": "/wallet/payment error",
+    "visual": "state-wallet-payment-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/phrase:default",
     "label": "/wallet/phrase default",
     "visual": "screen-wallet-phrase",
