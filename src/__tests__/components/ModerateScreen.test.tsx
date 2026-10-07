@@ -211,16 +211,13 @@ describe('ModerateScreen', () => {
     },
   );
 
-  it.each(['founder', 'initiator', 'moderator'] as const)(
-    'shows Access log to a %s',
-    (role) => {
-      useAuthStore.setState({ session: 'sess', account: { ...account, role } });
-      renderWithLocale(<ModerateScreen />);
-      expect(screen.getByRole('link', { name: 'Access log' }).getAttribute('href')).toBe(
-        '/moderate/audit',
-      );
-    },
-  );
+  it.each(['founder', 'initiator', 'moderator'] as const)('shows Access log to a %s', (role) => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role } });
+    renderWithLocale(<ModerateScreen />);
+    expect(screen.getByRole('link', { name: 'Access log' }).getAttribute('href')).toBe(
+      '/moderate/audit',
+    );
+  });
 
   it('shows the unread count on Moderators when the group is unread', async () => {
     groupMock.mockResolvedValue({ ...GROUP, unread: true });
