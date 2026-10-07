@@ -21,6 +21,7 @@ import {
   lnurlPayRequestSchema,
   giftDaySchema,
   giftStatsSchema,
+  fxSpotSchema,
   shopActivitySchema,
   grantContinuationSchema,
   postStatsSchema,
@@ -56,6 +57,7 @@ import {
   type HiddenMessage,
   type GiftDay,
   type GiftStats,
+  type FxSpot,
   type ShopActivityDay,
   type GrantContinuation,
   type PostStats,
@@ -1044,6 +1046,25 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
     return giftStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches the current price of 1 BTC in USD, CHF, EUR, and PHP. No session.
+ *
+ * @returns The parsed {@link FxSpot} body.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link fxSpotSchema}.
+ */
+export async function fetchFxSpot(): Promise<FxSpot> {
+  try {
+    const response = await fetch('/fx/spot');
+    if (!response.ok) {
+      throw new Error('Could not load the exchange rate. Please try again.');
+    }
+    return fxSpotSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load the exchange rate. Please try again.');
   }
 }
 

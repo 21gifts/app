@@ -11,6 +11,7 @@ import type { AmountUnit } from '@/lib/api-types';
 import { separatorsFor } from '@/lib/number-format';
 import {
   fiatDraftForSats,
+  fiatToSats,
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
@@ -41,7 +42,11 @@ export interface AmountEntryProps {
    * is disabled. Used after an invoice is minted.
    */
   lockedSats?: number | null;
-  /** Latest gift day for the counter and for conversion. */
+  /**
+   * Current exchange rate for the counter and for conversion. Without a
+   * usable rate for the preferred fiat, that fiat is disabled and the field
+   * stays in bitcoin.
+   */
   rateDay: FiatRateDay | null;
   /**
    * Unit the current `value` is written in, when that differs from the
@@ -103,8 +108,6 @@ function nextKeypadDraft(
   }
   return `${current}${key}`;
 }
-
-const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
 /** Shared across fields so a slower save cannot overwrite a later choice. */
 let unitRequest = 0;
@@ -181,7 +184,7 @@ function confirmUnitRequest(request: number, chosen: AmountUnit): boolean {
  * @param from - Unit the draft is written in.
  * @param to - Unit to write.
  * @param draft - Current field value.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns The converted draft, or `''` when empty, unparseable, or without a rate.
  */
@@ -240,9 +243,13 @@ export function AmountEntry({
   const fiatRef = useRef(fiat);
   fiatRef.current = fiat;
   const storedUnit: AmountUnit = account?.amountUnit ?? 'btc';
-  const unit: AmountUnit = session === null ? localUnit : storedUnit;
+  const fiatReady = fiatToSats(1, rateDay, fiat) !== null;
+  const chosenUnit: AmountUnit = session === null ? localUnit : storedUnit;
+  const unit: AmountUnit = chosenUnit === 'fiat' && !fiatReady ? 'btc' : chosenUnit;
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
-  const [shownUnit, setShownUnit] = useState<AmountUnit>(valueUnit ?? unit);
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(() =>
+    valueUnit === 'fiat' && !fiatReady && value.trim() === '' ? 'btc' : (valueUnit ?? unit),
+  );
   const applied = useRef(shownUnit);
   const posting = useRef(false);
   const draftRef = useRef(value);
@@ -351,7 +358,8 @@ export function AmountEntry({
     const previousDraft = value;
     const previousUnit = shownUnit;
     const converted = draftForUnit(previousUnit, next, value, rateDay, fiat);
-    if (value.trim() !== '' && converted === '') {
+    // A fiat draft that cannot be converted may still switch to bitcoin; it starts empty.
+    if (value.trim() !== '' && converted === '' && next !== 'btc') {
       return;
     }
     draftRef.current = converted;
@@ -430,15 +438,15 @@ export function AmountEntry({
     const fiatAmount = satsToFiatAmount(lockedSats, rateDay, fiat);
     counter =
       fiatAmount === null ? t('amount.noRate') : formatFiatDisplay(fiatAmount, fiat, numberFormat);
+  } else if (!fiatReady) {
+    counter = t('amount.noRate');
   } else if (value.trim() !== '') {
     const parsed = parseAmountDraft(entryUnit, value, rateDay, fiat);
-    if (entryUnit === 'btc' && parsed.kind === 'sats') {
-      const fiatAmount = satsToFiatAmount(parsed.sats, rateDay, fiat);
-      counter = fiatAmount === null ? null : formatFiatDisplay(fiatAmount, fiat, numberFormat);
-    } else if (entryUnit === 'fiat' && parsed.kind === 'sats') {
-      counter = formatBitcoin(parsed.sats, numberFormat);
-    } else if (entryUnit === 'fiat' && FIAT_DRAFT.test(value.trim())) {
-      counter = t('amount.noRate');
+    if (parsed.kind === 'sats') {
+      counter =
+        entryUnit === 'btc'
+          ? formatFiatDisplay(satsToFiatAmount(parsed.sats, rateDay, fiat), fiat, numberFormat)
+          : formatBitcoin(parsed.sats, numberFormat);
     }
   }
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
@@ -452,7 +460,7 @@ export function AmountEntry({
         value={entryUnit}
         options={[
           { value: 'btc', label: '\u20BF' },
-          { value: 'fiat', label: fiat },
+          { value: 'fiat', label: fiat, disabled: !fiatReady },
         ]}
         onChange={changeUnit}
         ariaLabel={t('amount.unit')}

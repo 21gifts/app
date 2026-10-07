@@ -16,7 +16,7 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fiatDraftForSats,
   parseAmountDraft,
@@ -437,9 +437,11 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
   useEffect(() => {
     if (askUnit.current === amountUnit) {
       return;
@@ -2059,6 +2061,8 @@ export function ForumLoader({
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -2077,7 +2081,7 @@ export function ForumLoader({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -2325,14 +2329,14 @@ export function ForumLoader({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               session,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -2413,7 +2417,7 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -2475,6 +2479,7 @@ export function ForumLoader({
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */

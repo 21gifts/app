@@ -107,7 +107,7 @@ describe('PosHistory', () => {
     expect(screen.getAllByText('Paid ✓')).toHaveLength(2);
   });
 
-  it('shows bitcoin only when no gift-day rate exists', () => {
+  it('shows bitcoin only when no spot rate exists', () => {
     renderWithLocale(
       <PosHistory history={[row({ id: 'a' })]} openChargeId={null} rateDay={null} />,
     );

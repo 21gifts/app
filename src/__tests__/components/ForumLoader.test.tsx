@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { ForumLoader } from '@/components/ForumLoader';
+import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import {
@@ -11,7 +12,6 @@ import {
   forumListSchema,
   type Account,
   type ForumMessage,
-  type GiftStats,
   type Notification,
   type NotificationList,
 } from '@/lib/api-types';
@@ -85,7 +85,9 @@ vi.mock('@/lib/api', () => ({
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchNotifications: vi.fn(),
   markNotificationRead: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
@@ -115,7 +117,7 @@ import {
   agreeToRules,
   CannotReceiveError,
   dismissForumLaws,
-  fetchGiftStats,
+  fetchFxSpot,
   fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
@@ -154,7 +156,6 @@ const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const markNotificationReadMock = vi.mocked(markNotificationRead);
 const markNotificationsReadForMessageMock = vi.mocked(markNotificationsReadForMessage);
 const closeLocalPushNotificationsMock = vi.mocked(closeLocalPushNotifications);
-const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
@@ -298,28 +299,6 @@ const UNREAD_APPOINTED: Notification = {
   readAt: null,
 };
 
-const EMPTY_STATS: GiftStats = {
-  totalSats: 0,
-  totalBtc: '0.00000000',
-  totalUsd: '0.00',
-  totalChf: '0.00',
-  totalEur: '0.00',
-  totalPhp: '0.00',
-  giftCount: 0,
-  recipientCount: 0,
-  firstPaidAt: null,
-  lastPaidAt: null,
-  spendOverTime: [],
-  byRecipient: [],
-  byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-  },
-};
-
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 
 /** Pay slot sentence while the in-app wallet is not configured (no Breez key in unit tests). */
@@ -350,6 +329,9 @@ async function revealAll(): Promise<void> {
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   vi.clearAllMocks();
   fetchMock.mockResolvedValue(forumPage([]));
   publicListMock.mockResolvedValue({ messages: [], nextCursor: null });
@@ -376,7 +358,6 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
   publicFetchMock.mockResolvedValue(SAMPLE);
-  fetchGiftStatsMock.mockResolvedValue(EMPTY_STATS);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -442,8 +423,8 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('keeps ₿-only amounts when gift stats fail', async () => {
-    fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
+  it('keeps ₿-only amounts when the spot rate fails', async () => {
+    vi.mocked(fetchFxSpot).mockRejectedValue(new Error('spot down'));
     fetchMock.mockResolvedValue(forumPage([FRESH]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -751,25 +732,10 @@ describe('ForumLoader', () => {
   });
 
   it('posts an ask defined in the account fiat', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     useAuthStore.setState({
       session: 'sess',
@@ -987,25 +953,10 @@ describe('ForumLoader', () => {
   });
 
   it('converts an ask draft that is not on screen when the account unit changes', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     renderForumWithChrome();
     await waitFor(() => {
@@ -1037,25 +988,10 @@ describe('ForumLoader', () => {
   });
 
   it('leaves the ask field to convert itself while step 1 is open', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -6978,6 +6914,44 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('stores the fiat of the rate the reply amount was read with when a retry follows a refresh', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      vi.mocked(fetchFxSpot).mockResolvedValue({
+        asOf: '2026-10-07T00:00:00.000Z',
+        source: 'test',
+        rates: { USD: '100000.00' },
+      });
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, name: null, missing: [] },
+      });
+      invoiceMock.mockRejectedValueOnce(new MissingRequirementsError(['name']));
+      invoiceMock.mockResolvedValueOnce({ pr: 'lnbc1', amountSats: 2100 });
+      vi.mocked(setName).mockResolvedValue({ ...account, name: 'Ada', missing: [], setup: null });
+      await expandForeignAndPayReply('Hi Bob', '2100');
+      expect(await screen.findByRole('dialog', { name: 'Add your name' })).toBeTruthy();
+      vi.mocked(fetchFxSpot).mockResolvedValue({
+        asOf: '2026-10-07T00:05:00.000Z',
+        source: 'test',
+        rates: { USD: '200000.00' },
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(SPOT_REFRESH_MS);
+      });
+      fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Ada' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+      await waitFor(() => {
+        expect(invoiceMock).toHaveBeenCalledTimes(2);
+      });
+      for (const call of invoiceMock.mock.calls) {
+        expect(call).toContainEqual(expect.objectContaining({ amountUsd: '2.10' }));
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('maps a retried paid-reply missing_requirements onto the request error', async () => {

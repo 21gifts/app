@@ -6,7 +6,7 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button } from '@/components/ui';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import type { WalletStatus } from '@/stores/wallet-store';
 
@@ -44,7 +44,7 @@ export function WalletBalance({
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const rateDay = useLatestRateDay(status === 'ready');
+  const rateDay = useSpotRate(status === 'ready');
   const [fiatFirst, setFiatFirst] = useState(false);
 
   if (status === 'disabled') {

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 
 const RATE_DAY_STATS = {
   totalSats: 100_000_000,
@@ -90,6 +91,7 @@ async function signIn(page: Page, overrides: Record<string, unknown> = {}): Prom
       body: JSON.stringify(RATE_DAY_STATS),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(RATE_DAY_STATS));
 }
 
 /** Opens `/wallet` and records every request URL. */
@@ -337,7 +339,7 @@ test.describe('wallet history', () => {
     );
   });
 
-  test('Function: useLatestRateDayState — the payment screen shows its amounts only with the loaded fiat', async ({
+  test('Function: useSpotRateState — the payment screen shows its amounts only with the loaded fiat', async ({
     page,
   }) => {
     let release: () => void = () => undefined;
@@ -346,7 +348,7 @@ test.describe('wallet history', () => {
     });
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     // After signIn, so this hold wins over its rate answer (the latest route is used first).
-    await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
+    await page.route('**/fx/spot', async (route) => {
       await held;
       await route.fallback();
     });

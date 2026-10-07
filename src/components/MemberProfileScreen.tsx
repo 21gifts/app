@@ -21,7 +21,6 @@ import { Button, Card, IconButton } from '@/components/ui';
 import {
   CannotReceiveError,
   fetchComposeTarget,
-  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -51,13 +50,8 @@ import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import {
-  latestRateDay,
-  paySatsFromDraft,
-  replySatsFromDraft,
-  shownFiatForSats,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -300,9 +294,9 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
-  const rateDayRef = useRef(rateDay);
-  rateDayRef.current = rateDay;
+  const rateDay = useSpotRate();
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -329,24 +323,6 @@ export function MemberProfileScreen({
     .map(({ id, count }) => `${id}:${count}`)
     .sort()
     .join('\0');
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateDay(null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {
@@ -782,7 +758,7 @@ export function MemberProfileScreen({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -851,14 +827,14 @@ export function MemberProfileScreen({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -990,6 +966,8 @@ export function MemberProfileScreen({
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -1015,7 +993,7 @@ export function MemberProfileScreen({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -1136,6 +1114,7 @@ export function MemberProfileScreen({
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
     const parentRow = posts?.find((message) => message.id === parentId);

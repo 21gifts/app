@@ -139,8 +139,15 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, and the people-count chart on `/statistics` (every visitor, including signed-out, no goal).
+- **Used by:** `fetchGiftStats` on `/stats` and the people-count chart on `/statistics` (every visitor, including signed-out, no goal). Historical amounts there stay on each day's rate; live amounts use `GET /fx/spot`.
 - **Auth:** Public.
+
+## Endpoint: GET /fx/spot
+
+- **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
+- **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, and the payment fiat suffixes).
+- **Auth:** Public. No bearer.
 
 ## Endpoint: GET /shops/activity
 

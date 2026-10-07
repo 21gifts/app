@@ -16,6 +16,8 @@ export type SegmentedControlOption<T extends string> = {
   badge?: number;
   /** Accessible name when `badge` \> 0. */
   badgeAriaLabel?: string;
+  /** Shown but not selectable, such as a fiat without an exchange rate. */
+  disabled?: boolean;
 };
 
 /** Props for {@link SegmentedControl}. */
@@ -110,8 +112,9 @@ export function SegmentedControl<T extends string>({
               type="button"
               aria-pressed={selected}
               aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
+              disabled={opt.disabled === true}
               onClick={() => onChange(opt.value)}
-              className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium ${
+              className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
                 selected ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
               }`}
             >
@@ -141,8 +144,9 @@ export function SegmentedControl<T extends string>({
             type="button"
             aria-pressed={selected}
             aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
+            disabled={opt.disabled === true}
             onClick={() => onChange(opt.value)}
-            className={`min-h-11 min-w-11 px-2 py-1 ${selected ? selectedClass : unselectedClass}`}
+            className={`min-h-11 min-w-11 px-2 py-1 disabled:opacity-50 ${selected ? selectedClass : unselectedClass}`}
           >
             {opt.label}
             {optionBadge(opt.badge)}

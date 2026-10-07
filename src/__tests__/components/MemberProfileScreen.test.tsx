@@ -6,7 +6,7 @@ import {
   CannotReceiveError,
   fetchComposeTarget,
   NoteDeletedError,
-  fetchGiftStats,
+  fetchFxSpot,
   fetchMember,
   fetchMemberPosts,
   fetchShopNoteEdits,
@@ -105,7 +105,9 @@ vi.mock('@/lib/api', () => ({
   postTrustPropose: vi.fn(),
   postTrustConfirm: vi.fn(),
   postTrustAppoint: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchShopNoteEdits: vi.fn(),
   setMessageShopText: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
@@ -329,6 +331,9 @@ function fillPaidReply(text: string, amount = '1'): void {
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   hydrateReady = true;
   vi.clearAllMocks();
   push.mockClear();
@@ -403,8 +408,8 @@ const NO_RATE_SHOWN = {
 };
 
 describe('MemberProfileScreen', () => {
-  it('keeps member notes ₿-only when gift stats fail', async () => {
-    vi.mocked(fetchGiftStats).mockRejectedValueOnce(new Error('stats down'));
+  it('keeps member notes ₿-only when the spot rate fails', async () => {
+    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('spot down'));
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}

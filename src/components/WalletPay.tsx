@@ -22,7 +22,7 @@ export interface WalletPayProps {
   pr: string;
   /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
   amountSats: number;
-  /** Latest gift-day totals for the fee's fiat line, or `null`. */
+  /** Current spot rate for the fee's fiat line, or `null`. */
   rateDay: FiatRateDay | null;
   /**
    * True on the posting fee: paying also posts the note, so the confirm button
@@ -85,7 +85,7 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * browser cannot hold a 21.gifts wallet, with **Try again**. It never shows an invoice QR or hands the payment to
  * another wallet.
  *
- * @param props - Requests, shown amount, and rate day.
+ * @param props - Requests, shown amount, and spot rate.
  * @returns The pay slot.
  */
 export function WalletPay({

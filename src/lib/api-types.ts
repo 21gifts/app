@@ -339,6 +339,33 @@ export const giftStatsSchema = z.object({
 export type GiftStats = z.infer<typeof giftStatsSchema>;
 
 /**
+ * A decimal price string from the api, such as `"62345.12"`. `"0"` parses here
+ * and is treated as no price by `spotRateDay`.
+ */
+const spotPriceSchema = z.string().regex(/^\d+(\.\d+)?$/);
+
+/**
+ * Runtime schema for the payload of `GET /fx/spot`: the current price of
+ * 1 BTC in each fiat the api could price. A missing code has no rate now.
+ * Without any quote the api answers `asOf` and `source` `null` and empty `rates`.
+ */
+export const fxSpotSchema = z.object({
+  asOf: z.string().nullable(),
+  source: z.string().nullable(),
+  rates: z
+    .object({
+      USD: spotPriceSchema,
+      CHF: spotPriceSchema,
+      EUR: spotPriceSchema,
+      PHP: spotPriceSchema,
+    })
+    .partial(),
+});
+
+/** Parsed `GET /fx/spot` body. */
+export type FxSpot = z.infer<typeof fxSpotSchema>;
+
+/**
  * One UTC day of shop activity from `GET /shops/activity`.
  */
 export const shopActivityDaySchema = z.object({

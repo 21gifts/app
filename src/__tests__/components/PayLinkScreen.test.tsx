@@ -482,47 +482,16 @@ describe('PayLinkScreen', () => {
     }
   });
 
-  it('shows the viewer fiat under an open till when a gift day exists', async () => {
+  it('shows the viewer fiat under an open till when a spot rate exists', async () => {
     const fixed = 1_700_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(fixed);
-    const day = {
-      day: '2026-09-24',
-      sats: 100_000_000,
-      cumulativeSats: 100_000_000,
-      btc: '1.00000000',
-      cumulativeBtc: '1.00000000',
-      usd: '84000.00',
-      cumulativeUsd: '84000.00',
-      chf: null,
-      eur: null,
-      php: null,
-      cumulativeChf: null,
-      cumulativeEur: null,
-      cumulativePhp: null,
-    };
     mockFetch(async (input) => {
       const url = String(input);
-      if (url.includes('/gifts/stats')) {
+      if (url.includes('/fx/spot')) {
         return Response.json({
-          totalSats: 100_000_000,
-          totalBtc: '1.00000000',
-          totalUsd: '84000.00',
-          totalChf: null,
-          totalEur: null,
-          totalPhp: null,
-          giftCount: 1,
-          recipientCount: 1,
-          firstPaidAt: null,
-          lastPaidAt: null,
-          spendOverTime: [day],
-          byRecipient: [],
-          byMonth: [],
-          fx: {
-            quote: 'BTC-USD',
-            dayBasis: 'utc',
-            source: 'coinbase-exchange-daily-close',
-            quotes: [],
-          },
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '84000.00' },
         });
       }
       if (url.endsWith('/invoice')) {
@@ -535,6 +504,10 @@ describe('PayLinkScreen', () => {
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByText('$200.00')).toBeTruthy();
+    const spotCalls = vi
+      .mocked(fetch)
+      .mock.calls.filter(([input]) => String(input).includes('/fx/spot'));
+    expect(spotCalls).toHaveLength(1);
   });
 
   it('returns to the amount form when the till runs out', async () => {

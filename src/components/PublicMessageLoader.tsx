@@ -16,9 +16,9 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fetchForumMessage,
-  fetchGiftStats,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
@@ -28,7 +28,7 @@ import {
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
-import { formatBitcoin, latestRateDay, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
+import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -262,7 +262,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const [replies, setReplies] = useState<ForumMessage[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const rateDay = useSpotRate(MESSAGE_ID_RE.test(id));
   const markedRootStampRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -348,27 +348,6 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
       cancelled = true;
     };
   }, [id, attempt, ready, session]);
-
-  useEffect(() => {
-    if (!MESSAGE_ID_RE.test(id)) {
-      return;
-    }
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateDay(null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
 
   if (status === 'missing') {
     return <p className="text-center text-sm text-app-muted">{t('view.missing')}</p>;

@@ -41,12 +41,12 @@ function fiatSuffixMarkup(
  * A shown amount is never one currency when a stored string or a usable rate
  * exists. Bitcoin is not the visitor's default fiat, so this suffix is that
  * fiat beside it. A stored string for that currency is shown as-is. A null
- * or missing field uses the gift-day rate when one is loaded. Returns null,
+ * or missing field uses the current spot rate when one is loaded. Returns null,
  * so the amount stays bitcoin, only when neither a stored string nor a
  * usable rate exists.
  *
  * @param sats - Whole sats.
- * @param rateDay - Latest gift-day totals, or `null`. Used when `stored`
+ * @param rateDay - Current spot rate, or `null`. Used when `stored`
  *   has no string for `fiat`.
  * @param fiat - Visitor's default fiat.
  * @param numberFormat - Grouping style.
