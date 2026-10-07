@@ -7709,7 +7709,7 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
-  it('shows Send 1 sat on a post and on a reply', () => {
+  it('shows Send ₿1 on a post and on a reply', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -7738,10 +7738,10 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getAllByRole('button', { name: 'Send 1 sat' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
   });
 
-  it('hides Send 1 sat on the viewer own post and reply', () => {
+  it('hides Send ₿1 on the viewer own post and reply', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -7770,10 +7770,10 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Send 1 sat' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
   });
 
-  it('does not hide Send 1 sat when only viewerAccountId matches the author', () => {
+  it('does not hide Send ₿1 when only viewerAccountId matches the author', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -7802,7 +7802,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getAllByRole('button', { name: 'Send 1 sat' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
   });
 
   it('shows the balance sentence without +1 when needsBalance', () => {

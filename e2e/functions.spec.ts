@@ -11533,7 +11533,7 @@ test('Function: sendHeartTip — signed-out heart does not mint', async ({ page 
       invoiced = true;
     }
   });
-  await page.getByRole('button', { name: 'Send 1 sat' }).first().click();
+  await page.getByRole('button', { name: 'Send ₿1' }).first().click();
   expect(invoiced).toBe(false);
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
   await expect(
@@ -11577,10 +11577,10 @@ test('Function: useHeartTip — signed-out board shows the heart', async ({ page
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
   await expect(page.getByText('Hello from the active list.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send 1 sat' }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'Send 1 sat' }).first().click();
+  await expect(page.getByRole('button', { name: 'Send ₿1' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Send ₿1' }).first().click();
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('button', { name: 'Send 1 sat' }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send ₿1' }).first()).toBeVisible();
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
 });
 
