@@ -171,80 +171,84 @@ test.describe('wallet setup endpoints', () => {
   });
 });
 
-test.describe('wallet setup dialog', () => {
-  test('wallet setup-intro pin shows Set up wallet', async ({ page }) => {
+test.describe('wallet setup in the background', () => {
+  test('wallet balance-setup-failed pin shows the setup note and Try again', async ({ page }) => {
     await signIn(page);
-    await openWallet(page, '?visual=setup-intro');
-    const dialog = page.getByRole('dialog', { name: 'Set up your wallet' });
-    await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Set up wallet' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: 'Log out' })).toBeVisible();
+    await openWallet(page, '?visual=balance-setup-failed');
+    const note = page
+      .getByRole('alert')
+      .filter({ hasText: 'Your wallet could not be set up yet.' });
+    await expect(note).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
   });
 
-  test('wallet setup-progress pin shows the progress line', async ({ page }) => {
+  test('pos-setup-failed pin shows the setup note instead of the wallet link', async ({ page }) => {
     await signIn(page);
-    await openWallet(page, '?visual=setup-progress');
-    await expect(
-      page.getByRole('status').filter({ hasText: 'Setting up your wallet…' }),
-    ).toBeVisible();
-  });
-
-  test('wallet setup-error pin shows the error and Try again', async ({ page }) => {
-    await signIn(page);
-    await openWallet(page, '?visual=setup-error');
-    await expect(
-      page.getByText('Your wallet could not be set up. Please try again.'),
-    ).toBeVisible();
+    await page.goto('/pos?visual=pos-setup-failed');
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-  });
-
-  test('wallet setup-no-prf pin says this phone or browser cannot hold a wallet', async ({
-    page,
-  }) => {
-    await signIn(page);
-    await openWallet(page, '?visual=setup-no-prf');
-    await expect(
-      page.getByRole('dialog', { name: 'No wallet on this phone or browser' }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(
-        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
-      ),
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
-  });
-
-  test('Function: WalletSetupNotice — Log out leaves the setup for the login page', async ({
-    page,
-  }) => {
-    await signIn(page);
-    await openWallet(page, '?visual=setup-error');
-    await page.getByRole('button', { name: 'Log out' }).click();
-    await expect(page).toHaveURL(/\/login$/);
-  });
-
-  test('Function: useWalletSetup — a pinned view stays inert on Set up wallet', async ({
-    page,
-  }) => {
-    await signIn(page);
-    await openWallet(page, '?visual=setup-intro');
-    await page.getByRole('button', { name: 'Set up wallet' }).click();
-    await expect(page.getByRole('button', { name: 'Set up wallet' })).toBeVisible();
-  });
-
-  test('Function: walletSetupPin — an unknown pin shows no setup dialog', async ({ page }) => {
-    await signIn(page);
-    await openWallet(page, '?visual=setup-unknown');
+    await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveCount(0);
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
-  test('Function: walletSetupInFlight — unset key runs no setup and shows no progress', async ({
+  test('an account that still needs the setup sees no dialog on any screen', async ({ page }) => {
+    await signIn(page);
+    for (const path of ['/welcome', '/wallet', '/pos', '/profile', '/settings', '/setup/rules']) {
+      await page.goto(path);
+      await expect(page.locator('main')).toBeVisible();
+      await expect(page.getByRole('dialog', { name: /wallet/i })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Set up wallet' })).toHaveCount(0);
+    }
+  });
+
+  test('Function: WalletSetupNote — a pinned Try again stays on the note', async ({ page }) => {
+    await signIn(page);
+    await openWallet(page, '?visual=balance-setup-failed');
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('Function: useWalletSetup — the note shows only while pinned or given up', async ({
     page,
   }) => {
     await signIn(page);
     await openWallet(page);
-    await expect(page.getByText('Setting up your wallet…')).toHaveCount(0);
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByText('Your wallet could not be set up yet.')).toHaveCount(0);
+    await page.goto('/pos?visual=pos-setup-failed');
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
+  });
+
+  test('Function: walletSetupPin — an unknown pin shows no setup note', async ({ page }) => {
+    await signIn(page);
+    await page.goto('/pos?visual=setup-unknown');
+    await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toBeVisible();
+    await expect(page.getByText('Your wallet could not be set up yet.')).toHaveCount(0);
+  });
+
+  test('Function: retryWalletSetup — a pinned Try again claims nothing', async ({ page }) => {
+    await signIn(page);
+    const urls: string[] = [];
+    page.on('request', (req) => {
+      urls.push(req.url());
+    });
+    await page.goto('/pos?visual=pos-setup-failed');
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
+    expect(urls.some((u) => u.endsWith('/me/wallet'))).toBe(false);
+  });
+
+  test('Function: listenForWalletSetup — unset key starts no background setup', async ({
+    page,
+  }) => {
+    await signIn(page);
+    const urls = await openWallet(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('dialog', { name: /wallet/i })).toHaveCount(0);
+    expect(urls.some((u) => u.endsWith('/me/wallet'))).toBe(false);
+    expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
   });
 
   test('Function: settlePhraseDerivations — unset key asks for no second passkey', async ({
@@ -253,12 +257,15 @@ test.describe('wallet setup dialog', () => {
     await signIn(page);
     await openWallet(page);
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByText('Setting up your wallet…')).toHaveCount(0);
+    await expect(page.getByText('Your wallet could not be set up yet.')).toHaveCount(0);
   });
 
-  test('Function: needsWalletSetup — unset key shows no setup dialog', async ({ page }) => {
+  test('Function: needsWalletSetup — unset key leaves the wallet disabled with no note', async ({
+    page,
+  }) => {
     await signIn(page);
     await openWallet(page);
+    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toHaveCount(0);
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
