@@ -8,6 +8,7 @@ import {
   Inbox,
   Menu,
   MessageCircle,
+  ListChecks,
   ScrollText,
   Share2,
   Shield,
@@ -34,7 +35,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules, Trust Chain, Statistics
+ * rows (Home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, living-room rules,
+ * Habit-Tracker (`/habit-tracker`), Trust Chain, Statistics
  * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
  * with a count (staff-room unread plus open proposals) when greater than zero,
@@ -46,7 +48,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * is an 18rem (`w-72`) portal on the trigger parent and a scrim portals to
  * `[data-menu-scrim-host]` and uses `rounded-3xl` so it follows the frame.
  * On a narrow frame the panel is a full-width sheet in `[data-menu-sheet-host]`
- * (the host has the page's `px-8` inset) and the page underneath is hidden. When onboarding
+ * (the host has the page's `px-8` inset) and the page underneath is hidden.
+ * A wide menu that cannot fit even with its top on the window uses that same
+ * sheet, so the one page scrollport reaches every row. It does not grow a
+ * second scroll. When onboarding
  * is complete and `hasPosted` is false, also mounts
  * {@link IntroduceYourselfOverlay}. Close dismisses this mount only; the
  * introduce CTA skips the overlay once so a remount after navigating to
@@ -61,6 +66,15 @@ export function SignedInChrome(): ReactElement {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
+  const [menuLift, setMenuLift] = useState(0);
+  const [menuBox, setMenuBox] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [sheetBecauseTall, setSheetBecauseTall] = useState(false);
+  const tightRef = useRef(false);
+  const menuLiftRef = useRef(0);
+  const menuBoxRef = useRef(menuBox);
+  tightRef.current = tight;
+  menuLiftRef.current = menuLift;
+  menuBoxRef.current = menuBox;
   const [introduceDismissed, setIntroduceDismissed] = useState<boolean>(
     consumeSkipIntroduceOverlay,
   );
@@ -110,9 +124,10 @@ export function SignedInChrome(): ReactElement {
       : typeof window !== 'undefined' &&
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(max-width: 36rem)').matches === true;
+  const sheet = narrow || sheetBecauseTall;
 
   useLayoutEffect(() => {
-    if (!open || !narrow) {
+    if (!open || !sheet) {
       delete document.documentElement.dataset['menuSheet'];
       return;
     }
@@ -130,28 +145,112 @@ export function SignedInChrome(): ReactElement {
       delete document.documentElement.dataset['menuSheet'];
       scroller.scrollTop = previousScrollTop;
     };
-  }, [narrow, open, scroller]);
+  }, [open, scroller, sheet]);
 
   useLayoutEffect(() => {
-    if (!open || narrow) {
-      if (tight) {
+    if (open || !sheetBecauseTall) {
+      return;
+    }
+    setSheetBecauseTall(false);
+  }, [open, sheetBecauseTall]);
+
+  useLayoutEffect(() => {
+    if (!open || narrow || !sheetBecauseTall) {
+      return;
+    }
+    const onResize = (): void => {
+      setSheetBecauseTall(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+    };
+  }, [narrow, open, sheetBecauseTall]);
+
+  useLayoutEffect(() => {
+    if (!open || sheet) {
+      // Keep the compact measurement while the tall sheet is open, so a
+      // taller window can return to that menu instead of the loose one.
+      if ((!open || !sheetBecauseTall) && tightRef.current) {
+        tightRef.current = false;
         setTight(false);
+      }
+      if (menuLiftRef.current !== 0) {
+        menuLiftRef.current = 0;
+        setMenuLift(0);
+      }
+      if (menuBoxRef.current !== null) {
+        menuBoxRef.current = null;
+        setMenuBox(null);
       }
       return;
     }
     const measure = (): void => {
+      // A node that has left the document is not a box anyone can see.
+      const panel = document.getElementById('signed-in-menu');
+      if (panel === null) {
+        return;
+      }
       const limit = window.innerHeight + 1;
-      const bottom = menuRef.current!.getBoundingClientRect().bottom;
-      setTight((current) => {
-        if (bottom > limit) {
-          return true;
-        }
-        // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
-        if (current && bottom <= limit - 48) {
-          return false;
-        }
-        return current;
-      });
+      const rect = panel.getBoundingClientRect();
+      const applied = menuLiftRef.current;
+      const fixed = panel.classList.contains('fixed');
+      // A fixed box is already shifted. Add the lift back. An absolute box is natural.
+      const naturalBottom = rect.bottom + (fixed ? applied : 0);
+      const naturalTop = rect.top + (fixed ? applied : 0);
+      // A fixed panel's left is the inline value from the last measure. The trigger
+      // moves when the frame resizes, so the horizontal position comes from the
+      // trigger parent. An absolute panel is already in that parent.
+      const anchorRight = rootEl?.getBoundingClientRect().right;
+      const naturalLeft =
+        fixed && typeof anchorRight === 'number' ? anchorRight - rect.width : rect.left;
+      const currentTight = tightRef.current;
+      // Compact is 40px shorter (mt-2 to mt-0, p-2 to py-0, version py-2 to py-0) plus 8px reserve.
+      const nextTight =
+        naturalBottom > limit
+          ? true
+          : currentTight && naturalBottom <= limit - 48
+            ? false
+            : currentTight;
+      // Wait until the compact absolute box is on screen, then pin that measurement.
+      if (nextTight !== currentTight) {
+        tightRef.current = nextTight;
+        setTight(nextTight);
+        return;
+      }
+      // A second scroll is forbidden. Lift only while the bottom stays in the window.
+      // When the compact menu cannot fit even at the top, use the narrow sheet.
+      const overflow = Math.ceil(naturalBottom - limit);
+      const room = Math.max(0, Math.floor(naturalTop));
+      if (nextTight && overflow > room) {
+        setSheetBecauseTall(true);
+        return;
+      }
+      const nextLift = nextTight && overflow > 0 ? Math.min(overflow, room) : 0;
+      const nextBox =
+        nextLift > 0
+          ? {
+              top: Math.round(naturalTop - nextLift),
+              left: Math.round(naturalLeft),
+              width: Math.round(rect.width),
+            }
+          : null;
+      const previous = menuBoxRef.current;
+      const sameBox =
+        (nextBox === null && previous === null) ||
+        (nextBox !== null &&
+          previous !== null &&
+          previous.top === nextBox.top &&
+          previous.left === nextBox.left &&
+          previous.width === nextBox.width);
+      if (nextLift !== applied) {
+        menuLiftRef.current = nextLift;
+        setMenuLift(nextLift);
+      }
+      if (!sameBox) {
+        menuBoxRef.current = nextBox;
+        setMenuBox(nextBox);
+      }
     };
     measure();
     window.addEventListener('resize', measure);
@@ -164,7 +263,7 @@ export function SignedInChrome(): ReactElement {
       window.removeEventListener('resize', measure);
       observer?.disconnect();
     };
-  }, [open, narrow, tight, account?.role]);
+  }, [account?.role, open, rootEl, sheet, sheetBecauseTall, tight]);
 
   useEffect(() => {
     if (session === null) {
@@ -178,24 +277,32 @@ export function SignedInChrome(): ReactElement {
   // that panel. `rootEl` is null on the first render, so the server and
   // the hydration pass both skip the portal.
   const sheetHost =
-    rootEl !== null && narrow && typeof document !== 'undefined'
+    rootEl !== null && sheet && typeof document !== 'undefined'
       ? document.querySelector('[data-menu-sheet-host]')
       : null;
   // `querySelector` is already an element or null. Do not touch `HTMLElement`:
   // that name does not exist while this component renders on the server.
   const panelTarget = sheetHost ?? rootEl;
   const scrimHost =
-    open && !narrow && typeof document !== 'undefined'
+    open && !sheet && typeof document !== 'undefined'
       ? document.querySelector('[data-menu-scrim-host]')
       : null;
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
-  // A tall wide menu drops its outer spacing so the last row stays inside the window. It does not scroll.
-  const panelClass = narrow
+  // A tall wide menu drops its outer spacing. Rows stay at least 44px. If it still
+  // passes the window, the panel becomes a fixed overlay whose measured top, left,
+  // and width keep the bottom on the window and never use a negative top. It does not
+  // scroll. When that lift would leave the bottom outside, the wide menu uses the
+  // same sheet as a narrow frame. The trigger stays above a lifted panel so Menu
+  // still receives the click that closes it.
+  const lifted = !sheet && menuBox !== null;
+  const panelClass = sheet
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
-    : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
-      : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
+    : lifted
+      ? `fixed z-50 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+      : tight
+        ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg${open ? '' : ' hidden'}`
+        : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
     <div ref={setRootEl} className="relative">
@@ -209,7 +316,11 @@ export function SignedInChrome(): ReactElement {
         onClick={() => {
           setOpen((current) => !current);
         }}
-        className="inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg"
+        className={
+          lifted
+            ? 'relative z-[60] inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
+            : 'inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
+        }
       >
         <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
         {t('aria.menu')}
@@ -217,7 +328,16 @@ export function SignedInChrome(): ReactElement {
       {panelTarget === null
         ? null
         : createPortal(
-            <div id="signed-in-menu" ref={menuRef} className={panelClass}>
+            <div
+              id="signed-in-menu"
+              ref={menuRef}
+              className={panelClass}
+              style={
+                lifted && menuBox !== null
+                  ? { top: menuBox.top, left: menuBox.left, width: menuBox.width }
+                  : undefined
+              }
+            >
               <Link
                 href="/welcome"
                 onClick={(event) => {
@@ -291,6 +411,16 @@ export function SignedInChrome(): ReactElement {
               >
                 <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
                 {t('nav.rules')}
+              </Link>
+              <Link
+                href="/habit-tracker"
+                onClick={() => {
+                  setOpen(false);
+                }}
+                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+              >
+                <ListChecks aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                {t('nav.habitTracker')}
               </Link>
               <Link
                 href="/trust-chain"

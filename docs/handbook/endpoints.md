@@ -135,6 +135,20 @@
 - **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, and the people-count chart on `/statistics` (every visitor, including signed-out, no goal).
 - **Auth:** Public.
 
+## Endpoint: GET /habits
+
+- **Purpose:** Same-origin proxy of api `GET /habits` (public habit list, review week, and comments). Forwards `Authorization` when the browser sent it, so the owner can receive internal notes.
+- **Errors:** The proxy forwards the upstream status, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberHabits` on `/habit-tracker`.
+- **Auth:** Public. A bearer is optional and is forwarded, not added.
+
+## Endpoint: POST /habits
+
+- **Purpose:** Same-origin proxy of api `POST /habits` (add, edit, archive, log, comment, delete a comment, or request a Lightning invoice). Forwards `Authorization` and `Time-Zone`. Does not pay the invoice.
+- **Errors:** The proxy forwards the upstream status. Expected upstream errors include 401 without a bearer, 400 for a bad body, 403 `{ error: 'SUNDAY_REST' }` when a comment, a comment deletion, or an invoice request falls on the device's local Sunday, 409 when the period is closed or no wallet can be invoiced, or 502 if the api is unreachable. A missing, blank, or invalid time zone does not refuse a comment, a comment deletion, or an invoice request. Add, edit, log, and archive do not rest on Sunday.
+- **Used by:** `postMemberHabit` on `/habit-tracker`.
+- **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
+
 ## Endpoint: GET /shops/activity
 
 - **Purpose:** Same-origin proxy of api `GET /shops/activity` (shop-use counts, 30 UTC days).

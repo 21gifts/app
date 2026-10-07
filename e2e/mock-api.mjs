@@ -355,6 +355,56 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathName === '/habits' && method === 'GET') {
+    json(res, 200, {
+      reviewWeek: { start: '2026-09-28' },
+      habits: [
+        {
+          id: 'h-ada',
+          accountId: 'acc-ada',
+          ownerName: 'Ada',
+          role: 'initiator',
+          name: 'Walk',
+          description: 'Outside',
+          cadence: 'daily',
+          timeZone: 'Asia/Manila',
+          firstPeriod: '2026-10-01',
+          lastPeriod: null,
+          periods: [
+            {
+              period: '2026-10-04',
+              name: 'Walk',
+              description: 'Outside',
+              logged: false,
+              status: null,
+            },
+          ],
+          comments: [
+            {
+              id: 'c-bea',
+              habitId: 'h-ada',
+              accountId: 'acc-bea',
+              name: 'Bea',
+              text: 'hello',
+              week: '2026-09-28',
+              createdAt: 1,
+            },
+          ],
+        },
+      ],
+    });
+    return;
+  }
+
+  if (pathName === '/habits' && method === 'POST') {
+    if (bearer(req) === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { ok: true });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/mentions') {
     if (bearer(req) === null) {
       json(res, 401, { error: 'Unauthorized' });

@@ -16321,6 +16321,81 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu');
   });
 
+  async function menuLayout(page: Page): Promise<'lifted' | 'sheet' | 'dropdown'> {
+    const sheet = await page.locator('html').getAttribute('data-menu-sheet');
+    const cls = (await page.locator('#signed-in-menu').getAttribute('class')) ?? '';
+    if (sheet === '1') {
+      return 'sheet';
+    }
+    if (cls.split(/\s+/).includes('fixed')) {
+      return 'lifted';
+    }
+    return 'dropdown';
+  }
+
+  /**
+   * Wide frame, short window. Mobile projects start at 375, which is always
+   * the narrow sheet, so every combo is forced to 1280px before the shot.
+   */
+  async function resizeWelcomeMenu(
+    page: Page,
+    want: 'lifted' | 'sheet',
+    heights: readonly number[],
+  ): Promise<void> {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeVisible();
+    const seen: string[] = [];
+    for (const height of heights) {
+      await page.setViewportSize({ width: 1280, height });
+      const matched = await page
+        .waitForFunction(
+          (expected) => {
+            const panel = document.getElementById('signed-in-menu');
+            const sheet = document.documentElement.dataset['menuSheet'] === '1';
+            const fixed = panel?.classList.contains('fixed') === true;
+            let layout = 'dropdown';
+            if (sheet) {
+              layout = 'sheet';
+            } else if (fixed) {
+              layout = 'lifted';
+            }
+            return layout === expected;
+          },
+          want,
+          { timeout: 800 },
+        )
+        .then(() => true)
+        .catch(() => false);
+      const layout = await menuLayout(page);
+      seen.push(`${height}:${layout}`);
+      if (matched && layout === want) {
+        return;
+      }
+    }
+    throw new Error(`welcome menu never became ${want} (${seen.join(', ')})`);
+  }
+
+  test('welcome menu-lifted', async ({ page }) => {
+    await resizeWelcomeMenu(page, 'lifted', [780, 740, 700, 680, 660, 640, 620, 600, 580, 560]);
+    await expect(page.locator('#signed-in-menu')).toHaveClass(/\bfixed\b/);
+    await expect(page.locator('html')).not.toHaveAttribute('data-menu-sheet');
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Log out' })).toBeInViewport();
+    await shotScreen(page, 'state-welcome-menu-lifted');
+  });
+
+  test('welcome menu-tall-sheet', async ({ page }) => {
+    await resizeWelcomeMenu(page, 'sheet', [520, 480, 440, 400, 360]);
+    await expect(page.locator('html')).toHaveAttribute('data-menu-sheet', '1');
+    await expect(page.locator('#signed-in-menu')).not.toHaveClass(/\bfixed\b/);
+    await expect(page.getByRole('link', { name: 'Home' })).toBeInViewport();
+    await shotScreen(page, 'state-welcome-menu-tall-sheet');
+  });
+
   test('welcome menu-unread', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
@@ -22677,5 +22752,1057 @@ test.describe('daily payments', () => {
     await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeEnabled();
     await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
     await shotScreen(page, 'state-grants-payments-amounts-editing');
+  });
+});
+
+const HABIT_ROW = {
+  id: 'h-ada',
+  accountId: 'acc-ada',
+  ownerName: 'Ada',
+  role: 'initiator',
+  name: 'Walk',
+  description: 'Outside',
+  cadence: 'daily',
+  timeZone: 'Asia/Manila',
+  firstPeriod: '2026-10-01',
+  lastPeriod: null,
+  periods: [
+    {
+      period: '2026-10-04',
+      name: 'Walk',
+      description: 'Outside',
+      logged: false,
+      status: null,
+    },
+  ],
+  comments: [
+    {
+      id: 'c-bea',
+      habitId: 'h-ada',
+      accountId: 'acc-bea',
+      name: 'Bea',
+      text: 'hello',
+      week: '2026-09-28',
+      createdAt: 1,
+    },
+  ],
+};
+
+const HABIT_PUBLIC = {
+  reviewWeek: { start: '2026-09-28' },
+  habits: [HABIT_ROW],
+};
+
+async function stubHabitList(page: Page, body: unknown, status = 200): Promise<void> {
+  await page.route('**/habits', async (route) => {
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
+async function shotRatedHabit(
+  page: Page,
+  status: 'achieved' | 'partial' | 'missed',
+  buttonName: string,
+): Promise<void> {
+  await seedHabitAda(page);
+  let rated = false;
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      rated = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: HABIT_PUBLIC.reviewWeek,
+        habits: [
+          {
+            ...HABIT_ROW,
+            accountId: 'acc_e2e',
+            notes: 'secret',
+            periods: [
+              {
+                period: '2026-10-04',
+                name: 'Walk',
+                description: 'Outside',
+                logged: rated,
+                status: rated ? status : null,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  const pill = page.getByRole('button', { name: buttonName, exact: true });
+  await expect(pill).toHaveAttribute('aria-pressed', 'false');
+  await pill.click();
+  await expect(pill).toHaveAttribute('aria-pressed', 'true');
+  await pill.scrollIntoViewIfNeeded();
+}
+
+async function seedHabitAda(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+}
+
+test.describe('habit tracker baselines', () => {
+  test('screen /habit-tracker default', async ({ page }) => {
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await expect(page.getByRole('heading', { name: 'Habit-Tracker' })).toBeVisible();
+    await expect(page.getByText('Outside')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign in to comment' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+    await shotScreen(page, 'screen-habit-tracker');
+  });
+
+  test('screen /habit-tracker empty', async ({ page }) => {
+    await stubHabitList(page, {
+      reviewWeek: { start: '2026-09-28' },
+      habits: [],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No habits yet.')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-empty');
+  });
+
+  test('screen /habit-tracker loading', async ({ page }) => {
+    await page.route('**/habits', () => new Promise(() => undefined));
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-loading');
+  });
+
+  test('screen /habit-tracker error', async ({ page }) => {
+    await stubHabitList(page, {}, 500);
+    await page.goto('/habit-tracker');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-error');
+  });
+
+  test('screen /habit-tracker signed-in', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Internal notes:')).toBeVisible();
+    await expect(page.getByText('secret')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-signed-in');
+  });
+
+  test('screen /habit-tracker menu-open', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-menu-open');
+  });
+
+  test('screen /habit-tracker add-weekly', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    const cadence = page.getByRole('group', { name: 'Cadence' });
+    await cadence.getByRole('button', { name: 'Weekly' }).click();
+    await expect(cadence.getByRole('button', { name: 'Weekly' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-habit-tracker-add-weekly');
+  });
+
+  test('screen /habit-tracker rated-achieved', async ({ page }) => {
+    await shotRatedHabit(page, 'achieved', 'Achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-achieved');
+  });
+
+  test('screen /habit-tracker rated-partial', async ({ page }) => {
+    await shotRatedHabit(page, 'partial', 'Partially achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-partial');
+  });
+
+  test('screen /habit-tracker rated-missed', async ({ page }) => {
+    await shotRatedHabit(page, 'missed', 'Not achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-missed');
+  });
+
+  test('screen /habit-tracker donate', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await shotScreen(page, 'state-habit-tracker-donate');
+  });
+
+  test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.unroute('**/gifts/stats**');
+    await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    const cont = page.getByRole('button', { name: 'Continue' });
+    await expect(cont).toBeDisabled();
+    await cont.scrollIntoViewIfNeeded();
+    await expect(cont).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-rate-pending');
+  });
+
+  test('screen /habit-tracker donate-fiat', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/me/amount-unit', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('1000');
+    await expect(page.getByText('$1.00')).toBeVisible();
+    const saved = page.waitForResponse(
+      (response) => response.url().includes('/me/amount-unit') && response.ok(),
+    );
+    await page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await saved;
+    await expect(page.getByLabel('Amount')).toHaveValue('1.00');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donate-fiat');
+  });
+
+  test('screen /habit-tracker donate-invoice', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donate-invoice');
+  });
+
+  test('screen /habit-tracker donate-habit-amount', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('0');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Expected a JSON body with an integer "amountSats"',
+      }),
+    ).toHaveText('Expected a JSON body with an integer "amountSats"');
+    await shotScreen(page, 'state-habit-tracker-donate-habit-amount');
+  });
+
+  test('screen /habit-tracker donate-request', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'nope' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const requestAlert = page
+      .getByRole('alert')
+      .filter({ hasText: 'Could not start the Bitcoin payment' });
+    await expect(requestAlert).toHaveText('Could not start the Bitcoin payment');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(requestAlert).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-request');
+  });
+
+  test('screen /habit-tracker donate-request-pending', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await new Promise(() => undefined);
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    const cont = page.getByRole('button', { name: 'Continue' });
+    await cont.click();
+    await expect(cont).toBeDisabled();
+    await expect(cont.locator('.animate-spin')).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not start the Bitcoin payment' }),
+    ).toHaveCount(0);
+    await cont.scrollIntoViewIfNeeded();
+    await expect(cont).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-request-pending');
+  });
+
+  test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 429,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Too many payments' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const rateAlert = page.getByRole('alert').filter({
+      hasText: 'Too many payments. Please wait a moment and try again.',
+    });
+    await expect(rateAlert).toHaveText('Too many payments. Please wait a moment and try again.');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(rateAlert).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-rate-limit');
+  });
+
+  test('screen /habit-tracker donate-author-wallet', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: "The author's wallet cannot receive this Bitcoin payment",
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const walletAlert = page.getByRole('alert').filter({
+      hasText: "The author's wallet cannot receive this Bitcoin payment",
+    });
+    await expect(walletAlert).toHaveText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(walletAlert).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-author-wallet');
+  });
+
+  test('screen /habit-tracker sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByText('Zapping is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-sunday');
+  });
+
+  test('screen /habit-tracker editing', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await expect(page.getByText('Save', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-editing');
+  });
+
+  test('screen /habit-tracker archive-confirm', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Archive' }).click();
+    await expect(page.getByText('Archive this habit? Its history stays visible.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-archive-confirm');
+  });
+
+  test('screen /habit-tracker archived', async ({ page }) => {
+    await seedHabitAda(page);
+    let archived = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        archived = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              notes: 'secret',
+              lastPeriod: archived ? '2026-10-04' : null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Archive' }).click();
+    await page.getByRole('button', { name: 'Confirm archive' }).click();
+    await expect(page.getByText('Archived', { exact: true })).toBeVisible();
+    await expect(page.getByText('2026-10-04')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Archive' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-habit-tracker-archived');
+  });
+
+  test('screen /habit-tracker save-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Achieved', exact: true }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-save-error');
+  });
+
+  test('screen /habit-tracker edit-save-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    // Save scrolls the open form under the fold. The shot has to keep the alert.
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-edit-save-error');
+  });
+
+  test('screen /habit-tracker archive-confirm-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Archive' }).click();
+    await page.getByRole('button', { name: 'Confirm archive' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await shotScreen(page, 'state-habit-tracker-archive-confirm-error');
+  });
+
+  test('screen /habit-tracker add-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No habits yet.')).toBeVisible();
+    const name = page.locator('#habit-add-name');
+    await name.fill('Stretch');
+    await page.getByRole('button', { name: 'Add habit' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(name).toHaveValue('Stretch');
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-add-error');
+  });
+
+  test('screen /habit-tracker comment-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              description: '',
+              periods: [],
+              comments: [],
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    const draft = page.getByLabel('Write a comment');
+    await draft.fill('still here');
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(draft).toHaveValue('still here');
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-comment-error');
+  });
+
+  test('screen /habit-tracker add-saved', async ({ page }) => {
+    await seedHabitAda(page);
+    let added = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        added = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      const owned = { ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: added
+            ? [
+                {
+                  ...HABIT_ROW,
+                  id: 'h-new',
+                  accountId: 'acc_e2e',
+                  name: 'Stretch',
+                  description: '',
+                  comments: [],
+                },
+                owned,
+              ]
+            : [owned],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.locator('#habit-add-name').fill('Stretch');
+    await page.getByRole('button', { name: 'Add habit' }).click();
+    const created = page.getByRole('heading', { name: 'Stretch', exact: true });
+    await expect(created).toBeVisible();
+    await expect(page.locator('#habit-add-name')).toHaveValue('');
+    await created.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-add-saved');
+  });
+
+  test('screen /habit-tracker edit-saved', async ({ page }) => {
+    await seedHabitAda(page);
+    let saved = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        saved = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              notes: 'secret',
+              name: saved ? 'Stretch' : 'Walk',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.locator('#habit-h-ada-name').fill('Stretch');
+    await page.getByRole('button', { name: 'Save' }).click();
+    const renamed = page.getByRole('heading', { name: 'Stretch', exact: true });
+    await expect(renamed).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await renamed.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-edit-saved');
+  });
+
+  test('screen /habit-tracker comment-posted', async ({ page }) => {
+    await seedHabitAda(page);
+    let posted = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        posted = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              notes: 'secret',
+              comments: posted
+                ? [
+                    ...HABIT_ROW.comments,
+                    {
+                      id: 'c-new',
+                      habitId: 'h-ada',
+                      accountId: 'acc_e2e',
+                      name: 'Ada',
+                      text: 'kept this',
+                      week: '2026-09-28',
+                      createdAt: 2,
+                    },
+                  ]
+                : HABIT_ROW.comments,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('hello', { exact: true })).toBeVisible();
+    await page.getByLabel('Write a comment').fill('kept this');
+    await page.getByRole('button', { name: 'Post' }).click();
+    const postedText = page.getByText('kept this', { exact: true });
+    await expect(postedText).toBeVisible();
+    await expect(page.getByLabel('Write a comment')).toHaveValue('');
+    // A minimum scroll to the new comment shifts by a few pixels between runs.
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-comment-posted');
+  });
+
+  test('screen /habit-tracker comment-deleted', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    let deleted = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        deleted = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              comments: deleted ? [] : HABIT_ROW.comments,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    const empty = page.getByText('No comments yet.');
+    await expect(empty).toBeVisible();
+    await expect(page.getByText('hello', { exact: true })).toHaveCount(0);
+    await empty.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-comment-deleted');
+  });
+
+  test('screen /habit-tracker delete-comment', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    const trash = page.getByRole('button', { name: 'Delete comment' });
+    await expect(trash).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toHaveCount(0);
+    await trash.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-delete-comment');
+  });
+
+  test('screen /habit-tracker delete-comment-confirm', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await expect(page.getByText('Delete this comment from the Habit-Tracker?')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel deletion' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-delete-comment-confirm');
+  });
+
+  test('screen /habit-tracker delete-comment-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Delete comment' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-delete-comment-error');
   });
 });
