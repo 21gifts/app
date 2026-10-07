@@ -38,6 +38,9 @@ vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
+
 vi.mock('@/hooks/useHydrateSession', () => ({
   useHydrateSession: vi.fn((): { ready: boolean } => ({ ready: true })),
 }));
@@ -242,6 +245,39 @@ describe('PublicMessageLoader', () => {
       expect(markReadForMessageMock).toHaveBeenCalledWith('sess', MESSAGE_ID);
     });
     expect(markReadForMessageMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks nothing read and stays public while a login is still opening its wallet', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    walletOpen.value = false;
+    fetchMessageBearer.mockResolvedValue(sample);
+    try {
+      renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(markReadForMessageMock).not.toHaveBeenCalled();
+      expect(fetchMessageBearer).not.toHaveBeenCalled();
+    } finally {
+      walletOpen.value = true;
+    }
   });
 
   it('does not mark notifications read for a signed-out visitor', async () => {
