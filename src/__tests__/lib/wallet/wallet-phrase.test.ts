@@ -8,6 +8,7 @@ import {
 } from '@/lib/wallet/wallet-phrase';
 import { mnemonicFromPrfFirst, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
 import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import { base64UrlToBytes } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/prf-mnemonic', async (importOriginal) => {
@@ -351,6 +352,9 @@ describe('unlockWalletPhrase', () => {
     vi.mocked(obtainPrfFirstFromGet).mockResolvedValueOnce(null);
     await expect(unlockWalletPhrase()).resolves.toBe('noPrf');
     expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(1);
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledWith(
+      Uint8Array.from(base64UrlToBytes(CREDENTIAL_ID)),
+    );
   });
 
   it('unlocks when PRF is present', async () => {
