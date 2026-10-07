@@ -26863,6 +26863,10 @@ test.describe('habit tracker baselines', () => {
       'aria-pressed',
       'true',
     );
+    // The press scrolls by a varying amount, so the shot always shows the end of the form.
+    await page.locator('[data-scrollport][data-scroll-active]').evaluate((port) => {
+      port.scrollTop = port.scrollHeight;
+    });
     await shotScreen(page, 'state-habit-tracker-add-weekly');
   });
 
