@@ -37,6 +37,9 @@ const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
  * the new-habit draft and unsent comments before paint.
  * The same gift body is not posted again while that request is still waiting.
  * A confirmed add may be sent again. It is not reserved for the whole session.
+ * A reload releases only actions that had already reached the server when
+ * that reload started, and a request is ignored when the visit changed,
+ * including when the same account comes back.
  * Does not log invoices, addresses, notes, or comment text.
  *
  * @returns The habit-tracker body.
@@ -73,6 +76,7 @@ export function MemberHabits(): ReactElement {
   const listAlive = useRef(true);
   const postedKeys = useRef(new Set<string>());
   const postedForSession = useRef<string | null>(null);
+  const sessionVisit = useRef(0);
   const inFlightKeys = useRef(new Set<string>());
   const { fiat } = useFiatPreference();
   const signedIn = session !== null && session !== '';
@@ -116,6 +120,7 @@ export function MemberHabits(): ReactElement {
     }
     setLoading(true);
     setError(false);
+    const confirmed = new Set(postedKeys.current);
     void fetchMemberHabits(session).then(
       (next) => {
         if (!listAlive.current || generation !== listGeneration.current) {
@@ -123,8 +128,8 @@ export function MemberHabits(): ReactElement {
         }
         setData(next);
         setLoading(false);
-        // A confirmed list releases a rating, edit, archive, comment, deletion, or add.
-        for (const id of releaseConfirmedPosts(postedKeys.current)) {
+        // Releases actions that had already reached the server when this load started.
+        for (const id of releaseConfirmedPosts(postedKeys.current, confirmed)) {
           cancelEdit(id);
         }
         listSettled.current = true;
@@ -148,6 +153,7 @@ export function MemberHabits(): ReactElement {
   // Cleared in this render, so the previous account's draft is not painted.
   if (draftSession !== session) {
     setDraftSession(session);
+    sessionVisit.current += 1;
     setAddName('');
     setAddDescription('');
     setAddNotes('');
@@ -165,6 +171,7 @@ export function MemberHabits(): ReactElement {
     listGeneration.current = generation;
     // Another save must not replace this reload while it is still loading.
     listSettled.current = false;
+    const confirmed = new Set(postedKeys.current);
     try {
       const next = await fetchMemberHabits(actor);
       if (
@@ -177,7 +184,7 @@ export function MemberHabits(): ReactElement {
       setData(next);
       setError(false);
       // A rating or a comment does not close an open edit. Try again does.
-      releaseConfirmedPosts(postedKeys.current);
+      releaseConfirmedPosts(postedKeys.current, confirmed);
       listSettled.current = true;
       return true;
     } catch {
@@ -198,6 +205,7 @@ export function MemberHabits(): ReactElement {
       return false;
     }
     const actor = session;
+    const visit = sessionVisit.current;
     const key = JSON.stringify(body);
     // The request already waiting owns the reload. Do not start a second one.
     if (inFlightKeys.current.has(key)) {
@@ -215,8 +223,8 @@ export function MemberHabits(): ReactElement {
         } finally {
           inFlightKeys.current.delete(key);
         }
-        // The session that arrived while this request waited owns the list.
-        if (useAuthStore.getState().session !== actor) {
+        // A later visit owns the list, including when the same account comes back.
+        if (requestVisitChanged(visit, actor)) {
           return false;
         }
         postedKeys.current.add(key);
@@ -232,12 +240,16 @@ export function MemberHabits(): ReactElement {
       }
       return true;
     } catch {
-      if (useAuthStore.getState().session !== actor) {
+      if (requestVisitChanged(visit, actor)) {
         return false;
       }
       setError(true);
       return false;
     }
+  }
+
+  function requestVisitChanged(visit: number, actor: string | null): boolean {
+    return useAuthStore.getState().session !== actor || sessionVisit.current !== visit;
   }
 
   function startEdit(habit: MemberHabit): void {
@@ -754,10 +766,13 @@ function statusCopy(
   return t('habit.unrated');
 }
 
-/** Drops every confirmed action. Edit and archive ids close. An add does not. */
-function releaseConfirmedPosts(keys: Set<string>): string[] {
+/** Drops actions that had already reached the server when this load started. Edit and archive ids close. An add does not. */
+function releaseConfirmedPosts(keys: Set<string>, confirmed: Set<string>): string[] {
   const closeIds: string[] = [];
   for (const stored of [...keys]) {
+    if (!confirmed.has(stored)) {
+      continue;
+    }
     const parsed = JSON.parse(stored) as { action?: unknown; id?: unknown };
     if (parsed.action !== 'add') {
       const closeEdit =
