@@ -3306,7 +3306,7 @@
   },
   "/setup/name:default": {
     "de": "Angemeldet, noch kein Name. Ihr Name und das Namensfeld oben, Weiter und beschriftetes Überspringen unten am Bildschirm angeheftet. Ein Menü oben rechts; darin Start, Shops, Kasse, Profil, Förderprogramm, Wallet, Wohnzimmerregeln, Habit-Tracker, Trust-Kette, Statistiken, Benachrichtigungen, Posteingang, Kontakt, optional App installieren und Abmelden.",
-    "es": "Con sesión iniciada, aún sin nombre. Tu nombre y el campo de nombre arriba, Continuar y Saltar etiquetado fijados al pie de la pantalla. Un Menú arriba a la derecha; contiene Inicio, Tiendas, Caja, Perfil, Beca, Wallet, Reglas del salón, Habit-Tracker, Cadena de confianza, Estadísticas, Notificaciones, Bandeja, Contacto, opcional Instalar app, y Cerrar sesión.",
+    "es": "Con sesión iniciada, aún sin nombre. Tu nombre y el campo de nombre arriba, Continuar y Omitir etiquetado fijados al pie de la pantalla. Un Menú arriba a la derecha; contiene Inicio, Tiendas, Caja, Perfil, Beca, Wallet, Reglas del salón, Habit-Tracker, Cadena de confianza, Estadísticas, Notificaciones, Bandeja, Contacto, opcional Instalar app, y Cerrar sesión.",
     "fil": "Naka-sign in, wala pang pangalan. Ang Pangalan mo at ang field ng pangalan sa itaas, Magpatuloy at may label na Laktawan na naka-pin sa ibaba ng screen. Isang Menu sa kanan-itaas; nasa loob ang Home, Mga Tindahan, Point of sale, Profile, Grant, Wallet, Mga patakaran sa living room, Habit-Tracker, Trust Chain, Mga istatistika, Mga abiso, Mga mensahe, Contact, opsyonal na I-install ang app, at Mag-log out."
   },
   "/profile:sticker-kikamba": {
