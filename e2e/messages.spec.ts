@@ -410,7 +410,7 @@ test('inbox gift-only last preview shows ₿21', async ({ page }) => {
   await expect(page.getByText('₿21')).toBeVisible();
 });
 
-test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) => {
+test('opening the inbox acknowledges listed messages before opening a thread', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -439,6 +439,7 @@ test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) 
   const readPosts: string[] = [];
   await page.route(/\/conversations\/conv-21\/read$/, async (route) => {
     expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON()).toEqual({ throughMessageId: 'm1' });
     readPosts.push(route.request().url());
     await route.fulfill({
       status: 200,
@@ -464,10 +465,12 @@ test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) 
             lastAt: '2026-08-28T12:00:00.000Z',
             lastFromMe: false,
             lastSats: 0,
-            unread: true,
+            lastMessageId: 'm1',
+            unread: readPosts.length === 0,
+            unreadMessageCount: readPosts.length === 0 ? 1 : 0,
           },
         ],
-        unreadCount: 1,
+        unreadCount: readPosts.length === 0 ? 1 : 0,
       }),
     });
   });
@@ -491,15 +494,19 @@ test('opening an unread thread POSTs /conversations/:id/read', async ({ page }) 
   });
   await page.goto('/messages');
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '21.gifts, 1 unread' })).toBeVisible();
-  expect(readPosts).toEqual([]);
+  await expect.poll(() => readPosts.length).toBe(1);
+  await expect(page.getByRole('button').filter({ hasText: 'Hello team' })).toBeVisible();
+  await expect(page.getByRole('button').filter({ hasText: 'Hello team' })).not.toHaveAttribute(
+    'aria-label',
+    /unread/,
+  );
   const readPost = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
   );
-  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
+  await page.getByRole('button').filter({ hasText: 'Hello team' }).click();
   await readPost;
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
-  expect(readPosts).toHaveLength(1);
+  expect(readPosts).toHaveLength(2);
 });
 
 test('inbox gift-only bubble shows send ₿21', async ({ page }) => {

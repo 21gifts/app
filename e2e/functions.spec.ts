@@ -3983,13 +3983,11 @@ test('Function: markConversationRead — opening a thread POSTs read', async ({ 
       }),
     });
   });
-  await page.goto('/messages');
-  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   const readPost = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/conversations/conv-21/read'),
   );
-  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
-  await readPost;
+  await page.goto('/messages?c=conv-21');
+  expect((await readPost).postDataJSON()).toEqual({ throughMessageId: 'm1' });
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
 });
 
@@ -10488,9 +10486,9 @@ test('Function: refreshUnreadAppBadge — opening a thread refetches notificatio
   await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
   await expect.poll(() => notificationGets).toBeGreaterThan(0);
   const beforeThread = notificationGets;
-  await page.getByRole('button', { name: '21.gifts, 1 unread' }).click();
+  await page.getByRole('button').filter({ hasText: 'Hello team' }).click();
   await expect(page.getByRole('heading', { name: '21.gifts' })).toBeVisible();
-  await expect.poll(() => notificationGets).toBe(beforeThread + 1);
+  await expect.poll(() => notificationGets).toBeGreaterThan(beforeThread);
 });
 
 test('Function: push service worker — GET /sw.js is the push worker', async ({ request }) => {
@@ -12569,6 +12567,86 @@ test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', 
   await box.press('End');
   await expect(people).toHaveCount(0);
   await expect(box).toHaveValue('xhi @');
+});
+
+test('Function: conversationUnreadCount — inbox and moderator badges clear on visit and count new messages', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'moderator');
+  let inboxCount = 4;
+  let moderatorCount = 3;
+  const reads: string[] = [];
+  const summary = (id: string, count: number, kind: string) => ({
+    id,
+    kind,
+    name: id === 'inbox-thread' ? 'Bob' : 'Moderators',
+    lastText: 'Hello',
+    lastAt: '2026-08-28T12:00:00.000Z',
+    lastMessageId: id + '-last',
+    lastFromMe: false,
+    lastSats: 0,
+    unread: count > 0,
+    unreadMessageCount: count,
+  });
+  await page.route(/\/forum\/notifications(?:\?|$)/, (route) =>
+    route.fulfill({ json: { notifications: [], unreadCount: 0 } }),
+  );
+  await page.route(/\/trust\/proposals$/, (route) => route.fulfill({ json: { proposals: [] } }));
+  await page.route(/\/conversations$/, (route) =>
+    route.fulfill({
+      json: { conversations: [summary('inbox-thread', inboxCount, 'member_member')] },
+    }),
+  );
+  await page.route(/\/conversations\/moderator-group$/, (route) =>
+    route.fulfill({
+      json: { conversation: summary('staff-thread', moderatorCount, 'moderator_group') },
+    }),
+  );
+  await page.route(/\/conversations\/staff-thread(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: {
+        messages: [
+          {
+            id: 'staff-thread-last',
+            name: 'Bob',
+            text: 'Staff message',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            fromMe: false,
+            sats: 0,
+            hasPhoto: false,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route(/\/conversations\/(inbox-thread|staff-thread)\/read$/, async (route) => {
+    const id = route.request().url().includes('inbox-thread') ? 'inbox-thread' : 'staff-thread';
+    expect(route.request().postDataJSON()).toEqual({ throughMessageId: id + '-last' });
+    reads.push(id);
+    if (id === 'inbox-thread') inboxCount = 0;
+    else moderatorCount = 0;
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Messages, 4 unread' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Moderation, 3 unread' })).toBeVisible();
+  await page.getByRole('link', { name: 'Messages, 4 unread' }).click();
+  await expect.poll(() => reads.includes('inbox-thread')).toBe(true);
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Messages', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Moderation, 3 unread' })).toBeVisible();
+  await page.goto('/moderate/group');
+  await expect(page.getByText('Staff message', { exact: true })).toBeVisible();
+  await expect.poll(() => reads.includes('staff-thread')).toBe(true);
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Moderation', exact: true })).toBeVisible();
+  inboxCount = 1;
+  moderatorCount = 2;
+  await page.goto('/profile');
+  await openSignedInMenu(page);
+  await expect(page.getByRole('link', { name: 'Messages, 1 unread' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Moderation, 2 unread' })).toBeVisible();
 });
 
 test('Function: fitBoxInFrame — a wide panel is pulled inside the frame', async ({ page }) => {

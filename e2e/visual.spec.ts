@@ -18717,8 +18717,11 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'screen-messages');
   });
 
-  test('messages unread', async ({ page }) => {
+  test('messages unread after acknowledgement failure', async ({ page }) => {
     await seedAda(page);
+    await page.route('**/conversations/conv-bob/read', (route) =>
+      route.fulfill({ status: 503, json: { error: 'Unavailable' } }),
+    );
     await page.route(/\/conversations$/, async (route) => {
       await route.fulfill({
         status: 200,

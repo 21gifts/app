@@ -121,12 +121,18 @@ export function ModeratorGroupScreen(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setGroup({ ...nextGroup, unread: false });
+        setGroup({ ...nextGroup, unread: false, unreadMessageCount: 0 });
         setMessages(page.messages);
         setNextCursor(page.nextCursor);
-        void markConversationRead(session, nextGroup.id).catch(() => undefined);
-        bumpUnreadAppBadgeEpoch();
-        void refreshUnreadAppBadge(session, undefined, 0).catch(() => undefined);
+        const readThrough = page.messages.at(-1);
+        if (readThrough !== undefined) {
+          void markConversationRead(session, nextGroup.id, readThrough.id)
+            .then(() => {
+              bumpUnreadAppBadgeEpoch();
+              return refreshUnreadAppBadge(session, undefined, 0);
+            })
+            .catch(() => undefined);
+        }
       } catch {
         if (cancelled) {
           return;
@@ -342,9 +348,12 @@ export function ModeratorGroupScreen(): ReactElement | null {
             return appendUnseenMessages(current, page.messages);
           });
           if (fresh.length === 0) return;
-          void markConversationRead(session, activeId).catch(() => undefined);
-          bumpUnreadAppBadgeEpoch();
-          void refreshUnreadAppBadge(session, undefined, 0).catch(() => undefined);
+          void markConversationRead(session, activeId, page.messages.at(-1)!.id)
+            .then(() => {
+              bumpUnreadAppBadgeEpoch();
+              return refreshUnreadAppBadge(session, undefined, 0);
+            })
+            .catch(() => undefined);
         })
         .catch(() => undefined)
         .finally(() => {

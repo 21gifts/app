@@ -1,5 +1,6 @@
 'use client';
 
+import { conversationUnreadCount } from '@/lib/conversation-unread';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -87,6 +88,9 @@ function appendUnseenMessages(
 /**
  * Client loader for the signed-in inbox on `/messages`.
  *
+ * Visiting the list acknowledges its unread conversations through each loaded
+ * last-message id. Failed acknowledgements stay unread and retry on another visit.
+ * The moderator room is excluded. After acknowledgement, menu and PWA counts refresh.
  * Reads the session from the auth store, fetches the conversation list, and
  * opens `?c=` only after that list loaded, unless the list has that id as
  * `moderator_group` (new empty PMs are not yet listed). When the role is at
@@ -221,6 +225,29 @@ export function InboxLoader(): ReactElement | null {
           return;
         }
         setConversations(next);
+        if (openId === null || openId === '') {
+          const acknowledged = new Set<string>();
+          await Promise.all(
+            next
+              .filter((row) => row.unread && row.kind !== 'moderator_group')
+              .map(async (row) => {
+                try {
+                  await markConversationRead(session, row.id, row.lastMessageId ?? undefined);
+                  acknowledged.add(row.id);
+                } catch {
+                  /* Keep failed acknowledgements unread so a later visit retries. */
+                }
+              }),
+          );
+          if (cancelled || useAuthStore.getState().session !== session) return;
+          setConversations(
+            next.map((row) =>
+              acknowledged.has(row.id) ? { ...row, unread: false, unreadMessageCount: 0 } : row,
+            ),
+          );
+          bumpUnreadAppBadgeEpoch();
+          void refreshUnreadAppBadge(session).catch(() => undefined);
+        }
       } catch {
         /* v8 ignore next 3 -- unmount during list fetch error */
         if (cancelled) {
@@ -237,7 +264,7 @@ export function InboxLoader(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, attempt]);
+  }, [session, attempt, openId]);
 
   useEffect(() => {
     if (
@@ -293,7 +320,9 @@ export function InboxLoader(): ReactElement | null {
         setNextCursor(page.nextCursor);
         /* v8 ignore next -- a thread only opens after the inbox list loaded */
         const listedRows = conversations ?? [];
-        const remaining = listedRows.filter((row) => row.id !== openId && row.unread).length;
+        const remaining = listedRows
+          .filter((row) => row.id !== openId)
+          .reduce((sum, row) => sum + conversationUnreadCount(row), 0);
         setConversations((prev) => {
           /* v8 ignore next 3 -- list cleared while the thread was loading */
           if (prev === null) {
@@ -303,9 +332,15 @@ export function InboxLoader(): ReactElement | null {
             row.id === openId ? { ...row, unread: false, unreadMessageCount: 0 } : row,
           );
         });
-        void markConversationRead(session, openId).catch(() => undefined);
-        bumpUnreadAppBadgeEpoch();
-        void refreshUnreadAppBadge(session, remaining).catch(() => undefined);
+        const readThrough = page.messages.at(-1);
+        if (readThrough !== undefined) {
+          void markConversationRead(session, openId, readThrough.id)
+            .then(() => {
+              bumpUnreadAppBadgeEpoch();
+              return refreshUnreadAppBadge(session, remaining);
+            })
+            .catch(() => undefined);
+        }
       } catch {
         /* v8 ignore next 3 -- unmount during fetch error */
         if (cancelled) {
@@ -552,7 +587,9 @@ export function InboxLoader(): ReactElement | null {
           if (last === undefined) return;
           /* v8 ignore next -- a thread only polls after the inbox list has loaded */
           if (conversations === null) return;
-          const remaining = conversations.filter((row) => row.id !== openId && row.unread).length;
+          const remaining = conversations
+            .filter((row) => row.id !== openId)
+            .reduce((sum, row) => sum + conversationUnreadCount(row), 0);
           setConversations((rows) => {
             /* v8 ignore next -- the list is loaded before a thread can poll */
             if (rows === null) return rows;
@@ -577,9 +614,12 @@ export function InboxLoader(): ReactElement | null {
             }
             return [opened, ...updated.filter((row) => row.id !== openId)];
           });
-          void markConversationRead(session, openId).catch(() => undefined);
-          bumpUnreadAppBadgeEpoch();
-          void refreshUnreadAppBadge(session, remaining).catch(() => undefined);
+          void markConversationRead(session, openId, page.messages.at(-1)!.id)
+            .then(() => {
+              bumpUnreadAppBadgeEpoch();
+              return refreshUnreadAppBadge(session, remaining);
+            })
+            .catch(() => undefined);
         })
         .catch(() => undefined)
         .finally(() => {
