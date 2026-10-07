@@ -21773,6 +21773,16 @@ test.describe('team access screens', () => {
     });
   }
 
+  /**
+   * Puts the page scroll back at the top after a press: a press can leave the
+   * scroll surface a pixel down, which is not part of the state.
+   */
+  async function scrollToTop(page: Page): Promise<void> {
+    await page.evaluate(() => {
+      document.querySelector('[data-scrollport][data-scroll-active]')?.scrollTo(0, 0);
+    });
+  }
+
   /** Opens Ada's member-data page and waits for the wallet with its fiat. */
   async function openAdaWallet(page: Page): Promise<void> {
     await page.goto('/moderate/members/acc_ada');
@@ -21887,6 +21897,7 @@ test.describe('team access screens', () => {
     await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
     await expect(page.getByText('Sent · Shop')).toBeVisible();
     await expect(page.getByText('From Bob')).toHaveCount(0);
+    await scrollToTop(page);
     await shotScreen(page, 'state-moderate-member-period');
   });
 
@@ -21903,6 +21914,7 @@ test.describe('team access screens', () => {
     await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
     await expect(page.getByText('To carol@example.com')).toBeVisible();
     await expect(page.getByText('From Bob')).toHaveCount(0);
+    await scrollToTop(page);
     await shotScreen(page, 'state-moderate-member-direction');
   });
 
@@ -21912,6 +21924,7 @@ test.describe('team access screens', () => {
     await openAdaWallet(page);
     await page.getByRole('combobox', { name: 'Category' }).click();
     await expect(page.getByRole('option', { name: 'All categories' })).toBeVisible();
+    await scrollToTop(page);
     await shotScreen(page, 'state-moderate-member-category-open');
   });
 
@@ -21926,6 +21939,7 @@ test.describe('team access screens', () => {
     await expect(page.getByRole('region', { name: 'Balance' })).toContainText(BALANCE_WITH_FIAT);
     await expect(page.getByText('Sent · Shop')).toBeVisible();
     await expect(page.getByText('From Bob')).toHaveCount(0);
+    await scrollToTop(page);
     await shotScreen(page, 'state-moderate-member-category');
   });
 
@@ -21936,6 +21950,7 @@ test.describe('team access screens', () => {
     await page.getByRole('button', { name: 'Activity' }).click();
     await expect(page.getByText('Opened a page')).toBeVisible();
     await expect(page.getByRole('region', { name: 'Activity' })).toContainText(/₿2.000 · .*\d/);
+    await scrollToTop(page);
     await shotScreen(page, 'state-moderate-member-activity');
   });
 
@@ -21945,6 +21960,7 @@ test.describe('team access screens', () => {
     await openAdaWallet(page);
     await page.getByRole('button', { name: 'Activity' }).click();
     await expect(page.getByText('No activity yet.')).toBeVisible();
+    await scrollToTop(page);
     await shotScreen(page, 'state-moderate-member-activity-empty');
   });
 
@@ -21954,6 +21970,7 @@ test.describe('team access screens', () => {
     await openAdaWallet(page);
     await page.getByRole('button', { name: 'Activity' }).click();
     await expect(page.getByText('Could not load the activity. Please try again.')).toBeVisible();
+    await scrollToTop(page);
     await shotScreen(page, 'state-moderate-member-activity-error');
   });
 
