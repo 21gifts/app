@@ -126,6 +126,14 @@ export function ViewProfileClaim({
         </div>
       );
     }
+    // A failed attempt of this login keeps its own alert and retry, also
+    // over a held-back session.
+    if (account === null && passkey.status === 'unknown') {
+      return claimFailedView(() => passkey.authenticate());
+    }
+    if (account === null && passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
+      return claimFailedView(() => passkey.retry());
+    }
     // Logging in here opens the wallet like everywhere else: until it is
     // open, and while the session is held back after it could not be, the
     // same login card stands in place, so its alert stays.
@@ -134,12 +142,6 @@ export function ViewProfileClaim({
     }
     if (account !== null) {
       return null;
-    }
-    if (passkey.status === 'unknown') {
-      return claimFailedView(() => passkey.authenticate());
-    }
-    if (passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
-      return claimFailedView(() => passkey.retry());
     }
     return alreadyClaimedView();
   }
