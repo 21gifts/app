@@ -21,6 +21,7 @@ import {
   proxyMePasskeyRenewReportPost,
   proxyGiftsGet,
   proxyGiftsStatsGet,
+  proxyFxSpotGet,
   proxyMeActivityGet,
   proxyMeGet,
   proxyPosDelete,
@@ -437,6 +438,12 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/rules-agreement');
+  });
+
+  it('proxyFxSpotGet hits /fx/spot', async () => {
+    const fetchMock = stubApi();
+    await proxyFxSpotGet(new Request('http://localhost/fx/spot'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/fx/spot');
   });
 
   it('proxyGiftsStatsGet hits /gifts/stats', async () => {

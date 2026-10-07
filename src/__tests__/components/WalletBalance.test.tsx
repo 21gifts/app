@@ -1,12 +1,12 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletBalance } from '@/components/WalletBalance';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('@/hooks/useLatestRateDay', () => ({
-  useLatestRateDay: vi.fn(),
+vi.mock('@/hooks/useSpotRate', () => ({
+  useSpotRate: vi.fn(),
 }));
 
 const RATE_DAY: FiatRateDay = {
@@ -18,7 +18,7 @@ const RATE_DAY: FiatRateDay = {
 };
 
 beforeEach(() => {
-  vi.mocked(useLatestRateDay).mockReset().mockReturnValue(null);
+  vi.mocked(useSpotRate).mockReset().mockReturnValue(null);
 });
 
 afterEach(cleanup);
@@ -29,7 +29,7 @@ describe('WalletBalance', () => {
       <WalletBalance status="disabled" balanceSats={null} onUnlock={vi.fn()} onRetry={vi.fn()} />,
     );
     expect(container.firstChild).toBeNull();
-    expect(useLatestRateDay).toHaveBeenCalledWith(false);
+    expect(useSpotRate).toHaveBeenCalledWith(false);
   });
 
   it('renders the named locked region and calls unlock', () => {
@@ -41,7 +41,7 @@ describe('WalletBalance', () => {
     expect(screen.getByText('Unlock your wallet to see your Bitcoin balance.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Unlock wallet' }));
     expect(onUnlock).toHaveBeenCalledTimes(1);
-    expect(useLatestRateDay).toHaveBeenCalledWith(false);
+    expect(useSpotRate).toHaveBeenCalledWith(false);
   });
 
   it('renders the pending treatment without a button', () => {
@@ -51,11 +51,11 @@ describe('WalletBalance', () => {
     expect(screen.getByRole('status').textContent).toBe('Opening your wallet…');
     expect(container.querySelector('svg')?.className.baseVal).toContain('animate-spin');
     expect(screen.queryByRole('button')).toBeNull();
-    expect(useLatestRateDay).toHaveBeenCalledWith(false);
+    expect(useSpotRate).toHaveBeenCalledWith(false);
   });
 
   it('renders bitcoin and preferred fiat with a usable rate', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
+    vi.mocked(useSpotRate).mockReturnValue(RATE_DAY);
     renderWithLocale(
       <WalletBalance status="ready" balanceSats={21_000} onUnlock={vi.fn()} onRetry={vi.fn()} />,
     );
@@ -65,11 +65,11 @@ describe('WalletBalance', () => {
     expect(large?.className).toContain('text-5xl');
     expect(small?.textContent).toBe('$21.00');
     expect(small?.className).toContain('text-app-muted');
-    expect(useLatestRateDay).toHaveBeenCalledWith(true);
+    expect(useSpotRate).toHaveBeenCalledWith(true);
   });
 
   it('swaps the large figure between bitcoin and fiat on each tap', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
+    vi.mocked(useSpotRate).mockReturnValue(RATE_DAY);
     renderWithLocale(
       <WalletBalance status="ready" balanceSats={21_000} onUnlock={vi.fn()} onRetry={vi.fn()} />,
     );
@@ -111,7 +111,7 @@ describe('WalletBalance', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
-    expect(useLatestRateDay).toHaveBeenCalledWith(false);
+    expect(useSpotRate).toHaveBeenCalledWith(false);
   });
 
   it('says that this phone or browser cannot hold a wallet when the passkey has no PRF', () => {
@@ -134,7 +134,7 @@ describe('WalletBalance', () => {
   });
 
   it('does not render prohibited implementation vocabulary', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(RATE_DAY);
+    vi.mocked(useSpotRate).mockReturnValue(RATE_DAY);
     for (const status of ['locked', 'connecting', 'ready', 'error'] as const) {
       const { container, unmount } = renderWithLocale(
         <WalletBalance

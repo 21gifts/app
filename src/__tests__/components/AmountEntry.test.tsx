@@ -207,7 +207,7 @@ describe('AmountEntry', () => {
         value=""
         onValueChange={() => undefined}
         onUnitChange={onUnitChange}
-        rateDay={null}
+        rateDay={DAY}
       />,
       'en',
       'ch',
@@ -218,23 +218,83 @@ describe('AmountEntry', () => {
     expect(onUnitChange).toHaveBeenCalledWith('fiat');
   });
 
-  it('shows bitcoin under a fiat draft and the missing-rate line', () => {
+  it('drops a fiat draft and falls back to bitcoin when the rate goes away', () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, amountUnit: 'fiat' },
       wrongAccount: false,
     });
+    const onValueChange = vi.fn();
     const { rerender } = renderWithLocale(
-      <AmountEntry label="Amount" value="1.00" onValueChange={() => undefined} rateDay={DAY} />,
+      <AmountEntry label="Amount" value="1.00" onValueChange={onValueChange} rateDay={DAY} />,
       'en',
       'ch',
       'USD',
     );
     expect(screen.getByText("₿1'000")).toBeTruthy();
     rerender(
-      <AmountEntry label="Amount" value="1.00" onValueChange={() => undefined} rateDay={null} />,
+      <AmountEntry label="Amount" value="1.00" onValueChange={onValueChange} rateDay={null} />,
     );
+    expect(onValueChange).toHaveBeenLastCalledWith('');
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', true);
+  });
+
+  it('disables the fiat without a rate and shows the missing-rate line under bitcoin', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat' },
+      wrongAccount: false,
+    });
+    const onUnitChange = vi.fn();
+    const { rerender } = renderWithLocale(
+      <AmountEntry
+        label="Amount"
+        value="1000"
+        onValueChange={() => undefined}
+        onUnitChange={onUnitChange}
+        rateDay={{ ...DAY, usd: null }}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    const fiatButton = screen.getByRole('button', { name: 'USD' });
+    expect(fiatButton).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
     expect(screen.getByText('No exchange rate yet')).toBeTruthy();
+    expect(onUnitChange).toHaveBeenLastCalledWith('btc');
+    fireEvent.click(fiatButton);
+    expect(setAmountUnit).not.toHaveBeenCalled();
+    rerender(
+      <AmountEntry
+        label="Amount"
+        value=""
+        onValueChange={() => undefined}
+        onUnitChange={onUnitChange}
+        rateDay={DAY}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('ariaPressed', 'true');
+    expect(onUnitChange).toHaveBeenLastCalledWith('fiat');
+  });
+
+  it('starts an empty fiat field in bitcoin while the fiat has no rate', () => {
+    useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
+    renderWithLocale(
+      <AmountEntry
+        label="Amount"
+        value=""
+        valueUnit="fiat"
+        onValueChange={() => undefined}
+        rateDay={null}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', true);
   });
 
   it('locks a minted invoice on the sat amount', () => {
@@ -756,7 +816,7 @@ describe('AmountEntry', () => {
     expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
   });
 
-  it('keeps a fiat draft typed during a failed save until a rate exists', async () => {
+  it('keeps an unconvertible fiat draft typed during a failed save', async () => {
     let rejectSave: (reason: Error) => void = () => undefined;
     vi.mocked(setAmountUnit).mockImplementation(
       () =>
@@ -767,10 +827,10 @@ describe('AmountEntry', () => {
     useAuthStore.setState({ session: 'sess', account, wrongAccount: false });
     const onValueChange = vi.fn();
     const onUnitChange = vi.fn();
-    const { rerender } = renderWithLocale(
+    renderWithLocale(
       <TypingAmount
         initial=""
-        rateDay={null}
+        rateDay={DAY}
         onValueChange={onValueChange}
         onUnitChange={onUnitChange}
       />,
@@ -779,23 +839,14 @@ describe('AmountEntry', () => {
       'USD',
     );
     fireEvent.click(screen.getByRole('button', { name: 'USD' }));
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '10.00' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.2.3' } });
     await act(async () => {
       rejectSave(new Error('nope'));
     });
     expect(useAuthStore.getState().account?.amountUnit).toBe('btc');
     expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('ariaPressed', 'true');
-    expect(onUnitChange).toHaveBeenCalledWith('fiat');
-    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '10.00');
-    rerender(
-      <TypingAmount
-        initial=""
-        rateDay={DAY}
-        onValueChange={onValueChange}
-        onUnitChange={onUnitChange}
-      />,
-    );
-    expect(onValueChange).toHaveBeenLastCalledWith('10000');
+    expect(onUnitChange).toHaveBeenLastCalledWith('fiat');
+    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '1.2.3');
   });
 
   it('keeps unreadable keystrokes when a save fails', async () => {

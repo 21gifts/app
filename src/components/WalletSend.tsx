@@ -22,7 +22,7 @@ import {
   type UseWalletSendResult,
   type WalletSendError,
 } from '@/hooks/useWalletSend';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import type { MessageKey } from '@/lib/messages';
 import type { OnchainSpeed } from '@/lib/wallet/wallet-sdk';
 import {
@@ -153,7 +153,7 @@ export function WalletSend({
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const accountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const [amountDraft, setAmountDraft] = useState('');
   const [amountUnit, setAmountUnit] = useState<AmountUnit>(accountUnit);

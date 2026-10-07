@@ -483,6 +483,18 @@ export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /fx/spot to the 21.gifts api.
+ *
+ * No session is required. The incoming request is forwarded as received.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFxSpotGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fx/spot');
+}
+
+/**
  * Proxies GET /shops/activity to the 21.gifts api.
  *
  * No session is required. The incoming request is forwarded as received.

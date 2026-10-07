@@ -11,6 +11,7 @@ import type { AmountUnit } from '@/lib/api-types';
 import { separatorsFor } from '@/lib/number-format';
 import {
   fiatDraftForSats,
+  fiatToSats,
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
@@ -41,7 +42,11 @@ export interface AmountEntryProps {
    * is disabled. Used after an invoice is minted.
    */
   lockedSats?: number | null;
-  /** Latest gift day for the counter and for conversion. */
+  /**
+   * Current exchange rate for the counter and for conversion. Without a
+   * usable rate for the preferred fiat, that fiat is disabled and the field
+   * stays in bitcoin.
+   */
   rateDay: FiatRateDay | null;
   /**
    * Unit the current `value` is written in, when that differs from the
@@ -240,9 +245,13 @@ export function AmountEntry({
   const fiatRef = useRef(fiat);
   fiatRef.current = fiat;
   const storedUnit: AmountUnit = account?.amountUnit ?? 'btc';
-  const unit: AmountUnit = session === null ? localUnit : storedUnit;
+  const fiatReady = fiatToSats(1, rateDay, fiat) !== null;
+  const chosenUnit: AmountUnit = session === null ? localUnit : storedUnit;
+  const unit: AmountUnit = chosenUnit === 'fiat' && !fiatReady ? 'btc' : chosenUnit;
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
-  const [shownUnit, setShownUnit] = useState<AmountUnit>(valueUnit ?? unit);
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(() =>
+    valueUnit === 'fiat' && !fiatReady && value.trim() === '' ? 'btc' : (valueUnit ?? unit),
+  );
   const applied = useRef(shownUnit);
   const posting = useRef(false);
   const draftRef = useRef(value);
@@ -283,7 +292,7 @@ export function AmountEntry({
     }
     const from = applied.current;
     const converted = draftForUnit(from, unit, value, rateDay, fiat);
-    if (value.trim() !== '' && converted === '') {
+    if (value.trim() !== '' && converted === '' && fiatReady) {
       return;
     }
     applied.current = unit;
@@ -434,7 +443,10 @@ export function AmountEntry({
     const parsed = parseAmountDraft(entryUnit, value, rateDay, fiat);
     if (entryUnit === 'btc' && parsed.kind === 'sats') {
       const fiatAmount = satsToFiatAmount(parsed.sats, rateDay, fiat);
-      counter = fiatAmount === null ? null : formatFiatDisplay(fiatAmount, fiat, numberFormat);
+      counter =
+        fiatAmount === null
+          ? t('amount.noRate')
+          : formatFiatDisplay(fiatAmount, fiat, numberFormat);
     } else if (entryUnit === 'fiat' && parsed.kind === 'sats') {
       counter = formatBitcoin(parsed.sats, numberFormat);
     } else if (entryUnit === 'fiat' && FIAT_DRAFT.test(value.trim())) {
@@ -452,7 +464,7 @@ export function AmountEntry({
         value={entryUnit}
         options={[
           { value: 'btc', label: '\u20BF' },
-          { value: 'fiat', label: fiat },
+          { value: 'fiat', label: fiat, disabled: !fiatReady },
         ]}
         onChange={changeUnit}
         ariaLabel={t('amount.unit')}

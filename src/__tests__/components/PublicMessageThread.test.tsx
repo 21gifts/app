@@ -8,6 +8,7 @@ import {
   fetchComposeTarget,
   NoteDeletedError,
   fetchGiftStats,
+  fetchFxSpot,
   fetchMessagePhoto,
   fetchShopNoteEdits,
   setMessageShopText,
@@ -76,6 +77,9 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchShopNoteEdits: vi.fn(),
   setMessageShopText: vi.fn(),
   deleteMessage: vi.fn(),
@@ -206,6 +210,9 @@ function renderThread(
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   useAuthStore.setState({ session: null, account: null });
   push.mockReset();
   vi.mocked(fetchReplies).mockResolvedValue([]);

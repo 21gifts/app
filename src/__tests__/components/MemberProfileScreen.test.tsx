@@ -8,6 +8,7 @@ import {
   fetchComposeTarget,
   NoteDeletedError,
   fetchGiftStats,
+  fetchFxSpot,
   fetchMember,
   fetchMemberPosts,
   fetchShopNoteEdits,
@@ -115,6 +116,9 @@ vi.mock('@/lib/api', () => ({
   postTrustConfirm: vi.fn(),
   postTrustAppoint: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchShopNoteEdits: vi.fn(),
   setMessageShopText: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
@@ -349,6 +353,9 @@ function fillPaidReply(text: string, amount = '1'): void {
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   hydrateReady = true;
   vi.clearAllMocks();
   push.mockClear();

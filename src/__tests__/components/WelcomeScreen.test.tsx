@@ -72,6 +72,9 @@ vi.mock('@/lib/api', () => ({
   postMessageInvoice: vi.fn(),
   dismissForumLaws: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
 

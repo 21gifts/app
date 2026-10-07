@@ -48,6 +48,9 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
   fetchPublicReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchReplies: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
@@ -65,6 +68,7 @@ import {
   deleteMessage,
   fetchForumMessage,
   fetchGiftStats,
+  fetchFxSpot,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
@@ -121,6 +125,9 @@ const sample: ForumMessage = {
 };
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   useAuthStore.setState({ session: null, account: null });
   hydrate.mockReturnValue({ ready: true });
   fetchRepliesPublic.mockResolvedValue([]);
@@ -158,7 +165,7 @@ describe('PublicMessageLoader', () => {
     renderWithLocale(<PublicMessageLoader id="not-a-uuid" />);
     expect(screen.getByText('This profile could not be found.')).toBeTruthy();
     expect(fetchMessage).not.toHaveBeenCalled();
-    expect(fetchGiftStatsMock).not.toHaveBeenCalled();
+    expect(fetchFxSpot).not.toHaveBeenCalled();
   });
 
   it('shows missing when fetchPublicMessage returns null', async () => {
@@ -850,25 +857,10 @@ describe('PublicMessageLoader', () => {
   });
 
   it('shows stored fiat next to ₿ when the live rate differs', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-07-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     fetchMessage.mockResolvedValue({ ...sample, amountUsd: '5.00' });
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
@@ -880,25 +872,10 @@ describe('PublicMessageLoader', () => {
   });
 
   it('shows the viewer fiat when the note stored no fiat', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-07-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     fetchMessage.mockResolvedValue(sample);
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);

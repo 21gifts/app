@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PosAmount, PosScreen, resetPosTillWriteForTests } from '@/components/PosScreen';
-import { fetchGiftStats } from '@/lib/api';
+import { fetchFxSpot } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -15,9 +15,17 @@ vi.mock('@/lib/api', async () => {
   const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
   return {
     ...actual,
-    fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+    fetchFxSpot: vi
+      .fn()
+      .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   };
 });
+
+const SPOT = {
+  asOf: '2026-10-07T00:00:00.000Z',
+  source: 'test',
+  rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+};
 
 const ACCOUNT = {
   id: 'acc_1',
@@ -72,18 +80,7 @@ afterEach(() => {
 
 describe('PosScreen', () => {
   it('shows the default fiat under an open charge when a gift day exists', async () => {
-    vi.mocked(fetchGiftStats).mockResolvedValueOnce({
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          usd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-        },
-      ],
-    } as never);
+    vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -543,6 +540,70 @@ describe('PosScreen', () => {
       expect(posted?.[1]?.body).toBe(JSON.stringify({ amountSats: 1786 }));
     });
     expect(screen.queryByText('Enter a whole number.')).toBeNull();
+  });
+
+  it('charges in bitcoin when the chosen fiat has no rate', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return jsonResponse({ error: 'stop here' }, 400);
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
+    expect(await screen.findByRole('button', { name: 'CHF' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    await pressAmount('68');
+    expect(screen.getByText('No exchange rate yet')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    const body = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as { amountSats: number };
+    expect(body.amountSats).toBe(68);
+    expect(screen.queryByText('Enter a whole number.')).toBeNull();
+  });
+
+  it('charges the sats of a fiat amount at the spot rate', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
+    useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        return jsonResponse({ error: 'stop here' }, 400);
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'CHF' })).toHaveProperty('ariaPressed', 'true');
+    });
+    await pressAmount('68');
+    expect(screen.getByText("₿85'000")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    const body = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as { amountSats: number };
+    expect(body.amountSats).toBe(85_000);
+  });
+
+  it('says so when a fiat amount cannot be converted to bitcoin', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
+    useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'CHF' })).toHaveProperty('ariaPressed', 'true');
+    });
+    await pressAmount('9999999999999');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'This amount cannot be converted to bitcoin. Enter it in ₿.',
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('shows an API range error and a load error', async () => {
@@ -1155,18 +1216,6 @@ describe('PosScreen', () => {
   });
 
   describe('paid charge', () => {
-    const GIFT_DAY = {
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          usd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-        },
-      ],
-    };
     const OPEN = {
       id: 'c1',
       amountSats: 21,
@@ -1190,7 +1239,7 @@ describe('PosScreen', () => {
     }
 
     it('shows Paid, bitcoin, fiat, and New payment for a paid charge', async () => {
-      vi.mocked(fetchGiftStats).mockResolvedValueOnce(GIFT_DAY as never);
+      vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),

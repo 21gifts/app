@@ -731,27 +731,11 @@ describe('PayLinkScreen', () => {
     };
     mockFetch(async (input) => {
       const url = String(input);
-      if (url.includes('/gifts/stats')) {
+      if (url.includes('/fx/spot')) {
         return Response.json({
-          totalSats: 100_000_000,
-          totalBtc: '1.00000000',
-          totalUsd: '84000.00',
-          totalChf: null,
-          totalEur: null,
-          totalPhp: null,
-          giftCount: 1,
-          recipientCount: 1,
-          firstPaidAt: null,
-          lastPaidAt: null,
-          spendOverTime: [day],
-          byRecipient: [],
-          byMonth: [],
-          fx: {
-            quote: 'BTC-USD',
-            dayBasis: 'utc',
-            source: 'coinbase-exchange-daily-close',
-            quotes: [],
-          },
+          asOf: '2026-09-24T00:00:00.000Z',
+          source: 'test',
+          rates: { USD: '84000.00' },
         });
       }
       if (url.endsWith('/invoice')) {

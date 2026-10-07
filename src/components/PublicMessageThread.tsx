@@ -12,7 +12,6 @@ import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import {
   CannotReceiveError,
   fetchComposeTarget,
-  fetchGiftStats,
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchReplies,
@@ -26,8 +25,8 @@ import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
-  latestRateDayFor,
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
@@ -210,8 +209,7 @@ export function PublicMessageThread(props: {
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
-  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
-  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
+  const rateDay = useSpotRate();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -234,24 +232,6 @@ export function PublicMessageThread(props: {
     .map(({ id, count }) => `${id}:${count}`)
     .sort()
     .join('\0');
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateSeries(stats.spendOverTime);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateSeries([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {

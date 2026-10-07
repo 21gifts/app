@@ -86,6 +86,9 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchNotifications: vi.fn(),
   markNotificationRead: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
@@ -117,6 +120,7 @@ import {
   CannotReceiveError,
   dismissForumLaws,
   fetchGiftStats,
+  fetchFxSpot,
   fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
@@ -420,6 +424,9 @@ async function revealAll(): Promise<void> {
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   vi.clearAllMocks();
   fetchMock.mockResolvedValue(forumPage([]));
   publicListMock.mockResolvedValue({ messages: [], nextCursor: null });
@@ -823,25 +830,10 @@ describe('ForumLoader', () => {
   });
 
   it('posts an ask defined in the account fiat', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     useAuthStore.setState({
       session: 'sess',
@@ -1059,25 +1051,10 @@ describe('ForumLoader', () => {
   });
 
   it('converts an ask draft that is not on screen when the account unit changes', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     renderForumWithChrome();
     await waitFor(() => {
@@ -1109,25 +1086,10 @@ describe('ForumLoader', () => {
   });
 
   it('leaves the ask field to convert itself while step 1 is open', async () => {
-    fetchGiftStatsMock.mockResolvedValue({
-      ...EMPTY_STATS,
-      spendOverTime: [
-        {
-          day: '2026-06-01',
-          sats: 100_000_000,
-          cumulativeSats: 100_000_000,
-          btc: '1.00000000',
-          cumulativeBtc: '1.00000000',
-          usd: '100000.00',
-          cumulativeUsd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-          cumulativeChf: '80000.00',
-          cumulativeEur: '90000.00',
-          cumulativePhp: '5600000.00',
-        },
-      ],
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {

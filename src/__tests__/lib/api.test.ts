@@ -18,6 +18,7 @@ import {
   fetchGiftDay,
   fetchGiftStats,
   fetchShopActivity,
+  fetchFxSpot,
   fetchGrantContinuation,
   fetchPostStats,
   fetchAboutMePhoto,
@@ -1164,6 +1165,46 @@ describe('fetchGiftStats', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
     await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+  });
+});
+
+describe('fetchFxSpot', () => {
+  const spot = {
+    asOf: '2026-10-07T12:00:00.000Z',
+    source: 'exchange',
+    rates: { USD: '62345.12', CHF: '55000' },
+  };
+
+  it('returns the prices without an Authorization header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: spot });
+    await expect(fetchFxSpot()).resolves.toEqual(spot);
+    expect(fetchMock).toHaveBeenCalledWith('/fx/spot');
+  });
+
+  it('accepts an answer without any price', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...spot, rates: {} } });
+    await expect(fetchFxSpot()).resolves.toEqual({ ...spot, rates: {} });
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'down' } });
+    await expect(fetchFxSpot()).rejects.toThrow(
+      'Could not load the exchange rate. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchFxSpot()).rejects.toThrow(
+      'Could not load the exchange rate. Please try again.',
+    );
+  });
+
+  it('throws when a price is not a decimal number', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...spot, rates: { USD: '-1' } } });
+    await expect(fetchFxSpot()).rejects.toThrow(
+      'Could not load the exchange rate. Please try again.',
+    );
   });
 });
 

@@ -11,7 +11,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PosHistory } from '@/components/PosHistory';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Card } from '@/components/ui';
-import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
@@ -128,10 +128,9 @@ function usePosTillState(): PosTillState {
   const reads = useRef<TillReads>({ started: 0, applied: 0 });
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
-  const { rateDay, settled: rateSettled } = useLatestRateDayState(session !== null);
+  const rateDay = useSpotRate(session !== null);
   const [state, setState] = useState<PosState | null>(null);
-  const [error, setErrorState] = useState<string | null>(null);
-  const [loadingAlert, setLoadingAlert] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
@@ -141,11 +140,6 @@ function usePosTillState(): PosTillState {
   const [showQr, setShowQr] = useState(false);
   const [reload, setReload] = useState(0);
   const [watchUntil, setWatchUntil] = useState<number | null>(null);
-
-  function setError(message: string | null, loading?: boolean): void {
-    setLoadingAlert(loading === true);
-    setErrorState(message);
-  }
 
   useEffect(() => {
     setShowQr(true);
@@ -297,34 +291,18 @@ function usePosTillState(): PosTillState {
       });
   }, [busy, charge, remaining, session, t]);
 
-  useEffect(() => {
-    if (!loadingAlert || !rateSettled) {
-      return;
-    }
-    const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
-    if (parsed.kind === 'no-rate') {
-      setError(t('pos.noRate', { code: fiat }));
-      return;
-    }
-    if (parsed.kind === 'sats' && parsed.sats >= 1) {
-      setError(null);
-      return;
-    }
-    setError(t('pos.badAmount'));
-  }, [amount, fiat, loadingAlert, rateDay, rateSettled, shownUnit, t]);
-
   async function onCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (session === null || busyRef.current) {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
-    if (shownUnit === 'fiat' && !rateSettled && parsed.kind === 'no-rate') {
-      setError(t('pos.rateLoading', { code: fiat }), true);
-      return;
-    }
     if (parsed.kind === 'no-rate') {
       setError(t('pos.noRate', { code: fiat }));
+      return;
+    }
+    if (shownUnit === 'fiat' && parsed.kind === 'invalid') {
+      setError(t('amount.cannotConvert'));
       return;
     }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {

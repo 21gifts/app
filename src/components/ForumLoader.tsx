@@ -16,7 +16,7 @@ import {
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fiatDraftForSats,
   parseAmountDraft,
@@ -448,7 +448,7 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   useEffect(() => {

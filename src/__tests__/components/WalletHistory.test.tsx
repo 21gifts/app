@@ -1,13 +1,13 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletHistory } from '@/components/WalletHistory';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory, type UseWalletHistoryResult } from '@/hooks/useWalletHistory';
 import type { FiatRateDay } from '@/lib/stats-money';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('@/hooks/useLatestRateDay', () => ({ useLatestRateDay: vi.fn() }));
+vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
 vi.mock('@/hooks/useWalletHistory', () => ({ useWalletHistory: vi.fn() }));
 
 const RATE_DAY: FiatRateDay = {
@@ -54,7 +54,7 @@ const observers: Array<{ callback: ObserverCallback; disconnect: ReturnType<type
 beforeEach(() => {
   loadMore.mockReset();
   retry.mockReset();
-  vi.mocked(useLatestRateDay).mockReset().mockReturnValue(RATE_DAY);
+  vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
   observers.length = 0;
   vi.stubGlobal(
     'IntersectionObserver',
@@ -129,7 +129,7 @@ describe('WalletHistory', () => {
   });
 
   it('keeps the bitcoin amount when no rate is loaded', () => {
-    vi.mocked(useLatestRateDay).mockReturnValue(null);
+    vi.mocked(useSpotRate).mockReturnValue(null);
     show({ payments: [payment({})] });
     expect(screen.getByRole('listitem').textContent).not.toContain('$');
   });
