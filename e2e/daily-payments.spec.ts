@@ -285,29 +285,43 @@ test('state-grants-payments-amounts-error — Could not load daily payments. Ple
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
-test('Function: addDailyRosterRecipient — Add posts address and amount', async ({ page }) => {
+test('Function: addDailyRosterRecipient — Add posts account id and amount', async ({ page }) => {
   await seedAdaSession(page, 'founder');
+  await page.route(/\/forum\/mentions/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ accounts: [{ id: 'acc_ada', username: 'ada', name: 'Ada' }] }),
+    });
+  });
   await page.route(/\/funding\/daily-roster$/, async (route) => {
     await fulfillRoster(route, EMPTY_ROSTER);
   });
   await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
-    const body = route.request().postDataJSON() as { address: string; amountUsd: number };
+    const body = route.request().postDataJSON() as { accountId: string; amountUsd: number };
     await fulfillRoster(route, {
       ...EMPTY_ROSTER,
       recipients: [
-        { address: body.address, amountUsd: body.amountUsd, accountId: null, name: null },
+        {
+          address: 'ada@example.com',
+          amountUsd: body.amountUsd,
+          accountId: body.accountId,
+          name: 'Ada',
+        },
       ],
     });
   });
   await page.goto('/grants/payments/amounts');
-  await page.getByLabel('Address').fill('ada@example.com');
+  await page.getByRole('textbox', { name: 'Person' }).fill('ada');
+  await page.getByRole('option', { name: 'Ada' }).click();
   await page.getByLabel('USD').fill('1.5');
   const posted = page.waitForRequest(
     (req) =>
       req.method() === 'POST' && new URL(req.url()).pathname === '/funding/daily-roster/recipients',
   );
   await page.getByRole('button', { name: 'Add' }).click();
-  expect((await posted).postDataJSON()).toEqual({ address: 'ada@example.com', amountUsd: 1.5 });
+  expect((await posted).postDataJSON()).toEqual({ accountId: 'acc_ada', amountUsd: 1.5 });
+  await expect(page.getByText('ada@example.com')).toHaveCount(0);
 });
 
 test('Function: updateDailyRosterRecipient — Update posts the stored address', async ({ page }) => {

@@ -3393,12 +3393,12 @@ Founder presses the pencil **Edit comment**. The stored comment **Daily gift** i
 
 - **Purpose:** Signed-in editor for daily payout amounts only. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Under the heading, the loaded editor says everyone in the grant program receives the roster `defaultAmountUsd` by default, formatted with `formatUsdDisplay`, and that the page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. The figure is not written into the catalog. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). The comment is not on this page. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
-- **Actions:** Turn payments **On** or **Off**. **Add** a recipient. A recipient row shows the formatted amount, a pencil (**Edit** plus the shown address), and a trash (**Delete** plus the shown address) on one line. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Actions:** Turn payments **On** or **Off**. **Add** a recipient. A recipient row shows the formatted amount, a pencil (**Edit** plus the shown name), and a trash (**Delete** plus the shown name) on one line. The shown name is the display name, or Unnamed when the name is null or blank. The add form's first field is Person. No address is typed or shown. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/payments/amounts` (`DailyPaymentAmountsPage`). The **Daily payment amounts** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
 
-Founder with a loaded roster that includes a Wallet of Satoshi address. Heading **Daily payment amounts**. The note begins **Everyone in the grant program receives $1.00 by default.** That address renders as `ada@w...`. Its amount is text, with pencil and trash. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. The comment is not shown. Needle `Everyone in the grant program receives`.
+Founder with a loaded roster. Heading **Daily payment amounts**. The note begins **Everyone in the grant program receives $1.00 by default.** The row name Ada is a link to `/members/acc_ada`. A row without a name shows Unnamed and is not a link. Pencil accessible names are **Edit Ada** and **Edit Unnamed**. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. The comment is not shown. Needle `Everyone in the grant program receives`.
 
 ![21.gifts daily payment amounts](images/grants-payments-amounts.png)
 
@@ -3428,7 +3428,7 @@ Moderator on the direct URL. Heading **Daily payment amounts** and **You cannot 
 
 ### Variant: invalid
 
-Founder, add amount 0, alert **The address or the amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown address. The trash is **Delete** plus that address. Needle `The address or the amount is not valid.`
+Founder, add amount 0, alert **The amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `The amount is not valid.`
 
 ![21.gifts daily payment amounts invalid](images/grants-payments-amounts-invalid.png)
 
@@ -3446,7 +3446,7 @@ Founder turns payments off and spend rejects the switch. Alert **The payments sw
 
 ### Variant: duplicate
 
-Founder adds an address spend already lists. Alert **That address is already listed.** Needle `That address is already listed.`
+Founder types a person prefix, picks that person, and spend answers that the person is already listed. Alert **That person is already listed.** Needle `That person is already listed.`
 
 ![21.gifts daily payment amounts duplicate](images/grants-payments-amounts-duplicate.png)
 
@@ -3470,7 +3470,7 @@ Founder opened a row with the pencil and pressed the check. The amount update ha
 
 ### Variant: editing
 
-Founder presses the row pencil **Edit ada@w...**. The amount field **USD ada@w...** is open and enabled. The check (**Save**) is enabled. **Cancel** is enabled. There is no alert and no spinner. Needle `state-grants-payments-amounts-editing`.
+Founder presses the row pencil **Edit Ada**. The amount field **USD Ada** is open and enabled. The check (**Save**) is enabled. **Cancel** is enabled. There is no alert and no spinner. Needle `state-grants-payments-amounts-editing`.
 
 ![21.gifts daily payment amounts editing](images/grants-payments-amounts-editing.png)
 

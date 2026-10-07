@@ -760,8 +760,8 @@
 
 ## Endpoint: POST /funding/daily-roster/recipients
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ address, amountUsd }`. Appends one daily recipient.
-- **Errors:** Upstream 400 `Invalid address or amount` or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ accountId, amountUsd }`. Appends one daily recipient for that person.
+- **Errors:** Upstream 400 `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `addDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
 - **Auth:** Bearer session. The api allows an initiator or founder only.
 

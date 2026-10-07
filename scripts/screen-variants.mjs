@@ -2898,7 +2898,7 @@ export const SCREEN_VARIANTS = [
     id: 'invalid',
     image: 'grants-payments-amounts-invalid.png',
     visual: 'state-grants-payments-amounts-invalid',
-    needle: 'The address or the amount is not valid.',
+    needle: 'The amount is not valid.',
   },
   {
     route: '/grants/payments/amounts',
@@ -2919,7 +2919,7 @@ export const SCREEN_VARIANTS = [
     id: 'duplicate',
     image: 'grants-payments-amounts-duplicate.png',
     visual: 'state-grants-payments-amounts-duplicate',
-    needle: 'That address is already listed.',
+    needle: 'That person is already listed.',
   },
   {
     route: '/grants/payments/amounts',

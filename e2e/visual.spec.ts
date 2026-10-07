@@ -23043,7 +23043,7 @@ test.describe('daily payments', () => {
     await page.goto('/grants/payments/amounts');
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('0');
     await page.getByRole('button', { name: 'Add' }).click();
-    const invalidAlert = page.getByText('The address or the amount is not valid.');
+    const invalidAlert = page.getByText('The amount is not valid.');
     await expect(invalidAlert).toBeVisible();
     await invalidAlert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-grants-payments-amounts-invalid');
@@ -23073,6 +23073,13 @@ test.describe('daily payments', () => {
 
   test('state /grants/payments/amounts duplicate', async ({ page }) => {
     await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
     await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
       await route.fulfill({
         status: 400,
@@ -23081,10 +23088,11 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Address' }).fill('cara@example.com');
+    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
+    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
-    const duplicateAlert = page.getByText('That address is already listed.');
+    const duplicateAlert = page.getByText('That person is already listed.');
     await expect(duplicateAlert).toBeVisible();
     await duplicateAlert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-grants-payments-amounts-duplicate');

@@ -15,6 +15,7 @@ import {
   updateDailyRosterRecipient,
 } from '@/lib/api';
 import type { DailyRoster } from '@/lib/api-types';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import { canEditDailyPayoutRoster } from '@/lib/roles';
@@ -25,12 +26,19 @@ const SAVE_ERROR_KEYS = [
   'funding.daily.invalidComment',
   'funding.daily.invalidSwitch',
   'funding.daily.invalidRow',
+  'funding.daily.invalidPerson',
   'funding.daily.duplicate',
   'funding.daily.unknown',
+  'funding.daily.unknownPerson',
+  'funding.daily.noLightning',
   'funding.daily.saveError',
 ] as const satisfies readonly MessageKey[];
 
-type SaveErrorKey = (typeof SAVE_ERROR_KEYS)[number];
+type SaveErrorKey = (typeof SAVE_ERROR_KEYS)[number] | 'funding.daily.pickPerson';
+
+type DailyPerson = { id: string; username: string; name: string };
+
+const PERSON_QUERY = /^[a-z0-9][a-z0-9._-]{0,31}$/;
 
 /**
  * Parse a typed USD amount. Numeric strings are not accepted by the api, so
@@ -49,6 +57,29 @@ function parseUsd(raw: string): number | null {
     return null;
   }
   return value;
+}
+
+/**
+ * Username prefix for the add-person search, or `null` when the field is not
+ * a searchable handle.
+ *
+ * Trims, strips one leading `@`, lowercases, then accepts 1–32 characters of
+ * `a-z`, digits, `.`, `_`, and `-`. Empty text, spaces, and any other string
+ * return `null`.
+ *
+ * @param draft - Current person field text.
+ * @returns The prefix, or `null` when no search must run.
+ */
+function personQuery(draft: string): string | null {
+  let prefix = draft.trim();
+  if (prefix.startsWith('@')) {
+    prefix = prefix.slice(1);
+  }
+  prefix = prefix.toLowerCase();
+  if (!PERSON_QUERY.test(prefix)) {
+    return null;
+  }
+  return prefix;
 }
 
 /**
@@ -396,13 +427,47 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
   const load = useDailyRoster();
   const [editingAddress, setEditingAddress] = useState<string | null>(null);
   const [amountDraft, setAmountDraft] = useState('');
-  const [addAddress, setAddAddress] = useState('');
+  const [addQuery, setAddQuery] = useState('');
+  const [addPerson, setAddPerson] = useState<DailyPerson | null>(null);
+  const [personRows, setPersonRows] = useState<DailyPerson[]>([]);
   const [addUsd, setAddUsd] = useState('');
   const attempt = load === null ? 0 : load.attempt;
+  const sessionToken = load === null ? null : load.session;
 
   useEffect(() => {
     setEditingAddress(null);
   }, [attempt]);
+
+  useEffect(() => {
+    if (sessionToken === null) {
+      return;
+    }
+    if (addPerson !== null && addQuery === addPerson.name) {
+      return;
+    }
+    const prefix = personQuery(addQuery);
+    if (prefix === null) {
+      setPersonRows([]);
+      return;
+    }
+    let cancelled = false;
+    void searchMentionAccounts(sessionToken, prefix)
+      .then((accounts) => {
+        if (cancelled) {
+          return;
+        }
+        setPersonRows(accounts.slice(0, 8));
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        setPersonRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [addQuery, addPerson, sessionToken]);
 
   if (load === null) {
     return null;
@@ -438,9 +503,15 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
       load.setSaveError('funding.daily.invalidRow');
       return;
     }
+    if (addPerson === null) {
+      load.setSaveError('funding.daily.pickPerson');
+      return;
+    }
+    const accountId = addPerson.id;
     void load.runSave(async () => {
-      const next = await addDailyRosterRecipient(session, addAddress, amountUsd);
-      setAddAddress('');
+      const next = await addDailyRosterRecipient(session, accountId, amountUsd);
+      setAddPerson(null);
+      setAddQuery('');
       setAddUsd('');
       return next;
     });
@@ -602,14 +673,52 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
         )}
         <form className="flex w-full flex-col gap-3" onSubmit={onAdd}>
           <Field
-            label={t('funding.daily.address')}
-            value={addAddress}
+            label={t('funding.daily.person')}
+            id="daily-person-add"
+            value={addQuery}
             autoComplete="off"
             disabled={pending}
+            aria-autocomplete="list"
+            aria-controls="daily-person-add-list"
+            aria-expanded={personRows.length > 0}
             onChange={(event) => {
-              setAddAddress(event.target.value);
+              const next = event.target.value;
+              setAddQuery(next);
+              if (addPerson !== null && next !== addPerson.name) {
+                setAddPerson(null);
+              }
             }}
           />
+          <ul
+            id="daily-person-add-list"
+            role="listbox"
+            aria-label={t('funding.daily.person')}
+            className={
+              personRows.length === 0
+                ? 'hidden'
+                : 'flex w-full flex-col rounded-xl border border-app-border bg-app-card p-2'
+            }
+          >
+            {personRows.map((account) => (
+              <li key={account.id} role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  disabled={pending}
+                  className="flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                  onClick={() => {
+                    setAddPerson(account);
+                    setAddQuery(account.name);
+                    setPersonRows([]);
+                  }}
+                >
+                  {account.name}
+                  {account.name !== account.username ? ` (@${account.username})` : null}
+                </button>
+              </li>
+            ))}
+          </ul>
           <Field
             label={t('funding.daily.usd')}
             id="daily-usd-add"
