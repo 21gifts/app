@@ -2276,7 +2276,7 @@
   },
   "/profile:notification-level-error": {
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/notification-level auf 500 und dem Klick auf Aktiv. Text Benachrichtigungsstufe konnte nicht gespeichert werden.",
-    "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/notification-level a 500 y pulsar Activo. Texto No se pudo guardar el nivel de notificaciones.",
+    "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/notification-level a 500 y pulsar Activas. Texto No se pudo guardar el nivel de notificaciones.",
     "fil": "Bahagi ng mga abiso na may mali sa pag-save na role=\"alert\" pagkatapos i-stub ang POST /me/notification-level sa 500 at pindutin ang Aktibo. Sipi Hindi ma-save ang antas ng notification."
   },
   "/welcome:ask-daily": {
@@ -2465,7 +2465,7 @@
     "fil": "Tagapagtatag na walang laman ang listahan ng tatanggap. Nagsisimula ang tala sa Ang bawat kalahok sa grant program ay tumatanggap ng $1.00 bilang default. Pangungusap Walang mga tatanggap. Nanatili ang porma ng pagdagdag. Karayom Walang mga tatanggap."
   },
   "/profile:push-enable-error": {
-    "de": "Benachrichtigungsabschnitt mit role=\"alert\" nach Klick auf Ein auf der Dieses Gerät-Kapsel, wenn Web Push vorhanden ist, das Aktivieren aber fehlschlägt. Text Benachrichtigungen sind in diesem Browser nicht verfügbar.",
+    "de": "Benachrichtigungsabschnitt mit role=\"alert\" nach Klick auf An auf der Dieses Gerät-Kapsel, wenn Web Push vorhanden ist, das Aktivieren aber fehlschlägt. Text Benachrichtigungen sind in diesem Browser nicht verfügbar.",
     "es": "Apartado de notificaciones con role=\"alert\" tras pulsar Activado en la pastilla Este dispositivo cuando Web Push está presente pero la activación falla. Texto Las notificaciones no están disponibles en este navegador.",
     "fil": "Seksiyon ng mga notification na may role=\"alert\" pagkatapos i-click ang Naka-on sa pilduras na Device na ito kapag nariyan ang Web Push pero nabigo ang pag-enable. Sipi Hindi available ang mga notification sa browser na ito."
   },
