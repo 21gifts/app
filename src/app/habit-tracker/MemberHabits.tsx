@@ -33,6 +33,8 @@ const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
  * Loads from same-origin `GET /habits` and writes through `POST /habits`.
  * A failed reload keeps a list already on screen. The full-screen error is
  * only when nothing has loaded. Internal notes render only for the owner.
+ * A session change closes an open edit and an archive confirmation.
+ * The same gift body is not posted again while that request is still waiting.
  * Does not log invoices, addresses, notes, or comment text.
  *
  * @returns The habit-tracker body.
@@ -99,6 +101,10 @@ export function MemberHabits(): ReactElement {
       setPayBusy(false);
       setPayError(null);
       setPayInvoice(null);
+      // The previous account's draft and archive confirm do not stay open.
+      setEditingHabitId(null);
+      setConfirmArchiveId(null);
+      setEditByHabitId({});
     }
     setLoading(true);
     setError(false);
@@ -274,6 +280,12 @@ export function MemberHabits(): ReactElement {
     const actor = session;
     const commentId = payCommentId;
     const generation = payGeneration.current;
+    const key = JSON.stringify({ action: 'invoice', commentId, amountSats: sats });
+    // Close resets the busy flag while this request is still waiting.
+    if (inFlightKeys.current.has(key)) {
+      return;
+    }
+    inFlightKeys.current.add(key);
     setPayBusy(true);
     setPayError(null);
     void postMemberHabit(actor, { action: 'invoice', commentId, amountSats: sats }, true)
@@ -317,6 +329,7 @@ export function MemberHabits(): ReactElement {
         setPayError('request');
       })
       .finally(() => {
+        inFlightKeys.current.delete(key);
         if (useAuthStore.getState().session !== actor) {
           return;
         }
@@ -433,7 +446,7 @@ export function MemberHabits(): ReactElement {
                       </div>
                     ) : null}
                   </div>
-                  {confirmArchiveId === habit.id ? (
+                  {confirmArchiveId === habit.id && openHabit ? (
                     <InlineConfirm
                       label={t('habit.archiveConfirm')}
                       confirmLabel={t('habit.archiveConfirmAction')}
@@ -490,7 +503,7 @@ export function MemberHabits(): ReactElement {
                       ))}
                     </ul>
                   ) : null}
-                  {editing ? (
+                  {editing && owns ? (
                     <form
                       className="flex flex-col gap-3"
                       onSubmit={(event) => {

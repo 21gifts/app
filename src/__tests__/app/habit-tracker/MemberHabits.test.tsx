@@ -1944,6 +1944,123 @@ describe('MemberHabits', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
+  it('hides an open edit and archive confirm after the session changed', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+    expect(screen.getByText(/Internal notes:/)).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0] as HTMLButtonElement);
+    const notes = screen.getAllByLabelText('Internal notes')[0];
+    if (!(notes instanceof HTMLInputElement)) {
+      throw new Error('missing notes');
+    }
+    fireEvent.change(notes, { target: { value: 'draft-secret' } });
+    expect(screen.getByDisplayValue('draft-secret')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[1] as HTMLButtonElement);
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+
+    useAuthStore.setState({ session: 'other', account: viewer });
+    await waitFor(() => {
+      expect(screen.queryByDisplayValue('draft-secret')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Confirm archive' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    });
+    expect(screen.queryByText('draft-secret')).toBeNull();
+    expect(screen.queryByText(/Internal notes:/)).toBeNull();
+  });
+
+  it('does not post the same gift again while that request is still waiting', async () => {
+    let posts = 0;
+    let releasePay: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          const body = JSON.parse(String(init.body)) as { amountSats?: number };
+          if (posts === 1) {
+            return new Promise<Response>((resolve) => {
+              releasePay = resolve;
+            });
+          }
+          return Promise.resolve(json({ pr: 'lnbc-next', amountSats: body.amountSats }));
+        }
+        return Promise.resolve(json(payload()));
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: viewer });
+    renderWithLocale(<MemberHabits />);
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(posts).toBe(1);
+
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '22' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Pay ₿22')).toBeTruthy();
+    expect(posts).toBe(2);
+
+    await act(async () => {
+      releasePay(json({ pr: 'lnbc-stale', amountSats: 21 }));
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(screen.getByText('Pay ₿22')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts).toBe(3);
+    });
+  });
+
   it('does not invoice until the gift-day rate has settled', async () => {
     let releaseStats!: (value: Response) => void;
     const posts: string[] = [];
