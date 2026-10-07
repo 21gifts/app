@@ -23343,7 +23343,10 @@ test.describe('habit tracker baselines', () => {
     const postedText = page.getByText('kept this', { exact: true });
     await expect(postedText).toBeVisible();
     await expect(page.getByLabel('Write a comment')).toHaveValue('');
-    await postedText.scrollIntoViewIfNeeded();
+    // A minimum scroll to the new comment shifts by a few pixels between runs.
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
     await shotScreen(page, 'state-habit-tracker-comment-posted');
   });
 
