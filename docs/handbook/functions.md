@@ -3983,7 +3983,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Load username suggestions for an `@` token. Calls same-origin GET `/forum/mentions`, adding `q` only when the prefix is non-empty.
 - **Inputs:** Bearer session and a lowercase prefix (`""` for the first page).
 - **Returns / side effects:** `{ id, username, name }[]`. Throws when the response is not 200 or the body is not that list.
-- **Used by:** `MentionTextarea` and `ShopAccountControl`.
+- **Used by:** `MentionTextarea`, `ShopAccountControl`, and `DailyPaymentAmountsScreen`.
 
 ## Function: proxyForumMentionsGet
 
