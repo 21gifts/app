@@ -500,7 +500,7 @@ describe('MemberHabits', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('does not post the same action again after Try again reloads the list', async () => {
+  it('does not resend an add when Try again reloads the list', async () => {
     let posts = 0;
     let gets = 0;
     vi.stubGlobal(
@@ -547,6 +547,7 @@ describe('MemberHabits', () => {
       expect(gets).toBe(3);
     });
     expect(addName.value).toBe('Held');
+    expect(posts).toBe(1);
 
     const settledForm = formsNamed('Add habit')[0];
     if (settledForm === undefined) {
@@ -557,7 +558,7 @@ describe('MemberHabits', () => {
       expect(gets).toBe(4);
       expect(addName.value).toBe('');
     });
-    expect(posts).toBe(1);
+    expect(posts).toBe(2);
   });
 
   it('does not replace the list load that started while a save was still posting', async () => {
@@ -623,7 +624,7 @@ describe('MemberHabits', () => {
       expect(posts).toBe(1);
       expect(gets).toBe(2);
     });
-    expect(addName.value).toBe('Held');
+    expect(addName.value).toBe('');
 
     const reload = pendingGets[0];
     if (reload === undefined) {
@@ -778,13 +779,7 @@ describe('MemberHabits', () => {
     if (!(settledName instanceof HTMLInputElement)) {
       throw new Error('missing add name');
     }
-    const settledForm = formsNamed('Add habit')[0];
-    if (settledForm === undefined) {
-      throw new Error('missing add form');
-    }
-    fireEvent.submit(settledForm);
-    expect(posts).toBe(1);
-    expect(settledName.value).toBe('Held');
+    expect(settledName.value).toBe('');
     expect(screen.queryByRole('alert')).toBeNull();
 
     await act(async () => {
@@ -792,9 +787,14 @@ describe('MemberHabits', () => {
     });
     expect(gets).toBe(2);
     expect(posts).toBe(1);
-    expect(settledName.value).toBe('Held');
+    expect(settledName.value).toBe('');
     expect(callAuth).toEqual(['GET Bearer tok', 'POST Bearer tok', 'GET Bearer other']);
 
+    const settledForm = formsNamed('Add habit')[0];
+    if (settledForm === undefined) {
+      throw new Error('missing add form');
+    }
+    fireEvent.change(settledName, { target: { value: 'Next' } });
     fireEvent.submit(settledForm);
     await waitFor(() => {
       expect(posts).toBe(2);
@@ -934,7 +934,7 @@ describe('MemberHabits', () => {
       useAuthStore.setState({ session: 'other', account: viewer });
       releaseRefresh(json({ error: 'down' }, 500));
     });
-    expect(addName.value).toBe('Held');
+    expect(addName.value).toBe('');
     expect(screen.queryByRole('alert')).toBeNull();
     expect(await screen.findByText('Walk')).toBeTruthy();
     expect(callAuth).toEqual([
@@ -1000,7 +1000,7 @@ describe('MemberHabits', () => {
     if (!(settledName instanceof HTMLInputElement)) {
       throw new Error('missing add name');
     }
-    expect(settledName.value).toBe('Held');
+    expect(settledName.value).toBe('');
   });
 
   it('posts a changed rating again after another save confirms the list', async () => {
@@ -1102,11 +1102,11 @@ describe('MemberHabits', () => {
       expect(gets).toBe(8);
       expect(addName.value).toBe('');
     });
-    expect(posts).toBe(6);
-    expect(bodies.filter((body) => body.action === 'add')).toHaveLength(1);
+    expect(posts).toBe(7);
+    expect(bodies.filter((body) => body.action === 'add')).toHaveLength(2);
   });
 
-  it('does not create an add again after its reload settles', async () => {
+  it('adds the same habit again after its reload settles', async () => {
     let posts = 0;
     let gets = 0;
     const bodies: Array<{ action?: string; name?: string }> = [];
@@ -1148,11 +1148,11 @@ describe('MemberHabits', () => {
     fireEvent.change(addName, { target: { value: 'Held' } });
     fireEvent.submit(addForm);
     await waitFor(() => {
+      expect(posts).toBe(2);
       expect(gets).toBe(3);
+      expect(addName.value).toBe('');
     });
-    expect(posts).toBe(1);
-    expect(bodies.filter((body) => body.action === 'add')).toHaveLength(1);
-    expect(addName.value).toBe('');
+    expect(bodies.filter((body) => body.action === 'add')).toHaveLength(2);
   });
 
   it('posts a rating again after Try again confirms the list', async () => {
@@ -1978,6 +1978,55 @@ describe('MemberHabits', () => {
     });
     expect(screen.queryByText('draft-secret')).toBeNull();
     expect(screen.queryByText(/Internal notes:/)).toBeNull();
+  });
+
+  it('clears the new-habit draft and unsent comments when the session changes', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    const addName = screen.getByLabelText('Name');
+    if (!(addName instanceof HTMLInputElement)) {
+      throw new Error('missing add name');
+    }
+    fireEvent.change(addName, { target: { value: 'Held' } });
+    const addNotes = screen.getByLabelText('Internal notes');
+    if (!(addNotes instanceof HTMLInputElement)) {
+      throw new Error('missing add notes');
+    }
+    fireEvent.change(addNotes, { target: { value: 'draft-secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Weekly' }));
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (!(comment instanceof HTMLTextAreaElement)) {
+      throw new Error('missing comment');
+    }
+    fireEvent.change(comment, { target: { value: 'unsent' } });
+
+    useAuthStore.setState({ session: 'other', account: viewer });
+    await waitFor(() => {
+      expect(screen.queryByDisplayValue('Held')).toBeNull();
+      expect(screen.queryByDisplayValue('draft-secret')).toBeNull();
+      expect(screen.queryByDisplayValue('unsent')).toBeNull();
+    });
+    expect(
+      (screen.getByRole('button', { name: 'Weekly' }) as HTMLButtonElement).getAttribute(
+        'aria-pressed',
+      ),
+    ).toBe('false');
+    expect(
+      (screen.getByRole('button', { name: 'Daily' }) as HTMLButtonElement).getAttribute(
+        'aria-pressed',
+      ),
+    ).toBe('true');
   });
 
   it('does not post the same gift again while that request is still waiting', async () => {

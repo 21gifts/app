@@ -33,8 +33,10 @@ const SAVE_ERROR = 'Could not save the habit tracker. Please try again.';
  * Loads from same-origin `GET /habits` and writes through `POST /habits`.
  * A failed reload keeps a list already on screen. The full-screen error is
  * only when nothing has loaded. Internal notes render only for the owner.
- * A session change closes an open edit and an archive confirmation.
+ * A session change closes an open edit and an archive confirmation and clears
+ * the new-habit draft and unsent comments before paint.
  * The same gift body is not posted again while that request is still waiting.
+ * A confirmed add may be sent again. It is not reserved for the whole session.
  * Does not log invoices, addresses, notes, or comment text.
  *
  * @returns The habit-tracker body.
@@ -57,6 +59,7 @@ export function MemberHabits(): ReactElement {
     Record<string, { name: string; description: string; notes: string }>
   >({});
   const [commentByHabitId, setCommentByHabitId] = useState<Record<string, string>>({});
+  const [draftSession, setDraftSession] = useState(session);
   const [payCommentId, setPayCommentId] = useState<string | null>(null);
   const [payDraft, setPayDraft] = useState('');
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
@@ -105,6 +108,11 @@ export function MemberHabits(): ReactElement {
       setEditingHabitId(null);
       setConfirmArchiveId(null);
       setEditByHabitId({});
+      setAddName('');
+      setAddDescription('');
+      setAddNotes('');
+      setAddCadence('daily');
+      setCommentByHabitId({});
     }
     setLoading(true);
     setError(false);
@@ -115,8 +123,7 @@ export function MemberHabits(): ReactElement {
         }
         setData(next);
         setLoading(false);
-        // A confirmed list releases a rating, edit, archive, comment, or deletion.
-        // An add that already reached the server stays reserved.
+        // A confirmed list releases a rating, edit, archive, comment, deletion, or add.
         for (const id of releaseConfirmedPosts(postedKeys.current)) {
           cancelEdit(id);
         }
@@ -137,6 +144,16 @@ export function MemberHabits(): ReactElement {
       }
     };
   }, [session, attempt]);
+
+  // Cleared in this render, so the previous account's draft is not painted.
+  if (draftSession !== session) {
+    setDraftSession(session);
+    setAddName('');
+    setAddDescription('');
+    setAddNotes('');
+    setAddCadence('daily');
+    setCommentByHabitId({});
+  }
 
   async function refresh(): Promise<boolean> {
     // A session change or Try again owns this generation until it settles.
@@ -737,18 +754,17 @@ function statusCopy(
   return t('habit.unrated');
 }
 
-/** Drops every confirmed action except an add. Edit and archive ids close. */
+/** Drops every confirmed action. Edit and archive ids close. An add does not. */
 function releaseConfirmedPosts(keys: Set<string>): string[] {
   const closeIds: string[] = [];
   for (const stored of [...keys]) {
     const parsed = JSON.parse(stored) as { action?: unknown; id?: unknown };
-    if (parsed.action === 'add') {
-      continue;
-    }
-    const closeEdit =
-      parsed.action === 'edit' || parsed.action === 'archive' ? parsed.id : undefined;
-    if (typeof closeEdit === 'string') {
-      closeIds.push(closeEdit);
+    if (parsed.action !== 'add') {
+      const closeEdit =
+        parsed.action === 'edit' || parsed.action === 'archive' ? parsed.id : undefined;
+      if (typeof closeEdit === 'string') {
+        closeIds.push(closeEdit);
+      }
     }
     keys.delete(stored);
   }
