@@ -1971,7 +1971,7 @@ test.describe('screen baselines', () => {
   test('state-wallet-payment-loading', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     // The rate read never answers, so the screen stays in its loading state.
-    await page.route(/\/gifts\/stats$/, () => undefined);
+    await page.route('**/fx/spot', () => undefined);
     await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
     await expect(page.getByText("+₿2'100")).toHaveCount(0);
