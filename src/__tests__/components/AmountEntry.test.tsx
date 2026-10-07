@@ -327,6 +327,7 @@ describe('AmountEntry', () => {
     );
     expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
     expect(screen.getByRole('button', { name: 'USD' })).toHaveProperty('disabled', true);
+    expect(screen.getByText('No exchange rate yet')).toBeTruthy();
   });
 
   it('locks a minted invoice on the sat amount', () => {
@@ -846,6 +847,25 @@ describe('AmountEntry', () => {
       rejectSave(new Error('nope'));
     });
     expect(useAuthStore.getState().account?.amountUnit).toBe('fiat');
+  });
+
+  it('switches an unconvertible fiat draft to an empty bitcoin field', () => {
+    useAuthStore.setState({ session: null, account: null, wrongAccount: false });
+    const onValueChange = vi.fn();
+    renderWithLocale(
+      <TypingAmount initial="" rateDay={DAY} onValueChange={onValueChange} />,
+      'en',
+      'ch',
+      'USD',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), {
+      target: { value: '99999999999999999' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    expect(screen.getByRole('button', { name: '₿' })).toHaveProperty('ariaPressed', 'true');
+    expect(screen.getByLabelText('Amount')).toHaveProperty('value', '');
+    expect(onValueChange).toHaveBeenLastCalledWith('');
   });
 
   it('keeps an unconvertible fiat draft typed during a failed save', async () => {
