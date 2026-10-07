@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
-import { getE2eNow } from '@/lib/config';
-import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
+import { visualPin } from '@/lib/visual-pin';
+import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import {
@@ -34,12 +34,9 @@ export const WALLET_PAY_BALANCE_POLL_MS = 4_000;
  * to pay; there is no other wallet to hand the payment to.
  *
  * - `unavailable`: this account has no wallet it can pay from here (the wallet
- *   is not configured, or the account cannot unlock one).
- * - `unlock`: one tap opens the wallet with one passkey prompt and pays when
- *   the fee is ₿0; a fee above ₿0 stops at `confirm`. When the one-time
- *   wallet setup is still due, that same prompt lets it run first.
- * - `preparing`: the wallet opens, its one-time setup runs in the background,
- *   or it reads amount and fee.
+ *   is not configured, or the account cannot hold one).
+ * - `preparing`: the wallet connects, its one-time setup runs in the
+ *   background, or it reads amount and fee.
  * - `setupFailed`: the background wallet setup gave up; the inline setup note
  *   offers **Try again**.
  * - `confirm`: fee shown, **Send** pays.
@@ -47,22 +44,18 @@ export const WALLET_PAY_BALANCE_POLL_MS = 4_000;
  * - `insufficient`: the balance does not cover the payment; the slot reads the
  *   synced balance every {@link WALLET_PAY_BALANCE_POLL_MS} and prepares again
  *   once it covers amount and known fee.
- * - `failed`: the wallet could not be opened or could not prepare this
+ * - `failed`: the wallet could not connect or could not prepare this
  *   payment; **Try again** starts over.
- * - `prfUnsupported`: the passkey answered without PRF output, so this phone
- *   or browser cannot hold the wallet; **Try again** starts over.
  * - `unconfirmed`: the sheet is still open {@link WALLET_PAY_CONFIRM_WAIT_MS}
  *   after a send (failed, timed out, or sent without a confirmation yet).
  */
 export type WalletPayView =
   | 'unavailable'
-  | 'unlock'
   | 'preparing'
   | 'confirm'
   | 'paying'
   | 'insufficient'
   | 'failed'
-  | 'prfUnsupported'
   | 'setupFailed'
   | 'unconfirmed';
 
@@ -77,27 +70,14 @@ export interface UseWalletPayResult {
    * fee minus the balance, or `null` when the balance is unknown or covers that.
    */
   missingSats: number | null;
-  /**
-   * Opens the wallet with the member's passkey, then pays at once when the
-   * prepared fee is ₿0, or stops at `confirm` when it is higher.
-   */
-  unlock: () => void;
   /** Sends the prepared payment once. */
   pay: () => void;
-  /** Starts over after `failed` or `prfUnsupported`: opens the wallet again or prepares again. */
+  /** Starts over after `failed`: connects the wallet again or prepares again. */
   retry: () => void;
 }
 
 type Phase =
-  | 'idle'
-  | 'unlocking'
-  | 'preparing'
-  | 'confirm'
-  | 'paying'
-  | 'insufficient'
-  | 'unconfirmed'
-  | 'failed'
-  | 'prfUnsupported';
+  'idle' | 'preparing' | 'confirm' | 'paying' | 'insufficient' | 'unconfirmed' | 'failed';
 
 /** The invoice and sheet amount a prepared send belongs to. */
 interface PreparedKey {
@@ -128,13 +108,11 @@ function preparedMatches<T extends PreparedKey>(
 
 const VISUAL_VIEWS: Record<string, WalletPayView> = {
   'wallet-pay-unavailable': 'unavailable',
-  'wallet-pay-unlock': 'unlock',
   'wallet-pay-preparing': 'preparing',
   'wallet-pay-confirm': 'confirm',
   'wallet-pay-paying': 'paying',
   'wallet-pay-insufficient': 'insufficient',
   'wallet-pay-failed': 'failed',
-  'wallet-pay-prf-unsupported': 'prfUnsupported',
   'wallet-pay-setup-failed': 'setupFailed',
   'wallet-pay-unconfirmed': 'unconfirmed',
 };
@@ -145,14 +123,7 @@ const VISUAL_VIEWS: Record<string, WalletPayView> = {
  * @returns The pinned view, or `null`.
  */
 function visualView(): WalletPayView | null {
-  /* v8 ignore next 3 -- SSR has no window */
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  if (getE2eNow() === null) {
-    return null;
-  }
-  const visual = new URLSearchParams(window.location.search).get('visual');
+  const visual = visualPin();
   return visual === null ? null : (VISUAL_VIEWS[visual] ?? null);
 }
 
@@ -160,19 +131,14 @@ function visualView(): WalletPayView | null {
  * Runs the in-app wallet payment of one invoice. The wallet pays
  * `sparkInvoice` when the api issued one, otherwise the payment request `pr`.
  * The view is `unavailable` when the wallet is not configured or the member
- * cannot unlock it. While the one-time wallet setup is still due, a locked
- * wallet shows `unlock` too: its one passkey prompt puts the phrase in tab
- * memory, the setup runs in the background meanwhile `preparing` shows, and
- * the payment then goes on as below; a setup that gave up shows `setupFailed`
- * and no longer pays by itself. A locked wallet shows `unlock`: one tap
- * opens it with one passkey prompt and prepares, then pays at once when the
- * fee is ₿0, or stops at `confirm` when the fee is higher. That tap pays at
- * most once, and never after the slot closed, the request or `amountSats`
- * changed, the wallet failed to open or left `ready`, or the prompt was cancelled or failed. A
- * ready wallet prepares at once so the fee is shown before **Pay from
- * wallet**. A prepared amount that differs from `amountSats`, a failed prepare
- * or unlock, and a wallet in `error` show `failed`; an unlock whose passkey
- * gives no PRF output shows `prfUnsupported`. A wallet that leaves
+ * cannot hold it. A signed-in member's wallet is open in this tab
+ * (`OnboardingGate` shows the login otherwise), so there is no unlock step:
+ * once the wallet is `ready` the slot prepares at once so the fee is shown
+ * before **Send**. While the one-time wallet setup is still due the
+ * slot shows `preparing`, and prepares once the setup is done; a setup that
+ * gave up shows `setupFailed`. A prepared amount that differs from
+ * `amountSats`, a failed prepare, and a wallet in `error` show `failed`. A
+ * wallet that leaves
  * `ready` before the send or while `insufficient` shows, or an account that
  * stops being able to pay from it then, starts over. After
  * `insufficient`, a balance that covers amount and the known fee and is above
@@ -190,7 +156,7 @@ function visualView(): WalletPayView | null {
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
  * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`.
  * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
- * @returns View, fee, missing amount, and the unlock, pay, and retry actions.
+ * @returns View, fee, missing amount, and the pay and retry actions.
  */
 export function useWalletPay(
   sparkInvoice: string | null | undefined,
@@ -207,7 +173,6 @@ export function useWalletPay(
   const generation = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insufficientBalance = useRef<number | null>(null);
-  const autoPayRun = useRef<number | null>(null);
   const input = typeof sparkInvoice === 'string' && sparkInvoice !== '' ? sparkInvoice : pr;
   const pinned = visualView();
   const usable = pinned === null && status !== 'disabled' && canUnlockWallet(account);
@@ -261,13 +226,8 @@ export function useWalletPay(
       if (run !== generation.current) {
         return;
       }
-      const autoPay = autoPayRun.current === run;
-      autoPayRun.current = null;
       if (result.kind === 'confirm' && result.amountSats !== amountSats) {
         setPhase('failed');
-      } else if (result.kind === 'confirm' && autoPay && result.feeSats === 0) {
-        setFeeSats(result.feeSats);
-        sendPrepared(result.send, run);
       } else if (result.kind === 'confirm') {
         sendRef.current = { send: result.send, input, amountSats };
         setPreparedFor({ input, amountSats });
@@ -281,7 +241,7 @@ export function useWalletPay(
         setPhase('failed');
       }
     });
-  }, [canPay, status, phase, input, amountSats, sendPrepared]);
+  }, [canPay, status, phase, input, amountSats]);
 
   useEffect(() => {
     if (phase !== 'insufficient' || balanceSats === null) {
@@ -320,12 +280,6 @@ export function useWalletPay(
   }, [phase, status, canPay]);
 
   useEffect(() => {
-    if ((status === 'error' && !setupDue) || !usable || (setupDue && setupFailed)) {
-      autoPayRun.current = null;
-    }
-  }, [status, usable, setupDue, setupFailed]);
-
-  useEffect(() => {
     if (
       (status === 'ready' && canPay) ||
       (phase !== 'preparing' && phase !== 'confirm' && phase !== 'insufficient')
@@ -338,24 +292,6 @@ export function useWalletPay(
     setFeeSats(null);
     setPhase('idle');
   }, [status, canPay, phase]);
-
-  const unlock = useCallback((): void => {
-    if (pinned !== null || phase !== 'idle') {
-      return;
-    }
-    const run = generation.current;
-    autoPayRun.current = run;
-    setPhase('unlocking');
-    void unlockWalletPhrase().then((result) => {
-      if (run !== generation.current) {
-        return;
-      }
-      if (result !== 'unlocked') {
-        autoPayRun.current = null;
-      }
-      setPhase(result === 'failed' ? 'failed' : result === 'noPrf' ? 'prfUnsupported' : 'idle');
-    });
-  }, [pinned, phase]);
 
   const pay = useCallback((): void => {
     const prepared = sendRef.current;
@@ -391,20 +327,18 @@ export function useWalletPay(
   }, [pinned]);
 
   if (pinned !== null) {
-    return { view: pinned, feeSats: 0, missingSats: amountSats, unlock, pay, retry };
+    return { view: pinned, feeSats: 0, missingSats: amountSats, pay, retry };
   }
   let view: WalletPayView;
   if (!usable) {
     view = 'unavailable';
   } else if (setupDue && setupFailed) {
     view = 'setupFailed';
-  } else if (setupDue && phase === 'idle' && status !== 'locked') {
+  } else if (setupDue && phase === 'idle') {
     view = 'preparing';
   } else if (phase === 'idle' && status === 'error') {
     view = 'failed';
-  } else if (phase === 'idle' && status === 'locked') {
-    view = 'unlock';
-  } else if (phase === 'idle' || phase === 'unlocking') {
+  } else if (phase === 'idle') {
     view = 'preparing';
   } else if (phase === 'confirm') {
     view = preparedMatches(preparedFor, input, amountSats) ? 'confirm' : 'preparing';
@@ -414,5 +348,5 @@ export function useWalletPay(
   const missing = amountSats + (feeSats ?? 0) - (balanceSats ?? 0);
   const missingSats =
     phase === 'insufficient' && balanceSats !== null && missing > 0 ? missing : null;
-  return { view, feeSats, missingSats, unlock, pay, retry };
+  return { view, feeSats, missingSats, pay, retry };
 }

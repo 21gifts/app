@@ -3,8 +3,10 @@
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, type ReactElement, type ReactNode } from 'react';
+import { WalletLoginCard } from '@/components/WalletLoginCard';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -41,6 +43,13 @@ interface OnboardingGateProps {
  * The recovery phrase is not a setup step: {@link nextOnboardingPath} never
  * returns `/wallet`.
  *
+ * Signed in means the wallet is open in this tab ({@link useWalletOpen}). Every
+ * screen but `login` shows {@link WalletLoginCard} in place of its children,
+ * on the same path and without a redirect, while a stored session is held
+ * back (`lockedSession`) or a fresh login is still opening its wallet; the
+ * screen shows once the wallet is open. On a screen open to guests a
+ * held-back session counts as signed out and the guest view shows.
+ *
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.
  */
@@ -53,9 +62,14 @@ export function OnboardingGate({
   const router = useRouter();
   const { cancel } = usePasskeyLogin();
   const account = useAuthStore((state) => state.account);
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  const walletOpen = useWalletOpen();
+  const guest = screen === 'welcome' && allowGuest;
+  const locked =
+    screen !== 'login' && (account !== null ? !walletOpen : lockedSession !== null && !guest);
 
   useEffect(() => {
-    if (!ready) {
+    if (!ready || locked) {
       return;
     }
     if (screen === 'login') {
@@ -90,13 +104,16 @@ export function OnboardingGate({
     if (target !== PATH[screen]) {
       router.replace(target);
     }
-  }, [account, allowGuest, cancel, ready, router, screen]);
+  }, [account, allowGuest, cancel, locked, ready, router, screen]);
 
   if (!ready) {
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
   if (screen === 'login') {
     return <>{children}</>;
+  }
+  if (locked) {
+    return <WalletLoginCard />;
   }
   if (screen === 'profile') {
     if (account !== null && nextOnboardingPath(account) === '/welcome') {

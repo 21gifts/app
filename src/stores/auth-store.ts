@@ -13,6 +13,14 @@ interface AuthState {
   /** The authenticated account, or `null` when logged out. */
   account: Account | null;
   /**
+   * A stored, valid session token whose wallet is not open in this tab (after
+   * a reload, in a new tab, or after a login that could not open the wallet).
+   * Such a session counts as logged out: `session` and `account` stay `null`,
+   * and signed-in screens show the login in place until a login opens the
+   * wallet. The token stays in storage.
+   */
+  lockedSession: string | null;
+  /**
    * True after a wrong-account 403 until the visitor retries login.
    * Survives {@link AuthState.clearAuth} so `/login` can show the hint.
    */
@@ -34,6 +42,18 @@ interface AuthState {
    * @param account - The updated account.
    */
   setAccount(account: Account): void;
+  /**
+   * Holds a stored session back until its wallet is open (see
+   * {@link AuthState.lockedSession}). Keeps the token in storage.
+   *
+   * @param session - The stored session token.
+   */
+  setLockedSession(session: string): void;
+  /**
+   * Moves the current session to {@link AuthState.lockedSession}: a login
+   * whose wallet could not be opened does not count as signed in.
+   */
+  lockSession(): void;
   /** Clears the session from state and from storage, and the home-screen badge. */
   clearAuth(): void;
   /**
@@ -57,20 +77,31 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   account: null,
+  lockedSession: null,
   wrongAccount: false,
   setAuth: (session, account) => {
     saveSession(session);
-    set({ session, account, wrongAccount: false });
+    set({ session, account, lockedSession: null, wrongAccount: false });
   },
   setAccount: (account) => {
     set({ account });
+  },
+  setLockedSession: (session) => {
+    set({ session: null, account: null, lockedSession: session });
+  },
+  lockSession: () => {
+    set((state) =>
+      state.session === null
+        ? state
+        : { session: null, account: null, lockedSession: state.session },
+    );
   },
   clearAuth: () => {
     clearSessionPhrase();
     clearSession();
     bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);
-    set({ session: null, account: null });
+    set({ session: null, account: null, lockedSession: null });
   },
   setWrongAccount: (value) => {
     set({ wrongAccount: value });

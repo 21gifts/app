@@ -33,7 +33,7 @@ const account = {
 };
 
 beforeEach(() => {
-  useAuthStore.setState({ session: null, account: null, wrongAccount: false });
+  useAuthStore.setState({ session: null, account: null, lockedSession: null, wrongAccount: false });
   vi.clearAllMocks();
 });
 
@@ -42,6 +42,7 @@ describe('useAuthStore', () => {
     const state = useAuthStore.getState();
     expect(state.session).toBeNull();
     expect(state.account).toBeNull();
+    expect(state.lockedSession).toBeNull();
     expect(state.wrongAccount).toBe(false);
   });
 
@@ -71,14 +72,50 @@ describe('useAuthStore', () => {
     expect(clearSession).not.toHaveBeenCalled();
   });
 
+  it('holds a stored session back without touching storage', () => {
+    useAuthStore.getState().setLockedSession('stored');
+    expect(useAuthStore.getState()).toMatchObject({
+      session: null,
+      account: null,
+      lockedSession: 'stored',
+    });
+    expect(saveSession).not.toHaveBeenCalled();
+    expect(clearSession).not.toHaveBeenCalled();
+  });
+
+  it('moves the active session to lockedSession', () => {
+    useAuthStore.getState().setAuth('tok', account);
+    useAuthStore.getState().lockSession();
+    expect(useAuthStore.getState()).toMatchObject({
+      session: null,
+      account: null,
+      lockedSession: 'tok',
+    });
+  });
+
+  it('leaves state unchanged when there is no active session to lock', () => {
+    useAuthStore.getState().setLockedSession('stored');
+    const before = useAuthStore.getState();
+    useAuthStore.getState().lockSession();
+    expect(useAuthStore.getState()).toBe(before);
+  });
+
+  it('setAuth clears a held-back session', () => {
+    useAuthStore.getState().setLockedSession('stored');
+    useAuthStore.getState().setAuth('tok', account);
+    expect(useAuthStore.getState().lockedSession).toBeNull();
+  });
+
   it('clearAuth wipes state and clears storage', () => {
     rememberSessionPhrase('one two three');
     useAuthStore.getState().setAuth('tok', account);
+    useAuthStore.getState().setLockedSession('tok');
     useAuthStore.getState().clearAuth();
 
     const state = useAuthStore.getState();
     expect(state.session).toBeNull();
     expect(state.account).toBeNull();
+    expect(state.lockedSession).toBeNull();
     expect(peekSessionPhrase()).toBeNull();
     expect(clearSession).toHaveBeenCalledTimes(1);
     expect(bumpUnreadAppBadgeEpoch).toHaveBeenCalled();

@@ -44,7 +44,7 @@ function afterNamePath(account: Account): OnboardingPath {
  *
  * `'wallet'` is not a route: the path comes from name, username, and rules.
  * There is no address step: a member receives on their own in-app wallet,
- * which the one-time wallet setup dialog sets up. The api's
+ * which the one-time wallet setup sets up in the background. The api's
  * `'lightning-address'` step comes after the name step (filled or skipped),
  * so it resolves to username, rules, or welcome. Other `setup` values stay a
  * 1:1 map.
