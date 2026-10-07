@@ -2146,6 +2146,38 @@ describe('useWalletSend unreadable text', () => {
     expect(result.current.state).toEqual({ step: 'input', error: 'unreadable' });
   });
 
+  it('drops a prepare that rejects after Cancel', async () => {
+    target(LNURL);
+    const prepare = pending<WalletPayResult>(vi.mocked(payFromWallet));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@21.gifts');
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    act(() => {
+      result.current.cancel();
+    });
+    await act(async () => {
+      prepare.reject(new Error('gone'));
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('drops a read that rejects after the wallet locks', async () => {
+    const read = pending<Awaited<ReturnType<typeof parseWalletInput>>>(vi.mocked(parseWalletInput));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    await act(async () => {
+      read.reject(new Error('gone'));
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
+  });
+
   it('shows the failed alert when a prepare answer cannot be read', async () => {
     target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'Coffee' });
     vi.mocked(payFromWallet).mockResolvedValue(undefined as unknown as WalletPayResult);
