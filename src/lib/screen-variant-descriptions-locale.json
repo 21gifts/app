@@ -3285,9 +3285,9 @@
     "fil": "I-click ang Wala pang regalo — tanging naka-load na tala na may eksaktong serong sats ang lumilitaw. Nakikita si Bob; nakatago ang bayad na sina Ada at Carol. Kasama rito ang mga talang walang pitakang tumatanggap. Ang apat na filter ay isang dropdown; Ipinapakita ang Aktibo na nakasara; buksan at piliin ang Wala pang regalo. Nananatiling default ang Aktibo."
   },
   "/members/[accountId]:staff-verify-open": {
-    "de": "Derselbe Moderator und dasselbe basis-Mitglied nach dem Drücken von Moderatorenfunktionen. Der Aufklapper ist geöffnet und Verifizieren ist sichtbar. Viewport-Aufnahme nach dem Scrollen von Verifizieren in den Blick: die Mitgliedskarte scrollt innerhalb des Seitenrahmens, und eine ganzseitige Naht lässt Verifizieren unterhalb des Falzes. Die geschlossene Aufnahme deckt dieses Ergebnis nicht ab.",
-    "es": "El mismo moderador y miembro basis tras pulsar Funciones de moderación. La divulgación está expandida y Verificar es visible. Captura del viewport tras desplazar Verificar a la vista: la tarjeta del miembro se desplaza dentro del marco de la página, y un empalme de página completa deja Verificar debajo del pliegue. La captura cerrada no cubre este resultado.",
-    "fil": "Parehong moderator at miyembrong basis pagkatapos pindutin ang Mga tungkulin ng moderator. Naka-expand ang pagbubunyag at nakikita ang Patunayan. Kuha ng viewport pagkatapos i-scroll ang Patunayan sa tanaw: ang kard ng miyembro ay nag-i-scroll sa loob ng frame ng pahina, at ang buong-pahinang tahi ay iniiwan ang Patunayan sa ibaba ng fold. Hindi saklaw ng nakasarang kuha ang resultang ito."
+    "de": "Derselbe Moderator und dasselbe basis-Mitglied nach dem Drücken von Moderatorenfunktionen. Der Aufklapper ist geöffnet und zeigt Verifizieren als Link auf /members/[accountId]/verify. Die Frage steht nicht auf dieser Seite. Viewport-Aufnahme nach dem Scrollen von Verifizieren in den Blick: die Mitgliedskarte scrollt innerhalb des Seitenrahmens, und eine ganzseitige Naht lässt Verifizieren unterhalb des Falzes. Die geschlossene Aufnahme deckt dieses Ergebnis nicht ab.",
+    "es": "El mismo moderador y miembro basis tras pulsar Funciones de moderación. La divulgación está expandida y muestra Verificar como enlace a /members/[accountId]/verify. La pregunta no está en esta página. Captura del viewport tras desplazar Verificar a la vista: la tarjeta del miembro se desplaza dentro del marco de la página, y un empalme de página completa deja Verificar debajo del pliegue. La captura cerrada no cubre este resultado.",
+    "fil": "Parehong moderator at miyembrong basis pagkatapos pindutin ang Mga tungkulin ng moderator. Naka-expand ang pagbubunyag at ipinapakita ang Patunayan bilang link sa /members/[accountId]/verify. Wala sa pahinang ito ang tanong. Kuha ng viewport pagkatapos i-scroll ang Patunayan sa tanaw: ang kard ng miyembro ay nag-i-scroll sa loob ng frame ng pahina, at ang buong-pahinang tahi ay iniiwan ang Patunayan sa ibaba ng fold. Hindi saklaw ng nakasarang kuha ang resultang ito."
   },
   "/messages/[id]:goal-credit": {
     "de": "Unsignierter Permalink einer Ada-Notiz der obersten Ebene mit sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in Bitcoin festgelegt, daher zeigt der Balken Anfragen ₿21'000 · $21.00, den Notizbetrag ₿10'500 · $10.50, ein Etikett Darlehen und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Beschriftung 50%. Kein Anfragen im Eingabebereich.",
@@ -3778,5 +3778,45 @@
     "de": "Menü geöffnet auf einem breiten Rahmen, der kürzer ist als das kompakte Menü, selbst wenn dessen Oberkante im Fenster liegt. Das breite Menü nutzt dieselbe volle Breite wie ein schmaler Rahmen. Die Seite darunter ist verborgen. Das Blatt erzeugt keinen eigenen Scrollbereich; der Scrollport der Seite erreicht die unteren Zeilen.",
     "es": "Menú abierto en un marco ancho más bajo que el menú compacto incluso con su borde superior en la ventana. El menú ancho usa la misma hoja a todo el ancho que un marco estrecho. La página de debajo está oculta. La hoja no crea su propio desplazamiento; el scrollport de la página alcanza las filas inferiores.",
     "fil": "Bukas ang Menu sa isang malapad na frame na mas maikli kaysa sa siksik na menu kahit nasa bintana ang tuktok nito. Ang malapad na menu ay gumagamit ng parehong sheet na buong lapad tulad ng makitid na frame. Nakatago ang pahina sa ilalim. Hindi lumilikha ang sheet ng sarili nitong scroll; ang scrollport ng pahina ay umaabot sa ibabang mga hilera."
+  },
+  "/members/[accountId]/verify:default": {
+    "de": "Hinterlegter Name Ada als Link, die Frage, Ja und Nein.",
+    "es": "Nombre guardado Ada como enlace, la pregunta, Sí y No.",
+    "fil": "Nakaimbak na pangalan na Ada bilang link, ang tanong, Oo at Hindi."
+  },
+  "/members/[accountId]/verify:unnamed": {
+    "de": "Mitglied basis ohne hinterlegten Namen. Zum Verifizieren braucht es einen hinterlegten Namen, mit dem die Person eindeutig identifiziert werden kann. Weder Ja noch Nein.",
+    "es": "Miembro basis sin nombre guardado. Para verificar hace falta un nombre guardado que identifique a esta persona de forma inequívoca. Ni Sí ni No.",
+    "fil": "Miyembrong basis na walang nakaimbak na pangalan. Kailangan ng nakaimbak na pangalan na natatanging kumikilala sa taong ito bago ma-verify. Wala ang Oo at wala ang Hindi."
+  },
+  "/members/[accountId]/verify:loading": {
+    "de": "Überschrift Verifizieren und Wird geladen…, solange der Abruf des Mitglieds nicht abgeschlossen ist.",
+    "es": "Encabezado Verificar y Cargando… mientras la obtención del miembro no ha terminado.",
+    "fil": "Pamagat na I-verify at Naglo-load… habang hindi pa natatapos ang pagkuha ng miyembro."
+  },
+  "/members/[accountId]/verify:error": {
+    "de": "Das Laden des Mitglieds ist fehlgeschlagen. Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
+    "es": "Falló la obtención del miembro. No se pudo cargar este perfil. Inténtalo de nuevo. e Intentar de nuevo.",
+    "fil": "Nabigo ang pagkuha ng miyembro. Hindi ma-load ang profile. Subukan ulit. at Subukan ulit."
+  },
+  "/members/[accountId]/verify:missing": {
+    "de": "Unbekannte id oder ein fehlendes Mitglied. Dieses Profil konnte nicht gefunden werden.",
+    "es": "id desconocido o un miembro ausente. No se pudo encontrar este perfil.",
+    "fil": "Hindi kilalang id o nawawalang miyembro. Hindi mahanap ang profile na ito."
+  },
+  "/members/[accountId]/verify:forbidden": {
+    "de": "Angemeldete betrachtende Person, die nicht verifizieren kann. Du kannst dieses Mitglied nicht verifizieren. Die Frage fehlt.",
+    "es": "Persona con sesión iniciada que no puede verificar. No puedes verificar a este miembro. La pregunta no está.",
+    "fil": "Naka-sign-in na tumitingin na hindi makapag-verify. Hindi mo ma-verify ang miyembrong ito. Wala ang tanong."
+  },
+  "/members/[accountId]/verify:sunday": {
+    "de": "Gerätelokaler Sonntag. Die Frage und Ada bleiben. Am Sonntag ist das Schreiben pausiert. Keine der beiden Schaltflächen ist sichtbar.",
+    "es": "Domingo según la hora del dispositivo. La pregunta y Ada permanecen. El domingo no se puede escribir. Ninguno de los dos botones es visible.",
+    "fil": "Linggo ayon sa oras ng aparato. Nananatili ang tanong at si Ada. Linggo, hindi puwedeng magsulat. Hindi nakikita ang alinmang pindutan."
+  },
+  "/members/[accountId]/verify:failed": {
+    "de": "Das Schreiben ist fehlgeschlagen. Dieses Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut. Ja und Nein bleiben.",
+    "es": "Falló la escritura. No se pudo actualizar a este miembro. Inténtalo de nuevo. Sí y No permanecen.",
+    "fil": "Nabigo ang pagsulat. Hindi ma-update ang miyembrong ito. Subukan ulit. Nananatili ang Oo at Hindi."
   }
 }
