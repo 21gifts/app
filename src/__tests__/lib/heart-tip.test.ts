@@ -131,6 +131,20 @@ describe('sendHeartTip', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
+  it('shows payFailed when the wallet still asks to unlock after it was unlocked', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({ kind: 'unlock' })
+      .mockResolvedValueOnce({ kind: 'unlock' });
+    vi.mocked(unlockWalletPhrase).mockResolvedValue('unlocked');
+
+    await expect(
+      sendHeartTip({ ...BASE, walletStatus: 'locked', balanceSats: null }),
+    ).resolves.toEqual({ kind: 'alert', alert: 'payFailed' });
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+  });
+
   it('shows payFailed when unlock is cancelled', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'unlock' });
