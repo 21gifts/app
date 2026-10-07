@@ -179,7 +179,7 @@ test.describe('wallet setup in the background', () => {
       .getByRole('alert')
       .filter({ hasText: 'Your wallet could not be set up yet.' });
     await expect(note).toBeVisible();
-    await expect(note.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Receive' })).toBeDisabled();
   });
