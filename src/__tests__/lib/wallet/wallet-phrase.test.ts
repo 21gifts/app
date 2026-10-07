@@ -415,11 +415,22 @@ describe('unlockWalletPhrase', () => {
     expect(peekSessionPhrase()).toBe('abandon ability able about');
   });
 
-  it('prompts once a login derivation stored nothing', async () => {
+  it('answers failed without a second prompt when the seed login could not derive the phrase', async () => {
     vi.mocked(mnemonicFromPrfFirst).mockRejectedValueOnce(new Error('derive'));
     void rememberPhraseFromPrf({
       prfFirst: PRF,
       credentialId: CREDENTIAL_ID,
+      account: baseAccount,
+      sessionToken: 'tok',
+    });
+    await expect(unlockWalletPhrase()).resolves.toBe('failed');
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+  });
+
+  it('prompts the seed passkey once after another passkey logged in', async () => {
+    void rememberPhraseFromPrf({
+      prfFirst: PRF,
+      credentialId: 'another-credential',
       account: baseAccount,
       sessionToken: 'tok',
     });
