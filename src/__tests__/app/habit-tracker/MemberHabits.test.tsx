@@ -1870,6 +1870,80 @@ describe('MemberHabits', () => {
     expect(screen.queryByText('lnbc-stale')).toBeNull();
   });
 
+  it('does not show a gift result after the session changed', async () => {
+    let releasePay: (value: Response) => void = () => undefined;
+    let rejectPay: (reason: unknown) => void = () => undefined;
+    let posts = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return Promise.resolve(json({ spendOverTime: [] }));
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          if (posts === 1) {
+            return new Promise<Response>((resolve) => {
+              releasePay = resolve;
+            });
+          }
+          return new Promise<Response>((_resolve, reject) => {
+            rejectPay = reject;
+          });
+        }
+        return Promise.resolve(json(payload()));
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: viewer });
+    renderWithLocale(<MemberHabits />);
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts).toBe(1);
+    });
+
+    useAuthStore.setState({ session: 'other', account: owner });
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Amount')).toBeNull();
+    });
+    await act(async () => {
+      releasePay(json({ pr: 'lnbc-stale', amountSats: 21 }));
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '22' } });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(posts).toBe(2);
+    });
+    useAuthStore.setState({ session: 'tok', account: viewer });
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Amount')).toBeNull();
+    });
+    await act(async () => {
+      rejectPay(new Error('Too many payments'));
+    });
+    expect(screen.queryByText('Too many payments')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
   it('does not invoice until the gift-day rate has settled', async () => {
     let releaseStats!: (value: Response) => void;
     const posts: string[] = [];

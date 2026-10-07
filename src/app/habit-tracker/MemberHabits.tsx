@@ -93,6 +93,12 @@ export function MemberHabits(): ReactElement {
     if (postedForSession.current !== session) {
       postedKeys.current.clear();
       postedForSession.current = session;
+      payGeneration.current += 1;
+      setPayCommentId(null);
+      setPayDraft('');
+      setPayBusy(false);
+      setPayError(null);
+      setPayInvoice(null);
     }
     setLoading(true);
     setError(false);
@@ -265,12 +271,16 @@ export function MemberHabits(): ReactElement {
       setPayError('habitAmount');
       return;
     }
+    const actor = session;
     const commentId = payCommentId;
     const generation = payGeneration.current;
     setPayBusy(true);
     setPayError(null);
-    void postMemberHabit(session, { action: 'invoice', commentId, amountSats: sats }, true)
+    void postMemberHabit(actor, { action: 'invoice', commentId, amountSats: sats }, true)
       .then((body) => {
+        if (useAuthStore.getState().session !== actor) {
+          return;
+        }
         if (generation !== payGeneration.current) {
           return;
         }
@@ -281,6 +291,9 @@ export function MemberHabits(): ReactElement {
         });
       })
       .catch((caught: unknown) => {
+        if (useAuthStore.getState().session !== actor) {
+          return;
+        }
         if (generation !== payGeneration.current) {
           return;
         }
@@ -304,6 +317,9 @@ export function MemberHabits(): ReactElement {
         setPayError('request');
       })
       .finally(() => {
+        if (useAuthStore.getState().session !== actor) {
+          return;
+        }
         if (generation === payGeneration.current) {
           setPayBusy(false);
         }
