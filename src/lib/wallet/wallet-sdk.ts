@@ -266,10 +266,11 @@ const METHODS: readonly WalletPaymentMethod[] = ['lightning', 'spark', 'deposit'
 
 /**
  * Maps an SDK payment to the {@link WalletPayment} the history list and the
- * payment screen render: fees, method (`token` and unknown methods are
+ * payment screen read: fees, method (`token` and unknown methods are
  * `other`), and the method details (description, invoice, payment hash and
- * preimage, node, paid Lightning address and comment, a parsed zap request,
- * transaction id and output). A blank note, description, or comment counts as
+ * preimage, the invoice's node, paid Lightning address and comment, a parsed
+ * zap request, transaction id and output); the screen does not show the node
+ * key or the zap's key and note id. A blank note, description, or comment counts as
  * none; a zap request that is not valid kind-9734 JSON is left out.
  *
  * @param payment - Payment from the SDK's `listPayments`.
