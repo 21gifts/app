@@ -528,7 +528,7 @@ export function useWalletSend(): UseWalletSendResult {
   /**
    * Ends `run` with one plain alert on the input step when its read rejected
    * or its handler threw unexpectedly. A run that a Cancel, a new run or a
-   * locked wallet already ended stays ended.
+   * wallet that stopped being ready already ended stays ended.
    */
   const failRun = useCallback((run: number, error: WalletSendError): void => {
     if (run !== generation.current || !walletCanSend()) {
