@@ -21747,6 +21747,10 @@ test.describe('team access screens', () => {
   /** Fiat beside the balance: the shown amount is not ready for a baseline before it. */
   const BALANCE_WITH_FIAT = /₿21.000 · .*\d/;
 
+  test.beforeEach(async ({ page }) => {
+    await fulfillRateDay(page);
+  });
+
   async function routeSearch(
     page: Page,
     status: number | 'hang',
