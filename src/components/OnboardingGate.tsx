@@ -48,7 +48,10 @@ interface OnboardingGateProps {
  * on the same path and without a redirect, while a stored session is held
  * back (`lockedSession`) or a fresh login is still opening its wallet; the
  * screen shows once the wallet is open. On a screen open to guests a
- * held-back session counts as signed out and the guest view shows.
+ * held-back session counts as signed out and the guest view shows. `/login`
+ * itself sends a fresh login on only once its wallet is open, and shows
+ * {@link WalletLoginCard} meanwhile and while a session is held back, so a
+ * wallet that could not be opened keeps its alert there.
  *
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.
@@ -67,13 +70,18 @@ export function OnboardingGate({
   const guest = screen === 'welcome' && allowGuest;
   const locked =
     screen !== 'login' && (account !== null ? !walletOpen : lockedSession !== null && !guest);
+  // `/login` leaves only once the wallet is open; until then, and while a
+  // session is held back, it shows the same card, so its alert outlives a
+  // wallet that could not be opened.
+  const loginOpening =
+    screen === 'login' && (account !== null ? !walletOpen : lockedSession !== null);
 
   useEffect(() => {
     if (!ready || locked) {
       return;
     }
     if (screen === 'login') {
-      if (account !== null) {
+      if (account !== null && walletOpen) {
         cancel();
         router.replace(nextOnboardingPath(account));
       }
@@ -104,13 +112,13 @@ export function OnboardingGate({
     if (target !== PATH[screen]) {
       router.replace(target);
     }
-  }, [account, allowGuest, cancel, locked, ready, router, screen]);
+  }, [account, allowGuest, cancel, locked, ready, router, screen, walletOpen]);
 
   if (!ready) {
     return <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />;
   }
   if (screen === 'login') {
-    return <>{children}</>;
+    return loginOpening ? <WalletLoginCard /> : <>{children}</>;
   }
   if (locked) {
     return <WalletLoginCard />;
