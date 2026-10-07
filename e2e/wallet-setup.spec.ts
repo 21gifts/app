@@ -287,7 +287,7 @@ test.describe('wallet history', () => {
     await openWallet(page, '?visual=history-rows');
     const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
     await expect(rows).toHaveCount(10);
-    await expect(rows.nth(0)).toContainText('Zap on your post');
+    await expect(rows.nth(0)).toContainText('Gift on your post');
     await expect(rows.nth(0)).toContainText("+₿2'100");
     await expect(rows.nth(0)).toContainText('$2.10');
     await expect(rows.nth(0)).toContainText('Great photo!');
@@ -313,7 +313,7 @@ test.describe('wallet history', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
     await expect(page.getByText("−₿10'000")).toBeVisible();
     await expect(page.getByText('Thanks for dinner')).toBeVisible();
-    const summary = page.locator('dl').first();
+    const summary = page.locator('[data-scroll-page] dl').first();
     await expect(summary).toContainText('Total');
     await expect(summary).toContainText("₿10'003");
     await page.getByRole('link', { name: 'Back', exact: true }).click();
@@ -326,12 +326,37 @@ test.describe('wallet history', () => {
   }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await page.goto('/wallet/payment?id=nope&visual=history-rows');
-    await expect(page.getByRole('alert')).toHaveText('This payment could not be found.');
+    await expect(page.getByText('This payment could not be found.')).toHaveAttribute(
+      'role',
+      'alert',
+    );
     await page.goto('/wallet/payment?visual=history-rows');
-    await expect(page.getByRole('alert')).toHaveText('This payment could not be found.');
+    await expect(page.getByText('This payment could not be found.')).toHaveAttribute(
+      'role',
+      'alert',
+    );
   });
 
-  test('Function: encodeBech32 — the zap screen shows the sender npub and the zapped note, and Copy writes the full value', async ({
+  test('Function: useLatestRateDayState — the payment screen shows its amounts only with the loaded fiat', async ({
+    page,
+  }) => {
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(/\/gifts\/stats$/, async (route) => {
+      await held;
+      await route.fallback();
+    });
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
+    await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
+    await expect(page.getByText("+₿2'100")).toHaveCount(0);
+    release();
+    await expect(page.getByText("+₿2'100")).toBeVisible();
+  });
+
+  test('wallet payment screen copies a technical value in full and shows no key or note id', async ({
     page,
     context,
   }) => {
@@ -339,13 +364,11 @@ test.describe('wallet history', () => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');
     await page.getByRole('region', { name: 'Payments' }).getByRole('link').first().click();
-    await expect(page.getByText('Zap on your post')).toBeVisible();
-    await page.getByRole('button', { name: 'Copy From' }).click();
-    const npub = await page.evaluate(() => navigator.clipboard.readText());
-    expect(npub).toMatch(/^npub1[02-9ac-hj-np-z]{58}$/);
-    await page.getByRole('button', { name: 'Copy Post' }).click();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
-      /^note1[02-9ac-hj-np-z]{58}$/,
+    await expect(page.getByText('Gift on your post')).toBeVisible();
+    await expect(page.getByText(/npub1|note1/)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Copy Payment ID' }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      'f43f0362-edf9-4387-8edb-e18af9bb4dbc',
     );
   });
 
@@ -366,7 +389,7 @@ test.describe('wallet history', () => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');
     const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
-    await expect(rows.first()).toContainText('Zap on your post');
+    await expect(rows.first()).toContainText('Gift on your post');
     await expect(rows.nth(9)).toContainText('Posting fee');
   });
 
@@ -386,7 +409,10 @@ test.describe('wallet history', () => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await page.goto('/wallet/payment');
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
-    await expect(page.getByRole('alert')).toHaveText('This payment could not be found.');
+    await expect(page.getByText('This payment could not be found.')).toHaveAttribute(
+      'role',
+      'alert',
+    );
     await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   });
 

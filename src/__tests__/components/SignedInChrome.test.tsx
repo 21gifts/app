@@ -1206,7 +1206,9 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('absolute');
       expect(panel.className).not.toContain('overflow-y-auto');
       expect(panel.className).not.toContain('overflow-auto');
-      expect(panel.className).not.toContain('max-h-');
+      // Compact is capped at the window and becomes the bound scrollport.
+      expect(panel.className).toContain('max-h-[calc(var(--app-height)-6rem)]');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       bottom = 700;
@@ -1295,7 +1297,7 @@ describe('SignedInChrome', () => {
       expect(panel.className).toContain('px-2');
       expect(panel.className).toContain('py-0');
       expect(panel.className).not.toContain('overflow-y-auto');
-      expect(panel.className).not.toContain('max-h-');
+      expect(panel.className).toContain('max-h-[calc(var(--app-height)-6rem)]');
       expect(panel.querySelector('p')?.className).not.toContain('py-2');
     } finally {
       if (previousInnerHeight === undefined) {

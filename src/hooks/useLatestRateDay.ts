@@ -4,6 +4,48 @@ import { useEffect, useState } from 'react';
 import { fetchGiftStats } from '@/lib/api';
 import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
 
+/** The latest rate day and whether its read has settled. */
+export interface LatestRateDayState {
+  /** The latest gift-day totals, or `null` without a usable rate (or while loading). */
+  rateDay: FiatRateDay | null;
+  /** True until the read has settled (or while disabled), so a payment screen can wait for it. */
+  loading: boolean;
+}
+
+/**
+ * {@link useLatestRateDay} with its load state, for a screen that must not
+ * show an amount as ready while the rate is still loading.
+ *
+ * @param enabled - When false, skip the fetch; `loading` stays `true`. Default true.
+ * @returns The rate day and whether its read is still running.
+ */
+export function useLatestRateDayState(enabled = true): LatestRateDayState {
+  const [state, setState] = useState<LatestRateDayState>({ rateDay: null, loading: true });
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    let cancelled = false;
+    void fetchGiftStats()
+      .then((stats) => {
+        if (!cancelled) {
+          setState({ rateDay: latestRateDay(stats.spendOverTime), loading: false });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({ rateDay: null, loading: false });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
+
+  return state;
+}
+
 /**
  * Latest gift-day totals for preferred-fiat conversion, or `null`.
  *
@@ -16,28 +58,5 @@ import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
  * @returns The latest rate day, or `null` without a usable rate.
  */
 export function useLatestRateDay(enabled = true): FiatRateDay | null {
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
-
-  useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateDay(null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled]);
-
-  return rateDay;
+  return useLatestRateDayState(enabled).rateDay;
 }

@@ -43,23 +43,24 @@ function loadStats(session: string, accountId: string): Promise<MenuStats> {
     fetchAccountActivity(session),
     fetchMember(session, accountId),
     fetchProfilePhoto(session),
-  ]).then(([activity, member, picture]) => {
-    const blob =
-      picture.status === 'fulfilled' && picture.value.type.startsWith('image/')
-        ? picture.value
-        : null;
+  ]).then(([activity, member, picture]): MenuStats => {
     const stats: MenuStats = {
       receivedSats: activity.status === 'fulfilled' ? activity.value.receivedSats : null,
       givenSats: activity.status === 'fulfilled' ? activity.value.donatedSats : null,
       postCount:
         member.status === 'fulfilled' && member.value !== null ? member.value.postCount : null,
-      pictureUrl: blob === null ? null : URL.createObjectURL(blob),
+      pictureUrl: null,
     };
-    if (activity.status === 'rejected' || member.status === 'rejected') {
-      if (inflight?.promise === promise) {
-        inflight = null;
-      }
+    const current = inflight?.promise === promise;
+    if (current) {
+      inflight = null;
+    }
+    // Only the session's current, complete load is kept; anything else is shown once without a photo.
+    if (!current || activity.status === 'rejected' || member.status === 'rejected') {
       return stats;
+    }
+    if (picture.status === 'fulfilled' && picture.value.type.startsWith('image/')) {
+      stats.pictureUrl = URL.createObjectURL(picture.value);
     }
     if (cached !== null && cached.stats.pictureUrl !== null) {
       URL.revokeObjectURL(cached.stats.pictureUrl);
@@ -77,6 +78,8 @@ export interface MenuAccountHeaderProps {
   onNavigate: () => void;
   /** The compact wide Menu, whose panel has no top padding. */
   tight: boolean;
+  /** Whether the Menu is open; closed, the header loads but renders nothing. */
+  open: boolean;
 }
 
 /** Loading bar in place of a value: same height as its text line. */
@@ -101,6 +104,7 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
 export function MenuAccountHeader({
   onNavigate,
   tight,
+  open,
 }: MenuAccountHeaderProps): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -127,7 +131,7 @@ export function MenuAccountHeader({
     };
   }, [session, accountId]);
 
-  if (account === null || session === null) {
+  if (account === null || session === null || !open) {
     return null;
   }
   const stats =

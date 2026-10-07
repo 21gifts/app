@@ -148,9 +148,10 @@ export function SignedInChrome(): ReactElement {
     };
   }, [narrow, open, scroller]);
 
-  // The open sheet is the one scrollport, so its own rows scroll and the page behind stays put.
-  // The panel stays mounted while closed, so it binds only while open.
-  const sheetScrolls = open && narrow;
+  // The open sheet (and a compact wide panel that still does not fit) is the one
+  // scrollport, so its own rows scroll and the page behind stays put. The panel
+  // stays mounted while closed, so it binds only while open.
+  const sheetScrolls = open && (narrow || tight);
   useLayoutEffect(() => {
     if (!sheetScrolls) {
       return;
@@ -174,7 +175,10 @@ export function SignedInChrome(): ReactElement {
     }
     const measure = (): void => {
       const limit = window.innerHeight + 1;
-      const bottom = menuRef.current!.getBoundingClientRect().bottom;
+      const panel = menuRef.current!;
+      const box = panel.getBoundingClientRect();
+      // Content bottom, also while a compact panel is capped and scrolls.
+      const bottom = Math.max(box.bottom, box.top + panel.scrollHeight);
       if (!tight) {
         if (bottom > limit) {
           roomyBottom.current = bottom;
@@ -229,11 +233,11 @@ export function SignedInChrome(): ReactElement {
   // A percentage width resolves against the trigger, which is only as
   // wide as the button, so the wide panel is a fixed 18rem.
   // A tall wide menu drops its outer spacing and shortens its rows to 36px
-  // (the Log out height) so the last row stays inside the window. It does not scroll.
+  // (the Log out height) so the last row stays inside the window; if it still does not fit, it is capped at the window and scrolls by itself.
   const panelClass = narrow
     ? `w-full rounded-xl border border-app-border bg-app-card p-2${open ? '' : ' hidden'}`
     : tight
-      ? `absolute right-0 z-50 mt-0 w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg [&_.min-h-11]:min-h-9${open ? '' : ' hidden'}`
+      ? `absolute right-0 z-50 mt-0 max-h-[calc(var(--app-height)-6rem)] w-72 rounded-xl border border-app-border bg-app-card px-2 py-0 shadow-lg [&_.min-h-11]:min-h-9${open ? '' : ' hidden'}`
       : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
@@ -267,6 +271,7 @@ export function SignedInChrome(): ReactElement {
                   <>
                     <MenuAccountHeader
                       tight={tight}
+                      open={open}
                       onNavigate={() => {
                         setOpen(false);
                       }}

@@ -1,7 +1,7 @@
-import { act, cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDay, useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -99,5 +99,34 @@ describe('useLatestRateDay', () => {
     await act(async () => {
       reject(new Error('stats down'));
     });
+  });
+});
+
+describe('useLatestRateDayState', () => {
+  it('is loading until the read settles, then carries the rate or null', async () => {
+    let finish: (value: Awaited<ReturnType<typeof fetchGiftStats>>) => void = () => undefined;
+    fetchGiftStatsMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const { result } = renderHook(() => useLatestRateDayState());
+    expect(result.current).toEqual({ rateDay: null, loading: true });
+    await act(async () => {
+      finish({
+        spendOverTime: [{ date: '2026-01-07', ...RATE_DAY }],
+      } as unknown as Awaited<ReturnType<typeof fetchGiftStats>>);
+    });
+    expect(result.current.loading).toBe(false);
+    fetchGiftStatsMock.mockRejectedValueOnce(new Error('down'));
+    const failed = renderHook(() => useLatestRateDayState());
+    await waitFor(() => {
+      expect(failed.result.current).toEqual({ rateDay: null, loading: false });
+    });
+  });
+
+  it('stays loading without fetching while disabled', () => {
+    const { result } = renderHook(() => useLatestRateDayState(false));
+    expect(result.current).toEqual({ rateDay: null, loading: true });
   });
 });
