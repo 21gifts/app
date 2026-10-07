@@ -344,11 +344,12 @@ test.describe('wallet history', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve;
     });
-    await page.route(/\/gifts\/stats$/, async (route) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    // After signIn, so this hold wins over its rate answer (the latest route is used first).
+    await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
       await held;
       await route.fallback();
     });
-    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
     await expect(page.getByRole('heading', { level: 1, name: 'Payment' })).toBeAttached();
     await expect(page.getByText("+₿2'100")).toHaveCount(0);
