@@ -21,7 +21,6 @@ import { Button, Card, IconButton } from '@/components/ui';
 import {
   CannotReceiveError,
   fetchComposeTarget,
-  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -52,8 +51,8 @@ import { shortResourceUrl } from '@/lib/short-link';
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
-  latestRateDay,
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
@@ -306,7 +305,7 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const rateDay = useSpotRate();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -335,24 +334,6 @@ export function MemberProfileScreen({
     .map(({ id, count }) => `${id}:${count}`)
     .sort()
     .join('\0');
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateDay(null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {

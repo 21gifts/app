@@ -10,7 +10,7 @@ import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { Button, Card, PageChrome } from '@/components/ui';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import type { AmountUnit } from '@/lib/api-types';
 import { payLinkUsername } from '@/lib/pay-link';
 import {
@@ -35,7 +35,7 @@ function PayLinkAmount(props: {
   onRate: (day: FiatRateDay | null) => void;
 }): ReactElement {
   const { t } = useTranslations();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const { onRate } = props;
   useEffect(() => {
     onRate(rateDay);
@@ -115,7 +115,7 @@ function openWallet(invoice: string): void {
 function ChargeFiat(props: { amountSats: number }): ReactElement | null {
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const amount = satsToFiatAmount(props.amountSats, rateDay, fiat);
   if (amount === null) {
     return null;

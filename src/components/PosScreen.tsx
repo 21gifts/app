@@ -11,7 +11,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PosHistory } from '@/components/PosHistory';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Card } from '@/components/ui';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
@@ -128,7 +128,7 @@ function usePosTillState(): PosTillState {
   const reads = useRef<TillReads>({ started: 0, applied: 0 });
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
-  const rateDay = useLatestRateDay(session !== null);
+  const rateDay = useSpotRate(session !== null);
   const [state, setState] = useState<PosState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -297,6 +297,10 @@ function usePosTillState(): PosTillState {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
+    if (shownUnit === 'fiat' && parsed.kind === 'invalid') {
+      setError(t('amount.cannotConvert'));
+      return;
+    }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));
       return;

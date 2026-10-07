@@ -39,6 +39,9 @@ vi.mock('@/lib/api', () => ({
   fetchExternalAuthorPosts: vi.fn(),
   fetchExternalAuthorReplies: vi.fn(),
   fetchGiftStats: vi.fn(),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchForumMessage: vi.fn(),
@@ -53,6 +56,7 @@ import {
   fetchExternalAuthorProfile,
   fetchExternalAuthorReplies,
   fetchGiftStats,
+  fetchFxSpot,
 } from '@/lib/api';
 import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 
@@ -83,6 +87,9 @@ const HINT =
   'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   fetchStats.mockResolvedValue({ spendOverTime: [] } as never);
 });
 
@@ -832,17 +839,11 @@ describe('ExternalAuthorProfile', () => {
   });
 
   it('opens a post expand control to that note', async () => {
-    fetchStats.mockResolvedValue({
-      spendOverTime: [
-        {
-          sats: 100_000_000,
-          usd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-        },
-      ],
-    } as Awaited<ReturnType<typeof fetchStats>>);
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
     fetchProfile.mockResolvedValue({
       name: 'Robin',
       npub: 'npub1example',
