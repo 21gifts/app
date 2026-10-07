@@ -301,9 +301,15 @@ function usePosTillState(): PosTillState {
       setError(t('pos.noRate', { code: fiat }));
       return;
     }
-    if (shownUnit === 'fiat' && parsed.kind === 'invalid') {
-      setError(t('amount.cannotConvert'));
-      return;
+    if (shownUnit === 'fiat') {
+      if (parsed.kind === 'invalid') {
+        setError(t('amount.cannotConvert'));
+        return;
+      }
+      if (parsed.kind === 'empty' || parsed.sats < 1) {
+        setError(t('wallet.sendAmountMin', { min: formatBitcoin(1) }));
+        return;
+      }
     }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));

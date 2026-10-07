@@ -589,6 +589,26 @@ describe('PosScreen', () => {
     expect(body.amountSats).toBe(85_000);
   });
 
+  it('asks for at least ₿1 when a fiat amount is empty or zero', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
+    useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'CHF' })).toHaveProperty('ariaPressed', 'true');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Enter an amount of at least ₿1.',
+    );
+    await pressAmount('0');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect(screen.getByRole('alert').textContent).toContain('Enter an amount of at least ₿1.');
+    expect(screen.queryByText('Enter a whole number.')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('says so when a fiat amount cannot be converted to bitcoin', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
     useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
