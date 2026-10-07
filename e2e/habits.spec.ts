@@ -479,6 +479,76 @@ test('screen /habit-tracker save-error', async ({ page }) => {
   await expect(page.getByText('Walk', { exact: true })).toBeVisible();
 });
 
+test('screen /habit-tracker edit-save-error', async ({ page }) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid name' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Edit' }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'Could not load or save the tracker. Please try again.',
+    }),
+  ).toHaveText('Could not load or save the tracker. Please try again.');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+});
+
+test('screen /habit-tracker archive-confirm-error', async ({ page }) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid name' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: PUBLIC_LIST.reviewWeek,
+        habits: [{ ...PUBLIC_HABIT, accountId: 'acc_e2e', notes: 'secret' }],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Archive' }).click();
+  await page.getByRole('button', { name: 'Confirm archive' }).click();
+  await expect(
+    page.getByRole('alert').filter({
+      hasText: 'Could not load or save the tracker. Please try again.',
+    }),
+  ).toHaveText('Could not load or save the tracker. Please try again.');
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+});
+
 test('screen /habit-tracker delete-comment-confirm', async ({ page }) => {
   await seedAda(page);
   await page.route(/\/me$/, async (route) => {

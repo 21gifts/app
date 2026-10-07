@@ -1605,6 +1605,99 @@ describe('MemberHabits', () => {
     expect(posts).toBe(1);
   });
 
+  it('closes a saved archive after Try again confirms the list', async () => {
+    let posts = 0;
+    let gets = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          posts += 1;
+          return json({ ok: true });
+        }
+        gets += 1;
+        if (gets === 2) {
+          throw new Error('refresh');
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel archive' }));
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Confirm archive' })).toBeNull();
+      expect(gets).toBe(3);
+    });
+    expect(posts).toBe(1);
+  });
+
+  it('keeps another habit confirming when Try again releases a different archive', async () => {
+    let posts = 0;
+    let gets = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (isGiftStats(input)) {
+          return json({ spendOverTime: [] });
+        }
+        if (init?.method === 'POST') {
+          const parsed = JSON.parse(String(init.body)) as { action?: string; id?: string };
+          if (parsed.action === 'archive' && parsed.id === 'h-owner') {
+            posts += 1;
+            return json({ ok: true });
+          }
+          return json({ error: 'down' }, 500);
+        }
+        gets += 1;
+        if (gets === 2) {
+          throw new Error('refresh');
+        }
+        return json(payload());
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: owner });
+    renderWithLocale(<MemberHabits />);
+    expect(await screen.findByText('Walk')).toBeTruthy();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Archive' })[0] as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm archive' }));
+    await waitFor(() => {
+      expect(posts).toBe(1);
+      expect(gets).toBe(2);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive' }));
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => {
+      expect(gets).toBe(3);
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+    expect(screen.getByRole('button', { name: 'Confirm archive' })).toBeTruthy();
+    expect(posts).toBe(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel archive' }));
+    expect(screen.queryByRole('button', { name: 'Confirm archive' })).toBeNull();
+  });
+
   it('keeps the archive confirmation when the save fails', async () => {
     vi.stubGlobal(
       'fetch',

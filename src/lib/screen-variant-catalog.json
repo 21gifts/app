@@ -1446,6 +1446,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:edit-save-error",
+    "label": "/habit-tracker edit-save-error",
+    "visual": "state-habit-tracker-edit-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:archive-confirm-error",
+    "label": "/habit-tracker archive-confirm-error",
+    "visual": "state-habit-tracker-archive-confirm-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/contact:default",
     "label": "/contact default",
     "visual": "screen-contact",
