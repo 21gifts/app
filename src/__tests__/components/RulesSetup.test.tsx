@@ -92,6 +92,67 @@ describe('RulesSetup', () => {
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
   });
 
+  it('shows the Terms of Use line with a link only on the last chapter', () => {
+    renderWithLocale(
+      <RulesSetup chapters={[<p key="first">chapter-one</p>, <p key="second">chapter-two</p>]} />,
+    );
+    expect(screen.queryByRole('link', { name: 'Terms of Use' })).toBeNull();
+    expect(screen.queryByText(/By continuing you accept the/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    const line = screen.getByText(/By continuing you accept the/);
+    expect(line.textContent).toBe('By continuing you accept the Terms of Use.');
+    const link = screen.getByRole('link', { name: 'Terms of Use' });
+    expect(link.getAttribute('href')).toBe('/terms');
+    expect(line.contains(link)).toBe(true);
+    expect(screen.queryByRole('checkbox')).toBeNull();
+  });
+
+  it('reopens the last chapter after its Terms of Use link, and only once', () => {
+    const chapters = [<p key="first">chapter-one</p>, <p key="second">chapter-two</p>];
+    const first = renderWithLocale(<RulesSetup chapters={chapters} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const link = screen.getByRole('link', { name: 'Terms of Use' });
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+    first.unmount();
+
+    const second = renderWithLocale(<RulesSetup chapters={chapters} />);
+    expect(screen.getByText('2 of 2')).toBeTruthy();
+    expect(screen.getByText('chapter-two')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
+    second.unmount();
+
+    renderWithLocale(<RulesSetup chapters={chapters} />);
+    expect(screen.getByText('1 of 2')).toBeTruthy();
+  });
+
+  it('clamps a remembered chapter to the chapters it is given', () => {
+    const first = renderWithLocale(
+      <RulesSetup chapters={[<p key="a">a</p>, <p key="b">b</p>, <p key="c">c</p>]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    const link = screen.getByRole('link', { name: 'Terms of Use' });
+    link.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(link);
+    first.unmount();
+
+    renderWithLocale(<RulesSetup chapters={oneChapter} />);
+    expect(screen.getByText('rules-body')).toBeTruthy();
+  });
+
+  it('shows the Terms of Use line in German', () => {
+    renderWithLocale(<RulesSetup chapters={oneChapter} />, 'de');
+    expect(screen.getByText(/Mit dem Fortfahren akzeptieren Sie die/).textContent).toBe(
+      'Mit dem Fortfahren akzeptieren Sie die Nutzungsbedingungen.',
+    );
+    expect(screen.getByRole('link', { name: 'Nutzungsbedingungen' }).getAttribute('href')).toBe(
+      '/terms',
+    );
+  });
+
   it('labels the chapter 0 arrow Back when this tab has a previous view', () => {
     recordCurrentView('/shops');
     Object.defineProperty(window.history, 'length', {
