@@ -103,7 +103,7 @@ export function WalletLoginCard(): ReactElement {
       <LoginCard
         footer={
           lockedSession === null ? undefined : (
-            <div className="w-full max-w-xs">
+            <div className="w-full max-w-xs [&_button]:min-h-11">
               <LogoutButton />
             </div>
           )

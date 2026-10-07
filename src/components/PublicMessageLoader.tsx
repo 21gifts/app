@@ -18,6 +18,7 @@ import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { useSpotRate } from '@/hooks/useSpotRate';
+import { useWalletOpen } from '@/hooks/useWalletOpen';
 import {
   fetchForumMessage,
   fetchPublicMessage,
@@ -272,8 +273,12 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const { t, locale } = useTranslations();
   const { fiat } = useFiatPreference();
   const { ready } = useHydrateSession();
-  const session = useAuthStore((state) => state.session);
+  const storeSession = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const walletOpen = useWalletOpen();
+  // A login whose wallet is still opening counts as signed out here: no
+  // signed-in fetch and no notification marked read until it is open.
+  const session = account !== null && !walletOpen ? null : storeSession;
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
   );
