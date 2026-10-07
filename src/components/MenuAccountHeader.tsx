@@ -23,7 +23,7 @@ interface MenuStats {
 /** Stats of the current session, kept while the document lives. */
 let cached: { session: string; stats: MenuStats } | null = null;
 /** The load in flight, so two screens mounting at once do not fetch twice. */
-let inflight: { session: string; promise: Promise<MenuStats> } | null = null;
+let inFlight: { session: string; promise: Promise<MenuStats> } | null = null;
 
 /** Drops the cached photo and numbers (and revokes the photo URL). */
 function dropCache(): void {
@@ -52,8 +52,8 @@ useAuthStore.subscribe((state) => {
  * @returns The stats, with `null` for what could not be read.
  */
 function loadStats(session: string, accountId: string): Promise<MenuStats> {
-  if (inflight?.session === session) {
-    return inflight.promise;
+  if (inFlight?.session === session) {
+    return inFlight.promise;
   }
   const promise = Promise.allSettled([
     fetchAccountActivity(session),
@@ -67,9 +67,9 @@ function loadStats(session: string, accountId: string): Promise<MenuStats> {
         member.status === 'fulfilled' && member.value !== null ? member.value.postCount : null,
       pictureUrl: null,
     };
-    const current = inflight?.promise === promise;
+    const current = inFlight?.promise === promise;
     if (current) {
-      inflight = null;
+      inFlight = null;
     }
     // Only the current, complete load of the session that is still signed in is kept;
     // anything else is shown once without a photo.
@@ -83,7 +83,7 @@ function loadStats(session: string, accountId: string): Promise<MenuStats> {
     cached = { session, stats };
     return stats;
   });
-  inflight = { session, promise };
+  inFlight = { session, promise };
   return promise;
 }
 

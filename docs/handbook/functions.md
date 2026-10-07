@@ -4153,7 +4153,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Next.js page for `/wallet/payment`.
 - **Inputs:** None.
-- **Returns / side effects:** Fill `AppShell` with `WalletChromeLeft` top-left (the one arrow, back to the list), `SignedInChrome` top-right, and `OnboardingGate screen="wallet"` around `Suspense` and `WalletPaymentDetails`.
+- **Returns / side effects:** Fill `AppShell` with `WalletChromeLeft` top-left (the one arrow: the previous in-app view, the list when opened from it, or `/welcome` when this tab has none), `SignedInChrome` top-right, and `OnboardingGate screen="wallet"` around `Suspense` and `WalletPaymentDetails`.
 - **Used by:** Screen `/wallet/payment`.
 
 ## Function: WalletSync
