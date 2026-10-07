@@ -15,6 +15,7 @@ import { shouldOfferIosInstall } from '@/lib/pwa-install';
 import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
 import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
   FORUM_HOME_EVENT,
@@ -238,7 +239,39 @@ function follows(earlier: Node, later: Node): boolean {
   return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 }
 
+/** Wallet links outside the Menu panel: the header wallet button only. */
+function headerWalletLinks(): HTMLElement[] {
+  return screen
+    .queryAllByRole('link', { name: 'Wallet' })
+    .filter((link) => !menuPanel().contains(link));
+}
+
 describe('SignedInChrome', () => {
+  it('shows no header wallet button while this build has no wallet', () => {
+    renderWithLocale(<SignedInChrome />);
+    expect(headerWalletLinks()).toEqual([]);
+  });
+
+  it('places the header wallet button just left of Menu when the wallet is set up', () => {
+    const account = useAuthStore.getState().account!;
+    useAuthStore.setState({
+      account: { ...account, walletRequired: true, passkeyCredentialId: 'credential' },
+    });
+    useWalletStore.setState({ status: 'locked', balanceSats: null });
+    try {
+      renderWithLocale(<SignedInChrome />);
+      const [wallet] = headerWalletLinks();
+      expect(headerWalletLinks()).toHaveLength(1);
+      expect(wallet?.getAttribute('href')).toBe('/wallet');
+      expect(
+        wallet?.nextElementSibling?.contains(screen.getByRole('button', { name: 'Menu' })),
+      ).toBe(true);
+      expectMenuClosed();
+    } finally {
+      useWalletStore.getState().reset();
+    }
+  });
+
   it('shows Menu while Log out stays hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
@@ -276,12 +309,13 @@ describe('SignedInChrome', () => {
     expect(screen.getByRole('link', { name: 'Grants' }).getAttribute('href')).toBe('/grants');
     expect(screen.getByRole('link', { name: 'Wallet' }).getAttribute('href')).toBe('/wallet');
     expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
-    expect(
-      follows(
-        screen.getByRole('link', { name: 'Wallet' }),
-        screen.getByRole('link', { name: 'Settings' }),
-      ),
-    ).toBe(true);
+    expect(menuPanel().firstElementChild).toBe(screen.getByRole('link', { name: 'Wallet' }));
+    expect(screen.getByRole('link', { name: 'Wallet' }).nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Home' }),
+    );
+    expect(screen.getByRole('link', { name: 'Grants' }).nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Settings' }),
+    );
     expect(
       follows(
         screen.getByRole('link', { name: 'Settings' }),

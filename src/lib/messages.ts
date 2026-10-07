@@ -566,6 +566,7 @@ const en = {
   'introduce.close': 'Close',
 
   'wallet.title': 'Wallet',
+  'wallet.headerBalance': 'Wallet, balance {amount}',
   'wallet.addPhrase': 'Add recovery phrase',
   'wallet.addPhraseHint':
     'This creates a recovery phrase on this device. Your existing login passkey stays.',
@@ -1763,6 +1764,7 @@ const de = {
   'introduce.close': 'Schließen',
 
   'wallet.title': 'Wallet',
+  'wallet.headerBalance': 'Wallet, Guthaben {amount}',
   'wallet.addPhrase': 'Wiederherstellungssatz hinzufügen',
   'wallet.addPhraseHint':
     'Dadurch entsteht ein Wiederherstellungssatz auf diesem Gerät. Ihr vorhandener Anmelde-Passkey bleibt.',
@@ -2981,6 +2983,7 @@ const es = {
   'introduce.close': 'Cerrar',
 
   'wallet.title': 'Wallet',
+  'wallet.headerBalance': 'Wallet, saldo {amount}',
   'wallet.addPhrase': 'Añadir frase de recuperación',
   'wallet.addPhraseHint':
     'Esto crea una frase de recuperación en este dispositivo. Tu passkey de inicio de sesión se mantiene.',
@@ -4179,6 +4182,7 @@ const fil = {
   'introduce.close': 'Isara',
 
   'wallet.title': 'Wallet',
+  'wallet.headerBalance': 'Wallet, balanse {amount}',
   'wallet.addPhrase': 'Magdagdag ng recovery phrase',
   'wallet.addPhraseHint':
     'Lumilikha ito ng recovery phrase sa device na ito. Mananatili ang kasalukuyang login passkey mo.',

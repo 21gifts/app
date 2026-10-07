@@ -144,7 +144,7 @@ export function AppShell({
   return (
     <AppShellContext.Provider value={ctx}>
       <main
-        className={`relative flex h-[var(--app-height)] flex-col overscroll-y-none px-6 py-4${extra}`}
+        className={`relative flex h-[var(--app-height)] flex-col overscroll-y-none px-6 max-[359px]:px-3 py-4${extra}`}
       >
         <section
           ref={setFrameEl}
@@ -154,7 +154,7 @@ export function AppShell({
           <div data-menu-scrim-host className="contents" />
           <div
             data-app-chrome
-            className="relative z-40 flex flex-none items-center justify-between gap-2 px-8 pt-6 pb-2"
+            className="relative z-40 flex flex-none items-center justify-between gap-2 px-8 pt-6 pb-2 max-[359px]:px-4"
           >
             <div ref={setTopLeftEl} className="flex min-w-0 items-center gap-2 empty:hidden">
               {showPageTopLeft ? topLeft : null}

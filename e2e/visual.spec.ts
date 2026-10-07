@@ -1588,6 +1588,136 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-settings-activate');
   });
 
+  test('settings header wallet balance', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto('/settings?visual=balance-ready');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
+      name: "Wallet, balance ₿21'000",
+    });
+    await expect(wallet).toContainText('$21.00');
+    await shotScreen(page, 'state-settings-header-wallet-balance');
+  });
+
+  test('settings header wallet locked', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.goto('/settings?visual=balance-locked');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
+      name: 'Wallet',
+      exact: true,
+    });
+    await expect(wallet).toHaveText('Wallet');
+    await shotScreen(page, 'state-settings-header-wallet-locked');
+  });
+
+  test('settings header wallet balance at 320 px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: page.viewportSize()!.height });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto('/settings?visual=balance-ready');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
+      name: "Wallet, balance ₿21'000",
+    });
+    await expect(wallet).toContainText('$21.00');
+    await shotScreen(page, 'state-settings-header-wallet-balance-320');
+  });
+
+  test('settings header wallet locked at 320 px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: page.viewportSize()!.height });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.goto('/settings?visual=balance-locked');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    const wallet = page.locator('[data-app-chrome]').getByRole('link', {
+      name: 'Wallet',
+      exact: true,
+    });
+    await expect(wallet).toHaveText('Wallet');
+    await shotScreen(page, 'state-settings-header-wallet-locked-320');
+  });
+
   test('wallet balance-locked', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

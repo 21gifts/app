@@ -23,6 +23,7 @@ import { usePathname } from 'next/navigation';
 import { useContext, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { AppShellContext, useAppShellScroller } from '@/components/AppShell';
+import { HeaderWalletButton } from '@/components/HeaderWalletButton';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
@@ -36,9 +37,11 @@ import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Top-right signed-in page chrome: one Menu disclosure; open for icon+label
- * rows (Home, which clears this tab's view stack on a plain click so the
- * next screen's back arrow returns to the forum home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Wallet, Settings (`/settings`, lucide `Settings`), living-room rules,
+ * Top-right signed-in page chrome: {@link HeaderWalletButton} (the wallet
+ * shortcut, which hides itself while the wallet is not configured and on
+ * `/wallet`) just left of one Menu disclosure; open for icon+label
+ * rows (Wallet first, then Home, which clears this tab's view stack on a plain click so the
+ * next screen's back arrow returns to the forum home, Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Settings (`/settings`, lucide `Settings`), living-room rules,
  * Habit-Tracker (`/habit-tracker`), Trust Chain, Statistics
  * (`/statistics`, lucide `BarChart3`) for every signed-in account, then staff-only Moderation
  * (`/moderate`, lucide `Shield`) when `roleAtLeast(account?.role, 'moderator')`
@@ -310,293 +313,296 @@ export function SignedInChrome(): ReactElement {
         : `absolute right-0 z-50 mt-2 w-72 rounded-xl border border-app-border bg-app-card p-2 shadow-lg${open ? '' : ' hidden'}`;
 
   return (
-    <div ref={setRootEl} className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        id="signed-in-menu-button"
-        aria-expanded={open}
-        aria-controls="signed-in-menu"
-        aria-label={t('aria.menu')}
-        onClick={() => {
-          setOpen((current) => !current);
-        }}
-        className={
-          lifted
-            ? 'relative z-[60] inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
-            : 'inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
-        }
-      >
-        <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-        {t('aria.menu')}
-      </button>
-      {panelTarget === null
-        ? null
-        : createPortal(
-            <div
-              id="signed-in-menu"
-              ref={menuRef}
-              className={panelClass}
-              style={
-                lifted && menuBox !== null
-                  ? { top: menuBox.top, left: menuBox.left, width: menuBox.width }
-                  : undefined
-              }
-            >
-              <Link
-                href="/welcome"
-                onClick={(event) => {
-                  setOpen(false);
-                  const plain =
-                    !event.metaKey &&
-                    !event.ctrlKey &&
-                    !event.shiftKey &&
-                    !event.altKey &&
-                    event.button === 0;
-                  if (plain) {
-                    resetViewHistory();
-                  }
-                  if (pathname === '/welcome') {
-                    event.preventDefault();
-                    if (plain) {
-                      recordCurrentView(`${window.location.pathname}${window.location.search}`);
-                    }
-                    window.dispatchEvent(new Event(FORUM_HOME_EVENT));
-                  }
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+    <div className="flex items-center">
+      <HeaderWalletButton />
+      <div ref={setRootEl} className="relative">
+        <button
+          ref={buttonRef}
+          type="button"
+          id="signed-in-menu-button"
+          aria-expanded={open}
+          aria-controls="signed-in-menu"
+          aria-label={t('aria.menu')}
+          onClick={() => {
+            setOpen((current) => !current);
+          }}
+          className={
+            lifted
+              ? 'relative z-[60] inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
+              : 'inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
+          }
+        >
+          <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          {t('aria.menu')}
+        </button>
+        {panelTarget === null
+          ? null
+          : createPortal(
+              <div
+                id="signed-in-menu"
+                ref={menuRef}
+                className={panelClass}
+                style={
+                  lifted && menuBox !== null
+                    ? { top: menuBox.top, left: menuBox.left, width: menuBox.width }
+                    : undefined
+                }
               >
-                <Home aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.home')}
-              </Link>
-              <Link
-                href="/shops"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <Store aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.shops')}
-              </Link>
-              <Link
-                href="/pos"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <Banknote aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('pos.nav')}
-              </Link>
-              <Link
-                href="/profile"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('profile.title')}
-              </Link>
-              <Link
-                href="/grants"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <HandCoins aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.grants')}
-              </Link>
-              <Link
-                href="/wallet"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('wallet.title')}
-              </Link>
-              <Link
-                href="/settings"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <Settings aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.settings')}
-              </Link>
-              <Link
-                href="/rules"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.rules')}
-              </Link>
-              <Link
-                href="/habit-tracker"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <ListChecks aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.habitTracker')}
-              </Link>
-              <Link
-                href="/trust-chain"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.trustChain')}
-              </Link>
-              {account !== null ? (
                 <Link
-                  href="/statistics"
+                  href="/wallet"
                   onClick={() => {
                     setOpen(false);
                   }}
                   className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
                 >
-                  <BarChart3 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                  {t('nav.statistics')}
+                  <Wallet aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('wallet.title')}
                 </Link>
-              ) : null}
-              {roleAtLeast(account?.role, 'moderator') ? (
                 <Link
-                  href="/moderate"
-                  aria-label={
-                    moderationUnreadCount > 0
-                      ? t('nav.moderateUnread', { count: String(moderationUnreadCount) })
-                      : t('nav.moderate')
-                  }
+                  href="/welcome"
+                  onClick={(event) => {
+                    setOpen(false);
+                    const plain =
+                      !event.metaKey &&
+                      !event.ctrlKey &&
+                      !event.shiftKey &&
+                      !event.altKey &&
+                      event.button === 0;
+                    if (plain) {
+                      resetViewHistory();
+                    }
+                    if (pathname === '/welcome') {
+                      event.preventDefault();
+                      if (plain) {
+                        recordCurrentView(`${window.location.pathname}${window.location.search}`);
+                      }
+                      window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+                    }
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Home aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.home')}
+                </Link>
+                <Link
+                  href="/shops"
                   onClick={() => {
                     setOpen(false);
                   }}
                   className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
                 >
-                  <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                  {t('nav.moderate')}
-                  {moderationUnreadCount > 0 ? (
+                  <Store aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.shops')}
+                </Link>
+                <Link
+                  href="/pos"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Banknote aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('pos.nav')}
+                </Link>
+                <Link
+                  href="/profile"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <User aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('profile.title')}
+                </Link>
+                <Link
+                  href="/grants"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <HandCoins aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.grants')}
+                </Link>
+                <Link
+                  href="/settings"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Settings aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.settings')}
+                </Link>
+                <Link
+                  href="/rules"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <ScrollText aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.rules')}
+                </Link>
+                <Link
+                  href="/habit-tracker"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <ListChecks aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.habitTracker')}
+                </Link>
+                <Link
+                  href="/trust-chain"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Share2 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.trustChain')}
+                </Link>
+                {account !== null ? (
+                  <Link
+                    href="/statistics"
+                    onClick={() => {
+                      setOpen(false);
+                    }}
+                    className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                  >
+                    <BarChart3 aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    {t('nav.statistics')}
+                  </Link>
+                ) : null}
+                {roleAtLeast(account?.role, 'moderator') ? (
+                  <Link
+                    href="/moderate"
+                    aria-label={
+                      moderationUnreadCount > 0
+                        ? t('nav.moderateUnread', { count: String(moderationUnreadCount) })
+                        : t('nav.moderate')
+                    }
+                    onClick={() => {
+                      setOpen(false);
+                    }}
+                    className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                  >
+                    <Shield aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                    {t('nav.moderate')}
+                    {moderationUnreadCount > 0 ? (
+                      <span className="ml-auto font-semibold tabular-nums lining-nums">
+                        {moderationUnreadCount}
+                      </span>
+                    ) : null}
+                  </Link>
+                ) : null}
+                <Link
+                  href="/notifications"
+                  aria-label={
+                    unreadCount > 0
+                      ? t('nav.notificationsUnread', { count: String(unreadCount) })
+                      : t('nav.notifications')
+                  }
+                  onClick={() => {
+                    setOpen(false);
+                    if (session === null) {
+                      return;
+                    }
+                    if (
+                      typeof Notification !== 'undefined' &&
+                      Notification.permission !== 'granted' &&
+                      typeof navigator.serviceWorker !== 'undefined' &&
+                      typeof window.PushManager !== 'undefined'
+                    ) {
+                      void enablePush(session).catch(() => undefined);
+                    } else {
+                      void resyncPushSubscription(session).catch(() => undefined);
+                    }
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Bell aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.notifications')}
+                  {unreadCount > 0 ? (
                     <span className="ml-auto font-semibold tabular-nums lining-nums">
-                      {moderationUnreadCount}
+                      {unreadCount}
                     </span>
                   ) : null}
                 </Link>
-              ) : null}
-              <Link
-                href="/notifications"
-                aria-label={
-                  unreadCount > 0
-                    ? t('nav.notificationsUnread', { count: String(unreadCount) })
-                    : t('nav.notifications')
-                }
-                onClick={() => {
-                  setOpen(false);
-                  if (session === null) {
-                    return;
+                <Link
+                  href="/messages"
+                  aria-label={
+                    inboxUnreadCount > 0
+                      ? t('nav.inboxUnread', { count: String(inboxUnreadCount) })
+                      : t('nav.inbox')
                   }
-                  if (
-                    typeof Notification !== 'undefined' &&
-                    Notification.permission !== 'granted' &&
-                    typeof navigator.serviceWorker !== 'undefined' &&
-                    typeof window.PushManager !== 'undefined'
-                  ) {
-                    void enablePush(session).catch(() => undefined);
-                  } else {
-                    void resyncPushSubscription(session).catch(() => undefined);
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.inbox')}
+                  {inboxUnreadCount > 0 ? (
+                    <span className="ml-auto font-semibold tabular-nums lining-nums">
+                      {inboxUnreadCount}
+                    </span>
+                  ) : null}
+                </Link>
+                <Link
+                  href="/contact"
+                  onClick={() => {
+                    setOpen(false);
+                  }}
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
+                >
+                  <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+                  {t('nav.contact')}
+                </Link>
+                <PwaInstall
+                  placement="menu"
+                  onMenuAction={() => {
+                    setOpen(false);
+                  }}
+                />
+                <LogoutButton />
+                <p
+                  className={
+                    tight
+                      ? 'px-3 py-0 text-xs text-app-muted tabular-nums lining-nums'
+                      : 'px-3 py-2 text-xs text-app-muted tabular-nums lining-nums'
                   }
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <Bell aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.notifications')}
-                {unreadCount > 0 ? (
-                  <span className="ml-auto font-semibold tabular-nums lining-nums">
-                    {unreadCount}
-                  </span>
-                ) : null}
-              </Link>
-              <Link
-                href="/messages"
-                aria-label={
-                  inboxUnreadCount > 0
-                    ? t('nav.inboxUnread', { count: String(inboxUnreadCount) })
-                    : t('nav.inbox')
-                }
+                >
+                  {t('app.version', { version: getAppVersion() })}
+                </p>
+              </div>,
+              panelTarget,
+            )}
+        {scrimHost !== null
+          ? createPortal(
+              <button
+                type="button"
+                id="signed-in-menu-scrim"
+                tabIndex={-1}
+                aria-label={t('aria.menuDismiss')}
+                className="absolute inset-0 z-40 rounded-3xl bg-app-overlay"
                 onClick={() => {
                   setOpen(false);
                 }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <Inbox aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.inbox')}
-                {inboxUnreadCount > 0 ? (
-                  <span className="ml-auto font-semibold tabular-nums lining-nums">
-                    {inboxUnreadCount}
-                  </span>
-                ) : null}
-              </Link>
-              <Link
-                href="/contact"
-                onClick={() => {
-                  setOpen(false);
-                }}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-app-fg no-underline transition hover:bg-app-hover"
-              >
-                <MessageCircle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                {t('nav.contact')}
-              </Link>
-              <PwaInstall
-                placement="menu"
-                onMenuAction={() => {
-                  setOpen(false);
-                }}
-              />
-              <LogoutButton />
-              <p
-                className={
-                  tight
-                    ? 'px-3 py-0 text-xs text-app-muted tabular-nums lining-nums'
-                    : 'px-3 py-2 text-xs text-app-muted tabular-nums lining-nums'
-                }
-              >
-                {t('app.version', { version: getAppVersion() })}
-              </p>
-            </div>,
-            panelTarget,
-          )}
-      {scrimHost !== null
-        ? createPortal(
-            <button
-              type="button"
-              id="signed-in-menu-scrim"
-              tabIndex={-1}
-              aria-label={t('aria.menuDismiss')}
-              className="absolute inset-0 z-40 rounded-3xl bg-app-overlay"
-              onClick={() => {
-                setOpen(false);
-              }}
-            />,
-            scrimHost,
-          )
-        : null}
-      {showIntroduce ? (
-        <IntroduceYourselfOverlay
-          onDismiss={() => {
-            setIntroduceDismissed(true);
-          }}
-        />
-      ) : null}
+              />,
+              scrimHost,
+            )
+          : null}
+        {showIntroduce ? (
+          <IntroduceYourselfOverlay
+            onDismiss={() => {
+              setIntroduceDismissed(true);
+            }}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

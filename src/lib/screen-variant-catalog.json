@@ -552,6 +552,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:header-wallet-balance",
+    "label": "/settings header-wallet-balance",
+    "visual": "state-settings-header-wallet-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:header-wallet-locked",
+    "label": "/settings header-wallet-locked",
+    "visual": "state-settings-header-wallet-locked",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:header-wallet-balance-320",
+    "label": "/settings header-wallet-balance-320",
+    "visual": "state-settings-header-wallet-balance-320",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:header-wallet-locked-320",
+    "label": "/settings header-wallet-locked-320",
+    "visual": "state-settings-header-wallet-locked-320",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",

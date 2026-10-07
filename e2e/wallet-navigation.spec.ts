@@ -362,3 +362,142 @@ test('the top-left arrow from a place on the shops map returns to the posts', as
   await expect(page.getByRole('button', { name: 'Post', pressed: true })).toBeVisible();
   expect(await sameDocument(page)).toBe('same');
 });
+
+/** Latest gift day used for the fiat line: ₿1 = $100,000. */
+async function fulfillRateDay(page: Page): Promise<void> {
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 100_000_000,
+        totalBtc: '1.00000000',
+        totalUsd: '100000.00',
+        totalChf: '80000.00',
+        totalEur: '90000.00',
+        totalPhp: '5600000.00',
+        giftCount: 1,
+        recipientCount: 1,
+        firstPaidAt: '2026-01-06T00:00:00.000Z',
+        lastPaidAt: '2026-01-06T00:00:00.000Z',
+        spendOverTime: [
+          {
+            day: '2026-01-06',
+            giftCount: 1,
+            sats: 100_000_000,
+            cumulativeSats: 100_000_000,
+            btc: '1.00000000',
+            cumulativeBtc: '1.00000000',
+            usd: '100000.00',
+            cumulativeUsd: '100000.00',
+            chf: '80000.00',
+            eur: '90000.00',
+            php: '5600000.00',
+            cumulativeChf: '80000.00',
+            cumulativeEur: '90000.00',
+            cumulativePhp: '5600000.00',
+          },
+        ],
+        byRecipient: [],
+        byMonth: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
+      }),
+    });
+  });
+}
+
+/** The header wallet button: a Wallet link outside the Menu panel. */
+function headerWallet(page: Page, name: string | RegExp): ReturnType<Page['getByRole']> {
+  return page.locator('[data-app-chrome]').getByRole('link', { name, exact: true });
+}
+
+test('Function: HeaderWalletButton opens the wallet client-side from the locked header and asks for no passkey', async ({
+  page,
+}) => {
+  await signInWithPasskey(page);
+  await page.goto('/settings?visual=balance-locked');
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  const wallet = headerWallet(page, 'Wallet');
+  await expect(wallet).toBeVisible();
+  await expect(wallet).toHaveText('Wallet');
+  await expect(wallet).toHaveAttribute('href', '/wallet');
+  await expect(page.locator('[data-app-chrome] .animate-spin')).toHaveCount(0);
+  await markDocument(page);
+  const origin = new URL(page.url()).origin;
+
+  await wallet.click();
+  await expect(page).toHaveURL(`${origin}/wallet`);
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  expect(await sameDocument(page)).toBe('same');
+  expect(await passkeyPrompts(page)).toBe(0);
+});
+
+test('Function: HeaderWalletButton shows the ready balance with fiat and opens the wallet without a document load', async ({
+  page,
+}) => {
+  await signInWithPasskey(page);
+  await fulfillRateDay(page);
+  await page.goto('/settings?visual=balance-ready');
+  const wallet = headerWallet(page, "Wallet, balance ₿21'000");
+  await expect(wallet).toBeVisible();
+  await expect(wallet).toContainText("₿21'000");
+  await expect(wallet).toContainText('$21.00');
+  await markDocument(page);
+  const origin = new URL(page.url()).origin;
+
+  await wallet.click();
+  await expect(page).toHaveURL(`${origin}/wallet`);
+  expect(await sameDocument(page)).toBe('same');
+  expect(await passkeyPrompts(page)).toBe(0);
+});
+
+test('Function: HeaderWalletButton is hidden on /wallet and without a configured wallet', async ({
+  page,
+}) => {
+  await signInWithPasskey(page);
+  await page.goto('/wallet?visual=balance-ready');
+  await expect(page.getByText("₿21'000")).toBeVisible();
+  await expect(
+    page.locator('[data-app-chrome]').getByRole('link', { name: /^Wallet/ }),
+  ).toHaveCount(0);
+
+  // This build has no wallet key, so without a pin the wallet is not configured.
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(
+    page.locator('[data-app-chrome]').getByRole('link', { name: /^Wallet/ }),
+  ).toHaveCount(0);
+  expect(await passkeyPrompts(page)).toBe(0);
+});
+
+for (const width of [320, 375]) {
+  test(`HeaderWalletButton fits next to Menu, the back arrow, and the wordmark at ${width} px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 700 });
+    await signInWithPasskey(page);
+    await fulfillRateDay(page);
+    for (const pin of ['balance-ready', 'balance-locked']) {
+      await page.goto(`/settings?visual=${pin}`);
+      const wallet = page.locator('[data-app-chrome]').getByRole('link', { name: /^Wallet/ });
+      await expect(wallet).toBeVisible();
+      const chrome = (await page.locator('[data-app-chrome]').boundingBox())!;
+      const back = (await page.locator('[data-app-chrome] a').first().boundingBox())!;
+      const mark = (await page.locator('[data-app-chrome]').getByText('21.gifts').boundingBox())!;
+      const box = (await wallet.boundingBox())!;
+      const menu = (await page.getByRole('button', { name: 'Menu' }).boundingBox())!;
+      expect(back.width).toBe(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(mark.x + mark.width).toBeLessThanOrEqual(box.x);
+      expect(box.x + box.width).toBeLessThanOrEqual(menu.x);
+      expect(menu.x + menu.width).toBeLessThanOrEqual(chrome.x + chrome.width);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    }
+  });
+}

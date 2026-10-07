@@ -88,4 +88,15 @@ describe('ButtonLink', () => {
     );
     expect(screen.getByRole('link', { name: 'Log in' }).className).toContain('bg-accent');
   });
+
+  it('uses the compact chrome size with 12px text on phones', () => {
+    renderWithLocale(
+      <ButtonLink href="/wallet" variant="secondary" size="chrome">
+        Wallet
+      </ButtonLink>,
+    );
+    const className = screen.getByRole('link', { name: 'Wallet' }).className;
+    expect(className).toContain('min-h-11 gap-1 px-1.5 py-1 text-xs sm:gap-1.5 sm:px-3 sm:text-sm');
+    expect(className).not.toContain('gap-2');
+  });
 });
