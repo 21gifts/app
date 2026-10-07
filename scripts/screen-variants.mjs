@@ -293,7 +293,21 @@ export const SCREEN_VARIANTS = [
     id: 'balance-locked',
     image: 'wallet-balance-locked.png',
     visual: 'state-wallet-balance-locked',
-    needle: 'Unlock wallet',
+    needle: 'balance-locked pin shows the login card in place of the wallet',
+  },
+  {
+    route: '/wallet',
+    id: 'balance-locked-prf-unsupported',
+    image: 'wallet-balance-locked-prf-unsupported.png',
+    visual: 'state-wallet-balance-locked-prf-unsupported',
+    needle: 'balance-locked-prf-unsupported pin says this phone cannot hold a wallet',
+  },
+  {
+    route: '/wallet',
+    id: 'balance-locked-error',
+    image: 'wallet-balance-locked-error.png',
+    visual: 'state-wallet-balance-locked-error',
+    needle: 'balance-locked-error pin shows the login error above Log in',
   },
   {
     route: '/wallet',
@@ -350,13 +364,6 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-balance-error.png',
     visual: 'state-wallet-balance-error',
     needle: 'Your wallet could not be opened. Please try again.',
-  },
-  {
-    route: '/wallet',
-    id: 'balance-prf-unsupported',
-    image: 'wallet-balance-prf-unsupported.png',
-    visual: 'state-wallet-balance-prf-unsupported',
-    needle: "shotScreen(page, 'state-wallet-balance-prf-unsupported')",
   },
   {
     route: '/wallet',
@@ -1580,13 +1587,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'repay-wallet-pay-unlock',
-    image: 'welcome-repay-wallet-pay-unlock.png',
-    visual: 'state-welcome-repay-wallet-pay-unlock',
-    needle: "shotScreen(page, 'state-welcome-repay-wallet-pay-unlock')",
-  },
-  {
-    route: '/welcome',
     id: 'repay-wallet-pay-preparing',
     image: 'welcome-repay-wallet-pay-preparing.png',
     visual: 'state-welcome-repay-wallet-pay-preparing',
@@ -2364,13 +2364,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'composer-wallet-pay-unlock',
-    image: 'welcome-composer-wallet-pay-unlock.png',
-    visual: 'state-welcome-composer-wallet-pay-unlock',
-    needle: "shotScreen(page, 'state-welcome-composer-wallet-pay-unlock')",
-  },
-  {
-    route: '/welcome',
     id: 'composer-wallet-pay-preparing',
     image: 'welcome-composer-wallet-pay-preparing.png',
     visual: 'state-welcome-composer-wallet-pay-preparing',
@@ -2539,13 +2532,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'wallet-pay-unlock',
-    image: 'welcome-wallet-pay-unlock.png',
-    visual: 'state-welcome-wallet-pay-unlock',
-    needle: 'Unlock and pay ₿21 · $0.02',
-  },
-  {
-    route: '/welcome',
     id: 'wallet-pay-preparing',
     image: 'welcome-wallet-pay-preparing.png',
     visual: 'state-welcome-wallet-pay-preparing',
@@ -2578,13 +2564,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-pay-failed.png',
     visual: 'state-welcome-wallet-pay-failed',
     needle: 'Your wallet could not prepare this payment. Please try again.',
-  },
-  {
-    route: '/welcome',
-    id: 'wallet-pay-prf-unsupported',
-    image: 'welcome-wallet-pay-prf-unsupported.png',
-    visual: 'state-welcome-wallet-pay-prf-unsupported',
-    needle: "shotScreen(page, 'state-welcome-wallet-pay-prf-unsupported')",
   },
   {
     route: '/welcome',
@@ -4648,13 +4627,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
-    id: 'thread-wallet-pay-unlock',
-    image: 'messages-thread-wallet-pay-unlock.png',
-    visual: 'state-messages-thread-wallet-pay-unlock',
-    needle: "shotScreen(page, 'state-messages-thread-wallet-pay-unlock')",
-  },
-  {
-    route: '/messages',
     id: 'thread-wallet-pay-preparing',
     image: 'messages-thread-wallet-pay-preparing.png',
     visual: 'state-messages-thread-wallet-pay-preparing',
@@ -5681,13 +5653,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-reaction-pay-sheet.png',
     visual: 'state-welcome-reaction-pay-sheet',
     needle: "shotScreen(page, 'state-welcome-reaction-pay-sheet')",
-  },
-  {
-    route: '/welcome',
-    id: 'reaction-wallet-pay-unlock',
-    image: 'welcome-reaction-wallet-pay-unlock.png',
-    visual: 'state-welcome-reaction-wallet-pay-unlock',
-    needle: "shotScreen(page, 'state-welcome-reaction-wallet-pay-unlock')",
   },
   {
     route: '/welcome',

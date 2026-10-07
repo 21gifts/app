@@ -16,7 +16,6 @@ import { fulfillSpot, spotRatesFromStats } from './fx-spot';
  * Locked pay slot button once its fiat has loaded: the shown amount is not
  * ready for a baseline before its fiat line.
  */
-const UNLOCK_AND_PAY = /^Unlock and pay ₿\S+ · .*\d$/;
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -1659,8 +1658,81 @@ test.describe('screen baselines', () => {
       });
     });
     await page.goto('/wallet?visual=balance-locked');
-    await expect(page.getByRole('button', { name: 'Unlock wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
     await shotScreen(page, 'state-wallet-balance-locked');
+  });
+
+  test('wallet balance-locked-prf-unsupported', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/wallet?visual=balance-locked-prf-unsupported');
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveText(PRF_UNSUPPORTED_MESSAGE);
+    await shotScreen(page, 'state-wallet-balance-locked-prf-unsupported');
+  });
+
+  test('wallet balance-locked-error', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/wallet?visual=balance-locked-error');
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveText('Something went wrong. Please try again.');
+    await shotScreen(page, 'state-wallet-balance-locked-error');
   });
 
   test('wallet balance-connecting', async ({ page }) => {
@@ -1792,41 +1864,6 @@ test.describe('screen baselines', () => {
       page.getByText('Your wallet could not be opened. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-wallet-balance-error');
-  });
-
-  test('wallet balance-prf-unsupported', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          username: 'ada',
-          lightningAddress: null,
-          rulesAgreedAt: 1,
-          setup: null,
-          missing: [],
-          walletRequired: true,
-          walletBackupSeenAt: 1,
-          passkeyCredentialId: 'cred-seed',
-        }),
-      });
-    });
-    await page.route(/\/pos\/charge$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ charge: null, history: [] }),
-      });
-    });
-    await page.goto('/wallet?visual=balance-prf-unsupported');
-    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await shotScreen(page, 'state-wallet-balance-prf-unsupported');
   });
 
   test('wallet setup-failed', async ({ page }) => {
@@ -5709,17 +5746,6 @@ test.describe('onboarding screens', () => {
     await expect(sheet).toBeVisible();
     return sheet;
   }
-
-  test('state /welcome reaction-wallet-pay-unlock', async ({ page }) => {
-    const sheet = await openReactionWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
-      UNLOCK_AND_PAY,
-    );
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
-    await shotScreen(page, 'state-welcome-reaction-wallet-pay-unlock');
-  });
 
   test('state /welcome reaction-wallet-pay-preparing', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-preparing');
@@ -17342,14 +17368,6 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(/^Pay ₿700\b/)).toBeVisible();
   }
 
-  test('state /welcome repay-wallet-pay-unlock', async ({ page }) => {
-    await openRepayWalletPay(page, 'wallet-pay-unlock');
-    const slot = page.getByRole('button', { name: /^Unlock and pay ₿/ });
-    await expect(slot).toHaveText(UNLOCK_AND_PAY);
-    await slot.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-wallet-pay-unlock');
-  });
-
   test('state /welcome repay-wallet-pay-preparing', async ({ page }) => {
     await openRepayWalletPay(page, 'wallet-pay-preparing');
     const slot = page.getByText('Checking your wallet…');
@@ -19489,14 +19507,6 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-pay-composer');
   });
 
-  test('welcome composer-wallet-pay-unlock', async ({ page }) => {
-    await openComposerWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
-      UNLOCK_AND_PAY,
-    );
-    await shotScreen(page, 'state-welcome-composer-wallet-pay-unlock');
-  });
-
   test('welcome composer-wallet-pay-preparing', async ({ page }) => {
     await openComposerWalletPay(page, 'wallet-pay-preparing');
     await expect(page.getByText('Checking your wallet…')).toBeVisible();
@@ -20040,14 +20050,6 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-wallet-pay-unavailable');
   });
 
-  test('welcome wallet-pay-unlock', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
-      UNLOCK_AND_PAY,
-    );
-    await shotScreen(page, 'state-welcome-wallet-pay-unlock');
-  });
-
   test('welcome wallet-pay-preparing', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-preparing');
     await expect(page.getByText('Checking your wallet…')).toBeVisible();
@@ -20084,13 +20086,6 @@ test.describe('welcome forum variants', () => {
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-failed');
-  });
-
-  test('welcome wallet-pay-prf-unsupported', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-prf-unsupported');
-    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
-    await shotScreen(page, 'state-welcome-wallet-pay-prf-unsupported');
   });
 
   test('welcome wallet-pay-setup-failed', async ({ page }) => {
@@ -23412,14 +23407,6 @@ test.describe('inbox screens', () => {
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByText(/^Pay ₿21\b/)).toBeVisible();
   }
-
-  test('messages thread-wallet-pay-unlock', async ({ page }) => {
-    await openInboxWalletPay(page, 'wallet-pay-unlock');
-    await expect(page.getByRole('button', { name: /^Unlock and pay ₿/ })).toHaveText(
-      UNLOCK_AND_PAY,
-    );
-    await shotScreen(page, 'state-messages-thread-wallet-pay-unlock');
-  });
 
   test('messages thread-wallet-pay-preparing', async ({ page }) => {
     await openInboxWalletPay(page, 'wallet-pay-preparing');
