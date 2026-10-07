@@ -90,7 +90,7 @@ export function SignedInChrome(): ReactElement | null {
 /**
  * The signed-in Menu chrome itself; see {@link SignedInChrome}.
  *
- * @returns The header wallet button and the Menu.
+ * @returns The signed-in Menu chrome.
  */
 function SignedInMenu(): ReactElement {
   const { t } = useTranslations();
