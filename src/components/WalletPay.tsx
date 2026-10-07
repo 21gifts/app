@@ -26,7 +26,7 @@ export interface WalletPayProps {
   rateDay: FiatRateDay | null;
   /**
    * True on the posting fee: paying also posts the note, so the confirm button
-   * says **Pay {amount} and post** instead of **Pay from wallet**.
+   * says **Pay {amount} and post** instead of **Send**.
    */
   postsOnPay?: boolean;
 }
@@ -72,8 +72,8 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * Pay slot of an invoice pay sheet. The member pays from the in-app wallet
  * only. A locked wallet shows one button, **Unlock and pay** with the amount:
  * one passkey prompt, then it pays at once when the fee is ₿0, or shows the
- * fee and **Pay from wallet** when it is higher. An open wallet shows the fee
- * from the prepare response, then **Pay from wallet**. While and after sending it says so; the
+ * fee and **Send** when it is higher. An open wallet shows the fee
+ * from the prepare response, then **Send**. While and after sending it says so; the
  * sheet's own long-poll closes it on confirmation. On the posting fee that
  * button says **Pay {amount} and post**. Too little balance shows an alert,
  * how much is still missing (amount plus the known fee minus the balance, with

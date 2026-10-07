@@ -123,7 +123,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
   it('pays the sparkInvoice from the wallet, with no invoice QR and no wallet-app button', async () => {
     setWalletUsable('ready');
     renderPage(SPARK_INVOICE);
-    fireEvent.click(await screen.findByRole('button', { name: 'Pay from wallet' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Send' }));
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(screen.queryByRole('img')).toBeNull();
@@ -136,7 +136,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
   it('pays the payment request from the wallet without a sparkInvoice', async () => {
     setWalletUsable('ready');
     renderPage(null);
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
     expect(screen.queryByRole('img')).toBeNull();
   });
@@ -157,16 +157,16 @@ describe('ForumReplyPayPage in-app wallet', () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderPage(SPARK_INVOICE);
     expect(payFromWallet).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
-  it('unlocks with one tap and stops at the fee and Pay from wallet when the fee is above ₿0', async () => {
+  it('unlocks with one tap and stops at the fee and Send when the fee is above ₿0', async () => {
     unlockSetsReady();
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(payFromWallet).mockResolvedValue({
@@ -177,7 +177,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
     });
     renderPage(SPARK_INVOICE);
     fireEvent.click(screen.getByRole('button', { name: /^Unlock and pay ₿21/ }));
-    expect(await screen.findByRole('button', { name: 'Pay from wallet' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
     expect(screen.getByText(/Fee ₿3/)).toBeTruthy();
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(send).not.toHaveBeenCalled();
@@ -189,7 +189,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
     expect(
       screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
     ).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Pay from wallet' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(screen.queryByRole('img')).toBeNull();
     expect(
       screen.getAllByRole('button').map((button) => button.getAttribute('aria-label')),

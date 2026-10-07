@@ -5160,7 +5160,7 @@ test.describe('onboarding screens', () => {
 
   test('state /welcome reaction-wallet-pay-confirm', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -15455,7 +15455,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome repay-wallet-pay-confirm', async ({ page }) => {
     await openRepayWalletPay(page, 'wallet-pay-confirm');
-    const slot = page.getByRole('button', { name: 'Pay from wallet' });
+    const slot = page.getByRole('button', { name: 'Send', exact: true });
     await expect(slot).toBeVisible();
     await slot.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-repay-wallet-pay-confirm');
@@ -17684,7 +17684,7 @@ test.describe('welcome forum variants', () => {
   test('welcome composer-wallet-pay-confirm', async ({ page }) => {
     await openComposerWalletPay(page, 'wallet-pay-confirm');
     await expect(page.getByRole('button', { name: /^Pay ₿1 and post/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-wallet-pay-confirm');
   });
 
@@ -18061,7 +18061,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome wallet-pay-confirm', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
     await expect(page.locator('[data-pay-sheet]').getByText('$0.00')).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-confirm');
   });
@@ -21427,7 +21427,7 @@ test.describe('inbox screens', () => {
 
   test('messages thread-wallet-pay-confirm', async ({ page }) => {
     await openInboxWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Pay from wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
     await shotScreen(page, 'state-messages-thread-wallet-pay-confirm');
   });
 
