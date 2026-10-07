@@ -240,6 +240,19 @@ describe('WalletPaymentDetails', () => {
     expect(screen.queryByText(/\$/)).toBeNull();
   });
 
+  it('keeps the description row under a Lightning address title, and drops it when the description is the title', () => {
+    showPayment({
+      ...fixture(SPARK_SEND),
+      info: { lnAddress: 'bob@example.com', description: 'Coffee' },
+    });
+    expect(screen.getByText('bob@example.com', { selector: 'p' })).toBeTruthy();
+    expect(row('Description').textContent).toBe('Coffee');
+    cleanup();
+    showPayment({ ...fixture(SPARK_SEND), info: { description: 'Coffee' } });
+    expect(screen.getByText('Coffee', { selector: 'p' })).toBeTruthy();
+    expect(screen.queryByText('Description', { selector: 'dt' })).toBeNull();
+  });
+
   it('copies a value with the icon-only Copy and confirms for two seconds; a refused clipboard keeps Copy', async () => {
     vi.useFakeTimers();
     const writeText = vi.fn(() => Promise.resolve());
