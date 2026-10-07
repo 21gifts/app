@@ -79,8 +79,17 @@ const SECRET_VALUES: readonly RegExp[] = [
 /** Path prefixes whose next segment is an access key and is replaced. */
 const KEYED_PATHS = ['/view/', '/view-key/'];
 
+/**
+ * Largest request body one batch may have. Every request is sent with
+ * `keepalive`, whose body the browser caps at 64 KiB.
+ */
+const MAX_BATCH_BYTES = 60_000;
+
 /** Events waiting to be sent. */
 const queue: InteractionEvent[] = [];
+
+/** Session the queued events belong to. */
+let queueSession: string | null = null;
 
 /** True while a flush is sending. */
 let flushing = false;
@@ -142,20 +151,15 @@ function currentPath(): string {
  *
  * @param session - Bearer session.
  * @param events - At most {@link INTERACTION_BATCH_SIZE} events.
- * @param keepalive - Set while the page is hidden or closing, so the request outlives it.
  * @returns Resolves once the api accepted the batch.
  * @throws Error on a non-2xx status or a network failure.
  */
-async function postEvents(
-  session: string,
-  events: InteractionEvent[],
-  keepalive: boolean,
-): Promise<void> {
+async function postEvents(session: string, events: InteractionEvent[]): Promise<void> {
   const response = await fetch('/me/events', {
     method: 'POST',
     headers: { Authorization: `Bearer ${session}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ events }),
-    keepalive,
+    keepalive: true,
   });
   if (!response.ok) {
     throw new Error(`Could not send events: ${String(response.status)}`);
@@ -173,15 +177,22 @@ function dropOldest(): void {
 
 /**
  * Queues one interaction of the signed-in member. Without a session nothing is
- * kept: anonymous visits are not recorded. A full batch is sent at once. Never
- * throws: an event that cannot be built is dropped.
+ * kept: anonymous visits are not recorded. Events queued under another
+ * session are dropped first. A full batch is sent at once. Never throws: an
+ * event that cannot be built is dropped.
  *
  * @param name - What happened.
  * @param props - Ids, amounts, counts, or a search term; never a secret.
  */
 export function logInteraction(name: InteractionName, props: InteractionProps = {}): void {
-  if (useAuthStore.getState().session === null) {
+  const session = useAuthStore.getState().session;
+  if (session === null) {
     return;
+  }
+  if (session !== queueSession) {
+    // Events of another member are never sent with this session.
+    queue.length = 0;
+    queueSession = session;
   }
   let event: InteractionEvent;
   try {
@@ -198,31 +209,55 @@ export function logInteraction(name: InteractionName, props: InteractionProps = 
 }
 
 /**
- * Sends the queued events in batches of {@link INTERACTION_BATCH_SIZE}. Without
- * a session the queue is dropped. A failed batch goes back to the front of
- * the queue and the next flush tries again. Never rejects.
+ * Takes the next batch off the queue: at most {@link INTERACTION_BATCH_SIZE}
+ * events and at most {@link MAX_BATCH_BYTES} of JSON, and always at least one.
  *
- * @param keepalive - Set while the page is hidden or closing.
- * @returns Resolves when the queue is empty, a batch failed, or another flush is running.
+ * @returns The batch.
  */
-export async function flushInteractions(keepalive = false): Promise<void> {
+function nextBatch(): InteractionEvent[] {
+  let count = 0;
+  let bytes = 0;
+  for (const event of queue) {
+    bytes += JSON.stringify(event).length + 1;
+    if (count === INTERACTION_BATCH_SIZE || (count > 0 && bytes > MAX_BATCH_BYTES)) {
+      break;
+    }
+    count += 1;
+  }
+  return queue.splice(0, count);
+}
+
+/**
+ * Sends the queued events in batches of at most {@link INTERACTION_BATCH_SIZE}
+ * and {@link MAX_BATCH_BYTES}, each with `keepalive`, so a request still in
+ * flight when the page closes is delivered. Events go out only with the
+ * session they were recorded under: without a session, or with another one,
+ * the queue is dropped. A failed batch goes back to the front of the queue and
+ * the next flush tries again. Never rejects.
+ *
+ * @returns Resolves when the queue is empty, a batch failed, the session
+ *   changed, or another flush is running.
+ */
+export async function flushInteractions(): Promise<void> {
   if (flushing) {
     return;
   }
   const session = useAuthStore.getState().session;
-  if (session === null) {
+  if (session === null || session !== queueSession) {
     queue.length = 0;
     return;
   }
   flushing = true;
   try {
-    while (queue.length > 0) {
-      const batch = queue.splice(0, INTERACTION_BATCH_SIZE);
+    while (queue.length > 0 && queueSession === session) {
+      const batch = nextBatch();
       try {
-        await postEvents(session, batch, keepalive);
+        await postEvents(session, batch);
       } catch {
-        queue.unshift(...batch);
-        dropOldest();
+        if (queueSession === session) {
+          queue.unshift(...batch);
+          dropOldest();
+        }
         return;
       }
     }
@@ -242,7 +277,7 @@ export function startInteractionLog(): () => void {
     void flushInteractions();
   }, INTERACTION_FLUSH_MS);
   const onHide = (): void => {
-    void flushInteractions(true);
+    void flushInteractions();
   };
   const onVisibility = (): void => {
     if (document.visibilityState === 'hidden') {

@@ -1386,7 +1386,7 @@ Optional `firstPostFree` (default false) adds the muted line `forum.firstPostFre
 - **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key the same pins are also markers. A 21.gifts author name links to `/members/:accountId`; an external name stays text. Pin rows link with `next/link`, so opening a member or a note keeps the document. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
-- **Interaction log:** An opened `?pin=` is recorded as `shop_opened` with that pin's note id.
+- **Interaction log:** An opened `?pin=` whose place is a shop (`shop: true`) is recorded once as `shop_opened` with that pin's note id; other pins are not recorded.
 - **Used by:** `ShopsScreen`.
 
 ## Function: fetchPlaces
@@ -4097,7 +4097,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Runs the in-app wallet payment of one gift-sheet invoice. The wallet pays `sparkInvoice` when the api issued one, otherwise `pr`. A wallet that is unavailable or the account cannot hold reports `unavailable`. Because the wallet is open whenever the member is signed in, there is no passkey or unlock phase: the hook connects and prepares, then always stops at `confirm`, including for a zero fee. While setup is due it reports `preparing`; if setup gives up, it reports `setupFailed` and no payment continues by itself.
 - **Inputs:** `sparkInvoice` (string, `null`, or `undefined`), `pr` (fallback request for the same invoice), and `amountSats` (the exact whole-sat amount the sheet shows). Reads the auth store, `useWalletStore`, and `useWalletSetup`.
 - **Returns / side effects:** `{ view, feeSats, missingSats, pay, retry }`. Views are `unavailable`, `preparing`, `confirm`, `paying`, `insufficient`, `failed`, `setupFailed`, or `unconfirmed`. It prepares only after setup is no longer due, never pays a mismatched or stale request, pays at most once, and never retries a send automatically. `pay` is the only send trigger. An insufficient view polls a synchronized balance every 4 s and prepares again only after the balance covers amount plus known fee; after any send, 60 s without sheet confirmation becomes `unconfirmed`. Retry clears prepared state and reconnects or reloads after a wallet error. Recognized `?visual=wallet-pay-…` values pin deterministic views only through `visualPin` and leave actions inert.
-- **Interaction log:** A send the SDK reports as sent is recorded as `gift_sent` with the amount.
+- **Interaction log:** A send the SDK reports as sent is recorded as `gift_sent` with the amount, also when the sheet closed before the send finished.
 - **Used by:** `WalletPay`.
 
 ## Function: WalletPay
@@ -4279,21 +4279,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Queues one interaction of the signed-in member for `POST /me/events`: `screen_view`, `post_created`, `reply_created`, `gift_sent`, `payment_sent`, `payment_received_seen`, `pos_charge_created`, `pos_charge_paid_seen`, `wallet_unlocked`, `wallet_locked`, `search`, `shop_opened`, `profile_opened`, `login`, or `signup_completed`.
 - **Inputs:** The event name and optional flat `props` (ids, amounts, counts, flags; the only free text is a search term).
-- **Returns / side effects:** None. Without a session nothing is kept, so anonymous visits are never recorded. The event carries the time (ISO 8601), the current path without query or fragment (the access key of `/view/:viewKey` and `/view-key/:viewKey` is replaced by `[key]`), and the cleaned props: at most 12, keys that are short identifiers and do not name a secret (`mnemonic`, `phrase`, `seed`, `prf`, `preimage`, `secret`, `token`, `password`, `privkey`, `private`, `session`), values that are strings of at most 200 characters, finite numbers, booleans, or `null`, and never a string that looks like a recovery phrase (12 or more words), 64 or more hex digits, or a bearer token. At most 500 events wait; the oldest are dropped first. A full batch of 50 is sent at once.
+- **Returns / side effects:** None. Without a session nothing is kept, so anonymous visits are never recorded. Events still queued under another session are dropped before the new one is queued. The event carries the time (ISO 8601), the current path without query or fragment (the access key of `/view/:viewKey` and `/view-key/:viewKey` is replaced by `[key]`), and the cleaned props: at most 12, keys that are short identifiers and do not name a secret (`mnemonic`, `phrase`, `seed`, `prf`, `preimage`, `secret`, `token`, `password`, `privkey`, `private`, `session`), values that are strings of at most 200 characters, finite numbers, booleans, or `null`, and never a string that looks like a recovery phrase (12 or more words), 64 or more hex digits, or a bearer token. At most 500 events wait; the oldest are dropped first. A full batch of 50 is sent at once.
 - **Used by:** `InteractionLog`, `WalletSync`, `reportWallet`, `payFromWallet`, `useWalletPay`, `usePasskeyLogin`, `postMessage`, `postMessageVideo`, `createPosCharge`, `PosTill`, `searchMentionAccounts`, `PlacesMapScreen`.
 
 ## Function: flushInteractions
 
-- **Purpose:** Sends the queued interactions with `POST /me/events` `{ events }` in batches of `INTERACTION_BATCH_SIZE` (50).
-- **Inputs:** Optional `keepalive` (set while the page is hidden or closing, so the request outlives the page).
-- **Returns / side effects:** A promise that never rejects. Without a session the queue is dropped. A failed batch goes back to the front of the queue (still at most 500 events) and the next flush tries again. One flush runs at a time; a second call while one runs returns at once.
+- **Purpose:** Sends the queued interactions with `POST /me/events` `{ events }` in batches of at most `INTERACTION_BATCH_SIZE` (50) events and 60 000 bytes of JSON, each request with `keepalive`, so a request in flight when the page closes is still delivered (the browser caps a keepalive body at 64 KiB).
+- **Inputs:** None. Reads the session from `useAuthStore`.
+- **Returns / side effects:** A promise that never rejects. Events go out only with the session they were recorded under: without a session, or with another one, the queue is dropped, and a flush stops after the batch in flight when another member signs in. A failed batch goes back to the front of the queue (still at most 500 events) and the next flush tries again; a failed batch of a member who is no longer signed in is dropped. One flush runs at a time; a second call while one runs returns at once.
 - **Used by:** `logInteraction` (full batch) and `startInteractionLog`.
 
 ## Function: startInteractionLog
 
 - **Purpose:** Starts sending the interaction queue while the app is open.
 - **Inputs:** None.
-- **Returns / side effects:** Flushes every `INTERACTION_FLUSH_MS` (10 s), and with `keepalive` when the document becomes hidden or on `pagehide`. Returns the function that stops the timer and removes both listeners.
+- **Returns / side effects:** Flushes every `INTERACTION_FLUSH_MS` (10 s), and when the document becomes hidden or on `pagehide`. Returns the function that stops the timer and removes both listeners.
 - **Used by:** `InteractionLog`.
 
 ## Function: WalletPhraseScreen

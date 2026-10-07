@@ -875,3 +875,27 @@ describe('useWalletPay retry', () => {
     expect(result.current.view).toBe('insufficient');
   });
 });
+
+describe('useWalletPay gift record', () => {
+  it('records the gift even when the sheet closed before the send finished', async () => {
+    let finish: (value: WalletSendResult) => void = () => undefined;
+    const send = vi.fn(
+      () =>
+        new Promise<WalletSendResult>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const { result, unmount } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    unmount();
+    await act(async () => {
+      finish({ kind: 'paid' });
+    });
+    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 });
+  });
+});
