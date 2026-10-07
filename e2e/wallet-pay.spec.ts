@@ -243,6 +243,16 @@ test('wallet pay: failed pin shows the prepare error and Try again', async ({ pa
   await expect(sheet.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
+test('wallet-pay-setup-failed pin shows the setup note and Try again', async ({ page }) => {
+  await signInAda(page);
+  await stubPayableReply(page, null);
+  await openPaySheet(page, 'wallet-pay-setup-failed');
+  const sheet = page.locator('[data-pay-sheet]');
+  await expect(sheet.getByRole('alert')).toContainText('Your wallet could not be set up yet.');
+  await expect(sheet.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Set up your wallet' })).toHaveCount(0);
+});
+
 test('wallet pay: preparing pin shows Checking your wallet…', async ({ page }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);

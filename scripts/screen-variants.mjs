@@ -360,31 +360,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
-    id: 'setup-intro',
-    image: 'wallet-setup-intro.png',
-    visual: 'state-wallet-setup-intro',
-    needle: 'wallet setup-intro pin shows Set up wallet',
-  },
-  {
-    route: '/wallet',
-    id: 'setup-progress',
-    image: 'wallet-setup-progress.png',
-    visual: 'state-wallet-setup-progress',
-    needle: 'Setting up your wallet…',
-  },
-  {
-    route: '/wallet',
-    id: 'setup-error',
-    image: 'wallet-setup-error.png',
-    visual: 'state-wallet-setup-error',
-    needle: 'Your wallet could not be set up. Please try again.',
-  },
-  {
-    route: '/wallet',
-    id: 'setup-no-prf',
-    image: 'wallet-setup-no-prf.png',
-    visual: 'state-wallet-setup-no-prf',
-    needle: "shotScreen(page, 'state-wallet-setup-no-prf')",
+    id: 'setup-failed',
+    image: 'wallet-setup-failed.png',
+    visual: 'state-wallet-setup-failed',
+    needle: 'wallet balance-setup-failed pin shows the setup note and Try again',
   },
   {
     route: '/wallet',
@@ -2609,6 +2588,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'wallet-pay-setup-failed',
+    image: 'welcome-wallet-pay-setup-failed.png',
+    visual: 'state-welcome-wallet-pay-setup-failed',
+    needle: 'wallet-pay-setup-failed pin shows the setup note and Try again',
+  },
+  {
+    route: '/welcome',
     id: 'wallet-pay-unconfirmed',
     image: 'welcome-wallet-pay-unconfirmed.png',
     visual: 'state-welcome-wallet-pay-unconfirmed',
@@ -3131,6 +3117,13 @@ export const SCREEN_VARIANTS = [
     image: 'pos-need-wallet.png',
     visual: 'state-pos-need-wallet',
     needle: 'Set up your wallet first.',
+  },
+  {
+    route: '/pos',
+    id: 'setup-failed',
+    image: 'pos-setup-failed.png',
+    visual: 'state-pos-setup-failed',
+    needle: 'pos-setup-failed pin shows the setup note instead of the wallet link',
   },
   {
     route: '/profile',

@@ -1829,37 +1829,13 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-prf-unsupported');
   });
 
-  test('wallet setup-intro', async ({ page }) => {
+  test('wallet setup-failed', async ({ page }) => {
     await stubWalletSetupAccount(page);
-    await page.goto('/wallet?visual=setup-intro');
-    await expect(page.getByRole('button', { name: 'Set up wallet' })).toBeVisible();
-    await shotScreen(page, 'state-wallet-setup-intro');
-  });
-
-  test('wallet setup-progress', async ({ page }) => {
-    await stubWalletSetupAccount(page);
-    await page.goto('/wallet?visual=setup-progress');
-    await expect(page.getByText('Setting up your wallet…')).toBeVisible();
-    await shotScreen(page, 'state-wallet-setup-progress');
-  });
-
-  test('wallet setup-error', async ({ page }) => {
-    await stubWalletSetupAccount(page);
-    await page.goto('/wallet?visual=setup-error');
-    await expect(
-      page.getByText('Your wallet could not be set up. Please try again.'),
-    ).toBeVisible();
-    await shotScreen(page, 'state-wallet-setup-error');
-  });
-
-  test('wallet setup-no-prf', async ({ page }) => {
-    await stubWalletSetupAccount(page);
-    await page.goto('/wallet?visual=setup-no-prf');
-    await expect(
-      page.getByRole('dialog', { name: 'No wallet on this phone or browser' }),
-    ).toBeVisible();
-    await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
-    await shotScreen(page, 'state-wallet-setup-no-prf');
+    await page.goto('/wallet?visual=balance-setup-failed');
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-setup-failed');
   });
 
   test('wallet history-empty', async ({ page }) => {
@@ -8274,6 +8250,41 @@ test.describe('onboarding screens', () => {
     );
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-need-wallet');
+  });
+
+  test('pos setup-failed', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/pos?visual=pos-setup-failed');
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveCount(0);
+    await expect(page.getByText('No payments yet.')).toBeVisible();
+    await shotScreen(page, 'state-pos-setup-failed');
   });
 
   test('profile fiat', async ({ page }) => {
@@ -20080,6 +20091,13 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(PRF_UNSUPPORTED_MESSAGE)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-prf-unsupported');
+  });
+
+  test('welcome wallet-pay-setup-failed', async ({ page }) => {
+    await openWalletPaySheet(page, 'wallet-pay-setup-failed');
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-pay-setup-failed');
   });
 
   test('welcome wallet-pay-unconfirmed', async ({ page }) => {
