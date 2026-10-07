@@ -48,13 +48,17 @@ export function spotRatesFromStats(stats: { spendOverTime?: readonly StatsDay[] 
   return rates;
 }
 
-/** Answers `GET /fx/spot` with these prices (an empty object is "no rate"). */
+/** Answers `GET /fx/spot` with these prices; an empty object is the api's no-quote answer. */
 export async function fulfillSpot(page: Page, rates: SpotRates = SPOT_RATES): Promise<void> {
   await page.route('**/fx/spot', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ asOf: '2026-06-01T00:00:00.000Z', source: 'e2e', rates }),
+      body: JSON.stringify(
+        Object.keys(rates).length === 0
+          ? { asOf: null, source: null, rates }
+          : { asOf: '2026-06-01T00:00:00.000Z', source: 'e2e', rates },
+      ),
     });
   });
 }
