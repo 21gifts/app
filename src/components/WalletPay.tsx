@@ -22,7 +22,7 @@ export interface WalletPayProps {
   pr: string;
   /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
   amountSats: number;
-  /** Latest gift-day totals for the fee's fiat line, or `null`. */
+  /** Current spot rate for the fee's fiat line, or `null`. */
   rateDay: FiatRateDay | null;
   /**
    * True on the posting fee: paying also posts the note, so the confirm button

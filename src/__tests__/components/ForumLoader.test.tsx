@@ -11,7 +11,6 @@ import {
   forumListSchema,
   type Account,
   type ForumMessage,
-  type GiftStats,
   type Notification,
   type NotificationList,
 } from '@/lib/api-types';
@@ -85,7 +84,6 @@ vi.mock('@/lib/api', () => ({
   dismissForumLaws: vi.fn(),
   fetchMessagePhoto: vi.fn(),
   fetchReplies: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchFxSpot: vi
     .fn()
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
@@ -118,7 +116,6 @@ import {
   agreeToRules,
   CannotReceiveError,
   dismissForumLaws,
-  fetchGiftStats,
   fetchFxSpot,
   fetchMessagePhoto,
   fetchMessages,
@@ -158,7 +155,6 @@ const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const markNotificationReadMock = vi.mocked(markNotificationRead);
 const markNotificationsReadForMessageMock = vi.mocked(markNotificationsReadForMessage);
 const closeLocalPushNotificationsMock = vi.mocked(closeLocalPushNotifications);
-const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
 const postMock = vi.mocked(postMessage);
 const invoiceMock = vi.mocked(postMessageInvoice);
@@ -302,28 +298,6 @@ const UNREAD_APPOINTED: Notification = {
   readAt: null,
 };
 
-const EMPTY_STATS: GiftStats = {
-  totalSats: 0,
-  totalBtc: '0.00000000',
-  totalUsd: '0.00',
-  totalChf: '0.00',
-  totalEur: '0.00',
-  totalPhp: '0.00',
-  giftCount: 0,
-  recipientCount: 0,
-  firstPaidAt: null,
-  lastPaidAt: null,
-  spendOverTime: [],
-  byRecipient: [],
-  byMonth: [],
-  fx: {
-    quote: 'BTC-USD',
-    dayBasis: 'utc',
-    source: 'coinbase-exchange-daily-close',
-    quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-  },
-};
-
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 
 /** Pay slot sentence while the in-app wallet is not configured (no Breez key in unit tests). */
@@ -383,7 +357,6 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
   photoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
   publicFetchMock.mockResolvedValue(SAMPLE);
-  fetchGiftStatsMock.mockResolvedValue(EMPTY_STATS);
   Object.defineProperty(URL, 'createObjectURL', {
     configurable: true,
     writable: true,
@@ -449,8 +422,8 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('keeps ₿-only amounts when gift stats fail', async () => {
-    fetchGiftStatsMock.mockRejectedValue(new Error('stats down'));
+  it('keeps ₿-only amounts when the spot rate fails', async () => {
+    vi.mocked(fetchFxSpot).mockRejectedValue(new Error('spot down'));
     fetchMock.mockResolvedValue(forumPage([FRESH]));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {

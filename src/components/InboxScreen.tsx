@@ -257,7 +257,7 @@ export interface InboxScreenProps {
    * the closed staff room passes false (no gifts).
    */
   showAmount?: boolean;
-  /** Latest gift-day totals for unpaid invoice previews, or `null` without a usable rate. */
+  /** Current spot rate for unpaid invoice previews, or `null` without a usable rate. */
   rateDay?: FiatRateDay | null;
   /**
    * Show the ImagePlus attach control and photo drafts. Default false for
@@ -343,7 +343,7 @@ const STORED_FIAT_FIELD = {
 
 /**
  * Plain-text ₿ amount plus the visitor's default fiat.
- * A stored string wins. Otherwise the gift-day rate. Bitcoin alone only
+ * A stored string wins. Otherwise the current spot rate. Bitcoin alone only
  * when neither figure exists.
  */
 function giftAmountText(
@@ -489,7 +489,7 @@ function ConversationListItem({
  * a 8000-character composer and a sats amount field (`showAmount` false
  * hides it; the staff room has no gifts). An open invoice hides that amount
  * row too: the pay sheet states the amount once, as bitcoin plus the
- * default fiat from the latest gift-day rate. Members (`showFilter`
+ * default fiat from the current spot rate. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the

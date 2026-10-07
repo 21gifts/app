@@ -111,7 +111,7 @@ function openWallet(invoice: string): void {
   window.location.href = lightningHref(invoice);
 }
 
-/** Viewer's fiat for a till amount, or nothing when no gift-day rate is ready. */
+/** Viewer's fiat for a till amount, or nothing when no spot rate is ready. */
 function ChargeFiat(props: { amountSats: number }): ReactElement | null {
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();

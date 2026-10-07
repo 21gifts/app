@@ -292,7 +292,7 @@ export function AmountEntry({
     }
     const from = applied.current;
     const converted = draftForUnit(from, unit, value, rateDay, fiat);
-    if (value.trim() !== '' && converted === '' && fiatReady) {
+    if (value.trim() !== '' && converted === '') {
       return;
     }
     applied.current = unit;
@@ -301,7 +301,7 @@ export function AmountEntry({
     if (converted !== value) {
       onValueChange(converted);
     }
-  }, [decimal, fiat, fiatReady, keypad, locked, onUnitChange, onValueChange, rateDay, unit, value]);
+  }, [decimal, fiat, keypad, locked, onUnitChange, onValueChange, rateDay, unit, value]);
 
   useEffect(() => {
     if (!keypad || disabled || locked) {
