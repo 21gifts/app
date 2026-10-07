@@ -379,7 +379,7 @@ function visualState(name: string | null): WalletSendState | null {
     case 'send-invalid':
       return { step: 'input', error: 'invalid' };
     case 'send-failed':
-    case 'send-alert-locked':
+    case 'send-alert-not-ready':
       return { step: 'input', error: 'failed' };
     case 'send-insufficient':
       return { step: 'input', error: 'insufficient' };

@@ -531,7 +531,7 @@ describe('useWalletSend visual pins', () => {
     ['send-unsupported', { step: 'input', error: 'unsupported' }],
     ['send-invalid', { step: 'input', error: 'invalid' }],
     ['send-failed', { step: 'input', error: 'failed' }],
-    ['send-alert-locked', { step: 'input', error: 'failed' }],
+    ['send-alert-not-ready', { step: 'input', error: 'failed' }],
     ['send-insufficient', { step: 'input', error: 'insufficient' }],
     ['send-error', { step: 'input', error: 'unreachable' }],
     ['send-amount-error', { step: 'amount', amountError: true, target: { type: 'lnurl' } }],

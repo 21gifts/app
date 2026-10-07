@@ -49,6 +49,7 @@ function visualStatus(): WalletViewStatus | null {
   const visual = visualPin();
   switch (visual) {
     case 'balance-connecting':
+    case 'send-alert-not-ready':
       return 'connecting';
     case 'balance-ready':
     case 'history-empty':
@@ -70,8 +71,9 @@ function visualStatus(): WalletViewStatus | null {
  * `connecting`. While the one-time wallet setup is still due the balance
  * shows `connecting` until the wallet is verified, or `error` with
  * `setupFailed` once the setup gave up, and **Receive** stays disabled
- * (`canReceive`). Visual pins (`?visual=balance-…`, `?visual=history-…`, and
- * `?visual=send-…` as ready) are honoured only in a Playwright build
+ * (`canReceive`). Visual pins (`?visual=balance-…`, `?visual=history-…`,
+ * `?visual=send-alert-not-ready` as connecting, and the other
+ * `?visual=send-…` pins as ready) are honoured only in a Playwright build
  * (`getE2eNow()` set) and leave retry inert while pinned.
  *
  * @returns Wallet balance state and a stable retry for `/wallet`.
