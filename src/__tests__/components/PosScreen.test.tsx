@@ -5,6 +5,12 @@ import { fetchFxSpot } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const setup = vi.hoisted(() => ({ failed: false, retry: vi.fn() }));
+
+vi.mock('@/hooks/useWalletSetup', () => ({
+  useWalletSetup: () => setup,
+}));
+
 const push = vi.fn();
 const replace = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -64,6 +70,8 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 beforeEach(() => {
+  setup.failed = false;
+  setup.retry.mockReset();
   useAuthStore.setState({ session: 'tok', account: ACCOUNT });
 });
 
@@ -658,6 +666,22 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('link', { name: 'Set a username first.' })).toBeNull();
       expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
     }
+  });
+
+  it('shows the inline setup note instead of the wallet link after setup failed', async () => {
+    setup.failed = true;
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...ACCOUNT, sparkWalletVerified: false },
+    });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
+    renderWithLocale(<PosScreen />);
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Your wallet could not be set up yet.',
+    );
+    expect(screen.queryByRole('link', { name: 'Set up your wallet first.' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(setup.retry).toHaveBeenCalledTimes(1);
   });
 
   it('does not ask for the wallet when the account has no username', async () => {

@@ -1,245 +1,157 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWalletSetup, walletSetupPin } from '@/hooks/useWalletSetup';
-import { clearSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import type { Account } from '@/lib/api-types';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
-import {
-  runWalletSetup,
-  walletSetupInFlight,
-  type WalletSetupOutcome,
-} from '@/lib/wallet/wallet-setup';
+import { retryWalletSetup } from '@/lib/wallet/wallet-setup';
+import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 
-vi.mock('@/lib/wallet/wallet-setup', () => ({
-  runWalletSetup: vi.fn(),
-  walletSetupInFlight: vi.fn(() => false),
-}));
+vi.mock('@/lib/wallet/wallet-setup', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-setup')>();
+  return { ...actual, retryWalletSetup: vi.fn() };
+});
 
 vi.mock('@/lib/wallet/wallet-sdk', () => ({
   walletNeedsReload: vi.fn(() => false),
 }));
 
-const MNEMONIC =
-  'abandon ability able about above absent absorb abstract absurd abuse access accident';
+const SESSION = 'session-1';
 const originalHref = window.location.href;
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 
-function deferred(): {
-  promise: Promise<WalletSetupOutcome>;
-  resolve: (o: WalletSetupOutcome) => void;
-} {
-  let resolve: (o: WalletSetupOutcome) => void = () => undefined;
-  const promise = new Promise<WalletSetupOutcome>((r) => {
-    resolve = r;
-  });
-  return { promise, resolve };
+function account(overrides: Partial<Account> = {}): Account {
+  return {
+    id: 'acc',
+    linkingKey: null,
+    role: 'basis',
+    name: 'Ada',
+    username: 'ada',
+    location: null,
+    lightningAddress: null,
+    lightningAddressVerified: false,
+    forumLawsDismissed: false,
+    createdAt: 1,
+    rulesAgreedAt: 1,
+    viewKey: 'a'.repeat(64),
+    aboutMe: null,
+    aboutMeHasPhoto: false,
+    setup: null,
+    missing: [],
+    walletRequired: true,
+    passkeyCredentialId: 'credential',
+    sparkPubkey: null,
+    sparkWalletVerified: false,
+    ...overrides,
+  };
+}
+
+function setPlaywrightBuild(): void {
+  process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
 }
 
 beforeEach(() => {
   window.history.replaceState({}, '', '/wallet');
   delete process.env.NEXT_PUBLIC_E2E_NOW;
-  clearSessionPhrase();
-  vi.mocked(runWalletSetup).mockReset().mockResolvedValue('done');
-  vi.mocked(walletSetupInFlight).mockReset().mockReturnValue(false);
+  process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
+  useAuthStore.setState({ session: SESSION, account: account(), wrongAccount: false });
+  useWalletStore.setState({ setupFailedSession: null });
+  vi.mocked(retryWalletSetup).mockReset().mockResolvedValue('done');
   vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
 afterEach(() => {
   cleanup();
-  clearSessionPhrase();
   window.history.replaceState({}, '', originalHref);
-  if (ORIGINAL_E2E_NOW === undefined) {
-    delete process.env.NEXT_PUBLIC_E2E_NOW;
-  } else {
-    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
-  }
+  if (ORIGINAL_E2E_NOW === undefined) delete process.env.NEXT_PUBLIC_E2E_NOW;
+  else process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  if (ORIGINAL_BREEZ === undefined) delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  else process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+  useWalletStore.setState({ setupFailedSession: null });
 });
 
 describe('walletSetupPin', () => {
-  it.each([
-    ['setup-intro', 'intro'],
-    ['setup-progress', 'progress'],
-    ['setup-error', 'error'],
-    ['setup-no-prf', 'noPrf'],
-    ['other', null],
-  ] as const)('maps %s to %s in a Playwright build', (visual, view) => {
-    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
-    window.history.replaceState({}, '', `/wallet?visual=${visual}`);
-    expect(walletSetupPin()).toBe(view);
+  it.each(['balance-setup-failed', 'wallet-pay-setup-failed', 'pos-setup-failed'])(
+    'recognises %s in a Playwright build',
+    (visual) => {
+      setPlaywrightBuild();
+      window.history.replaceState({}, '', `/wallet?visual=${visual}`);
+      expect(walletSetupPin()).toBe(true);
+    },
+  );
+
+  it('ignores unknown pins', () => {
+    setPlaywrightBuild();
+    window.history.replaceState({}, '', '/wallet?visual=balance-error');
+    expect(walletSetupPin()).toBe(false);
   });
 
-  it('ignores pins outside a Playwright build', () => {
-    window.history.replaceState({}, '', '/wallet?visual=setup-error');
-    expect(walletSetupPin()).toBeNull();
+  it('returns false without a visual parameter', () => {
+    setPlaywrightBuild();
+    expect(walletSetupPin()).toBe(false);
+  });
+
+  it('ignores setup pins in a production build', () => {
+    window.history.replaceState({}, '', '/wallet?visual=balance-setup-failed');
+    expect(walletSetupPin()).toBe(false);
   });
 });
 
 describe('useWalletSetup', () => {
-  it('waits on the intro when the phrase is not in tab memory', () => {
-    const { result } = renderHook(() => useWalletSetup());
-    expect(result.current.view).toBe('intro');
-    expect(runWalletSetup).not.toHaveBeenCalled();
-  });
-
-  it('starts by itself when the phrase is in tab memory', async () => {
-    rememberSessionPhrase(MNEMONIC);
-    const run = deferred();
-    vi.mocked(runWalletSetup).mockReturnValueOnce(run.promise);
-    const { result } = renderHook(() => useWalletSetup());
-    expect(result.current.view).toBe('progress');
-    expect(runWalletSetup).toHaveBeenCalledTimes(1);
-    await act(async () => {
-      run.resolve('done');
-      await run.promise;
-    });
-    expect(result.current.view).toBe('progress');
-  });
-
-  it('joins a run that is still in flight after a remount, without a phrase in tab memory', async () => {
-    vi.mocked(walletSetupInFlight).mockReturnValue(true);
-    const run = deferred();
-    vi.mocked(runWalletSetup).mockReturnValueOnce(run.promise);
-    const { result } = renderHook(() => useWalletSetup());
-    expect(result.current.view).toBe('progress');
-    expect(runWalletSetup).toHaveBeenCalledTimes(1);
-    await act(async () => {
-      run.resolve('failed');
-      await run.promise;
-    });
-    expect(result.current.view).toBe('error');
-  });
-
-  it('reports a joined run that ended before the mount effect instead of staying on progress', async () => {
-    vi.mocked(walletSetupInFlight).mockReturnValue(true);
-    vi.mocked(runWalletSetup).mockResolvedValueOnce('noPrf');
-    const { result } = renderHook(() => useWalletSetup());
-    vi.mocked(walletSetupInFlight).mockReturnValue(false);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(result.current.view).toBe('noPrf');
-    expect(runWalletSetup).toHaveBeenCalledTimes(1);
-  });
-
-  it('follows a joined run once under a double effect', async () => {
-    vi.mocked(walletSetupInFlight).mockReturnValue(true);
-    const run = deferred();
-    vi.mocked(runWalletSetup).mockReturnValueOnce(run.promise);
-    const { result } = renderHook(() => useWalletSetup(), { reactStrictMode: true });
-    expect(result.current.view).toBe('progress');
-    await act(async () => {
-      run.resolve('cancelled');
-      await run.promise;
-    });
-    expect(result.current.view).toBe('intro');
-  });
-
-  it('starts when the phrase arrives while the intro is shown', async () => {
-    const { result } = renderHook(() => useWalletSetup());
-    expect(result.current.view).toBe('intro');
-    await act(async () => {
-      rememberSessionPhrase(MNEMONIC);
-      await Promise.resolve();
-    });
-    expect(runWalletSetup).toHaveBeenCalledTimes(1);
-  });
-
-  it('ignores a cleared phrase on the intro and stops listening once it leaves the intro', async () => {
-    vi.mocked(runWalletSetup).mockResolvedValueOnce('failed');
-    const { result } = renderHook(() => useWalletSetup());
-    act(() => {
-      clearSessionPhrase();
-    });
-    expect(runWalletSetup).not.toHaveBeenCalled();
-    await act(async () => {
-      result.current.start();
-      await Promise.resolve();
-    });
-    expect(result.current.view).toBe('error');
-    act(() => {
-      rememberSessionPhrase(MNEMONIC);
-    });
-    expect(runWalletSetup).toHaveBeenCalledTimes(1);
-  });
-
   it.each([
-    ['noPrf', 'noPrf'],
-    ['failed', 'error'],
-    ['cancelled', 'intro'],
-    ['superseded', 'intro'],
-  ] as const)('shows %s as %s', async (outcome, view) => {
-    vi.mocked(runWalletSetup).mockResolvedValueOnce(outcome);
+    ['matching failed session while due', SESSION, SESSION, account(), true],
+    ['different failed session', 'other', SESSION, account(), false],
+    ['no failed session', null, SESSION, account(), false],
+    ['logged out', SESSION, null, null, false],
+    ['verified account', SESSION, SESSION, account({ sparkWalletVerified: true }), false],
+    ['account without username', SESSION, SESSION, account({ username: null }), false],
+  ] as const)('sets failed for %s', (_label, failedSession, session, currentAccount, expected) => {
+    useWalletStore.setState({ setupFailedSession: failedSession });
+    useAuthStore.setState({ session, account: currentAccount });
     const { result } = renderHook(() => useWalletSetup());
-    await act(async () => {
-      result.current.start();
-      await Promise.resolve();
-    });
-    expect(result.current.view).toBe(view);
+    expect(result.current.failed).toBe(expected);
   });
 
-  it('ignores a second start while running', async () => {
-    const run = deferred();
-    vi.mocked(runWalletSetup).mockReturnValueOnce(run.promise);
+  it('reports a pinned note even without a due setup', () => {
+    setPlaywrightBuild();
+    window.history.replaceState({}, '', '/wallet?visual=pos-setup-failed');
+    useAuthStore.setState({ account: account({ sparkWalletVerified: true }) });
     const { result } = renderHook(() => useWalletSetup());
-    act(() => {
-      result.current.start();
-      result.current.start();
-    });
-    expect(result.current.view).toBe('progress');
-    expect(runWalletSetup).toHaveBeenCalledTimes(1);
-    await act(async () => {
-      run.resolve('failed');
-      await run.promise;
-    });
-    expect(result.current.view).toBe('error');
+    expect(result.current.failed).toBe(true);
   });
 
-  it('retry runs the setup again after an error', async () => {
-    vi.mocked(runWalletSetup).mockResolvedValueOnce('failed').mockResolvedValueOnce('done');
+  it('leaves retry inert while pinned', () => {
+    setPlaywrightBuild();
+    window.history.replaceState({}, '', '/wallet?visual=wallet-pay-setup-failed');
     const { result } = renderHook(() => useWalletSetup());
-    await act(async () => {
-      result.current.start();
-      await Promise.resolve();
-    });
-    expect(result.current.view).toBe('error');
-    await act(async () => {
-      result.current.retry();
-      await Promise.resolve();
-    });
-    expect(result.current.view).toBe('progress');
-    expect(runWalletSetup).toHaveBeenCalledTimes(2);
+    act(() => result.current.retry());
+    expect(walletNeedsReload).not.toHaveBeenCalled();
+    expect(retryWalletSetup).not.toHaveBeenCalled();
   });
 
-  it('retry reloads the page when the wallet must reload', () => {
+  it('reloads when the SDK requires it', () => {
     vi.mocked(walletNeedsReload).mockReturnValue(true);
+    const previous = window.location;
     const reload = vi.fn();
-    const original = window.location;
     Object.defineProperty(window, 'location', {
       configurable: true,
-      value: { ...original, reload, search: '' },
+      value: { href: previous.href, search: previous.search, reload },
     });
     try {
       const { result } = renderHook(() => useWalletSetup());
-      act(() => {
-        result.current.retry();
-      });
+      act(() => result.current.retry());
       expect(reload).toHaveBeenCalledTimes(1);
-      expect(runWalletSetup).not.toHaveBeenCalled();
+      expect(retryWalletSetup).not.toHaveBeenCalled();
     } finally {
-      Object.defineProperty(window, 'location', { configurable: true, value: original });
+      Object.defineProperty(window, 'location', { configurable: true, value: previous });
     }
   });
 
-  it('a pinned view stays put and leaves the actions inert', () => {
-    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
-    window.history.replaceState({}, '', '/wallet?visual=setup-error');
-    rememberSessionPhrase(MNEMONIC);
+  it('retries setup without reloading otherwise', () => {
     const { result } = renderHook(() => useWalletSetup());
-    expect(result.current.view).toBe('error');
-    act(() => {
-      result.current.start();
-      result.current.retry();
-    });
-    expect(runWalletSetup).not.toHaveBeenCalled();
-    expect(result.current.view).toBe('error');
+    act(() => result.current.retry());
+    expect(walletNeedsReload).toHaveBeenCalledTimes(1);
+    expect(retryWalletSetup).toHaveBeenCalledTimes(1);
   });
 });

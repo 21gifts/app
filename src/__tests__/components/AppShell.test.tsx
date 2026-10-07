@@ -103,7 +103,7 @@ describe('AppShell', () => {
     useAuthStore.setState({ session: null, account: null });
   });
 
-  it('shows the wallet setup dialog when the key is set and the wallet is not verified', () => {
+  it('does not render a blocking dialog for an account that needs wallet setup', () => {
     const original = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
     try {
@@ -113,69 +113,14 @@ describe('AppShell', () => {
           <p>Body</p>
         </AppShell>,
       );
-      expect(screen.getByRole('dialog', { name: 'Set up your wallet' })).toBeTruthy();
-      cleanup();
-      useAuthStore.setState({
-        account: { ...WALLET_SETUP_ACCOUNT, sparkWalletVerified: true },
-      });
-      renderWithLocale(
-        <AppShell mode="fill">
-          <p>Body</p>
-        </AppShell>,
-      );
       expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.getByText('Body')).toBeTruthy();
     } finally {
       if (original === undefined) {
         delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
       } else {
         process.env.NEXT_PUBLIC_BREEZ_API_KEY = original;
       }
-      useAuthStore.setState({ session: null, account: null });
-    }
-  });
-
-  it('shows no wallet setup dialog while the Breez key is unset', () => {
-    useAuthStore.setState({ session: 'tok', account: WALLET_SETUP_ACCOUNT });
-    renderWithLocale(
-      <AppShell mode="fill">
-        <p>Body</p>
-      </AppShell>,
-    );
-    expect(screen.queryByRole('dialog')).toBeNull();
-    useAuthStore.setState({ session: null, account: null });
-  });
-
-  it('shows a pinned wallet setup view in a Playwright build when signed in', () => {
-    const original = process.env.NEXT_PUBLIC_E2E_NOW;
-    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
-    window.history.replaceState({}, '', '/wallet?visual=setup-no-prf');
-    try {
-      renderWithLocale(
-        <AppShell mode="fill">
-          <p>Body</p>
-        </AppShell>,
-      );
-      expect(screen.queryByRole('dialog')).toBeNull();
-      cleanup();
-      useAuthStore.setState({
-        session: 'tok',
-        account: { ...WALLET_SETUP_ACCOUNT, sparkWalletVerified: true },
-      });
-      renderWithLocale(
-        <AppShell mode="fill">
-          <p>Body</p>
-        </AppShell>,
-      );
-      expect(
-        screen.getByRole('dialog', { name: 'No wallet on this phone or browser' }),
-      ).toBeTruthy();
-    } finally {
-      if (original === undefined) {
-        delete process.env.NEXT_PUBLIC_E2E_NOW;
-      } else {
-        process.env.NEXT_PUBLIC_E2E_NOW = original;
-      }
-      window.history.replaceState({}, '', '/');
       useAuthStore.setState({ session: null, account: null });
     }
   });

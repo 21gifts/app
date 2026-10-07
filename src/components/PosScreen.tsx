@@ -10,8 +10,10 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { PosHistory } from '@/components/PosHistory';
 import { QrCode } from '@/components/QrCode';
+import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
+import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
@@ -427,7 +429,10 @@ function usePosTillState(): PosTillState {
  * and asks every few seconds whether it is paid. A paid charge shows
  * **Paid ✓**, bitcoin, fiat, and **New payment** (to `/pos/amount`). Under
  * that, once the till has loaded, {@link PosHistory} lists the past charges
- * from the same answer, so the list changes whenever the till reloads.
+ * from the same answer, so the list changes whenever the till reloads. An
+ * account whose wallet is not verified sees **Set up your wallet first.**
+ * (to `/wallet`), or the inline setup note once the background wallet setup
+ * gave up.
  *
  * @returns The point-of-sale card.
  */
@@ -436,6 +441,7 @@ export function PosTill(): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const till = usePosTillState();
+  const setup = useWalletSetup();
 
   return (
     <Card surface={false}>
@@ -464,7 +470,8 @@ export function PosTill(): ReactElement {
           </Link>
         </p>
       ) : null}
-      {till.needsWallet ? (
+      {till.needsWallet && setup.failed ? <WalletSetupNote /> : null}
+      {till.needsWallet && !setup.failed ? (
         <p className="text-center text-sm text-app-fg">
           <Link href="/wallet" className="underline">
             {t('pos.needWallet')}

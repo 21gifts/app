@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Account } from '@/lib/api-types';
-import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
+import { clearSessionPhrase, rememberSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
 import type { WalletConnection, WalletSdk } from '@/lib/wallet/wallet-sdk';
 import { disconnectWallet, type WalletSdkLoader } from '@/lib/wallet/wallet-service';
 import {
+  listenForWalletSetup,
   needsWalletSetup,
+  retryWalletSetup,
   runWalletSetup,
-  walletSetupInFlight,
-  type WalletSetupStep,
+  WALLET_SETUP_RETRY_DELAYS_MS,
 } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -23,7 +24,6 @@ const mocks = vi.hoisted(() => ({
   putWallet: vi.fn(),
   fetchMe: vi.fn(),
   obtainPrfFirstFromGet: vi.fn(),
-  rememberPhraseFromPrf: vi.fn(),
   settlePhraseDerivations: vi.fn(),
 }));
 
@@ -46,22 +46,12 @@ vi.mock('@/lib/api', () => ({
 
 vi.mock('@/lib/prf-mnemonic', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/prf-mnemonic')>();
-  return {
-    ...actual,
-    obtainPrfFirstFromGet: (...args: unknown[]) => {
-      mocks.calls.push('passkey');
-      return mocks.obtainPrfFirstFromGet(...args);
-    },
-  };
+  return { ...actual, obtainPrfFirstFromGet: mocks.obtainPrfFirstFromGet };
 });
 
 vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-phrase')>();
-  return {
-    ...actual,
-    rememberPhraseFromPrf: mocks.rememberPhraseFromPrf,
-    settlePhraseDerivations: mocks.settlePhraseDerivations,
-  };
+  return { ...actual, settlePhraseDerivations: mocks.settlePhraseDerivations };
 });
 
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
@@ -124,18 +114,27 @@ function fakeSdk(overrides?: { connect?: () => Promise<WalletConnection> }): {
   return { loadSdk, connection };
 }
 
+async function flush(): Promise<void> {
+  for (let turn = 0; turn < 12; turn += 1) {
+    await Promise.resolve();
+  }
+}
+
+async function finishRetries<T>(promise: Promise<T>): Promise<T> {
+  await vi.runAllTimersAsync();
+  return promise;
+}
+
 beforeEach(() => {
+  vi.useFakeTimers();
   process.env.NEXT_PUBLIC_BREEZ_API_KEY = API_KEY;
   mocks.calls.length = 0;
   mocks.putWallet.mockReset().mockResolvedValue(account({ sparkPubkey: IDENTITY.toLowerCase() }));
   mocks.fetchMe.mockReset().mockResolvedValue(account({ sparkWalletVerified: true }));
-  mocks.obtainPrfFirstFromGet.mockReset().mockResolvedValue(new Uint8Array([1, 2, 3]));
+  mocks.obtainPrfFirstFromGet.mockReset();
   mocks.settlePhraseDerivations.mockReset().mockResolvedValue(undefined);
-  mocks.rememberPhraseFromPrf.mockReset().mockImplementation(async () => {
-    rememberSessionPhrase(MNEMONIC);
-    return true;
-  });
   clearSessionPhrase();
+  useWalletStore.setState({ setupFailedSession: null });
   useWalletStore.getState().reset();
   useAuthStore.setState({ session: SESSION, account: account(), wrongAccount: false });
 });
@@ -143,73 +142,134 @@ beforeEach(() => {
 afterEach(async () => {
   await disconnectWallet();
   clearSessionPhrase();
-  if (ORIGINAL_BREEZ === undefined) {
-    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
-  } else {
-    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
-  }
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  if (ORIGINAL_BREEZ === undefined) delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  else process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+  useWalletStore.setState({ setupFailedSession: null });
   useWalletStore.getState().reset();
 });
 
 describe('needsWalletSetup', () => {
-  it('is true for a wallet account with a username and an unverified wallet', () => {
+  it('requires the wallet feature, an unlockable unverified account, and a username', () => {
     expect(needsWalletSetup(account())).toBe(true);
-  });
-
-  it('is false without the Breez key', () => {
-    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
-    expect(needsWalletSetup(account())).toBe(false);
-  });
-
-  it('is false for a verified wallet, an older api body, or no account', () => {
-    expect(needsWalletSetup(account({ sparkWalletVerified: true }))).toBe(false);
-    const older = account();
-    delete older.sparkWalletVerified;
-    expect(needsWalletSetup(older)).toBe(false);
     expect(needsWalletSetup(null)).toBe(false);
-  });
-
-  it('is false without a required wallet, a seed passkey, or a username', () => {
     expect(needsWalletSetup(account({ walletRequired: false }))).toBe(false);
     expect(needsWalletSetup(account({ passkeyCredentialId: null }))).toBe(false);
+    expect(needsWalletSetup(account({ passkeyCredentialId: '' }))).toBe(false);
+    expect(needsWalletSetup(account({ sparkWalletVerified: true }))).toBe(false);
     expect(needsWalletSetup(account({ username: null }))).toBe(false);
     expect(needsWalletSetup(account({ username: '' }))).toBe(false);
+    const oldAccount = account();
+    delete oldAccount.sparkWalletVerified;
+    expect(needsWalletSetup(oldAccount)).toBe(false);
+  });
+
+  it('is false while the wallet feature is disabled', () => {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(needsWalletSetup(account())).toBe(false);
   });
 });
 
 describe('runWalletSetup', () => {
-  it('prompts once, then connects, claims, registers, and refreshes in that order', async () => {
+  it('never prompts and stays locked when no phrase exists after derivations settle', async () => {
+    const { loadSdk } = fakeSdk();
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('locked');
+    expect(mocks.settlePhraseDerivations).toHaveBeenCalledTimes(1);
+    expect(mocks.obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(loadSdk).not.toHaveBeenCalled();
+  });
+
+  it('waits for a pending derivation and proceeds when it supplies the phrase', async () => {
+    let release: (() => void) | undefined;
+    mocks.settlePhraseDerivations.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = () => {
+            rememberSessionPhrase(MNEMONIC);
+            resolve();
+          };
+        }),
+    );
+    const { loadSdk } = fakeSdk();
+    const run = runWalletSetup(loadSdk);
+    await flush();
+    expect(loadSdk).not.toHaveBeenCalled();
+    release?.();
+    await expect(run).resolves.toBe('done');
+    expect(mocks.obtainPrfFirstFromGet).not.toHaveBeenCalled();
+  });
+
+  it('connects, claims, registers the claimed username, refreshes, and finishes', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockResolvedValueOnce(account({ username: 'ada-renamed' }));
     const { loadSdk, connection } = fakeSdk();
-    const steps: WalletSetupStep[] = [];
-    await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('done');
-    expect(steps).toEqual(['passkey', 'connecting', 'claiming', 'registering', 'refreshing']);
-    expect(mocks.calls).toEqual(['passkey', 'connect', 'claim', 'register', 'refresh']);
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('done');
+    expect(mocks.calls).toEqual(['connect', 'claim', 'register', 'refresh']);
     expect(mocks.putWallet).toHaveBeenCalledWith(SESSION, IDENTITY.toLowerCase());
-    expect(connection.registerAddress).toHaveBeenCalledWith('ada');
+    expect(connection.registerAddress).toHaveBeenCalledWith('ada-renamed');
     expect(mocks.fetchMe).toHaveBeenCalledWith(SESSION);
     expect(useAuthStore.getState().account?.sparkWalletVerified).toBe(true);
-    expect(mocks.rememberPhraseFromPrf).toHaveBeenCalledWith(
-      expect.objectContaining({ credentialId: 'AQID', sessionToken: SESSION }),
-    );
   });
 
-  it('a second call while a run is in progress joins it instead of starting another', async () => {
+  it('skips registration for the wallet-verified response', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockRejectedValueOnce(new Error('wallet-verified'));
+    const { loadSdk, connection } = fakeSdk();
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('done');
+    expect(connection.registerAddress).not.toHaveBeenCalled();
+    expect(mocks.fetchMe).toHaveBeenCalledWith(SESSION);
+  });
+
+  it.each([null, ''] as const)(
+    'fails after all retries when a claim username is %s',
+    async (username) => {
+      rememberSessionPhrase(MNEMONIC);
+      mocks.putWallet.mockResolvedValue(account({ username }));
+      const { loadSdk, connection } = fakeSdk();
+      await expect(finishRetries(runWalletSetup(loadSdk))).resolves.toBe('failed');
+      expect(mocks.putWallet).toHaveBeenCalledTimes(4);
+      expect(connection.registerAddress).not.toHaveBeenCalled();
+    },
+  );
+
+  it('fails after all retries when refresh returns null', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.fetchMe.mockResolvedValue(null);
     const { loadSdk } = fakeSdk();
-    const first: WalletSetupStep[] = [];
-    const second: WalletSetupStep[] = [];
-    expect(walletSetupInFlight()).toBe(false);
-    const a = runWalletSetup((step) => first.push(step), loadSdk);
-    expect(walletSetupInFlight()).toBe(true);
-    const b = runWalletSetup((step) => second.push(step), loadSdk);
-    expect(b).toBe(a);
-    await expect(Promise.all([a, b])).resolves.toEqual(['done', 'done']);
-    expect(mocks.calls).toEqual(['passkey', 'connect', 'claim', 'register', 'refresh']);
-    expect(second).toEqual([]);
-    expect(first).toEqual(['passkey', 'connecting', 'claiming', 'registering', 'refreshing']);
-    expect(walletSetupInFlight()).toBe(false);
+    await expect(finishRetries(runWalletSetup(loadSdk))).resolves.toBe('failed');
+    expect(mocks.fetchMe).toHaveBeenCalledTimes(4);
   });
 
-  it('does not join a run left over from an earlier session', async () => {
+  it('fails after all retries when refresh leaves the wallet unverified', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.fetchMe.mockResolvedValue(account());
+    const { loadSdk } = fakeSdk();
+    await expect(finishRetries(runWalletSetup(loadSdk))).resolves.toBe('failed');
+    expect(useAuthStore.getState().account?.sparkWalletVerified).toBe(false);
+  });
+
+  it('joins a run for the same session', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let release: ((value: Account) => void) | undefined;
+    mocks.putWallet.mockImplementationOnce(
+      () =>
+        new Promise<Account>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const { loadSdk } = fakeSdk();
+    const first = runWalletSetup(loadSdk);
+    const second = runWalletSetup(loadSdk);
+    expect(second).toBe(first);
+    await flush();
+    release?.(account());
+    await expect(Promise.all([first, second])).resolves.toEqual(['done', 'done']);
+    expect(mocks.putWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts a separate run for a new session', async () => {
+    rememberSessionPhrase(MNEMONIC);
     const releases: Array<(value: Account) => void> = [];
     mocks.putWallet.mockImplementation(
       () =>
@@ -217,286 +277,265 @@ describe('runWalletSetup', () => {
           releases.push(resolve);
         }),
     );
-    rememberSessionPhrase(MNEMONIC);
     const { loadSdk } = fakeSdk();
-    const first = runWalletSetup(() => undefined, loadSdk);
-    await vi.waitFor(() => {
-      expect(releases).toHaveLength(1);
-    });
+    const first = runWalletSetup(loadSdk);
+    await flush();
     useAuthStore.setState({ session: 'sess-2' });
-    expect(walletSetupInFlight()).toBe(false);
-    const second = runWalletSetup(() => undefined, loadSdk);
+    const second = runWalletSetup(loadSdk);
+    await flush();
     expect(second).not.toBe(first);
-    expect(walletSetupInFlight()).toBe(true);
-    await vi.waitFor(() => {
-      expect(releases).toHaveLength(2);
-    });
+    expect(releases).toHaveLength(2);
     releases[0]?.(account());
     await expect(first).resolves.toBe('superseded');
-    expect(walletSetupInFlight()).toBe(true);
     releases[1]?.(account());
     await expect(second).resolves.toBe('done');
-    expect(walletSetupInFlight()).toBe(false);
   });
 
-  it('starts a fresh run after the previous one ended', async () => {
-    const { loadSdk } = fakeSdk();
-    mocks.putWallet.mockRejectedValueOnce(new Error('wallet-request'));
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(walletSetupInFlight()).toBe(false);
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
-  });
-
-  it('waits for a phrase the login is still deriving instead of prompting again', async () => {
-    mocks.settlePhraseDerivations.mockImplementationOnce(async () => {
-      rememberSessionPhrase(MNEMONIC);
-    });
-    const { loadSdk } = fakeSdk();
-    const steps: WalletSetupStep[] = [];
-    await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('done');
-    expect(mocks.settlePhraseDerivations).toHaveBeenCalledTimes(1);
-    expect(mocks.obtainPrfFirstFromGet).not.toHaveBeenCalled();
-    expect(steps[0]).toBe('connecting');
-  });
-
-  it('is superseded when the session changes while waiting for a running derivation', async () => {
-    mocks.settlePhraseDerivations.mockImplementationOnce(async () => {
-      useAuthStore.setState({ session: 'other' });
-    });
-    const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
-    expect(mocks.obtainPrfFirstFromGet).not.toHaveBeenCalled();
-  });
-
-  it('skips the passkey prompt when the phrase is already in tab memory', async () => {
+  it('retries a transient failure once and succeeds', async () => {
     rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockRejectedValueOnce(new Error('temporary'));
     const { loadSdk } = fakeSdk();
-    const steps: WalletSetupStep[] = [];
-    await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('done');
-    expect(steps[0]).toBe('connecting');
-    expect(mocks.calls).toEqual(['connect', 'claim', 'register', 'refresh']);
-    expect(mocks.obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    const run = runWalletSetup(loadSdk);
+    await flush();
+    expect(mocks.putWallet).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(WALLET_SETUP_RETRY_DELAYS_MS[0] ?? 0);
+    await expect(run).resolves.toBe('done');
+    expect(mocks.putWallet).toHaveBeenCalledTimes(2);
   });
 
-  it('never sends the phrase anywhere', async () => {
+  it('makes exactly four tries, then records the failed session', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockRejectedValue(new Error('down'));
     const { loadSdk } = fakeSdk();
-    await runWalletSetup(() => undefined, loadSdk);
-    const sent = JSON.stringify([mocks.putWallet.mock.calls, mocks.fetchMe.mock.calls]);
-    expect(sent).not.toContain('abandon');
+    await expect(finishRetries(runWalletSetup(loadSdk))).resolves.toBe('failed');
+    expect(mocks.putWallet).toHaveBeenCalledTimes(4);
+    expect(useWalletStore.getState().setupFailedSession).toBe(SESSION);
   });
 
-  it('fails without a session or an eligible account', async () => {
+  it('is superseded during a retry pause without recording a failure', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockRejectedValue(new Error('down'));
     const { loadSdk } = fakeSdk();
+    const run = runWalletSetup(loadSdk);
+    await flush();
+    useAuthStore.setState({ session: 'other' });
+    await vi.advanceTimersByTimeAsync(WALLET_SETUP_RETRY_DELAYS_MS[0] ?? 0);
+    await expect(run).resolves.toBe('superseded');
+    expect(mocks.putWallet).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState().setupFailedSession).toBeNull();
+  });
+
+  it('is superseded immediately without a session', async () => {
     useAuthStore.setState({ session: null });
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    useAuthStore.setState({ session: SESSION, account: account({ sparkWalletVerified: true }) });
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(mocks.calls).toEqual([]);
-  });
-
-  it('returns noPrf when the passkey yields no PRF output', async () => {
-    mocks.obtainPrfFirstFromGet.mockResolvedValueOnce(null);
     const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('noPrf');
-    expect(mocks.calls).toEqual(['passkey']);
-    expect(peekSessionPhrase()).toBeNull();
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('superseded');
+    expect(loadSdk).not.toHaveBeenCalled();
   });
 
-  it('returns cancelled when the member dismisses the prompt', async () => {
-    mocks.obtainPrfFirstFromGet.mockRejectedValueOnce(
-      Object.assign(new Error('x'), { name: 'NotAllowedError' }),
-    );
+  it('finishes when the account becomes verified between tries', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockRejectedValueOnce(new Error('temporary'));
     const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('cancelled');
+    const run = runWalletSetup(loadSdk);
+    await flush();
+    useAuthStore.setState({ account: account({ sparkWalletVerified: true }) });
+    await vi.advanceTimersByTimeAsync(WALLET_SETUP_RETRY_DELAYS_MS[0] ?? 0);
+    await expect(run).resolves.toBe('done');
+    expect(mocks.putWallet).toHaveBeenCalledTimes(1);
   });
 
-  it('fails when the prompt errors otherwise', async () => {
-    mocks.obtainPrfFirstFromGet.mockRejectedValueOnce(new Error('boom'));
+  it('fails when the account no longer needs setup but is not verified', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockRejectedValueOnce(new Error('temporary'));
     const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
+    const run = runWalletSetup(loadSdk);
+    await flush();
+    useAuthStore.setState({ account: account({ username: null }) });
+    await expect(finishRetries(run)).resolves.toBe('failed');
+    expect(mocks.putWallet).toHaveBeenCalledTimes(1);
   });
 
-  it('fails when the phrase could not be remembered', async () => {
-    mocks.rememberPhraseFromPrf.mockResolvedValueOnce(false);
-    const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(mocks.calls).toEqual(['passkey']);
-  });
-
-  it('fails when the wallet cannot connect and does not claim', async () => {
-    const { loadSdk } = fakeSdk({
-      connect: async () => {
-        throw new Error('down');
-      },
-    });
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(mocks.putWallet).not.toHaveBeenCalled();
-  });
-
-  it('registers the username on the account the claim returns', async () => {
-    mocks.putWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
-    const { loadSdk, connection } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
-    expect(connection.registerAddress).toHaveBeenCalledWith('ada2');
-  });
-
-  it('stores the claimed account so a retry starts from it', async () => {
-    mocks.putWallet.mockResolvedValueOnce(account({ username: 'ada2' }));
-    const { loadSdk, connection } = fakeSdk();
-    connection.registerAddress.mockRejectedValueOnce(new Error('rejected'));
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(useAuthStore.getState().account?.username).toBe('ada2');
-  });
-
-  it('fails when the claimed account has no username', async () => {
-    mocks.putWallet.mockResolvedValueOnce(account({ username: null }));
-    const { loadSdk, connection } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(connection.registerAddress).not.toHaveBeenCalled();
-    expect(useAuthStore.getState().account?.username).toBe('ada');
-    expect(needsWalletSetup(useAuthStore.getState().account)).toBe(true);
-  });
-
-  it('fails when the claim fails and does not register', async () => {
-    mocks.putWallet.mockRejectedValueOnce(new Error('wallet-request'));
-    const { loadSdk, connection } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(connection.registerAddress).not.toHaveBeenCalled();
-  });
-
-  it('fails on a non-Error claim rejection', async () => {
-    mocks.putWallet.mockRejectedValueOnce('nope');
-    const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-  });
-
-  it('skips registration and refreshes when the wallet is already verified (409)', async () => {
-    mocks.putWallet.mockRejectedValueOnce(new Error('wallet-verified'));
-    const { loadSdk, connection } = fakeSdk();
-    const steps: WalletSetupStep[] = [];
-    await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('done');
-    expect(connection.registerAddress).not.toHaveBeenCalled();
-    expect(steps).toEqual(['passkey', 'connecting', 'claiming', 'refreshing']);
-  });
-
-  it('fails when registration fails and does not refresh', async () => {
-    const { loadSdk, connection } = fakeSdk();
-    connection.registerAddress.mockRejectedValueOnce(new Error('rejected'));
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(mocks.fetchMe).not.toHaveBeenCalled();
-  });
-
-  it('fails when the refresh returns no account or an unverified one', async () => {
-    const { loadSdk } = fakeSdk();
-    mocks.fetchMe.mockResolvedValueOnce(null);
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    mocks.fetchMe.mockResolvedValueOnce(account());
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    expect(useAuthStore.getState().account?.sparkWalletVerified).toBe(false);
-  });
-
-  it('fails when the refresh rejects', async () => {
-    mocks.fetchMe.mockRejectedValueOnce(new Error('down'));
-    const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-  });
-
-  it('succeeds on a retry after a failed registration', async () => {
-    const { loadSdk, connection } = fakeSdk();
-    connection.registerAddress.mockRejectedValueOnce(new Error('rejected'));
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('failed');
-    mocks.calls.length = 0;
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('done');
-    expect(mocks.calls).toEqual(['claim', 'register', 'refresh']);
-  });
-
-  function swapSession(): void {
+  function changeSession(): void {
     useAuthStore.setState({ session: 'other' });
   }
 
-  it('is superseded when the session changes during the passkey step', async () => {
-    mocks.rememberPhraseFromPrf.mockImplementationOnce(async () => {
-      rememberSessionPhrase(MNEMONIC);
-      swapSession();
-      return true;
-    });
-    const { loadSdk } = fakeSdk();
-    const steps: WalletSetupStep[] = [];
-    await expect(runWalletSetup((step) => steps.push(step), loadSdk)).resolves.toBe('superseded');
-    expect(steps).toEqual(['passkey']);
+  it('is superseded after phrase derivations settle', async () => {
+    mocks.settlePhraseDerivations.mockImplementationOnce(async () => changeSession());
+    await expect(runWalletSetup(fakeSdk().loadSdk)).resolves.toBe('superseded');
   });
 
-  it('is superseded when the session changes during a prompt that returned no PRF output', async () => {
-    mocks.obtainPrfFirstFromGet.mockImplementationOnce(async () => {
-      swapSession();
-      return null;
-    });
-    const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
-  });
-
-  it('is superseded, not failed, when a step throws after the session changed', async () => {
-    const { loadSdk, connection } = fakeSdk();
-    connection.registerAddress.mockImplementationOnce(async () => {
-      swapSession();
-      throw new Error('rejected');
-    });
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
-  });
-
-  it('is superseded when the session changes while connecting', async () => {
+  it('is superseded after connecting', async () => {
+    rememberSessionPhrase(MNEMONIC);
     const base = fakeSdk();
-    const swapping = fakeSdk({
+    const changing = fakeSdk({
       connect: async () => {
-        swapSession();
+        changeSession();
         return base.connection as unknown as WalletConnection;
       },
     });
-    rememberSessionPhrase(MNEMONIC);
-    const steps: WalletSetupStep[] = [];
-    await expect(runWalletSetup((step) => steps.push(step), swapping.loadSdk)).resolves.toBe(
-      'superseded',
-    );
-    expect(steps).toEqual(['connecting']);
+    await expect(runWalletSetup(changing.loadSdk)).resolves.toBe('superseded');
     expect(mocks.putWallet).not.toHaveBeenCalled();
   });
 
-  it('is superseded when the session changes while claiming', async () => {
+  it('is superseded after claiming', async () => {
+    rememberSessionPhrase(MNEMONIC);
     mocks.putWallet.mockImplementationOnce(async () => {
-      swapSession();
+      changeSession();
       return account();
     });
     const { loadSdk, connection } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('superseded');
     expect(connection.registerAddress).not.toHaveBeenCalled();
   });
 
-  it('is superseded when the session changes during a claim that answered 409', async () => {
+  it('is superseded after an already-verified claim', async () => {
+    rememberSessionPhrase(MNEMONIC);
     mocks.putWallet.mockImplementationOnce(async () => {
-      swapSession();
+      changeSession();
       throw new Error('wallet-verified');
     });
     const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('superseded');
     expect(mocks.fetchMe).not.toHaveBeenCalled();
   });
 
-  it('is superseded when the session changes while registering', async () => {
+  it('is superseded after registering', async () => {
+    rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection } = fakeSdk();
-    connection.registerAddress.mockImplementationOnce(async () => {
-      swapSession();
-    });
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
+    connection.registerAddress.mockImplementationOnce(async () => changeSession());
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('superseded');
     expect(mocks.fetchMe).not.toHaveBeenCalled();
   });
 
-  it('is superseded when the session changes during the refresh', async () => {
+  it('is superseded after refreshing', async () => {
+    rememberSessionPhrase(MNEMONIC);
     mocks.fetchMe.mockImplementationOnce(async () => {
-      useAuthStore.setState({ session: 'other' });
+      changeSession();
       return account({ sparkWalletVerified: true });
     });
+    await expect(runWalletSetup(fakeSdk().loadSdk)).resolves.toBe('superseded');
+  });
+
+  it('turns a thrown step into superseded after a session change', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = fakeSdk();
+    connection.registerAddress.mockImplementationOnce(async () => {
+      changeSession();
+      throw new Error('stale');
+    });
+    await expect(runWalletSetup(loadSdk)).resolves.toBe('superseded');
+  });
+
+  it('retries ordinary errors as failures', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk } = fakeSdk({ connect: async () => Promise.reject(new Error('offline')) });
+    await expect(finishRetries(runWalletSetup(loadSdk))).resolves.toBe('failed');
+  });
+
+  it('retries non-Error claim failures too', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    mocks.putWallet.mockRejectedValue('offline');
+    await expect(finishRetries(runWalletSetup(fakeSdk().loadSdk))).resolves.toBe('failed');
+  });
+
+  it('uses the default loader without loading it while locked', async () => {
+    await expect(runWalletSetup()).resolves.toBe('locked');
+  });
+});
+
+describe('retryWalletSetup', () => {
+  it('clears the failed-session flag before running again', async () => {
+    useWalletStore.setState({ setupFailedSession: SESSION });
+    await expect(retryWalletSetup(fakeSdk().loadSdk)).resolves.toBe('locked');
+    expect(useWalletStore.getState().setupFailedSession).toBeNull();
+  });
+
+  it('uses the default loader without loading it while locked', async () => {
+    await expect(retryWalletSetup()).resolves.toBe('locked');
+  });
+});
+
+describe('listenForWalletSetup', () => {
+  it('does not add a listener when the wallet feature is disabled', () => {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    const add = vi.spyOn(window, 'addEventListener');
+    const stop = listenForWalletSetup(fakeSdk().loadSdk);
+    expect(add).not.toHaveBeenCalledWith(SESSION_PHRASE_EVENT, expect.any(Function));
+    expect(stop()).toBeUndefined();
+  });
+
+  it('supports the default loader in the disabled no-op path', () => {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(listenForWalletSetup()()).toBeUndefined();
+  });
+
+  it('checks once at subscribe time', async () => {
+    rememberSessionPhrase(MNEMONIC);
     const { loadSdk } = fakeSdk();
-    await expect(runWalletSetup(() => undefined, loadSdk)).resolves.toBe('superseded');
-    expect(useAuthStore.getState().account?.sparkWalletVerified).toBe(false);
+    const stop = listenForWalletSetup(loadSdk);
+    await flush();
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it('starts on the phrase event', async () => {
+    const { loadSdk } = fakeSdk();
+    const stop = listenForWalletSetup(loadSdk);
+    rememberSessionPhrase(MNEMONIC);
+    await flush();
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it('starts when an auth change supplies the username', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    useAuthStore.setState({ account: account({ username: null }) });
+    const { loadSdk } = fakeSdk();
+    const stop = listenForWalletSetup(loadSdk);
+    expect(loadSdk).not.toHaveBeenCalled();
+    useAuthStore.setState({ account: account() });
+    await flush();
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
+  it('does not start without a phrase, without need, or for the failed session', async () => {
+    const first = fakeSdk();
+    const stopFirst = listenForWalletSetup(first.loadSdk);
+    await flush();
+    expect(first.loadSdk).not.toHaveBeenCalled();
+    stopFirst();
+
+    rememberSessionPhrase(MNEMONIC);
+    useAuthStore.setState({ account: account({ sparkWalletVerified: true }) });
+    const second = fakeSdk();
+    const stopSecond = listenForWalletSetup(second.loadSdk);
+    expect(second.loadSdk).not.toHaveBeenCalled();
+    stopSecond();
+
+    useAuthStore.setState({ account: account() });
+    useWalletStore.setState({ setupFailedSession: SESSION });
+    const third = fakeSdk();
+    const stopThird = listenForWalletSetup(third.loadSdk);
+    expect(third.loadSdk).not.toHaveBeenCalled();
+    stopThird();
+
+    useAuthStore.setState({ session: null });
+    useWalletStore.setState({ setupFailedSession: null });
+    const fourth = fakeSdk();
+    const stopFourth = listenForWalletSetup(fourth.loadSdk);
+    expect(fourth.loadSdk).not.toHaveBeenCalled();
+    stopFourth();
+  });
+
+  it('removes both listeners on unsubscribe', () => {
+    const remove = vi.spyOn(window, 'removeEventListener');
+    const unsubscribe = vi.fn();
+    const subscribe = vi.spyOn(useAuthStore, 'subscribe').mockReturnValueOnce(unsubscribe);
+    const stop = listenForWalletSetup(fakeSdk().loadSdk);
+    const check = subscribe.mock.calls[0]?.[0];
+    stop();
+    expect(remove).toHaveBeenCalledWith(SESSION_PHRASE_EVENT, check);
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
 });

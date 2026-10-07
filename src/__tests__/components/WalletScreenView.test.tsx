@@ -82,13 +82,18 @@ afterEach(() => {
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
-function walletResult(status: UseWalletResult['status'], prfUnsupported = false): UseWalletResult {
+function walletResult(
+  status: UseWalletResult['status'],
+  prfUnsupported = false,
+  setupFailed = false,
+): UseWalletResult {
   return {
     status,
     balanceSats: status === 'ready' ? 21_000 : null,
     unlock: vi.fn(),
     retry: vi.fn(),
     prfUnsupported,
+    setupFailed,
   };
 }
 
@@ -192,6 +197,14 @@ describe('WalletScreenView', () => {
     expect(screen.getByRole('region', { name: 'Balance' }).textContent).toContain(
       'This phone or browser cannot hold a 21.gifts wallet.',
     );
+  });
+
+  it('passes the setup failure to the balance', () => {
+    setWalletAccount();
+    renderWithLocale(
+      <WalletScreenView {...ENTRY_PROPS} wallet={walletResult('error', false, true)} />,
+    );
+    expect(screen.getByRole('alert').textContent).toContain('Your wallet could not be set up yet.');
   });
 
   it("keeps today's entry markup when the wallet is disabled or omitted", () => {

@@ -246,27 +246,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:setup-intro",
-    "label": "/wallet setup-intro",
-    "visual": "state-wallet-setup-intro",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/wallet:setup-progress",
-    "label": "/wallet setup-progress",
-    "visual": "state-wallet-setup-progress",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/wallet:setup-error",
-    "label": "/wallet setup-error",
-    "visual": "state-wallet-setup-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/wallet:setup-no-prf",
-    "label": "/wallet setup-no-prf",
-    "visual": "state-wallet-setup-no-prf",
+    "id": "/wallet:setup-failed",
+    "label": "/wallet setup-failed",
+    "visual": "state-wallet-setup-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2172,6 +2154,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:wallet-pay-setup-failed",
+    "label": "/welcome wallet-pay-setup-failed",
+    "visual": "state-welcome-wallet-pay-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:wallet-pay-unconfirmed",
     "label": "/welcome wallet-pay-unconfirmed",
     "visual": "state-welcome-wallet-pay-unconfirmed",
@@ -2601,6 +2589,12 @@
     "id": "/pos:need-wallet",
     "label": "/pos need-wallet",
     "visual": "state-pos-need-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:setup-failed",
+    "label": "/pos setup-failed",
+    "visual": "state-pos-setup-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -606,13 +606,7 @@ const en = {
   'wallet.sent': 'Sent',
   'wallet.pending': 'Pending',
   'wallet.failed': 'Failed',
-  'walletSetup.title': 'Set up your wallet',
-  'walletSetup.intro':
-    'Your 21.gifts address will send Bitcoin straight to your own wallet in this app. Confirm with your passkey once to set it up.',
-  'walletSetup.start': 'Set up wallet',
-  'walletSetup.progress': 'Setting up your wallet…',
-  'walletSetup.error': 'Your wallet could not be set up. Please try again.',
-  'walletSetup.noPrfTitle': 'No wallet on this phone or browser',
+  'walletSetup.error': 'Your wallet could not be set up yet.',
   'setup.usernameFrozen':
     'Your username can no longer be changed because your wallet address uses it.',
   'wallet.payFromWallet': 'Send',
@@ -1845,14 +1839,7 @@ const de = {
   'wallet.sent': 'Gesendet',
   'wallet.pending': 'Ausstehend',
   'wallet.failed': 'Fehlgeschlagen',
-  'walletSetup.title': 'Wallet einrichten',
-  'walletSetup.intro':
-    'Ihre 21.gifts-Adresse schickt Bitcoin direkt in Ihre eigene Wallet in dieser App. Bestätigen Sie einmal mit Ihrem Passkey, um sie einzurichten.',
-  'walletSetup.start': 'Wallet einrichten',
-  'walletSetup.progress': 'Ihre Wallet wird eingerichtet…',
-  'walletSetup.error':
-    'Ihre Wallet konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut.',
-  'walletSetup.noPrfTitle': 'Keine Wallet auf diesem Telefon oder Browser',
+  'walletSetup.error': 'Ihre Wallet konnte noch nicht eingerichtet werden.',
   'setup.usernameFrozen':
     'Ihr Benutzername kann nicht mehr geändert werden, weil Ihre Wallet-Adresse ihn verwendet.',
   'wallet.payFromWallet': 'Senden',
@@ -3105,13 +3092,7 @@ const es = {
   'wallet.sent': 'Enviado',
   'wallet.pending': 'Pendiente',
   'wallet.failed': 'Fallido',
-  'walletSetup.title': 'Configura tu wallet',
-  'walletSetup.intro':
-    'Tu dirección de 21.gifts enviará Bitcoin directamente a tu propia wallet en esta app. Confirma una vez con tu passkey para configurarla.',
-  'walletSetup.start': 'Configurar wallet',
-  'walletSetup.progress': 'Configurando tu wallet…',
-  'walletSetup.error': 'No se pudo configurar tu wallet. Inténtalo de nuevo.',
-  'walletSetup.noPrfTitle': 'No hay wallet en este teléfono o navegador',
+  'walletSetup.error': 'Tu wallet aún no se pudo configurar.',
   'setup.usernameFrozen':
     'Tu nombre de usuario ya no se puede cambiar porque la dirección de tu wallet lo usa.',
   'wallet.payFromWallet': 'Enviar',
@@ -4342,13 +4323,7 @@ const fil = {
   'wallet.sent': 'Naipadala',
   'wallet.pending': 'Hinihintay',
   'wallet.failed': 'Hindi natuloy',
-  'walletSetup.title': 'I-set up ang wallet mo',
-  'walletSetup.intro':
-    'Ang 21.gifts address mo ay magpapadala ng Bitcoin diretso sa sarili mong wallet sa app na ito. Kumpirmahin nang isang beses gamit ang passkey mo para i-set up ito.',
-  'walletSetup.start': 'I-set up ang wallet',
-  'walletSetup.progress': 'Sine-set up ang wallet mo…',
-  'walletSetup.error': 'Hindi ma-set up ang wallet mo. Pakisubukan ulit.',
-  'walletSetup.noPrfTitle': 'Walang wallet sa phone o browser na ito',
+  'walletSetup.error': 'Hindi pa ma-set up ang wallet mo.',
   'setup.usernameFrozen':
     'Hindi na mababago ang username mo dahil ginagamit ito ng address ng wallet mo.',
   'wallet.payFromWallet': 'Ipadala',

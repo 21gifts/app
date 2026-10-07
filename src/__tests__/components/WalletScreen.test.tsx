@@ -18,6 +18,7 @@ const { walletState, useWalletMock } = vi.hoisted(() => {
     unlock: vi.fn(),
     retry: vi.fn(),
     prfUnsupported: false,
+    setupFailed: false,
   };
   return { walletState: state, useWalletMock: vi.fn((): UseWalletResult => state) };
 });
@@ -50,6 +51,7 @@ afterEach(() => {
   phraseState.status = 'idle';
   walletState.status = 'locked';
   walletState.balanceSats = null;
+  walletState.setupFailed = false;
   useWalletMock.mockClear();
 });
 

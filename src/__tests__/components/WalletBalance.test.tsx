@@ -9,6 +9,10 @@ vi.mock('@/hooks/useSpotRate', () => ({
   useSpotRate: vi.fn(),
 }));
 
+vi.mock('@/components/WalletSetupNote', () => ({
+  WalletSetupNote: () => <p role="alert">setup failed</p>,
+}));
+
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
   usd: '100000.00',
@@ -131,6 +135,22 @@ describe('WalletBalance', () => {
     expect(screen.queryByText('Your wallet could not be opened. Please try again.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the inline setup note instead of the ordinary error controls', () => {
+    const onRetry = vi.fn();
+    renderWithLocale(
+      <WalletBalance
+        status="error"
+        balanceSats={null}
+        onUnlock={vi.fn()}
+        onRetry={onRetry}
+        setupFailed
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe('setup failed');
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(onRetry).not.toHaveBeenCalled();
   });
 
   it('does not render prohibited implementation vocabulary', () => {

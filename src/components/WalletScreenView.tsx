@@ -183,6 +183,7 @@ export function WalletScreenView({
               onUnlock={wallet.unlock}
               onRetry={wallet.retry}
               prfUnsupported={wallet.prfUnsupported}
+              setupFailed={wallet.setupFailed}
             />
           </div>
         )}

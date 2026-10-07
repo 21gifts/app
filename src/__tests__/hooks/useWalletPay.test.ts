@@ -68,6 +68,7 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/welcome');
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   useAuthStore.setState({ session: 'token', account });
+  useWalletStore.setState({ setupFailedSession: null });
   setWallet('ready');
   vi.mocked(payFromWallet).mockReset();
   vi.mocked(unlockWalletPhrase).mockReset().mockResolvedValue('unlocked');
@@ -120,11 +121,11 @@ describe('useWalletPay path choice', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('is unavailable while the account is in the one-time wallet setup', () => {
+  it('shows preparing while the account is in the one-time wallet setup', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
-    expect(result.current.view).toBe('unavailable');
+    expect(result.current.view).toBe('preparing');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
@@ -133,7 +134,7 @@ describe('useWalletPay path choice', () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
-    expect(result.current.view).toBe('unavailable');
+    expect(result.current.view).toBe('preparing');
     await act(async () => {
       useAuthStore.setState({ account: { ...account, sparkWalletVerified: true } });
     });
@@ -145,6 +146,15 @@ describe('useWalletPay path choice', () => {
     useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
     expect(result.current.view).toBe('unavailable');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('shows setupFailed after background setup gave up for this session', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    useWalletStore.setState({ setupFailedSession: 'token' });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    expect(result.current.view).toBe('setupFailed');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
@@ -341,6 +351,61 @@ describe('useWalletPay one tap unlock and pay', () => {
       result.current.pay();
     });
     expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('unlocks a legacy account, waits for setup, then prepares and pays at zero fee in the same tap', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    lockedWith(send);
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    expect(result.current.view).toBe('unlock');
+    await act(async () => {
+      result.current.unlock();
+    });
+    expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
+    expect(result.current.view).toBe('unlock');
+    await act(async () => {
+      useAuthStore.setState({ account: { ...account, sparkWalletVerified: true } });
+      setWallet('ready', 5_000);
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(result.current.view).toBe('paying');
+  });
+
+  it('shows prfUnsupported when the legacy-account unlock has no PRF output', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    setWallet('locked');
+    vi.mocked(unlockWalletPhrase).mockResolvedValueOnce('noPrf');
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => {
+      result.current.unlock();
+    });
+    expect(result.current.view).toBe('prfUnsupported');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('clears automatic payment when setup fails', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    lockedWith(send);
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => {
+      result.current.unlock();
+    });
+    await act(async () => {
+      useWalletStore.setState({ setupFailedSession: 'token' });
+    });
+    expect(result.current.view).toBe('setupFailed');
+    await act(async () => {
+      useAuthStore.setState({ account: { ...account, sparkWalletVerified: true } });
+      setWallet('ready', 5_000);
+    });
+    expect(result.current.view).toBe('confirm');
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('turns neutral 60 s after an automatic send, like Send', async () => {
@@ -1163,6 +1228,7 @@ describe('useWalletPay visual pins', () => {
     ['wallet-pay-insufficient', 'insufficient'],
     ['wallet-pay-failed', 'failed'],
     ['wallet-pay-prf-unsupported', 'prfUnsupported'],
+    ['wallet-pay-setup-failed', 'setupFailed'],
     ['wallet-pay-unconfirmed', 'unconfirmed'],
   ] as const;
 
