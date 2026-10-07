@@ -1906,6 +1906,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-failed');
   });
 
+  test('state-wallet-payment-spark-send', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=df98837c-6a12-4b15-94f8-375c33937a4e&visual=history-rows');
+    await expect(page.getByText('Gift to @alice').first()).toBeVisible();
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('Free')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-spark-send');
+  });
+
   test('state-wallet-payment-deposit', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -2124,6 +2134,21 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-send-manual');
   });
 
+  test('wallet send-manual-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=send-input-busy');
+    await openWalletSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const field = page.getByPlaceholder('Paste a Bitcoin payment request or address');
+    await field.fill('bob@example.com');
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send.getByRole('button', { name: 'Continue' }).click();
+    await expect(field).toBeDisabled();
+    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(send.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-wallet-send-manual-busy');
+  });
+
   test('wallet send-manual-alert', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=send-invalid');
@@ -2133,6 +2158,21 @@ test.describe('screen baselines', () => {
     await expect(sheetAlert).toHaveClass(/text-app-danger/);
     await page.getByPlaceholder('Paste a Bitcoin payment request or address').blur();
     await shotScreen(page, 'state-wallet-send-manual-alert');
+  });
+
+  test('welcome wallet-send-manual-busy', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/welcome?visual=send-input-busy');
+    await openWelcomeSend(page);
+    await page.getByRole('button', { name: 'Enter manually' }).click();
+    const field = page.getByPlaceholder('Paste a Bitcoin payment request or address');
+    await field.fill('bob@example.com');
+    const send = page.getByRole('region', { name: 'Send Bitcoin' });
+    await send.getByRole('button', { name: 'Continue' }).click();
+    await expect(field).toBeDisabled();
+    await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(send.locator('.animate-spin')).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-send-manual-busy');
   });
 
   test('welcome wallet-send-manual-alert', async ({ page }) => {
@@ -4033,6 +4073,15 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
     await shotScreen(page, 'state-welcome-wallet-buttons');
+  });
+
+  test('welcome wallet-buttons-disabled', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.goto('/welcome?visual=balance-connecting');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-wallet-buttons-disabled');
   });
 
   test('welcome wallet-receive', async ({ page }) => {
@@ -19478,20 +19527,59 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-tall-sheet');
   });
 
+  /** Answers the Menu header's totals and the gift-day rate, so every ₿ figure shows its fiat. */
+  async function menuTotals(page: Page): Promise<void> {
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await fulfillRateDay(page);
+  }
+
   test('welcome menu-header-balance', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
+    await menuTotals(page);
     await page.goto('/welcome?visual=balance-ready');
     await page.getByRole('button', { name: 'Menu' }).click();
     const menu = page.locator('#signed-in-menu');
     await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();
+    await expect(menu.getByText('$21.00')).toBeVisible();
     await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-menu-header-balance');
+  });
+
+  test('welcome menu-header-no-rate', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route('**/gifts/stats**', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    const stats = page.waitForResponse('**/gifts/stats**');
+    await page.goto('/welcome?visual=balance-ready');
+    await stats;
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();
+    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await expect(menu.getByText(/\$/)).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-menu-header-no-rate');
   });
 
   test('welcome menu-header-connecting', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
+    await menuTotals(page);
     await page.goto('/welcome?visual=balance-connecting');
     await page.getByRole('button', { name: 'Menu' }).click();
     const menu = page.locator('#signed-in-menu');
@@ -19520,13 +19608,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     // The photo shows only with a complete load, so the totals must be readable too.
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
+    await menuTotals(page);
     await page.route(/\/pictures\/me$/, async (route) => {
       await route.fulfill({
         status: 200,

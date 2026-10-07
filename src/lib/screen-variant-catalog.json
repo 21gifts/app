@@ -306,6 +306,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-manual-busy",
+    "label": "/wallet send-manual-busy",
+    "visual": "state-wallet-send-manual-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-paste-denied",
     "label": "/wallet send-paste-denied",
     "visual": "state-wallet-send-paste-denied",
@@ -552,6 +558,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:spark-send",
+    "label": "/wallet/payment spark-send",
+    "visual": "state-wallet-payment-spark-send",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:pending",
     "label": "/wallet/payment pending",
     "visual": "state-wallet-payment-pending",
@@ -774,6 +786,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:wallet-buttons-disabled",
+    "label": "/welcome wallet-buttons-disabled",
+    "visual": "state-welcome-wallet-buttons-disabled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:wallet-receive",
     "label": "/welcome wallet-receive",
     "visual": "state-welcome-wallet-receive",
@@ -801,6 +819,12 @@
     "id": "/welcome:wallet-send-manual-alert",
     "label": "/welcome wallet-send-manual-alert",
     "visual": "state-welcome-wallet-send-manual-alert",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-manual-busy",
+    "label": "/welcome wallet-send-manual-busy",
+    "visual": "state-welcome-wallet-send-manual-busy",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2025,6 +2049,12 @@
     "id": "/welcome:menu-header-balance",
     "label": "/welcome menu-header-balance",
     "visual": "state-welcome-menu-header-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-no-rate",
+    "label": "/welcome menu-header-no-rate",
+    "visual": "state-welcome-menu-header-no-rate",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

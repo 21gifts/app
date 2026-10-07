@@ -317,6 +317,12 @@ The manual-entry sheet with an alert (pin `?visual=send-invalid`, then **Enter m
 
 ![21.gifts wallet send manual alert](images/wallet-send-manual-alert.png)
 
+### Variant: send-manual-busy
+
+The manual-entry sheet while the typed text is read (pin `?visual=send-input-busy`, then **Enter manually**, **bob@example.com** and **Continue**): the field and **Continue** wait, and **Continue** shows a spinner.
+
+![21.gifts wallet send manual busy](images/wallet-send-manual-busy.png)
+
 ### Variant: send-paste-denied
 
 The Send view after **Paste** when the browser refuses the clipboard: the small alert **Pasting was not allowed. Use Enter manually instead.** above the floating buttons, over the camera, which keeps running.
@@ -566,9 +572,15 @@ Pinned fixture (`?visual=history-rows` with the zap's id, Playwright builds only
 
 ### Variant: address-send
 
-A payment to the Lightning address **bob@example.com** with the comment **Thanks for dinner**: **−₿10'000**, **To** bob@example.com, **Fee** ₿3, **Total** ₿10'003 (each with fiat),.
+A payment to the Lightning address **bob@example.com** with the comment **Thanks for dinner**: **−₿10'000**, **To** bob@example.com, **Fee** ₿3, **Total** ₿10'003 (each with fiat).
 
 ![21.gifts wallet payment Lightning-address send](images/wallet-payment-address-send.png)
+
+### Variant: spark-send
+
+A wallet transfer of **₿5'000** with the description **Gift to @alice**: **Type** Wallet transfer, **Fee** Free, and no **Total** row.
+
+![21.gifts wallet payment wallet transfer](images/wallet-payment-spark-send.png)
 
 ### Variant: pending
 
@@ -997,6 +1009,12 @@ Signed in with the wallet open (Playwright pin `?visual=balance-ready`, honoured
 
 ![21.gifts welcome with Receive and Send](images/welcome-wallet-buttons.png)
 
+### Variant: wallet-buttons-disabled
+
+Signed in while the wallet opens (Playwright pin `?visual=balance-connecting`): **Send** is disabled at the bottom of the forum home, and **Receive** stays enabled.
+
+![21.gifts welcome with Send disabled](images/welcome-wallet-buttons-disabled.png)
+
 ### Variant: wallet-receive
 
 After **Receive**: the wallet's Receive view over the forum home (label **Receive**, the address QR, **ada@21.gifts**, **Copy**, **Set an amount**), with the top-left arrow and without the feed or the bottom buttons.
@@ -1026,6 +1044,12 @@ The Send view after **Enter manually**: the sheet over the bottom of the camera 
 The `/wallet` variant `send-manual-alert` over the forum home: the manual-entry sheet with the input alert under the field.
 
 ![21.gifts welcome wallet send manual alert](images/welcome-wallet-send-manual-alert.png)
+
+### Variant: wallet-send-manual-busy
+
+The `/wallet` variant `send-manual-busy` over the forum home: the manual-entry sheet while the typed text is read.
+
+![21.gifts welcome wallet send manual busy](images/welcome-wallet-send-manual-busy.png)
 
 ### Variant: wallet-send-paste-denied
 
@@ -2444,6 +2468,12 @@ The same open Menu while the account header's numbers are still on their way: **
 The open Menu with the wallet open (pin `?visual=balance-ready`): the account header shows the balance **₿21'000** with its fiat small in the top-right corner, a link to `/wallet`.
 
 ![21.gifts welcome menu header balance](images/welcome-menu-header-balance.png)
+
+### Variant: menu-header-no-rate
+
+The open Menu with the wallet open (pin `?visual=balance-ready`) while the gift-day rate cannot be read: the balance **₿21'000** and the **Received** and **Given** totals show only the Bitcoin figure, without a fiat line.
+
+![21.gifts welcome menu header without a rate](images/welcome-menu-header-no-rate.png)
 
 ### Variant: menu-header-connecting
 
