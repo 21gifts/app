@@ -56,11 +56,15 @@ export function WalletLoginCard(): ReactElement {
     let live = true;
     setProblem(null);
     void finishWalletOpen().then((outcome) => {
-      if (!live || outcome === 'open' || useAuthStore.getState().session !== session) {
+      if (outcome === 'open' || useAuthStore.getState().session !== session) {
         return;
       }
+      // Hold the session back even when the card has unmounted meanwhile;
+      // only the alert belongs to this card.
       useAuthStore.getState().lockSession();
-      setProblem(outcome === 'cancelled' ? null : outcome);
+      if (live) {
+        setProblem(outcome === 'cancelled' ? null : outcome);
+      }
     });
     return () => {
       live = false;

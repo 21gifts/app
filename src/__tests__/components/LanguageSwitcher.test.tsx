@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { setAccountLocale } from '@/lib/api';
+import { isWalletOpen } from '@/lib/wallet/wallet-open';
 import type { Account } from '@/lib/api-types';
 import { LOCALE_COOKIE } from '@/lib/locale';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
@@ -12,6 +13,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 const refresh = vi.fn();
 
 vi.mock('@/lib/api', () => ({ setAccountLocale: vi.fn() }));
+vi.mock('@/lib/wallet/wallet-open', () => ({ isWalletOpen: vi.fn(() => true) }));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh }),
@@ -322,6 +324,27 @@ describe('LanguageSwitcher', () => {
     expect(screen.getByRole('listbox')).toBeTruthy();
     fireEvent.click(trigger);
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('only writes the cookie while a login is still opening its wallet', () => {
+    vi.mocked(setAccountLocale).mockReset();
+    vi.mocked(isWalletOpen).mockReturnValue(false);
+    saveSession('tok');
+    useAuthStore.setState({
+      session: 'tok',
+      account: account('language_switcher_opening', 'en'),
+      lockedSession: null,
+    });
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      fireEvent.click(screen.getByLabelText('Language'));
+      fireEvent.click(screen.getByRole('option', { name: 'Deutsch' }));
+      expect(setAccountLocale).not.toHaveBeenCalled();
+      expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
+    } finally {
+      vi.mocked(isWalletOpen).mockReturnValue(true);
+      useAuthStore.setState({ session: null, account: null });
+    }
   });
 
   it('only writes the cookie while the stored session is held back', () => {

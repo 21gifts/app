@@ -19,7 +19,7 @@ export function WalletSetupNote(): ReactElement {
   const { retry } = useWalletSetup();
   return (
     <div className="flex flex-col items-center gap-3">
-      <p role="alert" className="px-6 text-center text-sm text-app-muted">
+      <p role="alert" className="px-6 text-center text-sm text-app-danger">
         {t('walletSetup.error')}
       </p>
       <Button type="button" variant="secondary" onClick={retry}>
