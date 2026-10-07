@@ -7,7 +7,8 @@ import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 
 /**
- * Dark shell for marketing routes (`/`, `/about`, `/legal`, `/handbook`, `/stats`): header, page, footer.
+ * Dark shell for marketing routes (`/`, `/about`, `/legal`, `/terms`, `/handbook`, `/stats`): header, page,
+ * footer.
  * This segment can render without the root layout, so it provides the locale itself.
  *
  * @param children - Nested page.

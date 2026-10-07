@@ -52,6 +52,7 @@ const en = {
   'nav.home': 'Home',
   'nav.shops': 'Shops',
   'nav.legal': 'Legal & Privacy',
+  'nav.terms': 'Terms of Use',
   'nav.rules': 'Living room rules',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
@@ -302,6 +303,26 @@ const en = {
   'setup.rulesBack': 'Back',
   'setup.agree': 'I agree to these rules',
   'setup.rulesErrorRequest': 'Could not save your agreement',
+  'setup.termsBefore': 'By continuing you accept the',
+  'setup.termsAfter': '.',
+  'terms.title': 'Terms of Use',
+  'terms.lastUpdated': 'Last updated: 6 October 2026',
+  'terms.heading': 'Wallet and data',
+  'terms.clause1Title': 'Self-custody',
+  'terms.clause1':
+    'Your bitcoin is held only in your own wallet and stays under your sole control. 21.gifts does not hold any funds, cannot spend your balance and cannot make payments on your behalf.',
+  'terms.clause2Title': 'Access to wallet data',
+  'terms.clause2':
+    'By using the 21.gifts wallet you give 21.gifts insight into your balance and your complete transaction history. 21.gifts can see every single transaction and may analyse this data to run and improve the platform and for its own purposes.',
+  'terms.clause3Title': 'Analysis of spending',
+  'terms.clause3':
+    '21.gifts actively analyses wallet data to understand what you spend your money on — for example, whether you pay shops and members of the 21.gifts community or pay outside it.',
+  'terms.clause4Title': 'Access by the team',
+  'terms.clause4':
+    '21.gifts staff and moderators may have access to balances and transaction history as part of their duties.',
+  'terms.clause5Title': 'Public assessments',
+  'terms.clause5':
+    '21.gifts may publish statements derived from transaction data about how you use your money, for example whether you act in the spirit of the circular economy, or an assessment of your creditworthiness.',
 
   'name.heading': 'Name',
   'name.prompt': 'Add your name so people know who you are.',
@@ -1232,6 +1253,7 @@ const de = {
   'nav.home': 'Start',
   'nav.shops': 'Shops',
   'nav.legal': 'Impressum & Datenschutz',
+  'nav.terms': 'Nutzungsbedingungen',
   'nav.rules': 'Wohnzimmerregeln',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
@@ -1476,6 +1498,26 @@ const de = {
   'setup.rulesBack': 'Zurück',
   'setup.agree': 'Ich stimme diesen Regeln zu',
   'setup.rulesErrorRequest': 'Zustimmung konnte nicht gespeichert werden',
+  'setup.termsBefore': 'Mit dem Fortfahren akzeptieren Sie die',
+  'setup.termsAfter': '.',
+  'terms.title': 'Nutzungsbedingungen',
+  'terms.lastUpdated': 'Zuletzt aktualisiert: 6. Oktober 2026',
+  'terms.heading': 'Wallet und Daten',
+  'terms.clause1Title': 'Selbstverwahrung',
+  'terms.clause1':
+    'Ihre Bitcoin liegen ausschliesslich in Ihrer eigenen Wallet und unter Ihrer alleinigen Kontrolle. 21.gifts verwahrt keine Vermögenswerte, kann nicht über Ihr Guthaben verfügen und keine Zahlungen in Ihrem Namen auslösen.',
+  'terms.clause2Title': 'Einsicht in Wallet-Daten',
+  'terms.clause2':
+    'Mit der Nutzung der 21.gifts-Wallet erhält 21.gifts Einsicht in Ihr Guthaben und Ihre vollständige Transaktionshistorie. 21.gifts kann jede einzelne Transaktion sehen und diese Daten für den Betrieb und die Weiterentwicklung der Plattform sowie für eigene Zwecke auswerten.',
+  'terms.clause3Title': 'Auswertung der Verwendung',
+  'terms.clause3':
+    '21.gifts wertet die Wallet-Daten aktiv aus, um zu erkennen, wofür Sie Ihr Geld verwenden – zum Beispiel, ob Sie bei Shops und Mitgliedern der 21.gifts-Gemeinschaft bezahlen oder ausserhalb davon.',
+  'terms.clause4Title': 'Einsicht durch das Team',
+  'terms.clause4':
+    'Mitarbeitende von 21.gifts sowie Moderatorinnen und Moderatoren können im Rahmen ihrer Aufgaben Einsicht in Guthaben und Transaktionshistorie erhalten.',
+  'terms.clause5Title': 'Öffentliche Einschätzungen',
+  'terms.clause5':
+    '21.gifts kann aus den Transaktionsdaten abgeleitete Aussagen über Ihr Nutzungsverhalten öffentlich sichtbar machen, zum Beispiel ob Sie im Sinne der Kreislaufwirtschaft („Circular Economy“) handeln, oder eine Einschätzung Ihrer Kreditwürdigkeit (Bonität).',
   'name.heading': 'Name',
   'name.prompt': 'Hinterlegen Sie Ihren Namen, damit andere wissen, wer Sie sind.',
   'name.placeholder': 'Ihr Name',
@@ -2439,6 +2481,7 @@ const es = {
   'nav.home': 'Inicio',
   'nav.shops': 'Tiendas',
   'nav.legal': 'Aviso legal y privacidad',
+  'nav.terms': 'Términos de uso',
   'nav.rules': 'Reglas del salón',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
@@ -2678,6 +2721,26 @@ const es = {
   'setup.rulesBack': 'Atrás',
   'setup.agree': 'Acepto estas reglas',
   'setup.rulesErrorRequest': 'No se pudo guardar tu aceptación',
+  'setup.termsBefore': 'Al continuar, aceptas los',
+  'setup.termsAfter': '.',
+  'terms.title': 'Términos de uso',
+  'terms.lastUpdated': 'Última actualización: 6 de octubre de 2026',
+  'terms.heading': 'Wallet y datos',
+  'terms.clause1Title': 'Autocustodia',
+  'terms.clause1':
+    'Tus bitcoin están únicamente en tu propia wallet y bajo tu control exclusivo. 21.gifts no custodia ningún activo, no puede disponer de tu saldo ni realizar pagos en tu nombre.',
+  'terms.clause2Title': 'Acceso a los datos de la wallet',
+  'terms.clause2':
+    'Al usar la wallet de 21.gifts, 21.gifts obtiene acceso a tu saldo y a tu historial completo de transacciones. 21.gifts puede ver cada una de las transacciones y analizar estos datos para operar y mejorar la plataforma, así como para sus propios fines.',
+  'terms.clause3Title': 'Análisis del uso',
+  'terms.clause3':
+    '21.gifts analiza activamente los datos de la wallet para saber en qué usas tu dinero; por ejemplo, si pagas en tiendas y a miembros de la comunidad de 21.gifts o fuera de ella.',
+  'terms.clause4Title': 'Acceso del equipo',
+  'terms.clause4':
+    'El personal de 21.gifts y los moderadores pueden tener acceso a los saldos y al historial de transacciones en el marco de sus tareas.',
+  'terms.clause5Title': 'Valoraciones públicas',
+  'terms.clause5':
+    '21.gifts puede hacer públicas afirmaciones derivadas de los datos de transacciones sobre tu comportamiento de uso; por ejemplo, si actúas en el espíritu de la economía circular («Circular Economy»), o una valoración de tu solvencia crediticia.',
   'name.heading': 'Nombre',
   'name.prompt': 'Añade tu nombre para que sepan quién eres.',
   'name.placeholder': 'Tu nombre',
@@ -3613,6 +3676,7 @@ const fil = {
   'nav.home': 'Home',
   'nav.shops': 'Mga Tindahan',
   'nav.legal': 'Legal at Privacy',
+  'nav.terms': 'Mga Tuntunin ng Paggamit',
   'nav.rules': 'Mga patakaran sa living room',
   'nav.habitTracker': 'Habit-Tracker',
   'habit.schedule':
@@ -3854,6 +3918,26 @@ const fil = {
   'setup.rulesBack': 'Bumalik',
   'setup.agree': 'Sumasang-ayon ako sa mga patakarang ito',
   'setup.rulesErrorRequest': 'Hindi ma-save ang pagsang-ayon mo',
+  'setup.termsBefore': 'Sa pagpapatuloy, tinatanggap mo ang',
+  'setup.termsAfter': '.',
+  'terms.title': 'Mga Tuntunin ng Paggamit',
+  'terms.lastUpdated': 'Huling na-update: Oktubre 6, 2026',
+  'terms.heading': 'Wallet at data',
+  'terms.clause1Title': 'Sariling pag-iingat',
+  'terms.clause1':
+    'Ang bitcoin mo ay nasa sarili mong wallet lamang at nasa ilalim ng iyong tanging kontrol. Hindi nag-iingat ang 21.gifts ng anumang pondo, hindi nito magagalaw ang balanse mo, at hindi ito makakagawa ng bayad sa ngalan mo.',
+  'terms.clause2Title': 'Access sa data ng wallet',
+  'terms.clause2':
+    'Sa paggamit mo ng 21.gifts wallet, nakikita ng 21.gifts ang balanse mo at ang buo mong kasaysayan ng transaksyon. Nakikita ng 21.gifts ang bawat isang transaksyon at maaari nitong suriin ang data na ito para patakbuhin at paunlarin ang platform, at para sa sarili nitong layunin.',
+  'terms.clause3Title': 'Pagsusuri ng paggastos',
+  'terms.clause3':
+    'Aktibong sinusuri ng 21.gifts ang data ng wallet para malaman kung saan mo ginagastos ang pera mo — halimbawa, kung nagbabayad ka sa mga shop at miyembro ng 21.gifts community o sa labas nito.',
+  'terms.clause4Title': 'Access ng team',
+  'terms.clause4':
+    'Maaaring magkaroon ng access sa mga balanse at kasaysayan ng transaksyon ang mga staff at moderator ng 21.gifts bilang bahagi ng kanilang tungkulin.',
+  'terms.clause5Title': 'Mga pampublikong pagtatasa',
+  'terms.clause5':
+    'Maaaring ilathala ng 21.gifts ang mga pahayag tungkol sa kung paano mo ginagamit ang pera mo na hinango sa data ng transaksyon — halimbawa, kung kumikilos ka ayon sa diwa ng circular economy, o isang pagtatasa ng iyong creditworthiness.',
   'name.heading': 'Pangalan',
   'name.prompt': 'Ilagay ang pangalan mo para malaman ng iba kung sino ka.',
   'name.placeholder': 'Ang pangalan mo',

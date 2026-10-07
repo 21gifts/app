@@ -8,7 +8,7 @@ Every variant below is captured in all four Linux Chromium combos (desktop/mobil
 
 - **URL:** `/` — public marketing landing (no auth gate).
 - **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login, wallet setup, and the `you@21.gifts` address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (the platform account's own 21.gifts address, `<platform username>@<host>`, to run 21.gifts itself, distinct from `/donate`; shown only when the build names the platform account) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
+- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open Terms of Use, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
 
 ### Variant: default
@@ -32,8 +32,8 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
-- **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland; a line that using 21.gifts is governed by the **Terms of Use**, linked to `/terms`) and Privacy Policy (the website runs no advertising and loads no analytics scripts; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin; **Wallet and payment data**: 21.gifts sees the balance and the complete transaction history of the in-app wallet, and the paragraph links **Wallet and data** to `/terms#wallet-and-data` for how that data is used, who in the team may see it, and what may be published). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Open **Terms of Use** (`/terms`) or **Wallet and data** (`/terms#wallet-and-data`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -41,6 +41,20 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 The only state: imprint plus privacy, marketing chrome.
 
 ![21.gifts legal](images/legal.png)
+
+## Screen: /terms
+
+- **Purpose:** Public Terms of Use of 21.gifts.
+- **URL:** `/terms` — public marketing page (no auth gate). Linked from `/legal`, the marketing footer, and the last chapter of `/setup/rules`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Terms of Use**, the muted line **Last updated: 6 October 2026**, the section heading **Wallet and data** (anchor `#wallet-and-data`), and five numbered clauses, each opening with a short bold heading: **Self-custody**, **Access to wallet data**, **Analysis of spending**, **Access by the team**, **Public assessments**. All copy comes from the catalog in the visitor's locale (German, English, Spanish, or Filipino).
+- **Actions:** Change language. Read the clauses. Header **Log in** goes to `/login`.
+- **Calls:** `TermsPage` inside `MarketingLayout`, `LanguageSwitcher`.
+
+### Variant: default
+
+The only state: title, last-updated date, the **Wallet and data** heading, and the five numbered clauses, marketing chrome.
+
+![21.gifts terms of use](images/terms.png)
 
 ## Screen: /about
 
@@ -760,8 +774,8 @@ Account whose in-app wallet is verified (`sparkWalletVerified`). The hint under 
 ## Screen: /setup/rules
 
 - **URL:** `/setup/rules` — when living-room rules are not yet agreed (`account.setup === 'rules'`). Name and username may already be done; username cannot be skipped; rules cannot be skipped.
-- **What the user sees:** Chrome is the page-frame header (wordmark is a non-link span, plus Menu). Chapter 0 shows one arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters replace it with the previous-chapter arrow. One arrow. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact link, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
-- **Actions:** Read the current chapter and **Continue** to advance. Chapter 0's arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters use that same arrow for the previous chapter. One arrow. The wordmark is not that control. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
+- **What the user sees:** Chrome is the page-frame header (wordmark is a non-link span, plus Menu). Chapter 0 shows one arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters replace it with the previous-chapter arrow. One arrow. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact link, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**, and above it the line **By continuing you accept the Terms of Use.** whose **Terms of Use** links to `/terms`. There is no checkbox and no extra step.
+- **Actions:** Read the current chapter and **Continue** to advance. Chapter 0's arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters use that same arrow for the previous chapter. One arrow. The wordmark is not that control. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. On the last chapter **Terms of Use** opens `/terms` client-side; its arrow returns here. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
 - **Calls:** `AppShell`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
@@ -814,13 +828,13 @@ Heading **Forbidden**, muted lead, and the three forbidden groups (red cross gly
 
 ### Variant: house
 
-Last chapter: muted **Our house** block (body plus emphasised closing paragraph) and **I agree to these rules**. That click POSTs agreement.
+Last chapter: muted **Our house** block (body plus emphasised closing paragraph), the line **By continuing you accept the Terms of Use.** with **Terms of Use** linked to `/terms`, and **I agree to these rules**. That click POSTs agreement.
 
 ![21.gifts rules setup house](images/setup-rules-house.png)
 
 ### Variant: error
 
-Last-chapter POST failed. Alert **Could not save your agreement**.
+Last-chapter POST failed. Alert **Could not save your agreement**. The Terms of Use line stays above the button.
 
 ![21.gifts rules setup error](images/setup-rules-error.png)
 

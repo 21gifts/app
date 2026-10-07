@@ -100,6 +100,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Legal Notice',
   },
   {
+    route: '/terms',
+    id: 'default',
+    image: 'terms.png',
+    visual: 'screen-terms',
+    needle: "getByRole('heading', { name: 'Wallet and data' })",
+  },
+  {
     route: '/about',
     id: 'default',
     image: 'about.png',

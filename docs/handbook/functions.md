@@ -393,7 +393,7 @@
 
 - **Purpose:** Third post-login screen: one living-room rules chapter at a time. Intermediate **Continue** clicks only advance the chapter. The last **I agree to these rules** POSTs and merges `rulesAgreedAt`, `setup`, and `missing` into the auth-store account.
 - **Inputs:** `chapters` — ordered server-rendered `RulesDocument` elements (one per `RULES_CHAPTER_IDS` id).
-- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules**, Wordmark is a non-link span. Chapter 0 shows one arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, through `goToPreviousView` with the client-side router (no document load). Later chapters replace that arrow with the previous-chapter arrow. One arrow. Continue and Back also reset the fill inner scroller to the top. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
+- **Returns / side effects:** Heading, prompt, progress, current chapter, error alert, full-width **Continue** until the last chapter, then **I agree to these rules** with the line **By continuing you accept the Terms of Use.** above it (`setup.termsBefore`, a `next/link` to `/terms` labelled `nav.terms`, `setup.termsAfter`; no checkbox), Wordmark is a non-link span. Chapter 0 shows one arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, through `goToPreviousView` with the client-side router (no document load). Later chapters replace that arrow with the previous-chapter arrow. One arrow. Continue and Back also reset the fill inner scroller to the top. POSTs `/me/rules-agreement` via `agreeToRules` only on the last chapter. Renders `null` without a session or when `chapters` is empty.
 - **Used by:** Screen `/setup/rules`.
 
 ## Function: RulesSetupPage
@@ -2919,14 +2919,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: LegalPage
 
-- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`.
+- **Purpose:** Next.js page for `/legal` (imprint and privacy). No published email — contact is in-app via `/contact`. The Privacy Policy states what is true about the website (no advertising, no analytics scripts, the cookies it sets) and its **Wallet and payment data** paragraph points to the **Wallet and data** section of the Terms of Use instead of promising the opposite.
 - **Inputs:** None.
-- **Returns / side effects:** The legal screen with links to `/contact`.
+- **Returns / side effects:** The legal screen with links to `/contact`, `/terms`, and `/terms#wallet-and-data`.
 - **Used by:** Route `/legal`.
+
+## Function: TermsPage
+
+- **Purpose:** Next.js page for `/terms`: the Terms of Use with the **Wallet and data** section (anchor `#wallet-and-data`) and five numbered clauses, each with a short heading, plus the last-updated date 6 October 2026.
+- **Inputs:** None. Calls `getRequestLocale()` and reads every string from the catalog via `translate` (`terms.title`, `terms.lastUpdated`, `terms.heading`, `terms.clause1Title`…`terms.clause5Title`, `terms.clause1`…`terms.clause5`), so the page renders in German, English, Spanish, or Filipino. English `title`/`description` metadata is the documented exception.
+- **Returns / side effects:** The terms screen: an `h1`, the date line, an `h2`, and an ordered list of the five clauses. No links, no state.
+- **Used by:** Route `/terms`; linked from `LegalPage`, `MarketingFooter`, and `RulesSetup` (last chapter).
 
 ## Function: MarketingFooter
 
-- **Purpose:** Footer for marketing pages: wordmark, localized section links including About, legal, living-room rules, GitHub, and a quiet Matthew 10:8 verse.
+- **Purpose:** Footer for marketing pages: wordmark, localized section links including About, legal, Terms of Use (`/terms`), living-room rules, GitHub, and a quiet Matthew 10:8 verse.
 - **Inputs:** None. Resolves locale via `getRequestLocale` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** Footer element.
 - **Used by:** `MarketingLayout`, `NotFound`.
@@ -2940,7 +2947,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: MarketingLayout
 
-- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/handbook`, and `/stats`.
+- **Purpose:** Async dark full-page shell for `/`, `/about`, `/legal`, `/terms`, `/handbook`, and `/stats`.
 - **Inputs:** `children`. Awaits `MarketingFooter()` (does not render it as a JSX child).
 - **Returns / side effects:** Wrapper div with header, page, and awaited footer.
 - **Used by:** Marketing route group.

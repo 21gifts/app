@@ -1112,6 +1112,13 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-legal');
   });
 
+  test('screen /terms', async ({ page }) => {
+    await page.goto('/terms');
+    await expect(page.getByRole('heading', { name: 'Terms of Use', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet and data' })).toBeVisible();
+    await shotScreen(page, 'screen-terms');
+  });
+
   test('screen /about', async ({ page }) => {
     await page.goto('/about');
     await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();

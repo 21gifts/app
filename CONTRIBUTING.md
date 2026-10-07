@@ -56,7 +56,7 @@ app/
 │   ├── instrumentation-client.ts # Browser error reporting start (off without a DSN)
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
-│   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
+│   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/terms`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
 │   │   ├── rules/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
 │   │   ├── setup/

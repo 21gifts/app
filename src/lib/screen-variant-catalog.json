@@ -24,6 +24,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/terms:default",
+    "label": "/terms default",
+    "visual": "screen-terms",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/about:default",
     "label": "/about default",
     "visual": "screen-about",
@@ -639,6 +645,12 @@
     "id": "/welcome:software-developer",
     "label": "/welcome software-developer",
     "visual": "state-welcome-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:home-from-menu",
+    "label": "/welcome home-from-menu",
+    "visual": "state-welcome-home-from-menu",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

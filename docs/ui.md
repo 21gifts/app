@@ -349,7 +349,7 @@ sideways.
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).
 
 - Canvas: `flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]`, with one `[data-scrollport]` (`bg-ink`) around header, page, and footer. The document does not scroll. The ink background stays on the scroller so light theme cannot show through.
-- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/stats`, `/handbook`, `/404`.
+- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/terms`, `/stats`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
 **App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Every screen uses the one top-left arrow from `ProfileChromeLeft` (or the rules-setup portal of that same arrow). Unsigned app adds LanguageSwitcher. Signed-in adds `SignedInChrome` Menu. Setup name and username keep a non-link wordmark. ThemeSwitcher and LanguagePreferenceSwitcher are Profile identity-card settings rows, not chrome.
@@ -359,6 +359,7 @@ flowchart TB
   subgraph mkt [Marketing — always dark]
     R["/"]
     L["/legal"]
+    T["/terms"]
     A["/about"]
     S["/stats"]
     SD["/stats/day"]
@@ -401,7 +402,7 @@ flowchart TB
 | Measure            | Value                                       | Use                                                                                              |
 | ------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Marketing max      | `max-w-[1100px]`                            | Home, stats, handbook, 404 content, footer inner                                                 |
-| Legal max          | `max-w-3xl` (48rem)                         | `/legal` and `/about` reading column                                                             |
+| Legal max          | `max-w-3xl` (48rem)                         | `/legal`, `/terms`, and `/about` reading column                                                  |
 | App card `sm`      | `max-w-sm` (24rem)                          | Login, profile, wallet, view, member identity, external author profile, onboarding name/username |
 | App card `md`      | `max-w-md` (28rem)                          | Donate inner, public note                                                                        |
 | App card `xl`      | `max-w-xl` (36rem)                          | Welcome/forum, contact, inbox, notifications, moderation                                         |
@@ -1011,6 +1012,10 @@ Handbook states: live marketing home.
 
 `MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 Legal Notice, H2 Imprint (`text-xl font-semibold`), body, accent **Open the app** → H2 Privacy Policy (`text-3xl font-semibold`), H3 Overview (`text-xl font-semibold`)… → footer. English legal body is a catalog exception. Inline links `text-accent underline underline-offset-2`.
 
+### `/terms`
+
+`MarketingHeader` → `main max-w-3xl px-5 py-24` → H1 **Terms of Use** (`text-3xl font-semibold`, same as `/legal`), muted `text-sm text-paper/60` last-updated line, H2 **Wallet and data** (`text-xl font-semibold`, `id="wallet-and-data"`), then an `ol` (`list-decimal pl-6 space-y-3 text-paper/70`) of five clauses, each opening with a bold `text-paper` heading → footer. Unlike `/legal`, every string is catalogized in all four locales; English `title`/`description` metadata is the documented exception.
+
 ### `/stats`
 
 Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Gifts” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
@@ -1053,7 +1058,7 @@ Fill `AppShell` `align="start"`; `topLeft={<ProfileChromeLeft wordmark={<Wordmar
 
 ### `/setup/rules`
 
-Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** — the page does not pass `topLeft`. `OnboardingGate screen="rules"` → `RulesSetup` portals `AppShellTopLeft`: Wordmark **span** plus one arrow (previous chapter when the index is above 0, otherwise the previous in-app view). `AppShellHeader`: **h1** Living room rules, prompt, progress `1 of 9`. Chapter body (`RulesDocument` slice). Alert. `Button` primary lg **Continue** or **I agree to these rules**. No Skip. B′: overlines `text-app-subtle`; Welcome `Check` `text-app-fg`; THE TEST `border-l-2 border-app-accent`.
+Fill `AppShell` `align="start"` with **`topRight={<SignedInChrome />}` only** — the page does not pass `topLeft`. `OnboardingGate screen="rules"` → `RulesSetup` portals `AppShellTopLeft`: Wordmark **span** plus one arrow (previous chapter when the index is above 0, otherwise the previous in-app view). `AppShellHeader`: **h1** Living room rules, prompt, progress `1 of 9`. Chapter body (`RulesDocument` slice). Alert. On the last chapter only, a centered `text-sm text-app-muted` line **By continuing you accept the Terms of Use.** with an inline `text-accent underline underline-offset-2` `next/link` to `/terms`, directly above the button (no checkbox, no extra step). `Button` primary lg **Continue** or **I agree to these rules**. No Skip. B′: overlines `text-app-subtle`; Welcome `Check` `text-app-fg`; THE TEST `border-l-2 border-app-accent`.
 
 ### `/welcome` (forum)
 
