@@ -186,7 +186,7 @@ function confirmUnitRequest(request: number, chosen: AmountUnit): boolean {
  * @param from - Unit the draft is written in.
  * @param to - Unit to write.
  * @param draft - Current field value.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns The converted draft, or `''` when empty, unparseable, or without a rate.
  */
