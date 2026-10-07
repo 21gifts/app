@@ -33,13 +33,15 @@ import { FORUM_HOME_EVENT, consumeSkipIntroduceOverlay } from '@/lib/forum-feed'
 import { enablePush, resyncPushSubscription } from '@/lib/push';
 import { roleAtLeast } from '@/lib/roles';
 import { bindScrollport, releaseScrollport } from '@/lib/scroll-surface';
+import { loadSession } from '@/lib/session-storage';
 import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: one Menu disclosure; open, it starts with
  * {@link MenuAccountHeader} (photo, name, balance, Received / Given / Posts),
- * mounted with the chrome so its data loads before the Menu opens, and a
+ * mounted with the chrome so its data loads before the Menu opens (also while a
+ * stored session is still being checked, so the header holds its place), and a
  * divider, then icon+label rows (Home first, which clears this tab's view
  * stack on a plain click so the next screen's back arrow returns to the forum
  * home, then Balance (`/wallet`), Shops, Point of sale, Profile with no given or received amounts, Grants for every signed-in member, Settings (`/settings`, lucide `Settings`), living-room rules, Trust Chain, Statistics
@@ -69,6 +71,9 @@ export function SignedInChrome(): ReactElement {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
+  // A stored session still being checked keeps the account header's place; read on every
+  // auth change, so the sign-out that clears it also removes the header.
+  const storedSession = useAuthStore((state) => (state.account === null ? loadSession() : null));
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [tight, setTight] = useState(false);
@@ -268,7 +273,7 @@ export function SignedInChrome(): ReactElement {
                 className={panelClass}
                 {...(sheetScrolls ? { 'data-scrollport': '' } : {})}
               >
-                {account !== null ? (
+                {account !== null || storedSession !== null ? (
                   <>
                     <MenuAccountHeader
                       tight={tight}
