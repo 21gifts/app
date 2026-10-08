@@ -1383,29 +1383,41 @@ describe('useWalletSend wallet status', () => {
     expect(result.current.state.step).toBe('confirm');
   });
 
-  it('quotes again instead of sending a payment prepared before the wallet closed and opened again', async () => {
+  it('quotes an idle confirm step again on its own when the wallet closed and opened again before a render', async () => {
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'lnbc1');
     expect(result.current.state.step).toBe('confirm');
-    act(() => {
+    await act(async () => {
       useWalletStore.setState({ status: 'locked' });
       useWalletStore.setState({ status: 'ready' });
     });
-    expect(result.current.state.step).toBe('confirm');
-    await act(async () => {
-      result.current.confirm();
-    });
-    expect(send).not.toHaveBeenCalled();
     expect(payFromWallet).toHaveBeenCalledTimes(2);
     expect(result.current.state.step).toBe('confirm');
+    expect(result.current.busy).toBe(false);
     await act(async () => {
       result.current.confirm();
     });
     expect(send).toHaveBeenCalledTimes(1);
     expect(result.current.state.step).toBe('sent');
+  });
+
+  it('quotes again instead of sending when Send is pressed before React saw the wallet reopen', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    await act(async () => {
+      useWalletStore.setState({ status: 'locked' });
+      useWalletStore.setState({ status: 'ready' });
+      result.current.confirm();
+    });
+    expect(send).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.state.step).toBe('confirm');
   });
 
   it('drops a held step on Cancel or when the view closes', async () => {
@@ -2216,6 +2228,27 @@ describe('useWalletSend shop charge', () => {
     expect(parseWalletInput).toHaveBeenCalledWith(SHOP_QR);
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(result.current.state).toMatchObject({ step: 'amount', target: { member: 'shop' } });
+  });
+
+  it('falls back to the wallet read when the Spark quote fails after the wallet closed and opened again', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(CHARGE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce(confirmShop());
+    target(LNURL);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'shop@21.gifts' });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed' });
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    expect(result.current.state.step).toBe('quote');
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(parseWalletInput).toHaveBeenCalledWith(SHOP_QR);
+    expect(result.current.state.step).toBe('amount');
+    expect(result.current.busy).toBe(false);
   });
 
   it('pays an open charge without a Spark invoice over Lightning, without asking again', async () => {
