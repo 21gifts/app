@@ -62,8 +62,10 @@ function revealFocusedField(): void {
  * slid away. When the focus leaves that composer and no other text field
  * takes it, the height measured when the focus came into the composer from
  * no text field (kept while a hold is still on), and offset 0, are written
- * at once and held until the viewport reports that height, another field
- * takes the focus, the width or orientation changes, or one second has passed. Every other
+ * at once and held until the viewport reports that height, another text
+ * field takes the focus, the width or orientation changes, or one second has
+ * passed. Entering the composer from another text field measures nothing, so
+ * leaving it afterwards holds nothing. Every other
  * field keeps the plain behaviour.
  *
  * @returns void. Writes both custom properties, then reveals the focused field.
@@ -105,12 +107,18 @@ export function useAppHeight(): void {
     const handleFocusIn = (event: FocusEvent): void => {
       // Back into the composer while the keyboard is still closing: the held height stays the full one.
       const held = window.innerWidth === restingWidth ? heldHeight : null;
-      releaseHold();
-      if (inWritingComposer(event.target) && !isTypingField(event.relatedTarget)) {
-        const height = resolveAppHeight(window.innerHeight, viewport);
-        if (height !== null) {
-          restingHeight = held === null ? height : Math.max(held, height);
-          restingWidth = window.innerWidth;
+      // A control that opens no keyboard (a focused button) keeps the hold; a text field ends it.
+      if (isTypingField(event.target)) releaseHold();
+      if (inWritingComposer(event.target)) {
+        if (!isTypingField(event.relatedTarget)) {
+          const height = resolveAppHeight(window.innerHeight, viewport);
+          if (height !== null) {
+            restingHeight = held === null ? height : Math.max(held, height);
+            restingWidth = window.innerWidth;
+          }
+        } else if (!inWritingComposer(event.relatedTarget)) {
+          // From another text field the keyboard is already up: no full height to measure.
+          restingHeight = null;
         }
       }
       writeViewport(false);

@@ -578,12 +578,36 @@ describe('useAppHeight and the writing composer', () => {
     editable.remove();
   });
 
-  it('holds when the focus moves to a control that opens no keyboard', () => {
+  it('holds when the focus moves to a control that opens no keyboard, also once it is focused', () => {
     const { field } = openKeyboard();
     const box = document.createElement('input');
     box.type = 'checkbox';
     document.body.appendChild(box);
     focusOut(field, box);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+    focusIn(box, field);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+  });
+
+  it('holds nothing after entering the composer from another text field', () => {
+    const { field, other } = openKeyboard();
+    focusOut(field, other);
+    focusIn(other, field);
+    expect(written().height).toBe('511px');
+    // Back into the composer straight from the other field: the keyboard is up, nothing is measured.
+    focusOut(other, field);
+    focusIn(field, other);
+    focusOut(field);
+    expect(written().height).toBe('511px');
+  });
+
+  it('keeps the measured height when the focus moves inside the composer', () => {
+    const { form, field } = openKeyboard();
+    const button = document.createElement('button');
+    form.appendChild(button);
+    focusOut(field, button);
+    focusIn(button, field);
+    focusOut(button);
     expect(written()).toEqual({ height: '852px', offset: '0px' });
   });
 
