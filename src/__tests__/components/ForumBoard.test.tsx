@@ -8063,6 +8063,30 @@ describe('ForumBoard writer', () => {
     expect(document.querySelector('[data-scroll-page]')!.contains(sentence)).toBe(true);
   });
 
+  it('shows the composer pay slot on the page while the writer is closed, and in it while open', () => {
+    const view = renderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+      payWaiting: true,
+    });
+    const onPage = screen.getByText(WALLET_UNAVAILABLE);
+    expect(writerLayer(view.container)).toBeNull();
+    expect(document.querySelector('[data-scroll-page]')!.contains(onPage)).toBe(true);
+    view.setOpen(true);
+    expect(screen.getAllByText(WALLET_UNAVAILABLE)).toHaveLength(1);
+    expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
+  });
+
+  it('takes a compose request on an open writer without a text field (Ask for money)', () => {
+    const view = renderHome({ composeIntent: 'ask' }, true);
+    act(() => {
+      requestForumCompose();
+    });
+    expect(view.onOpen).not.toHaveBeenCalled();
+    expect(consumePendingForumCompose()).toBe(false);
+  });
+
   it('opens the closed writer on a compose request and focuses its field', () => {
     const view = renderHome();
     act(() => {
