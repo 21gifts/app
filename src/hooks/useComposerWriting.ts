@@ -78,6 +78,14 @@ export function useComposerWriting(
     }
   }, [enabled, active]);
 
+  // A field focused before the pointer was known (a compose request at mount) starts writing mode now.
+  useEffect(() => {
+    const field = document.activeElement;
+    if (touch && field instanceof HTMLTextAreaElement && composerRef.current?.contains(field)) {
+      setFocused(true);
+    }
+  }, [touch, composerRef]);
+
   useEffect(() => {
     if (!touch || setShellWriting === undefined) {
       return;

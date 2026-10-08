@@ -186,6 +186,38 @@ describe('useComposerWriting', () => {
     expect(states.at(-1)!.writing).toBe(false);
   });
 
+  it('starts writing mode for a field that was focused before the pointer was known', () => {
+    function Early({ onState }: { onState: (state: ComposerWriting) => void }): ReactElement {
+      const formRef = useRef<HTMLFormElement>(null);
+      const state = useComposerWriting(true, true, formRef);
+      onState(state);
+      return (
+        <form ref={formRef} onFocus={state.onComposerFocus}>
+          {/* Focused by the browser at mount, before the pointer effect ran. */}
+          <textarea aria-label="Early" autoFocus />
+        </form>
+      );
+    }
+    const states: ComposerWriting[] = [];
+    const Wrapper = shell(vi.fn());
+    render(
+      <Wrapper>
+        <Early onState={(state) => states.push(state)} />
+      </Wrapper>,
+    );
+    expect(states.at(-1)!.writing).toBe(true);
+  });
+
+  it('leaves writing mode off when the focused field is outside the composer', () => {
+    const outside = document.createElement('textarea');
+    document.body.appendChild(outside);
+    outside.focus();
+    const { latest } = renderComposer();
+    expect(latest().touch).toBe(true);
+    expect(latest().writing).toBe(false);
+    outside.remove();
+  });
+
   it('sets the shell off on unmount', () => {
     const setWriting = vi.fn();
     const { unmount } = renderComposer({}, setWriting);

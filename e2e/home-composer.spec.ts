@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { stubCamera } from './camera';
 
 /** First living-room law, shown in the laws hint above the composer. */
 const LAWS_1 = '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.';
@@ -304,6 +305,49 @@ test.describe('forum home composer on a touch device', () => {
     await expect(inboxField).toBeFocused();
     await page.waitForTimeout(400);
     expect(await frame(page)).toEqual(inboxRest);
+    await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
+  });
+
+  test('Function: useComposerWriting — the Ask-for-money wizard, wallet Send manual entry and the shop wizard change nothing', async ({
+    page,
+  }) => {
+    await stubCamera(page, { kind: 'blank' });
+    await openHome(page);
+    const atRest = await frame(page);
+
+    // Ask for money: its amount field is not the Post composer.
+    await page.getByRole('button', { name: 'Ask for money' }).tap();
+    const ask = page.getByLabel('Ask', { exact: true });
+    await ask.tap();
+    await expect(ask).toBeFocused();
+    await page.waitForTimeout(400);
+    // Without the Post composer on the page the shell has no writing mode at all.
+    expect(await frame(page)).toEqual({ ...atRest, writing: null });
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await expect(page.getByText(LAWS_1)).toBeVisible();
+
+    // Wallet Send, manual entry, over the same forum home.
+    await page.goto('/welcome?visual=send-input');
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(region.locator('video')).toBeVisible();
+    const sendRest = await frame(page);
+    await region.getByRole('button', { name: 'Enter manually' }).tap();
+    const manual = region.getByLabel('Payment request or address');
+    await expect(manual).toBeFocused();
+    await page.waitForTimeout(400);
+    expect(await frame(page)).toEqual(sendRest);
+    expect(sendRest.writing).not.toBe('on');
+
+    // The shop wizard on /shops.
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Add a shop' }).tap();
+    await page.getByRole('button', { name: 'Next' }).tap();
+    await page.getByRole('button', { name: 'Next' }).tap();
+    const shopText = page.getByLabel('Shop text');
+    await shopText.tap();
+    await expect(shopText).toBeFocused();
+    await page.waitForTimeout(400);
+    expect(await frame(page)).toEqual({ radius: '24px', pad: '8px', writing: null });
     await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
   });
 
