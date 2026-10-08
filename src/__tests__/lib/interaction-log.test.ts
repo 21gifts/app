@@ -42,6 +42,17 @@ function posted(): SentEvent[] {
 }
 
 /**
+ * Names of the events in each request so far.
+ *
+ * @returns One list of names per request.
+ */
+function batches(): string[][] {
+  return requests().map((request) =>
+    (JSON.parse(request.body) as { events: SentEvent[] }).events.map((event) => event.name),
+  );
+}
+
+/**
  * Makes the next answers succeed, fail with a status, or fail on the network.
  *
  * @param outcome - `ok`, an error status, or a network error.
@@ -329,6 +340,20 @@ describe('signing out while a flush runs', () => {
   });
 });
 
+describe('a batch the api refuses', () => {
+  it('is dropped instead of sent again, and a 429 is kept', async () => {
+    answer(400);
+    mod.logInteraction('screen_view');
+    await mod.flushInteractions();
+    answer(429);
+    mod.logInteraction('login');
+    await mod.flushInteractions();
+    answer('ok');
+    await mod.flushInteractions();
+    expect(batches()).toEqual([['screen_view'], ['login'], ['login']]);
+  });
+});
+
 describe('logInteraction with the session of the action', () => {
   it('keeps the event while that session is still current', async () => {
     mod.logInteraction('search', { query: 'ada', results: 1 }, 'sess');
@@ -346,17 +371,6 @@ describe('logInteraction with the session of the action', () => {
 });
 
 describe('logLogout', () => {
-  /**
-   * Names of the events in each request so far.
-   *
-   * @returns One list of names per request.
-   */
-  function batches(): string[][] {
-    return requests().map((request) =>
-      (JSON.parse(request.body) as { events: SentEvent[] }).events.map((event) => event.name),
-    );
-  }
-
   it('sends logout in a request of its own under the ending session, and flushes the queue', async () => {
     mod.logInteraction('screen_view');
     await mod.logLogout();
@@ -433,6 +447,13 @@ describe('logLogout', () => {
     await vi.advanceTimersByTimeAsync(1);
     await logout;
     expect(batches()).toEqual([['screen_view'], ['logout'], ['screen_view']]);
+  });
+
+  it('ends at once when the api refuses the session', async () => {
+    answer(401);
+    mod.logInteraction('screen_view');
+    await mod.logLogout();
+    expect(batches()).toEqual([['screen_view'], ['logout']]);
   });
 
   it('is not held back by a flush that does not answer', async () => {

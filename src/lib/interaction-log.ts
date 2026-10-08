@@ -158,12 +158,19 @@ function currentPath(): string {
 }
 
 /**
+ * A batch the api refused for good (a 4xx status other than 429): sending it
+ * again cannot succeed, so it is dropped instead.
+ */
+class EventsRefusedError extends Error {}
+
+/**
  * Sends one batch of events of the signed-in member.
  *
  * @param session - Bearer session.
  * @param events - At most {@link INTERACTION_BATCH_SIZE} events.
  * @returns Resolves once the api accepted the batch.
- * @throws Error on a non-2xx status or a network failure.
+ * @throws {@link EventsRefusedError} on a 4xx status other than 429; Error on
+ *   another non-2xx status, a network failure, or the time limit.
  */
 async function postEvents(session: string, events: InteractionEvent[]): Promise<void> {
   const controller = new AbortController();
@@ -183,7 +190,9 @@ async function postEvents(session: string, events: InteractionEvent[]): Promise<
     clearTimeout(timer);
   }
   if (!response.ok) {
-    throw new Error(`Could not send events: ${String(response.status)}`);
+    const message = `Could not send events: ${String(response.status)}`;
+    const refused = response.status >= 400 && response.status < 500 && response.status !== 429;
+    throw refused ? new EventsRefusedError(message) : new Error(message);
   }
 }
 
@@ -278,8 +287,9 @@ function nextBatch(): InteractionEvent[] {
  * flight when the page closes is delivered. Events go out only with the
  * session they were recorded under: without a session, or with another one,
  * the queue is dropped. A request that has not answered after
- * {@link INTERACTION_REQUEST_TIMEOUT_MS} is aborted. A failed batch goes back
- * to the front of the queue and the next flush tries again. One flush per
+ * {@link INTERACTION_REQUEST_TIMEOUT_MS} is aborted. A batch the api refused
+ * for good (a 4xx status other than 429) is dropped; another failed batch goes
+ * back to the front of the queue and the next flush tries again. One flush per
  * session runs at a time; a flush of an earlier session does not hold a new
  * session's queue back, and once its member signed out it sends no further
  * batch and drops what is left. Never rejects.
@@ -325,17 +335,22 @@ function sendsFor(session: string): boolean {
 }
 
 /**
- * Sends the queue in batches while it still belongs to `session`.
+ * Sends the queue in batches while it still belongs to `session`. A batch the
+ * api refused for good is dropped, and the next one is sent.
  *
  * @param session - Session the queued events were recorded under.
- * @returns `false` when a batch failed, otherwise `true` (the queue is empty or the session changed).
+ * @returns `false` when a batch failed and went back to the queue, otherwise
+ *   `true` (the queue is empty or the session changed).
  */
 async function sendQueue(session: string): Promise<boolean> {
   while (queue.length > 0 && sendsFor(session)) {
     const batch = nextBatch();
     try {
       await postEvents(session, batch);
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof EventsRefusedError) {
+        continue;
+      }
       if (sendsFor(session)) {
         queue.unshift(...batch);
         dropOldest();
@@ -359,7 +374,8 @@ export const LOGOUT_RETRY_MS = 500;
  * flush already running does not hold it back. It also sends the queued
  * events, after any flush already running.
  * A failed request is sent again every {@link LOGOUT_RETRY_MS} while the
- * session is still the current one. The caller bounds the wait and then
+ * session is still the current one; a request the api refused for good (a
+ * 4xx status other than 429) is not. The caller bounds the wait and then
  * clears the session: queued events not sent by then are dropped, and a
  * request still in flight keeps running (it is kept alive) until it is
  * answered or aborted after {@link INTERACTION_REQUEST_TIMEOUT_MS}. Without a
@@ -383,7 +399,11 @@ export async function logLogout(): Promise<void> {
     try {
       await postEvents(session, [event]);
       break;
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof EventsRefusedError) {
+        // The api refused it (for example, the session is no longer valid).
+        break;
+      }
       await waitToRetry();
     }
   }
