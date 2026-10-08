@@ -12399,6 +12399,18 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
+    const viewport = page.viewportSize();
+    if (viewport !== null && viewport.width < 500) {
+      await page.getByRole('button', { name: 'Send ₿1' }).evaluate((button) => {
+        const scroller = button.closest('[data-scrollport]');
+        if (!(scroller instanceof HTMLElement)) {
+          return;
+        }
+        scroller.scrollTop +=
+          button.getBoundingClientRect().top - (scroller.getBoundingClientRect().bottom - 96);
+      });
+    }
+    await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-members-heart-paid');
   });
 

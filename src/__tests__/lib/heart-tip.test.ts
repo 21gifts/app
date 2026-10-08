@@ -395,6 +395,29 @@ describe('useHeartTip', () => {
     vi.useRealTimers();
   });
 
+  it('keeps plusOne on screen when visual=heart-paid', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-paid');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: true,
+      alert: null,
+    });
+    act(() => {
+      vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
+    });
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: true,
+      alert: null,
+    });
+    vi.useRealTimers();
+  });
+
   it('still pays when navigator.vibrate is missing', async () => {
     Reflect.deleteProperty(navigator, 'vibrate');
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
