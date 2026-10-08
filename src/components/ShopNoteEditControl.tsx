@@ -190,17 +190,27 @@ export function ShopNoteEditControl({
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
-  // A save that stopped after some parts were written is reported when the editor closes.
+  // A save that stopped after some parts were written is reported when the
+  // editor closes or unmounts (for example when the Shops view switches).
   const unreportedSave = useRef(false);
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
 
-  /** Close the steps; report a partly written save that was not reported yet. */
-  function closeEditor(): void {
-    setOpen(false);
+  /** Report a partly written save once, if one is waiting. */
+  function reportUnreportedSave(): void {
     if (unreportedSave.current) {
       unreportedSave.current = false;
-      onSaved?.();
+      onSavedRef.current?.();
     }
   }
+
+  /** Close the steps and report a partly written save. */
+  function closeEditor(): void {
+    setOpen(false);
+    reportUnreportedSave();
+  }
+
+  useEffect(() => reportUnreportedSave, []);
   const [saveError, setSaveError] = useState(false);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
