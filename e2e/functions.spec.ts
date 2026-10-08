@@ -5950,7 +5950,9 @@ test('Function: latestRateDayFor — peso till uses the last day that has PHP', 
     });
   });
   await page.goto('/pos/amount');
-  const php = page.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', { name: 'PHP' });
+  const php = page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'PHP' });
   await php.click();
   await expect(php).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '1', exact: true }).click();
