@@ -357,7 +357,7 @@ export const LOGOUT_RETRY_MS = 500;
  * Records `logout` and sends it at once, in a request of its own with the
  * session that is ending, so the caller can clear the session afterwards; a
  * flush already running does not hold it back. It also sends the queued
- * events, after any flush already running, and resolves once both are done.
+ * events, after any flush already running.
  * A failed request is sent again every {@link LOGOUT_RETRY_MS} while the
  * session is still the current one. The caller bounds the wait and then
  * clears the session: queued events not sent by then are dropped, and a

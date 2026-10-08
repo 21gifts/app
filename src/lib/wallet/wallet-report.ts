@@ -11,6 +11,12 @@ import { useWalletStore } from '@/stores/wallet-store';
  */
 export const WALLET_REPORT_QUIET_MS = 60_000;
 
+/**
+ * How long the listing, and each report request, may take before the report
+ * stops; the next report tries again.
+ */
+export const WALLET_REPORT_STEP_TIMEOUT_MS = 30_000;
+
 /** Wallet identity the cursors below belong to. */
 let identity: string | null = null;
 
@@ -41,10 +47,31 @@ function forget(): void {
 }
 
 /**
- * Every payment the wallet lists, newest first, read in pages of
- * {@link WALLET_REPORT_PAGE_SIZE}.
+ * Rejects when `work` has not settled after {@link WALLET_REPORT_STEP_TIMEOUT_MS},
+ * so a call that never answers cannot hold the report forever.
  *
- * @returns The payments.
+ * @param work - One step of the report.
+ * @returns The step's result.
+ * @throws Error `wallet-report-timeout` after the time limit; otherwise the step's error.
+ */
+function withinStepTime<T>(work: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const limit = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error('wallet-report-timeout'));
+    }, WALLET_REPORT_STEP_TIMEOUT_MS);
+  });
+  return Promise.race([work, limit]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
+/**
+ * Every payment the wallet lists, newest first, read in pages of
+ * {@link WALLET_REPORT_PAGE_SIZE}. A payment that moved onto the next page
+ * while the pages were read is kept once.
+ *
+ * @returns The payments, each id once.
  * @throws When the wallet cannot list them.
  */
 async function listAll(): Promise<WalletReportPayment[]> {
@@ -56,7 +83,7 @@ async function listAll(): Promise<WalletReportPayment[]> {
     });
     all.push(...page);
     if (page.length < WALLET_REPORT_PAGE_SIZE) {
-      return all;
+      return [...new Map(all.map((payment) => [payment.id, payment])).values()];
     }
   }
 }
@@ -117,7 +144,7 @@ async function reportOnce(): Promise<void> {
   const syncedAt = new Date().toISOString();
   let payments: WalletReportPayment[];
   try {
-    payments = await listAll();
+    payments = await withinStepTime(listAll());
   } catch {
     return;
   }
@@ -138,7 +165,9 @@ async function reportOnce(): Promise<void> {
     const chunk = unsent.slice(offset, offset + WALLET_REPORT_PAGE_SIZE);
     let ids: string[];
     try {
-      ids = await postWalletReport(session, { balanceSats, syncedAt, payments: chunk });
+      ids = await withinStepTime(
+        postWalletReport(session, { balanceSats, syncedAt, payments: chunk }),
+      );
     } catch {
       return;
     }
