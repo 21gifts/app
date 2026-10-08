@@ -1107,12 +1107,13 @@ describe('payFromWallet', () => {
     }
     const readsBefore = getInfo.mock.calls.length;
     vi.mocked(logInteraction).mockClear();
+    useAuthStore.setState({ session: 'sess' });
     await expect(result.send()).resolves.toEqual({ kind: 'paid' });
-    expect(logInteraction).toHaveBeenCalledWith('payment_sent', {
-      amountSats: 2_100,
-      feeSats: 0,
-      onchain: false,
-    });
+    expect(logInteraction).toHaveBeenCalledWith(
+      'payment_sent',
+      { amountSats: 2_100, feeSats: 0, onchain: false },
+      'sess',
+    );
     await vi.waitFor(() => {
       expect(getInfo.mock.calls.length).toBeGreaterThan(readsBefore);
     });
@@ -1375,11 +1376,11 @@ describe('payFromWallet to a base-chain address', () => {
     }
     await expect(result.send('fast')).resolves.toEqual({ kind: 'paid' });
     expect(send).toHaveBeenCalledWith('fast');
-    expect(logInteraction).toHaveBeenCalledWith('payment_sent', {
-      amountSats: 50_000,
-      feeSats: 2_840,
-      onchain: true,
-    });
+    expect(logInteraction).toHaveBeenCalledWith(
+      'payment_sent',
+      { amountSats: 50_000, feeSats: 2_840, onchain: true },
+      null,
+    );
   });
 
   it('sends with the medium speed when none is chosen', async () => {

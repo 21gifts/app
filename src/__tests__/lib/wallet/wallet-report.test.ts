@@ -250,18 +250,20 @@ describe('reportWallet', () => {
     stores.wallet.setState({ balanceSats: 5_500 });
     await mod.reportWallet();
     expect(mocks.logInteraction).toHaveBeenCalledTimes(1);
-    expect(mocks.logInteraction).toHaveBeenCalledWith('payment_received_seen', {
-      paymentId: 'new',
-      amountSats: 500,
-    });
+    expect(mocks.logInteraction).toHaveBeenCalledWith(
+      'payment_received_seen',
+      { paymentId: 'new', amountSats: 500 },
+      'sess',
+    );
     listing([payment('pending'), payment('new', { amountSats: 500 }), payment('old')]);
     stores.wallet.setState({ balanceSats: 5_521 });
     await mod.reportWallet();
     expect(mocks.logInteraction).toHaveBeenCalledTimes(2);
-    expect(mocks.logInteraction).toHaveBeenLastCalledWith('payment_received_seen', {
-      paymentId: 'pending',
-      amountSats: 21,
-    });
+    expect(mocks.logInteraction).toHaveBeenLastCalledWith(
+      'payment_received_seen',
+      { paymentId: 'pending', amountSats: 21 },
+      'sess',
+    );
   });
 
   it('keeps its cursor in tab memory only and writes no browser storage', async () => {

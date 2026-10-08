@@ -983,7 +983,9 @@ only for a signed-in member and both through same-origin proxies:
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or
-any private key. The report payment is built field by field
+any private key. Free text that a member or a counterparty typed (a
+payment description or comment, a search term) is sent as typed; the app
+never puts one of these secrets into it. The report payment is built field by field
 (`toWalletReportPayment`) and never copies an SDK object; event props drop
 secret-named keys and secret-shaped values. A change that widens either
 payload adds a unit test proving the new field cannot carry one of these. No

@@ -641,7 +641,7 @@ describe('useWalletPay sending', () => {
     expect(result.current.view).toBe('unconfirmed');
     expect(send).toHaveBeenCalledTimes(1);
     expect(logInteraction).toHaveBeenCalledTimes(1);
-    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 });
+    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 }, 'token');
   });
 
   it('after a failed send waits 60 s on the long-poll, then says not confirmed yet, without retrying', async () => {
@@ -896,6 +896,27 @@ describe('useWalletPay gift record', () => {
     await act(async () => {
       finish({ kind: 'paid' });
     });
-    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 });
+    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 }, 'token');
+  });
+
+  it('records the gift under the session the send started in', async () => {
+    let finish: (value: WalletSendResult) => void = () => undefined;
+    const send = vi.fn(
+      () =>
+        new Promise<WalletSendResult>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    useAuthStore.setState({ session: 'other' });
+    await act(async () => {
+      finish({ kind: 'paid' });
+    });
+    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 }, 'token');
   });
 });
