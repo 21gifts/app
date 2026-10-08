@@ -734,6 +734,26 @@ describe('useAppHeight and the writing composer', () => {
     expect(written().height).toBe('300px');
   });
 
+  it('measures a field focused before the composer was marked, once the focus is announced again', () => {
+    stubInnerHeight(852);
+    const visualViewport = stubVisualViewport(852, { offsetTop: 0 });
+    renderHook(() => {
+      useAppHeight();
+    });
+    const form = document.createElement('form');
+    const field = document.createElement('textarea');
+    form.appendChild(field);
+    document.body.appendChild(form);
+    // Focused at mount, before the marker: nothing is measured yet.
+    focusIn(field);
+    form.setAttribute('data-writing-composer', '');
+    focusIn(field);
+    visualViewport.height = 511;
+    viewportListener(visualViewport, 'resize')();
+    focusOut(field);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+  });
+
   it('forgets an earlier measurement when a later entry cannot measure', () => {
     const { visualViewport, field } = openKeyboard();
     // The keyboard closes and the viewport is full again; then a pinch-zoomed entry measures nothing.

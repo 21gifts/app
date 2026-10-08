@@ -78,11 +78,14 @@ export function useComposerWriting(
     }
   }, [enabled, active]);
 
-  // A field focused before the pointer was known (a compose request at mount) starts writing mode now.
+  // A field focused before the pointer was known (a compose request at mount) starts writing mode
+  // now. Its focusin came before the form carried `data-writing-composer`, so the focus is announced
+  // again (no real focus change) for useAppHeight to measure the composer's full height.
   useEffect(() => {
     const field = document.activeElement;
     if (touch && field instanceof HTMLTextAreaElement && composerRef.current?.contains(field)) {
       setFocused(true);
+      field.dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget: null }));
     }
   }, [touch, composerRef]);
 
