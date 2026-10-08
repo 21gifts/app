@@ -926,7 +926,11 @@ describe('ShopNoteEditControl', () => {
       });
       return { promise, resolve, reject };
     };
-    const run = async (finish: 'fail' | 'succeed', unmountAfterText: boolean): Promise<number> => {
+    const run = async (
+      finish: 'fail' | 'succeed',
+      unmountAfterText: boolean,
+      close = false,
+    ): Promise<number> => {
       const text = deferred<ForumMessage>();
       const user = deferred<ForumMessage>();
       vi.mocked(setMessageShopText).mockReturnValueOnce(text.promise);
@@ -963,7 +967,12 @@ describe('ShopNoteEditControl', () => {
         expect(setMessageShopAccount).toHaveBeenCalled();
       });
       if (unmountAfterText) {
-        view.unmount();
+        if (close) {
+          // The pencil closes the editor while the save still runs; it stays mounted.
+          fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+        } else {
+          view.unmount();
+        }
       }
       // Nothing is reported while the save is still running.
       expect(onSaved).not.toHaveBeenCalled();
@@ -979,11 +988,17 @@ describe('ShopNoteEditControl', () => {
       });
       vi.mocked(setMessageShopText).mockClear();
       vi.mocked(setMessageShopAccount).mockClear();
-      return onSaved.mock.calls.length;
+      const reported = onSaved.mock.calls.length;
+      view.unmount();
+      // A later unmount does not report the same save again.
+      expect(onSaved).toHaveBeenCalledTimes(reported);
+      return reported;
     };
     expect(await run('fail', false)).toBe(1);
     expect(await run('succeed', true)).toBe(1);
     expect(await run('fail', true)).toBe(1);
+    expect(await run('fail', true, true)).toBe(1);
+    expect(await run('succeed', true, true)).toBe(1);
   });
 
   it('reads kept stills before a text save can drop their addresses', async () => {

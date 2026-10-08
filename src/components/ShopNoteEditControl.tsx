@@ -195,7 +195,8 @@ export function ShopNoteEditControl({
   // example when the Shops view switches), and never while a save is in flight.
   const unreportedSave = useRef(false);
   const saveInFlight = useRef(false);
-  const mounted = useRef(true);
+  // Closed or unmounted while a save ran: report once that save settles.
+  const reportWhenSettled = useRef(false);
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
 
@@ -207,23 +208,29 @@ export function ShopNoteEditControl({
     }
   }
 
-  /** Close the steps; a save in flight reports when it settles. */
-  function closeEditor(): void {
-    setOpen(false);
-    if (!saveInFlight.current) {
+  /** Report now, or once the running save settles. */
+  function reportNowOrWhenSettled(): void {
+    if (saveInFlight.current) {
+      reportWhenSettled.current = true;
+    } else {
       reportSave();
     }
   }
 
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      if (!saveInFlight.current) {
-        reportSave();
-      }
-    };
-  }, []);
+  /** Close the steps and report written parts. */
+  function closeEditor(): void {
+    setOpen(false);
+    reportNowOrWhenSettled();
+  }
+
+  const reportOnUnmount = useRef(reportNowOrWhenSettled);
+  reportOnUnmount.current = reportNowOrWhenSettled;
+  useEffect(
+    () => () => {
+      reportOnUnmount.current();
+    },
+    [],
+  );
   const [saveError, setSaveError] = useState(false);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
@@ -445,12 +452,12 @@ export function ShopNoteEditControl({
       reportSave();
     } catch {
       setSaveError(true);
-      // Closed or gone while the save ran: nothing will close it again.
-      if (!mounted.current) {
-        reportSave();
-      }
     } finally {
       saveInFlight.current = false;
+      if (reportWhenSettled.current) {
+        reportWhenSettled.current = false;
+        reportSave();
+      }
       setSaving(false);
     }
   }
