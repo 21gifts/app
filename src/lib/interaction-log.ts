@@ -6,6 +6,7 @@ export type InteractionName =
   | 'post_created'
   | 'reply_created'
   | 'gift_sent'
+  | 'heart_sent'
   | 'payment_sent'
   | 'payment_received_seen'
   | 'pos_charge_created'

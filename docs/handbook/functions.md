@@ -4277,10 +4277,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: logInteraction
 
-- **Purpose:** Queues one interaction of the signed-in member for `POST /me/events`: `screen_view`, `post_created`, `reply_created`, `gift_sent`, `payment_sent`, `payment_received_seen`, `pos_charge_created`, `pos_charge_paid_seen`, `search`, `shop_opened`, `profile_opened`, `login`, `logout`, or `signup_completed`.
+- **Purpose:** Queues one interaction of the signed-in member for `POST /me/events`: `screen_view`, `post_created`, `reply_created`, `gift_sent`, `heart_sent`, `payment_sent`, `payment_received_seen`, `pos_charge_created`, `pos_charge_paid_seen`, `search`, `shop_opened`, `profile_opened`, `login`, `logout`, or `signup_completed`.
 - **Inputs:** The event name, optional flat `props` (ids, amounts, counts, flags; the only free text is a search term), and optionally the session the recorded action ran under. Callers that record after an await pass it (`postMessage`, `postMessageVideo`, `createPosCharge`, `searchMentionAccounts` their `sessionToken`; `payFromWallet`'s `send`, `useWalletPay` and `reportWallet` the session at the start of the send or report); when it is no longer the current session, the event is dropped, so it is never queued for another member.
 - **Returns / side effects:** None. Without a session nothing is kept, so anonymous visits are never recorded. Events still queued under another session are dropped before the new one is queued. The event carries the time (ISO 8601), the current path without query or fragment (the access key of `/view/:viewKey` and `/view-key/:viewKey` is replaced by `[key]`), and the cleaned props: at most 12, keys that are short identifiers and do not name a secret (`mnemonic`, `phrase`, `seed`, `prf`, `preimage`, `secret`, `token`, `password`, `privkey`, `private`, `session`), values that are strings of at most 200 characters, finite numbers, booleans, or `null`, and never a string that looks like a recovery phrase (12 or more words), 64 or more hex digits, or a bearer token. At most 500 events wait; the oldest are dropped first. Reaching 50 queued events starts a flush (the byte budget may split it into several requests). The path is cut at 512 characters.
-- **Used by:** `InteractionLog`, `reportWallet`, `payFromWallet`, `useWalletPay`, `usePasskeyLogin`, `postMessage`, `postMessageVideo`, `createPosCharge`, `PosTill`, `searchMentionAccounts`, `PlacesMapScreen`.
+- **Used by:** `InteractionLog`, `reportWallet`, `payFromWallet`, `useWalletPay`, `usePasskeyLogin`, `postMessage`, `postMessageVideo`, `createPosCharge`, `PosTill`, `searchMentionAccounts`, `PlacesMapScreen`, `sendHeartTip`.
 
 ## Function: flushInteractions
 
@@ -4411,6 +4411,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** One-click 1-sat heart: `postMessageInvoice(..., 1, undefined, undefined, true)` then `payFromWallet` on `sparkInvoice` or `pr`. A `confirm` result calls `send()` at once, including when the fee is above ₿0. No amount dialog and no gift sheet.
 - **Inputs:** `HeartTipInput` (message id, session or null, readOnly, local Sunday, wallet snapshot, setup/unlock flags).
 - **Returns / side effects:** `{ kind: 'noop' }` without a session or on a read-only board; `{ kind: 'paid' }` after a successful send; otherwise `{ kind: 'alert', alert }` (`sunday`, `needsBalance`, `rateLimit`, `authorWallet`, `request`, `payFailed`). A second in-flight click on the same id is ignored by `useHeartTip`.
+- **Interaction log:** A heart the SDK reports as sent is recorded as `heart_sent` with the message id and `amountSats` 1, under the session of the click, next to the `payment_sent` that `payFromWallet` records; a send the app stopped waiting for is recorded once its `sentLate` resolves `true`.
 - **Used by:** `useHeartTip`.
 
 ## Function: useHeartTip
