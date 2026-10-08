@@ -5854,22 +5854,44 @@ test('Function: latestRateDayFor — peso till uses the last day that has PHP', 
   await seedAdaSession(page);
   await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
   await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 100_001_000,
+    totalBtc: '1.00001000',
+    totalUsd: '100010.00',
+    totalPhp: '5600000.00',
+    giftCount: 2,
+    firstPaidAt: '2026-10-07T00:00:00.000Z',
+    lastPaidAt: '2026-10-08T00:08:00.000Z',
     spendOverTime: [
       {
         day: '2026-10-07',
         sats: 100_000_000,
+        cumulativeSats: 100_000_000,
+        btc: '1.00000000',
+        cumulativeBtc: '1.00000000',
         usd: '100000.00',
+        cumulativeUsd: '100000.00',
         chf: '80000.00',
+        cumulativeChf: '80000.00',
         eur: '90000.00',
+        cumulativeEur: '90000.00',
         php: '5600000.00',
+        cumulativePhp: '5600000.00',
       },
       {
         day: '2026-10-08',
         sats: 1000,
+        cumulativeSats: 100_001_000,
+        btc: '0.00001000',
+        cumulativeBtc: '1.00001000',
         usd: '10.00',
+        cumulativeUsd: '100010.00',
         chf: null,
+        cumulativeChf: null,
         eur: null,
+        cumulativeEur: null,
         php: null,
+        cumulativePhp: null,
       },
     ],
   });
@@ -5928,10 +5950,9 @@ test('Function: latestRateDayFor — peso till uses the last day that has PHP', 
     });
   });
   await page.goto('/pos/amount');
-  await page
-    .getByRole('group', { name: 'Bitcoin or fiat' })
-    .getByRole('button', { name: 'PHP' })
-    .click();
+  const php = page.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', { name: 'PHP' });
+  await php.click();
+  await expect(php).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '1', exact: true }).click();
   await page.getByRole('button', { name: '0', exact: true }).click();
   await page.getByRole('button', { name: '0', exact: true }).click();
