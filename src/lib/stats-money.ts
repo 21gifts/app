@@ -432,10 +432,7 @@ export function parseAmountDraft(
   if (!Number.isFinite(amount)) {
     return { kind: 'invalid' };
   }
-  if (
-    amount > 0 &&
-    (day === null || !fiatTotalUsable(day === null ? null : fiatFieldOnDay(day, code)))
-  ) {
+  if (amount > 0 && (day === null || !fiatTotalUsable(fiatFieldOnDay(day, code)))) {
     return { kind: 'no-rate' };
   }
   const sats = fiatToSats(amount, day, code);
