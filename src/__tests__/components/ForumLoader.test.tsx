@@ -5860,6 +5860,7 @@ describe('ForumLoader', () => {
   it('skips a card whose data-message-id is empty', async () => {
     stubForumCardRects({
       m1: CARD_INSIDE_RECT,
+      '': CARD_INSIDE_RECT,
     });
     fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     const { container } = renderWithLocale(
@@ -5880,7 +5881,9 @@ describe('ForumLoader', () => {
     emptyCard.setAttribute('data-message-id', '');
     scroller.appendChild(emptyCard);
     scroller.dispatchEvent(new Event('scroll'));
-    await flushPaint();
+    await waitFor(() => {
+      expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
+    });
     expect(markVisibleForumNoteReadMock).not.toHaveBeenCalledWith('sess', '');
   });
 
