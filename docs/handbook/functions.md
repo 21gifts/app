@@ -4168,7 +4168,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The one reader of the `?visual=` screenshot pin. Honoured only in a Playwright build (`getE2eNow()` set); every deployed build gets `null`.
 - **Inputs:** None. Reads `window.location.search`.
 - **Returns / side effects:** The pin name, or `null` (also during server rendering). No network.
-- **Used by:** `useWallet`, `useWalletPay`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useWalletSetup` (`walletSetupPin`), `WalletLoginCard`, `walletGateApplies`, `paymentHref`.
+- **Used by:** `useWallet`, `useWalletPay`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useWalletSetup` (`walletSetupPin`), `WalletLoginCard`, `walletGateApplies`, `paymentHref`, `sendHeartTip`, `useHeartTip`.
 
 ## Function: paymentTitle
 
