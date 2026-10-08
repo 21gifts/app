@@ -2254,6 +2254,18 @@ Same signed-in German note after opening `?visual=heart-paid` and clicking Send 
 
 ![21.gifts welcome heart paid](images/welcome-heart-paid.png)
 
+### Variant: heart-unavailable
+
+Same signed-in German note after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
+
+![21.gifts welcome heart unavailable](images/welcome-heart-unavailable.png)
+
+### Variant: heart-pending
+
+Same signed-in German note after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
+
+![21.gifts welcome heart pending](images/welcome-heart-pending.png)
+
 ### Variant: note-truncated
 
 Signed-in `/welcome` with one paid note whose body is longer than 560 characters. Collapsed 280-character preview, ellipsis, and **Show more** are visible; the distinctive tail is hidden.
@@ -2809,6 +2821,18 @@ Shop post feed with **Cafe Luna** after stubbing POST /messages/*/invoice to 400
 Same Cafe Luna post after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
 
 ![21.gifts shops heart paid](images/shops-heart-paid.png)
+
+### Variant: heart-unavailable
+
+Same Cafe Luna post after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
+
+![21.gifts shops heart unavailable](images/shops-heart-unavailable.png)
+
+### Variant: heart-pending
+
+Same Cafe Luna post after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
+
+![21.gifts shops heart pending](images/shops-heart-pending.png)
 
 ### Variant: mention-suggest
 
@@ -3789,6 +3813,18 @@ Same German post in the posts feed after stubbing POST /messages/*/invoice to 40
 Same German post after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
 
 ![21.gifts member heart paid](images/members-heart-paid.png)
+
+### Variant: heart-unavailable
+
+Same German post after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
+
+![21.gifts member heart unavailable](images/members-heart-unavailable.png)
+
+### Variant: heart-pending
+
+Same German post after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
+
+![21.gifts member heart pending](images/members-heart-pending.png)
 
 ### Variant: about-translate
 
@@ -5826,6 +5862,18 @@ Same signed-in public thread after stubbing POST /messages/*/invoice to 400 `wal
 Same signed-in public thread after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
 
 ![21.gifts public message heart paid](images/messages-id-heart-paid.png)
+
+### Variant: heart-unavailable
+
+Same signed-in public thread after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
+
+![21.gifts public message heart unavailable](images/messages-id-heart-unavailable.png)
+
+### Variant: heart-pending
+
+Same signed-in public thread after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
+
+![21.gifts public message heart pending](images/messages-id-heart-pending.png)
 
 ### Variant: thread
 
