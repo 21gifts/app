@@ -369,6 +369,30 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     };
   }, [charge, chargeLive, mintNonce, profile]);
 
+  useEffect(() => {
+    if (formError !== 'loading' || !rateSettled) {
+      return;
+    }
+    /* v8 ignore next 3 -- loading is only set after a profile exists */
+    if (profile === null) {
+      return;
+    }
+    const parsed = parseAmountDraft(unit, amount, rateDay, fiat);
+    if (parsed.kind === 'no-rate') {
+      setFormError('rate');
+      return;
+    }
+    if (
+      parsed.kind === 'sats' &&
+      parsed.sats >= profile.minSats &&
+      parsed.sats <= profile.maxSats
+    ) {
+      setFormError(null);
+      return;
+    }
+    setFormError('amount');
+  }, [amount, fiat, formError, profile, rateDay, rateSettled, unit]);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     /* v8 ignore next 3 -- the form is not mounted until a profile exists */

@@ -94,7 +94,8 @@ function usePosTillState(): PosTillState {
   const session = useAuthStore((state) => state.session);
   const { rateDay, settled: rateSettled } = useLatestRateDayState(session !== null);
   const [state, setState] = useState<PosState | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorState] = useState<string | null>(null);
+  const [loadingAlert, setLoadingAlert] = useState(false);
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
@@ -103,6 +104,11 @@ function usePosTillState(): PosTillState {
   const [now, setNow] = useState(() => Date.now());
   const [showQr, setShowQr] = useState(false);
   const [reload, setReload] = useState(0);
+
+  function setError(message: string | null, loading?: boolean): void {
+    setLoadingAlert(loading === true);
+    setErrorState(message);
+  }
 
   useEffect(() => {
     setShowQr(true);
@@ -199,6 +205,22 @@ function usePosTillState(): PosTillState {
       });
   }, [busy, charge, remaining, session, t]);
 
+  useEffect(() => {
+    if (!loadingAlert || !rateSettled) {
+      return;
+    }
+    const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
+    if (parsed.kind === 'no-rate') {
+      setError(t('pos.noRate', { code: fiat }));
+      return;
+    }
+    if (parsed.kind === 'sats' && parsed.sats >= 1) {
+      setError(null);
+      return;
+    }
+    setError(t('pos.badAmount'));
+  }, [amount, fiat, loadingAlert, rateDay, rateSettled, shownUnit, t]);
+
   async function onCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (session === null || busyRef.current) {
@@ -206,7 +228,7 @@ function usePosTillState(): PosTillState {
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
     if (shownUnit === 'fiat' && !rateSettled && parsed.kind === 'no-rate') {
-      setError(t('pos.rateLoading', { code: fiat }));
+      setError(t('pos.rateLoading', { code: fiat }), true);
       return;
     }
     if (parsed.kind === 'no-rate') {
