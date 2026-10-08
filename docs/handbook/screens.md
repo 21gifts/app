@@ -2473,7 +2473,7 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 - **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the chart never says **Loading…** and has no retry control. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and in the footer icon row with react / copy on feed notes and replies via `TranslatableNoteBody` (`controlSlotId`), which portals `NoteTranslate`, when the language differs from the UI locale. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for the gift-day rate when a feed amount or ask has no stored string for the visitor's currency, and for unsent previews (a stored string is shown as-is; no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can Verify, Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit. A moderator sees **Edit shop note** on a shop post in the posts feed.
+- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can open **Verify** (`/members/[accountId]/verify`; it does not post from the card), Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit. A moderator sees **Edit shop note** on a shop post in the posts feed.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -2713,7 +2713,7 @@ Signed-in **moderator** viewing another member who is **basis**. Staff card with
 
 ### Variant: staff-verify-open
 
-Same moderator and basis member after pressing **Moderator functions**. The disclosure is expanded and **Verify** is visible. Viewport capture after scrolling **Verify** into view: the member card scrolls inside the page frame, and a full-page stitch leaves **Verify** below the fold. The closed shot does not cover this result.
+Same moderator and basis member after pressing **Moderator functions**. The disclosure is expanded and shows **Verify** as a link to `/members/[accountId]/verify`. The question is not on this page. Viewport capture after scrolling **Verify** into view: the member card scrolls inside the page frame, and a full-page stitch leaves **Verify** below the fold. The closed shot does not cover this result.
 
 ![21.gifts member staff verify open](images/members-staff-verify-open.png)
 
@@ -2800,6 +2800,60 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
 
 ![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
+
+## Screen: /members/[accountId]/verify
+
+- **Purpose:** The stored-name check only. Heading **Verify**. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees that name as an underlined link to the member card, the question under it, then **Yes** and **No**. A blank name shows the missing sentence and neither button. A signed-in viewer who cannot verify sees **You cannot verify this member.** Loading is **Loading…**. A failed load is the profile error plus **Try again**. An unknown id or a missing member is **This profile could not be found.** A failed verify stays on the page with **Could not update this member. Please try again.** **Yes** and **No** remain. On the device-local Sunday the question and the name stay, **Writing is paused on Sunday.** is shown, and neither button is visible. No in-card back. No Cancel. Chrome back does not post. No route.ts beside the page.
+- **Actions:** **Yes** posts the untrimmed stored name and then opens `/members/[accountId]`. **No** opens `/members/[accountId]` and does not post. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. There is no Cancel control.
+- **Used by:** route `/members/[accountId]/verify` (`MemberVerifyPage` / `MemberVerifyScreen`). The **Verify** link on `/members/[accountId]` is shown only to a moderator viewing another basis member, inside **Moderator functions**.
+
+### Variant: default
+
+Stored name **Ada** as a link, the question, **Yes** and **No**.
+
+![21.gifts member verify](images/members-verify.png)
+
+### Variant: unnamed
+
+Basis member with no stored name. **Verification needs a stored name that identifies this person.** Neither **Yes** nor **No**.
+
+![21.gifts member verify unnamed](images/members-verify-unnamed.png)
+
+### Variant: loading
+
+Heading **Verify** and **Loading…** while the member fetch has not settled.
+
+![21.gifts member verify loading](images/members-verify-loading.png)
+
+### Variant: error
+
+Member fetch failed. **Could not load this profile. Please try again.** and **Try again**.
+
+![21.gifts member verify error](images/members-verify-error.png)
+
+### Variant: missing
+
+Unknown id or a missing member. **This profile could not be found.**
+
+![21.gifts member verify missing](images/members-verify-missing.png)
+
+### Variant: forbidden
+
+Signed-in viewer who cannot verify. **You cannot verify this member.** The question is absent.
+
+![21.gifts member verify forbidden](images/members-verify-forbidden.png)
+
+### Variant: sunday
+
+Device-local Sunday. The question and **Ada** stay. **Writing is paused on Sunday.** Neither button is visible.
+
+![21.gifts member verify sunday](images/members-verify-sunday.png)
+
+### Variant: failed
+
+The write failed. **Could not update this member. Please try again.** **Yes** and **No** remain.
+
+![21.gifts member verify failed](images/members-verify-failed.png)
 
 ## Screen: /pos
 

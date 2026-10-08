@@ -1074,6 +1074,12 @@ const en = {
   'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
   'staff.functions': 'Moderator functions',
   'trustChain.action.verify': 'Verify',
+  'trustChain.verifyName.question':
+    'Does this stored name match the name that uniquely identifies this person?',
+  'trustChain.verifyName.yes': 'Yes',
+  'trustChain.verifyName.no': 'No',
+  'trustChain.verifyName.missing': 'Verification needs a stored name that identifies this person.',
+  'trustChain.verifyName.forbidden': 'You cannot verify this member.',
   'trustChain.action.propose': 'Propose as moderator',
   'trustChain.action.confirm': 'Confirm as moderator',
   'trustChain.action.reject': 'Reject',
@@ -2185,6 +2191,13 @@ const de = {
     'Eine Gründerperson hat 21.gifts gestartet und ist das erste Glied der Kette.',
   'staff.functions': 'Moderatorenfunktionen',
   'trustChain.action.verify': 'Verifizieren',
+  'trustChain.verifyName.question':
+    'Entspricht dieser hinterlegte Name dem Namen, mit dem diese Person eindeutig identifiziert werden kann?',
+  'trustChain.verifyName.yes': 'Ja',
+  'trustChain.verifyName.no': 'Nein',
+  'trustChain.verifyName.missing':
+    'Zum Verifizieren braucht es einen hinterlegten Namen, mit dem die Person eindeutig identifiziert werden kann.',
+  'trustChain.verifyName.forbidden': 'Du kannst dieses Mitglied nicht verifizieren.',
   'trustChain.action.propose': 'Als Moderator vorschlagen',
   'trustChain.action.confirm': 'Als Moderator bestätigen',
   'trustChain.action.reject': 'Ablehnen',
@@ -3268,6 +3281,13 @@ const es = {
     'Una persona fundadora empezó 21.gifts y es el primer eslabón de la cadena.',
   'staff.functions': 'Funciones de moderación',
   'trustChain.action.verify': 'Verificar',
+  'trustChain.verifyName.question':
+    '¿Coincide este nombre guardado con el nombre que identifica a esta persona de forma inequívoca?',
+  'trustChain.verifyName.yes': 'Sí',
+  'trustChain.verifyName.no': 'No',
+  'trustChain.verifyName.missing':
+    'Para verificar hace falta un nombre guardado que identifique a esta persona de forma inequívoca.',
+  'trustChain.verifyName.forbidden': 'No puedes verificar a este miembro.',
   'trustChain.action.propose': 'Proponer como moderador',
   'trustChain.action.confirm': 'Confirmar como moderador',
   'trustChain.action.reject': 'Rechazar',
@@ -4359,6 +4379,13 @@ const fil = {
     'Isang founder ang nagsimula ng 21.gifts at siya ang unang kawing ng kadena.',
   'staff.functions': 'Mga tungkulin ng moderator',
   'trustChain.action.verify': 'I-verify',
+  'trustChain.verifyName.question':
+    'Tumutugma ba ang nakaimbak na pangalan sa pangalan na natatanging kumikilala sa taong ito?',
+  'trustChain.verifyName.yes': 'Oo',
+  'trustChain.verifyName.no': 'Hindi',
+  'trustChain.verifyName.missing':
+    'Kailangan ng nakaimbak na pangalan na natatanging kumikilala sa taong ito bago ma-verify.',
+  'trustChain.verifyName.forbidden': 'Hindi mo ma-verify ang miyembrong ito.',
   'trustChain.action.propose': 'Ipanukala bilang moderator',
   'trustChain.action.confirm': 'Kumpirmahin bilang moderator',
   'trustChain.action.reject': 'Tanggihan',

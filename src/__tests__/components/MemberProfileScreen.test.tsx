@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
@@ -9,7 +10,7 @@ import {
   fetchMember,
   fetchMemberPosts,
   fetchShopNoteEdits,
-  postTrustVerify,
+  postTrustAppoint,
   setMessageShopText,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -47,6 +48,12 @@ vi.mock('next/navigation', () => ({
   }),
   usePathname: (): string => '/',
   useSearchParams: (): URLSearchParams => new URLSearchParams(),
+}));
+
+vi.mock('next/link', () => ({
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -543,16 +550,16 @@ describe('MemberProfileScreen', () => {
     window.history.pushState(null, '', '/?lang=Kikamba');
     useAuthStore.setState({
       session: 'sess',
-      account: { ...account, role: 'moderator' },
+      account: { ...account, role: 'founder' },
     });
-    vi.mocked(postTrustVerify).mockResolvedValueOnce({
+    vi.mocked(postTrustAppoint).mockResolvedValueOnce({
       id: profile.id,
       name: 'Carol',
-      role: 'verified',
+      role: 'moderator',
     });
     vi.mocked(fetchMember).mockResolvedValueOnce({
       ...profile,
-      role: 'verified',
+      role: 'moderator',
       username: 'ada',
     });
     renderWithLocale(
@@ -562,8 +569,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
     fireEvent.click(screen.getByText('Moderator functions'));
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Appoint as moderator' }));
     await waitFor(() => {
+      expect(postTrustAppoint).toHaveBeenCalledWith('sess', profile.id);
       expect(screen.getByText('ada@21.gifts')).toBeTruthy();
     });
     expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
@@ -3612,12 +3620,12 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
     expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
     fireEvent.click(screen.getByText('Moderator functions'));
-    expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Verify' })).toBeTruthy();
   });
 
   it('does not show Verify for a basis viewer', () => {
     renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
-    expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Verify' })).toBeNull();
     expect(screen.queryByTestId('state-members-staff-verify')).toBeNull();
     expect(screen.queryByTestId('staff-functions')).toBeNull();
   });

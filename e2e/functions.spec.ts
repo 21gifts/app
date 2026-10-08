@@ -2669,6 +2669,7 @@ test('Function: MemberProfilePage — member page heading is visible', async ({ 
 
 test('e2e:check dynamic path token for /members/[accountId]', async ({ page, request }) => {
   await page.goto('/members/[accountId]');
+  await page.goto('/members/[accountId]/verify');
   await request.get('/forum/members/[accountId]');
   await request.get('/forum/members/[accountId]/posts');
   await request.get('/forum/members/[accountId]/replies');
@@ -11246,13 +11247,112 @@ test('Function: StaffFunctions — moderator actions stay closed until opened', 
   });
   await page.goto(`/members/${memberId}`);
   await expect(page.getByText('Moderator functions')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Verify' })).toHaveCount(0);
   await page.getByText('Moderator functions').click();
-  await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Verify' })).toBeVisible();
   await seedAdaSession(page);
   await page.goto(`/members/${memberId}`);
   await expect(page.getByText('Moderator functions')).toHaveCount(0);
   await expect(page.getByTestId('state-members-staff-verify')).toHaveCount(0);
+});
+
+test('Function: MemberVerifyPage — moderator sees the stored-name check', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Ada',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+        aboutMe: null,
+        trust: {
+          verifiedBy: null,
+          proposedBy: null,
+          confirmedBy: null,
+          appointedBy: null,
+        },
+      }),
+    });
+  });
+  await page.goto(`/members/${memberId}/verify`);
+  await expect(page.getByRole('heading', { name: 'Verify' })).toBeVisible();
+  await expect(
+    page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+  ).toBeVisible();
+  const ada = page.getByRole('link', { name: 'Ada', exact: true });
+  await expect(ada).toBeVisible();
+  await expect(ada).toHaveAttribute('href', `/members/${memberId}`);
+  await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
+});
+
+test('Function: MemberVerifyScreen — confirm posts and opens the member card', async ({ page }) => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Ada',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+        aboutMe: null,
+        trust: {
+          verifiedBy: null,
+          proposedBy: null,
+          confirmedBy: null,
+          appointedBy: null,
+        },
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        receivedOverTime: [],
+        donatedOverTime: [],
+      }),
+    });
+  });
+  await seedAdaSession(page);
+  await page.goto(`/members/${memberId}/verify`);
+  await expect(page.getByText('You cannot verify this member.')).toBeVisible();
+  await expect(
+    page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+  ).toHaveCount(0);
+  await seedAdaSession(page, 'moderator');
+  await page.route('**/trust/verify', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: memberId, name: 'Ada', role: 'verified' }),
+    });
+  });
+  await page.goto(`/members/${memberId}/verify`);
+  await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Yes', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/members/${memberId}(?:\\?.*)?$`));
 });
 
 test('Function: DeletePostControl — ordinary members have no delete action', async ({ page }) => {
