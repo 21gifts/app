@@ -687,6 +687,41 @@ describe('sendHeartTip after a send timed out', () => {
     expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
+  it('counts a heart as paid when sentLate reports it while the payment list is read', async () => {
+    let late: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate }),
+    });
+    const now = vi.spyOn(Date, 'now').mockReturnValue(2_000_000);
+    await sendHeartTip({ ...BASE, messageId: 't-race' });
+    now.mockReturnValue(2_000_000 + HEART_TIP_UNSETTLED_MS);
+    let listed: (payments: WalletPayment[]) => void = () => undefined;
+    vi.mocked(listWalletPayments).mockReturnValueOnce(
+      new Promise<WalletPayment[]>((resolve) => {
+        listed = resolve;
+      }),
+    );
+    vi.mocked(postMessageInvoice).mockClear();
+    const retap = sendHeartTip({ ...BASE, messageId: 't-race' });
+    await vi.waitFor(() => {
+      expect(listWalletPayments).toHaveBeenCalledTimes(1);
+    });
+    late(true);
+    await sentLate;
+    await Promise.resolve();
+    listed([]);
+    await expect(retap).resolves.toEqual({ kind: 'paid' });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps a timed-out heart to its own note', async () => {
     await timeOutHeart('t-own', 'spark1own');
     const send = payNext();
