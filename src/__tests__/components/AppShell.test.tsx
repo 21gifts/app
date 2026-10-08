@@ -6,9 +6,9 @@ import {
   AppShellContext,
   AppShellFooter,
   AppShellHeader,
+  AppShellOverlay,
   AppShellTopLeft,
   useAppShellScroller,
-  type AppShellWriting,
 } from '@/components/AppShell';
 import { Card } from '@/components/ui/Card';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -159,7 +159,16 @@ describe('AppShell', () => {
     expect(scroller?.className).toContain('min-h-0');
     expect(footer).toBeTruthy();
     expect(footer?.previousElementSibling).toBe(scroller);
-    expect(footer?.className).toContain('px-5 pb-5');
+    // Unset --footer-collapse: the same 1.25rem as pb-5.
+    expect(footer?.className).toContain(
+      'px-5 pb-[calc(1.25rem-0.5rem*var(--footer-collapse,0))] empty:hidden',
+    );
+    const body = main?.querySelector('[data-app-body]');
+    expect(body?.className).toBe('group/body relative flex min-h-0 w-full flex-1 flex-col');
+    expect(body?.parentElement).toBe(frame);
+    expect(body?.previousElementSibling).toBe(main?.querySelector('[data-app-chrome]'));
+    expect(body?.contains(header as Node)).toBe(true);
+    expect(body?.contains(footer as Node)).toBe(true);
     expect(header?.className).toContain('px-5');
     expect(main?.querySelector('[data-app-chrome]')?.className).toContain(
       'px-5 pt-4 pb-1 max-[359px]:px-3',
@@ -486,89 +495,53 @@ describe('AppShell', () => {
   });
 });
 
-describe('AppShell writing mode', () => {
-  let setWriting: (writing: AppShellWriting) => void = () => undefined;
-
-  function WritingProbe(): null {
-    setWriting = useContext(AppShellContext)!.setWriting;
-    return null;
-  }
-
-  function shellParts(container: HTMLElement) {
-    const main = container.querySelector('main')!;
-    return {
-      main,
-      frame: main.querySelector('[data-app-frame]')!,
-      chrome: main.querySelector('[data-app-chrome]')!,
-      page: main.querySelector('[data-scroll-page]')!,
-      footer: main.querySelector('footer')!,
-    };
-  }
-
-  it('changes nothing while off, adds transitions when ready, and goes edge to edge when on', () => {
+describe('AppShellOverlay', () => {
+  it('portals a layer into the frame body after the footer, and renders nothing before the host', () => {
     const { container } = renderWithLocale(
       <AppShell mode="fill">
-        <WritingProbe />
+        <p>Body</p>
+        <AppShellOverlay>
+          <div data-testid="layer">Layer</div>
+        </AppShellOverlay>
       </AppShell>,
     );
-    const off = shellParts(container);
-    const before = [off.main, off.frame, off.chrome, off.page, off.footer].map(
-      (node) => node.className,
-    );
-    expect(off.main.hasAttribute('data-writing')).toBe(false);
-    expect(off.main.className).not.toContain('group/shell');
-    expect(off.footer.className).toBe('flex-none px-5 pb-5 empty:hidden');
-
-    act(() => {
-      setWriting('ready');
-    });
-    expect(off.main.getAttribute('data-writing')).toBe('ready');
-    expect(off.main.className).toContain('group/shell');
-    expect(off.main.className).toContain('px-3 max-[359px]:px-2 py-2');
-    for (const node of [off.main, off.frame, off.chrome, off.page]) {
-      expect(node.className).toContain(
-        'transition-[padding,border-radius,border-width] duration-250 ease-fold',
-      );
-    }
-    expect(off.frame.className).toContain('rounded-3xl border');
-    expect(off.footer.className).toBe(
-      'flex flex-none flex-col justify-end px-5 pb-5 empty:hidden writing-fold',
-    );
-
-    act(() => {
-      setWriting('on');
-    });
-    expect(off.main.getAttribute('data-writing')).toBe('on');
-    expect(off.main.className).toContain('p-0');
-    expect(off.main.className).not.toContain('py-2');
-    expect(off.frame.className).toContain('rounded-none border-0');
-    expect(off.chrome.className).toContain('pt-2');
-    expect(off.page.className).toContain('pt-1 pb-4');
-    expect(off.footer.className).toBe(
-      'flex flex-none flex-col justify-end px-5 pb-0 empty:hidden writing-folded',
-    );
-
-    act(() => {
-      setWriting('off');
-    });
-    expect(
-      [off.main, off.frame, off.chrome, off.page, off.footer].map((node) => node.className),
-    ).toEqual(before);
-    expect(off.main.hasAttribute('data-writing')).toBe(false);
+    const body = container.querySelector('[data-app-body]')!;
+    const layer = screen.getByTestId('layer');
+    const host = layer.parentElement!;
+    expect(host.className).toBe('contents');
+    expect(host.parentElement).toBe(body);
+    expect(host.previousElementSibling?.tagName).toBe('FOOTER');
+    expect(container.querySelector('[data-scrollport]')?.contains(layer)).toBe(false);
+    expect(container.querySelector('[data-app-chrome]')?.contains(layer)).toBe(false);
   });
 
-  it('tightens the centered page top too', () => {
-    const { container } = renderWithLocale(
-      <AppShell mode="fill" align="center">
-        <WritingProbe />
+  it('renders inline without an AppShell', () => {
+    renderWithLocale(
+      <div data-testid="outside">
+        <AppShellOverlay>
+          <span>Inline</span>
+        </AppShellOverlay>
+      </div>,
+    );
+    expect(screen.getByText('Inline').parentElement).toBe(screen.getByTestId('outside'));
+  });
+
+  it('renders nothing until the overlay host is known', () => {
+    function Probe(): ReactElement {
+      const ctx = useContext(AppShellContext)!;
+      return (
+        <AppShellContext.Provider value={{ ...ctx, overlayEl: null }}>
+          <AppShellOverlay>
+            <span>Hidden layer</span>
+          </AppShellOverlay>
+        </AppShellContext.Provider>
+      );
+    }
+    renderWithLocale(
+      <AppShell mode="fill">
+        <Probe />
       </AppShell>,
     );
-    const page = container.querySelector('[data-scroll-page]')!;
-    expect(page.className).toContain('px-5 py-4');
-    act(() => {
-      setWriting('on');
-    });
-    expect(page.className).toContain('shell-safe-center');
-    expect(page.className).toContain('pt-1 pb-4');
+    expect(screen.queryByText('Hidden layer')).toBeNull();
   });
 });
