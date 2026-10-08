@@ -200,12 +200,20 @@ describe('useComposerWriting', () => {
     }
     const states: ComposerWriting[] = [];
     const Wrapper = shell(vi.fn());
+    const announced: Array<EventTarget | null> = [];
+    const listen = (event: FocusEvent): void => {
+      announced.push(event.relatedTarget);
+    };
+    document.addEventListener('focusin', listen);
     render(
       <Wrapper>
         <Early onState={(state) => states.push(state)} />
       </Wrapper>,
     );
+    document.removeEventListener('focusin', listen);
     expect(states.at(-1)!.writing).toBe(true);
+    // The real focus at mount, then the announcement once the composer is marked.
+    expect(announced).toEqual([null, null]);
   });
 
   it('leaves writing mode off when the focused field is outside the composer', () => {
