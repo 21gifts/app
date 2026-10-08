@@ -131,7 +131,9 @@ test('welcome forum laws card centres its text and keeps the X in the top-right 
   expect(top).toBeLessThanOrEqual(14);
   expect(right).toBeGreaterThanOrEqual(12);
   expect(right).toBeLessThanOrEqual(14);
-  expect(xBox.x).toBeGreaterThanOrEqual(textBox.x + textBox.width);
+  // The 24px X has a 44px hit area around its centre; no text may sit under it.
+  const hitLeft = xBox.x + xBox.width / 2 - 22;
+  expect(hitLeft).toBeGreaterThanOrEqual(textBox.x + textBox.width);
 });
 
 test('welcome forum dismiss hides the living-room laws hint', async ({ page }) => {
