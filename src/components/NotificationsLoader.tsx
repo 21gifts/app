@@ -52,7 +52,7 @@ async function setHomeScreenBadgeToRemainingUnread(sessionToken: string): Promis
 
 /**
  * Where a notification row opens. Replies and mentions open the message that
- * triggered them. Posts and zaps open the forum note, not a receipt id.
+ * triggered them. Posts, zaps, and hearts open the forum note, not a receipt id.
  *
  * @param row - One notification from the list.
  * @returns An in-app path.
@@ -73,7 +73,7 @@ function notificationOpenPath(row: Notification): string {
  * Client loader for the signed-in notifications list on `/notifications`.
  *
  * Reads the session from the auth store and fetches notifications (posts, replies,
- * payments, moderator appointment, and moderator proposal). After a successful
+ * payments, hearts, moderator appointment, and moderator proposal). After a successful
  * list fetch, marks all as read fire-and-forget and refreshes the home-screen
  * badge to remaining inbox unread plus staff-room unread (`0` or `1`;
  * notifications are treated as 0; visiting this screen does not force the badge
@@ -86,7 +86,7 @@ function notificationOpenPath(row: Notification): string {
  * row waits for `markNotificationRead` (then still goes to `/welcome` if that
  * POST fails, and skips navigation if the session changed). A `forum_reply`
  * or `forum_mention` opens `/messages/{replyId}` without waiting. A
- * `forum_post` or `zap` opens `/messages/{parentId}` without waiting. Ids are
+ * `forum_post`, `zap`, or `heart` opens `/messages/{parentId}` without waiting. Ids are
  * URI-encoded. Opening a non-proposal row also closes the matching local
  * Web Push notification without waiting for the POST.
  *
