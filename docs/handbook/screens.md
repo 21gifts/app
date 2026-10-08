@@ -2314,6 +2314,12 @@ The same touch device after a tap into the text field (writing mode): the frame 
 
 ![21.gifts welcome writing mode](images/welcome-writing.png)
 
+### Variant: writing-validation-error
+
+Writing mode as above after a tap on **Post** with an empty text field: the field keeps the focus, so the page stays in writing mode, and **Enter a message or add a photo or video** shows under the composer.
+
+![21.gifts welcome writing mode with the empty-post error](images/welcome-writing-validation-error.png)
+
 ### Variant: composer-photo
 
 JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.

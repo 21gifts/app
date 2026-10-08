@@ -1848,6 +1848,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:writing-validation-error",
+    "label": "/welcome writing-validation-error",
+    "visual": "state-welcome-writing-validation-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-photo",
     "label": "/welcome composer-photo",
     "visual": "state-welcome-composer-photo",

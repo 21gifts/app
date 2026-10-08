@@ -4184,6 +4184,21 @@ test.describe('onboarding screens', () => {
       await expect(page.locator('[data-app-frame]')).toHaveCSS('border-top-left-radius', '0px');
       await shotScreen(page, 'state-welcome-writing');
     });
+
+    test('welcome writing-validation-error', async ({ page }) => {
+      await seedWelcomeWallet(page);
+      await page.goto('/welcome?visual=balance-ready');
+      await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+      const field = page.getByLabel('Your message');
+      await field.tap();
+      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
+      await page.getByRole('button', { name: 'Post', exact: true }).tap();
+      await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
+      await expect(field).toBeFocused();
+      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
+      await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
+      await shotScreen(page, 'state-welcome-writing-validation-error');
+    });
   });
 
   test('welcome wallet-buttons-disabled', async ({ page }) => {

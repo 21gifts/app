@@ -628,8 +628,8 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * shows its text field on top at full width and photo, place and send on one
  * row below it. While that field has the focus (`useComposerWriting`), the
  * laws hint, the mode filter, the Post / Ask pill and the divider fold away,
- * the feed and its New posts / moderator pills hide at once (the feed fades
- * back in afterwards), and the field grows;
+ * the feed and its New posts / moderator pills hide at once (and fade back
+ * in afterwards), and the field grows;
  * a press on the composer's own buttons keeps the field focused. The form is
  * marked `data-writing-composer` for {@link useAppHeight}.
  *
@@ -1897,8 +1897,12 @@ export function ForumBoard({
     : writing.writing
       ? 'invisible flex max-h-0 min-w-0 flex-col gap-4 overflow-clip opacity-0'
       : 'flex min-w-0 flex-col gap-4 transition-opacity duration-250 ease-fold';
-  // The feed's sticky pills hide with the feed while writing.
-  const pillsHidden = writing.writing ? ' invisible' : '';
+  // The feed's sticky pills hide with the feed while writing and fade back in with it.
+  const pillsHidden = !writing.touch
+    ? ''
+    : writing.writing
+      ? ' invisible opacity-0'
+      : ' transition-opacity duration-250 ease-fold';
   const phoneShape = writingMode ? ' pointer-coarse:order-first pointer-coarse:basis-full' : '';
   const composerTextClass = writing.writing
     ? 'min-h-26 transition-[color,background-color,border-color,min-height] duration-250 ease-fold'

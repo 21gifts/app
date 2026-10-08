@@ -2231,6 +2231,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'writing-validation-error',
+    image: 'welcome-writing-validation-error.png',
+    visual: 'state-welcome-writing-validation-error',
+    needle: "shotScreen(page, 'state-welcome-writing-validation-error')",
+  },
+  {
+    route: '/welcome',
     id: 'composer-photo',
     image: 'welcome-composer-photo.png',
     visual: 'state-welcome-composer-photo',

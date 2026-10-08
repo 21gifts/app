@@ -8085,9 +8085,20 @@ describe('ForumBoard writing mode', () => {
       screen.getByRole('button', { name: getCatalog('en')['forum.moderatorAppointed'] })
         .parentElement!,
     ];
+    for (const pill of pills) expect(pill.className).toContain('transition-opacity duration-250');
+    const { field } = parts(container);
+    fireEvent.focus(field);
+    for (const pill of pills) expect(pill.className).toContain('invisible opacity-0');
+    fireEvent.blur(field);
     for (const pill of pills) expect(pill.className).not.toContain('invisible');
-    fireEvent.focus(parts(container).field);
-    for (const pill of pills) expect(pill.className).toContain('invisible');
+  });
+
+  it('leaves the pills as they were without writing mode', () => {
+    stubPointer(true);
+    renderHome({ newPostsAvailable: true });
+    expect(screen.getByRole('button', { name: 'New posts' }).parentElement!.className).toBe(
+      'pointer-events-none sticky top-2 z-30 mx-auto w-fit',
+    );
   });
 
   it('has no writing mode while the Post composer is not on the page', () => {
