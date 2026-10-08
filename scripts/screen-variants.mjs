@@ -2224,6 +2224,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'writing-place-open',
+    image: 'welcome-writing-place-open.png',
+    visual: 'state-welcome-writing-place-open',
+    needle: "shotScreen(page, 'state-welcome-writing-place-open')",
+  },
+  {
+    route: '/welcome',
     id: 'composer-photo',
     image: 'welcome-composer-photo.png',
     visual: 'state-welcome-composer-photo',
