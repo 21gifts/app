@@ -628,7 +628,8 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * shows its text field on top at full width and photo, place and send on one
  * row below it. While that field has the focus (`useComposerWriting`), the
  * laws hint, the mode filter, the Post / Ask pill and the divider fold away,
- * the feed hides at once (and fades back in afterwards), and the field grows;
+ * the feed and its New posts / moderator pills hide at once (the feed fades
+ * back in afterwards), and the field grows;
  * a press on the composer's own buttons keeps the field focused. The form is
  * marked `data-writing-composer` for {@link useAppHeight}.
  *
@@ -748,7 +749,10 @@ export function ForumBoard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const composerFormRef = useRef<HTMLFormElement>(null);
-  const writing = useComposerWriting(writingMode, !posting, composerFormRef);
+  // Only while the Post composer itself is on the page (not signed out, not Ask, not shops).
+  const postComposerShown =
+    !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
+  const writing = useComposerWriting(writingMode && postComposerShown, !posting, composerFormRef);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
@@ -1893,6 +1897,8 @@ export function ForumBoard({
     : writing.writing
       ? 'invisible flex max-h-0 min-w-0 flex-col gap-4 overflow-clip opacity-0'
       : 'flex min-w-0 flex-col gap-4 transition-opacity duration-250 ease-fold';
+  // The feed's sticky pills hide with the feed while writing.
+  const pillsHidden = writing.writing ? ' invisible' : '';
   const phoneShape = writingMode ? ' pointer-coarse:order-first pointer-coarse:basis-full' : '';
   const composerTextClass = writing.writing
     ? 'min-h-26 transition-[color,background-color,border-color,min-height] duration-250 ease-fold'
@@ -1904,7 +1910,7 @@ export function ForumBoard({
       className={`flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t ${rootEdge}`}
     >
       {moderatorAppointedAvailable ? (
-        <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
+        <div className={`pointer-events-none sticky top-2 z-30 mx-auto w-fit${pillsHidden}`}>
           <Button
             type="button"
             variant="primary"
@@ -1919,11 +1925,11 @@ export function ForumBoard({
       ) : null}
       {newPostsAvailable ? (
         <div
-          className={
+          className={`${
             moderatorAppointedAvailable
               ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
               : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
-          }
+          }${pillsHidden}`}
         >
           <Button
             type="button"
@@ -2071,7 +2077,7 @@ export function ForumBoard({
           />
         </SundayWritingGate>
       ) : null}
-      {!hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer ? (
+      {postComposerShown ? (
         <SundayWritingGate>
           <form
             ref={composerFormRef}

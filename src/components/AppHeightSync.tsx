@@ -61,9 +61,9 @@ function revealFocusedField(): void {
  * touch devices): iOS reports the taller viewport only after the keyboard has
  * slid away. When the focus leaves that composer and no other text field
  * takes it, the height measured when the focus came into the composer from
- * no text field (the largest at this width), and offset 0, are written at
- * once and held until the viewport reports that height, another field takes
- * the focus, the orientation changes, or one second has passed. Every other
+ * no text field (kept while a hold is still on), and offset 0, are written
+ * at once and held until the viewport reports that height, another field
+ * takes the focus, the width or orientation changes, or one second has passed. Every other
  * field keeps the plain behaviour.
  *
  * @returns void. Writes both custom properties, then reveals the focused field.
@@ -72,7 +72,7 @@ export function useAppHeight(): void {
   useEffect(() => {
     const viewport = window.visualViewport;
     let focusFrame: number | null = null;
-    // Full height before the keyboard opened for the writing composer, at this width.
+    // Height measured when the focus came into the writing composer from no field, at this width.
     let restingHeight: number | null = null;
     let restingWidth = 0;
     let heldHeight: number | null = null;
@@ -90,7 +90,7 @@ export function useAppHeight(): void {
       let offsetTop = resolveAppOffsetTop(viewport);
       if (offsetTop === null) return;
       let shown = height;
-      if (heldHeight !== null && height < heldHeight) {
+      if (heldHeight !== null && height < heldHeight && window.innerWidth === restingWidth) {
         shown = heldHeight;
         offsetTop = 0;
       } else {
@@ -103,14 +103,13 @@ export function useAppHeight(): void {
     };
 
     const handleFocusIn = (event: FocusEvent): void => {
+      // Back into the composer while the keyboard is still closing: the held height stays the full one.
+      const held = heldHeight;
       releaseHold();
       if (inWritingComposer(event.target) && !isTypingField(event.relatedTarget)) {
         const height = resolveAppHeight(window.innerHeight, viewport);
         if (height !== null) {
-          restingHeight =
-            restingHeight !== null && restingWidth === window.innerWidth
-              ? Math.max(restingHeight, height)
-              : height;
+          restingHeight = held === null ? height : Math.max(held, height);
           restingWidth = window.innerWidth;
         }
       }

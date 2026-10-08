@@ -8073,6 +8073,47 @@ describe('ForumBoard writing mode', () => {
     expect(p.main.getAttribute('data-writing')).toBe('ready');
   });
 
+  it('hides the New posts and moderator pills while writing', () => {
+    stubPointer(true);
+    const { container } = renderHome({
+      writingMode: true,
+      newPostsAvailable: true,
+      moderatorAppointedAvailable: true,
+    });
+    const pills = [
+      screen.getByRole('button', { name: 'New posts' }).parentElement!,
+      screen.getByRole('button', { name: getCatalog('en')['forum.moderatorAppointed'] })
+        .parentElement!,
+    ];
+    for (const pill of pills) expect(pill.className).not.toContain('invisible');
+    fireEvent.focus(parts(container).field);
+    for (const pill of pills) expect(pill.className).toContain('invisible');
+  });
+
+  it('has no writing mode while the Post composer is not on the page', () => {
+    stubPointer(true);
+    const ask = renderHome({ writingMode: true, composeIntent: 'ask' });
+    expect(ask.container.querySelector('main')!.hasAttribute('data-writing')).toBe(false);
+    expect(
+      (screen.getByRole('group', { name: 'Compose' }).parentElement as HTMLElement).className,
+    ).toBe('contents');
+    ask.unmount();
+    const signedOut = renderHome({ writingMode: true, readOnly: true });
+    expect(signedOut.container.querySelector('main')!.hasAttribute('data-writing')).toBe(false);
+  });
+
+  it('ends writing mode when the composer leaves the page while focused', () => {
+    stubPointer(true);
+    const view = renderHome({ writingMode: true });
+    const main = view.container.querySelector('main')!;
+    fireEvent.focus(parts(view.container).field);
+    expect(main.getAttribute('data-writing')).toBe('on');
+    view.rerenderHome({ writingMode: true, composerHidden: true });
+    expect(main.hasAttribute('data-writing')).toBe(false);
+    view.rerenderHome({ writingMode: true });
+    expect(main.getAttribute('data-writing')).toBe('ready');
+  });
+
   it('a reply field on the forum home starts no writing mode', () => {
     stubPointer(true);
     const { container } = renderHome({
