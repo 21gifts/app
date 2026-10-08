@@ -4,6 +4,7 @@ import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/l
 import type { Account } from '@/lib/api-types';
 import { getE2eNow } from '@/lib/config';
 import { HEART_TIP_PLUS_ONE_MS, sendHeartTip, useHeartTip } from '@/lib/heart-tip';
+import { logInteraction } from '@/lib/interaction-log';
 import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
@@ -46,6 +47,7 @@ beforeEach(() => {
   vi.mocked(postMessageInvoice).mockReset();
   vi.mocked(payFromWallet).mockReset();
   vi.mocked(unlockWalletPhrase).mockReset();
+  vi.mocked(logInteraction).mockClear();
   useWalletStore.setState({ status: 'ready', balanceSats: 21, identityPubkey: null });
 });
 
@@ -68,6 +70,46 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).toHaveBeenCalledWith('sess', 'm1', 1, undefined, undefined, true);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'spark1heart' });
     expect(send).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledWith(
+      'heart_sent',
+      { messageId: 'm1', amountSats: 1 },
+      'sess',
+    );
+  });
+
+  it('records a heart the SDK sent after the app stopped waiting, and not one that failed', async () => {
+    let late: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate }),
+    });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'request' });
+    expect(logInteraction).not.toHaveBeenCalled();
+    late(true);
+    await sentLate;
+    await Promise.resolve();
+    expect(logInteraction).toHaveBeenCalledWith(
+      'heart_sent',
+      { messageId: 'm1', amountSats: 1 },
+      'sess',
+    );
+    vi.mocked(logInteraction).mockClear();
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate: Promise.resolve(false) }),
+    });
+    await sendHeartTip(BASE);
+    await Promise.resolve();
+    expect(logInteraction).not.toHaveBeenCalled();
   });
 
   it('pays pr when the api issued no sparkInvoice', async () => {

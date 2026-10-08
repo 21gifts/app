@@ -15,6 +15,7 @@ import { Button, ButtonLink, Card } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
@@ -77,12 +78,16 @@ function applyRead(reads: { current: TillReads }, seq: number, apply: () => void
 /** Create or cancel that is still talking to the server, across page changes. */
 let tillWrite: Promise<void> | null = null;
 
+/** Paid charges already recorded as seen in this tab, so each is recorded once. */
+const paidSeen = new Set<string>();
+
 /**
- * Drop a till write left behind by a test. Production clears it when the
- * request settles.
+ * Drop a till write and the paid charges recorded as seen, left behind by a
+ * test. Production clears the write when the request settles.
  */
 export function resetPosTillWriteForTests(): void {
   tillWrite = null;
+  paidSeen.clear();
 }
 
 /** Remember `work` until it settles so a later till load does not race it. */
@@ -101,6 +106,8 @@ type PosTillState = {
   qr: string | null;
   showQr: boolean;
   state: PosState | null;
+  /** Session whose till read or create produced `state`. */
+  stateSession: string | null;
   error: string | null;
   charge: PosState['charge'];
   paid: PosState['charge'];
@@ -131,7 +138,13 @@ function usePosTillState(): PosTillState {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const rateDay = useSpotRate(session !== null);
-  const [state, setState] = useState<PosState | null>(null);
+  // The till and the session whose read or create produced it, set together so
+  // an effect of one render never pairs one member's till with another's session.
+  const [till, setTill] = useState<{ state: PosState | null; session: string | null }>({
+    state: null,
+    session: null,
+  });
+  const state = till.state;
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
@@ -171,7 +184,7 @@ function usePosTillState(): PosTillState {
         }
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
-            setState(next);
+            setTill({ state: next, session });
           });
         });
       } catch {
@@ -249,7 +262,7 @@ function usePosTillState(): PosTillState {
           if (alive) {
             whenCurrent(generation, mine, () => {
               applyRead(reads, seq, () => {
-                setState(next);
+                setTill({ state: next, session });
               });
             });
           }
@@ -282,7 +295,7 @@ function usePosTillState(): PosTillState {
       .then((next) => {
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
-            setState(next);
+            setTill({ state: next, session });
           });
         });
       })
@@ -324,7 +337,7 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = state?.history ?? [];
-          setState({ charge: created, history: [created, ...history] });
+          setTill({ state: { charge: created, history: [created, ...history] }, session });
           setAmount('');
         });
       } catch (err) {
@@ -372,7 +385,7 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           setWatchUntil(null);
           applyRead(reads, seq, () => {
-            setState(next);
+            setTill({ state: next, session });
           });
         });
       } catch {
@@ -395,6 +408,7 @@ function usePosTillState(): PosTillState {
     qr,
     showQr,
     state,
+    stateSession: till.session,
     error,
     charge,
     paid,
@@ -439,6 +453,16 @@ export function PosTill(): ReactElement {
   const { fiat } = useFiatPreference();
   const till = usePosTillState();
   const setup = useWalletSetup();
+  const paidId = till.paid?.id ?? null;
+  const paidSats = till.paid?.amountSats ?? 0;
+  const paidFor = till.stateSession;
+  useEffect(() => {
+    if (paidId !== null && !paidSeen.has(paidId)) {
+      paidSeen.add(paidId);
+      // Recorded where the paid charge shows, for the member whose till showed it.
+      logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
+    }
+  }, [paidId, paidSats, paidFor]);
 
   return (
     <Card surface={false}>

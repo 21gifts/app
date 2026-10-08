@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadWalletSdk, toWalletPayment } from '@/lib/wallet/wallet-sdk';
+import { loadWalletSdk, toWalletPayment, toWalletReportPayment } from '@/lib/wallet/wallet-sdk';
 
 const MNEMONIC =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
@@ -732,6 +732,40 @@ describe('payments', () => {
   });
 });
 
+describe('loadWalletSdk listReportPayments', () => {
+  it('lists Bitcoin payments newest first in the report shape', async () => {
+    mocks.listPayments.mockResolvedValueOnce({
+      payments: [
+        {
+          id: 'r1',
+          paymentType: 'receive',
+          status: 'completed',
+          amount: 21n,
+          fees: 0n,
+          timestamp: 0,
+          method: 'lightning',
+          details: {
+            type: 'lightning',
+            htlcDetails: { paymentHash: PAYMENT_HASH, preimage: PREIMAGE },
+          },
+        },
+      ],
+    });
+    const sdk = await loadWalletSdk();
+    const conn = await sdk.connect(MNEMONIC, API_KEY, HOST);
+    const rows = await conn.listReportPayments({ offset: 200, limit: 200 });
+    expect(mocks.listPayments).toHaveBeenCalledWith({
+      offset: 200,
+      limit: 200,
+      sortAscending: false,
+      assetFilter: { type: 'bitcoin' },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.paymentHash).toBe(PAYMENT_HASH);
+    expect(JSON.stringify(rows)).not.toContain(PREIMAGE);
+  });
+});
+
 describe('walletNeedsReload', () => {
   it('is false initially', async () => {
     vi.resetModules();
@@ -967,5 +1001,141 @@ describe('toWalletPayment', () => {
         details: { type: 'spark', lnurlReceiveMetadata: { senderComment: 'x' } },
       }).senderComment,
     ).toBeNull();
+  });
+});
+
+const PREIMAGE = 'f'.repeat(64);
+const PAYMENT_HASH = 'e'.repeat(64);
+
+describe('toWalletReportPayment', () => {
+  it('maps a sent Lightning address payment and leaves out the preimage', () => {
+    const sdkPayment = {
+      id: 'pay-1',
+      paymentType: 'send',
+      status: 'completed',
+      amount: 2_100n,
+      fees: 3n,
+      timestamp: 1_700_000_000,
+      method: 'lightning',
+      details: {
+        type: 'lightning',
+        description: ' Coffee ',
+        invoice: 'lnbc21u1example',
+        destinationPubkey: '03node',
+        htlcDetails: { paymentHash: PAYMENT_HASH, preimage: PREIMAGE, expiryTime: 1, status: 'x' },
+        lnurlPayInfo: { lnAddress: 'shop@example.com', domain: 'example.com', comment: 'thanks' },
+        lnurlReceiveMetadata: { nostrZapRequest: '{}', senderComment: 'ignored' },
+      },
+    };
+    const mapped = toWalletReportPayment(sdkPayment);
+    expect(mapped).toEqual({
+      id: 'pay-1',
+      direction: 'out',
+      status: 'completed',
+      amountSats: 2_100,
+      feeSats: 3,
+      timestamp: '2023-11-14T22:13:20.000Z',
+      method: 'lightning',
+      paymentHash: PAYMENT_HASH,
+      invoice: 'lnbc21u1example',
+      destination: 'shop@example.com',
+      description: 'Coffee',
+      lnurlComment: 'thanks',
+    });
+    expect(JSON.stringify(mapped)).not.toContain(PREIMAGE);
+    expect(Object.keys(mapped)).not.toContain('preimage');
+  });
+
+  it('falls back to the LNURL domain, then the node key', () => {
+    const base = {
+      id: 'p',
+      paymentType: 'send',
+      status: 'pending',
+      amount: 1,
+      fees: 0,
+      timestamp: 0,
+      method: 'lightning',
+    };
+    expect(
+      toWalletReportPayment({
+        ...base,
+        details: { type: 'lightning', lnurlPayInfo: { domain: 'pay.example' } },
+      }).destination,
+    ).toBe('pay.example');
+    const node = toWalletReportPayment({
+      ...base,
+      details: { type: 'lightning', destinationPubkey: '03node', lnurlPayInfo: { lnAddress: ' ' } },
+    });
+    expect(node.destination).toBe('03node');
+    expect(node.status).toBe('pending');
+  });
+
+  it('maps a received Spark invoice payment with the sender comment', () => {
+    const mapped = toWalletReportPayment({
+      id: 'p2',
+      paymentType: 'receive',
+      status: 'failed',
+      amount: 5,
+      fees: 0,
+      timestamp: 0,
+      method: 'spark',
+      details: {
+        type: 'spark',
+        invoiceDetails: { invoice: 'spark1invoice', description: 'Tip' },
+        htlcDetails: { paymentHash: PAYMENT_HASH },
+        lnurlReceiveMetadata: { senderComment: 'hi' },
+      },
+    });
+    expect(mapped).toMatchObject({
+      direction: 'in',
+      status: 'failed',
+      method: 'spark',
+      invoice: 'spark1invoice',
+      description: 'Tip',
+      lnurlComment: 'hi',
+      paymentHash: PAYMENT_HASH,
+      destination: null,
+    });
+  });
+
+  it('maps base-chain deposits and withdrawals to onchain with the transaction id', () => {
+    for (const method of ['deposit', 'withdraw']) {
+      const mapped = toWalletReportPayment({
+        id: method,
+        paymentType: method === 'deposit' ? 'receive' : 'send',
+        status: 'completed',
+        amount: 10_000,
+        fees: 200,
+        timestamp: 0,
+        method,
+        details: { type: method, txId: 'abc123' },
+      });
+      expect(mapped.method).toBe('onchain');
+      expect(mapped.destination).toBe('abc123');
+    }
+  });
+
+  it('keeps token and unknown methods and reports missing details as null', () => {
+    const base = {
+      id: 't',
+      paymentType: 'receive',
+      status: 'completed',
+      amount: 1,
+      fees: 0,
+      timestamp: 0,
+      method: 'token',
+    };
+    const token = toWalletReportPayment(base);
+    expect(token.method).toBe('token');
+    expect(token).toMatchObject({
+      paymentHash: null,
+      invoice: null,
+      destination: null,
+      description: null,
+      lnurlComment: null,
+    });
+    expect(
+      toWalletReportPayment({ ...base, method: 'something-new', details: undefined }).method,
+    ).toBe('unknown');
   });
 });

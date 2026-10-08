@@ -21,6 +21,7 @@ import {
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
+import { logInteraction } from '@/lib/interaction-log';
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
@@ -32,6 +33,8 @@ vi.mock('@/lib/api', async (importOriginal) => {
     finishPasskeyAuthentication: vi.fn(),
   };
 });
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
@@ -1181,6 +1184,7 @@ describe('usePasskeyLogin', () => {
   });
 
   it('registers a passkey and stores the session', async () => {
+    vi.mocked(logInteraction).mockClear();
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -1194,6 +1198,8 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
     expect(finishPasskeyRegistration).toHaveBeenCalled();
+    expect(logInteraction).toHaveBeenCalledWith('signup_completed');
+    expect(logInteraction).not.toHaveBeenCalledWith('login');
     expect(rememberSessionPhrase).not.toHaveBeenCalled();
     const createArg = vi.mocked(navigator.credentials.create).mock.calls[0]?.[0] as
       CredentialCreationOptions | undefined;
@@ -1711,6 +1717,7 @@ describe('usePasskeyLogin', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
+    expect(logInteraction).toHaveBeenCalledWith('login');
     useAuthStore.setState({ session: null, account: null, wrongAccount: false });
     await act(async () => {
       result.current.authenticate();

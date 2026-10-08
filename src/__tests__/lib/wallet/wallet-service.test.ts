@@ -7,6 +7,7 @@ import {
   listenForWalletPhrase,
   getWalletPayment,
   listWalletPayments,
+  listWalletReportPayments,
   parseWalletInput,
   payFromWallet,
   refreshWallet,
@@ -21,7 +22,10 @@ import type {
   WalletSdk,
   WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
+import { logInteraction } from '@/lib/interaction-log';
 import { useAuthStore } from '@/stores/auth-store';
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 import { useWalletStore } from '@/stores/wallet-store';
 
 const MNEMONIC =
@@ -54,6 +58,7 @@ function createFakeSdk(overrides?: {
     registerAddress: ReturnType<typeof vi.fn>;
     listPayments: ReturnType<typeof vi.fn>;
     getPayment: ReturnType<typeof vi.fn>;
+    listReportPayments: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   };
   connect: ReturnType<typeof vi.fn>;
@@ -78,6 +83,7 @@ function createFakeSdk(overrides?: {
     registerAddress: vi.fn(async () => undefined),
     listPayments: vi.fn(async () => []),
     getPayment: vi.fn(),
+    listReportPayments: vi.fn(async () => []),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
@@ -1016,6 +1022,24 @@ describe('getWalletPayment', () => {
   });
 });
 
+describe('listWalletReportPayments', () => {
+  it('rejects without a connection', async () => {
+    await expect(listWalletReportPayments({ offset: 0, limit: 200 })).rejects.toThrow(
+      'wallet-connect',
+    );
+  });
+
+  it('forwards the page to the connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    const row = { id: 'p1', direction: 'in', amountSats: 1 };
+    connection.listReportPayments.mockResolvedValueOnce([row]);
+    await connectWallet(loadSdk);
+    await expect(listWalletReportPayments({ offset: 200, limit: 200 })).resolves.toEqual([row]);
+    expect(connection.listReportPayments).toHaveBeenCalledWith({ offset: 200, limit: 200 });
+  });
+});
+
 /**
  * Connects a fake wallet whose connection also parses and prepares payments.
  */
@@ -1082,7 +1106,14 @@ describe('payFromWallet', () => {
       throw new Error('expected confirm');
     }
     const readsBefore = getInfo.mock.calls.length;
+    vi.mocked(logInteraction).mockClear();
+    useAuthStore.setState({ session: 'sess' });
     await expect(result.send()).resolves.toEqual({ kind: 'paid' });
+    expect(logInteraction).toHaveBeenCalledWith(
+      'payment_sent',
+      { amountSats: 2_100, feeSats: 0, onchain: false },
+      'sess',
+    );
     await vi.waitFor(() => {
       expect(getInfo.mock.calls.length).toBeGreaterThan(readsBefore);
     });
@@ -1298,7 +1329,78 @@ describe('payFromWallet', () => {
     vi.useFakeTimers();
     const pending = result.send();
     await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
-    await expect(pending).resolves.toEqual({ kind: 'failed' });
+    await expect(pending).resolves.toMatchObject({ kind: 'failed' });
+  });
+
+  it('records a send that the SDK finishes after the time limit, under the session of the send', async () => {
+    let finish: (fail?: boolean) => void = () => undefined;
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 7,
+        feeSats: 1,
+        send: () =>
+          new Promise<void>((resolve, reject) => {
+            finish = (fail) => {
+              if (fail === true) {
+                reject(new Error('send failed'));
+              } else {
+                resolve();
+              }
+            };
+          }),
+      }),
+    });
+    useAuthStore.setState({ session: 'sess' });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    vi.useFakeTimers();
+    const pending = result.send();
+    await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
+    const failed = await pending;
+    if (failed.kind !== 'failed' || failed.sentLate === undefined) {
+      throw new Error('expected a late send');
+    }
+    vi.mocked(logInteraction).mockClear();
+    finish();
+    await expect(failed.sentLate).resolves.toBe(true);
+    expect(logInteraction).toHaveBeenCalledWith(
+      'payment_sent',
+      { amountSats: 7, feeSats: 1, onchain: false },
+      'sess',
+    );
+  });
+
+  it('reports a send that fails after the time limit as not sent late', async () => {
+    let fail: () => void = () => undefined;
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 7,
+        feeSats: 1,
+        send: () =>
+          new Promise<void>((_resolve, reject) => {
+            fail = () => {
+              reject(new Error('send failed'));
+            };
+          }),
+      }),
+    });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    vi.useFakeTimers();
+    const pending = result.send();
+    await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
+    const failed = await pending;
+    if (failed.kind !== 'failed' || failed.sentLate === undefined) {
+      throw new Error('expected a late send');
+    }
+    vi.mocked(logInteraction).mockClear();
+    fail();
+    await expect(failed.sentLate).resolves.toBe(false);
+    expect(logInteraction).not.toHaveBeenCalled();
   });
 
   it('refuses to send after the wallet was disconnected', async () => {
@@ -1345,6 +1447,11 @@ describe('payFromWallet to a base-chain address', () => {
     }
     await expect(result.send('fast')).resolves.toEqual({ kind: 'paid' });
     expect(send).toHaveBeenCalledWith('fast');
+    expect(logInteraction).toHaveBeenCalledWith(
+      'payment_sent',
+      { amountSats: 50_000, feeSats: 2_840, onchain: true },
+      null,
+    );
   });
 
   it('sends with the medium speed when none is chosen', async () => {

@@ -8,6 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { Button, Card, IconButton } from '@/components/ui';
 import { fetchForumMessage, fetchPlaces } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 import type { ForumMessage, ForumPlaceRow } from '@/lib/api-types';
 import { isShopNote } from '@/lib/forum-shop';
 import { roleAtLeast } from '@/lib/roles';
@@ -149,6 +150,16 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
   const pinId = useSearchParams().get('pin');
   const frameRef = useRef<HTMLDivElement | null>(null);
   const authFailedRef = useRef(false);
+
+  const openedShop =
+    pinId !== null && places?.some((row) => row.id === pinId && row.shop === true) === true
+      ? pinId
+      : null;
+  useEffect(() => {
+    if (openedShop !== null) {
+      logInteraction('shop_opened', { placeId: openedShop });
+    }
+  }, [openedShop]);
 
   useEffect(() => {
     const host = window as GoogleWindow;

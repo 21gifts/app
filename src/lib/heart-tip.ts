@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet, type WalletPayResult } from '@/lib/wallet/wallet-service';
@@ -104,19 +105,40 @@ function liveReadyBalanceIsZero(): boolean {
 
 /**
  * Pays a prepared heart invoice: `confirm` sends at once, even when the fee is
- * above ₿0. `insufficient` or a ready zero balance is `needsBalance`.
+ * above ₿0. `insufficient` or a ready zero balance is `needsBalance`. A sent
+ * heart is recorded as `heart_sent` under the session of the click, also when
+ * the SDK finishes a send the app stopped waiting for.
  *
  * @param result - Outcome of {@link payFromWallet}.
+ * @param input - Click snapshot: the message id and the session.
  * @returns Paid, or the alert to show.
  */
-async function finishPreparedPay(result: WalletPayResult): Promise<HeartTipOutcome> {
+async function finishPreparedPay(
+  result: WalletPayResult,
+  input: HeartTipInput,
+): Promise<HeartTipOutcome> {
   if (result.kind === 'insufficient' || liveReadyBalanceIsZero()) {
     return { kind: 'alert', alert: 'needsBalance' };
   }
   if (result.kind === 'confirm') {
     const sent = await result.send();
+    const recordHeart = (): void => {
+      logInteraction(
+        'heart_sent',
+        { messageId: input.messageId, amountSats: 1 },
+        input.sessionToken,
+      );
+    };
     if (sent.kind === 'paid') {
+      recordHeart();
       return { kind: 'paid' };
+    }
+    if (sent.kind === 'failed' && sent.sentLate !== undefined) {
+      void sent.sentLate.then((late) => {
+        if (late) {
+          recordHeart();
+        }
+      });
     }
     if (sent.kind === 'insufficient') {
       return { kind: 'alert', alert: 'needsBalance' };
@@ -146,11 +168,11 @@ async function payHeartInvoice(payInput: string, input: HeartTipInput): Promise<
         return { kind: 'alert', alert: 'payFailed' };
       }
       const second = await payFromWallet({ type: 'input', input: payInput });
-      return finishPreparedPay(second);
+      return finishPreparedPay(second, input);
     }
     return { kind: 'alert', alert: 'request' };
   }
-  return finishPreparedPay(first);
+  return finishPreparedPay(first, input);
 }
 
 /**

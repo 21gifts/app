@@ -261,6 +261,27 @@ export async function proxyMeWalletPut(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON
+ *   `{ balanceSats, syncedAt, payments }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletReportPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/report');
+}
+
+/**
+ * Proxies POST /me/events (interaction log batch) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ events }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeEventsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/events');
+}
+
+/**
  * Proxies POST /lnurlpay/:pubkey (wallet address registration) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (signed JSON body from the wallet).

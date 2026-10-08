@@ -102,6 +102,7 @@ import {
   setAmountUnit,
   postPushSubscription,
   postWalletBackupSeen,
+  postWalletReport,
   postPasskeyRenewAck,
   postPasskeyRenewReport,
   agreeToRules,
@@ -115,7 +116,10 @@ import {
   startPasskeyRegistration,
   startPasskeySeed,
 } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 
 const account = {
   id: 'acc_1',
@@ -2316,6 +2320,20 @@ const parsedForumMessage = {
 };
 
 describe('postMessage', () => {
+  it('records a created post or reply without its text', async () => {
+    vi.mocked(logInteraction).mockClear();
+    stubFetch({ ok: true, status: 200, body: forumMessage });
+    await postMessage('tok', { text: 'Secret words', photos: [] });
+    await postMessage('tok', { text: 'Ask', goalCurrency: 'CHF', goalAmount: '10' });
+    await postMessage('tok', { text: 'Reply', inReplyTo: 'parent-1' });
+    expect(vi.mocked(logInteraction).mock.calls).toEqual([
+      ['post_created', { messageId: forumMessage.id, photos: 0, ask: false }, 'tok'],
+      ['post_created', { messageId: forumMessage.id, photos: 0, ask: true }, 'tok'],
+      ['reply_created', { messageId: forumMessage.id, parentId: 'parent-1' }, 'tok'],
+    ]);
+    expect(JSON.stringify(vi.mocked(logInteraction).mock.calls)).not.toContain('Secret words');
+  });
+
   it('includes place only when set', async () => {
     const fetchMock = stubFetch({
       ok: true,
@@ -2490,6 +2508,12 @@ describe('postMessage', () => {
     expect(JSON.parse((fetchMock.mock.calls[2]?.[1] as RequestInit).body as string)).toEqual({
       text: 'Hello from Ada',
     });
+    expect(
+      vi
+        .mocked(logInteraction)
+        .mock.calls.slice(-3)
+        .map(([, props]) => props?.['ask']),
+    ).toEqual([false, false, false]);
   });
 
   it('sends a capture time and drops a blank one', async () => {
@@ -2655,6 +2679,23 @@ describe('postMessage', () => {
 });
 
 describe('postMessageVideo', () => {
+  it('records a created video post', async () => {
+    vi.mocked(logInteraction).mockClear();
+    stubFetch({ ok: true, status: 200, body: { ...forumMessage, hasVideo: true } });
+    const file = new File(['vid'], 'clip.mp4', { type: 'video/mp4' });
+    await postMessageVideo('tok', { text: 'Hi', video: file });
+    await postMessageVideo('tok', {
+      text: 'Hi',
+      video: file,
+      goalCurrency: 'CHF',
+      goalAmount: '5',
+    });
+    expect(vi.mocked(logInteraction).mock.calls).toEqual([
+      ['post_created', { messageId: forumMessage.id, video: true, ask: false }, 'tok'],
+      ['post_created', { messageId: forumMessage.id, video: true, ask: true }, 'tok'],
+    ]);
+  });
+
   it('includes place fields only when set', async () => {
     const created = {
       ...forumMessage,
@@ -2825,6 +2866,11 @@ describe('postMessageVideo', () => {
     expect(form.get('goalCurrency')).toBeNull();
     expect(form.get('goalAmount')).toBeNull();
     expect(form.get('goalSats')).toBeNull();
+    expect(vi.mocked(logInteraction).mock.calls.at(-1)?.[1]).toEqual({
+      messageId: created.id,
+      video: true,
+      ask: false,
+    });
   });
 
   it('throws the api error message on a 400', async () => {
@@ -6121,5 +6167,73 @@ describe('postLnurlInvoice', () => {
     await expect(relayReason(postLnurlInvoice('sess', 'bob@example.com', 21_000))).resolves.toBe(
       'failed',
     );
+  });
+});
+
+describe('postWalletReport', () => {
+  const payment = {
+    id: 'pay-1',
+    direction: 'in' as const,
+    status: 'completed' as const,
+    amountSats: 21,
+    feeSats: 0,
+    timestamp: '2026-10-07T00:00:00.000Z',
+    method: 'lightning' as const,
+    paymentHash: 'e'.repeat(64),
+    invoice: 'lnbc1example',
+    destination: null,
+    description: null,
+    lnurlComment: null,
+  };
+
+  it('posts the balance and payments and returns the acknowledged ids', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { acknowledgedIds: ['pay-1'] } });
+    await expect(
+      postWalletReport('sess', {
+        balanceSats: 5_000,
+        syncedAt: '2026-10-07T00:00:01.000Z',
+        payments: [payment],
+      }),
+    ).resolves.toEqual(['pay-1']);
+    expect(fetchMock).toHaveBeenCalledWith('/me/wallet/report', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        balanceSats: 5_000,
+        syncedAt: '2026-10-07T00:00:01.000Z',
+        payments: [payment],
+      }),
+    });
+  });
+
+  it('sends only balance, sync time, and payments', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { acknowledgedIds: [] } });
+    const body = {
+      balanceSats: 1,
+      syncedAt: 'now',
+      payments: [],
+      mnemonic:
+        'abandon ability able about above absent absorb abstract absurd abuse access accident',
+    };
+    await postWalletReport('sess', body);
+    const sent = JSON.parse((fetchMock.mock.calls[0]?.[1] as { body: string }).body) as Record<
+      string,
+      unknown
+    >;
+    expect(Object.keys(sent)).toEqual(['balanceSats', 'syncedAt', 'payments']);
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 429, body: {} });
+    await expect(
+      postWalletReport('sess', { balanceSats: 0, syncedAt: 'now', payments: [] }),
+    ).rejects.toThrow('Could not report wallet data: 429');
+  });
+
+  it('throws when the body has no acknowledged ids', async () => {
+    stubFetch({ ok: true, status: 200, body: {} });
+    await expect(
+      postWalletReport('sess', { balanceSats: 0, syncedAt: 'now', payments: [] }),
+    ).rejects.toThrow();
   });
 });
