@@ -23,7 +23,7 @@ export interface WalletPayProps {
   pr: string;
   /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
   amountSats: number;
-  /** Current spot rate for the fee's fiat line, or `null`. */
+  /** Current spot rate for the fiat line of a fee above ₿0 and of the missing amount, or `null`. */
   rateDay: FiatRateDay | null;
   /**
    * True on the posting fee: paying also posts the note, so the confirm button
@@ -72,13 +72,15 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
 /**
  * Pay slot of an invoice pay sheet. The member pays from the in-app wallet
  * only, which is open whenever the member is signed in. It shows the fee from
- * the prepare response, then **Send**;
- * on the posting fee that button says **Pay {amount} and post**. While and
+ * the prepare response when it is above ₿0 (in-app payments quote ₿0, so the
+ * row is usually absent), then **Send**; on the posting fee that button says
+ * **Pay {amount} and post**, without a fiat suffix. While and
  * after sending it says so; the sheet's own long-poll closes it on
  * confirmation. Too little balance shows an alert, how much is still missing
  * (amount plus the known fee minus the balance, with fiat), and the member's
  * own address and QR when their username gives one; once the balance covers
- * the payment, the slot prepares again and shows the fee and the pay button.
+ * the payment, the slot prepares again and shows the pay button (with the fee
+ * row only for a fee above ₿0).
  * While the one-time wallet setup is still due, the progress line shows until
  * it is done, and a setup that gave up shows the inline setup note with
  * **Try again**. Without a wallet the member can use here it says so, and a
@@ -137,15 +139,16 @@ export function WalletPay({
       const fee = feeSats ?? 0;
       return (
         <>
-          <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
-            {t('wallet.payFee', { amount: formatBitcoin(fee, numberFormat) })}
-            {preferredFiatSuffix(fee, rateDay, fiat, numberFormat)}
-          </p>
+          {fee > 0 ? (
+            <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
+              {t('wallet.payFee', { amount: formatBitcoin(fee, numberFormat) })}
+              {preferredFiatSuffix(fee, rateDay, fiat, numberFormat)}
+            </p>
+          ) : null}
           <Button type="button" variant="primary" onClick={pay}>
             {postsOnPay ? (
               <span className="text-center">
                 {t('wallet.payAndPost', { amount: formatBitcoin(amountSats, numberFormat) })}
-                {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
               </span>
             ) : (
               t('wallet.payFromWallet')

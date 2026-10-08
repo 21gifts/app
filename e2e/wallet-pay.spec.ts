@@ -258,14 +258,13 @@ test('wallet pay: preparing pin shows Checking your wallet…', async ({ page })
   );
 });
 
-test('wallet pay: confirm pin shows the fee with fiat and Send', async ({ page }) => {
+test('wallet pay: confirm pin shows no row for the fee of ₿0, only Send', async ({ page }) => {
   await signInAda(page);
   await stubPayableReply(page, SPARK_INVOICE);
   await openPaySheet(page, 'wallet-pay-confirm');
   const sheet = page.locator('[data-pay-sheet]');
-  await expect(sheet.getByText(/Fee ₿0/)).toBeVisible();
-  await expect(sheet.getByText('$0.00')).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+  await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
 });
@@ -334,7 +333,7 @@ test('Function: WalletPay — insufficient pin shows the missing amount above th
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
 });
 
-test('Function: WalletPay — the posting fee confirm says Pay ₿1 and post, a gift keeps Send', async ({
+test('Function: WalletPay — the posting fee confirm says Pay ₿1 and post without fiat or a fee row, a gift keeps Send', async ({
   page,
 }) => {
   await signInAda(page);
@@ -363,8 +362,9 @@ test('Function: WalletPay — the posting fee confirm says Pay ₿1 and post, a 
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   const sheet = page.locator('[data-pay-sheet]');
   await expect(sheet.getByRole('button', { name: /^Pay ₿1 and post/ })).toHaveText(
-    /^Pay ₿1 and post · \$\d/,
+    'Pay ₿1 and post',
   );
+  await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
   await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Close' }).click();
   await expect(sheet).toHaveCount(0);

@@ -4117,9 +4117,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: WalletPay
 
-- **Purpose:** Pay slot of the forum pay sheet, reaction pay page, and inbox pay sheet. It pays only from the in-app wallet and never offers an invoice QR or another wallet. The wallet is already open for every signed-in member. The slot shows **Checking your wallet…** while connecting, preparing, or waiting for background setup; after preparation it shows the fee and **Send**, or **Pay {amount} and post** with the preferred-fiat suffix for a posting fee. Too little balance shows the missing amount and the member's own address and Open CryptoPay QR.
+- **Purpose:** Pay slot of the forum pay sheet, reaction pay page, and inbox pay sheet. It pays only from the in-app wallet and never offers an invoice QR or another wallet. The wallet is already open for every signed-in member. The slot shows **Checking your wallet…** while connecting, preparing, or waiting for background setup; after preparation it shows **Send**, or **Pay {amount} and post** without a fiat suffix for a posting fee. A fee row with the preferred-fiat suffix sits above that button only when the quoted fee is above ₿0; in-app payments quote ₿0, so the row is usually absent. Too little balance shows the missing amount and the member's own address and Open CryptoPay QR.
 - **Inputs:** `sparkInvoice`, `pr`, `amountSats`, `rateDay`, and optional `postsOnPay` (default false).
-- **Returns / side effects:** React slot for the current `useWalletPay` view. `failed` shows its alert and secondary **Try again**. `setupFailed` renders `WalletSetupNote`: `walletSetup.error` and a secondary **Try again** button. `preparing` and `paying` show a spinner and status; `confirm` shows the fee and **Send**; `unconfirmed` is neutral.
+- **Returns / side effects:** React slot for the current `useWalletPay` view. `failed` shows its alert and secondary **Try again**. `setupFailed` renders `WalletSetupNote`: `walletSetup.error` and a secondary **Try again** button. `preparing` and `paying` show a spinner and status; `confirm` shows **Send** (or **Pay {amount} and post**), with the fee row only for a fee above ₿0; `unconfirmed` is neutral.
 - **Used by:** `ForumBoard` (pay sheet, composer pay slot, repayment), `ForumReplyPayPage`, and `InboxScreen`.
 
 ## Function: useWalletSend
