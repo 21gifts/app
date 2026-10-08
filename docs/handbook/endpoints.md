@@ -256,7 +256,7 @@
 
 ## Endpoint: POST /me/wallet/report
 
-- **Purpose:** Same-origin proxy of api `POST /me/wallet/report`. While the member is signed in, sends the wallet's balance (`balanceSats`, `syncedAt`) and the payments the api has not acknowledged yet (`payments`, at most 200 per request, each with `id`, `direction`, `status`, `amountSats`, `feeSats`, `timestamp`, `method`, `paymentHash`, `invoice`, `destination`, `description`, `lnurlComment`). Never a recovery phrase, key, PRF output, or preimage.
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/report`. While the member is signed in, sends the wallet's balance (`balanceSats`, `syncedAt`) and the payments the api has not acknowledged yet (`payments`, at most 200 per request, each with `id`, `direction`, `status`, `amountSats`, `feeSats`, `timestamp`, `method`, `paymentHash`, `invoice`, `destination`, `description`, `lnurlComment`). Never a recovery phrase, private key, PRF output, or preimage.
 - **Returns:** Upstream `{ acknowledgedIds }`.
 - **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
 - **Used by:** `postWalletReport` (from `reportWallet`).

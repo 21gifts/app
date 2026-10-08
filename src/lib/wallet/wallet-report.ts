@@ -167,8 +167,8 @@ async function reportOnce(): Promise<void> {
  * {@link WALLET_REPORT_QUIET_MS} after the last one. Calls while a report runs
  * add one more report after it. Without a session or a ready wallet nothing
  * is sent. The report holds the payment fields of
- * {@link WalletReportPayment} only: never the recovery phrase, a key, PRF
- * output, or a preimage. Never rejects.
+ * {@link WalletReportPayment} only: never the recovery phrase, a private
+ * key, PRF output, or a preimage. Never rejects.
  *
  * @returns Resolves when the report and any report asked for meanwhile are done.
  */

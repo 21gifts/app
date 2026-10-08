@@ -409,14 +409,10 @@ function waitToRetry(): Promise<void> {
  */
 async function drainQueue(session: string): Promise<void> {
   while (useAuthStore.getState().session === session) {
-    const running = flushRuns.get(session);
-    if (running !== undefined) {
-      await running;
-      continue;
-    }
-    if (!(await flush())) {
+    const sent = await (flushRuns.get(session) ?? flush());
+    if (!sent) {
       await waitToRetry();
-    } else if (queue.length === 0 || queueSession !== session) {
+    } else if (queue.length === 0) {
       return;
     }
   }
