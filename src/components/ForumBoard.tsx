@@ -650,9 +650,12 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * row (frame background, rounded bottom corners, its own scrollport): a
  * centred title (`forum.composePost` or `forum.composeAsk`, per the switch),
  * the Post / Ask pill, then the composer as on every other board (or the Ask
- * wizard), the posting-fee pay slot, and the composer's errors. Opening it
- * focuses the text field in the same task, so a tap brings up the keyboard. A
- * compose request opens it first. On a touch device its Post composer shows
+ * wizard), the composer pay slot (`payHost` `composer`: the posting fee, or the
+ * 1-sat fee of a text reaction), and the composer's errors. While the writer is
+ * closed that pay slot shows on the page above the feed instead, so it never
+ * disappears. Opening it focuses the text field in the same task, so a tap
+ * brings up the keyboard. A compose request opens it first (or focuses its
+ * field when it is already open). On a touch device its Post composer shows
  * the text field on top at full width and photo, place and send on one row
  * below it. The writer is marked `data-writing-composer` for
  * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
@@ -974,9 +977,14 @@ export function ForumBoard({
     };
     const onCompose = (): void => {
       const home = writerRef.current;
-      if (home !== undefined && !writerOpenRef.current) {
-        // Synchronously, so the writer's field takes the focus inside the request's tap.
-        flushSync(home.onOpen);
+      if (home !== undefined) {
+        if (writerOpenRef.current) {
+          // Already open (on Ask for money there is no text field to focus).
+          tryFocusComposer();
+        } else {
+          // Synchronously, so the writer's field takes the focus inside the request's tap.
+          flushSync(home.onOpen);
+        }
         consumePendingForumCompose();
         return;
       }
@@ -2321,7 +2329,7 @@ export function ForumBoard({
 
       {composeSection}
 
-      {writer !== undefined && loosePay ? paySheet : null}
+      {writer !== undefined && (loosePay || (composerPay && !writerOpen)) ? paySheet : null}
 
       {middle}
       {error && messages !== null ? errorBlock : null}
