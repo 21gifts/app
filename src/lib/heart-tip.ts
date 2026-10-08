@@ -299,9 +299,10 @@ async function payHeartInvoice(
  * progress in this tab (also from a board mounted again), nothing is invoiced
  * and the alert is `pending`.
  * In a Playwright build, `?visual=heart-paid` (via {@link visualPin}) returns
- * paid without invoicing; that pin is ignored in production and does not
- * override signed-out or read-only. It is read before the Sunday check so a
- * Sunday clock cannot hide the shot.
+ * paid and `?visual=heart-pending` returns the `pending` alert, both without
+ * invoicing; those pins are ignored in production and do not override
+ * signed-out or read-only. They are read before the Sunday check so a Sunday
+ * clock cannot hide the shot.
  *
  * @param input - Click snapshot for one `messageId`.
  * @returns `noop`, `paid`, or an alert kind for the board.
@@ -310,8 +311,12 @@ export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcom
   if (input.sessionToken === null || input.readOnly) {
     return { kind: 'noop' };
   }
-  if (visualPin() === 'heart-paid') {
+  const pin = visualPin();
+  if (pin === 'heart-paid') {
     return { kind: 'paid' };
+  }
+  if (pin === 'heart-pending') {
+    return { kind: 'alert', alert: 'pending' };
   }
   if (input.isLocalSunday) {
     return { kind: 'alert', alert: 'sunday' };

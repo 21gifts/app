@@ -6686,6 +6686,112 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-welcome-heart-paid');
   });
+  test('state /welcome heart-unavailable', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-de',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
+    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-heart-unavailable');
+  });
+  test('state /welcome heart-pending', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-de',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'moderator',
+            },
+          ],
+        }),
+      });
+    });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/welcome?visual=heart-pending');
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText('Your last heart is still on its way. Try again in a moment.'),
+    ).toBeVisible();
+    await page
+      .getByText('Your last heart is still on its way. Try again in a moment.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-heart-pending');
+  });
 
   test('state /welcome note-truncated', async ({ page }) => {
     await page.addInitScript(() => {
@@ -12561,6 +12667,213 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-members-heart-paid');
   });
+  test('state /members heart-unavailable', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
+    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-heart-unavailable');
+  });
+  test('state /members heart-pending', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`/members/${memberId}?visual=heart-pending`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText('Your last heart is still on its way. Try again in a moment.'),
+    ).toBeVisible();
+    await page
+      .getByText('Your last heart is still on its way. Try again in a moment.')
+      .scrollIntoViewIfNeeded();
+    const viewport = page.viewportSize();
+    if (viewport !== null && viewport.width < 500) {
+      await page.getByRole('button', { name: 'Send ₿1' }).evaluate((button) => {
+        const scroller = button.closest('[data-scrollport]');
+        if (!(scroller instanceof HTMLElement)) {
+          return;
+        }
+        scroller.scrollTop +=
+          button.getBoundingClientRect().top - (scroller.getBoundingClientRect().bottom - 96);
+      });
+    }
+    await expect(
+      page.getByText('Your last heart is still on its way. Try again in a moment.'),
+    ).toBeVisible();
+    await page
+      .getByText('Your last heart is still on its way. Try again in a moment.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-heart-pending');
+  });
 
   test('state /members about-translate', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
@@ -14347,6 +14660,148 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-messages-id-heart-paid');
+  });
+  test('state /messages/[id] heart-unavailable', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const note = {
+      id,
+      accountId: 'acc-ada',
+      name: 'Ada',
+      text: GERMAN_NOTE_TEXT,
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
+    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-heart-unavailable');
+  });
+  test('state /messages/[id] heart-pending', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const note = {
+      id,
+      accountId: 'acc-ada',
+      name: 'Ada',
+      text: GERMAN_NOTE_TEXT,
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`/messages/${id}?visual=heart-pending`);
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText('Your last heart is still on its way. Try again in a moment.'),
+    ).toBeVisible();
+    await page
+      .getByText('Your last heart is still on its way. Try again in a moment.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-heart-pending');
   });
 
   test('state /messages/[id] thread', async ({ page }) => {
@@ -21294,6 +21749,78 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-shops-heart-paid');
+  });
+  test('state /shops heart-unavailable', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
+    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-heart-unavailable');
+  });
+  test('state /shops heart-pending', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/shops?visual=heart-pending');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText('Your last heart is still on its way. Try again in a moment.'),
+    ).toBeVisible();
+    await page
+      .getByText('Your last heart is still on its way. Try again in a moment.')
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-heart-pending');
   });
 
   test('state /shops mention-suggest', async ({ page }) => {

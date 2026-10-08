@@ -385,6 +385,28 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('ignores visual=heart-pending in a production build and still invoices', async () => {
+    window.history.replaceState({}, '', '/welcome?visual=heart-pending');
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    await expect(sendHeartTip({ ...BASE, messageId: 'pin-prod' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'needsBalance',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns pending for visual=heart-pending in a Playwright build without invoicing', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-pending');
+    await expect(sendHeartTip({ ...BASE, isLocalSunday: true })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    await expect(sendHeartTip({ ...BASE, readOnly: true })).resolves.toEqual({ kind: 'noop' });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('stays silent when signed out or read-only even with visual=heart-paid in Playwright', async () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
     window.history.replaceState({}, '', '/welcome?visual=heart-paid');
