@@ -856,7 +856,7 @@
 ## Function: ForumModeSelect
 
 - **Purpose:** Closed combobox for the living-room forum view (Active, No gifts yet, All, Most popular). The trigger shows the selected label and a chevron. A positive unpaid badge is also shown as a count chip on the closed trigger. Opening the trigger shows a listbox of option rows; the selected row has a check. Choosing a row calls onChange and closes the list. The shops feed has no view filter; `/shops` mounts it once as the country filter (`ShopsCountryFilter`). Post/Ask stays a SegmentedControl.
-- **Inputs:** `value`; `options` (`value`, `label`, optional `badge`, optional `badgeAriaLabel`); `onChange(value)`; `ariaLabel` (catalog `forum.modeLabel`).
+- **Inputs:** `value`; `options` (`value`, `label`, optional `badge`, optional `badgeAriaLabel`); `onChange(value)`; `ariaLabel` (the caller's catalog label: `forum.modeLabel` in `ForumBoard`, `shops.countryLabel` in `ShopsCountryFilter`).
 - **Returns:** A relative wrapper with the combobox button and, only while open, the listbox.
 
 ## Function: IconButton
