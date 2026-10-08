@@ -2300,6 +2300,20 @@ describe('postMessageInvoice', () => {
     );
   });
 
+  it('keeps HEART_UNAVAILABLE from a 503 in the thrown message', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'HEART_UNAVAILABLE' } });
+    await expect(postMessageInvoice('sess', 'm1', 1, undefined, undefined, true)).rejects.toThrow(
+      /^HEART_UNAVAILABLE$/,
+    );
+  });
+
+  it('collapses any other 503 error to the payment copy', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Payments are unavailable' } });
+    await expect(postMessageInvoice('sess', 'm1', 1, undefined, undefined, true)).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
   it('throws on other non-ok statuses', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toThrow(
