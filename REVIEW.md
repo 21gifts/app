@@ -59,7 +59,7 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 
 ## Shown amounts
 
-Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the current spot rate. A fee of ₿0 on the wallet send confirm step shows no fiat; that is not a reason to reject. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
+Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the current spot rate. A fee of ₿0 on the wallet send confirm step shows no fiat, the **Pay {amount} and post** button on the posting fee shows its amount without fiat, and a pay sheet's `WalletPay` slot shows no fee row for a fee of ₿0; none of these is a reason to reject. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
 
 ## Payment QR vs wallet links
 
