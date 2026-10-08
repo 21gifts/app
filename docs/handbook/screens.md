@@ -2012,7 +2012,7 @@ Active is shown closed; last-visit stamp older than Bob's unpaid note; the count
 
 ### Variant: empty-unpaid
 
-No zero-sat notes remain in the loaded list. **Every loaded message has already received Bitcoin.** appears; the filters and composer remain available. An entirely empty forum still uses the general empty state.
+No zero-sat notes remain in the loaded list. **Every loaded message has already received Bitcoin.** appears; the filters and the **+** remain available. An entirely empty forum still uses the general empty state.
 
 ![21.gifts welcome no remaining zero-sat notes](images/welcome-empty-unpaid.png)
 
@@ -2024,13 +2024,13 @@ Click **Most popular** — paid notes ordered by sats (Carol ₿21, then Ada ₿
 
 ### Variant: empty-paid
 
-Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidden, composer visible.
+Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidden, the **+** visible (no composer on the page).
 
 ![21.gifts welcome empty paid](images/welcome-empty-paid.png)
 
 ### Variant: empty
 
-Empty copy **No messages yet — be the first to write one.** plus composer (**Send a post** / **Ask for money** pill, attach + textarea + Post).
+Empty copy **No messages yet — be the first to write one.** plus the **+** (no composer on the page; the **Send a post** / **Ask for money** pill, attach, textarea and Post are in the writer).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -2749,7 +2749,7 @@ Named member with living-room rules agreed and no username. Composer filled, **P
 
 Named member with living-room rules agreed and `hasPosted` false. After login on `/welcome` (the only screen that shows it), `IntroduceYourselfOverlay` dialog **Introduce yourself** with body copy and **Write an introduction**. Close (X) is icon-only.
 
-- **Actions:** Close dismisses this mount only. **Write an introduction** (`Button` `type="button"` `size="lg"`) dismisses the overlay and focuses the welcome composer (`requestForumCompose` / `FORUM_COMPOSE_EVENT`). It stays on `/welcome`; the dialog never opens on `/wallet`, the point of sale, the profile, messages, or the setup flow.
+- **Actions:** Close dismisses this mount only. **Write an introduction** (`Button` `type="button"` `size="lg"`) dismisses the overlay, opens the writer and focuses its text field (`requestForumCompose` / `FORUM_COMPOSE_EVENT`). It stays on `/welcome`; the dialog never opens on `/wallet`, the point of sale, the profile, messages, or the setup flow.
 
 ![21.gifts welcome overlay introduce](images/welcome-overlay-introduce.png)
 

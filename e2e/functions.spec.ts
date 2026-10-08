@@ -2432,7 +2432,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
   await expect(page.getByLabel('Your message')).toBeFocused();
 });
 
-test('Function: requestForumCompose — Write an introduction focuses the welcome composer', async ({
+test('Function: requestForumCompose — Write an introduction opens the writer with its field focused', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -9473,7 +9473,7 @@ test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', asy
   await expect(page).toHaveURL(/\/welcome/);
 });
 
-test('Function: SegmentedControl — welcome composer shows Send a post', async ({ page }) => {
+test('Function: SegmentedControl — the welcome writer shows Send a post', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
@@ -9515,7 +9515,7 @@ test('Function: ForumModeSelect — welcome forum view is a dropdown', async ({ 
   await expect(view).toContainText('Most popular');
 });
 
-test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
+test('Function: IconButton — the welcome writer shows the Post icon control', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
