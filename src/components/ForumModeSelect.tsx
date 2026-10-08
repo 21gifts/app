@@ -110,8 +110,9 @@ function triggerBadge<T extends string>(
 /**
  * Closed full-width combobox for the living-room forum view.
  *
- * Public forum only: field trigger + absolute listbox. Not a pill grid.
- * Shops does not mount it. Post/Ask stays a SegmentedControl.
+ * Field trigger + absolute listbox. Not a pill grid. The shops feed has no
+ * view filter; `/shops` mounts it once, as the country filter
+ * (`ShopsCountryFilter`). Post/Ask stays a SegmentedControl.
  *
  * @param props - Selected value, options, change handler, and accessible name.
  * @returns The forum-mode select element.

@@ -5887,6 +5887,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'country-open',
+    image: 'shops-country-open.png',
+    visual: 'state-shops-country-open',
+    needle: "shotScreen(page, 'state-shops-country-open')",
+  },
+  {
+    route: '/shops',
+    id: 'country',
+    image: 'shops-country.png',
+    visual: 'state-shops-country',
+    needle: "shotScreen(page, 'state-shops-country')",
+  },
+  {
+    route: '/shops',
     id: 'map',
     image: 'shops-map.png',
     visual: 'state-shops-map',

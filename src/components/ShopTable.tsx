@@ -49,11 +49,15 @@ function placeText(message: ForumMessage): string | null {
 /**
  * Table of loaded shop notes: name, place, and operator. Place and operator
  * are client-side links: the place opens `/shops?pin=…#map`, the operator
- * `/members/:id`.
+ * `/members/:id`. With a country, only shops pinned in that country are
+ * loaded (`country` on `GET /forum/messages`).
  *
+ * @param props - Optional ISO 3166-1 alpha-2 `country`; null or omitted lists every shop.
  * @returns The table, empty copy, or an error with retry. Null without a session.
  */
-export function ShopTable(): ReactElement | null {
+export function ShopTable({
+  country = null,
+}: { country?: string | null } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const router = useRouter();
   const replaceRef = useRef(router.replace);
@@ -77,6 +81,7 @@ export function ShopTable(): ReactElement | null {
       mode: 'all',
       limit: PAGE_LIMIT,
       hashtag: SHOP_HASHTAG,
+      ...(country !== null ? { country } : {}),
       ...(cursor !== null ? { cursor } : {}),
     })
       .then((page) => {
@@ -102,7 +107,7 @@ export function ShopTable(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, loadId, cursor]);
+  }, [session, loadId, cursor, country]);
 
   if (session === null) {
     return null;

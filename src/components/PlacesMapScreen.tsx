@@ -3,7 +3,7 @@
 import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { Button, Card, IconButton } from '@/components/ui';
@@ -135,15 +135,28 @@ function loadGoogleMaps(key: string): Promise<void> {
  * Signed-in map of every forum note that has a pin.
  *
  * Without a Google key the places stay a list of links. A key draws the
- * same places as markers and does not replace the list.
+ * same places as markers and does not replace the list. With a country, the
+ * list and the markers keep only the pins in that country (`countryCode`) and
+ * the map fits those pins; none left is the empty copy.
  *
- * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body.
+ * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body;
+ * `country` (ISO 3166-1 alpha-2, or null for every pin) narrows the pins.
  * @returns The map card, or only the body when `embedded` is true.
  */
-export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {}): ReactElement {
+export function PlacesMapScreen({
+  embedded = false,
+  country = null,
+}: { embedded?: boolean; country?: string | null } = {}): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
-  const [places, setPlaces] = useState<ForumPlaceRow[] | null>(null);
+  const [loadedPlaces, setPlaces] = useState<ForumPlaceRow[] | null>(null);
+  const places = useMemo(
+    () =>
+      loadedPlaces === null || country === null
+        ? loadedPlaces
+        : loadedPlaces.filter((row) => row.countryCode === country),
+    [loadedPlaces, country],
+  );
   const [mapsKey, setMapsKey] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);

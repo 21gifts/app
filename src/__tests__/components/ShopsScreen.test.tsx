@@ -4,16 +4,45 @@ import { ShopsScreen } from '@/components/ShopsScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const forumLoader = vi.hoisted(() => vi.fn());
+const routerPush = vi.hoisted(() =>
+  vi.fn((href: string) => {
+    window.history.pushState(null, '', href);
+  }),
+);
+
+vi.mock('next/navigation', () => ({
+  useRouter: (): { push: typeof routerPush } => ({ push: routerPush }),
+}));
 
 vi.mock('@/components/ForumLoader', () => ({
-  ForumLoader: ({ feed }: { feed: string }) => {
+  ForumLoader: ({ feed, country }: { feed: string; country: string | null }) => {
     forumLoader();
     return (
-      <div data-testid="forum-loader" data-feed={feed}>
+      <div data-testid="forum-loader" data-feed={feed} data-country={country ?? 'all'}>
         <a href="/shops?pin=p2#map">feed place</a>
+        <a href="/shops?country=ke#map">kenya map</a>
       </div>
     );
   },
+}));
+
+vi.mock('@/components/ShopsCountryFilter', () => ({
+  ShopsCountryFilter: ({
+    value,
+    onChange,
+  }: {
+    value: string | null;
+    onChange: (value: string | null) => void;
+  }) => (
+    <div data-testid="country-filter" data-value={value ?? 'all'}>
+      <button type="button" onClick={() => onChange('PH')}>
+        choose PH
+      </button>
+      <button type="button" onClick={() => onChange(null)}>
+        choose all
+      </button>
+    </div>
+  ),
 }));
 
 /**
@@ -53,12 +82,14 @@ function popTo(path: string): void {
 }
 
 vi.mock('@/components/PlacesMapScreen', () => ({
-  PlacesMapScreen: () => <div data-testid="places-map-screen" />,
+  PlacesMapScreen: ({ country }: { country: string | null }) => (
+    <div data-testid="places-map-screen" data-country={country ?? 'all'} />
+  ),
 }));
 
 vi.mock('@/components/ShopTable', () => ({
-  ShopTable: () => (
-    <div data-testid="shop-table">
+  ShopTable: ({ country }: { country: string | null }) => (
+    <div data-testid="shop-table" data-country={country ?? 'all'}>
       <a href="/shops?pin=p1#map">
         <span>place</span>
       </a>
@@ -81,6 +112,7 @@ afterEach(() => {
   cleanup();
   window.history.replaceState(null, '', window.location.pathname);
   forumLoader.mockClear();
+  routerPush.mockClear();
 });
 
 describe('ShopsScreen', () => {
@@ -199,5 +231,46 @@ describe('ShopsScreen', () => {
     clickLink(screen.getByRole('button', { name: 'Table' }));
     clickLink(screen.getByText('unknown'));
     expect(screen.getByRole('button', { name: 'Post', pressed: true })).toBeTruthy();
+  });
+
+  it('filters every view by the country in the URL and ignores an unknown code', async () => {
+    window.history.replaceState(null, '', '/shops?country=ph#table');
+    renderWithLocale(<ShopsScreen />);
+    expect((await screen.findByTestId('shop-table')).getAttribute('data-country')).toBe('PH');
+    expect(screen.getByTestId('country-filter').getAttribute('data-value')).toBe('PH');
+    fireEvent.click(screen.getByRole('button', { name: 'Map' }));
+    expect(screen.getByTestId('places-map-screen').getAttribute('data-country')).toBe('PH');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(screen.getByTestId('forum-loader').getAttribute('data-country')).toBe('PH');
+    cleanup();
+    window.history.replaceState(null, '', '/shops?country=QQ');
+    renderWithLocale(<ShopsScreen />);
+    expect(screen.getByTestId('country-filter').getAttribute('data-value')).toBe('all');
+    expect(screen.getByTestId('forum-loader').getAttribute('data-country')).toBe('all');
+  });
+
+  it('pushes the chosen country with the view and other values, and Back restores it', () => {
+    window.history.replaceState(null, '', '/shops?pin=p1#table');
+    renderWithLocale(<ShopsScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'choose PH' }));
+    expect(routerPush).toHaveBeenLastCalledWith('/shops?pin=p1&country=PH#table', {
+      scroll: false,
+    });
+    expect(screen.getByTestId('shop-table').getAttribute('data-country')).toBe('PH');
+    fireEvent.click(screen.getByRole('button', { name: 'choose all' }));
+    expect(routerPush).toHaveBeenLastCalledWith('/shops?pin=p1#table', { scroll: false });
+    expect(screen.getByTestId('shop-table').getAttribute('data-country')).toBe('all');
+    popTo('/shops?pin=p1&country=PH#table');
+    expect(screen.getByTestId('shop-table').getAttribute('data-country')).toBe('PH');
+    window.history.replaceState(null, '', '/shops?country=PH');
+    fireEvent.click(screen.getByRole('button', { name: 'choose all' }));
+    expect(routerPush).toHaveBeenLastCalledWith('/shops', { scroll: false });
+  });
+
+  it('takes the country of a link to this page', () => {
+    window.history.replaceState(null, '', '/shops');
+    renderWithLocale(<ShopsScreen />);
+    clickLink(screen.getByText('kenya map'));
+    expect(screen.getByTestId('places-map-screen').getAttribute('data-country')).toBe('KE');
   });
 });

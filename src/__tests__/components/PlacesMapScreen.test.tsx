@@ -206,6 +206,42 @@ describe('PlacesMapScreen', () => {
     expect(map.setCenter).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98 });
   });
 
+  it('keeps only the pins of the chosen country and fits the map to them', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    const manila = { ...ROW, id: 'm-ph-1', countryCode: 'PH' };
+    const cebu = { ...ROW, id: 'm-ph-2', label: 'Cebu', lat: 10.3, lng: 123.9, countryCode: 'PH' };
+    const kenya = { ...SECOND_ROW, countryCode: 'KE' };
+    const sea = { ...ROW, id: 'm-sea', label: 'Boat', lat: 30, lng: -40, countryCode: null };
+    fetchPlacesMock.mockResolvedValue([manila, cebu, kenya, sea]);
+    const maps = installGoogleMaps(4);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    const view = renderWithLocale(<PlacesMapScreen embedded country="PH" />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · Cebu' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Ada · Machakos' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ada · Boat' })).toBeNull();
+    await waitFor(() => {
+      expect(maps.map.fitBounds).toHaveBeenCalledWith(maps.bounds, 32);
+    });
+    expect(maps.points).toEqual([
+      { lat: 14.6, lng: 120.98 },
+      { lat: 10.3, lng: 123.9 },
+    ]);
+    expect(maps.Marker).toHaveBeenCalledTimes(2);
+    maps.Marker.mockClear();
+    view.rerender(<PlacesMapScreen embedded country="KE" />);
+    expect(await screen.findByRole('link', { name: 'Ada · Machakos' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Ada · Happyland' })).toBeNull();
+    await waitFor(() => {
+      expect(maps.Marker).toHaveBeenCalledTimes(1);
+    });
+    expect(maps.map.setCenter).toHaveBeenCalledWith({ lat: -1.95, lng: 37.84 });
+    view.rerender(<PlacesMapScreen embedded country="CH" />);
+    expect(await screen.findByText('No places yet.')).toBeTruthy();
+    view.rerender(<PlacesMapScreen embedded />);
+    expect(await screen.findByRole('link', { name: 'Ada · Boat' })).toBeTruthy();
+  });
+
   it('frames every pin when several places have no matching query', async () => {
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
