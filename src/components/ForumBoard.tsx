@@ -1926,11 +1926,17 @@ export function ForumBoard({
   const composerPay = payInvoice !== null && payHost === 'composer';
   // The forum home keeps an open composer pay slot where it opened (in the writer for a posting
   // fee, on the page for a text reaction's fee), so closing the writer never moves or remounts it.
-  const [payOpenedInWriter, setPayOpenedInWriter] = useState<boolean | null>(null);
-  if (composerPay ? payOpenedInWriter === null : payOpenedInWriter !== null) {
-    setPayOpenedInWriter(composerPay ? writerOpen : null);
+  // Keyed to the invoice itself: a second fee (a reaction's while a posting fee waits) is placed anew.
+  const composerInvoice = composerPay ? payInvoice.pr : null;
+  const [payPlace, setPayPlace] = useState<{ invoice: string; inWriter: boolean } | null>(null);
+  if (composerInvoice === null ? payPlace !== null : payPlace?.invoice !== composerInvoice) {
+    setPayPlace(
+      composerInvoice === null ? null : { invoice: composerInvoice, inWriter: writerOpen },
+    );
   }
-  const payInWriter = composerPay && (payOpenedInWriter ?? writerOpen);
+  const payInWriter =
+    composerInvoice !== null &&
+    (payPlace !== null && payPlace.invoice === composerInvoice ? payPlace.inWriter : writerOpen);
   const loosePay =
     payInvoice !== null &&
     payHost !== 'composer' &&

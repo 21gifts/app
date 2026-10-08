@@ -8092,6 +8092,18 @@ describe('ForumBoard writer', () => {
     expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
     view.setOpen(true);
     expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
+    // A second fee (a reaction's) while the first waits in the closed writer is placed anew.
+    view.setOpen(false);
+    view.rerenderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc2', amountSats: 1 },
+      payWaiting: true,
+    });
+    expect(
+      document.querySelector('[data-scroll-page]')!.contains(screen.getByText(WALLET_UNAVAILABLE)),
+    ).toBe(true);
+    view.setOpen(true);
     // Once the slot is gone, the next one opens where the writer is at that moment.
     view.rerenderHome({ payHost: null, payInvoice: null, payMessageId: null });
     view.setOpen(false);
