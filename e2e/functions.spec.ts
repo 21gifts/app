@@ -1179,9 +1179,18 @@ test('Function: isForumCardFullyVisible — a fully shown welcome note is marked
   const tallId = '22222222-2222-4222-8222-222222222222';
   const posted: string[] = [];
   let inFlight = 0;
-  await page.addInitScript(() => {
+  await page.addInitScript((id: string) => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      if (this instanceof Element && this.getAttribute('data-message-id') === id) {
+        const root = this.closest('[data-scrollport]');
+        const rootRect = root instanceof Element ? original.call(root) : original.call(this);
+        return new DOMRect(rootRect.left, rootRect.top - 1, rootRect.width, rootRect.height + 2);
+      }
+      return original.call(this);
+    };
+  }, tallId);
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -1222,7 +1231,7 @@ test('Function: isForumCardFullyVisible — a fully shown welcome note is marked
           {
             id: tallId,
             name: 'Ada',
-            text: 'Tall note. '.repeat(600),
+            text: 'Tall note',
             createdAt: '2026-08-28T11:00:00.000Z',
             sats: 21,
             payable: false,
@@ -1254,6 +1263,26 @@ test('Function: isForumCardFullyVisible — a fully shown welcome note is marked
   await expect(page.getByText('Short note on screen')).toBeVisible();
   await expect(page.locator(`[data-message-id="${tallId}"]`)).toBeAttached();
   await expect.poll(() => posted.includes(shownId) && inFlight === 0).toBe(true);
+  const geometry = await page.locator(`[data-message-id="${tallId}"]`).evaluate((el) => {
+    const card = el.getBoundingClientRect();
+    const rootEl = el.closest('[data-scrollport]');
+    if (!(rootEl instanceof HTMLElement)) {
+      throw new Error('expected scrollport');
+    }
+    const root = rootEl.getBoundingClientRect();
+    return {
+      heightGap: card.height - root.height,
+      topSlack: root.top - card.top,
+      bottomSlack: card.bottom - root.bottom,
+      leftSlack: root.left - card.left,
+      rightSlack: card.right - root.right,
+    };
+  });
+  expect(geometry.heightGap).toBeGreaterThan(1);
+  expect(geometry.topSlack).toBeLessThanOrEqual(1);
+  expect(geometry.bottomSlack).toBeLessThanOrEqual(1);
+  expect(geometry.leftSlack).toBeLessThanOrEqual(1);
+  expect(geometry.rightSlack).toBeLessThanOrEqual(1);
   expect(posted).not.toContain(tallId);
 });
 
