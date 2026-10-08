@@ -454,4 +454,25 @@ describe('useHeartTip', () => {
     });
     vi.useRealTimers();
   });
+
+  it('does not vibrate or pay when readOnly is true', async () => {
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    const { result } = renderHook(() => useHeartTip({ readOnly: true }));
+    await clickHeart(result);
+    expect(vibrate).not.toHaveBeenCalled();
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('does not vibrate or pay when the session is null', async () => {
+    useAuthStore.setState({ session: null, account: HEART_ACCOUNT });
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result);
+    expect(vibrate).not.toHaveBeenCalled();
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
 });

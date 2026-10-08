@@ -224,6 +224,10 @@ export function useHeartTip(options: { readOnly: boolean }): {
 
   const onHeartTip = useCallback(
     (messageId: string): void => {
+      const sessionToken = useAuthStore.getState().session;
+      if (sessionToken === null || readOnly) {
+        return;
+      }
       if (inflightRef.current.has(messageId)) {
         return;
       }
@@ -240,7 +244,6 @@ export function useHeartTip(options: { readOnly: boolean }): {
         ...prev,
         [messageId]: { pressed: true, plusOne: false, alert: null },
       }));
-      const sessionToken = useAuthStore.getState().session;
       const account = useAuthStore.getState().account;
       const wallet = useWalletStore.getState();
       const isLocalSunday =
@@ -272,18 +275,20 @@ export function useHeartTip(options: { readOnly: boolean }): {
             timersRef.current.set(messageId, timer);
             return;
           }
-          if (outcome.kind === 'alert') {
-            setHeartTipViews((prev) => ({
-              ...prev,
-              [messageId]: { pressed: false, plusOne: false, alert: outcome.alert },
-            }));
+          /* v8 ignore start -- sendHeartTip cannot noop after the early return */
+          if (outcome.kind !== 'alert') {
+            setHeartTipViews((prev) => {
+              const next = { ...prev };
+              delete next[messageId];
+              return next;
+            });
             return;
           }
-          setHeartTipViews((prev) => {
-            const next = { ...prev };
-            delete next[messageId];
-            return next;
-          });
+          /* v8 ignore stop */
+          setHeartTipViews((prev) => ({
+            ...prev,
+            [messageId]: { pressed: false, plusOne: false, alert: outcome.alert },
+          }));
         })
         .finally(() => {
           inflightRef.current.delete(messageId);
