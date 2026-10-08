@@ -318,6 +318,7 @@ app/
 │   │   ├── useWalletPhrase.ts   # In-tab PRF recovery phrase
 │   │   ├── useWalletSend.ts     # Wallet send flow steps
 │   │   ├── useWalletPanel.ts    # Receive / Send view over a page, its Back steps, scroll restore (/wallet, /welcome)
+│   │   ├── useComposerWriting.ts # Forum home composer writing mode on touch devices (fold, settle, keep focus)
 │   │   └── useWalletPayment.ts  # One payment by id for /wallet/payment, re-read after each sync
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)

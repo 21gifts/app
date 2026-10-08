@@ -176,6 +176,18 @@ describe('WelcomeScreen', () => {
   });
 });
 
+describe('WelcomeScreen writing mode', () => {
+  it('wraps the icon and heading in a part that is no box until the shell is in writing mode', () => {
+    renderWithLocale(<WelcomeScreen />);
+    const part = screen.getByRole('heading', { name: 'Welcome, Ada' }).parentElement!;
+    expect(part.querySelector('svg')).toBeTruthy();
+    expect(part.className).toContain('contents');
+    expect(part.className).toContain('group-data-[writing=ready]/shell:writing-fold');
+    expect(part.className).toContain('group-data-[writing=on]/shell:writing-folded');
+    expect(part.className).toContain('group-data-[writing=on]/shell:-mt-6');
+  });
+});
+
 describe('WelcomeScreen wallet', () => {
   it('shows no Receive or Send without a configured wallet or when signed out', () => {
     renderWelcome();
