@@ -10468,6 +10468,143 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-messages-id-repayment-list');
   });
 
+  test('state /messages/[id]/repayment-list signed-in', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: 'BTC',
+          fundedAt: '2026-09-26T12:00:00.000Z',
+          termDays: 2,
+          daysDue: 1,
+          daysPaid: 0,
+          unassignedSats: 0,
+          givers: [
+            {
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              givenSats: 20,
+              givenAmount: null,
+            },
+            {
+              accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+              name: 'Cara',
+              username: 'cara',
+              givenSats: 1,
+              givenAmount: null,
+            },
+          ],
+          repayments: [
+            {
+              dayIndex: 0,
+              dueOn: '2026-09-27',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 10,
+              status: 'due',
+              via: 'lightning',
+            },
+            {
+              dayIndex: 1,
+              dueOn: '2026-09-28',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 10,
+              status: 'scheduled',
+              via: 'lightning',
+            },
+            {
+              dayIndex: 1,
+              dueOn: '2026-09-28',
+              accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+              name: 'Cara',
+              username: 'cara',
+              amount: null,
+              sats: 1,
+              status: 'scheduled',
+              via: 'lightning',
+            },
+          ],
+          next: null,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await expect(page.getByText('Due', { exact: true })).toHaveCount(1);
+    await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-repayment-list-signed-in');
+  });
+
+  test('state /messages/[id]/repayment-list loading', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.route(`**/messages/${id}/repayment`, () => new Promise(() => undefined));
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByRole('link', { name: '21.gifts' })).toBeVisible();
+    await expect(page.getByText('Given')).toHaveCount(0);
+    await expect(page.getByText('Due', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-repayment-list-loading');
+  });
+
+  test('state /messages/[id]/repayment-list empty', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: 'BTC',
+          fundedAt: null,
+          termDays: 30,
+          daysDue: 0,
+          daysPaid: 0,
+          unassignedSats: 0,
+          givers: [],
+          repayments: [],
+          next: null,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByText('No one has given yet.')).toBeVisible();
+    await expect(page.getByText('Each share is one bitcoin payment to that person.')).toBeVisible();
+    await expect(
+      page.getByText(
+        'The days are fixed once the credit is fully given. Until then this is the plan for what has been given.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByText('Due', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-repayment-list-empty');
+  });
+
   test('state /messages/[id] photos', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111112';
     const jpeg = Buffer.from(

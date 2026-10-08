@@ -22,7 +22,9 @@ import {
 /**
  * Who gave what on a credit, and who is paid back how much, when, and by one bitcoin payment.
  *
- * Renders nothing until the public ledger loads. A failed read stays blank.
+ * Renders nothing until the public ledger for this note loads. A failed read
+ * stays blank. Changing `messageId` drops the previous note immediately, so a
+ * slow read never keeps the last person's rows on screen.
  * `list="summary"` (default) shows givers, the explanation, the chart, and a
  * link to the repayment list. `list="page"` also shows the day-group rows and
  * omits that link.
@@ -41,12 +43,16 @@ export function CreditLedger({
   const { numberFormat } = useNumberFormat();
   const { fiat: visitorFiat } = useFiatPreference();
   const rateDay = useLatestRateDay();
-  const [ledger, setLedger] = useState<RepaymentLedger | null>(null);
+  const [loaded, setLoaded] = useState<{
+    messageId: string;
+    ledger: RepaymentLedger;
+  } | null>(null);
+  const ledger = loaded !== null && loaded.messageId === messageId ? loaded.ledger : null;
   useEffect(() => {
     let cancel = false;
     void getRepayment(messageId).then((row) => {
-      if (!cancel) {
-        setLedger(row);
+      if (!cancel && row !== null) {
+        setLoaded({ messageId, ledger: row });
       }
     });
     return () => {
@@ -61,7 +67,7 @@ export function CreditLedger({
     const timer = setInterval(() => {
       void getRepayment(messageId).then((row) => {
         if (!cancel && row !== null) {
-          setLedger(row);
+          setLoaded({ messageId, ledger: row });
         }
       });
     }, 4000);

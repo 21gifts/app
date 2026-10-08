@@ -4745,16 +4745,34 @@ Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello fr
 ## Screen: /messages/[id]/repayment-list
 
 - **Purpose:** The repayment list for one credit note: who gave, the chart, and every day's shares. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
-- **Inputs:** Dynamic route `id`. Loads `GET /messages/:id/repayment` through `getRepayment`. No session.
+- **Inputs:** Dynamic route `id`. Loads `GET /messages/:id/repayment` through `getRepayment`. No session is required to view. Chrome follows the hydrated session.
 - **Actions:** The top-left arrow is the existing ProfileChromeLeft control (previous in-app view, or `/welcome` when this tab has none). No other control. Names are text.
 - **Used by:** Route `/messages/[id]/repayment-list` (`RepaymentListPage`). The **Repayment list** link on a collapsed `ForumGoalBar` and on `CreditLedger` summary.
-- **Auth:** None required. No OnboardingGate.
+- **Auth:** None required to view. Chrome depends on the hydrated session. No OnboardingGate.
 
 ### Variant: default
 
 Unsigned. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 27 Sep 2026 to 28 Sep 2026, then **Each share is one bitcoin payment to that person.**, then 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
 
 ![21.gifts repayment list](images/messages-id-repayment-list.png)
+
+### Variant: signed-in
+
+Same loaded list as the default, with the **Menu** control. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 27 Sep 2026 to 28 Sep 2026, then **Each share is one bitcoin payment to that person.**, then 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
+
+![21.gifts repayment list signed in](images/messages-id-repayment-list-signed-in.png)
+
+### Variant: loading
+
+Unsigned chrome only. The repayment request has not returned, so **Given**, the chart, and the day rows are absent. A failed read is this same blank screen: nothing is added and the layout does not change, so it is not a separate variant.
+
+![21.gifts repayment list loading](images/messages-id-repayment-list-loading.png)
+
+### Variant: empty
+
+Unsigned. The ledger loaded with no givers and no repayment rows. **Given** shows **No one has given yet.** **Paid back** shows **Each share is one bitcoin payment to that person.** and **The days are fixed once the credit is fully given. Until then this is the plan for what has been given.** No chart and no day rows.
+
+![21.gifts repayment list empty](images/messages-id-repayment-list-empty.png)
 
 ## Screen: /messages/[id]/author
 

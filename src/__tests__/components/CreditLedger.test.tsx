@@ -233,6 +233,10 @@ describe('CreditLedger', () => {
       const stalePending = new Promise<Response>((done) => {
         resolveStale = done;
       });
+      let resolveNext: (value: Response) => void = () => {};
+      const nextPending = new Promise<Response>((done) => {
+        resolveNext = done;
+      });
       vi.stubGlobal(
         'fetch',
         vi.fn(async (input: RequestInfo) => {
@@ -241,7 +245,7 @@ describe('CreditLedger', () => {
             return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
           }
           if (url.includes('/messages/m2/')) {
-            return new Response(JSON.stringify(named('Milo', 'milo')), { status: 200 });
+            return nextPending;
           }
           return stalePending;
         }),
@@ -250,11 +254,17 @@ describe('CreditLedger', () => {
         await vi.advanceTimersByTimeAsync(4000);
       });
       view.rerender(<CreditLedger messageId="m2" list="page" />);
+      expect(screen.queryByText('Nia @nia')).toBeNull();
+      expect(screen.queryByText('Due')).toBeNull();
       await act(async () => {
         resolveStale(new Response(JSON.stringify(named('Quinn', 'quinn')), { status: 200 }));
       });
-      expect((await screen.findAllByText('Milo @milo')).length).toBeGreaterThan(0);
       expect(screen.queryByText('Quinn @quinn')).toBeNull();
+      expect(screen.queryByText('Nia @nia')).toBeNull();
+      await act(async () => {
+        resolveNext(new Response(JSON.stringify(named('Milo', 'milo')), { status: 200 }));
+      });
+      expect((await screen.findAllByText('Milo @milo')).length).toBeGreaterThan(0);
     } finally {
       vi.useRealTimers();
     }

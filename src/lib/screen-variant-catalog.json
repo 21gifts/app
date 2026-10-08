@@ -4488,6 +4488,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/repayment-list:signed-in",
+    "label": "/messages/[id]/repayment-list signed-in",
+    "visual": "state-messages-id-repayment-list-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:loading",
+    "label": "/messages/[id]/repayment-list loading",
+    "visual": "state-messages-id-repayment-list-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:empty",
+    "label": "/messages/[id]/repayment-list empty",
+    "visual": "state-messages-id-repayment-list-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:default",
     "label": "/messages/[id]/author default",
     "visual": "screen-messages-id-author",

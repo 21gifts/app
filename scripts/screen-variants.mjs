@@ -5310,6 +5310,27 @@ export const SCREEN_VARIANTS = [
     needle: 'screen /messages/[id]/repayment-list',
   },
   {
+    route: '/messages/[id]/repayment-list',
+    id: 'signed-in',
+    image: 'messages-id-repayment-list-signed-in.png',
+    visual: 'state-messages-id-repayment-list-signed-in',
+    needle: 'state /messages/[id]/repayment-list signed-in',
+  },
+  {
+    route: '/messages/[id]/repayment-list',
+    id: 'loading',
+    image: 'messages-id-repayment-list-loading.png',
+    visual: 'state-messages-id-repayment-list-loading',
+    needle: 'state /messages/[id]/repayment-list loading',
+  },
+  {
+    route: '/messages/[id]/repayment-list',
+    id: 'empty',
+    image: 'messages-id-repayment-list-empty.png',
+    visual: 'state-messages-id-repayment-list-empty',
+    needle: 'state /messages/[id]/repayment-list empty',
+  },
+  {
     route: '/messages/[id]/author',
     id: 'default',
     image: 'messages-id-author.png',
