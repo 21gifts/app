@@ -5857,6 +5857,158 @@ describe('ForumLoader', () => {
     expect(markVisibleForumNoteReadMock).not.toHaveBeenCalled();
   });
 
+  it('skips a card whose data-message-id is empty', async () => {
+    stubForumCardRects({
+      m1: CARD_INSIDE_RECT,
+    });
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <ForumLoader />
+      </AppShell>,
+    );
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    const scroller = container.querySelector('[data-scrollport]');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    const emptyCard = document.createElement('li');
+    emptyCard.setAttribute('data-message-id', '');
+    scroller.appendChild(emptyCard);
+    scroller.dispatchEvent(new Event('scroll'));
+    await flushPaint();
+    expect(markVisibleForumNoteReadMock).not.toHaveBeenCalledWith('sess', '');
+  });
+
+  it('marks a card again after it leaves the fully visible set and returns', async () => {
+    const cardRects = {
+      m1: CARD_INSIDE_RECT,
+    };
+    stubForumCardRects(cardRects);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <ForumLoader />
+      </AppShell>,
+    );
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
+    });
+    const scroller = container.querySelector('[data-scrollport]');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    cardRects.m1 = { top: 100, bottom: 802, left: 16, right: 384, width: 368, height: 702 };
+    scroller.dispatchEvent(new Event('scroll'));
+    await flushPaint();
+    cardRects.m1 = CARD_INSIDE_RECT;
+    markVisibleForumNoteReadMock.mockClear();
+    scroller.dispatchEvent(new Event('scroll'));
+    await flushPaint();
+    expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
+  });
+
+  it('does not schedule a second frame while one is pending', async () => {
+    const previousRequestAnimationFrame = window.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    let nextHandle = 1;
+    window.requestAnimationFrame = (callback: FrameRequestCallback): number => {
+      rafCallbacks.push(callback);
+      const handle = nextHandle;
+      nextHandle += 1;
+      return handle;
+    };
+    try {
+      stubForumCardRects({
+        m1: CARD_INSIDE_RECT,
+      });
+      fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+      const { container } = renderWithLocale(
+        <AppShell mode="fill">
+          <ForumLoader />
+        </AppShell>,
+      );
+      await revealAll();
+      await waitFor(() => {
+        expect(screen.getByText('Hello from Ada')).toBeTruthy();
+      });
+      const scroller = container.querySelector('[data-scrollport]');
+      expect(scroller).toBeTruthy();
+      if (!(scroller instanceof HTMLElement)) {
+        throw new Error('expected AppShell scroller');
+      }
+      const queuedBeforeScroll = rafCallbacks.length;
+      expect(queuedBeforeScroll).toBeGreaterThan(0);
+      scroller.dispatchEvent(new Event('scroll'));
+      expect(rafCallbacks).toHaveLength(queuedBeforeScroll);
+      await act(async () => {
+        rafCallbacks[queuedBeforeScroll - 1](0);
+      });
+      expect(markVisibleForumNoteReadMock).toHaveBeenCalledTimes(1);
+      expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
+    } finally {
+      window.requestAnimationFrame = previousRequestAnimationFrame;
+    }
+  });
+
+  it('observes the scrollport with ResizeObserver and disconnects on unmount', async () => {
+    const previousResizeObserver = globalThis.ResizeObserver;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    let observerCallback: ResizeObserverCallback | undefined;
+    globalThis.ResizeObserver = class {
+      constructor(callback: ResizeObserverCallback) {
+        observerCallback = callback;
+      }
+      observe(element: Element): void {
+        observe(element);
+      }
+      unobserve(): void {}
+      disconnect(): void {
+        disconnect();
+      }
+    };
+    try {
+      stubForumCardRects({
+        m1: CARD_INSIDE_RECT,
+      });
+      fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+      const view = renderWithLocale(
+        <AppShell mode="fill">
+          <ForumLoader />
+        </AppShell>,
+      );
+      await revealAll();
+      await waitFor(() => {
+        expect(screen.getByText('Hello from Ada')).toBeTruthy();
+      });
+      const scroller = view.container.querySelector('[data-scrollport]');
+      expect(scroller).toBeTruthy();
+      expect(observe).toHaveBeenCalledWith(scroller);
+      if (observerCallback === undefined) {
+        throw new Error('expected ResizeObserver callback');
+      }
+      observerCallback([], {} as ResizeObserver);
+      view.unmount();
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      if (previousResizeObserver === undefined) {
+        Reflect.deleteProperty(globalThis, 'ResizeObserver');
+      } else {
+        globalThis.ResizeObserver = previousResizeObserver;
+      }
+    }
+  });
+
   it('loads replies via fetchReplies when a row is expanded', async () => {
     fetchMock.mockResolvedValue(forumPage([SAMPLE]));
     repliesMock.mockResolvedValue([

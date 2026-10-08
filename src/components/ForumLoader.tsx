@@ -1126,10 +1126,7 @@ export function ForumLoader({
           .join('\n');
 
   useEffect(() => {
-    if (
-      visibleReadSessionRef.current !== session ||
-      visibleReadScrollerRef.current !== scroller
-    ) {
+    if (visibleReadSessionRef.current !== session || visibleReadScrollerRef.current !== scroller) {
       visibleReadAttemptedIds.current.clear();
       visibleReadInFlightIds.current.clear();
       visibleReadSessionRef.current = session;

@@ -56,6 +56,7 @@ import {
   proxyForumMentionsGet,
   proxyNotificationsReadAllPost,
   proxyNotificationsReadByMessagePost,
+  proxyNotificationsReadVisiblePost,
   proxyMePushSubscriptionsDelete,
   proxyMePushSubscriptionsPost,
   proxyMessagesComposeTargetGet,
@@ -617,6 +618,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/notifications/read-by-message');
+  });
+
+  it('proxyNotificationsReadVisiblePost hits POST /notifications/read-visible', async () => {
+    const fetchMock = stubApi();
+    await proxyNotificationsReadVisiblePost(
+      new Request('http://localhost/forum/notifications/read-visible', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/notifications/read-visible');
   });
 
   it('proxyNotificationReadPost encodes the id', async () => {

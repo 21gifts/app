@@ -87,7 +87,9 @@ export interface NotificationsScreenProps {
 /**
  * Presentational signed-in notifications list of living-room posts, replies,
  * payments, moderator appointment, and moderator proposal. There is no
- * composer, no thread view, and no filter.
+ * composer, no thread view, and no filter. Unread rows (`readAt === null`)
+ * are a section above rows that already have `readAt`, each section keeping
+ * API order; an empty section is omitted.
  *
  * @param props - List state from {@link NotificationsLoader}.
  * @returns The notifications page column.
@@ -135,16 +137,45 @@ export function NotificationsScreen({
       </>
     );
   } else {
+    const unread = notifications.filter((row) => row.readAt === null);
+    const seen = notifications.filter((row) => row.readAt !== null);
     body = (
       <>
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('notifications.heading')}
         </h1>
-        <ul aria-label={t('notifications.listLabel')} className="flex w-full flex-col gap-3">
-          {notifications.map((row) => (
-            <NotificationRow key={row.id} row={row} onOpen={onOpen} />
-          ))}
-        </ul>
+        <div className="flex w-full flex-col gap-6">
+          {unread.length > 0 ? (
+            <div className="flex w-full flex-col gap-3">
+              <h2 className="text-sm font-semibold text-app-muted">
+                {t('notifications.unreadHeading')}
+              </h2>
+              <ul
+                aria-label={t('notifications.unreadListLabel')}
+                className="flex w-full flex-col gap-3"
+              >
+                {unread.map((row) => (
+                  <NotificationRow key={row.id} row={row} onOpen={onOpen} />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {seen.length > 0 ? (
+            <div className="flex w-full flex-col gap-3">
+              <h2 className="text-sm font-semibold text-app-muted">
+                {t('notifications.seenHeading')}
+              </h2>
+              <ul
+                aria-label={t('notifications.seenListLabel')}
+                className="flex w-full flex-col gap-3"
+              >
+                {seen.map((row) => (
+                  <NotificationRow key={row.id} row={row} onOpen={onOpen} />
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
       </>
     );
   }

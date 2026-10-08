@@ -882,6 +882,10 @@ const en = {
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
+  'notifications.unreadHeading': 'Unread',
+  'notifications.seenHeading': 'Already seen',
+  'notifications.unreadListLabel': 'Unread notifications',
+  'notifications.seenListLabel': 'Already seen notifications',
   'notifications.empty': 'No notifications yet.',
   'notifications.loading': 'Loading…',
   'notifications.error': 'Could not load notifications. Please try again.',
@@ -1985,6 +1989,10 @@ const de = {
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
+  'notifications.unreadHeading': 'Ungelesen',
+  'notifications.seenHeading': 'Schon gesehen',
+  'notifications.unreadListLabel': 'Ungelesene Benachrichtigungen',
+  'notifications.seenListLabel': 'Schon gesehene Benachrichtigungen',
   'notifications.empty': 'Noch keine Benachrichtigungen.',
   'notifications.loading': 'Wird geladen…',
   'notifications.error':
@@ -3091,6 +3099,10 @@ const es = {
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
+  'notifications.unreadHeading': 'No leídas',
+  'notifications.seenHeading': 'Ya vistas',
+  'notifications.unreadListLabel': 'Notificaciones no leídas',
+  'notifications.seenListLabel': 'Notificaciones ya vistas',
   'notifications.empty': 'Aún no hay notificaciones.',
   'notifications.loading': 'Cargando…',
   'notifications.error': 'No se pudieron cargar las notificaciones. Inténtalo de nuevo.',
@@ -4195,6 +4207,10 @@ const fil = {
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',
+  'notifications.unreadHeading': 'Hindi pa nababasa',
+  'notifications.seenHeading': 'Nabasa na',
+  'notifications.unreadListLabel': 'Mga abisong hindi pa nababasa',
+  'notifications.seenListLabel': 'Mga abisong nabasa na',
   'notifications.empty': 'Wala pang mga abiso.',
   'notifications.loading': 'Naglo-load…',
   'notifications.error': 'Hindi ma-load ang mga abiso. Subukan ulit.',
