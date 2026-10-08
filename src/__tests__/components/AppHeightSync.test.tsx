@@ -590,19 +590,25 @@ describe('useAppHeight and the writing composer', () => {
   it('ends the hold when a field takes the focus again, on orientation change, and on unmount', () => {
     vi.useFakeTimers();
     const clear = vi.spyOn(window, 'clearTimeout');
-    const { field, other, unmount } = openKeyboard();
+    const { visualViewport, field, other, unmount } = openKeyboard();
     focusOut(field);
     expect(written().height).toBe('852px');
     focusIn(other);
     expect(written()).toEqual({ height: '511px', offset: '200px' });
 
-    focusIn(field);
+    /** The keyboard closed, then the composer takes the focus again from no field. */
+    const reenter = (): void => {
+      visualViewport.height = 852;
+      focusIn(field);
+      visualViewport.height = 511;
+    };
+    reenter();
     focusOut(field);
     expect(written().height).toBe('852px');
     window.dispatchEvent(new Event('orientationchange'));
     expect(written().height).toBe('511px');
 
-    focusIn(field);
+    reenter();
     focusOut(field);
     expect(written().height).toBe('852px');
     const before = clear.mock.calls.length;
@@ -639,24 +645,44 @@ describe('useAppHeight and the writing composer', () => {
     expect(visualViewport.height).toBe(511);
   });
 
-  it('keeps the tallest height at one width, and measures again at another width', () => {
+  it('measures the full height again at each entry, keeping a held one only while it is held', () => {
     const { visualViewport, field } = openKeyboard();
-    // Back into the composer while the viewport is still short: 852 stays the full height.
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    // Back into the composer while the keyboard is still closing: the held 852 stays the full height.
     focusIn(field);
     focusOut(field);
     expect(written().height).toBe('852px');
-    // A focus at another width measures that width only.
+    // The viewport catches up and then shrinks for good (a toolbar came back): the next entry measures 800.
+    visualViewport.height = 852;
+    visualViewport.offsetTop = 0;
+    viewportListener(visualViewport, 'resize')();
+    visualViewport.height = 800;
+    viewportListener(visualViewport, 'resize')();
+    focusIn(field);
+    visualViewport.height = 480;
+    viewportListener(visualViewport, 'resize')();
+    focusOut(field);
+    expect(written().height).toBe('800px');
+  });
+
+  it('holds nothing once the width changed, after the focus or during the hold', () => {
+    const { visualViewport, field } = openKeyboard();
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 852 });
-    visualViewport.height = 393;
-    focusIn(field);
-    visualViewport.height = 200;
     focusOut(field);
-    expect(written().height).toBe('393px');
-    // The width changed after the focus: no hold.
-    focusIn(field);
+    expect(written().height).toBe('511px');
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 393 });
+    focusIn(field, document.body.querySelector('input'));
+    focusIn(field);
     focusOut(field);
-    expect(written().height).toBe('200px');
+    expect(written().height).toBe('511px');
+    // A fresh entry at 393 records 511; leaving holds it, and a width change ends the hold.
+    visualViewport.height = 300;
+    focusOut(field);
+    expect(written().height).toBe('511px');
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 852 });
+    viewportListener(visualViewport, 'resize')();
+    expect(written().height).toBe('300px');
   });
 
   it('measures nothing while pinch-zoomed', () => {

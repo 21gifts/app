@@ -49,7 +49,8 @@ export interface ComposerWriting {
  * prevented, so the field keeps the focus and nothing moves under the finger;
  * the click still runs.
  *
- * @param enabled - Whether this composer has a writing mode (the forum home only).
+ * @param enabled - Whether this composer has a writing mode and is shown (the forum home
+ * Post composer only); false ends writing mode.
  * @param active - False while the field cannot take text; ends writing mode.
  * @param composerRef - The composer element (the form), scrolled into place.
  * @returns Whether writing mode can run and is on, and the composer's handlers.
@@ -72,10 +73,10 @@ export function useComposerWriting(
   }, [enabled]);
 
   useEffect(() => {
-    if (!active) {
+    if (!enabled || !active) {
       setFocused(false);
     }
-  }, [active]);
+  }, [enabled, active]);
 
   useEffect(() => {
     if (!touch || setShellWriting === undefined) {
