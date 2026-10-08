@@ -5119,6 +5119,47 @@ test('Function: WalletPay — the forum pay sheet is wallet-only, with no invoic
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
+test('Function: ForumPaySheet — the amount form keeps its controls clear of the Close hit area', async ({
+  page,
+  request,
+}) => {
+  await stubWalletLocationAssign(page);
+  await stubPayableNote(page);
+  await signInViaStub(page, request);
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const sheet = replyCard.locator('[data-pay-sheet]');
+  const close = sheet.getByRole('button', { name: 'Close' });
+  await expect(close).toBeVisible();
+  const sheetBox = await sheet.boundingBox();
+  const closeBox = await close.boundingBox();
+  if (sheetBox === null || closeBox === null) {
+    throw new Error('pay sheet is not laid out');
+  }
+  expect(closeBox.x - sheetBox.x).toBeGreaterThanOrEqual(12);
+  expect(closeBox.x - sheetBox.x).toBeLessThanOrEqual(14);
+  expect(closeBox.y - sheetBox.y).toBeGreaterThanOrEqual(12);
+  expect(closeBox.y - sheetBox.y).toBeLessThanOrEqual(14);
+  // The 24px X has a 44px hit area around its centre.
+  const hitRight = closeBox.x + closeBox.width / 2 + 22;
+  const hitBottom = closeBox.y + closeBox.height / 2 + 22;
+  const controls = sheet.locator('input, button:not([aria-label="Close"]), [role="radio"]');
+  const count = await controls.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i += 1) {
+    const box = await controls.nth(i).boundingBox();
+    if (box === null) {
+      continue;
+    }
+    expect(box.x >= hitRight || box.y >= hitBottom).toBe(true);
+  }
+});
+
 const REACTION_PAY_ANSWER = 'This is my answer';
 const REACTION_PAY_NOTE = 'Thank you so much to all donors.';
 

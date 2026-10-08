@@ -86,7 +86,7 @@ export function ForumPaySheet({
         onSubmit={handlePaySubmit}
         onClick={onInteract}
         data-pay-sheet=""
-        className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10"
+        className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-12 pt-12"
       >
         <div className="absolute left-3 top-3">
           <IconButton

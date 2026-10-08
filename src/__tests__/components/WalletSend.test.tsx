@@ -477,7 +477,10 @@ describe('WalletSend amount', () => {
       "Enter an amount between ₿10 · $0.01 and ₿1'000 · $1.00.",
     );
     expect(screen.queryByText('Cancel')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    const close = screen.getByRole('button', { name: 'Cancel' });
+    expect(close.parentElement?.className).toBe('absolute left-3 top-3');
+    expect(close.parentElement?.parentElement?.className).toContain('pt-12');
+    fireEvent.click(close);
     expect(send.cancel).toHaveBeenCalledTimes(1);
   });
 
