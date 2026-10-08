@@ -267,7 +267,7 @@
 - **Purpose:** Same-origin proxy of api `POST /me/events`. Sends a batch of at most 50 interaction events of the signed-in member, each `{ name, at, path, props }`.
 - **Returns:** The upstream status.
 - **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
-- **Used by:** `flushInteractions` (also from `logLogout`).
+- **Used by:** `flushInteractions` and `logLogout` (the logout event in a request of its own).
 - **Auth:** Bearer.
 
 ## Endpoint: PUT /me/wallet

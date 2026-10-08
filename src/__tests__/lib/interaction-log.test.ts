@@ -258,7 +258,7 @@ describe('a request that does not answer', () => {
     expect(posted().map((event) => event.name)).toEqual(['screen_view', 'screen_view']);
   });
 
-  it('does not hold back the queue of the next session, and logout ends with its session', async () => {
+  it('does not hold back the queue of the next session', async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementationOnce(
       (_url: string, init: { signal: AbortSignal }) =>
@@ -269,7 +269,7 @@ describe('a request that does not answer', () => {
         }),
     );
     mod.logInteraction('screen_view');
-    const logout = mod.logLogout();
+    const old = mod.flushInteractions();
     await Promise.resolve();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     useAuthStore.setState({ session: 'next' });
@@ -277,13 +277,9 @@ describe('a request that does not answer', () => {
     await mod.flushInteractions();
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(requests()[1]?.headers['Authorization']).toBe('Bearer next');
-    expect(
-      posted()
-        .slice(-1)
-        .map((event) => event.name),
-    ).toEqual(['login']);
-    await vi.advanceTimersByTimeAsync(mod.INTERACTION_REQUEST_TIMEOUT_MS + mod.LOGOUT_RETRY_MS);
-    await logout;
+    expect(posted().map((event) => event.name)).toEqual(['screen_view', 'login']);
+    await vi.advanceTimersByTimeAsync(mod.INTERACTION_REQUEST_TIMEOUT_MS);
+    await old;
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
@@ -350,57 +346,45 @@ describe('logInteraction with the session of the action', () => {
 });
 
 describe('logLogout', () => {
-  it('sends the queue with the logout event under the ending session', async () => {
+  /**
+   * Names of the events in each request so far.
+   *
+   * @returns One list of names per request.
+   */
+  function batches(): string[][] {
+    return requests().map((request) =>
+      (JSON.parse(request.body) as { events: SentEvent[] }).events.map((event) => event.name),
+    );
+  }
+
+  it('sends logout in a request of its own under the ending session, and flushes the queue', async () => {
     mod.logInteraction('screen_view');
     await mod.logLogout();
-    expect(posted().map((event) => event.name)).toEqual(['screen_view', 'logout']);
-    expect(requests().map((request) => request.headers['Authorization'])).toEqual(['Bearer sess']);
+    expect(batches()).toEqual([['screen_view'], ['logout']]);
+    expect(requests().map((request) => request.headers['Authorization'])).toEqual([
+      'Bearer sess',
+      'Bearer sess',
+    ]);
   });
 
-  it('waits for a running flush and then sends what it left', async () => {
-    let release: () => void = () => undefined;
-    fetchMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          release = () => {
-            resolve({ ok: true, status: 204 });
-          };
-        }),
-    );
-    mod.logInteraction('login');
-    const first = mod.flushInteractions();
-    const logout = mod.logLogout();
-    await Promise.resolve();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    release();
-    await logout;
-    await first;
-    expect(posted().map((event) => event.name)).toEqual(['login', 'logout']);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-  });
-
-  it('records and sends nothing without a session', async () => {
-    useAuthStore.setState({ session: null });
+  it('is not held back by a flush that does not answer', async () => {
+    fetchMock.mockImplementationOnce(() => new Promise(() => undefined));
+    mod.logInteraction('screen_view');
+    void mod.flushInteractions();
     await mod.logLogout();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(batches()).toEqual([['screen_view'], ['logout']]);
   });
 
-  it('sends a failed batch again until it is accepted', async () => {
+  it('sends the logout event again until it is accepted', async () => {
     vi.useFakeTimers();
     answer(503);
-    mod.logInteraction('screen_view');
     const logout = mod.logLogout();
     await vi.advanceTimersByTimeAsync(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     answer('ok');
     await vi.advanceTimersByTimeAsync(mod.LOGOUT_RETRY_MS);
     await logout;
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(
-      (JSON.parse(requests()[1]?.body ?? '{}') as { events: SentEvent[] }).events.map(
-        (event) => event.name,
-      ),
-    ).toEqual(['screen_view', 'logout']);
+    expect(batches()).toEqual([['logout'], ['logout']]);
   });
 
   it('stops sending again once the session ended', async () => {
@@ -412,6 +396,23 @@ describe('logLogout', () => {
     await vi.advanceTimersByTimeAsync(mod.LOGOUT_RETRY_MS);
     await logout;
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('records and sends nothing without a session or when the event cannot be built', async () => {
+    useAuthStore.setState({ session: null });
+    await mod.logLogout();
+    useAuthStore.setState({ session: 'sess' });
+    const location = window.location;
+    Object.defineProperty(window, 'location', { configurable: true, value: {} });
+    await mod.logLogout();
+    Object.defineProperty(window, 'location', { configurable: true, value: location });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps a path of at most 512 characters', async () => {
+    window.history.replaceState(null, '', `/${'a'.repeat(600)}`);
+    await mod.logLogout();
+    expect(posted()[0]?.path).toHaveLength(512);
   });
 });
 

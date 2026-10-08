@@ -47,6 +47,9 @@ const MAX_QUEUED = 500;
 /** Most props one event keeps. */
 const MAX_PROPS = 12;
 
+/** Longest path one event keeps; a longer one is cut. */
+const MAX_PATH_LENGTH = 512;
+
 /** Longest string value one prop keeps. */
 const MAX_PROP_LENGTH = 200;
 
@@ -104,8 +107,8 @@ const WRAPPER_BYTES = encoder.encode('{"events":[]}').length;
 
 /**
  * Props reduced to short flat values. A key that is not an identifier or that
- * names a secret, a value that is not a string, finite number, boolean, or
- * `null`, and a string that is too long or looks like a secret are left out.
+ * names a secret, a number that is not finite, and a string that is too long
+ * or looks like a secret are left out.
  *
  * @param props - Props as the caller gave them.
  * @returns The kept props.
@@ -148,10 +151,10 @@ function currentPath(): string {
     if (path.startsWith(prefix)) {
       const rest = path.slice(prefix.length);
       const slash = rest.indexOf('/');
-      return `${prefix}[key]${slash === -1 ? '' : rest.slice(slash)}`;
+      return `${prefix}[key]${slash === -1 ? '' : rest.slice(slash)}`.slice(0, MAX_PATH_LENGTH);
     }
   }
-  return path;
+  return path.slice(0, MAX_PATH_LENGTH);
 }
 
 /**
@@ -194,9 +197,26 @@ function dropOldest(): void {
 }
 
 /**
+ * Builds one event for the current path and time.
+ *
+ * @param name - What happened.
+ * @param props - Props as the caller gave them.
+ * @returns The event, or `null` when it cannot be built (recording never
+ *   breaks the action it records).
+ */
+function buildEvent(name: InteractionName, props: InteractionProps): InteractionEvent | null {
+  try {
+    return { name, at: new Date().toISOString(), path: currentPath(), props: cleanProps(props) };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Queues one interaction of the signed-in member. Without a session nothing is
  * kept: anonymous visits are not recorded. Events queued under another
- * session are dropped first. A full batch is sent at once. Never throws: an
+ * session are dropped first. Reaching 50 queued events starts a flush (the
+ * byte budget may split it into several requests). Never throws: an
  * event that cannot be built is dropped.
  *
  * @param name - What happened.
@@ -220,11 +240,8 @@ export function logInteraction(
     queue.length = 0;
     queueSession = session;
   }
-  let event: InteractionEvent;
-  try {
-    event = { name, at: new Date().toISOString(), path: currentPath(), props: cleanProps(props) };
-  } catch {
-    // Recording never breaks the action it records.
+  const event = buildEvent(name, props);
+  if (event === null) {
     return;
   }
   queue.push(event);
@@ -333,34 +350,41 @@ async function sendQueue(session: string): Promise<boolean> {
   return true;
 }
 
-/** How long {@link logLogout} waits before it sends a failed batch again. */
+/** How long {@link logLogout} waits before it sends the logout event again. */
 export const LOGOUT_RETRY_MS = 500;
 
 /**
- * Records `logout` and sends the queue with the session that is ending, so
- * the caller can clear the session afterwards. Waits for a flush already
- * running, then sends what it left; a failed batch is sent again every
- * {@link LOGOUT_RETRY_MS} until it is accepted or the session is no longer
- * the current one (the caller bounds the wait and then clears it). Without a
- * session nothing is recorded or sent. Never rejects.
+ * Records `logout` and sends it at once, in a request of its own with the
+ * session that is ending, so the caller can clear the session afterwards; a
+ * flush already running does not hold it back. It also starts a flush of the
+ * queued events. A failed request is sent again every
+ * {@link LOGOUT_RETRY_MS} while the session is still the current one (the
+ * caller bounds the wait and then clears it; queued events not sent by then
+ * are dropped, and a request already in flight still completes, as every
+ * request is kept alive). Without a session nothing is recorded or sent.
+ * Never rejects.
  *
- * @returns Resolves when the queue is sent or the session ended.
+ * @returns Resolves when the api accepted the event or the session ended.
  */
 export async function logLogout(): Promise<void> {
   const session = useAuthStore.getState().session;
-  logInteraction('logout');
-  while (session !== null && useAuthStore.getState().session === session) {
-    const running = flushRuns.get(session);
-    const sent = await (running ?? flush());
-    if (sent && running === undefined) {
+  if (session === null) {
+    return;
+  }
+  const event = buildEvent('logout', {});
+  if (event === null) {
+    return;
+  }
+  void flush();
+  while (useAuthStore.getState().session === session) {
+    try {
+      await postEvents(session, [event]);
       return;
+    } catch {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, LOGOUT_RETRY_MS);
+      });
     }
-    if (sent) {
-      continue;
-    }
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, LOGOUT_RETRY_MS);
-    });
   }
 }
 
