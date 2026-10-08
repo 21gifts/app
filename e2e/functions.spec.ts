@@ -23,7 +23,6 @@ import {
   replySatsFromDraft,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
-import { isForumCardFullyVisible } from '../src/lib/forum-card-visible';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -1173,51 +1172,89 @@ test('Function: proxyNotificationsReadVisiblePost — POST /forum/notifications/
   expect((await request.post('/forum/notifications/read-visible')).status()).toBe(401);
 });
 
-test('Function: isForumCardFullyVisible — a clipped card is not fully shown', () => {
-  const root = {
-    top: 0,
-    bottom: 800,
-    left: 0,
-    right: 400,
-    width: 400,
-    height: 800,
-  };
-  expect(
-    isForumCardFullyVisible(
-      { top: 100, bottom: 500, left: 16, right: 384, width: 368, height: 400 },
-      root,
-    ),
-  ).toBe(true);
-  expect(
-    isForumCardFullyVisible(
-      { top: 100, bottom: 801, left: 16, right: 384, width: 368, height: 701 },
-      root,
-    ),
-  ).toBe(true);
-  expect(
-    isForumCardFullyVisible(
-      { top: 100, bottom: 802, left: 16, right: 384, width: 368, height: 702 },
-      root,
-    ),
-  ).toBe(false);
-  expect(
-    isForumCardFullyVisible(
-      { top: 0, bottom: 900, left: 16, right: 384, width: 368, height: 900 },
-      root,
-    ),
-  ).toBe(false);
-  expect(
-    isForumCardFullyVisible(
-      { top: 100, bottom: 100, left: 16, right: 384, width: 368, height: 0 },
-      root,
-    ),
-  ).toBe(false);
-  expect(
-    isForumCardFullyVisible(
-      { top: -20, bottom: 400, left: 16, right: 384, width: 368, height: 420 },
-      root,
-    ),
-  ).toBe(false);
+test('Function: isForumCardFullyVisible — a fully shown welcome note is marked read and a taller note is not', async ({
+  page,
+}) => {
+  const shownId = '11111111-1111-4111-8111-111111111111';
+  const tallId = '22222222-2222-4222-8222-222222222222';
+  const posted: string[] = [];
+  let inFlight = 0;
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: shownId,
+            name: 'Ada',
+            text: 'Short note on screen',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+          },
+          {
+            id: tallId,
+            name: 'Ada',
+            text: 'Tall note. '.repeat(600),
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/forum/notifications/read-visible', async (route) => {
+    inFlight += 1;
+    const raw = route.request().postData() ?? '';
+    try {
+      const body = JSON.parse(raw) as { messageId?: unknown };
+      if (typeof body.messageId === 'string') {
+        posted.push(body.messageId);
+      }
+    } catch {
+      posted.push('unparsed');
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, tags: [] }),
+    });
+    inFlight -= 1;
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Short note on screen')).toBeVisible();
+  await expect(page.locator(`[data-message-id="${tallId}"]`)).toBeAttached();
+  await expect.poll(() => posted.includes(shownId) && inFlight === 0).toBe(true);
+  expect(posted).not.toContain(tallId);
 });
 
 test('Function: markNotificationsReadForMessage — opening a signed-in message page POSTs read-by-message', async ({
