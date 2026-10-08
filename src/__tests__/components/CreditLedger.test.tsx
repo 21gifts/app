@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreditLedger } from '@/components/CreditLedger';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -142,6 +142,10 @@ describe('CreditLedger', () => {
     const link = await screen.findByRole('link', { name: 'Repayment list' });
     expect(link.getAttribute('href')).toBe('/messages/m1/repayment-list');
     expect(screen.queryByText('Due')).toBeNull();
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const stop = vi.spyOn(click, 'stopPropagation');
+    fireEvent(link, click);
+    expect(stop).toHaveBeenCalled();
   });
 
   it('reloads a due share and ignores a failed refresh', async () => {
@@ -493,6 +497,10 @@ describe('CreditLedger', () => {
     );
     const link = await screen.findByRole('link', { name: 'Repayment list' });
     expect(link.getAttribute('href')).toBe('/messages/m1/repayment-list');
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const stop = vi.spyOn(click, 'stopPropagation');
+    fireEvent(link, click);
+    expect(stop).toHaveBeenCalled();
     expect(screen.queryByText('Given')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Who gave and who is paid back' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Hide givers and repayment' })).toBeNull();

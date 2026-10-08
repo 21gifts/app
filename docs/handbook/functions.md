@@ -1039,10 +1039,10 @@
 
 ## Function: PublicMessageChrome
 
-- **Purpose:** Client chrome wrapper for public `/messages/[id]` and `/messages/[id]/author`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
-- **Inputs:** `children` (page body: `PublicMessageLoader` from `PublicMessagePage`, or `ExternalAuthorProfile` from `ExternalAuthorPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
+- **Purpose:** Client chrome wrapper for public `/messages/[id]`, `/messages/[id]/author`, and `/messages/[id]/repayment-list`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise `ProfileChromeLeft` with wordmark href `/` and light `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
+- **Inputs:** `children` (page body: `PublicMessageLoader` from `PublicMessagePage`, `ExternalAuthorProfile` from `ExternalAuthorPage`, or `CreditLedger` from `RepaymentListPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
 - **Returns / side effects:** Fill `AppShell` (`align="center"`) with the matching top-left / top-right slots around `children`. No network beyond session hydration.
-- **Used by:** `PublicMessagePage`, `ExternalAuthorPage`.
+- **Used by:** `PublicMessagePage`, `ExternalAuthorPage`, `RepaymentListPage`.
 
 ## Function: PublicMessagePage
 
