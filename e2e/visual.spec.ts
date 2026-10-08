@@ -21390,6 +21390,31 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-country-loading');
   });
 
+  test('shops posts filtered by country', async ({ page }) => {
+    await seedCountryShops(page);
+    await page.goto('/shops?country=PH');
+    await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('Philippines (1)');
+    await expect(page.getByText('Sari-sari Manila')).toBeVisible();
+    await expect(page.getByText('Duka Nairobi')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-country-post');
+  });
+
+  test('shops map filtered by country', async ({ page }) => {
+    await seedCountryShops(page);
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.goto('/shops?country=PH#map');
+    await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('Philippines (1)');
+    await expect(page.getByRole('link', { name: 'Manila' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Nairobi' })).toHaveCount(0);
+    await shotScreen(page, 'state-shops-country-map');
+  });
+
   test('shops map', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {

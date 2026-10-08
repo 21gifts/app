@@ -5118,6 +5118,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:country-post",
+    "label": "/shops country-post",
+    "visual": "state-shops-country-post",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country-map",
+    "label": "/shops country-map",
+    "visual": "state-shops-country-map",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:map",
     "label": "/shops map",
     "visual": "state-shops-map",

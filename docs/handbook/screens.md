@@ -2804,6 +2804,18 @@ A shared link chose a country without shops (`/shops?country=CH#table`). The sel
 
 ![21.gifts shops country before the counts load](images/shops-country-loading.png)
 
+### Variant: country-post
+
+`/shops?country=PH` on **Post**. The select shows **Philippines (1)**. The post list shows only the shop in the Philippines, **Sari-sari Manila**; the shop in Kenya is gone. **Add a shop** stays.
+
+![21.gifts shops posts filtered by country](images/shops-country-post.png)
+
+### Variant: country-map
+
+`/shops?country=PH#map` on **Map**. The select shows **Philippines (1)**. The place list keeps only **Ada · Manila**; the pin in Nairobi is gone. No map key, so the frame stays empty.
+
+![21.gifts shops map filtered by country](images/shops-country-map.png)
+
 ### Variant: map
 
 The **Map** option is selected. The post composer is gone. The place list is visible without a second **Map** heading. No map key, so the frame stays empty.

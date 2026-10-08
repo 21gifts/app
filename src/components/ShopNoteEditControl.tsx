@@ -29,7 +29,10 @@ export interface ShopNoteEditControlProps {
   message: ForumMessage;
   /** Apply the saved note to the listed row. Runs after each saved part of the note. */
   onUpdated: (message: ForumMessage) => void;
-  /** Runs once after every changed part of the note is saved. */
+  /**
+   * Runs once after every changed part of the note is saved. When a save stops
+   * after some parts were written, it runs when the editor is closed instead.
+   */
   onSaved?: () => void;
   /** Still previews already loaded for this note, in order. */
   existingPhotos?: readonly string[];
@@ -187,6 +190,17 @@ export function ShopNoteEditControl({
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
+  // A save that stopped after some parts were written is reported when the editor closes.
+  const unreportedSave = useRef(false);
+
+  /** Close the steps; report a partly written save that was not reported yet. */
+  function closeEditor(): void {
+    setOpen(false);
+    if (unreportedSave.current) {
+      unreportedSave.current = false;
+      onSaved?.();
+    }
+  }
   const [saveError, setSaveError] = useState(false);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
@@ -382,22 +396,27 @@ export function ShopNoteEditControl({
       if (textChanged) {
         latest = await setMessageShopText(token, message.id, draft);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       if (!placesEqual(place, message.place ?? null)) {
         latest = await setMessagePlace(token, message.id, place);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       const nextUser = usernameOf(username);
       const prevUser = message.shopAccount?.username ?? '';
       if (nextUser !== prevUser) {
         latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       if (photosChanged) {
         latest = await setMessageShopPhotos(token, message.id, stills);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       onUpdated(latest);
+      unreportedSave.current = false;
       setOpen(false);
       onSaved?.();
     } catch {
@@ -426,7 +445,7 @@ export function ShopNoteEditControl({
         aria-expanded={open}
         onClick={() => {
           if (open) {
-            setOpen(false);
+            closeEditor();
             return;
           }
           openEditor();
@@ -462,7 +481,7 @@ export function ShopNoteEditControl({
               }}
               onCancel={() => {
                 setSaveError(false);
-                setOpen(false);
+                closeEditor();
               }}
               resetToken={0}
               maxLength={FORUM_MESSAGE_MAX_LENGTH - '\n\n#21GiftsShop'.length}

@@ -6048,6 +6048,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'country-post',
+    image: 'shops-country-post.png',
+    visual: 'state-shops-country-post',
+    needle: "shotScreen(page, 'state-shops-country-post')",
+  },
+  {
+    route: '/shops',
+    id: 'country-map',
+    image: 'shops-country-map.png',
+    visual: 'state-shops-country-map',
+    needle: "shotScreen(page, 'state-shops-country-map')",
+  },
+  {
+    route: '/shops',
     id: 'map',
     image: 'shops-map.png',
     visual: 'state-shops-map',

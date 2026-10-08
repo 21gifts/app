@@ -4833,5 +4833,15 @@
     "de": "/shops?country=PH#table, während die Pins für die Zählung noch laden (oder nicht geladen werden konnten). Die Auswahl zeigt Philippinen ohne Anzahl; die Tabelle listet bereits nur Sari-sari Manila.",
     "es": "/shops?country=PH#table mientras los pines para los recuentos aún se cargan (o no se pudieron cargar). El selector muestra Filipinas sin número; la tabla ya solo muestra Sari-sari Manila.",
     "fil": "/shops?country=PH#table habang naglo-load pa ang mga pin para sa bilang (o hindi ma-load). Ipinapakita ng pagpipilian ang Pilipinas nang walang bilang; ang talahanayan ay Sari-sari Manila na lang ang nakalista."
+  },
+  "/shops:country-post": {
+    "de": "/shops?country=PH auf Post. Die Auswahl zeigt Philippinen (1). Die Beitragsliste zeigt nur den Shop auf den Philippinen, Sari-sari Manila; der Shop in Kenia ist verschwunden. Shop hinzufügen bleibt.",
+    "es": "/shops?country=PH en Publicación. El selector muestra Filipinas (1). La lista de publicaciones solo muestra la tienda de Filipinas, Sari-sari Manila; la tienda de Kenia ya no aparece. Añadir una tienda sigue ahí.",
+    "fil": "/shops?country=PH sa Post. Ipinapakita ng pagpipilian ang Pilipinas (1). Ang shop lang sa Pilipinas, Sari-sari Manila, ang nasa listahan ng post; wala na ang shop sa Kenya. Nananatili ang Magdagdag ng shop."
+  },
+  "/shops:country-map": {
+    "de": "/shops?country=PH#map auf Karte. Die Auswahl zeigt Philippinen (1). Die Ortsliste behält nur Ada · Manila; der Pin in Nairobi ist verschwunden. Kein Kartenschlüssel, daher bleibt der Rahmen leer.",
+    "es": "/shops?country=PH#map en Mapa. El selector muestra Filipinas (1). La lista de lugares solo conserva Ada · Manila; el pin de Nairobi ya no aparece. No hay clave del mapa, así que el marco permanece vacío.",
+    "fil": "/shops?country=PH#map sa Mapa. Ipinapakita ng pagpipilian ang Pilipinas (1). Ada · Manila lang ang natitira sa listahan ng lugar; wala na ang pin sa Nairobi. Walang susi ng mapa, kaya walang laman ang kuwadro."
   }
 }
