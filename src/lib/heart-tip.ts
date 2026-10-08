@@ -272,6 +272,9 @@ export function useHeartTip(options: { readOnly: boolean }): {
               ...prev,
               [messageId]: { pressed: true, plusOne: true, alert: null },
             }));
+            if (visualPin() === 'heart-paid') {
+              return;
+            }
             const timer = setTimeout(() => {
               timersRef.current.delete(messageId);
               setHeartTipViews((prev) => {
