@@ -65,6 +65,7 @@ test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', as
     }
     return /\/messages\/?$/.test(new URL(req.url()).pathname);
   });
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/taken-at.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Post', exact: true }).click();
@@ -1731,6 +1732,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
 });
 
@@ -1768,6 +1770,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   const input = page.locator('input[type="file"]');
   await expect(input).toHaveAttribute('accept', /image\/jpeg/);
   await expect(input).toHaveAttribute('accept', /image\/png/);
@@ -1780,7 +1783,7 @@ test('Function: fetchMessages — welcome shows the empty forum', async ({ page,
   await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
-  await expect(page.getByLabel('Your message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
 });
 
 test('Function: postMessage — posting from the composer shows the row', async ({
@@ -1789,6 +1792,7 @@ test('Function: postMessage — posting from the composer shows the row', async 
 }) => {
   await reachWelcomeVerified(page, request);
   const body = `Hello from Ada ${Date.now()}`;
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(page.getByText(body)).toBeVisible();
@@ -1822,13 +1826,19 @@ async function markWalletVerified(page: Page): Promise<void> {
   await page.reload();
 }
 
+/** Opens the forum home writer from the floating + (the composer is not on the page). */
+async function openHomeWriter(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Write a post' }).click();
+  await expect(page.locator('[data-writing-composer]')).toBeVisible();
+}
+
 async function reachWelcome(page: Page, request: APIRequestContext): Promise<string> {
   const handle = await signInViaStub(page, request);
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await markWalletVerified(page);
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
   return handle;
 }
 
@@ -1845,7 +1855,7 @@ async function reachWelcomeVerified(page: Page, request: APIRequestContext): Pro
   });
   await page.reload();
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
   return handle;
 }
 
@@ -1901,6 +1911,7 @@ test('Function: prepareForumPhoto — attaching a jpeg shows a preview then post
   request,
 }) => {
   const handle = await reachWelcomeVerified(page, request);
+  await openHomeWriter(page);
   await attachTinyJpeg(page);
   await postAndExpectPhotoRow(page, handle);
 });
@@ -1910,6 +1921,7 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
   request,
 }) => {
   const handle = await reachWelcomeVerified(page, request);
+  await openHomeWriter(page);
   await attachTinyJpeg(page);
   await expect(page.getByLabel('Your message')).toHaveValue('');
   await postAndExpectPhotoRow(page, handle);
@@ -1918,6 +1930,7 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
 test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
   const handle = await reachWelcomeVerified(page, request);
   const caption = `Caption ${Date.now()}`;
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill(caption);
   await attachTinyJpeg(page);
   await postAndExpectPhotoRow(page, handle, caption);
@@ -1962,12 +1975,14 @@ test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ 
 
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
 });
 
 test('Function: ForumLoader — remove photo clears the preview', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Remove photo' }).click();
@@ -2356,6 +2371,7 @@ test('Function: RequirementsOverlay — forum post without a set-up wallet expla
   await signInViaStub(page, request);
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill('Hello');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Your wallet is not set up' });
@@ -4373,6 +4389,7 @@ test('Function: useChromeBack shows one chrome Back on the ask step', async ({ p
   await routeForumLists(page);
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -5284,6 +5301,7 @@ test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', 
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill('Hello gifts');
   const compose = page.waitForRequest(
     (req) => req.method() === 'GET' && new URL(req.url()).pathname === '/messages/compose-target',
@@ -5327,6 +5345,7 @@ test('Function: fetchComposeTarget — a free first post is created without an i
     }
   });
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await expect(page.getByText('Your first post is free.')).toBeVisible();
   await page.getByLabel('Your message').fill('My first note is free');
   const created = page.waitForResponse(
@@ -5335,6 +5354,8 @@ test('Function: fetchComposeTarget — a free first post is created without an i
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   expect((await created).status()).toBe(200);
   await expect(page.getByText('My first note is free')).toBeVisible();
+  // A successful post closes the writer; reopened, its field is empty.
+  await openHomeWriter(page);
   await expect(page.getByLabel('Your message')).toHaveValue('');
   await expect(page.getByText('Your first post is free.')).toHaveCount(0);
   await expect(page.getByText(WALLET_UNAVAILABLE)).toHaveCount(0);
@@ -5358,6 +5379,7 @@ test('Function: PostFeeRequiredError — a refused free first post asks for the 
     });
   });
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await expect(page.getByText('Your first post is free.')).toBeVisible();
   await page.getByLabel('Your message').fill('Hello gifts');
   const invoice = page.waitForRequest(
@@ -5733,6 +5755,7 @@ test('Function: satsToFiatAmount — a note without stored fiat shows the viewer
   await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
   await expect(page.getByText('$0.02')).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
   await expect(page.getByText('$0.02').first()).toBeVisible();
@@ -7385,6 +7408,7 @@ test('Function: ForumAskWizard — welcome loads', async ({ page }) => {
   });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
 });
@@ -7424,6 +7448,7 @@ test('Function: parseForumAskAmount — welcome loads', async ({ page }) => {
   });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
   await page.getByLabel('Ask').fill('0');
@@ -9458,6 +9483,7 @@ test('Function: SegmentedControl — welcome composer shows Send a post', async 
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('group', { name: 'Compose' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send a post' })).toBeVisible();
 });
@@ -9499,6 +9525,7 @@ test('Function: IconButton — welcome composer shows the Post icon control', as
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeVisible();
 });
 
@@ -9828,6 +9855,7 @@ test('Function: resolveAppHeight — short keyboard visualViewport sizes the pag
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByLabel('Your message').focus();
   const measured = await page.evaluate(() => {
     const inner = window.innerHeight;
@@ -11552,6 +11580,7 @@ test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) =>
 test('Function: isForumVideoFile — composer accept includes mp4', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
@@ -11559,26 +11588,31 @@ test('Function: isForumVideoFile — composer accept includes mp4', async ({ pag
 test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/webm/);
 });
 test('Function: postMessageVideo — composer accept includes quicktime', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/quicktime/);
 });
 test('Function: forumVideoSrc — composer accept includes mov', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.mov/);
 });
 test('Function: isForumVideoFile — composer accept includes m4v', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/x-m4v/);
 });
 test('Function: prepareForumVideo — composer accept includes m4v extension', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.m4v/);
 });
 
@@ -11631,6 +11665,7 @@ test('Function: prepareForumVideo — attaching an mp4 shows a preview', async (
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
@@ -11651,6 +11686,7 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
     await route.fallback();
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect
     .poll(
@@ -12834,6 +12870,7 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
   const usd = page
@@ -12881,6 +12918,7 @@ test('Function: setAmountUnit — the ask switch saves fiat on the account', asy
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
   const saved = page.waitForRequest(
@@ -12987,6 +13025,7 @@ async function openCreditAmount(page: Page): Promise<void> {
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByRole('button', { name: 'Credit' }).click();
   await page.getByLabel('Ask').fill('21000');
@@ -13434,6 +13473,7 @@ test('Function: proxyForumMentionsGet — GET /forum/mentions without bearer is 
 
 test('Function: activeMention — @ in the composer opens People', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@');
   await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
@@ -13445,6 +13485,7 @@ test('Function: MentionTextarea — choosing a person inserts the handle', async
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@');
   await page.getByRole('option', { name: '@ada', exact: true }).click();
@@ -13453,6 +13494,7 @@ test('Function: MentionTextarea — choosing a person inserts the handle', async
 
 test('Function: searchMentionAccounts — @as keeps only that prefix', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@as');
   await expect(page.getByRole('option', { name: '@ashton' })).toBeVisible();
@@ -13464,6 +13506,7 @@ test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', 
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   const people = page.getByRole('listbox', { name: 'People' });
   await box.fill('hi @');
