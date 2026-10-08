@@ -329,6 +329,12 @@ function ProfileImages({
   );
 }
 
+function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
+  const copy = { ...profile };
+  delete copy.staffTag;
+  return copy;
+}
+
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
  * the same public gifts facts as the member card (`MemberProfileScreen`
@@ -344,12 +350,6 @@ function ProfileImages({
  *
  * @returns The identity card.
  */
-function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
-  const copy = { ...profile };
-  delete copy.staffTag;
-  return copy;
-}
-
 export function ProfileScreen(): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
