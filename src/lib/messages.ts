@@ -661,7 +661,6 @@ const en = {
   'wallet.sendCommentLong': 'This message is too long for the receiver.',
   'wallet.sendUnsupported': 'This payment request cannot be paid from your wallet yet.',
   'wallet.sendFailed': 'The payment could not be sent. Check your balance before you try again.',
-  'wallet.sendNotReady': 'Your wallet is not ready yet. Please try again in a moment.',
   'wallet.sendUnreadable': 'This could not be read. Please try again.',
   'wallet.payment.heading': 'Payment',
   'wallet.payment.completed': 'Completed',
@@ -1907,8 +1906,6 @@ const de = {
     'Diese Zahlungsanforderung kann noch nicht aus Ihrer Wallet bezahlt werden.',
   'wallet.sendFailed':
     'Die Zahlung konnte nicht gesendet werden. Prüfen Sie Ihr Guthaben, bevor Sie es erneut versuchen.',
-  'wallet.sendNotReady':
-    'Ihre Wallet ist noch nicht bereit. Bitte versuchen Sie es gleich noch einmal.',
   'wallet.sendUnreadable': 'Das konnte nicht gelesen werden. Bitte versuchen Sie es erneut.',
   'wallet.payment.heading': 'Zahlung',
   'wallet.payment.completed': 'Abgeschlossen',
@@ -3160,7 +3157,6 @@ const es = {
   'wallet.sendCommentLong': 'Este mensaje es demasiado largo para el destinatario.',
   'wallet.sendUnsupported': 'Esta solicitud de pago todavía no se puede pagar desde tu wallet.',
   'wallet.sendFailed': 'No se pudo enviar el pago. Revisa tu saldo antes de volver a intentarlo.',
-  'wallet.sendNotReady': 'Tu wallet aún no está lista. Inténtalo de nuevo en un momento.',
   'wallet.sendUnreadable': 'No se pudo leer. Inténtalo de nuevo.',
   'wallet.payment.heading': 'Pago',
   'wallet.payment.completed': 'Completado',
@@ -4398,7 +4394,6 @@ const fil = {
   'wallet.sendCommentLong': 'Masyadong mahaba ang mensaheng ito para sa tatanggap.',
   'wallet.sendUnsupported': 'Hindi pa mababayaran mula sa wallet mo ang payment request na ito.',
   'wallet.sendFailed': 'Hindi naipadala ang bayad. Tingnan ang balanse mo bago subukan ulit.',
-  'wallet.sendNotReady': 'Hindi pa handa ang wallet mo. Subukan ulit maya-maya.',
   'wallet.sendUnreadable': 'Hindi ito mabasa. Subukan ulit.',
   'wallet.payment.heading': 'Bayad',
   'wallet.payment.completed': 'Tapos na',

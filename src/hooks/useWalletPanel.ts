@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAppShellScroller } from '@/components/AppShell';
-import type { UseWalletResult } from '@/hooks/useWallet';
 import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 import { visualPin } from '@/lib/visual-pin';
-import type { WalletStatus } from '@/stores/wallet-store';
 
 /** Wallet view shown in place of a page's own body. `none` is the page itself. */
 export type WalletPanel = 'none' | 'receive' | 'send';
@@ -14,8 +12,6 @@ export type WalletPanel = 'none' | 'receive' | 'send';
 export interface UseWalletPanelOptions {
   /** Send flow state, or `undefined` where the page has no Send. */
   send: UseWalletSendResult | undefined;
-  /** Wallet state, or `undefined` where the page shows no wallet. */
-  wallet: UseWalletResult | undefined;
   /**
    * Open the Send view on mount under a `?visual=send-…` pin (Playwright
    * builds only). `/welcome` sets it; `/wallet` keeps its pins behind Send.
@@ -29,25 +25,19 @@ export interface UseWalletPanelResult {
   shown: WalletPanel;
   /** Opens Receive. */
   openReceive: () => void;
-  /** Opens Send while the wallet is ready. */
+  /** Opens Send, also while the wallet is still opening. */
   openSend: () => void;
   /** The footer button to focus when the page comes back (the view that just closed), or `null`. */
   returnFocus: 'receive' | 'send' | null;
-  /** Whether Send cannot be pressed now (no send flow, or the wallet is not ready). */
-  sendDisabled: boolean;
-  /**
-   * Whether Receive cannot be pressed now: the one-time wallet setup is still
-   * due or gave up, so the account's address is not registered yet.
-   */
-  receiveDisabled: boolean;
   /** Whether the Send input step shows its manual-entry sheet over the camera. */
   manualEntry: boolean;
   /** Opens or closes the manual-entry sheet. */
   setManualEntry: (open: boolean) => void;
   /**
    * One top-left Back step: closes the manual-entry sheet or an open send
-   * step (or is held while a send is in flight), otherwise returns from Send
-   * or Receive to the page.
+   * step (or is held while a read or send is in flight), otherwise returns
+   * from Send or Receive to the page; a read that waits for the wallet is
+   * dropped on the way.
    *
    * @returns `true` when it took an in-page step, `false` when no view is open.
    */
@@ -62,9 +52,8 @@ export interface UseWalletPanelResult {
 
 /**
  * Whether the Send view must stay on screen: while a send is in flight, its
- * Sent line shows, or an alert is up, so neither Back nor a wallet that stops
- * being ready hides a payment that may already have left or the alert of one
- * that failed.
+ * Sent line shows, or an alert is up, so a closed view never hides a payment
+ * that may already have left or the alert of one that failed.
  *
  * @param send - Send flow state.
  * @returns Whether the Send view is pinned.
@@ -79,49 +68,42 @@ function isSendPinned(send: UseWalletSendResult): boolean {
 
 /**
  * Which wallet view (Receive or Send) shows over a page, shared by `/wallet`
- * and `/welcome`. Send opens only while the wallet is ready (a signed-in
- * member's wallet is open, so there is no unlock step), and Receive waits
- * until the account's address is registered (`canReceive`). The Send
+ * and `/welcome`. Send and Receive open at once, also while the wallet is
+ * still opening: only a step inside a view that needs the open wallet waits
+ * for it, and a view never closes because the wallet is not ready. The Send
  * view stays while a send is in flight, its Sent line shows, or a send alert
- * is up. Leaving the Sent line (Done or Back) returns to the page, and a
- * chosen Send view closes when the wallet stops being ready. Both adjust
- * during render, so no commit shows the Send input (and its camera) in
- * between. The manual-entry sheet of the Send input step closes whenever the
- * send step changes or a view opens or closes. Opening a view keeps the page's
+ * is up. Leaving the Sent line (Done or Back) returns to the page; that
+ * adjusts during render, so no commit shows the Send input (and its camera)
+ * in between. The manual-entry sheet of the Send input step closes whenever
+ * the send step changes, a read starts waiting for the wallet (the camera
+ * area then shows that wait), or a view opens or closes. Opening a view keeps the page's
  * scroll position and shows the view from the top; closing it restores that
  * position.
  *
- * @param options - Send flow, wallet state, and whether a send pin opens Send.
+ * @param options - Send flow, and whether a send pin opens Send.
  * @returns The shown view and its open, Back, and close actions.
  */
 export function useWalletPanel({
   send,
-  wallet,
   openPinnedSend = false,
 }: UseWalletPanelOptions): UseWalletPanelResult {
-  const status: WalletStatus | undefined = wallet?.status;
-  const walletReady = status === 'ready';
   const [panel, setPanel] = useState<WalletPanel>('none');
   const [manual, setManual] = useState(false);
   const sendStep = send?.state.step;
-  const [seen, setSeen] = useState({ sendStep, status });
-  if (seen.sendStep !== sendStep || seen.status !== status) {
-    setSeen({ sendStep, status });
-    // The sheet closes with a step change, and when the wallet stops being ready (the Send view
-    // then shows only its alert), so Back never takes an invisible step.
-    if (seen.sendStep !== sendStep || !walletReady) {
+  const wait = send?.walletWait ?? null;
+  const [seen, setSeen] = useState({ sendStep, wait });
+  if (seen.sendStep !== sendStep || seen.wait !== wait) {
+    setSeen({ sendStep, wait });
+    // The sheet closes with a step change, and when a read starts waiting for the wallet (the
+    // camera area then shows that wait), so Back never takes an invisible step.
+    if (seen.sendStep !== sendStep || wait !== null) {
       setManual(false);
     }
-    if ((seen.sendStep === 'sent' && sendStep !== 'sent') || (!walletReady && panel === 'send')) {
+    if (seen.sendStep === 'sent' && sendStep !== 'sent') {
       setPanel('none');
     }
   }
-  const shown: WalletPanel =
-    send !== undefined && isSendPinned(send)
-      ? 'send'
-      : panel === 'send' && !walletReady
-        ? 'none'
-        : panel;
+  const shown: WalletPanel = send !== undefined && isSendPinned(send) ? 'send' : panel;
   const manualEntry = manual && shown === 'send' && sendStep === 'input';
   const [lastView, setLastView] = useState<'receive' | 'send' | null>(null);
   if (shown !== 'none' && lastView !== shown) {
@@ -166,10 +148,8 @@ export function useWalletPanel({
     }
     remember();
     setManual(false);
-    if (walletReady) {
-      setPanel('send');
-    }
-  }, [send, walletReady, remember]);
+    setPanel('send');
+  }, [send, remember]);
 
   useEffect(() => {
     if (openPinnedSend && visualPin()?.startsWith('send-') === true) {
@@ -183,7 +163,14 @@ export function useWalletPanel({
       return true;
     }
     if (shown === 'send' && send !== undefined) {
-      if (!send.cancel() && !send.busy) {
+      if (send.cancel()) {
+        return true;
+      }
+      // A read that waits for the wallet is dropped; one that already runs holds Back.
+      if (send.walletWait !== null) {
+        send.abandon();
+        setPanel('none');
+      } else if (!send.busy) {
         send.setText('');
         setPanel('none');
       }
@@ -213,8 +200,6 @@ export function useWalletPanel({
     returnFocus: shown === 'none' ? lastView : null,
     openReceive,
     openSend,
-    sendDisabled: send === undefined || !walletReady,
-    receiveDisabled: wallet !== undefined && !wallet.canReceive,
     manualEntry,
     setManualEntry: setManual,
     stepBack,

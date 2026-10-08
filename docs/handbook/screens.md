@@ -188,13 +188,13 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 ## Screen: /wallet
 
 - **URL:** `/wallet` — signed-in wallet home, with a **Send** view and a **Receive** view on the same page. The recovery phrase is a separate page. When the in-app wallet is enabled by configuration and the account can produce a phrase (`walletRequired` with a `passkeyCredentialId`), the balance block sits in the centre of the home view.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. The wallet is already open here. Open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The heading **Wallet** is for screen readers only. **Home:** with the wallet configured for an eligible account, the balance region **Balance** sits large in the centre with connecting, ready, and error states only. Connecting shows the pending line; ready shows the Bitcoin balance as a large figure with the default fiat in small type under it once a usable rate is loaded (without a usable rate, only the Bitcoin figure); error shows a sentence and **Try again**. A visitor whose stored session has no phrase in this tab sees the login card in place of this entire page on the same `/wallet` path, so no wallet heading, balance, history, or footer actions show until login opens the wallet. One-time setup is separate and runs in the background; until verification finishes the balance stays connecting. If all quiet setup retries fail, the balance instead shows the alert **Your wallet could not be set up yet.** with a secondary **Try again** button; **Receive** and **Send** stay in place but remain disabled as their prerequisites require. A reload, a new tab, or reopening the app clears the tab-only phrase and brings back the in-place login card. Moving inside the app does not: the top-left arrow, the **Menu**, and in-app links open the next view client-side in the same document, so the wallet stays open and a payment does not ask for the passkey again. Without configuration there is no balance region. While the wallet is ready, a **Payments** card under the balance lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list is in view, checked again after every completed load, and the list reloads after every wallet sync. Fixed at the bottom of the screen are two large, equal buttons side by side, **Receive** on the left and **Send** on the right. Nothing sits under them: the recovery phrase is reached from **Settings** in the Menu (`/settings`). **Send** is disabled until the wallet is ready; **Receive** is disabled while setup is due or has failed, because the address is not registered yet. **Receive view:** the label **Receive**, the Open CryptoPay QR of the member's 21.gifts address, the address itself, a **Copy** button that says **Copied** for two seconds after a copy, and **Set an amount** to `/pos`. Without a username it says **Set a username first.** with a link to `/profile`. **Send view:** region **Send Bitcoin** opens with the camera already live (rear camera preferred), filling the whole page area under the header row edge to edge, down to the bottom of the page frame (the picture is cropped to fill). A white square with bold corners in the middle shows where to hold the code; it is only a guide, and the whole picture is read. The line **Point the camera at a Bitcoin QR code** sits in large white type over the top of the picture. Two dark translucent buttons float over the lower part of the camera: **Paste** and **Enter manually** (side by side, or stacked on a narrow phone). **Paste** reads the clipboard (iOS shows its own small **Paste** bubble first) and sends that text on exactly as a scanned code; when the browser refuses, a short alert says **Pasting was not allowed. Use Enter manually instead.**, and an empty clipboard says **The clipboard is empty.**; either disappears after a few seconds while the camera keeps running. **Enter manually** opens a sheet from the bottom over the camera with a Close (`X`) top-left, the **Payment request or address** field (focused, so the keyboard opens), and **Continue**; Close or the top-left arrow returns to the camera. The first QR code the camera reads goes into the field exactly as if it had been typed, and **Continue** runs on it. While the text is read a spinner turns in the middle and both floating buttons wait. A blocked camera shows **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in large white type on the black area; a device without a camera, or a page that cannot use one, shows **No camera found. Paste the payment request instead.** there. **Paste** and **Enter manually** keep working in both cases. Text that cannot be used always ends in one plain alert, never in silence: over the camera in large white type with **Try again** (which clears it and starts the camera again), or under the field while the sheet is open. That includes text sent while the wallet is not ready (**Your wallet is not ready yet. Please try again in a moment.**) and an unexpected error while reading it (**This could not be read. Please try again.**). The camera runs only while the input step shows no alert, nothing is being read, and the sheet is closed; it stops on a scan, on a paste, on **Continue**, on the next step, on Back, and when the view closes, and it starts again when the input step comes back without an alert. **Copy** pressed again while it says **Copied** shows **Copied** for another two seconds. A request or address without an amount then asks for an amount (the amount field with the ₿ / fiat switch and **Continue**); a Lightning address or LNURL receiver also shows its bounds and, when it takes one, an optional message within its limit. A receiver that takes exactly one amount, such as a shop's point-of-sale QR while a charge is open, skips the amount step and goes straight to the confirm step for that amount, without a message. For a 21.gifts shop on this app's own host (its address, its LNURL, or its `/pl/?lightning=` link), the page first asks `GET /pay/<name>` for an open charge and `POST /pay/<name>/invoice` for its Spark invoice; with one, the confirm step shows **To <name>@<host>**, the charge amount, and **Fee ₿0**, and **Send** pays that Spark invoice. Without an open charge or a Spark invoice, or when that payment cannot be prepared, the text is read as before. For a 21.gifts member on this app's own host without an open charge (also when the charge closed while it was asked), the amount and optional message are entered as for any address; **Continue** then asks `POST /pay/<name>/invoice` for a Spark invoice of exactly that amount, and with one the confirm step shows **To <name>@<host>**, the amount, and **Fee ₿0**, and **Send** pays that Spark invoice. Without a Spark invoice, or when it cannot be prepared, the member is paid over Lightning as before, with the fee the wallet quotes. The confirm step has no box and no Close: the amount sits large in the centre, like the home balance, with the default fiat in small type under it once a usable rate is loaded; under it **To …** in small type (cut short when it is long) and **Fee ₿…** in small type, with the default fiat only when the fee is above ₿0. Fixed at the bottom of the screen are one large, full-width **Send** and under it a small **Cancel** text button. For an LNURL that points at an address (`https://<host>/.well-known/lnurlp/<name>`, pasted, scanned, or inside a `/pl/?lightning=` link), **To …** names `<name>@<host>`, as for a pasted Lightning address; another LNURL names its domain. After sending: a large green check, **Sent ₿…** as the large figure with the default fiat in small type under it, **To …** in small type, and at the bottom one large, full-width **Done**, which returns home. A base-chain Bitcoin address, pasted, scanned, or in a `bitcoin:` URI that offers no Lightning or Spark payment, asks for an amount (a URI amount is used at once); an amount below the smallest the wallet sends to that address reopens the amount step with **Enter an amount of at least ₿… · $….** Its confirm step keeps the large amount and **To …** (the address cut short), then **Fee ₿…** and **Total ₿…** in larger type with the default fiat, then the **Speed** rows **Fast**, **Medium** (chosen first), and **Slow**, each with its fee in Bitcoin and the default fiat on one line; a speed the balance does not cover is greyed out and says **Balance too low**, and the slow speed is chosen first when the medium one is not covered. Under the rows a muted line says that this network fee is much higher than the fee of other payments. **Send** sends with the chosen speed, and the payment then shows in **Payments** as sent, marked **Pending** until the network confirms it. When the fee offer ran out before **Send**, nothing is sent: the confirm step comes back with a new fee and the alert **The fee offer expired, so nothing was sent. Check the new fee and press Send again.** Text that is not a payment request, a payment request this wallet cannot pay yet, a receiver whose server this browser cannot reach, a failed send, and too little balance each show one plain alert. A Lightning address or LNURL on another host is read through the 21.gifts api instead of this browser (`POST /lnurl/pay-request`, then `POST /lnurl/invoice` for the chosen amount); the wallet then pays the returned invoice, and the steps look the same. An address the api cannot pay, an address its server does not know, and a server that did not answer the api each show one plain alert; a message longer than the receiver accepts shows an alert in the amount step. Addresses on this app's own host and Spark targets are read by the wallet as before. The Send view stays on screen while a send is in flight, while its Sent line shows, and while an input alert is up, even when the wallet stops being ready (then only the alert shows, without the camera). When the wallet stops being ready otherwise, the Send view closes to home. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
-- **Actions:** **Send** opens the Send view (and the camera); **Receive** opens the Receive view. Tapping the ready balance swaps which of Bitcoin and fiat is the large figure; it does nothing without a usable rate. Login opening is handled by the in-place login card before this screen appears. **Try again** retries connection after a normal wallet error. The setup note's **Try again** reloads when wallet initialisation requires it, otherwise starts the background setup again. **Try again** on the **Payments** card loads the list again. **Copy** puts the 21.gifts address on the clipboard. **Set an amount** opens `/pos`. Open **Menu** (Home, Balance, Shops, Point of sale, Profile, Grants, …). Show a QR code to the camera, press **Paste**, or press **Enter manually**, type a payment request or address, and **Continue**; enter an amount and **Continue**; **Send**; **Done**. The amount step's Close (`X`, **Cancel**) and the confirm step's **Cancel** close that step, back to the field (also a confirm step reached without an amount step), except while a confirm send is in flight, when **Cancel** is disabled and the confirm step stays. Back, in the Send view, first closes the manual-entry sheet, then an open send step (while a confirm send is in flight, or while the text is read, it does nothing); on the input step it clears the field and its alert and returns home. In the Receive view, Back returns home. On home, the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. The wallet is already open here. Open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The heading **Wallet** is for screen readers only. **Home:** with the wallet configured for an eligible account, the balance region **Balance** sits large in the centre with connecting, ready, and error states only. Connecting shows the pending line; ready shows the Bitcoin balance as a large figure with the default fiat in small type under it once a usable rate is loaded (without a usable rate, only the Bitcoin figure); error shows a sentence and **Try again**. A visitor whose stored session has no phrase in this tab sees the login card in place of this entire page on the same `/wallet` path, so no wallet heading, balance, history, or footer actions show until login opens the wallet. One-time setup is separate and runs in the background; until verification finishes the balance stays connecting. If all quiet setup retries fail, the balance instead shows the alert **Your wallet could not be set up yet.** with a secondary **Try again** button; **Receive** and **Send** stay in place and enabled. A reload, a new tab, or reopening the app clears the tab-only phrase and brings back the in-place login card. Moving inside the app does not: the top-left arrow, the **Menu**, and in-app links open the next view client-side in the same document, so the wallet stays open and a payment does not ask for the passkey again. Without configuration there is no balance region. While the wallet is ready, a **Payments** card under the balance lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list is in view, checked again after every completed load, and the list reloads after every wallet sync. Fixed at the bottom of the screen are two large, equal buttons side by side, **Receive** on the left and **Send** on the right. Nothing sits under them: the recovery phrase is reached from **Settings** in the Menu (`/settings`). **Receive** and **Send** are always enabled, also right after login while the wallet still opens: only a step that needs the open wallet waits for it. **Receive view:** the label **Receive**, the Open CryptoPay QR of the member's 21.gifts address, the address itself, a **Copy** button that says **Copied** for two seconds after a copy, and **Set an amount** to `/pos`. Without a username it says **Set a username first.** with a link to `/profile`. While the one-time setup has not registered the address yet, a spinner and **Opening your wallet…** stand where the QR and address go, and the address appears on its own once it is registered; a setup that gave up shows **Your wallet could not be set up yet.** with a secondary **Try again** there instead. **Send view:** region **Send Bitcoin** opens with the camera already live (rear camera preferred), filling the whole page area under the header row edge to edge, down to the bottom of the page frame (the picture is cropped to fill). A white square with bold corners in the middle shows where to hold the code; it is only a guide, and the whole picture is read. The line **Point the camera at a Bitcoin QR code** sits in large white type over the top of the picture. Two dark translucent buttons float over the lower part of the camera: **Paste** and **Enter manually** (side by side, or stacked on a narrow phone). **Paste** reads the clipboard (iOS shows its own small **Paste** bubble first) and sends that text on exactly as a scanned code; when the browser refuses, a short alert says **Pasting was not allowed. Use Enter manually instead.**, and an empty clipboard says **The clipboard is empty.**; either disappears after a few seconds while the camera keeps running. **Enter manually** opens a sheet from the bottom over the camera with a Close (`X`) top-left, the **Payment request or address** field (focused, so the keyboard opens), and **Continue**; Close or the top-left arrow returns to the camera. The first QR code the camera reads goes into the field exactly as if it had been typed, and **Continue** runs on it. While the text is read a spinner turns in the middle and both floating buttons wait. A blocked camera shows **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in large white type on the black area; a device without a camera, or a page that cannot use one, shows **No camera found. Paste the payment request instead.** there. **Paste** and **Enter manually** keep working in both cases. Text that cannot be used always ends in one plain alert, never in silence: over the camera in large white type with **Try again** (which clears it and starts the camera again), or under the field while the sheet is open. That includes an unexpected error while reading it (**This could not be read. Please try again.**) and, for an account that has no wallet it can use here, **Your 21.gifts wallet is not available here, so this cannot be paid.** once a step needs the wallet. The camera, **Paste**, and **Enter manually** never wait for the wallet. A Lightning address or LNURL on another host and a 21.gifts shop's open charge are read without the wallet. A text the wallet itself has to read (a payment request, a Spark address or request, a base-chain address, or an address on this app's own host) keeps the text while the wallet still opens: the camera stays off, a spinner turns in the middle with **Opening your wallet…** under it, both floating buttons wait, and the text is read on its own once the wallet is open. When the wallet could not be opened, **Your wallet could not be opened. Please try again.** shows there instead, with **Try again**, which opens the wallet again (or runs its one-time setup again) and then goes on with the same text. The camera runs only while the input step shows no alert, nothing is being read, and the sheet is closed; it stops on a scan, on a paste, on **Continue**, on the next step, on Back, and when the view closes, and it starts again when the input step comes back without an alert. **Copy** pressed again while it says **Copied** shows **Copied** for another two seconds. A request or address without an amount then asks for an amount (the amount field with the ₿ / fiat switch and **Continue**); a Lightning address or LNURL receiver also shows its bounds and, when it takes one, an optional message within its limit. A receiver that takes exactly one amount, such as a shop's point-of-sale QR while a charge is open, skips the amount step and goes straight to the confirm step for that amount, without a message. For a 21.gifts shop on this app's own host (its address, its LNURL, or its `/pl/?lightning=` link), the page first asks `GET /pay/<name>` for an open charge and `POST /pay/<name>/invoice` for its Spark invoice; with one, the confirm step shows **To <name>@<host>**, the charge amount, and **Fee ₿0**, and **Send** pays that Spark invoice. Without an open charge or a Spark invoice, or when that payment cannot be prepared, the text is read as before. For a 21.gifts member on this app's own host without an open charge (also when the charge closed while it was asked), the amount and optional message are entered as for any address; **Continue** then asks `POST /pay/<name>/invoice` for a Spark invoice of exactly that amount, and with one the confirm step shows **To <name>@<host>**, the amount, and **Fee ₿0**, and **Send** pays that Spark invoice. Without a Spark invoice, or when it cannot be prepared, the member is paid over Lightning as before, with the fee the wallet quotes. The confirm step has no box and no Close: the amount sits large in the centre, like the home balance, with the default fiat in small type under it once a usable rate is loaded; under it **To …** in small type (cut short when it is long) and **Fee ₿…** in small type, with the default fiat only when the fee is above ₿0. Fixed at the bottom of the screen are one large, full-width **Send** and under it a small **Cancel** text button. The amount step never waits for the wallet. When a payment is ready to be confirmed while the wallet still opens, the confirm step already shows the large amount and **To …**, with a spinner and **Opening your wallet…** where the fee goes and **Send** disabled; once the wallet is open the fee is read and the step shows it with **Send** enabled, without a tap. When the wallet could not be opened, **Your wallet could not be opened. Please try again.** with a secondary **Try again** stands there instead. **Cancel** works throughout. When the wallet closes and opens again while a confirm step shows, that step reads its fee again the same way. For an LNURL that points at an address (`https://<host>/.well-known/lnurlp/<name>`, pasted, scanned, or inside a `/pl/?lightning=` link), **To …** names `<name>@<host>`, as for a pasted Lightning address; another LNURL names its domain. After sending: a large green check, **Sent ₿…** as the large figure with the default fiat in small type under it, **To …** in small type, and at the bottom one large, full-width **Done**, which returns home. A base-chain Bitcoin address, pasted, scanned, or in a `bitcoin:` URI that offers no Lightning or Spark payment, asks for an amount (a URI amount is used at once); an amount below the smallest the wallet sends to that address reopens the amount step with **Enter an amount of at least ₿… · $….** Its confirm step keeps the large amount and **To …** (the address cut short), then **Fee ₿…** and **Total ₿…** in larger type with the default fiat, then the **Speed** rows **Fast**, **Medium** (chosen first), and **Slow**, each with its fee in Bitcoin and the default fiat on one line; a speed the balance does not cover is greyed out and says **Balance too low**, and the slow speed is chosen first when the medium one is not covered. Under the rows a muted line says that this network fee is much higher than the fee of other payments. **Send** sends with the chosen speed, and the payment then shows in **Payments** as sent, marked **Pending** until the network confirms it. When the fee offer ran out before **Send**, nothing is sent: the confirm step comes back with a new fee and the alert **The fee offer expired, so nothing was sent. Check the new fee and press Send again.** Text that is not a payment request, a payment request this wallet cannot pay yet, a receiver whose server this browser cannot reach, a failed send, and too little balance each show one plain alert. A Lightning address or LNURL on another host is read through the 21.gifts api instead of this browser (`POST /lnurl/pay-request`, then `POST /lnurl/invoice` for the chosen amount); the wallet then pays the returned invoice, and the steps look the same. An address the api cannot pay, an address its server does not know, and a server that did not answer the api each show one plain alert; a message longer than the receiver accepts shows an alert in the amount step. Addresses on this app's own host and Spark targets are read by the wallet as before. The Send view stays on screen while a send is in flight, while its Sent line shows, and while an input alert is up. A Send or Receive view never closes because the wallet is not ready. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
+- **Actions:** **Send** opens the Send view (and the camera); **Receive** opens the Receive view. Tapping the ready balance swaps which of Bitcoin and fiat is the large figure; it does nothing without a usable rate. Login opening is handled by the in-place login card before this screen appears. **Try again** retries connection after a normal wallet error. The setup note's **Try again** reloads when wallet initialisation requires it, otherwise starts the background setup again. **Try again** on the **Payments** card loads the list again. **Copy** puts the 21.gifts address on the clipboard. **Set an amount** opens `/pos`. Open **Menu** (Home, Balance, Shops, Point of sale, Profile, Grants, …). Show a QR code to the camera, press **Paste**, or press **Enter manually**, type a payment request or address, and **Continue**; enter an amount and **Continue**; **Send**; **Done**. The amount step's Close (`X`, **Cancel**) and the confirm step's **Cancel** close that step, back to the field (also a confirm step reached without an amount step), except while a confirm send is in flight, when **Cancel** is disabled and the confirm step stays. Back, in the Send view, first closes the manual-entry sheet, then an open send step (while a confirm send is in flight, or while the text is read, it does nothing); on the input step it clears the field and its alert and returns home, also while a text waits for the wallet, which it then drops. In the Receive view, Back returns home. On home, the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `AppShellFooter`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `useSpotRate`, `WalletHistory`, `useWalletHistory`, `WalletSetupNote`, `useWalletSetup`, `useWalletPhrase`, `useWalletSend`, `useWalletPanel`, `WalletFooterActions`, `WalletPanelView`, `WalletReceive`, `WalletSend`, `QrScanner`, `parseWalletInput`, `payFromWallet`, `AmountEntry`, `lnurlRelayTarget`, `ownShop`, `fetchShopChargeInvoice`, `fetchMemberSparkInvoice`, `postLnurlPayRequest`, `postLnurlInvoice`, `QrCode`, `giftsLightningAddress`, `openCryptoPayQrValue`.
 
 ### Variant: default
 
-Existing member with the wallet not configured (Playwright builds). The home view has no balance region; **Receive** remains enabled and **Send** is disabled at the bottom under the soft fade, Receive on the left, with nothing under them.
+Existing member with the wallet not configured (Playwright builds). The home view has no balance region; **Receive** and **Send** are both enabled at the bottom under the soft fade, Receive on the left, with nothing under them.
 
 ![21.gifts wallet home](images/wallet.png)
 
@@ -258,6 +258,18 @@ The Receive view for an account without a username: no QR, no address, and no **
 
 ![21.gifts wallet receive no username](images/wallet-receive-no-username.png)
 
+### Variant: receive-opening
+
+The Receive view opened while the one-time wallet setup has not registered the address yet (pin `?visual=setup-pending`, then **Receive**; Playwright builds only): the label **Receive**, a spinner and **Opening your wallet…** where the QR, the address, and **Copy** go, and **Set an amount** under it. The address appears on its own once it is registered.
+
+![21.gifts wallet receive while the wallet opens](images/wallet-receive-opening.png)
+
+### Variant: receive-setup-failed
+
+The Receive view after the background setup gave up (pin `?visual=balance-setup-failed`, then **Receive**; Playwright builds only): the label **Receive**, then **Your wallet could not be set up yet.** with a secondary **Try again** where the QR and address go, and **Set an amount** under it.
+
+![21.gifts wallet receive after the setup gave up](images/wallet-receive-setup-failed.png)
+
 ### Variant: balance-error
 
 Pinned fixture (`?visual=balance-error`, Playwright builds only), not a live wallet. Region **Balance** shows the open-failed sentence and labeled **Try again**.
@@ -266,13 +278,13 @@ Pinned fixture (`?visual=balance-error`, Playwright builds only), not a live wal
 
 ### Variant: setup-failed
 
-Pinned fixture (`?visual=balance-setup-failed`, Playwright builds only), not a live wallet. The account still needs wallet verification after the background setup exhausted its quiet retries. Region **Balance** shows the alert **Your wallet could not be set up yet.** (`walletSetup.error`) followed by a secondary **Try again** button under it. The note does not cover or block the page; **Receive** and **Send** stay at the bottom but are disabled because setup has not registered the address or made the wallet ready.
+Pinned fixture (`?visual=balance-setup-failed`, Playwright builds only), not a live wallet. The account still needs wallet verification after the background setup exhausted its quiet retries. Region **Balance** shows the alert **Your wallet could not be set up yet.** (`walletSetup.error`) followed by a secondary **Try again** button under it. The note does not cover or block the page; **Receive** and **Send** stay at the bottom, enabled.
 
 ![21.gifts wallet setup failed](images/wallet-setup-failed.png)
 
 ### Variant: setup-pending
 
-Pinned fixture (`?visual=setup-pending`, Playwright builds only), not a live wallet. The background setup is still due: region **Balance** shows **Opening your wallet…**, and **Receive** and **Send** stay at the bottom, both disabled, until the setup has registered the address and the wallet is ready. No dialog.
+Pinned fixture (`?visual=setup-pending`, Playwright builds only), not a live wallet. The background setup is still due: region **Balance** shows **Opening your wallet…**, and **Receive** and **Send** stay at the bottom, both enabled; a step that needs the open wallet waits for it inside the view. No dialog.
 
 ![21.gifts wallet setup pending](images/wallet-setup-pending.png)
 
@@ -443,12 +455,6 @@ Pinned fixture (`?visual=send-failed`, Playwright builds only). After a prepare 
 
 ![21.gifts wallet send failed](images/wallet-send-failed.png)
 
-### Variant: send-alert-not-ready
-
-Pinned fixture (`?visual=send-alert-not-ready`, Playwright builds only). The same failed send while the wallet is no longer ready: the Send view stays, and region **Send Bitcoin** keeps only the alert **The payment could not be sent. Check your balance before you try again.**, without the field and **Continue**. Back clears the alert and returns home.
-
-![21.gifts wallet send alert not ready](images/wallet-send-alert-not-ready.png)
-
 ### Variant: send-insufficient
 
 Pinned fixture (`?visual=send-insufficient`, Playwright builds only). After a payment the balance does not cover: the alert **Your wallet does not have enough Bitcoin for this payment.** over the black camera area, with **Try again** under it.
@@ -533,17 +539,41 @@ Pinned fixture (`?visual=send-relay-unreachable`, Playwright builds only). After
 
 ![21.gifts wallet send relay unreachable](images/wallet-send-relay-unreachable.png)
 
-### Variant: send-not-ready
-
-Pinned fixture (`?visual=send-not-ready`, Playwright builds only). After text was sent on while the wallet was not ready, or the wallet stopped being ready while the text was read: the alert **Your wallet is not ready yet. Please try again in a moment.** over the black camera area, with **Try again** under it.
-
-![21.gifts wallet send not ready](images/wallet-send-not-ready.png)
-
 ### Variant: send-unreadable
 
 Pinned fixture (`?visual=send-unreadable`, Playwright builds only). After reading the text ended in an unexpected error: the alert **This could not be read. Please try again.** over the black camera area, with **Try again** under it.
 
 ![21.gifts wallet send unreadable](images/wallet-send-unreadable.png)
+
+### Variant: send-unavailable
+
+Pinned fixture (`?visual=send-unavailable`, Playwright builds only). A step needed the wallet for an account that has no wallet it can use here: the alert **Your 21.gifts wallet is not available here, so this cannot be paid.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send unavailable](images/wallet-send-unavailable.png)
+
+### Variant: send-input-opening
+
+Pinned fixture (`?visual=send-input-opening`, Playwright builds only). A scanned, pasted, or typed text that the wallet itself has to read, while the wallet still opens: the camera is off, a white spinner turns in the middle of the black camera area with **Opening your wallet…** under it, and **Paste** and **Enter manually** wait. The text is kept and read on its own once the wallet is open.
+
+![21.gifts wallet send input while the wallet opens](images/wallet-send-input-opening.png)
+
+### Variant: send-input-wallet-error
+
+Pinned fixture (`?visual=send-input-wallet-error`, Playwright builds only). The same waiting text after the wallet could not be opened: **Your wallet could not be opened. Please try again.** over the black camera area, with **Try again** under it, which opens the wallet again and keeps the text.
+
+![21.gifts wallet send input after the wallet could not be opened](images/wallet-send-input-wallet-error.png)
+
+### Variant: send-confirm-opening
+
+Pinned fixture (`?visual=send-confirm-opening`, Playwright builds only). The confirm step before its fee is known, while the wallet still opens: the large **₿2'100** with **$2.10** under it, **To bob@example.com**, then a spinner and **Opening your wallet…** where the fee goes; at the bottom **Send** is disabled and **Cancel** works. The fee and an enabled **Send** follow on their own once the wallet is open.
+
+![21.gifts wallet send confirm while the wallet opens](images/wallet-send-confirm-opening.png)
+
+### Variant: send-confirm-wallet-error
+
+Pinned fixture (`?visual=send-confirm-wallet-error`, Playwright builds only). The same confirm step after the wallet could not be opened: the large amount, **To bob@example.com**, then **Your wallet could not be opened. Please try again.** with a secondary **Try again** where the fee goes; **Send** stays disabled and **Cancel** works.
+
+![21.gifts wallet send confirm after the wallet could not be opened](images/wallet-send-confirm-wallet-error.png)
 
 ### Variant: send-comment-long
 
@@ -1027,15 +1057,9 @@ Signed in with the wallet open (Playwright pin `?visual=balance-ready`, honoured
 
 ![21.gifts welcome with Receive and Send](images/welcome-wallet-buttons.png)
 
-### Variant: wallet-buttons-disabled
-
-Signed in while the wallet opens (Playwright pin `?visual=balance-connecting`): **Send** is disabled at the bottom of the forum home, and **Receive** stays enabled.
-
-![21.gifts welcome with Send disabled](images/welcome-wallet-buttons-disabled.png)
-
 ### Variant: wallet-setup-pending
 
-Signed in while the background wallet setup is still due (Playwright pin `?visual=setup-pending`): **Receive** and **Send** are both disabled at the bottom of the forum home until the setup has registered the address and the wallet is ready. No dialog.
+Signed in while the background wallet setup is still due (Playwright pin `?visual=setup-pending`): **Receive** and **Send** are both enabled at the bottom of the forum home; a step that needs the open wallet waits for it inside the view. No dialog.
 
 ![21.gifts welcome while wallet setup is pending](images/welcome-wallet-setup-pending.png)
 
@@ -1044,6 +1068,18 @@ Signed in while the background wallet setup is still due (Playwright pin `?visua
 After **Receive**: the wallet's Receive view over the forum home (label **Receive**, the address QR, **ada@21.gifts**, **Copy**, **Set an amount**), with the top-left arrow and without the feed or the bottom buttons.
 
 ![21.gifts welcome receive view](images/welcome-wallet-receive.png)
+
+### Variant: wallet-receive-opening
+
+The `/wallet` variant `receive-opening` over the forum home (pin `?visual=setup-pending`, then **Receive**; Playwright builds only): the same Receive view as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet receive while the wallet opens](images/welcome-wallet-receive-opening.png)
+
+### Variant: wallet-receive-setup-failed
+
+The `/wallet` variant `receive-setup-failed` over the forum home (pin `?visual=balance-setup-failed`, then **Receive**; Playwright builds only): the same Receive view as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet receive after the setup gave up](images/welcome-wallet-receive-setup-failed.png)
 
 ### Variant: wallet-send-camera
 
@@ -1123,17 +1159,35 @@ The `/wallet` variant `send-unsupported` in the Send view the `?visual=send-unsu
 
 ![21.gifts welcome wallet send unsupported](images/welcome-wallet-send-unsupported.png)
 
-### Variant: wallet-send-not-ready
-
-The `/wallet` variant `send-not-ready` in the Send view the `?visual=send-not-ready` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
-
-![21.gifts welcome wallet send not ready](images/welcome-wallet-send-not-ready.png)
-
 ### Variant: wallet-send-unreadable
 
 The `/wallet` variant `send-unreadable` in the Send view the `?visual=send-unreadable` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
 
 ![21.gifts welcome wallet send unreadable](images/welcome-wallet-send-unreadable.png)
+
+### Variant: wallet-send-input-opening
+
+The `/wallet` variant `send-input-opening` in the Send view the `?visual=send-input-opening` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send input while the wallet opens](images/welcome-wallet-send-input-opening.png)
+
+### Variant: wallet-send-input-wallet-error
+
+The `/wallet` variant `send-input-wallet-error` in the Send view the `?visual=send-input-wallet-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send input after the wallet could not be opened](images/welcome-wallet-send-input-wallet-error.png)
+
+### Variant: wallet-send-confirm-opening
+
+The `/wallet` variant `send-confirm-opening` in the Send view the `?visual=send-confirm-opening` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm while the wallet opens](images/welcome-wallet-send-confirm-opening.png)
+
+### Variant: wallet-send-confirm-wallet-error
+
+The `/wallet` variant `send-confirm-wallet-error` in the Send view the `?visual=send-confirm-wallet-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm after the wallet could not be opened](images/welcome-wallet-send-confirm-wallet-error.png)
 
 ### Variant: wallet-send-invalid
 
@@ -1146,12 +1200,6 @@ The `/wallet` variant `send-invalid` in the Send view the `?visual=send-invalid`
 The `/wallet` variant `send-failed` in the Send view the `?visual=send-failed` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
 
 ![21.gifts welcome wallet send failed](images/welcome-wallet-send-failed.png)
-
-### Variant: wallet-send-alert-not-ready
-
-The `/wallet` variant `send-alert-not-ready` in the Send view the `?visual=send-alert-not-ready` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
-
-![21.gifts welcome wallet send alert not ready](images/welcome-wallet-send-alert-not-ready.png)
 
 ### Variant: wallet-send-insufficient
 

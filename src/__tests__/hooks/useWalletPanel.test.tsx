@@ -2,7 +2,6 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShellContext } from '@/components/AppShell';
-import type { UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPanel, type UseWalletPanelOptions } from '@/hooks/useWalletPanel';
 import type { UseWalletSendResult, WalletSendState } from '@/hooks/useWalletSend';
 
@@ -15,6 +14,8 @@ function sendWith(
   return {
     state,
     busy: false,
+    walletWait: null,
+    retryWallet: vi.fn(),
     sending: false,
     text: '',
     setText: vi.fn(),
@@ -28,10 +29,6 @@ function sendWith(
     abandon: vi.fn(),
     ...extra,
   };
-}
-
-function walletWith(status: UseWalletResult['status'], canReceive = true): UseWalletResult {
-  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false, canReceive };
 }
 
 const CONFIRM: WalletSendState = { step: 'confirm', recipient: 'r', amountSats: 1, feeSats: 0 };
@@ -74,7 +71,7 @@ afterEach(() => {
 
 describe('useWalletPanel open and Back', () => {
   it('opens Receive and Back returns to the page; Back on the page takes no step', () => {
-    const { result } = renderPanel({ send: sendWith(), wallet: walletWith('ready') });
+    const { result } = renderPanel({ send: sendWith() });
     expect(result.current.shown).toBe('none');
     let stepped = true;
     act(() => {
@@ -92,59 +89,23 @@ describe('useWalletPanel open and Back', () => {
     expect(result.current.shown).toBe('none');
   });
 
-  it('opens Send only while ready, and never without a send flow', () => {
+  it('opens Send at once, also while the wallet opens, and never without a send flow', () => {
     const send = sendWith();
-    const { result, rerender } = renderPanel({ send, wallet: walletWith('connecting') });
+    const { result, rerender } = renderPanel({ send: undefined });
     act(() => {
       result.current.openSend();
     });
     expect(result.current.shown).toBe('none');
-    rerender({ send: undefined, wallet: walletWith('ready') });
-    act(() => {
-      result.current.openSend();
-    });
-    expect(result.current.shown).toBe('none');
-    rerender({ send, wallet: walletWith('ready') });
+    rerender({ send });
     act(() => {
       result.current.openSend();
     });
     expect(result.current.shown).toBe('send');
   });
 
-  it('enables Send only for a send flow while the wallet is ready', () => {
-    const cases = [
-      ['ready', true, false],
-      ['connecting', true, true],
-      ['error', true, true],
-      ['disabled', true, true],
-      ['ready', false, true],
-    ] as const;
-    for (const [status, withSend, disabled] of cases) {
-      const { result, unmount } = renderPanel({
-        send: withSend ? sendWith() : undefined,
-        wallet: walletWith(status),
-      });
-      expect(result.current.sendDisabled).toBe(disabled);
-      unmount();
-    }
-    const { result } = renderPanel({ send: sendWith(), wallet: undefined });
-    expect(result.current.sendDisabled).toBe(true);
-  });
-
-  it('disables Receive while the account address is not registered yet', () => {
-    const blocked = renderPanel({ send: sendWith(), wallet: walletWith('connecting', false) });
-    expect(blocked.result.current.receiveDisabled).toBe(true);
-    blocked.unmount();
-    const open = renderPanel({ send: sendWith(), wallet: walletWith('ready') });
-    expect(open.result.current.receiveDisabled).toBe(false);
-    open.unmount();
-    const none = renderPanel({ send: sendWith(), wallet: undefined });
-    expect(none.result.current.receiveDisabled).toBe(false);
-  });
-
   it('Back in Send closes an open step first, then clears the text and returns to the page', () => {
     const confirm = sendWith(CONFIRM);
-    const { result, rerender } = renderPanel({ send: confirm, wallet: walletWith('ready') });
+    const { result, rerender } = renderPanel({ send: confirm });
     act(() => {
       result.current.openSend();
     });
@@ -154,7 +115,7 @@ describe('useWalletPanel open and Back', () => {
     expect(confirm.cancel).toHaveBeenCalledTimes(1);
     expect(result.current.shown).toBe('send');
     const idle = sendWith();
-    rerender({ send: idle, wallet: walletWith('ready') });
+    rerender({ send: idle });
     act(() => {
       result.current.stepBack();
     });
@@ -162,9 +123,27 @@ describe('useWalletPanel open and Back', () => {
     expect(result.current.shown).toBe('none');
   });
 
+  it('Back drops a read that waits for the wallet and returns to the page', () => {
+    const waiting = sendWith({ step: 'input', error: null }, { busy: true, walletWait: 'error' });
+    const { result, rerender } = renderPanel({ send: waiting });
+    act(() => {
+      result.current.openSend();
+    });
+    let stepped = false;
+    act(() => {
+      stepped = result.current.stepBack();
+    });
+    expect(stepped).toBe(true);
+    expect(waiting.abandon).toHaveBeenCalledTimes(1);
+    expect(waiting.setText).not.toHaveBeenCalled();
+    // abandon leaves the flow idle, so the view is no longer held open.
+    rerender({ send: sendWith() });
+    expect(result.current.shown).toBe('none');
+  });
+
   it('holds Back while a send is in flight', () => {
     const busy = sendWith({ step: 'input', error: null }, { busy: true });
-    const { result } = renderPanel({ send: busy, wallet: walletWith('ready') });
+    const { result } = renderPanel({ send: busy });
     expect(result.current.shown).toBe('send');
     act(() => {
       result.current.stepBack();
@@ -173,31 +152,33 @@ describe('useWalletPanel open and Back', () => {
     expect(result.current.shown).toBe('send');
   });
 
-  it('pins Send for an alert or the Sent line, returns to the page after Sent, and closes when the wallet stops being ready', () => {
-    const wallet = walletWith('ready');
+  it('pins Send for an alert or the Sent line, returns to the page after Sent, and keeps a chosen Send view while the wallet waits', () => {
     const { result, rerender } = renderPanel({
-      send: sendWith({ step: 'input', error: 'notReady' }),
-      wallet: walletWith('connecting'),
+      send: sendWith({ step: 'input', error: 'unavailable' }),
     });
     expect(result.current.shown).toBe('send');
-    rerender({ send: sendWith({ step: 'sent', amountSats: 1, recipient: 'r' }), wallet });
+    rerender({ send: sendWith({ step: 'sent', amountSats: 1, recipient: 'r' }) });
     expect(result.current.shown).toBe('send');
-    rerender({ send: sendWith(), wallet });
+    rerender({ send: sendWith() });
     expect(result.current.shown).toBe('none');
     act(() => {
       result.current.openSend();
     });
     expect(result.current.shown).toBe('send');
-    rerender({ send: sendWith(), wallet: walletWith('connecting') });
-    expect(result.current.shown).toBe('none');
-    rerender({ send: sendWith(), wallet });
-    expect(result.current.shown).toBe('none');
+    rerender({
+      send: sendWith({ step: 'input', error: null }, { busy: true, walletWait: 'opening' }),
+    });
+    expect(result.current.shown).toBe('send');
+    rerender({
+      send: sendWith({ step: 'quote', recipient: 'r', amountSats: 1 }, { walletWait: 'error' }),
+    });
+    expect(result.current.shown).toBe('send');
   });
 });
 
 describe('useWalletPanel focus', () => {
   it('names the view that just closed as the footer button to focus', () => {
-    const { result } = renderPanel({ send: sendWith(), wallet: walletWith('ready') });
+    const { result } = renderPanel({ send: sendWith() });
     expect(result.current.returnFocus).toBeNull();
     act(() => {
       result.current.openSend();
@@ -218,26 +199,30 @@ describe('useWalletPanel focus', () => {
 });
 
 describe('useWalletPanel manual entry and readiness', () => {
-  it('closes the sheet when the wallet stops being ready, so Back takes no invisible step', () => {
-    const send = sendWith({ step: 'input', error: 'notReady' });
-    const { result, rerender } = renderPanel({ send, wallet: walletWith('ready') });
+  it('closes the sheet when a read starts waiting for the wallet, so Back takes no invisible step', () => {
+    const send = sendWith();
+    const { result, rerender } = renderPanel({ send });
+    act(() => {
+      result.current.openSend();
+    });
     act(() => {
       result.current.setManualEntry(true);
     });
     expect(result.current.manualEntry).toBe(true);
-    rerender({ send, wallet: walletWith('connecting') });
+    rerender({ send: sendWith({ step: 'input', error: null }, { busy: true }) });
+    expect(result.current.manualEntry).toBe(true);
+    const waiting = sendWith({ step: 'input', error: null }, { busy: true, walletWait: 'opening' });
+    rerender({ send: waiting });
     expect(result.current.manualEntry).toBe(false);
-    act(() => {
-      result.current.stepBack();
-    });
-    expect(send.setText).toHaveBeenCalledWith('');
+    rerender({ send: sendWith({ step: 'input', error: null }, { busy: true }) });
+    expect(result.current.manualEntry).toBe(false);
   });
 });
 
 describe('useWalletPanel manual entry', () => {
   it('shows the sheet only on the Send input step; Back and a step change close it', () => {
     const send = sendWith();
-    const { result, rerender } = renderPanel({ send, wallet: walletWith('ready') });
+    const { result, rerender } = renderPanel({ send });
     act(() => {
       result.current.setManualEntry(true);
     });
@@ -259,9 +244,9 @@ describe('useWalletPanel manual entry', () => {
     act(() => {
       result.current.setManualEntry(true);
     });
-    rerender({ send: sendWith(CONFIRM), wallet: walletWith('ready') });
+    rerender({ send: sendWith(CONFIRM) });
     expect(result.current.manualEntry).toBe(false);
-    rerender({ send, wallet: walletWith('ready') });
+    rerender({ send });
     expect(result.current.manualEntry).toBe(false);
   });
 });
@@ -270,17 +255,14 @@ describe('useWalletPanel close', () => {
   it('drops the flow and returns to the page top, but not while a confirmed send is in flight', () => {
     const scroller = document.createElement('div');
     const sending = sendWith(CONFIRM, { busy: true, sending: true });
-    const { result, rerender } = renderPanel(
-      { send: sending, wallet: walletWith('ready') },
-      scroller,
-    );
+    const { result, rerender } = renderPanel({ send: sending }, scroller);
     act(() => {
       result.current.close();
     });
     expect(sending.abandon).not.toHaveBeenCalled();
     expect(result.current.shown).toBe('send');
     const reading = sendWith({ step: 'input', error: null }, { busy: true });
-    rerender({ send: reading, wallet: walletWith('ready') });
+    rerender({ send: reading });
     act(() => {
       result.current.openSend();
     });
@@ -288,14 +270,14 @@ describe('useWalletPanel close', () => {
       result.current.close();
     });
     expect(reading.abandon).toHaveBeenCalledTimes(1);
-    rerender({ send: sendWith(), wallet: walletWith('ready') });
+    rerender({ send: sendWith() });
     expect(result.current.shown).toBe('none');
     expect(scroller.scrollTop).toBe(0);
   });
 
   it('closes Receive without touching the send flow', () => {
     const send = sendWith();
-    const { result } = renderPanel({ send, wallet: walletWith('ready') });
+    const { result } = renderPanel({ send });
     act(() => {
       result.current.openReceive();
     });
@@ -311,7 +293,7 @@ describe('useWalletPanel scroll', () => {
   it('shows a view from the top and restores the page position on Back', () => {
     const scroller = document.createElement('div');
     scroller.scrollTop = 320;
-    const { result } = renderPanel({ send: sendWith(), wallet: walletWith('ready') }, scroller);
+    const { result } = renderPanel({ send: sendWith() }, scroller);
     act(() => {
       result.current.openReceive();
     });
@@ -335,7 +317,6 @@ describe('useWalletPanel Send pin', () => {
     window.history.replaceState({}, '', '/welcome?visual=send-input');
     const { result } = renderPanel({
       send: sendWith(),
-      wallet: walletWith('ready'),
       openPinnedSend: true,
     });
     expect(result.current.shown).toBe('send');
@@ -345,19 +326,17 @@ describe('useWalletPanel Send pin', () => {
     window.history.replaceState({}, '', '/welcome?visual=send-input');
     const deployed = renderPanel({
       send: sendWith(),
-      wallet: walletWith('ready'),
       openPinnedSend: true,
     });
     expect(deployed.result.current.shown).toBe('none');
     deployed.unmount();
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
-    const wallet = renderPanel({ send: sendWith(), wallet: walletWith('ready') });
+    const wallet = renderPanel({ send: sendWith() });
     expect(wallet.result.current.shown).toBe('none');
     wallet.unmount();
     window.history.replaceState({}, '', '/welcome?visual=balance-ready');
     const other = renderPanel({
       send: sendWith(),
-      wallet: walletWith('ready'),
       openPinnedSend: true,
     });
     expect(other.result.current.shown).toBe('none');

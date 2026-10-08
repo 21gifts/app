@@ -1,12 +1,19 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WALLET_SEND_VISUAL_FIXTURE, useWalletSend, walletSendBounds } from '@/hooks/useWalletSend';
+import {
+  WALLET_SEND_PIN_OPEN_MS,
+  WALLET_SEND_VISUAL_FIXTURE,
+  useWalletSend,
+  walletSendBounds,
+} from '@/hooks/useWalletSend';
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import type { LnurlPayRequest } from '@/lib/api-types';
 import { encodeLnurl } from '@/lib/lnurl';
 import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
 import type { OnchainSpeed, WalletTarget } from '@/lib/wallet/wallet-sdk';
+import { retryWalletSetup } from '@/lib/wallet/wallet-setup';
 import {
+  connectWallet,
   parseWalletInput,
   payFromWallet,
   type WalletPayResult,
@@ -17,8 +24,14 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
+  connectWallet: vi.fn(),
   parseWalletInput: vi.fn(),
   payFromWallet: vi.fn(),
+}));
+
+vi.mock('@/lib/wallet/wallet-setup', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/wallet/wallet-setup')>()),
+  retryWalletSetup: vi.fn(),
 }));
 
 vi.mock('@/lib/pos', () => ({
@@ -71,6 +84,9 @@ beforeEach(() => {
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   vi.mocked(parseWalletInput).mockReset();
   vi.mocked(payFromWallet).mockReset();
+  vi.mocked(connectWallet).mockReset();
+  useWalletStore.setState({ setupFailedSession: null });
+  vi.mocked(retryWalletSetup).mockReset();
   vi.mocked(postLnurlPayRequest).mockReset();
   vi.mocked(postLnurlInvoice).mockReset();
   vi.mocked(fetchShopChargeInvoice).mockReset();
@@ -531,7 +547,6 @@ describe('useWalletSend visual pins', () => {
     ['send-unsupported', { step: 'input', error: 'unsupported' }],
     ['send-invalid', { step: 'input', error: 'invalid' }],
     ['send-failed', { step: 'input', error: 'failed' }],
-    ['send-alert-not-ready', { step: 'input', error: 'failed' }],
     ['send-insufficient', { step: 'input', error: 'insufficient' }],
     ['send-error', { step: 'input', error: 'unreachable' }],
     ['send-amount-error', { step: 'amount', amountError: true, target: { type: 'lnurl' } }],
@@ -547,7 +562,7 @@ describe('useWalletSend visual pins', () => {
     ['send-not-payable', { step: 'input', error: 'notPayable' }],
     ['send-not-found', { step: 'input', error: 'notFound' }],
     ['send-relay-unreachable', { step: 'input', error: 'relayUnreachable' }],
-    ['send-not-ready', { step: 'input', error: 'notReady' }],
+    ['send-unavailable', { step: 'input', error: 'unavailable' }],
     ['send-unreadable', { step: 'input', error: 'unreadable' }],
     [
       'send-comment-long',
@@ -651,14 +666,125 @@ describe('useWalletSend visual pins', () => {
     'send-confirm-onchain-renewed',
     'send-confirm-onchain-renewing',
     'send-confirm-onchain-sending',
-    'send-not-ready',
+    'send-unavailable',
     'send-unreadable',
+    'send-input-opening',
+    'send-input-wallet-error',
+    'send-confirm-opening',
+    'send-confirm-opens',
+    'send-confirm-wallet-error',
   ])('ignores the %s pin outside a Playwright build', (visual) => {
     window.history.replaceState({}, '', `/wallet?visual=${visual}`);
     const { result } = renderHook(() => useWalletSend());
     expect(result.current.state).toEqual({ step: 'input', error: null });
     expect(result.current.busy).toBe(false);
     expect(result.current.sending).toBe(false);
+    expect(result.current.walletWait).toBeNull();
+  });
+
+  it.each([
+    ['send-input-opening', { step: 'input', error: null }, 'opening'],
+    ['send-input-wallet-error', { step: 'input', error: null }, 'error'],
+    [
+      'send-confirm-opening',
+      { step: 'quote', recipient: fixture.recipient, amountSats: fixture.amountSats },
+      'opening',
+    ],
+    [
+      'send-confirm-wallet-error',
+      { step: 'quote', recipient: fixture.recipient, amountSats: fixture.amountSats },
+      'error',
+    ],
+  ] as const)(
+    'pins %s as a step that waits for the wallet, busy and inert',
+    (visual, state, wait) => {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', `/wallet?visual=${visual}`);
+      const { result } = renderHook(() => useWalletSend());
+      expect(result.current.state).toEqual(state);
+      expect(result.current.busy).toBe(true);
+      expect(result.current.walletWait).toBe(wait);
+      act(() => {
+        result.current.submitInput();
+        result.current.confirm();
+      });
+      expect(parseWalletInput).not.toHaveBeenCalled();
+      expect(payFromWallet).not.toHaveBeenCalled();
+      expect(connectWallet).not.toHaveBeenCalled();
+    },
+  );
+
+  it('shows the confirm fixture a moment after send-confirm-opens opened the wallet', () => {
+    vi.useFakeTimers();
+    try {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', '/wallet?visual=send-confirm-opens');
+      const { result } = renderHook(() => useWalletSend());
+      expect(result.current.state.step).toBe('quote');
+      expect(result.current.walletWait).toBe('opening');
+      act(() => {
+        vi.advanceTimersByTime(WALLET_SEND_PIN_OPEN_MS - 1);
+      });
+      expect(result.current.state.step).toBe('quote');
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(result.current.state).toEqual({
+        step: 'confirm',
+        recipient: fixture.recipient,
+        amountSats: fixture.amountSats,
+        feeSats: fixture.feeSats,
+      });
+      expect(result.current.walletWait).toBeNull();
+      expect(result.current.busy).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('opens the wallet under send-confirm-wallet-error on Try again, then shows the confirm fixture', () => {
+    vi.useFakeTimers();
+    try {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', '/wallet?visual=send-confirm-wallet-error');
+      const { result } = renderHook(() => useWalletSend());
+      act(() => {
+        vi.advanceTimersByTime(WALLET_SEND_PIN_OPEN_MS);
+      });
+      expect(result.current.walletWait).toBe('error');
+      act(() => {
+        result.current.retryWallet();
+      });
+      expect(result.current.walletWait).toBe('opening');
+      expect(connectWallet).not.toHaveBeenCalled();
+      expect(retryWalletSetup).not.toHaveBeenCalled();
+      act(() => {
+        vi.advanceTimersByTime(WALLET_SEND_PIN_OPEN_MS);
+      });
+      expect(result.current.state.step).toBe('confirm');
+      expect(result.current.walletWait).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps send-input-wallet-error waiting after Try again', () => {
+    vi.useFakeTimers();
+    try {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', '/wallet?visual=send-input-wallet-error');
+      const { result } = renderHook(() => useWalletSend());
+      act(() => {
+        result.current.retryWallet();
+      });
+      act(() => {
+        vi.advanceTimersByTime(WALLET_SEND_PIN_OPEN_MS * 2);
+      });
+      expect(result.current.state).toEqual({ step: 'input', error: null });
+      expect(result.current.walletWait).toBe('opening');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('ignores pins outside a Playwright build and unknown values', () => {
@@ -900,7 +1026,7 @@ describe('useWalletSend base-chain address', () => {
     });
   });
 
-  it('returns to the input when a quote expired after the wallet left ready', async () => {
+  it('waits for the wallet before it renews a quote that expired after the wallet left ready', async () => {
     let finish: (value: WalletSendResult) => void = () => undefined;
     const result = await toOnchainConfirm(
       () =>
@@ -919,8 +1045,20 @@ describe('useWalletSend base-chain address', () => {
       finish({ kind: 'expired' });
     });
     expect(payFromWallet).toHaveBeenCalledTimes(1);
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({
+      step: 'quote',
+      recipient: 'bc1qar0srr…wf5mdq',
+      amountSats: 50_000,
+    });
+    expect(result.current.walletWait).toBe('opening');
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.state).toMatchObject({
+      step: 'confirm',
+      onchain: { speed: 'medium', renewed: true },
+    });
   });
 
   it('closes the confirm step while a quote is renewed and drops the late renewal', async () => {
@@ -949,7 +1087,7 @@ describe('useWalletSend base-chain address', () => {
     expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
-  it('returns to the input when the wallet leaves ready while a quote is renewed', async () => {
+  it('quotes again once open when the wallet leaves ready while a quote is renewed', async () => {
     const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
     vi.mocked(payFromWallet).mockReturnValue(new Promise(() => undefined));
     await act(async () => {
@@ -959,8 +1097,17 @@ describe('useWalletSend base-chain address', () => {
     act(() => {
       useWalletStore.setState({ status: 'locked' });
     });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-    expect(result.current.busy).toBe(false);
+    expect(result.current.state).toEqual({
+      step: 'quote',
+      recipient: 'bc1qar0srr…wf5mdq',
+      amountSats: 50_000,
+    });
+    expect(result.current.busy).toBe(true);
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -1019,91 +1166,109 @@ describe('useWalletSend speed pins', () => {
 });
 
 describe('useWalletSend wallet status', () => {
-  function setStatus(status: 'ready' | 'locked' | 'error'): void {
+  function setStatus(status: 'ready' | 'locked' | 'error' | 'disabled'): void {
     act(() => {
       useWalletStore.setState({ status });
     });
   }
 
-  it('returns an open amount step to the input when the wallet leaves ready', async () => {
+  it('holds a read while the wallet opens, keeps the text, and reads it once it is ready', async () => {
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    setWalletUsable('locked');
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.text).toBe('lnbc1');
+    expect(result.current.busy).toBe(true);
+    expect(result.current.walletWait).toBe('opening');
+    setStatus('error');
+    expect(result.current.walletWait).toBe('error');
+    expect(result.current.text).toBe('lnbc1');
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(parseWalletInput).toHaveBeenCalledTimes(1);
+    expect(parseWalletInput).toHaveBeenCalledWith('lnbc1');
+    expect(result.current.walletWait).toBeNull();
+    expect(result.current.state).toMatchObject({ step: 'confirm', amountSats: 2_100 });
+  });
+
+  it('keeps an open amount step when the wallet leaves ready, and quotes once it is ready again', async () => {
     target(LNURL);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'bob@21.gifts');
     expect(result.current.state.step).toBe('amount');
     setStatus('locked');
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.state.step).toBe('amount');
+    expect(result.current.walletWait).toBeNull();
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({
+      step: 'quote',
+      recipient: 'bob@21.gifts',
+      amountSats: 100,
+    });
+    expect(result.current.busy).toBe(true);
+    expect(result.current.walletWait).toBe('opening');
+    act(() => {
+      result.current.confirm();
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(payFromWallet).toHaveBeenCalledWith({
+      type: 'lnurl',
+      request: LNURL.type === 'lnurl' ? LNURL.request : null,
+      amountSats: 100,
+    });
+    expect(result.current.state.step).toBe('confirm');
+    expect(result.current.walletWait).toBeNull();
   });
 
-  it('returns an idle confirm step to the input when the wallet leaves ready', async () => {
+  it('quotes an idle confirm step again once the wallet is ready after it left ready', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
-    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'lnbc1');
     expect(result.current.state.step).toBe('confirm');
     setStatus('locked');
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.state).toEqual({ step: 'quote', recipient: 'r', amountSats: 2_100 });
     act(() => {
       result.current.confirm();
     });
-    expect(result.current.busy).toBe(false);
-  });
-
-  it('drops a prepare in flight on the amount step when the wallet leaves ready', async () => {
-    target(LNURL);
-    let finish: (value: WalletPayResult) => void = () => undefined;
-    vi.mocked(payFromWallet).mockReturnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@21.gifts');
-    act(() => {
-      result.current.submitAmount(100);
-    });
-    expect(result.current.busy).toBe(true);
-    setStatus('locked');
-    expect(result.current.busy).toBe(false);
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(send).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
     await act(async () => {
-      finish(confirmWith(async () => ({ kind: 'paid' })));
+      useWalletStore.setState({ status: 'ready' });
     });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.state).toEqual({
+      step: 'confirm',
+      recipient: 'r',
+      amountSats: 2_100,
+      feeSats: 1,
+    });
   });
 
-  it('drops a read in flight when the wallet leaves ready and shows the not-ready alert', async () => {
-    let finish: (value: Awaited<ReturnType<typeof parseWalletInput>>) => void = () => undefined;
-    vi.mocked(parseWalletInput).mockReturnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    const { result } = renderHook(() => useWalletSend());
-    act(() => {
-      result.current.setText('x');
-    });
-    act(() => {
-      result.current.submitInput();
-    });
-    setStatus('error');
-    expect(result.current.busy).toBe(false);
-    await act(async () => {
-      finish({ kind: 'invalid' });
-    });
-    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
-  });
-
-  it('drops a read or prepare that settles after the wallet left ready but before the reset ran', async () => {
+  it('waits again when a read or prepare settles after the wallet left ready but before React saw it', async () => {
     const lockedView = (): void => {
       const state = useWalletStore.getState();
       vi.spyOn(useWalletStore, 'getState').mockReturnValue({ ...state, status: 'locked' });
     };
     let finishRead: (value: Awaited<ReturnType<typeof parseWalletInput>>) => void = () => undefined;
-    vi.mocked(parseWalletInput).mockReturnValue(
+    vi.mocked(parseWalletInput).mockReturnValueOnce(
       new Promise((resolve) => {
         finishRead = resolve;
       }),
     );
+    target(LNURL);
     const { result } = renderHook(() => useWalletSend());
     act(() => {
       result.current.setText('x');
@@ -1115,20 +1280,22 @@ describe('useWalletSend wallet status', () => {
     await act(async () => {
       finishRead({ kind: 'invalid' });
     });
+    expect(result.current.walletWait).toBe('opening');
     vi.mocked(useWalletStore.getState).mockRestore();
-    expect(result.current.state).toEqual({ step: 'input', error: null });
     setStatus('locked');
-    expect(result.current.busy).toBe(false);
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(parseWalletInput).toHaveBeenCalledTimes(2);
+    expect(result.current.state.step).toBe('amount');
 
-    setStatus('ready');
-    target(LNURL);
     let finishPrepare: (value: WalletPayResult) => void = () => undefined;
-    vi.mocked(payFromWallet).mockReturnValue(
+    vi.mocked(payFromWallet).mockReturnValueOnce(
       new Promise((resolve) => {
         finishPrepare = resolve;
       }),
     );
-    await typeAndSubmit(result, 'bob@21.gifts');
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     act(() => {
       result.current.submitAmount(100);
     });
@@ -1136,77 +1303,144 @@ describe('useWalletSend wallet status', () => {
     await act(async () => {
       finishPrepare({ kind: 'failed' });
     });
+    expect(result.current.state).toEqual({
+      step: 'quote',
+      recipient: 'bob@pay.example',
+      amountSats: 100,
+    });
     vi.mocked(useWalletStore.getState).mockRestore();
-    expect(result.current.state.step).toBe('amount');
     setStatus('locked');
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-    expect(result.current.busy).toBe(false);
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.state.step).toBe('confirm');
   });
 
-  it('drops an open confirm or prepare when the account leaves wallet mode', async () => {
-    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
-    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
-    vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(send));
+  it('keeps a step held while the store reads not ready, even when the last render saw it ready', async () => {
+    target(LNURL);
+    const state = useWalletStore.getState();
+    vi.spyOn(useWalletStore, 'getState').mockReturnValue({ ...state, status: 'locked' });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@21.gifts');
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(result.current.walletWait).toBe('opening');
+    vi.mocked(useWalletStore.getState).mockRestore();
+    setStatus('locked');
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(parseWalletInput).toHaveBeenCalledTimes(1);
+    expect(result.current.walletWait).toBeNull();
+    expect(result.current.state.step).toBe('amount');
+  });
+
+  it('drops a held step on Cancel or when the view closes', async () => {
+    target(LNURL);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@21.gifts');
+    setStatus('locked');
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.state.step).toBe('quote');
+    let closed = false;
+    act(() => {
+      closed = result.current.cancel();
+    });
+    expect(closed).toBe(true);
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.walletWait).toBeNull();
+    await typeAndSubmit(result, 'bob@21.gifts');
+    expect(result.current.walletWait).toBe('opening');
+    act(() => {
+      result.current.abandon();
+    });
+    expect(result.current.walletWait).toBeNull();
+    expect(result.current.text).toBe('');
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(parseWalletInput).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('opens the wallet again on Try again, or runs the one-time setup again when it gave up', async () => {
+    setWalletUsable('error');
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'lnbc1');
-    expect(result.current.state.step).toBe('confirm');
+    expect(result.current.walletWait).toBe('error');
+    act(() => {
+      result.current.retryWallet();
+    });
+    expect(connectWallet).toHaveBeenCalledTimes(1);
+    expect(retryWalletSetup).not.toHaveBeenCalled();
+    cleanup();
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    const eligible = useAuthStore.getState().account;
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...eligible!, sparkWalletVerified: false },
+    });
+    useWalletStore.setState({ status: 'ready', setupFailedSession: 'sess' });
+    const setup = renderHook(() => useWalletSend());
+    await typeAndSubmit(setup.result, 'lnbc1');
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(setup.result.current.walletWait).toBe('error');
+    act(() => {
+      setup.result.current.retryWallet();
+    });
+    expect(retryWalletSetup).toHaveBeenCalledTimes(1);
+    expect(connectWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it('ends on the unavailable alert at once when this account has no wallet it can use here', async () => {
+    setWalletUsable('disabled');
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({ step: 'input', error: 'unavailable' });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.walletWait).toBeNull();
+    expect(result.current.text).toBe('lnbc1');
+  });
+
+  it('ends a held step on the unavailable alert when the account leaves wallet mode', async () => {
+    setWalletUsable('locked');
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.walletWait).toBe('opening');
     const eligible = useAuthStore.getState().account;
     act(() => {
       useAuthStore.setState({ account: { ...eligible!, passkeyCredentialId: null } });
     });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.state).toEqual({ step: 'input', error: 'unavailable' });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.walletWait).toBeNull();
     act(() => {
       useAuthStore.setState({ account: eligible });
     });
-    act(() => {
-      result.current.confirm();
-    });
-    expect(send).not.toHaveBeenCalled();
-
-    target(LNURL);
-    let finish: (value: WalletPayResult) => void = () => undefined;
-    vi.mocked(payFromWallet).mockReturnValueOnce(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
-    await typeAndSubmit(result, 'bob@21.gifts');
-    act(() => {
-      result.current.submitAmount(100);
-    });
-    expect(result.current.busy).toBe(true);
-    act(() => {
-      useAuthStore.setState({ account: { ...eligible!, walletRequired: false } });
-    });
-    expect(result.current.busy).toBe(false);
     await act(async () => {
-      finish(confirmWith(send));
-    });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-  });
-
-  it('does nothing while the account is in the one-time wallet setup', async () => {
-    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
-    target(LNURL);
-    const { result } = renderHook(() => useWalletSend());
-    await typeAndSubmit(result, 'bob@21.gifts');
-    expect(result.current.state.step).toBe('amount');
-    const eligible = useAuthStore.getState().account;
-    act(() => {
-      useAuthStore.setState({ account: { ...eligible!, sparkWalletVerified: false } });
-    });
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-    vi.mocked(parseWalletInput).mockClear();
-    await typeAndSubmit(result, 'bob@21.gifts');
-    act(() => {
-      result.current.submitAmount(100);
+      useWalletStore.setState({ status: 'ready' });
     });
     expect(parseWalletInput).not.toHaveBeenCalled();
-    expect(payFromWallet).not.toHaveBeenCalled();
-    act(() => {
+  });
+
+  it('waits while the one-time wallet setup runs, then reads the text', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
+    target(LNURL);
+    const eligible = useAuthStore.getState().account;
+    useAuthStore.setState({ account: { ...eligible!, sparkWalletVerified: false } });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@21.gifts');
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(result.current.walletWait).toBe('opening');
+    await act(async () => {
       useAuthStore.setState({ account: { ...eligible!, sparkWalletVerified: true } });
     });
-    await typeAndSubmit(result, 'bob@21.gifts');
     expect(parseWalletInput).toHaveBeenCalledTimes(1);
     expect(result.current.state.step).toBe('amount');
   });
@@ -1365,30 +1599,49 @@ describe('useWalletSend relay pay request', () => {
     expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
   });
 
+  it('reads an outside address through the api without the wallet, also while it opens', async () => {
+    setWalletUsable('locked');
+    vi.mocked(postLnurlPayRequest).mockResolvedValue(PAY_REQUEST);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@example.com');
+    expect(parseWalletInput).not.toHaveBeenCalled();
+    expect(result.current.state).toMatchObject({
+      step: 'amount',
+      target: { type: 'relay', recipient: 'bob@example.com' },
+    });
+    expect(result.current.busy).toBe(false);
+    expect(result.current.walletWait).toBeNull();
+  });
+
+  it('shows a pay-request refusal while the wallet opens', async () => {
+    setWalletUsable('locked');
+    vi.mocked(postLnurlPayRequest).mockRejectedValue(new LnurlRelayError('notFound'));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'bob@example.com');
+    expect(result.current.state).toEqual({ step: 'input', error: 'notFound' });
+    expect(result.current.walletWait).toBeNull();
+  });
+
   it.each([
-    ['an answer', (finish: Settle<LnurlPayRequest>) => finish.resolve(PAY_REQUEST)],
-    ['a refusal', (finish: Settle<LnurlPayRequest>) => finish.reject(new Error('x'))],
-  ])(
-    'drops %s that arrives after the wallet left ready and shows the not-ready alert',
-    async (_label, settle) => {
-      const finish = pending(vi.mocked(postLnurlPayRequest));
-      const { result } = renderHook(() => useWalletSend());
-      act(() => {
-        result.current.setText('bob@example.com');
-      });
-      act(() => {
-        result.current.submitInput();
-      });
-      expect(result.current.busy).toBe(true);
-      act(() => {
-        useWalletStore.setState({ status: 'locked' });
-      });
-      await act(async () => {
-        settle(finish);
-      });
-      expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
-    },
-  );
+    ['a pay request', (finish: Settle<LnurlPayRequest>) => finish.resolve(PAY_REQUEST)],
+    ['a pay-request refusal', (finish: Settle<LnurlPayRequest>) => finish.reject(new Error('x'))],
+  ])('drops %s that settles after the view closed', async (_label, settle) => {
+    const finish = pending(vi.mocked(postLnurlPayRequest));
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.setText('bob@example.com');
+    });
+    act(() => {
+      result.current.submitInput();
+    });
+    act(() => {
+      result.current.abandon();
+    });
+    await act(async () => {
+      settle(finish);
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
 });
 
 /** Controls of a promise a mock returns. */
@@ -1545,51 +1798,54 @@ describe('useWalletSend relay invoice', () => {
   });
 });
 
-describe('useWalletSend relay answers after the wallet left ready', () => {
-  /** Makes the store read `locked` while React has not yet run the reset effect. */
-  const lockedView = (): void => {
-    const state = useWalletStore.getState();
-    vi.spyOn(useWalletStore, 'getState').mockReturnValue({ ...state, status: 'locked' });
-  };
-
-  it.each([
-    ['a pay request', (finish: Settle<LnurlPayRequest>) => finish.resolve(PAY_REQUEST)],
-    ['a pay-request refusal', (finish: Settle<LnurlPayRequest>) => finish.reject(new Error('x'))],
-  ])('drops %s that settles before the reset ran', async (_label, settle) => {
-    const finish = pending(vi.mocked(postLnurlPayRequest));
-    const { result } = renderHook(() => useWalletSend());
+describe('useWalletSend relay answers while the wallet opens', () => {
+  it('asks the api for the invoice while the wallet opens, then quotes it once open', async () => {
+    const result = await relayAmountStep();
     act(() => {
-      result.current.setText('bob@example.com');
+      useWalletStore.setState({ status: 'locked' });
     });
-    act(() => {
-      result.current.submitInput();
+    vi.mocked(postLnurlInvoice).mockResolvedValue({ pr: 'lnbc1relay' });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 100,
+      feeSats: 1,
+      send: async () => ({ kind: 'paid' }),
     });
-    lockedView();
     await act(async () => {
-      settle(finish);
+      result.current.submitAmount(100);
     });
-    vi.mocked(useWalletStore.getState).mockRestore();
-    expect(result.current.state).toEqual({ step: 'input', error: null });
-    expect(result.current.busy).toBe(true);
+    expect(postLnurlInvoice).toHaveBeenCalledWith('sess', 'bob@example.com', 100_000, '');
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({
+      step: 'quote',
+      recipient: 'bob@example.com',
+      amountSats: 100,
+    });
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc1relay' });
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'bob@example.com' });
   });
 
   it.each([
     ['an invoice', (finish: Settle<{ pr: string }>) => finish.resolve({ pr: 'lnbc1relay' })],
     ['an invoice refusal', (finish: Settle<{ pr: string }>) => finish.reject(new Error('x'))],
-  ])('drops %s that settles before the reset ran', async (_label, settle) => {
+  ])('drops %s that settles after Cancel', async (_label, settle) => {
     const result = await relayAmountStep();
     const finish = pending(vi.mocked(postLnurlInvoice));
     act(() => {
       result.current.submitAmount(100);
     });
-    lockedView();
+    act(() => {
+      result.current.cancel();
+    });
     await act(async () => {
       settle(finish);
     });
-    vi.mocked(useWalletStore.getState).mockRestore();
     expect(payFromWallet).not.toHaveBeenCalled();
-    expect(result.current.state.step).toBe('amount');
-    expect(result.current.busy).toBe(true);
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(result.current.busy).toBe(false);
   });
 });
 
@@ -1791,7 +2047,7 @@ describe('useWalletSend fixed amount', () => {
     },
   );
 
-  it('drops a fixed-amount prepare that settles after the wallet left ready and came back and shows the not-ready alert', async () => {
+  it('prepares a fixed amount again when its prepare settles after the wallet left ready and came back', async () => {
     target(FIXED);
     const finish = pending(vi.mocked(payFromWallet));
     const { result } = renderHook(() => useWalletSend());
@@ -1800,17 +2056,18 @@ describe('useWalletSend fixed amount', () => {
     act(() => {
       useWalletStore.setState({ status: 'locked' });
     });
-    expect(result.current.busy).toBe(false);
-    act(() => {
+    expect(result.current.busy).toBe(true);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmFixed());
+    await act(async () => {
       useWalletStore.setState({ status: 'ready' });
     });
     await act(async () => {
       finish.resolve(confirmFixed());
     });
-    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
+    expect(result.current.state).toMatchObject({ step: 'confirm' });
   });
 
-  it('drops a fixed-amount invoice that arrives after the wallet left ready and shows the not-ready alert', async () => {
+  it('shows the quote step of an outside fixed amount while the wallet opens', async () => {
     vi.mocked(postLnurlPayRequest).mockResolvedValue({
       ...PAY_REQUEST,
       target: OUTSIDE_SHOP,
@@ -1828,7 +2085,8 @@ describe('useWalletSend fixed amount', () => {
       finish.resolve({ pr: 'lnbc70n1shop' });
     });
     expect(payFromWallet).not.toHaveBeenCalled();
-    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
+    expect(result.current.state).toMatchObject({ step: 'quote', amountSats: 7 });
+    expect(result.current.walletWait).toBe('opening');
   });
 
   it('keeps the amount step and the address for an outside LNURL whose bounds differ', async () => {
@@ -1934,19 +2192,39 @@ describe('useWalletSend shop charge', () => {
     expect(result.current.busy).toBe(false);
   });
 
-  it('drops a charge answer that arrives after the wallet left ready and shows the not-ready alert', async () => {
+  it('asks a shop for its charge while the wallet opens, then quotes it once open', async () => {
+    setWalletUsable('locked');
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(CHARGE);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmShop());
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, SHOP_QR);
+    expect(fetchShopChargeInvoice).toHaveBeenCalledWith('shop');
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({
+      step: 'quote',
+      recipient: 'shop@21.gifts',
+      amountSats: CHARGE.amountSats,
+    });
+    await act(async () => {
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: CHARGE.sparkInvoice });
+    expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'shop@21.gifts' });
+  });
+
+  it('drops a charge answer that arrives after Cancel', async () => {
     const finish = pending(vi.mocked(fetchShopChargeInvoice));
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, SHOP_QR);
     act(() => {
-      useWalletStore.setState({ status: 'locked' });
+      result.current.abandon();
     });
     await act(async () => {
       finish.resolve(CHARGE);
     });
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(parseWalletInput).not.toHaveBeenCalled();
-    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 });
 
@@ -2085,27 +2363,40 @@ describe('useWalletSend member without a charge', () => {
     expect(payFromWallet).toHaveBeenCalledWith(LIGHTNING_NO_MESSAGE);
   });
 
-  it.each([
-    ['the wallet left ready', (): void => useWalletStore.setState({ status: 'locked' })],
-    ['the amount step was closed', null],
-  ])('drops a Spark invoice that arrives after %s', async (_label, leave) => {
+  it('drops a Spark invoice that arrives after the amount step was closed', async () => {
     const result = await memberAmountStep();
     const finish = pending(vi.mocked(fetchMemberSparkInvoice));
     await act(async () => {
       result.current.submitAmount(100);
     });
     act(() => {
-      if (leave === null) {
-        result.current.cancel();
-      } else {
-        leave();
-      }
+      result.current.cancel();
     });
     await act(async () => {
       finish.resolve('spark1alice');
     });
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(result.current.state).toEqual({ step: 'input', error: null });
+  });
+
+  it('quotes a Spark invoice that arrives after the wallet left ready once it is open', async () => {
+    const result = await memberAmountStep();
+    const finish = pending(vi.mocked(fetchMemberSparkInvoice));
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+    });
+    await act(async () => {
+      finish.resolve('spark1alice');
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.state).toEqual({
+      step: 'quote',
+      recipient: 'alice@21.gifts',
+      amountSats: 100,
+    });
   });
 
   it('names the member as <name>@<host> whatever case or www. the text uses', async () => {
@@ -2132,20 +2423,6 @@ describe('useWalletSend member without a charge', () => {
 });
 
 describe('useWalletSend unreadable text', () => {
-  it('shows the not-ready alert when the text is submitted while the wallet is not ready', () => {
-    setWalletUsable('locked');
-    const { result } = renderHook(() => useWalletSend());
-    act(() => {
-      result.current.setText('lnbc1');
-    });
-    act(() => {
-      result.current.submitInput();
-    });
-    expect(result.current.busy).toBe(false);
-    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
-    expect(parseWalletInput).not.toHaveBeenCalled();
-  });
-
   it('shows the unreadable alert when reading the text throws', async () => {
     vi.mocked(parseWalletInput).mockResolvedValue({
       kind: 'target',
@@ -2196,7 +2473,7 @@ describe('useWalletSend unreadable text', () => {
     expect(result.current.state).toEqual({ step: 'input', error: null });
   });
 
-  it('drops a read that rejects after the wallet locks', async () => {
+  it('shows the unreadable alert when a read rejects after the wallet locks', async () => {
     const read = pending<Awaited<ReturnType<typeof parseWalletInput>>>(vi.mocked(parseWalletInput));
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'lnbc1');
@@ -2207,7 +2484,8 @@ describe('useWalletSend unreadable text', () => {
     await act(async () => {
       read.reject(new Error('gone'));
     });
-    expect(result.current.state).toEqual({ step: 'input', error: 'notReady' });
+    expect(result.current.state).toEqual({ step: 'input', error: 'unreadable' });
+    expect(result.current.busy).toBe(false);
   });
 
   it('shows the failed alert when a prepare answer cannot be read', async () => {

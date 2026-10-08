@@ -38,12 +38,6 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface WalletSendProps {
   /** Send flow state and actions from `useWalletSend`. */
   send: UseWalletSendResult;
-  /**
-   * Whether the wallet is ready. When it is not, an input step with an alert
-   * shows only that alert, so nothing can be pasted or sent until the wallet
-   * is ready again. Default `true`.
-   */
-  walletReady?: boolean;
   /** Whether the input step shows its manual-entry sheet over the camera. */
   manualEntry: boolean;
   /** Opens or closes the manual-entry sheet. */
@@ -68,7 +62,7 @@ const ERROR_KEYS: Record<WalletSendError, MessageKey> = {
   unsupported: 'wallet.sendUnsupported',
   insufficient: 'wallet.payInsufficient',
   failed: 'wallet.sendFailed',
-  notReady: 'wallet.sendNotReady',
+  unavailable: 'wallet.payUnavailable',
   unreadable: 'wallet.sendUnreadable',
 };
 
@@ -138,18 +132,18 @@ function StepBox({
  * sheet is closed, so a code that was just refused is not read again at once.
  * After a scan or paste the camera stays off until the submit moves on (busy,
  * another step, or an alert) or the text changes, so the same code is never
- * submitted twice. While the wallet is not ready, an input step with an alert
- * shows only that alert.
+ * submitted twice. Nothing here waits for the wallet except the steps that
+ * need it: a text the wallet reads keeps the camera off and shows
+ * **Opening your wallet…** under the spinner until it is read, and the
+ * `quote` step shows amount and recipient with that line where the fee goes
+ * until the payment is prepared. When the wallet could not be opened, both
+ * show **Your wallet could not be opened. Please try again.** with
+ * **Try again** instead, and continue on their own once it is open.
  *
- * @param props - Send flow, whether the wallet is ready, and the manual-entry sheet.
+ * @param props - Send flow and the manual-entry sheet.
  * @returns The send region.
  */
-export function WalletSend({
-  send,
-  walletReady = true,
-  manualEntry,
-  onManualEntry,
-}: WalletSendProps): ReactElement {
+export function WalletSend({ send, manualEntry, onManualEntry }: WalletSendProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -284,37 +278,32 @@ export function WalletSend({
     </AppShellFooter>
   );
 
-  const confirmFooter = footerAction(
-    <>
-      <Button
-        size="lg"
-        className="min-h-14 text-base"
-        disabled={busy}
-        icon={spinner}
-        onClick={send.confirm}
-      >
-        {t('wallet.sendButton')}
-      </Button>
-      <button
-        type="button"
-        disabled={send.sending}
-        onClick={close}
-        className="self-center px-4 py-2 text-sm text-app-muted underline hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {t('wallet.sendCancel')}
-      </button>
-    </>,
-  );
+  const confirmFooter = (quoted: boolean): ReactElement =>
+    footerAction(
+      <>
+        <Button
+          size="lg"
+          className="min-h-14 text-base"
+          disabled={busy || !quoted}
+          icon={quoted ? spinner : undefined}
+          onClick={send.confirm}
+        >
+          {t('wallet.sendButton')}
+        </Button>
+        <button
+          type="button"
+          disabled={send.sending}
+          onClick={close}
+          className="self-center px-4 py-2 text-sm text-app-muted underline hover:text-app-fg disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {t('wallet.sendCancel')}
+        </button>
+      </>,
+    );
 
   let body: ReactElement;
-  const camera = state.step === 'input' && (walletReady || state.error === null);
-  if (state.step === 'input' && !walletReady && state.error !== null) {
-    body = (
-      <p role="alert" className="text-center text-sm text-app-danger">
-        {t(ERROR_KEYS[state.error])}
-      </p>
-    );
-  } else if (state.step === 'input') {
+  const camera = state.step === 'input';
+  if (state.step === 'input') {
     const onSubmit = (event: FormEvent<HTMLFormElement>): void => {
       event.preventDefault();
       setAmountDraft('');
@@ -324,9 +313,23 @@ export function WalletSend({
     body = (
       <>
         {cameraOn ? <QrScanner onResult={takeText} /> : null}
-        {busy && !manualEntry ? (
-          <div className="absolute inset-0 flex items-center justify-center">
+        {busy && !manualEntry && send.walletWait === 'error' ? (
+          <div className="absolute inset-x-0 top-1/3 flex -translate-y-1/2 flex-col items-center gap-4 px-8">
+            <p role="alert" className="text-center text-lg font-medium text-white">
+              {t('wallet.balanceError')}
+            </p>
+            <Button variant="overlay" className={FLOAT_CLASS} onClick={send.retryWallet}>
+              {t('login.retry')}
+            </Button>
+          </div>
+        ) : busy && !manualEntry ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-8">
             <Loader2 aria-hidden="true" className="h-10 w-10 animate-spin text-white" />
+            {send.walletWait === 'opening' ? (
+              <p role="status" className="text-center text-lg font-medium text-white">
+                {t('wallet.connecting')}
+              </p>
+            ) : null}
           </div>
         ) : null}
         {manualEntry ? (
@@ -562,7 +565,7 @@ export function WalletSend({
         <p className="max-w-sm text-center text-xs text-app-muted">
           {t('wallet.sendOnchainFeeHint')}
         </p>
-        {confirmFooter}
+        {confirmFooter(true)}
       </div>
     );
   } else if (state.step === 'confirm') {
@@ -576,7 +579,34 @@ export function WalletSend({
           {t('wallet.payFee', { amount: formatBitcoin(state.feeSats, numberFormat) })}
           {state.feeSats > 0 ? fiatOf(state.feeSats) : null}
         </p>
-        {confirmFooter}
+        {confirmFooter(true)}
+      </div>
+    );
+  } else if (state.step === 'quote') {
+    body = (
+      <div className="flex w-full flex-col items-center gap-4 py-6">
+        {largeAmount(state.amountSats, formatBitcoin(state.amountSats, numberFormat))}
+        <p className="w-full min-w-0 truncate text-center text-sm text-app-muted">
+          {t('wallet.sendTo', { recipient: state.recipient })}
+        </p>
+        {send.walletWait === 'error' ? (
+          <div className="flex flex-col items-center gap-3">
+            <p role="alert" className="px-6 text-center text-sm text-app-danger">
+              {t('wallet.balanceError')}
+            </p>
+            <Button type="button" variant="secondary" onClick={send.retryWallet}>
+              {t('wallet.payRetry')}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-app-subtle" />
+            <p role="status" className="text-center text-sm text-app-muted">
+              {t('wallet.connecting')}
+            </p>
+          </div>
+        )}
+        {confirmFooter(false)}
       </div>
     );
   } else {

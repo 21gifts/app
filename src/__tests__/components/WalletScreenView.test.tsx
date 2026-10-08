@@ -82,17 +82,12 @@ afterEach(() => {
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
-function walletResult(
-  status: UseWalletResult['status'],
-  setupFailed = false,
-  canReceive = true,
-): UseWalletResult {
+function walletResult(status: UseWalletResult['status'], setupFailed = false): UseWalletResult {
   return {
     status,
     balanceSats: status === 'ready' ? 21_000 : null,
     retry: vi.fn(),
     setupFailed,
-    canReceive,
   };
 }
 
@@ -255,41 +250,32 @@ describe('WalletScreenView', () => {
     expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
   });
 
-  it('enables Send only while the wallet is ready and a send flow exists', () => {
+  it('keeps Send and Receive enabled whatever the wallet status, and opens Send while it connects', () => {
     setWalletAccount();
-    const cases = [
-      ['ready', true, true],
-      ['ready', false, false],
-      ['connecting', true, false],
-      ['error', true, false],
-    ] as const;
-    for (const [status, withSend, enabled] of cases) {
+    for (const status of ['ready', 'connecting', 'error', 'disabled'] as const) {
       const view = renderWithLocale(
-        <WalletScreenView
-          {...ENTRY_PROPS}
-          wallet={walletResult(status)}
-          {...(withSend ? { send: idleSend() } : {})}
-        />,
+        <WalletScreenView {...ENTRY_PROPS} wallet={walletResult(status)} send={idleSend()} />,
       );
       expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
-        !enabled,
+        false,
       );
       expect((screen.getByRole('button', { name: 'Receive' }) as HTMLButtonElement).disabled).toBe(
         false,
       );
       view.unmount();
     }
+    renderWithLocale(
+      <WalletScreenView {...ENTRY_PROPS} wallet={walletResult('connecting')} send={idleSend()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
   });
 
-  it('disables Receive while the account cannot receive', () => {
+  it('does not open Send without a send flow', () => {
     setWalletAccount();
-    renderWithLocale(
-      <WalletScreenView {...ENTRY_PROPS} wallet={walletResult('connecting', false, false)} />,
-    );
-    const receive = screen.getByRole('button', { name: 'Receive' }) as HTMLButtonElement;
-    expect(receive.disabled).toBe(true);
-    fireEvent.click(receive);
-    expect(screen.queryByText('ada@21.gifts')).toBeNull();
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
   });
 
   it('ignores balance state on the phrase surface', () => {
@@ -671,6 +657,8 @@ function idleSend(extra: Partial<UseWalletSendResult> = {}): UseWalletSendResult
   return {
     state: { step: 'input', error: null },
     busy: false,
+    walletWait: null,
+    retryWallet: vi.fn(),
     sending: false,
     text: '',
     setText: vi.fn(),
@@ -847,17 +835,15 @@ describe('WalletScreenView Send', () => {
     expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
   });
 
-  it('returns home when the wallet stops being ready and stays there when it is ready again', () => {
+  it('keeps the chosen Send view and its camera while the wallet stops being ready', () => {
     const view = renderEntry('ready', idleSend());
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
-    const before = cameraRenders.count;
     rerenderEntry(view, 'connecting', idleSend());
-    expect(cameraRenders.count).toBe(before);
-    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('Opening your wallet…');
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(screen.getByText('Camera stub')).toBeTruthy();
     rerenderEntry(view, 'ready', idleSend());
-    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
   });
 
   it('leaves the page with Back from home without asking the send flow', () => {

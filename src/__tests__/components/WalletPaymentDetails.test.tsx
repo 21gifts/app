@@ -53,7 +53,7 @@ const DEPOSIT = '9bc2f53d';
 const WITHDRAW = '71a0b382';
 
 function walletWith(status: UseWalletResult['status']): UseWalletResult {
-  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false, canReceive: true };
+  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false };
 }
 
 function show(state: WalletPaymentState): void {

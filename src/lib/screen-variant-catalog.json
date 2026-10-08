@@ -246,6 +246,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:receive-opening",
+    "label": "/wallet receive-opening",
+    "visual": "state-wallet-receive-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-setup-failed",
+    "label": "/wallet receive-setup-failed",
+    "visual": "state-wallet-receive-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:balance-error",
     "label": "/wallet balance-error",
     "visual": "state-wallet-balance-error",
@@ -432,12 +444,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:send-alert-not-ready",
-    "label": "/wallet send-alert-not-ready",
-    "visual": "state-wallet-send-alert-not-ready",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/wallet:send-insufficient",
     "label": "/wallet send-insufficient",
     "visual": "state-wallet-send-insufficient",
@@ -522,15 +528,39 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:send-not-ready",
-    "label": "/wallet send-not-ready",
-    "visual": "state-wallet-send-not-ready",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/wallet:send-unreadable",
     "label": "/wallet send-unreadable",
     "visual": "state-wallet-send-unreadable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-unavailable",
+    "label": "/wallet send-unavailable",
+    "visual": "state-wallet-send-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-input-opening",
+    "label": "/wallet send-input-opening",
+    "visual": "state-wallet-send-input-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-input-wallet-error",
+    "label": "/wallet send-input-wallet-error",
+    "visual": "state-wallet-send-input-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-opening",
+    "label": "/wallet send-confirm-opening",
+    "visual": "state-wallet-send-confirm-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-wallet-error",
+    "label": "/wallet send-confirm-wallet-error",
+    "visual": "state-wallet-send-confirm-wallet-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -804,12 +834,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:wallet-buttons-disabled",
-    "label": "/welcome wallet-buttons-disabled",
-    "visual": "state-welcome-wallet-buttons-disabled",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:wallet-setup-pending",
     "label": "/welcome wallet-setup-pending",
     "visual": "state-welcome-wallet-setup-pending",
@@ -819,6 +843,18 @@
     "id": "/welcome:wallet-receive",
     "label": "/welcome wallet-receive",
     "visual": "state-welcome-wallet-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive-opening",
+    "label": "/welcome wallet-receive-opening",
+    "visual": "state-welcome-wallet-receive-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive-setup-failed",
+    "label": "/welcome wallet-receive-setup-failed",
+    "visual": "state-welcome-wallet-receive-setup-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -900,15 +936,33 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:wallet-send-not-ready",
-    "label": "/welcome wallet-send-not-ready",
-    "visual": "state-welcome-wallet-send-not-ready",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:wallet-send-unreadable",
     "label": "/welcome wallet-send-unreadable",
     "visual": "state-welcome-wallet-send-unreadable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-input-opening",
+    "label": "/welcome wallet-send-input-opening",
+    "visual": "state-welcome-wallet-send-input-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-input-wallet-error",
+    "label": "/welcome wallet-send-input-wallet-error",
+    "visual": "state-welcome-wallet-send-input-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-opening",
+    "label": "/welcome wallet-send-confirm-opening",
+    "visual": "state-welcome-wallet-send-confirm-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-wallet-error",
+    "label": "/welcome wallet-send-confirm-wallet-error",
+    "visual": "state-welcome-wallet-send-confirm-wallet-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -921,12 +975,6 @@
     "id": "/welcome:wallet-send-failed",
     "label": "/welcome wallet-send-failed",
     "visual": "state-welcome-wallet-send-failed",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:wallet-send-alert-not-ready",
-    "label": "/welcome wallet-send-alert-not-ready",
-    "visual": "state-welcome-wallet-send-alert-not-ready",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

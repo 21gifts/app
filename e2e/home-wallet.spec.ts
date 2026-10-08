@@ -72,6 +72,21 @@ async function setPortScrollTop(page: Page, top: number): Promise<void> {
   }, top);
 }
 
+test('Function: WelcomeScreen — Send stays enabled on the forum home while the wallet opens and opens at once', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubCamera(page, { kind: 'blank' });
+  await page.goto('/welcome?visual=setup-pending');
+  const send = page.getByRole('button', { name: 'Send', exact: true });
+  await expect(send).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
+  await send.click();
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region.locator('video')).toBeVisible();
+  await expect(region.getByRole('button', { name: 'Paste' })).toBeEnabled();
+});
+
 test('Function: WalletFooterActions — Receive and Send stay fixed at the bottom of the forum home while the feed scrolls', async ({
   page,
 }) => {

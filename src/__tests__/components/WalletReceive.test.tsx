@@ -6,6 +6,12 @@ import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const setup = vi.hoisted(() => ({ due: false, failed: false, retry: vi.fn() }));
+
+vi.mock('@/hooks/useWalletSetup', () => ({
+  useWalletSetup: () => setup,
+}));
+
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
@@ -25,6 +31,9 @@ function renderReceive(): void {
 
 beforeEach(() => {
   setAccount('ada');
+  setup.due = false;
+  setup.failed = false;
+  setup.retry.mockReset();
 });
 
 afterEach(() => {
@@ -40,6 +49,29 @@ describe('WalletReceive', () => {
     expect(screen.getByRole('img', { name: /QR/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Set an amount' }).getAttribute('href')).toBe('/pos');
+  });
+
+  it('shows Opening your wallet… in place of the address while the one-time setup runs', () => {
+    setup.due = true;
+    renderReceive();
+    expect(screen.getByText('Receive')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('Opening your wallet…');
+    expect(document.querySelector('.animate-spin')).not.toBeNull();
+    expect(screen.queryByText('ada@21.gifts')).toBeNull();
+    expect(screen.queryByRole('img', { name: /QR/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+  });
+
+  it('shows the setup note with Try again in place of the address after the setup gave up', () => {
+    setup.due = true;
+    setup.failed = true;
+    renderReceive();
+    expect(screen.getByRole('alert').textContent).toBe('Your wallet could not be set up yet.');
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText('ada@21.gifts')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(setup.retry).toHaveBeenCalledTimes(1);
   });
 
   it('links to the profile when the account has no username yet', () => {

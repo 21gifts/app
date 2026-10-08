@@ -17,7 +17,6 @@ const { walletState, useWalletMock } = vi.hoisted(() => {
     balanceSats: null,
     retry: vi.fn(),
     setupFailed: false,
-    canReceive: true,
   };
   return { walletState: state, useWalletMock: vi.fn((): UseWalletResult => state) };
 });
@@ -51,7 +50,6 @@ afterEach(() => {
   walletState.status = 'connecting';
   walletState.balanceSats = null;
   walletState.setupFailed = false;
-  walletState.canReceive = true;
   useWalletMock.mockClear();
 });
 
@@ -158,7 +156,8 @@ describe('WalletScreen', () => {
     renderWithLocale(<WalletScreen />);
     expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Balance' })).toBeTruthy();
-    expect(useWalletMock).toHaveBeenCalledTimes(1);
+    // Once for the screen and once for its send flow, which waits on the same wallet state.
+    expect(useWalletMock).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
   });
 

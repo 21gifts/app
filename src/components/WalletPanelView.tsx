@@ -13,8 +13,6 @@ export interface WalletPanelViewProps {
   panel: 'receive' | 'send';
   /** Send flow state; the Send view needs it. */
   send: UseWalletSendResult | undefined;
-  /** Whether the wallet is ready. */
-  walletReady: boolean;
   /** Whether the Send input step shows its manual-entry sheet. */
   manualEntry: boolean;
   /** Opens or closes the manual-entry sheet. */
@@ -27,13 +25,12 @@ export interface WalletPanelViewProps {
  * the view opens (the button that opened it is gone). The Send input step's
  * camera fills the page port itself (see {@link WalletSend}).
  *
- * @param props - The open view, send flow, wallet readiness, and the manual-entry sheet.
+ * @param props - The open view, send flow, and the manual-entry sheet.
  * @returns The view's column, or `null` for Send without a send flow.
  */
 export function WalletPanelView({
   panel,
   send,
-  walletReady,
   manualEntry,
   onManualEntry,
 }: WalletPanelViewProps): ReactElement | null {
@@ -55,12 +52,7 @@ export function WalletPanelView({
     return (
       <Card surface={false}>
         {title}
-        <WalletSend
-          send={send}
-          walletReady={walletReady}
-          manualEntry={manualEntry}
-          onManualEntry={onManualEntry}
-        />
+        <WalletSend send={send} manualEntry={manualEntry} onManualEntry={onManualEntry} />
       </Card>
     );
   }

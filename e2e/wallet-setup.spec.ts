@@ -181,7 +181,9 @@ test.describe('wallet setup in the background', () => {
     await expect(note).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Receive' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
+    await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
   });
 
   test('pos-setup-failed pin shows the setup note instead of the wallet link', async ({ page }) => {
@@ -260,12 +262,13 @@ test.describe('wallet setup in the background', () => {
     await expect(page.getByText('Your wallet could not be set up yet.')).toHaveCount(0);
   });
 
-  test('Function: needsWalletSetup — unset key leaves the wallet disabled with no note', async ({
+  test('Function: needsWalletSetup — unset key keeps Send enabled with no note', async ({
     page,
   }) => {
     await signIn(page);
     await openWallet(page);
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+    await expect(page.getByText('Your wallet could not be set up yet.')).toHaveCount(0);
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
 
