@@ -7724,6 +7724,41 @@ describe('ForumBoard in-app wallet pay', () => {
         formError={null}
         {...idleProps}
         readOnly
+        onHeartTip={() => undefined}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r1',
+            name: 'Bob',
+            accountId: 'acc-bob',
+            parentId: 'm1',
+            payable: true,
+            sats: 0,
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
+    expect(screen.queryByText('Send ₿1')).toBeNull();
+  });
+
+  it('hides Send ₿1 on a post and a reply whose author cannot receive', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', payable: false }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-viewer"
+        onHeartTip={() => undefined}
         expandedId="m1"
         replies={[
           {
@@ -7739,8 +7774,8 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
-    expect(screen.queryByText('Send ₿1')).toBeNull();
+    expect(screen.getByText('Bob')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
   });
 
   it('hides Send ₿1 on the viewer own post and reply', () => {
@@ -7789,6 +7824,7 @@ describe('ForumBoard in-app wallet pay', () => {
         formError={null}
         {...idleProps}
         viewerAccountId="acc-ada"
+        onHeartTip={() => undefined}
         expandedId="m1"
         replies={[
           {
@@ -7822,6 +7858,7 @@ describe('ForumBoard in-app wallet pay', () => {
         formError={null}
         {...idleProps}
         viewerAccountId="acc-viewer"
+        onHeartTip={() => undefined}
         heartTipViews={{
           m1: { pressed: false, plusOne: false, alert: 'needsBalance' },
         }}
@@ -7846,6 +7883,7 @@ describe('ForumBoard in-app wallet pay', () => {
         formError={null}
         {...idleProps}
         viewerAccountId="acc-viewer"
+        onHeartTip={() => undefined}
         heartTipViews={{
           m1: { pressed: true, plusOne: true, alert: null },
         }}
@@ -7879,7 +7917,7 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(onHeartTip).toHaveBeenCalledWith('m1');
   });
 
-  it('does not throw when Send ₿1 is clicked without onHeartTip', () => {
+  it('hides Send ₿1 on a board without onHeartTip', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -7896,10 +7934,37 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.queryByText('Send ₿1')).toBeNull();
-    expect(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
-    }).not.toThrow();
+    expect(screen.getByText(SAMPLE.text)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+  });
+
+  it.each([
+    ['unavailable', 'Hearts are not available right now.', false],
+    ['pending', 'Your last heart is still on its way. Try again in a moment.', true],
+  ] as const)('shows the %s heart sentence', (alert, sentence, filled) => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc-viewer"
+        onHeartTip={() => undefined}
+        heartTipViews={{ m1: { pressed: filled, plusOne: false, alert } }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(sentence);
+    expect(
+      screen.getByRole('button', { name: 'Send ₿1' }).querySelector('svg')?.getAttribute('fill'),
+    ).toBe(filled ? 'currentColor' : 'none');
+    expect(screen.queryByText('+1')).toBeNull();
   });
 });
 

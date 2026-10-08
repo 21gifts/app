@@ -290,6 +290,9 @@ function toUserFacingError(raw: string): string {
     .replace(/\bLightning\b/gi, 'Bitcoin');
 }
 
+/** Error the api returns with 503 when it cannot issue a heart as a fee-free Spark invoice. */
+const HEART_UNAVAILABLE_CODE = 'HEART_UNAVAILABLE';
+
 /**
  * Reads `{ error }` from an api error body, or `null` when the body is not that
  * envelope (HTML, invalid JSON, missing `error`).
@@ -2609,7 +2612,9 @@ export async function fetchComposeTarget(
  * @throws Error with collapsed visitor copy on 400/403/429/503 (and other
  * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
  * {@link messageInvoiceSchema}. A 403 `SUNDAY_REST` keeps that code in the
- * thrown message so a heart click can show the Sunday copy.
+ * thrown message so a heart click can show the Sunday copy. A 503
+ * `HEART_UNAVAILABLE` (the api cannot issue a heart as a fee-free Spark
+ * invoice) keeps that code in the thrown message the same way.
  */
 export async function postMessageInvoice(
   sessionToken: string,
@@ -2660,7 +2665,12 @@ export async function postMessageInvoice(
     throw new NoteDeletedError();
   }
   if (response.status === 503) {
-    throw new Error('Could not start the Bitcoin payment');
+    const raw = await readApiError(response);
+    throw new Error(
+      raw === HEART_UNAVAILABLE_CODE
+        ? HEART_UNAVAILABLE_CODE
+        : 'Could not start the Bitcoin payment',
+    );
   }
   if (!response.ok) {
     throw new Error('Could not start the Bitcoin payment');

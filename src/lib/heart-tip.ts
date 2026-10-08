@@ -5,7 +5,11 @@ import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/l
 import { logInteraction } from '@/lib/interaction-log';
 import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
-import { payFromWallet, type WalletPayResult } from '@/lib/wallet/wallet-service';
+import {
+  listWalletPayments,
+  payFromWallet,
+  type WalletPayResult,
+} from '@/lib/wallet/wallet-service';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
@@ -13,9 +17,25 @@ import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 /** How long the filled heart and +1 stay after a paid send. */
 export const HEART_TIP_PLUS_ONE_MS = 700;
 
+/**
+ * How long a heart whose send timed out blocks another heart on the same note
+ * while the wallet's payment list does not show it at all.
+ */
+export const HEART_TIP_UNSETTLED_MS = 10 * 60_000;
+
+/** How many of the newest wallet payments are searched for a timed-out heart. */
+const HEART_TIP_LOOKUP_LIMIT = 50;
+
 /** Catalog-backed alert after a heart click that did not pay. */
 export type HeartTipAlert =
-  'sunday' | 'needsBalance' | 'rateLimit' | 'authorWallet' | 'request' | 'payFailed';
+  | 'sunday'
+  | 'needsBalance'
+  | 'rateLimit'
+  | 'authorWallet'
+  | 'request'
+  | 'payFailed'
+  | 'unavailable'
+  | 'pending';
 
 /** Per-message heart visuals for the forum board. */
 export type HeartTipView = {
@@ -30,6 +50,18 @@ export type HeartTipView = {
 /** Result of one {@link sendHeartTip} run. */
 export type HeartTipOutcome =
   { kind: 'noop' } | { kind: 'paid' } | { kind: 'alert'; alert: HeartTipAlert };
+
+/**
+ * A heart whose send timed out: the Spark invoice it paid, when, and `sent`
+ * once the SDK reported that the late send went out.
+ */
+type UnsettledHeart = { invoice: string; sinceMs: number; sent: boolean };
+
+/**
+ * Hearts whose send timed out, by note id, for this tab. The payment may still
+ * complete, so another heart on that note waits until the outcome is known.
+ */
+const unsettledHearts = new Map<string, UnsettledHeart>();
 
 /** Inputs for one heart send. Wallet fields are the snapshot at click time. */
 export type HeartTipInput = {
@@ -72,6 +104,17 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
+ * True when a thrown invoice error is the api's code for a heart it cannot
+ * issue as a fee-free Spark invoice.
+ *
+ * @param err - Caught rejection.
+ * @returns Whether the api refused the heart as unavailable.
+ */
+function isHeartUnavailableError(err: unknown): boolean {
+  return err instanceof Error && /HEART_UNAVAILABLE/.test(err.message);
+}
+
+/**
  * Maps an invoice rejection to the heart alert the board shows.
  *
  * @param err - Caught rejection from {@link postMessageInvoice}.
@@ -90,6 +133,9 @@ function mapInvoiceError(err: unknown): HeartTipAlert {
   if (isRateLimitError(err)) {
     return 'rateLimit';
   }
+  if (isHeartUnavailableError(err)) {
+    return 'unavailable';
+  }
   return 'request';
 }
 
@@ -104,23 +150,32 @@ function liveReadyBalanceIsZero(): boolean {
 }
 
 /**
- * Pays a prepared heart invoice: `confirm` sends at once, even when the fee is
- * above ₿0. `insufficient` or a ready zero balance is `needsBalance`. A sent
- * heart is recorded as `heart_sent` under the session of the click, also when
- * the SDK finishes a send the app stopped waiting for.
+ * Pays a prepared heart invoice. `confirm` sends at once, but only when the
+ * prepared payment is exactly 1 sat with a fee of ₿0; anything else is
+ * `unavailable` and nothing is sent. `insufficient` or a ready zero balance is
+ * `needsBalance`. A sent heart is recorded as `heart_sent` under the session
+ * of the click, also when the SDK finishes a send the app stopped waiting for.
+ * A send that timed out (`sentLate`) is remembered for this note until its
+ * outcome is known, so a retap waits instead of paying again: `sentLate`
+ * `true` marks it sent, `false` forgets it.
  *
  * @param result - Outcome of {@link payFromWallet}.
  * @param input - Click snapshot: the message id and the session.
+ * @param invoice - Spark invoice that was prepared.
  * @returns Paid, or the alert to show.
  */
 async function finishPreparedPay(
   result: WalletPayResult,
   input: HeartTipInput,
+  invoice: string,
 ): Promise<HeartTipOutcome> {
   if (result.kind === 'insufficient' || liveReadyBalanceIsZero()) {
     return { kind: 'alert', alert: 'needsBalance' };
   }
   if (result.kind === 'confirm') {
+    if (result.amountSats !== 1 || result.feeSats > 0) {
+      return { kind: 'alert', alert: 'unavailable' };
+    }
     const sent = await result.send();
     const recordHeart = (): void => {
       logInteraction(
@@ -133,15 +188,21 @@ async function finishPreparedPay(
       recordHeart();
       return { kind: 'paid' };
     }
+    if (sent.kind === 'insufficient') {
+      return { kind: 'alert', alert: 'needsBalance' };
+    }
     if (sent.kind === 'failed' && sent.sentLate !== undefined) {
+      const held: UnsettledHeart = { invoice, sinceMs: Date.now(), sent: false };
+      unsettledHearts.set(input.messageId, held);
       void sent.sentLate.then((late) => {
         if (late) {
           recordHeart();
+          held.sent = true;
+        } else if (unsettledHearts.get(input.messageId) === held) {
+          unsettledHearts.delete(input.messageId);
         }
       });
-    }
-    if (sent.kind === 'insufficient') {
-      return { kind: 'alert', alert: 'needsBalance' };
+      return { kind: 'alert', alert: 'pending' };
     }
     return { kind: 'alert', alert: 'request' };
   }
@@ -152,32 +213,83 @@ async function finishPreparedPay(
 }
 
 /**
+ * Settles a heart on this note whose send timed out. A late send the SDK
+ * reported as sent counts as paid and nothing new is sent. Otherwise the
+ * wallet's newest payments decide: a completed payment is the heart that was asked for, so it counts
+ * as paid and nothing new is sent. A failed payment, or one still missing
+ * after {@link HEART_TIP_UNSETTLED_MS}, clears the note. A pending payment, a
+ * payment not listed yet, or a list that cannot be read keeps it waiting.
+ *
+ * @param messageId - Note the heart is for.
+ * @returns `clear` to send a new heart, `paid`, or `pending`.
+ */
+async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid' | 'pending'> {
+  const held = unsettledHearts.get(messageId);
+  if (held === undefined) {
+    return 'clear';
+  }
+  if (held.sent) {
+    unsettledHearts.delete(messageId);
+    return 'paid';
+  }
+  let payments;
+  try {
+    payments = await listWalletPayments({ offset: 0, limit: HEART_TIP_LOOKUP_LIMIT });
+  } catch {
+    return 'pending';
+  }
+  const match = payments.find(
+    (payment) => payment.direction === 'sent' && payment.info.invoice === held.invoice,
+  );
+  if (match === undefined) {
+    if (Date.now() - held.sinceMs < HEART_TIP_UNSETTLED_MS) {
+      return 'pending';
+    }
+    unsettledHearts.delete(messageId);
+    return 'clear';
+  }
+  if (match.status === 'pending') {
+    return 'pending';
+  }
+  unsettledHearts.delete(messageId);
+  return match.status === 'completed' ? 'paid' : 'clear';
+}
+
+/**
  * Prepares the heart invoice in the in-app wallet and sends it. A locked but
  * unlockable wallet prompts once, then prepares and sends once.
  *
- * @param payInput - `sparkInvoice` when the api issued one, otherwise `pr`.
+ * @param sparkInvoice - The api's fee-free Spark invoice for this heart.
  * @param input - Click snapshot, including unlock eligibility.
  * @returns Paid, or the alert to show.
  */
-async function payHeartInvoice(payInput: string, input: HeartTipInput): Promise<HeartTipOutcome> {
-  const first = await payFromWallet({ type: 'input', input: payInput });
+async function payHeartInvoice(
+  sparkInvoice: string,
+  input: HeartTipInput,
+): Promise<HeartTipOutcome> {
+  const first = await payFromWallet({ type: 'input', input: sparkInvoice });
   if (first.kind === 'unlock') {
     if (!input.needsWalletSetup && input.canUnlockWallet) {
       const unlocked = await unlockWalletPhrase();
       if (unlocked !== 'unlocked') {
         return { kind: 'alert', alert: 'payFailed' };
       }
-      const second = await payFromWallet({ type: 'input', input: payInput });
-      return finishPreparedPay(second, input);
+      const second = await payFromWallet({ type: 'input', input: sparkInvoice });
+      return finishPreparedPay(second, input, sparkInvoice);
     }
     return { kind: 'alert', alert: 'request' };
   }
-  return finishPreparedPay(first, input);
+  return finishPreparedPay(first, input, sparkInvoice);
 }
 
 /**
  * Sends a 1-sat heart on a forum note or reply. No amount dialog, no gift
  * sheet, no comment text. A missing session or a read-only board is silent.
+ * A heart is paid only through the api's fee-free Spark invoice, for exactly
+ * 1 sat and a fee of ₿0: without a Spark invoice, or when the prepared payment
+ * differs, nothing is sent and the alert is `unavailable` (never the
+ * Lightning `pr`). While an earlier heart on the same note timed out and its
+ * outcome is not known, nothing is invoiced and the alert is `pending`.
  * In a Playwright build, `?visual=heart-paid` (via {@link visualPin}) returns
  * paid without invoicing; that pin is ignored in production and does not
  * override signed-out or read-only. It is read before the Sunday check so a
@@ -206,6 +318,13 @@ export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcom
   if (input.needsWalletSetup) {
     return { kind: 'alert', alert: 'needsBalance' };
   }
+  const held = await settleUnsettledHeart(input.messageId);
+  if (held === 'paid') {
+    return { kind: 'paid' };
+  }
+  if (held === 'pending') {
+    return { kind: 'alert', alert: 'pending' };
+  }
   let invoice;
   try {
     invoice = await postMessageInvoice(
@@ -219,11 +338,10 @@ export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcom
   } catch (err) {
     return { kind: 'alert', alert: mapInvoiceError(err) };
   }
-  const payInput =
-    typeof invoice.sparkInvoice === 'string' && invoice.sparkInvoice !== ''
-      ? invoice.sparkInvoice
-      : invoice.pr;
-  return payHeartInvoice(payInput, input);
+  if (typeof invoice.sparkInvoice !== 'string' || invoice.sparkInvoice === '') {
+    return { kind: 'alert', alert: 'unavailable' };
+  }
+  return payHeartInvoice(invoice.sparkInvoice, input);
 }
 
 /**
@@ -320,7 +438,11 @@ export function useHeartTip(options: { readOnly: boolean }): {
           /* v8 ignore stop */
           setHeartTipViews((prev) => ({
             ...prev,
-            [messageId]: { pressed: false, plusOne: false, alert: outcome.alert },
+            [messageId]: {
+              pressed: outcome.alert === 'pending',
+              plusOne: false,
+              alert: outcome.alert,
+            },
           }));
         })
         .finally(() => {
