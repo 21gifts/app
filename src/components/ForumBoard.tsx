@@ -1775,17 +1775,21 @@ export function ForumBoard({
         />
       ) : null}
       {lawsVisible ? (
-        <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('forum.lawsDismiss')}
-            onClick={onDismissLaws}
-            className="absolute right-2 top-2"
-          >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
+        <div
+          data-laws-card=""
+          className="relative rounded-2xl border border-app-border bg-app-card-muted px-12 py-5"
+        >
+          <div className="absolute right-3 top-3">
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t('forum.lawsDismiss')}
+              onClick={onDismissLaws}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
           <div className="flex flex-col items-center gap-2">
             <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
             <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>

@@ -88,7 +88,7 @@ export function ForumPaySheet({
         data-pay-sheet=""
         className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-11 pt-10"
       >
-        <div className="absolute left-2 top-2">
+        <div className="absolute left-3 top-3">
           <IconButton
             type="button"
             size="sm"
@@ -157,7 +157,7 @@ export function ForumPaySheet({
       data-pay-sheet=""
       className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
     >
-      <div className="absolute left-2 top-2">
+      <div className="absolute left-3 top-3">
         <IconButton
           type="button"
           size="sm"
