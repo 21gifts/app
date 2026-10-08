@@ -56,6 +56,33 @@ describe('isForumCardFullyVisible', () => {
     ).toBe(false);
   });
 
+  it('is false when the card has zero width', () => {
+    expect(
+      isForumCardFullyVisible(
+        { top: 100, bottom: 500, left: 16, right: 16, width: 0, height: 400 },
+        ROOT,
+      ),
+    ).toBe(false);
+  });
+
+  it('is false when the card is 2px past the left edge', () => {
+    expect(
+      isForumCardFullyVisible(
+        { top: 100, bottom: 500, left: -2, right: 384, width: 386, height: 400 },
+        ROOT,
+      ),
+    ).toBe(false);
+  });
+
+  it('is false when the card is 2px past the right edge', () => {
+    expect(
+      isForumCardFullyVisible(
+        { top: 100, bottom: 500, left: 16, right: 402, width: 386, height: 400 },
+        ROOT,
+      ),
+    ).toBe(false);
+  });
+
   it('is false when the card is clipped at the top', () => {
     expect(
       isForumCardFullyVisible(
