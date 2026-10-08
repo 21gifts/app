@@ -7579,7 +7579,7 @@ describe('ForumBoard in-app wallet pay', () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderWithLocale(cardBoard(SPARK_INVOICE));
     expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
-    expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
+    expect(screen.queryByText(/Fee ₿/)).toBeNull();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expectWalletOnly();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -7617,6 +7617,7 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     const button = await screen.findByRole('button', { name: /^Pay ₿21 and post/ });
+    expect(button.textContent).toBe('Pay ₿21 and post');
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(button);
     expect(send).toHaveBeenCalledTimes(1);
