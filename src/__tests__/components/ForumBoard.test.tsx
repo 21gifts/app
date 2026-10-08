@@ -7860,7 +7860,7 @@ describe('ForumBoard in-app wallet pay', () => {
   });
 });
 
-describe('ForumBoard writing mode', () => {
+describe('ForumBoard writer', () => {
   /** `matchMedia` answering a coarse (touch) or fine primary pointer. */
   function stubPointer(coarse: boolean): void {
     vi.stubGlobal(
@@ -7873,13 +7873,23 @@ describe('ForumBoard writing mode', () => {
     );
   }
 
-  function renderHome(props: Partial<ForumBoardProps> = {}): ReturnType<typeof renderWithLocale> & {
+  /** The forum home: a board with a writer whose state lives in the parent, as on `/welcome`. */
+  function renderHome(
+    props: Partial<ForumBoardProps> = {},
+    startOpen = false,
+  ): ReturnType<typeof renderWithLocale> & {
     rerenderHome: (next: Partial<ForumBoardProps>) => void;
+    onOpen: ReturnType<typeof vi.fn>;
+    setOpen: (open: boolean) => void;
   } {
     let setProps: (next: Partial<ForumBoardProps>) => void = () => undefined;
+    let setWriterOpen: (open: boolean) => void = () => undefined;
+    const onOpen = vi.fn();
     function Home(): ReactElement {
       const [current, setCurrent] = useState(props);
+      const [open, setOpen] = useState(startOpen);
       setProps = setCurrent;
+      setWriterOpen = setOpen;
       return (
         <AppShell mode="fill">
           <ForumBoard
@@ -7896,6 +7906,16 @@ describe('ForumBoard writing mode', () => {
             composeIntent="post"
             {...idleProps}
             {...modeProps('all')}
+            writer={{
+              open,
+              onOpen: () => {
+                onOpen();
+                setOpen(true);
+              },
+              onClose: () => {
+                setOpen(false);
+              },
+            }}
             {...current}
           />
         </AppShell>
@@ -7904,31 +7924,23 @@ describe('ForumBoard writing mode', () => {
     const view = renderWithLocale(<Home />);
     return {
       ...view,
+      onOpen,
       rerenderHome: (next) => {
         act(() => {
           setProps(next);
         });
       },
+      setOpen: (open) => {
+        act(() => {
+          setWriterOpen(open);
+        });
+      },
     };
   }
 
-  function parts(container: HTMLElement) {
-    const field = screen.getByRole('textbox', { name: 'Your message' });
-    const form = field.closest('form')!;
-    const root = form.closest('[class*="border-t"]') as HTMLElement;
-    return {
-      main: container.querySelector('main')!,
-      footer: container.querySelector('footer')!,
-      field,
-      form,
-      row: form.firstElementChild as HTMLElement,
-      root,
-      laws: screen.getByText(getCatalog('en')['forum.laws1']).closest('.rounded-2xl')!,
-      mode: screen.getByRole('combobox', { name: 'Forum view' }).parentElement!,
-      intent: screen.getByRole('group', { name: 'Compose' }),
-      feed: screen.getByText(SAMPLE.text).closest('ul')!,
-      send: screen.getByRole('button', { name: 'Post' }),
-    };
+  /** The writer layer, or null while it is closed. */
+  function writerLayer(container: HTMLElement): HTMLElement | null {
+    return container.querySelector('[data-app-body] > .contents > [data-scrollport]');
   }
 
   afterEach(() => {
@@ -7937,165 +7949,256 @@ describe('ForumBoard writing mode', () => {
 
   it('leaves every other ForumBoard as it was, even on a touch device', () => {
     stubPointer(true);
-    const { container } = renderHome();
-    const p = parts(container);
-    expect(p.laws.parentElement).toBe(p.root);
-    expect(p.mode.parentElement).toBe(p.root);
-    expect(p.intent.parentElement).toBe(p.root);
-    expect(p.feed.parentElement).toBe(p.root);
-    expect(p.root.className).toBe(
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError="empty"
+          allowAsk
+          composeIntent="post"
+          {...idleProps}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const field = screen.getByRole('textbox', { name: 'Your message' });
+    const form = field.closest('form')!;
+    const root = form.closest('[class*="border-t"]') as HTMLElement;
+    expect(root.className).toBe(
       'flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6',
     );
-    expect(p.row.className).toBe('flex items-center gap-2');
-    expect(p.field.className).not.toContain('pointer-coarse');
-    expect(p.send.className).not.toContain('pointer-coarse');
-    expect(p.form.hasAttribute('data-writing-composer')).toBe(false);
-    fireEvent.focus(p.field);
-    expect(p.main.hasAttribute('data-writing')).toBe(false);
-    expect(p.field.className).toContain('min-h-11');
-    expect(p.footer.className).toBe('flex-none px-5 pb-5 empty:hidden');
+    expect(screen.getByRole('group', { name: 'Compose' }).parentElement).toBe(root);
+    expect(form.closest('.sunday-write-field')!.parentElement).toBe(root);
+    expect((form.firstElementChild as HTMLElement).className).toBe('flex items-center gap-2');
+    expect(field.className).not.toContain('pointer-coarse');
+    expect(screen.getByRole('button', { name: 'Post' }).className).not.toContain('pointer-coarse');
+    expect(form.hasAttribute('data-writing-composer')).toBe(false);
+    expect(document.querySelector('[data-writing-composer]')).toBeNull();
+    expect(root.contains(screen.getByRole('alert'))).toBe(true);
+    expect(screen.queryByRole('heading', { name: 'Send a post' })).toBeNull();
   });
 
-  it('on a fine pointer gives the forum home composer no box and no writing mode', () => {
-    stubPointer(false);
-    const { container } = renderHome({ writingMode: true });
-    const p = parts(container);
-    expect((p.laws.parentElement as HTMLElement).className).toBe('contents');
-    expect((p.mode.parentElement as HTMLElement).className).toBe('contents');
-    expect((p.intent.parentElement as HTMLElement).className).toBe('contents');
-    expect((p.feed.parentElement as HTMLElement).className).toBe('contents');
-    // The phone shape is a touch-only media variant: no effect on a fine pointer.
-    expect(p.row.className).toBe('flex items-center gap-2 pointer-coarse:flex-wrap');
-    expect(p.field.className).toContain('pointer-coarse:order-first pointer-coarse:basis-full');
-    expect(p.send.className).toContain('pointer-coarse:ml-auto');
-    fireEvent.focus(p.field);
-    expect(p.main.hasAttribute('data-writing')).toBe(false);
-    expect(p.form.hasAttribute('data-writing-composer')).toBe(false);
-    expect(p.field.className).toContain('min-h-11');
+  it('shows no composer, Post / Ask pill or composer error on the page while the writer is closed', () => {
+    const { container } = renderHome({ formError: 'empty' });
+    expect(screen.queryByRole('textbox', { name: 'Your message' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Compose' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(writerLayer(container)).toBeNull();
+    // The laws hint, the view filter and the feed stay where they were.
+    expect(screen.getByText(getCatalog('en')['forum.laws1'])).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Forum view' })).toBeTruthy();
+    expect(screen.getByText(SAMPLE.text)).toBeTruthy();
   });
 
-  it('on a touch device folds the parts above, hides the feed, grows the field, and comes back on blur', () => {
+  it('opens over the frame body with the title, the pill and the composer, and focuses the field', () => {
     stubPointer(true);
-    const { container } = renderHome({ writingMode: true, error: true });
-    const p = parts(container);
-    expect(p.main.getAttribute('data-writing')).toBe('ready');
-    expect(p.form.hasAttribute('data-writing-composer')).toBe(true);
-    for (const part of [p.laws, p.mode, p.intent]) {
-      expect((part.parentElement as HTMLElement).className).toBe('writing-fold');
-    }
-    const feed = p.feed.parentElement as HTMLElement;
-    expect(feed.className).toContain('transition-opacity duration-250');
-    expect(within(feed).getByRole('button', { name: 'Try again' })).toBeTruthy();
-    expect(p.root.className).toContain('border-app-border pt-6 transition-[padding,border-color]');
-    expect(p.footer.className).toContain('writing-fold');
-
-    fireEvent.focus(p.field);
-    expect(p.main.getAttribute('data-writing')).toBe('on');
-    for (const part of [p.laws, p.mode, p.intent]) {
-      expect((part.parentElement as HTMLElement).className).toBe('writing-folded -mt-4');
-    }
-    expect(feed.className).toContain('invisible');
-    expect(feed.className).toContain('max-h-0');
-    expect(feed.className).not.toContain('transition');
-    expect(p.root.className).toContain('border-transparent pt-0');
-    expect(p.field.className).toContain('min-h-26');
-    expect(p.footer.className).toContain('writing-folded');
-
-    fireEvent.blur(p.field);
-    expect(p.main.getAttribute('data-writing')).toBe('ready');
-    expect((p.laws.parentElement as HTMLElement).className).toBe('writing-fold');
-    expect(feed.className).not.toContain('invisible');
-    expect(p.field.className).toContain('min-h-11');
-  });
-
-  it('keeps the field focused on a press of send while writing', () => {
-    stubPointer(true);
-    const { container } = renderHome({ writingMode: true });
-    const p = parts(container);
-    expect(fireEvent.pointerDown(p.send)).toBe(true);
-    fireEvent.focus(p.field);
-    expect(fireEvent.pointerDown(p.send)).toBe(false);
-    expect(
-      fireEvent.pointerDown(screen.getByRole('button', { name: 'Add a photo or video' })),
-    ).toBe(false);
-  });
-
-  it('ends writing mode while a post is sending', () => {
-    stubPointer(true);
-    const view = renderHome({ writingMode: true });
-    const p = parts(view.container);
-    fireEvent.focus(p.field);
-    expect(p.main.getAttribute('data-writing')).toBe('on');
-    view.rerenderHome({ writingMode: true, posting: true });
-    expect(p.main.getAttribute('data-writing')).toBe('ready');
-  });
-
-  it('hides the New posts and moderator pills while writing', () => {
-    stubPointer(true);
-    const { container } = renderHome({
-      writingMode: true,
-      newPostsAvailable: true,
-      moderatorAppointedAvailable: true,
-    });
-    const pills = [
-      screen.getByRole('button', { name: 'New posts' }).parentElement!,
-      screen.getByRole('button', { name: getCatalog('en')['forum.moderatorAppointed'] })
-        .parentElement!,
-    ];
-    for (const pill of pills) expect(pill.className).toContain('transition-opacity duration-250');
-    const { field } = parts(container);
-    fireEvent.focus(field);
-    for (const pill of pills)
-      expect(pill.className).toContain('invisible -mt-4 max-h-0 overflow-clip opacity-0');
-    fireEvent.blur(field);
-    for (const pill of pills) expect(pill.className).not.toContain('invisible');
-  });
-
-  it('leaves the pills as they were without writing mode', () => {
-    stubPointer(true);
-    renderHome({ newPostsAvailable: true });
-    expect(screen.getByRole('button', { name: 'New posts' }).parentElement!.className).toBe(
-      'pointer-events-none sticky top-2 z-30 mx-auto w-fit',
+    const view = renderHome({ formError: 'empty' });
+    view.setOpen(true);
+    const layer = writerLayer(view.container)!;
+    expect(layer).not.toBeNull();
+    expect(layer.className).toBe(
+      "min-h-0 min-w-0 absolute inset-0 z-30 rounded-b-3xl bg-app-card [html[data-menu-sheet='1']_&]:hidden",
     );
+    const inner = layer.firstElementChild as HTMLElement;
+    expect(inner.hasAttribute('data-writing-composer')).toBe(true);
+    expect(inner.className).toBe('flex flex-col gap-4 px-5 pt-6 pb-6');
+    const heading = within(layer).getByRole('heading', { name: 'Send a post' });
+    expect(heading.className).toBe('text-center text-base font-semibold text-app-fg');
+    const pill = within(layer).getByRole('group', { name: 'Compose' });
+    const field = within(layer).getByRole('textbox', { name: 'Your message' });
+    expect(heading.compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(pill.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.activeElement).toBe(field);
+    // Phone shape on a touch device: field on top, photo and place left, send right.
+    expect(field.className).toContain('pointer-coarse:order-first pointer-coarse:basis-full');
+    expect(field.closest('form')!.firstElementChild!.className).toBe(
+      'flex items-center gap-2 pointer-coarse:flex-wrap',
+    );
+    expect(within(layer).getByRole('button', { name: 'Post' }).className).toContain(
+      'pointer-coarse:ml-auto',
+    );
+    expect(within(layer).getByRole('alert').textContent).toBe(getCatalog('en')['forum.errorEmpty']);
+    // The feed stays on the page under the writer.
+    expect(layer.contains(screen.getByText(SAMPLE.text))).toBe(false);
+    expect(document.querySelector('[data-scroll-page]')!.contains(layer)).toBe(false);
   });
 
-  it('has no writing mode while the Post composer is not on the page', () => {
-    stubPointer(true);
-    const ask = renderHome({ writingMode: true, composeIntent: 'ask' });
-    expect(ask.container.querySelector('main')!.hasAttribute('data-writing')).toBe(false);
-    expect(
-      (screen.getByRole('group', { name: 'Compose' }).parentElement as HTMLElement).className,
-    ).toBe('contents');
-    ask.unmount();
-    const signedOut = renderHome({ writingMode: true, readOnly: true });
-    expect(signedOut.container.querySelector('main')!.hasAttribute('data-writing')).toBe(false);
+  it('titles the writer Ask for money and shows the Ask wizard when Ask is chosen', () => {
+    const view = renderHome({ composeIntent: 'ask' }, true);
+    const layer = writerLayer(view.container)!;
+    expect(within(layer).getByRole('heading', { name: 'Ask for money' })).toBeTruthy();
+    expect(within(layer).getByText('How much?')).toBeTruthy();
+    expect(within(layer).queryByRole('textbox', { name: 'Your message' })).toBeNull();
   });
 
-  it('ends writing mode when the composer leaves the page while focused', () => {
-    stubPointer(true);
-    const view = renderHome({ writingMode: true });
-    const main = view.container.querySelector('main')!;
-    fireEvent.focus(parts(view.container).field);
-    expect(main.getAttribute('data-writing')).toBe('on');
-    view.rerenderHome({ writingMode: true, composerHidden: true });
-    expect(main.hasAttribute('data-writing')).toBe(false);
-    view.rerenderHome({ writingMode: true });
-    expect(main.getAttribute('data-writing')).toBe('ready');
+  it('keeps the posting-fee pay slot in the writer and a loose pay sheet on the page', () => {
+    const composer = renderHome(
+      {
+        payMessageId: 'fee-note',
+        payHost: 'composer',
+        payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+        payWaiting: true,
+      },
+      true,
+    );
+    expect(within(writerLayer(composer.container)!).getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    composer.unmount();
+    const loose = renderHome(
+      {
+        payMessageId: 'elsewhere',
+        payInvoice: { messageId: 'elsewhere', pr: 'lnbc1', amountSats: 1 },
+        payWaiting: true,
+      },
+      true,
+    );
+    const sentence = screen.getByText(WALLET_UNAVAILABLE);
+    expect(writerLayer(loose.container)!.contains(sentence)).toBe(false);
+    expect(document.querySelector('[data-scroll-page]')!.contains(sentence)).toBe(true);
   });
 
-  it('a reply field on the forum home starts no writing mode', () => {
-    stubPointer(true);
-    const { container } = renderHome({
-      writingMode: true,
-      expandedId: SAMPLE.id,
-      replies: [],
+  it('keeps a composer pay slot opened with the writer closed on the page, also once the writer opens', () => {
+    const view = renderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+      payWaiting: true,
     });
-    const reply = screen
-      .getAllByRole('textbox')
-      .find((node) => node.getAttribute('aria-label') !== 'Your message')!;
-    expect(reply).toBeTruthy();
-    fireEvent.focus(reply);
-    expect(container.querySelector('main')!.getAttribute('data-writing')).toBe('ready');
-    expect(reply.closest('[data-writing-composer]')).toBeNull();
+    const page = document.querySelector('[data-scroll-page]')!;
+    const sheet = screen.getByText(WALLET_UNAVAILABLE);
+    expect(page.contains(sheet)).toBe(true);
+    view.setOpen(true);
+    expect(screen.getAllByText(WALLET_UNAVAILABLE)).toHaveLength(1);
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBe(sheet);
+    expect(page.contains(sheet)).toBe(true);
+  });
+
+  it('keeps a composer pay slot opened in the writer there, waiting while the writer is closed', () => {
+    const view = renderHome({}, true);
+    view.rerenderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+      payWaiting: true,
+    });
+    expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
+    view.setOpen(false);
+    expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
+    view.setOpen(true);
+    expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
+    // A second fee (a reaction's) while the first waits in the closed writer is placed anew.
+    view.setOpen(false);
+    view.rerenderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc2', amountSats: 1 },
+      payWaiting: true,
+    });
+    expect(
+      document.querySelector('[data-scroll-page]')!.contains(screen.getByText(WALLET_UNAVAILABLE)),
+    ).toBe(true);
+    view.setOpen(true);
+    // Once the slot is gone, the next one opens where the writer is at that moment.
+    view.rerenderHome({ payHost: null, payInvoice: null, payMessageId: null });
+    view.setOpen(false);
+    view.rerenderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+      payWaiting: true,
+    });
+    expect(
+      document.querySelector('[data-scroll-page]')!.contains(screen.getByText(WALLET_UNAVAILABLE)),
+    ).toBe(true);
+  });
+
+  it('takes a compose request on an open writer without a text field (Ask for money)', () => {
+    const view = renderHome({ composeIntent: 'ask' }, true);
+    act(() => {
+      requestForumCompose();
+    });
+    expect(view.onOpen).not.toHaveBeenCalled();
+    expect(consumePendingForumCompose()).toBe(false);
+  });
+
+  it('opens the closed writer on a compose request and focuses its field', () => {
+    const view = renderHome();
+    act(() => {
+      requestForumCompose();
+    });
+    expect(view.onOpen).toHaveBeenCalledTimes(1);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Your message' }));
+  });
+
+  it('focuses the open writer on a compose request without moving the page', () => {
+    const view = renderHome({}, true);
+    const port = document.querySelector('[data-scroll-page]')!.parentElement as HTMLElement;
+    let top = 40;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    const field = screen.getByRole('textbox', { name: 'Your message' });
+    field.blur();
+    act(() => {
+      requestForumCompose();
+    });
+    expect(view.onOpen).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(field);
+    expect(top).toBe(40);
+  });
+
+  it('opens the writer for a compose request left pending before it mounted', () => {
+    requestForumCompose();
+    const view = renderHome();
+    expect(view.onOpen).toHaveBeenCalledTimes(1);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Your message' }));
+  });
+
+  it('takes a compose request left pending for a writer that is already open at mount', () => {
+    requestForumCompose();
+    const view = renderHome({}, true);
+    expect(view.onOpen).toHaveBeenCalledTimes(1);
+    expect(consumePendingForumCompose()).toBe(false);
+    expect(screen.getByRole('textbox', { name: 'Your message' })).toBeTruthy();
+  });
+
+  it('does not pull to refresh while the writer is open', () => {
+    const onRefresh = vi.fn();
+    const view = renderHome({ onRefresh }, true);
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).not.toHaveBeenCalled();
+    view.setOpen(false);
+    fireEvent.touchStart(window, { touches: [{ clientY: 100 }] });
+    fireEvent.touchMove(window, { touches: [{ clientY: 180 }] });
+    fireEvent.touchEnd(window);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes on the owner and keeps nothing of the writer on the page', () => {
+    const view = renderHome({}, true);
+    expect(writerLayer(view.container)).not.toBeNull();
+    view.setOpen(false);
+    expect(writerLayer(view.container)).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Your message' })).toBeNull();
+    view.rerenderHome({ draft: 'Kept draft' });
+    view.setOpen(true);
+    expect(screen.getByRole('textbox', { name: 'Your message' })).toHaveProperty(
+      'value',
+      'Kept draft',
+    );
   });
 });

@@ -14,8 +14,11 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   children: ReactNode;
   /** Filled, bordered, or bare. Default `secondary`. */
   variant?: IconButtonVariant;
-  /** Painted size. Default `md`. `sm` keeps 24px paint with a 44px hit slop. */
-  size?: 'sm' | 'md' | 'lg';
+  /**
+   * Painted size. Default `md`. `sm` keeps 24px paint with a 44px hit slop.
+   * `xl` (56px) is the floating **+** on the forum home.
+   */
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   /** App tokens or marketing ink. Default `app`. */
   tone?: IconButtonTone;
 }
@@ -37,6 +40,7 @@ const SIZE_CLASS: Record<NonNullable<IconButtonProps['size']>, string> = {
   sm: "relative isolate h-6 w-6 before:absolute before:content-[''] before:block before:-inset-2.5 before:min-h-11 before:min-w-11 before:rounded-full",
   md: 'h-11 w-11',
   lg: 'h-12 w-12',
+  xl: 'h-14 w-14',
 };
 
 /**

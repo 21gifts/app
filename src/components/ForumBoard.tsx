@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { flushSync } from 'react-dom';
 import {
   useEffect,
   useLayoutEffect,
@@ -34,8 +35,7 @@ import {
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
-import { useAppShellScroller } from '@/components/AppShell';
-import { useComposerWriting } from '@/hooks/useComposerWriting';
+import { AppShellOverlay, useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
   type ForumAskCadence,
@@ -56,6 +56,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
+import { Scrollport } from '@/components/ui/Scrollport';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type AmountUnit,
@@ -163,6 +164,16 @@ function forumTaggedRole(role: string): ForumTaggedRole | null {
 }
 
 const COPY_RESET_MS = 1200;
+
+/** The forum home's writer: whether it is open, and how it opens and closes. */
+export interface ForumWriter {
+  /** True while the writer covers the frame under the header row. */
+  open: boolean;
+  /** Opens the writer (the **+** button, or a compose request while it is closed). */
+  onOpen: () => void;
+  /** Closes the writer; drafts stay. `ForumLoader` calls it after a successful post. */
+  onClose: () => void;
+}
 
 /** Props for {@link ForumBoard}. */
 export interface ForumBoardProps {
@@ -360,10 +371,12 @@ export interface ForumBoardProps {
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
   /**
-   * Forum home only: on a touch device the Post composer has its phone shape
-   * and a writing mode (`useComposerWriting`). Default false: no change.
+   * Forum home only: the composer lives in the writer instead of on the page.
+   * While `open`, the writer covers the frame under the header row; closed,
+   * the page shows no composer. Omit for the inline composer of every other
+   * board.
    */
-  writingMode?: boolean;
+  writer?: ForumWriter;
   /** Signed-out living room: no composer, reaction form, pay, or delete. Mode stays. */
   readOnly?: boolean;
   /** Remove a moderated post or nested reply after a successful server deletion. */
@@ -632,14 +645,24 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * to the empty-feed line when no row is loaded, so a page whose notes were all
  * dropped still leads on to the next page.
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
- * With `writingMode` (the forum home) on a touch device, the Post composer
- * shows its text field on top at full width and photo, place and send on one
- * row below it. While that field has the focus (`useComposerWriting`), the
- * laws hint, the mode filter, the Post / Ask pill and the divider fold away,
- * the feed and its New posts / moderator pills hide at once (and fade back
- * in afterwards), and the field grows;
- * a press on the composer's own buttons keeps the field focused. The form is
- * marked `data-writing-composer` for {@link useAppHeight}.
+ * With `writer` (the forum home) the page shows no composer. While the writer
+ * is open, an {@link AppShellOverlay} layer covers the frame under the header
+ * row (frame background, rounded bottom corners, its own scrollport): a
+ * centred title (`forum.composePost` or `forum.composeAsk`, per the switch),
+ * the Post / Ask pill, then the composer as on every other board (or the Ask
+ * wizard), the composer pay slot (`payHost` `composer`: the posting fee, or the
+ * 1-sat fee of a text reaction), and the composer's errors. That pay slot stays
+ * where it opened: in the writer when it opened there (a posting fee; it waits
+ * there while the writer is closed), on the page above the feed when it opened
+ * with the writer closed (a text reaction's fee), so closing or opening the
+ * writer never moves or remounts it. Opening it focuses the text field in the same task, so a tap
+ * brings up the keyboard. A compose request opens it first (or focuses its
+ * field when it is already open). On a touch device its Post composer shows
+ * the text field on top at full width and photo, place and send on one row
+ * below it. The writer is marked `data-writing-composer` for
+ * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
+ * Menu is open as a sheet (`html[data-menu-sheet='1']`) the writer steps aside,
+ * so the sheet in the page scrollport shows; it comes back when the Menu closes.
  *
  * @param props - Messages payload plus loading/error/composer (including
  * `askDraft` / compose intent / Ask wizard) /pay/mode/photo/video/laws/thread/permalink/truncate state.
@@ -729,7 +752,7 @@ export function ForumBoard({
   replyPosting,
   replyFormError,
   composerHidden = false,
-  writingMode = false,
+  writer,
   readOnly = false,
   onDeleted,
   permalinkTargetId = null,
@@ -756,11 +779,19 @@ export function ForumBoard({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
-  const composerFormRef = useRef<HTMLFormElement>(null);
-  // Only while the Post composer itself is on the page (not signed out, not Ask, not shops).
   const postComposerShown =
     !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
-  const writing = useComposerWriting(writingMode && postComposerShown, !posting, composerFormRef);
+  const writerOpen = writer !== undefined && writer.open;
+  const writerRef = useRef(writer);
+  writerRef.current = writer;
+  const writerOpenRef = useRef(writerOpen);
+  writerOpenRef.current = writerOpen;
+  // In the same task as the tap that opened the writer, so the keyboard comes up.
+  useLayoutEffect(() => {
+    if (writerOpen) {
+      composerRef.current?.focus({ preventScroll: true });
+    }
+  }, [writerOpen]);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
@@ -854,7 +885,7 @@ export function ForumBoard({
     };
 
     const onTouchStart = (event: TouchEvent): void => {
-      if (refreshingRef.current || loadingRef.current) {
+      if (refreshingRef.current || loadingRef.current || writerOpenRef.current) {
         return;
       }
       if (pageScrollTop() >= 8) {
@@ -941,18 +972,35 @@ export function ForumBoard({
       }
       el.focus({ preventScroll: true });
       const port = scrollerRef.current;
-      if (port !== null) {
+      if (port !== null && port.contains(el)) {
         revealInScrollport(port, el);
       }
       return true;
     };
     const onCompose = (): void => {
+      const home = writerRef.current;
+      if (home !== undefined) {
+        if (writerOpenRef.current) {
+          // Already open (on Ask for money there is no text field to focus).
+          tryFocusComposer();
+        } else {
+          // Synchronously, so the writer's field takes the focus inside the request's tap.
+          flushSync(home.onOpen);
+        }
+        consumePendingForumCompose();
+        return;
+      }
       if (tryFocusComposer()) {
         consumePendingForumCompose();
       }
     };
     window.addEventListener(FORUM_COMPOSE_EVENT, onCompose);
-    if (composerRef.current !== null && consumePendingForumCompose()) {
+    const home = writerRef.current;
+    if (home !== undefined) {
+      if (consumePendingForumCompose()) {
+        home.onOpen();
+      }
+    } else if (composerRef.current !== null && consumePendingForumCompose()) {
       tryFocusComposer();
     }
     return () => {
@@ -1873,161 +1921,67 @@ export function ForumBoard({
   }
 
   const showRefreshStatus = refreshing === true || pullArmed;
-  // Writing mode (forum home, touch): parts above the composer fold away. Off the
-  // forum home there is no wrapper; on a fine pointer the wrapper is no box.
-  const foldPart = (part: ReactElement): ReactElement =>
-    writingMode ? (
-      <div
-        className={
-          !writing.touch ? 'contents' : writing.writing ? 'writing-folded -mt-4' : 'writing-fold'
-        }
-      >
-        {part}
-      </div>
-    ) : (
-      part
+  const phoneShape =
+    writer === undefined ? '' : ' pointer-coarse:order-first pointer-coarse:basis-full';
+  const composerPay = payInvoice !== null && payHost === 'composer';
+  // The forum home keeps an open composer pay slot where it opened (in the writer for a posting
+  // fee, on the page for a text reaction's fee), so closing the writer never moves or remounts it.
+  // Keyed to the invoice itself: a second fee (a reaction's while a posting fee waits) is placed anew.
+  const composerInvoice = composerPay ? payInvoice.pr : null;
+  const [payPlace, setPayPlace] = useState<{ invoice: string; inWriter: boolean } | null>(null);
+  if (composerInvoice === null ? payPlace !== null : payPlace?.invoice !== composerInvoice) {
+    setPayPlace(
+      composerInvoice === null ? null : { invoice: composerInvoice, inWriter: writerOpen },
     );
-  const rootEdge = !writing.touch
-    ? 'border-app-border pt-6'
-    : writing.writing
-      ? 'border-transparent pt-0 transition-[padding,border-color] duration-250 ease-fold'
-      : 'border-app-border pt-6 transition-[padding,border-color] duration-250 ease-fold';
-  const feedClass = !writing.touch
-    ? 'contents'
-    : writing.writing
-      ? 'invisible flex max-h-0 min-w-0 flex-col gap-4 overflow-clip opacity-0'
-      : 'flex min-w-0 flex-col gap-4 transition-opacity duration-250 ease-fold';
-  // The feed's sticky pills fold away with the feed while writing (no box left above the
-  // composer) and fade back in with it.
-  const pillsHidden = !writing.touch
-    ? ''
-    : writing.writing
-      ? ' invisible -mt-4 max-h-0 overflow-clip opacity-0'
-      : ' transition-opacity duration-250 ease-fold';
-  const phoneShape = writingMode ? ' pointer-coarse:order-first pointer-coarse:basis-full' : '';
-  const composerTextClass = writing.writing
-    ? 'min-h-26 transition-[color,background-color,border-color,min-height] duration-250 ease-fold'
-    : 'min-h-11 transition';
-
-  return (
-    <div
-      ref={rootRef}
-      className={`flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t ${rootEdge}`}
-    >
-      {moderatorAppointedAvailable ? (
-        <div className={`pointer-events-none sticky top-2 z-30 mx-auto w-fit${pillsHidden}`}>
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="pointer-events-auto shadow-lg"
-            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
-            onClick={onShowModeratorAppointed}
-          >
-            {t('forum.moderatorAppointed')}
-          </Button>
-        </div>
-      ) : null}
-      {newPostsAvailable ? (
-        <div
-          className={`${
-            moderatorAppointedAvailable
-              ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
-              : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
-          }${pillsHidden}`}
-        >
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="pointer-events-auto shadow-lg"
-            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
-            onClick={onShowNewPosts}
-          >
-            {t('forum.newPosts')}
-          </Button>
-        </div>
-      ) : null}
-      {showRefreshStatus ? (
-        <div
-          role="status"
-          aria-live="polite"
-          aria-label={t('forum.refreshing')}
-          className="sr-only"
+  }
+  const payInWriter =
+    composerInvoice !== null &&
+    (payPlace !== null && payPlace.invoice === composerInvoice ? payPlace.inWriter : writerOpen);
+  const loosePay =
+    payInvoice !== null &&
+    payHost !== 'composer' &&
+    payHost !== 'card' &&
+    payMessageId !== null &&
+    !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
+    !(replies !== null && replies.some((row) => row.id === payMessageId));
+  const paySheet =
+    payInvoice === null ? null : (
+      <SundayWritingGate notice="zap">
+        <ForumPaySheet
+          messageId={payInvoice.messageId}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          payWaiting={payWaiting}
+          onPayDraftChange={onPayDraftChange}
+          {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+          onPaySubmit={onPaySubmit}
+          onPayCancel={onPayCancel}
+          rateDay={rateDay}
+          onInteract={(event) => {
+            event.stopPropagation();
+          }}
+        />
+      </SundayWritingGate>
+    );
+  const composeParts = (
+    <>
+      {!hideCompose && allowAsk ? (
+        <SegmentedControl
+          value={composeIntent}
+          options={[
+            { value: 'post', label: t('forum.composePost') },
+            { value: 'ask', label: t('forum.composeAsk') },
+          ]}
+          onChange={(next) => {
+            onComposeIntentChange?.(next);
+          }}
+          ariaLabel={t('forum.composeIntentLabel')}
+          tone="neutral"
+          className="!grid grid-cols-2 !rounded-2xl"
         />
       ) : null}
-      {lawsVisible
-        ? foldPart(
-            <div
-              data-laws-card=""
-              className="relative rounded-2xl border border-app-border bg-app-card-muted px-12 py-5"
-            >
-              <div className="absolute right-3 top-3">
-                <IconButton
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  aria-label={t('forum.lawsDismiss')}
-                  onClick={onDismissLaws}
-                >
-                  <X aria-hidden="true" className="h-4 w-4" />
-                </IconButton>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
-                <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
-                <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
-                  <Link href="/rules" className="text-app-fg underline underline-offset-2">
-                    {t('forum.rulesLink')}
-                  </Link>
-                  <Link href="/contact" className="text-app-fg underline underline-offset-2">
-                    {t('forum.contactLink')}
-                  </Link>
-                </nav>
-              </div>
-            </div>,
-          )
-        : null}
-
-      {modeSelector && !composerHidden
-        ? foldPart(
-            <ForumModeSelect
-              value={mode}
-              options={FORUM_FEED_MODES.map((next) => {
-                const label = t(MODE_LABEL_KEY[next]);
-                if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
-                  return { value: next, label };
-                }
-                return {
-                  value: next,
-                  label,
-                  badge: unpaidNewCount,
-                  badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
-                };
-              })}
-              onChange={onModeChange}
-              ariaLabel={t('forum.modeLabel')}
-            />,
-          )
-        : null}
-
-      {!hideCompose && allowAsk
-        ? foldPart(
-            <SegmentedControl
-              value={composeIntent}
-              options={[
-                { value: 'post', label: t('forum.composePost') },
-                { value: 'ask', label: t('forum.composeAsk') },
-              ]}
-              onChange={(next) => {
-                onComposeIntentChange?.(next);
-              }}
-              ariaLabel={t('forum.composeIntentLabel')}
-              tone="neutral"
-              className="!grid grid-cols-2 !rounded-2xl"
-            />,
-          )
-        : null}
 
       {!hideCompose && allowAsk && composeIntent === 'ask' ? (
         <SundayWritingGate>
@@ -2084,18 +2038,10 @@ export function ForumBoard({
       ) : null}
       {postComposerShown ? (
         <SundayWritingGate>
-          <form
-            ref={composerFormRef}
-            onSubmit={handleSubmit}
-            onFocus={writing.onComposerFocus}
-            onBlur={writing.onComposerBlur}
-            onPointerDown={writing.onComposerPointerDown}
-            {...(writing.touch ? { 'data-writing-composer': '' } : {})}
-            className="flex flex-col gap-2"
-          >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
             <div
               className={
-                writingMode
+                writer !== undefined
                   ? 'flex items-center gap-2 pointer-coarse:flex-wrap'
                   : 'flex items-center gap-2'
               }
@@ -2134,7 +2080,7 @@ export function ForumBoard({
                 rows={2}
                 disabled={posting}
                 wrapperClassName={`relative min-w-0 flex-1${phoneShape}`}
-                className={`${composerTextClass} min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50${phoneShape}`}
+                className={`min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50${phoneShape}`}
               />
               <IconButton
                 type="submit"
@@ -2142,7 +2088,7 @@ export function ForumBoard({
                 variant="primary"
                 disabled={posting}
                 aria-label={t('forum.post')}
-                {...(writingMode ? { className: 'pointer-coarse:ml-auto' } : {})}
+                {...(writer === undefined ? {} : { className: 'pointer-coarse:ml-auto' })}
               >
                 {posting ? (
                   <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
@@ -2226,31 +2172,7 @@ export function ForumBoard({
         </SundayWritingGate>
       ) : null}
 
-      {payInvoice !== null &&
-      (payHost === 'composer' ||
-        (payHost !== 'card' &&
-          payMessageId !== null &&
-          !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
-          !(replies !== null && replies.some((row) => row.id === payMessageId)))) ? (
-        <SundayWritingGate notice="zap">
-          <ForumPaySheet
-            messageId={payInvoice.messageId}
-            payDraft={payDraft}
-            payBusy={payBusy}
-            payError={payError}
-            payInvoice={payInvoice}
-            payWaiting={payWaiting}
-            onPayDraftChange={onPayDraftChange}
-            {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-            onPaySubmit={onPaySubmit}
-            onPayCancel={onPayCancel}
-            rateDay={rateDay}
-            onInteract={(event) => {
-              event.stopPropagation();
-            }}
-          />
-        </SundayWritingGate>
-      ) : null}
+      {(writer === undefined ? composerPay || loosePay : payInWriter) ? paySheet : null}
 
       <div className="sunday-write-field">
         {!hideCompose && formError === 'empty' ? (
@@ -2294,18 +2216,128 @@ export function ForumBoard({
           </p>
         ) : null}
       </div>
+    </>
+  );
+  const composeSection =
+    writer === undefined ? (
+      composeParts
+    ) : writerOpen ? (
+      <AppShellOverlay>
+        <Scrollport className="absolute inset-0 z-30 rounded-b-3xl bg-app-card [html[data-menu-sheet='1']_&]:hidden">
+          <div data-writing-composer="" className="flex flex-col gap-4 px-5 pt-6 pb-6">
+            <h2 className="text-center text-base font-semibold text-app-fg">
+              {composeIntent === 'ask' ? t('forum.composeAsk') : t('forum.composePost')}
+            </h2>
+            {composeParts}
+          </div>
+        </Scrollport>
+      </AppShellOverlay>
+    ) : null;
 
-      {writingMode ? (
-        <div className={feedClass}>
-          {middle}
-          {error && messages !== null ? errorBlock : null}
+  return (
+    <div
+      ref={rootRef}
+      className="flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
+    >
+      {moderatorAppointedAvailable ? (
+        <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowModeratorAppointed}
+          >
+            {t('forum.moderatorAppointed')}
+          </Button>
         </div>
-      ) : (
-        <>
-          {middle}
-          {error && messages !== null ? errorBlock : null}
-        </>
-      )}
+      ) : null}
+      {newPostsAvailable ? (
+        <div
+          className={
+            moderatorAppointedAvailable
+              ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
+              : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
+          }
+        >
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowNewPosts}
+          >
+            {t('forum.newPosts')}
+          </Button>
+        </div>
+      ) : null}
+      {showRefreshStatus ? (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={t('forum.refreshing')}
+          className="sr-only"
+        />
+      ) : null}
+      {lawsVisible ? (
+        <div
+          data-laws-card=""
+          className="relative rounded-2xl border border-app-border bg-app-card-muted px-12 py-5"
+        >
+          <div className="absolute right-3 top-3">
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t('forum.lawsDismiss')}
+              onClick={onDismissLaws}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
+            <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
+            <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
+              <Link href="/rules" className="text-app-fg underline underline-offset-2">
+                {t('forum.rulesLink')}
+              </Link>
+              <Link href="/contact" className="text-app-fg underline underline-offset-2">
+                {t('forum.contactLink')}
+              </Link>
+            </nav>
+          </div>
+        </div>
+      ) : null}
+
+      {modeSelector && !composerHidden ? (
+        <ForumModeSelect
+          value={mode}
+          options={FORUM_FEED_MODES.map((next) => {
+            const label = t(MODE_LABEL_KEY[next]);
+            if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
+              return { value: next, label };
+            }
+            return {
+              value: next,
+              label,
+              badge: unpaidNewCount,
+              badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
+            };
+          })}
+          onChange={onModeChange}
+          ariaLabel={t('forum.modeLabel')}
+        />
+      ) : null}
+
+      {composeSection}
+
+      {writer !== undefined && (loosePay || (composerPay && !payInWriter)) ? paySheet : null}
+
+      {middle}
+      {error && messages !== null ? errorBlock : null}
     </div>
   );
 }

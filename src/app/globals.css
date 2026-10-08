@@ -31,38 +31,8 @@
   --color-app-notice-fg: #171717;
   --color-app-qr-bg: #ffffff;
   --color-app-qr-fg: #000000;
-  --ease-fold: cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-/* Writing mode of the forum home composer on touch devices: a part that can
-   fold away (`writing-fold`) and the same part folded (`writing-folded`).
-   One 250 ms ease each way; visibility switches only after the fade on the
-   way out, and at once on the way back. */
-@utility writing-fold {
-  max-height: 32rem;
-  transition:
-    max-height 250ms var(--ease-fold),
-    margin 250ms var(--ease-fold),
-    padding 250ms var(--ease-fold),
-    opacity 250ms var(--ease-fold),
-    visibility 0s linear 0s;
-}
-
-@utility writing-folded {
-  max-height: 0;
-  overflow: clip;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition:
-    max-height 250ms var(--ease-fold),
-    margin 250ms var(--ease-fold),
-    padding 250ms var(--ease-fold),
-    opacity 250ms var(--ease-fold),
-    visibility 0s linear 250ms;
-  @media (prefers-reduced-motion: reduce) {
-    transition-delay: 0s;
-  }
+  /* Receive / Send settling to full or slim after the scroll stopped. */
+  --ease-glide: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 html {

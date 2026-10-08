@@ -742,6 +742,17 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
 }
 
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  // Receive / Send settle at full or slim 140 ms after a scroll; never capture in between.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const body = document.querySelector('[data-app-body]');
+        const value =
+          body instanceof HTMLElement ? body.style.getPropertyValue('--footer-collapse') : '';
+        return value === '' || value === '0' || value === '1';
+      }),
+    )
+    .toBe(true);
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
@@ -758,6 +769,12 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
     maxDiffPixelRatio: 0,
     ...SHOT,
   });
+}
+
+/** Opens the forum home writer from the floating + (the composer is not on the page). */
+async function openHomeWriter(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Write a post' }).click();
+  await expect(page.locator('[data-writing-composer]')).toBeVisible();
 }
 
 /** Choose @ada from the open People list and leave that handle in the field. */
@@ -4117,63 +4134,82 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-wallet-buttons');
   });
 
-  test.describe('welcome on a touch device', () => {
+  test('welcome wallet-buttons-slim', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    // A feed long enough to scroll past the slim range.
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: Array.from({ length: 8 }, (_, index) => ({
+            id: `slim-${index + 1}`,
+            name: 'Carol',
+            text: `Thank you for gift number ${index + 1}.`,
+            createdAt: `2026-08-28T1${index}:00:00.000Z`,
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          })),
+        }),
+      });
+    });
+    await page.goto('/welcome?visual=balance-ready');
+    await expect(page.getByText('Thank you for gift number 1.')).toBeVisible();
+    const port = page.locator('[data-scrollport]:has(> [data-scroll-page])');
+    await port.evaluate((node) => {
+      node.scrollTop = 160;
+    });
+    await expect
+      .poll(async () => (await page.getByRole('button', { name: 'Receive' }).boundingBox())!.height)
+      .toBe(36);
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-wallet-buttons-slim');
+  });
+
+  test.describe('welcome writer on a touch device', () => {
     test.use({ hasTouch: true });
 
-    test('welcome composer-touch', async ({ page }) => {
+    /** Opens the writer from the + with the field focused. */
+    async function openWriter(page: Page): Promise<void> {
       await seedWelcomeWallet(page);
       await page.goto('/welcome?visual=balance-ready');
-      await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
       await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+      await page.getByRole('button', { name: 'Write a post' }).tap();
+      await expect(page.getByLabel('Your message')).toBeFocused();
+    }
+
+    test('welcome writer', async ({ page }) => {
+      await openWriter(page);
+      await expect(page.getByRole('heading', { name: 'Send a post' })).toBeVisible();
       const field = (await page.getByLabel('Your message').boundingBox())!;
       const post = (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!;
       expect(post.y).toBeGreaterThanOrEqual(field.y + field.height);
-      await expect(page.locator('main')).toHaveAttribute('data-writing', 'ready');
-      await shotScreen(page, 'state-welcome-composer-touch');
+      await shotScreen(page, 'state-welcome-writer');
     });
 
-    test('welcome writing', async ({ page }) => {
-      await seedWelcomeWallet(page);
-      await page.goto('/welcome?visual=balance-ready');
-      await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
-      await page.getByLabel('Your message').tap();
-      await expect(page.getByLabel('Your message')).toBeFocused();
-      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
-      await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
-      await expect(page.getByText('Thank you both — that helps.')).toBeHidden();
-      await expect(page.getByRole('button', { name: 'Receive' })).toBeHidden();
-      await expect(page.locator('[data-app-frame]')).toHaveCSS('border-top-left-radius', '0px');
-      await shotScreen(page, 'state-welcome-writing');
+    test('welcome writer-ask', async ({ page }) => {
+      await openWriter(page);
+      await page.getByRole('button', { name: 'Ask for money' }).tap();
+      await expect(page.getByRole('heading', { name: 'Ask for money' })).toBeVisible();
+      await expect(page.getByText('How much?')).toBeVisible();
+      await shotScreen(page, 'state-welcome-writer-ask');
     });
 
-    test('welcome writing-validation-error', async ({ page }) => {
-      await seedWelcomeWallet(page);
-      await page.goto('/welcome?visual=balance-ready');
-      await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
-      const field = page.getByLabel('Your message');
-      await field.tap();
-      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
+    test('welcome writer-validation-error', async ({ page }) => {
+      await openWriter(page);
       await page.getByRole('button', { name: 'Post', exact: true }).tap();
       await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
-      await expect(field).toBeFocused();
-      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
-      await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
-      await shotScreen(page, 'state-welcome-writing-validation-error');
+      await shotScreen(page, 'state-welcome-writer-validation-error');
     });
 
-    test('welcome writing-place-open', async ({ page }) => {
-      await seedWelcomeWallet(page);
-      await page.goto('/welcome?visual=balance-ready');
-      await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
-      const field = page.getByLabel('Your message');
-      await field.tap();
-      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
+    test('welcome writer-place-open', async ({ page }) => {
+      await openWriter(page);
       await page.getByRole('button', { name: 'Add a place' }).tap();
       await expect(page.getByText('The map is not available.')).toBeVisible();
-      await expect(field).toBeFocused();
-      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
-      await shotScreen(page, 'state-welcome-writing-place-open');
+      await shotScreen(page, 'state-welcome-writer-place-open');
     });
   });
 
@@ -4582,6 +4618,7 @@ test.describe('onboarding screens', () => {
     });
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Your message' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-sunday');
@@ -4706,6 +4743,7 @@ test.describe('onboarding screens', () => {
     await fulfillMixedSatsMessages(page);
     await fulfillMentionPeople(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     const box = page.getByRole('textbox', { name: 'Your message' });
     await box.fill('@');
     await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
@@ -4738,6 +4776,7 @@ test.describe('onboarding screens', () => {
     await fulfillMixedSatsMessages(page);
     await fulfillMentionPeople(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     const box = page.getByRole('textbox', { name: 'Your message' });
     await chooseMentionAda(page, box);
     await shotScreen(page, 'state-welcome-mention-inserted');
@@ -4806,6 +4845,7 @@ test.describe('onboarding screens', () => {
     await fulfillRateDay(page);
     await fulfillMentionPeople(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -4842,6 +4882,7 @@ test.describe('onboarding screens', () => {
     await fulfillRateDay(page);
     await fulfillMentionPeople(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -5113,6 +5154,7 @@ test.describe('onboarding screens', () => {
     await fulfillMixedSatsMessages(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await openHomeWriter(page);
     await expect(page.getByText('Your first post is free.')).toBeVisible();
     await shotScreen(page, 'state-welcome-first-post-free');
   });
@@ -17760,6 +17802,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await expect(page.getByRole('button', { name: 'One-time' })).toHaveAttribute(
       'aria-pressed',
@@ -17781,6 +17824,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await expect(page.getByText('How much?')).toBeVisible();
     await page.getByLabel('Ask').fill('1000');
@@ -17799,6 +17843,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Daily' }).click();
     await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
@@ -17820,6 +17865,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -17837,6 +17883,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('1000');
@@ -17854,6 +17901,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByRole('button', { name: 'Daily' }).click();
@@ -17870,6 +17918,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await expect(page.getByRole('button', { name: 'Credit' })).toHaveAttribute(
@@ -17886,6 +17935,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByRole('button', { name: 'Daily' }).click();
@@ -17903,6 +17953,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('0');
@@ -17915,6 +17966,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByRole('button', { name: 'Daily' }).click();
@@ -17933,6 +17985,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -17947,6 +18000,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page
@@ -17967,6 +18021,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -17984,6 +18039,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -17999,6 +18055,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -18015,6 +18072,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page
@@ -18034,6 +18092,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -18057,6 +18116,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -18076,6 +18136,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page
@@ -18098,6 +18159,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page
@@ -18121,6 +18183,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -18139,6 +18202,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -18158,6 +18222,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -18186,6 +18251,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByLabel('Ask').fill('21000');
@@ -18216,6 +18282,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page.getByRole('button', { name: 'Daily' }).click();
@@ -18242,6 +18309,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     await page
@@ -18372,6 +18440,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('21000');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -18383,6 +18452,7 @@ test.describe('welcome forum variants', () => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('21000');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -18396,6 +18466,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -18422,6 +18493,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await emptyForum(page);
     await page.goto('/welcome');
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -18462,6 +18534,7 @@ test.describe('welcome forum variants', () => {
   });
 
   async function beginAsk(page: Page, daily = false): Promise<void> {
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     if (daily) {
       await page.getByRole('button', { name: 'Daily' }).click();
@@ -18650,6 +18723,7 @@ test.describe('welcome forum variants', () => {
     page: Page,
     options: { daily?: boolean; text?: string; photo?: boolean },
   ): Promise<void> {
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Credit' }).click();
     if (options.daily === true) {
@@ -19085,6 +19159,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
     await shotScreen(page, 'state-welcome-validation-error');
@@ -19101,6 +19176,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('0');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
@@ -19118,6 +19194,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByRole('button', { name: 'Daily' }).click();
     await expect(page.getByRole('button', { name: 'Daily' })).toHaveAttribute(
@@ -19165,7 +19242,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photo');
   });
 
@@ -19215,7 +19292,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
-    await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photos');
   });
 
@@ -19251,6 +19328,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello with this photo.');
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
@@ -19271,7 +19349,8 @@ test.describe('welcome forum variants', () => {
         }),
       )
       .toBe(true);
-    await expect(page.getByLabel('Your message')).toHaveValue('');
+    // A successful post closes the writer and clears the draft.
+    await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-photo-and-text');
   });
@@ -19369,6 +19448,7 @@ test.describe('welcome forum variants', () => {
     await fulfillRateDay(page);
     await page.goto(`/welcome?visual=${visual}`);
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText(/^Pay ₿1\b(?! and post)/)).toBeVisible();
@@ -19416,6 +19496,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption before attaching a photo.');
     await expect(page.getByLabel('Your message')).toHaveValue('Caption before attaching a photo.');
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
@@ -19446,6 +19527,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').focus();
     await shotScreen(page, 'state-welcome-keyboard-viewport');
   });
@@ -19455,6 +19537,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await attachTinyJpeg(page);
     await expect(page.getByLabel('Your message')).toHaveValue('');
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible();
@@ -19524,6 +19607,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await expect(page.getByText('The map is not available.')).toBeVisible();
     await shotScreen(page, 'state-welcome-composer-place');
@@ -19535,6 +19619,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     const frame = page.locator('.h-64');
     await expect(frame).toBeVisible();
@@ -19552,6 +19637,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
@@ -19568,11 +19654,14 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByLabel('Place name').fill('Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    // The preview sits above the writer: its Remove takes the tap.
+    await page.getByRole('button', { name: 'Remove place' }).click({ trial: true });
     await shotScreen(page, 'state-welcome-composer-place-set');
   });
 
@@ -19582,6 +19671,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     const name = page.getByLabel('Place name');
     await expect(name).toBeVisible();
@@ -19599,6 +19689,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
@@ -19615,6 +19706,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await page.getByRole('button', { name: 'Use this place' }).click();
@@ -19627,6 +19719,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page
       .locator('input[type="file"]')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
@@ -19639,6 +19732,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with selected photo.');
     await attachTinyJpeg(page);
     await expect(page.getByAltText('Selected photo')).toBeVisible();
@@ -19651,6 +19745,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with selected photos.');
     await page
       .locator('input[type="file"]')
@@ -19665,6 +19760,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await attachTinyMp4(page);
     await expect(page.getByLabel('Your message')).toHaveValue('');
     await expect(page.getByRole('button', { name: 'Remove video' })).toBeVisible();
@@ -19676,6 +19772,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with selected video.');
     await attachTinyMp4(page);
     await expect(page.locator('form video')).toBeVisible();
@@ -19688,6 +19785,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption kept after removing photo.');
     await attachTinyJpeg(page);
     await page.getByRole('button', { name: 'Remove photo' }).click();
@@ -19702,6 +19800,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
@@ -19714,6 +19813,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption while the photo is preparing.');
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByLabel('Your message')).toHaveValue(
@@ -19757,6 +19857,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption while the post is in flight.');
     await attachTinyJpeg(page);
     await page.getByRole('button', { name: 'Post', exact: true }).click();
@@ -19812,6 +19913,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await attachGif(page);
     await expect(
       page.getByText('Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'),
@@ -19825,6 +19927,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with an unsupported photo.');
     await attachGif(page);
     await expect(
@@ -19841,6 +19944,7 @@ test.describe('welcome forum variants', () => {
     await stubComposeInvoice(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
@@ -19893,6 +19997,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
@@ -19904,6 +20009,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page
       .locator('input[type="file"]')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
@@ -19917,6 +20023,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with a photo that is too large.');
     await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
@@ -19932,6 +20039,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with too many photos.');
     await page
       .locator('input[type="file"]')
@@ -19960,6 +20068,7 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption when posting fails.');
     await attachTinyJpeg(page);
     await page.getByRole('button', { name: 'Post', exact: true }).click();
@@ -20688,6 +20797,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Your wallet is not set up' })).toBeVisible();
@@ -20720,6 +20830,7 @@ test.describe('welcome forum variants', () => {
     await emptyForum(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Add your 21.gifts name' })).toBeVisible();

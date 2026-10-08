@@ -21,15 +21,6 @@ export type AppShellMode = 'fill' | 'flow';
 /** Inner-scroller alignment. Only the inner wrapper under `center` may center. */
 export type AppShellAlign = 'start' | 'center';
 
-/**
- * Writing mode of the forum home composer on a touch device. `off`: no such
- * composer on the page, the frame is unchanged. `ready`: the composer is
- * mounted, so the frame, the header row and the footer carry their 250 ms
- * transitions. `on`: the composer's text field has the focus, so the frame is
- * edge to edge, the header row tightens and the footer folds away.
- */
-export type AppShellWriting = 'off' | 'ready' | 'on';
-
 /** Props for {@link AppShell}. */
 export interface AppShellProps {
   /** Page body (and optional slot registrars). */
@@ -55,19 +46,23 @@ export interface AppShellProps {
 interface AppShellContextValue {
   headerEl: HTMLElement | null;
   footerEl: HTMLElement | null;
+  bodyEl: HTMLElement | null;
+  overlayEl: HTMLElement | null;
   topLeftEl: HTMLElement | null;
   setTopLeftEl: (el: HTMLElement | null) => void;
   setHasTopLeftPortal: (value: boolean) => void;
   hasTopLeftPortal: boolean;
   scrollerEl: HTMLElement | null;
   frameWidth: number | null;
-  setWriting: (writing: AppShellWriting) => void;
   topLeft?: ReactNode;
   topRight?: ReactNode;
 }
 
 const AppShellContext = createContext<AppShellContextValue | null>(null);
-/** Slot hosts for header, footer, top-left, and the inner scroller. Null outside AppShell. */
+/**
+ * Slot hosts for header, footer, overlay, top-left, the frame body under the
+ * header row, and the inner scroller. Null outside AppShell.
+ */
 export { AppShellContext };
 
 /**
@@ -80,13 +75,14 @@ export { AppShellContext };
  * `[data-scrollport]`. `<main>` has
  * no `overflow-hidden`. The document does not scroll. The scrollport
  * scrolls vertically only. Sideways movement stays inside `[data-scroll-x]`.
- * Cards never host page chrome. The context's `setWriting` is called only by
- * the forum home composer on a touch device (`useComposerWriting`): `ready`
- * marks `<main>` `data-writing="ready"` (a `group/shell`) and gives the
- * padding, frame edge, header row and footer their 250 ms transitions; `on`
- * drops `<main>`'s padding and the frame's rounded border, tightens the
- * header row and the page top, and folds the footer away. `off` (every other
- * page) leaves every class as it was.
+ * Cards never host page chrome. Everything under the header row (notices,
+ * header slot, scrollport, footer) sits in one positioned frame body
+ * (`data-app-body`, a `group/body`), so a layer registered with
+ * {@link AppShellOverlay} covers exactly that body: it starts at the header
+ * row's bottom edge and ends at the frame's, and it follows the frame when the
+ * visible viewport changes. The footer's bottom padding follows
+ * `--footer-collapse` on that body (unset: `1.25rem`, as `pb-5`), and glides
+ * while the body carries `data-footer-snap` (`WalletFooterActions`).
  *
  * @param props - See {@link AppShellProps}.
  * @returns The page shell element.
@@ -102,12 +98,13 @@ export function AppShell({
   void mode;
   const [headerEl, setHeaderEl] = useState<HTMLElement | null>(null);
   const [footerEl, setFooterEl] = useState<HTMLElement | null>(null);
+  const [bodyEl, setBodyEl] = useState<HTMLElement | null>(null);
+  const [overlayEl, setOverlayEl] = useState<HTMLElement | null>(null);
   const [topLeftEl, setTopLeftEl] = useState<HTMLElement | null>(null);
   const [hasTopLeftPortal, setHasTopLeftPortal] = useState(false);
   const [scrollerEl, setScrollerEl] = useState<HTMLElement | null>(null);
   const [frameEl, setFrameEl] = useState<HTMLElement | null>(null);
   const [frameWidth, setFrameWidth] = useState<number | null>(null);
-  const [writing, setWriting] = useState<AppShellWriting>('off');
 
   useLayoutEffect(() => {
     if (frameEl === null) return;
@@ -132,17 +129,29 @@ export function AppShell({
     () => ({
       headerEl,
       footerEl,
+      bodyEl,
+      overlayEl,
       topLeftEl,
       setTopLeftEl,
       setHasTopLeftPortal,
       hasTopLeftPortal,
       scrollerEl,
       frameWidth,
-      setWriting,
       topLeft,
       topRight,
     }),
-    [headerEl, footerEl, topLeftEl, hasTopLeftPortal, scrollerEl, frameWidth, topLeft, topRight],
+    [
+      headerEl,
+      footerEl,
+      bodyEl,
+      overlayEl,
+      topLeftEl,
+      hasTopLeftPortal,
+      scrollerEl,
+      frameWidth,
+      topLeft,
+      topRight,
+    ],
   );
 
   const showPasskeyRenew = useAuthStore(
@@ -151,38 +160,20 @@ export function AppShell({
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const hasRight = topRight !== undefined && topRight !== null;
   const showPageTopLeft = !hasTopLeftPortal && topLeft !== undefined && topLeft !== null;
-  const writingOn = writing === 'on';
-  const fold =
-    writing === 'off'
-      ? ''
-      : ' transition-[padding,border-radius,border-width] duration-250 ease-fold';
-  const mainPad = writingOn ? 'p-0' : 'px-3 max-[359px]:px-2 py-2';
-  const frameEdge = writingOn ? 'rounded-none border-0' : 'rounded-3xl border';
-  const chromeTop = writingOn ? 'pt-2' : 'pt-4';
-  const pageTop = writingOn ? 'pt-1 pb-4' : 'py-4';
-  // A folding footer keeps its buttons at its bottom edge, so shrinking clips
-  // them from the top instead of pushing them below the window.
-  const footerClass = writingOn
-    ? 'flex flex-none flex-col justify-end px-5 pb-0 empty:hidden writing-folded'
-    : writing === 'off'
-      ? 'flex-none px-5 pb-5 empty:hidden'
-      : 'flex flex-none flex-col justify-end px-5 pb-5 empty:hidden writing-fold';
-
   return (
     <AppShellContext.Provider value={ctx}>
       <main
-        {...(writing === 'off' ? {} : { 'data-writing': writing })}
-        className={`${writing === 'off' ? '' : 'group/shell '}relative flex h-[var(--app-height)] flex-col overscroll-y-none ${mainPad}${fold}${extra}`}
+        className={`relative flex h-[var(--app-height)] flex-col overscroll-y-none px-3 max-[359px]:px-2 py-2${extra}`}
       >
         <section
           ref={setFrameEl}
           data-app-frame
-          className={`relative flex min-h-0 w-full flex-col grow shrink basis-0 self-stretch overflow-visible ${frameEdge} border-app-border bg-app-card shadow-sm${fold}`}
+          className="relative flex min-h-0 w-full flex-col grow shrink basis-0 self-stretch overflow-visible rounded-3xl border border-app-border bg-app-card shadow-sm"
         >
           <div data-menu-scrim-host className="contents" />
           <div
             data-app-chrome
-            className={`relative z-40 flex flex-none items-center justify-between gap-2 px-5 ${chromeTop} pb-1 max-[359px]:px-3${fold}`}
+            className="relative z-40 flex flex-none items-center justify-between gap-2 px-5 pt-4 pb-1 max-[359px]:px-3"
           >
             <div ref={setTopLeftEl} className="flex min-w-0 items-center gap-2 empty:hidden">
               {showPageTopLeft ? topLeft : null}
@@ -191,33 +182,43 @@ export function AppShell({
               {hasRight ? topRight : null}
             </div>
           </div>
-          {showPasskeyRenew ? <PasskeyRenewNotice /> : null}
-          <DailyPayoutStoppedNotice />
-          <header ref={setHeaderEl} className="flex-none empty:hidden px-5" />
-          <Scrollport
-            scrollRef={(node) => {
-              setScrollerEl(node);
-            }}
-            className="w-full flex-1"
+          <div
+            ref={setBodyEl}
+            data-app-body
+            className="group/body relative flex min-h-0 w-full flex-1 flex-col"
           >
-            <div data-menu-sheet-host className="px-5" />
-            {align === 'center' ? (
-              <div
-                data-scroll-page
-                className={`shell-safe-center flex min-h-full min-w-0 flex-col items-center px-5 ${pageTop}${fold}`}
-              >
-                {children}
-              </div>
-            ) : (
-              <div
-                data-scroll-page
-                className={`flex w-full min-w-0 flex-col items-center px-5 ${pageTop}${fold}`}
-              >
-                {children}
-              </div>
-            )}
-          </Scrollport>
-          <footer ref={setFooterEl} className={footerClass} />
+            {showPasskeyRenew ? <PasskeyRenewNotice /> : null}
+            <DailyPayoutStoppedNotice />
+            <header ref={setHeaderEl} className="flex-none empty:hidden px-5" />
+            <Scrollport
+              scrollRef={(node) => {
+                setScrollerEl(node);
+              }}
+              className="w-full flex-1"
+            >
+              <div data-menu-sheet-host className="px-5" />
+              {align === 'center' ? (
+                <div
+                  data-scroll-page
+                  className="shell-safe-center flex min-h-full min-w-0 flex-col items-center px-5 py-4"
+                >
+                  {children}
+                </div>
+              ) : (
+                <div
+                  data-scroll-page
+                  className="flex w-full min-w-0 flex-col items-center px-5 py-4"
+                >
+                  {children}
+                </div>
+              )}
+            </Scrollport>
+            <footer
+              ref={setFooterEl}
+              className="flex-none px-5 pb-[calc(1.25rem-0.5rem*var(--footer-collapse,0))] empty:hidden group-data-[footer-snap]/body:transition-[padding] group-data-[footer-snap]/body:duration-320 group-data-[footer-snap]/body:ease-glide"
+            />
+            <div ref={setOverlayEl} className="contents" />
+          </div>
         </section>
       </main>
     </AppShellContext.Provider>
@@ -271,6 +272,28 @@ export function AppShellFooter(props: { children: ReactNode }): ReactElement | n
     return null;
   }
   return createPortal(props.children, ctx.footerEl);
+}
+
+/**
+ * Registers a layer over the frame body: everything under the header row, down
+ * to the frame's bottom edge (notices, header slot, scrollport, and footer).
+ * The layer positions itself (`absolute inset-0`, or a smaller box) against
+ * that body, so it moves with the frame when the visible viewport changes and
+ * needs no measured screen coordinates. Without an {@link AppShell} ancestor,
+ * renders children inline.
+ *
+ * @param props - Layer content.
+ * @returns Portal into the shell overlay host, inline children, or `null` before the host mounts.
+ */
+export function AppShellOverlay(props: { children: ReactNode }): ReactElement | null {
+  const ctx = useContext(AppShellContext);
+  if (ctx === null) {
+    return <>{props.children}</>;
+  }
+  if (ctx.overlayEl === null) {
+    return null;
+  }
+  return createPortal(props.children, ctx.overlayEl);
 }
 
 /**
