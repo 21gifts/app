@@ -63,6 +63,12 @@ type UnsettledHeart = { invoice: string; sinceMs: number; sent: boolean };
  */
 const unsettledHearts = new Map<string, UnsettledHeart>();
 
+/**
+ * Note ids with a heart run in progress in this tab, across every board, so a
+ * board mounted again during a send cannot start a second heart on that note.
+ */
+const heartsInFlight = new Set<string>();
+
 /** Inputs for one heart send. Wallet fields are the snapshot at click time. */
 export type HeartTipInput = {
   /** Forum note or reply id. */
@@ -289,7 +295,9 @@ async function payHeartInvoice(
  * 1 sat and a fee of ₿0: without a Spark invoice, or when the prepared payment
  * differs, nothing is sent and the alert is `unavailable` (never the
  * Lightning `pr`). While an earlier heart on the same note timed out and its
- * outcome is not known, nothing is invoiced and the alert is `pending`.
+ * outcome is not known, or while another heart on the same note is still in
+ * progress in this tab (also from a board mounted again), nothing is invoiced
+ * and the alert is `pending`.
  * In a Playwright build, `?visual=heart-paid` (via {@link visualPin}) returns
  * paid without invoicing; that pin is ignored in production and does not
  * override signed-out or read-only. It is read before the Sunday check so a
@@ -318,7 +326,32 @@ export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcom
   if (input.needsWalletSetup) {
     return { kind: 'alert', alert: 'needsBalance' };
   }
-  const held = await settleUnsettledHeart(input.messageId);
+  if (heartsInFlight.has(input.messageId)) {
+    return { kind: 'alert', alert: 'pending' };
+  }
+  heartsInFlight.add(input.messageId);
+  try {
+    return await invoiceAndPayHeart(input.messageId, input.sessionToken, input);
+  } finally {
+    heartsInFlight.delete(input.messageId);
+  }
+}
+
+/**
+ * Settles an earlier timed-out heart on this note, then invoices and pays a
+ * new one through the api's Spark invoice only.
+ *
+ * @param messageId - Note the heart is for.
+ * @param sessionToken - Bearer session.
+ * @param input - Click snapshot.
+ * @returns Paid, or the alert to show.
+ */
+async function invoiceAndPayHeart(
+  messageId: string,
+  sessionToken: string,
+  input: HeartTipInput,
+): Promise<HeartTipOutcome> {
+  const held = await settleUnsettledHeart(messageId);
   if (held === 'paid') {
     return { kind: 'paid' };
   }
@@ -327,14 +360,7 @@ export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcom
   }
   let invoice;
   try {
-    invoice = await postMessageInvoice(
-      input.sessionToken,
-      input.messageId,
-      1,
-      undefined,
-      undefined,
-      true,
-    );
+    invoice = await postMessageInvoice(sessionToken, messageId, 1, undefined, undefined, true);
   } catch (err) {
     return { kind: 'alert', alert: mapInvoiceError(err) };
   }
