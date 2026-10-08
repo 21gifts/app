@@ -265,7 +265,6 @@ test('wallet pay: confirm pin shows no row for the fee of ₿0, only Send', asyn
   const sheet = page.locator('[data-pay-sheet]');
   await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
   await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
-  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
   await sheet.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
 });
