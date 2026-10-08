@@ -1131,7 +1131,7 @@ test.describe('Send while the wallet is still opening', () => {
   }) => {
     await signInWalletEligible(page);
     await stubWalletRate(page);
-    await page.goto('/wallet?visual=send-confirm-opens');
+    await page.goto('/welcome?visual=send-confirm-opens');
     const region = page.getByRole('region', { name: 'Send Bitcoin' });
     await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
@@ -1145,7 +1145,7 @@ test.describe('Send while the wallet is still opening', () => {
   }) => {
     await signInWalletEligible(page);
     await stubWalletRate(page);
-    await page.goto('/wallet?visual=send-confirm-wallet-error');
+    await page.goto('/welcome?visual=send-confirm-wallet-error');
     const region = page.getByRole('region', { name: 'Send Bitcoin' });
     await expect(region.getByRole('alert')).toHaveText(
       'Your wallet could not be opened. Please try again.',
@@ -1155,7 +1155,7 @@ test.describe('Send while the wallet is still opening', () => {
     await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
     await expect(region.getByText('Fee ₿0', { exact: true })).toBeVisible({ timeout: 10_000 });
 
-    await page.goto('/wallet?visual=send-input-wallet-error');
+    await page.goto('/welcome?visual=send-input-wallet-error');
     await expect(region.getByRole('alert')).toHaveText(
       'Your wallet could not be opened. Please try again.',
     );

@@ -1335,6 +1335,79 @@ describe('useWalletSend wallet status', () => {
     expect(result.current.state.step).toBe('amount');
   });
 
+  it('reads the text again when the wallet closed and opened again while the first read ran', async () => {
+    let finishRead: (value: Awaited<ReturnType<typeof parseWalletInput>>) => void = () => undefined;
+    vi.mocked(parseWalletInput).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishRead = resolve;
+      }),
+    );
+    target(LNURL);
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.setText('lnurl1wallet');
+    });
+    act(() => {
+      result.current.submitInput();
+    });
+    setStatus('locked');
+    setStatus('ready');
+    await act(async () => {
+      finishRead({ kind: 'unlock' });
+    });
+    expect(parseWalletInput).toHaveBeenCalledTimes(2);
+    expect(result.current.state.step).toBe('amount');
+    expect(result.current.text).toBe('lnurl1wallet');
+  });
+
+  it('prepares again when the wallet closed and opened again while the first prepare ran', async () => {
+    target(LNURL);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnurl1wallet');
+    let finishPrepare: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishPrepare = resolve;
+      }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    act(() => {
+      result.current.submitAmount(100);
+    });
+    setStatus('locked');
+    setStatus('ready');
+    await act(async () => {
+      finishPrepare({ kind: 'failed' });
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.state.step).toBe('confirm');
+  });
+
+  it('quotes again instead of sending a payment prepared before the wallet closed and opened again', async () => {
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.state.step).toBe('confirm');
+    act(() => {
+      useWalletStore.setState({ status: 'locked' });
+      useWalletStore.setState({ status: 'ready' });
+    });
+    expect(result.current.state.step).toBe('confirm');
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(send).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(result.current.state.step).toBe('confirm');
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(result.current.state.step).toBe('sent');
+  });
+
   it('drops a held step on Cancel or when the view closes', async () => {
     target(LNURL);
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
