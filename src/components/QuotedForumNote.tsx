@@ -151,6 +151,11 @@ function QuotedForumNote({
                 {badgeLabel}
               </span>
             ) : null}
+            {note.staffTag === 'software_developer' ? (
+              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                {t('forum.staff.softwareDeveloper')}
+              </span>
+            ) : null}
           </span>
           <time dateTime={note.createdAt} className="text-xs text-app-subtle">
             {formatForumTime(note.createdAt, locale)}

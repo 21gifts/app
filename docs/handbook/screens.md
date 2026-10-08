@@ -518,6 +518,12 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ![21.gifts welcome](images/welcome.png)
 
+### Variant: software-developer
+
+One author row on the welcome forum. Beside the name, a static Software Developer label (a span, not a button and not a role) sits after any role pill. The rest of this state matches the smallest one-note welcome screen.
+
+![21.gifts welcome software developer](images/welcome-software-developer.png)
+
 ### Variant: daily-payout-stopped
 
 Signed in, no grant application. The notice title is **Daily payout stopped**, then **Applications are currently paused. You can apply again when shop transactions have increased.**, then the link `https://21.gifts/statistics`. No apply control. The living room underneath is the default welcome.
@@ -2488,6 +2494,12 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 Member identity card with About me inside the card when `aboutMe` is set; read-only location; Message on the card when another member has a `profileMessage`. Not a forum post. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the chart never says **Loading…** and has no retry control.
 
 ![21.gifts member profile](images/members.png)
+
+### Variant: software-developer
+
+Basis member identity card. Beside the name, a static Software Developer label (a span, not a button and not a role). There is no role pill. About me and Message stay as on the default member card.
+
+![21.gifts member software developer](images/members-software-developer.png)
 
 ### Variant: posts-open
 

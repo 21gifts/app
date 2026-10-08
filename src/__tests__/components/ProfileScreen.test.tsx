@@ -646,6 +646,17 @@ describe('ProfileScreen', () => {
     expect(screen.getByRole('button', { name: '14 posts' })).toBeTruthy();
   });
 
+  it('hides Software Developer on the embedded facts card even when fetchMember returns the staff tag', async () => {
+    vi.mocked(fetchMember).mockResolvedValue({
+      ...OWN_MEMBER,
+      role: 'basis',
+      staffTag: 'software_developer',
+    });
+    renderWithLocale(<ProfileScreen />);
+    expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
+    expect(screen.queryByText('Software Developer')).toBeNull();
+  });
+
   it('shows forum.error and keeps address editors when fetchMember rejects, and retry fetches again', async () => {
     vi.mocked(fetchMember).mockRejectedValue(new Error('network'));
     renderWithLocale(<ProfileScreen />);

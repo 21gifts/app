@@ -1038,6 +1038,11 @@ export function ForumBoard({
                         {t('forum.via.nostr')}
                       </button>
                     ) : null}
+                    {message.staffTag === 'software_developer' ? (
+                      <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                        {t('forum.staff.softwareDeveloper')}
+                      </span>
+                    ) : null}
                   </MessageKindTags>
                   <time dateTime={message.createdAt} className="text-xs text-app-subtle">
                     {formatForumTime(message.createdAt, locale)}
@@ -1436,6 +1441,11 @@ export function ForumBoard({
                                   >
                                     {t('forum.via.nostr')}
                                   </button>
+                                ) : null}
+                                {reply.staffTag === 'software_developer' ? (
+                                  <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                                    {t('forum.staff.softwareDeveloper')}
+                                  </span>
                                 ) : null}
                               </div>
                               <time dateTime={reply.createdAt} className="text-xs text-app-subtle">

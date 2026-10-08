@@ -695,6 +695,7 @@ const en = {
   'forum.role.initiatorHint': 'This person was named an initiator.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
+  'forum.staff.softwareDeveloper': 'Software Developer',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'External',
   'forum.via.nostrHint':
@@ -1799,6 +1800,7 @@ const de = {
   'forum.role.initiatorHint': 'Diese Person wurde als Initiator benannt.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
+  'forum.staff.softwareDeveloper': 'Software-Entwickler',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
@@ -2915,6 +2917,7 @@ const es = {
   'forum.role.initiatorHint': 'Esta persona fue nombrada iniciadora.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
+  'forum.staff.softwareDeveloper': 'Desarrollador de software',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
@@ -4018,6 +4021,7 @@ const fil = {
   'forum.role.initiatorHint': 'Ang taong ito ay pinangalanang Initiator.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
+  'forum.staff.softwareDeveloper': 'Developer ng software',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':

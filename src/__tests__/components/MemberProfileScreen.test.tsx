@@ -468,6 +468,59 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
   });
 
+  it('shows Software Developer on a basis full card with only the staff tag', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, role: 'basis', staffTag: 'software_developer' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Software Developer' })).toBeNull();
+  });
+
+  it('factsOnly shows Software Developer for a basis profile with only the staff tag', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        factsOnly
+        profile={{ ...profile, role: 'basis', staffTag: 'software_developer' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
+  it('omits Software Developer on the full card and factsOnly when staffTag is absent', () => {
+    const { unmount } = renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByText('Software Developer')).toBeNull();
+    unmount();
+    renderWithLocale(
+      <MemberProfileScreen
+        factsOnly
+        profile={{ ...profile, role: 'basis' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByText('Software Developer')).toBeNull();
+  });
+
+  it('keeps the Verified button and Software Developer label on a verified profile', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, staffTag: 'software_developer' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
   it('factsOnly shows the reviewed pill without a role pill', () => {
     renderWithLocale(
       <MemberProfileScreen

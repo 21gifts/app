@@ -312,6 +312,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:software-developer",
+    "label": "/welcome software-developer",
+    "visual": "state-welcome-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:daily-payout-stopped",
     "label": "/welcome daily-payout-stopped",
     "visual": "state-welcome-daily-payout-stopped",
@@ -1701,6 +1707,12 @@
     "id": "/members/[accountId]:default",
     "label": "/members/[accountId] default",
     "visual": "screen-members-accountId",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:software-developer",
+    "label": "/members/[accountId] software-developer",
+    "visual": "state-members-accountId-software-developer",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
