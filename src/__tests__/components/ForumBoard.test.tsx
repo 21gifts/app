@@ -6859,6 +6859,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: /^React$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete post' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
     expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
@@ -7630,6 +7631,7 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
+    expect(screen.queryByText('Send ₿1')).toBeNull();
   });
 
   it('hides Send ₿1 on the viewer own post and reply', () => {
@@ -7694,6 +7696,7 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
+    expect(screen.queryByText('Send ₿1')).toBeNull();
   });
 
   it('shows the balance sentence without +1 when needsBalance', () => {
@@ -7763,6 +7766,7 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
+    expect(screen.queryByText('Send ₿1')).toBeNull();
     expect(onHeartTip).toHaveBeenCalledWith('m1');
   });
 
@@ -7783,6 +7787,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
+    expect(screen.queryByText('Send ₿1')).toBeNull();
     expect(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
     }).not.toThrow();
