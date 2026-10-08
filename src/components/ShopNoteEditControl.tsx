@@ -30,8 +30,8 @@ export interface ShopNoteEditControlProps {
   /** Apply the saved note to the listed row. Runs after each saved part of the note. */
   onUpdated: (message: ForumMessage) => void;
   /**
-   * Runs once after every changed part of the note is saved. When a save stops
-   * after some parts were written, it runs when the editor is closed instead.
+   * Runs once after a complete save. When a save stops after some parts were
+   * written, it runs once when the editor closes or unmounts instead.
    */
   onSaved?: () => void;
   /** Still previews already loaded for this note, in order. */
@@ -190,27 +190,40 @@ export function ShopNoteEditControl({
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
-  // A save that stopped after some parts were written is reported when the
-  // editor closes or unmounts (for example when the Shops view switches).
+  // Written parts not reported to `onSaved` yet. A complete save reports at once;
+  // a save that stopped part-way reports when the editor closes or unmounts (for
+  // example when the Shops view switches), and never while a save is in flight.
   const unreportedSave = useRef(false);
+  const saveInFlight = useRef(false);
+  const mounted = useRef(true);
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
 
-  /** Report a partly written save once, if one is waiting. */
-  function reportUnreportedSave(): void {
+  /** Report written parts once, if any are waiting. */
+  function reportSave(): void {
     if (unreportedSave.current) {
       unreportedSave.current = false;
       onSavedRef.current?.();
     }
   }
 
-  /** Close the steps and report a partly written save. */
+  /** Close the steps; a save in flight reports when it settles. */
   function closeEditor(): void {
     setOpen(false);
-    reportUnreportedSave();
+    if (!saveInFlight.current) {
+      reportSave();
+    }
   }
 
-  useEffect(() => reportUnreportedSave, []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (!saveInFlight.current) {
+        reportSave();
+      }
+    };
+  }, []);
   const [saveError, setSaveError] = useState(false);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
@@ -358,6 +371,7 @@ export function ShopNoteEditControl({
 
   async function save(): Promise<void> {
     setSaving(true);
+    saveInFlight.current = true;
     setSaveError(false);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
@@ -426,12 +440,17 @@ export function ShopNoteEditControl({
         unreportedSave.current = true;
       }
       onUpdated(latest);
-      unreportedSave.current = false;
+      unreportedSave.current = true;
       setOpen(false);
-      onSaved?.();
+      reportSave();
     } catch {
       setSaveError(true);
+      // Closed or gone while the save ran: nothing will close it again.
+      if (!mounted.current) {
+        reportSave();
+      }
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
   }

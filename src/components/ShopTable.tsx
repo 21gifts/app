@@ -53,7 +53,8 @@ function placeText(message: ForumMessage): string | null {
  * loaded (`country` on `GET /forum/messages`).
  *
  * @param props - Optional ISO 3166-1 alpha-2 `country` (null or omitted lists every shop) and
- * `onShopsChanged`, run after a moderator saves a row's shop note.
+ * `onShopsChanged`, run once per moderator save of a row's shop note (complete, or partly
+ * written once its editor closes or unmounts).
  * @returns The table, empty copy, or an error with retry. Null without a session.
  */
 export function ShopTable({

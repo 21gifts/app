@@ -159,7 +159,8 @@ function loadGoogleMaps(key: string): Promise<void> {
  *
  * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body;
  * `country` (ISO 3166-1 alpha-2, or null for every pin) narrows the pins to that country's
- * shops; `onShopsChanged` runs once after a moderator saves a shop in full.
+ * shops; `onShopsChanged` runs once per moderator shop save (complete, or partly written
+ * once its editor closes or unmounts).
  * @returns The map card, or only the body when `embedded` is true.
  */
 export function PlacesMapScreen({
