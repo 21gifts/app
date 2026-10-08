@@ -831,6 +831,48 @@ describe('ShopNoteEditControl', () => {
     expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
   });
 
+  it('reports a partly written save when the editor is closed', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    vi.mocked(setMessageShopAccount).mockRejectedValueOnce(new Error('no'));
+    const onSaved = vi.fn();
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        onUpdated={vi.fn()}
+        onSaved={onSaved}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(onSaved).not.toHaveBeenCalled();
+    // Closing with the text already written reports it once.
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit shop note' }));
+    await screen.findByText('1 / 5 · Photos');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(onSaved).toHaveBeenCalledTimes(1);
+  });
+
   it('reads kept stills before a text save can drop their addresses', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
