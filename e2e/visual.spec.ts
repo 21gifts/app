@@ -4199,6 +4199,20 @@ test.describe('onboarding screens', () => {
       await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
       await shotScreen(page, 'state-welcome-writing-validation-error');
     });
+
+    test('welcome writing-place-open', async ({ page }) => {
+      await seedWelcomeWallet(page);
+      await page.goto('/welcome?visual=balance-ready');
+      await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+      const field = page.getByLabel('Your message');
+      await field.tap();
+      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
+      await page.getByRole('button', { name: 'Add a place' }).tap();
+      await expect(page.getByText('The map is not available.')).toBeVisible();
+      await expect(field).toBeFocused();
+      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
+      await shotScreen(page, 'state-welcome-writing-place-open');
+    });
   });
 
   test('welcome wallet-buttons-disabled', async ({ page }) => {

@@ -2320,6 +2320,12 @@ Writing mode as above after a tap on **Post** with an empty text field: the fiel
 
 ![21.gifts welcome writing mode with the empty-post error](images/welcome-writing-validation-error.png)
 
+### Variant: writing-place-open
+
+Writing mode as above after a tap on **Add a place**: the text field keeps the focus, so the page stays in writing mode, and the place panel opens under the composer (in the test build without a map key it says **The map is not available.**).
+
+![21.gifts welcome writing mode with the place panel open](images/welcome-writing-place-open.png)
+
 ### Variant: composer-photo
 
 JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.

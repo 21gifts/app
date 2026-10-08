@@ -1092,7 +1092,7 @@ Fill `AppShell` `align="start"` with `topRight={<SignedInChrome />}` and a fallb
 
 Author names with `accountId` open `/members/[accountId]`.
 
-Handbook states: composer-touch, writing, writing-validation-error, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-text, shop-edit-user, shop-edit-summary.
+Handbook states: composer-touch, writing, writing-validation-error, writing-place-open, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-text, shop-edit-user, shop-edit-summary.
 
 ### `/wallet`
 

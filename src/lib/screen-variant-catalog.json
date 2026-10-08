@@ -1854,6 +1854,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:writing-place-open",
+    "label": "/welcome writing-place-open",
+    "visual": "state-welcome-writing-place-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-photo",
     "label": "/welcome composer-photo",
     "visual": "state-welcome-composer-photo",
