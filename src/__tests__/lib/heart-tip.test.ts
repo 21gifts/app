@@ -631,6 +631,40 @@ describe('sendHeartTip after a send timed out', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
+  it('does not start a second heart on a note while one is still sending', async () => {
+    let finish: ((value: { kind: 'paid' }) => void) | undefined;
+    const send = vi
+      .fn(async () => ({ kind: 'paid' as const }))
+      .mockImplementationOnce(
+        () =>
+          new Promise<{ kind: 'paid' }>((resolve) => {
+            finish = resolve;
+          }),
+      );
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send,
+    });
+    const first = sendHeartTip({ ...BASE, messageId: 't-flight' });
+    await vi.waitFor(() => {
+      expect(send).toHaveBeenCalledTimes(1);
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-flight' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    finish?.({ kind: 'paid' });
+    await expect(first).resolves.toEqual({ kind: 'paid' });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-flight' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps a timed-out heart to its own note', async () => {
     await timeOutHeart('t-own', 'spark1own');
     const send = payNext();
