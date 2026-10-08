@@ -59,6 +59,9 @@ vi.mock('@/components/ForumLoader', async () => {
         <button type="button" onClick={() => writer?.onOpen()}>
           Stub compose request
         </button>
+        <button type="button" onClick={() => writer?.onClose()}>
+          Stub late post
+        </button>
         {writer?.open === true ? (
           <div data-testid="writer">
             <textarea aria-label="Writer field" />
@@ -325,6 +328,30 @@ describe('WelcomeScreen writer', () => {
     });
     expect(screen.queryByTestId('writer')).toBeNull();
     expect(port.scrollTop).toBe(12);
+  });
+
+  it('leaves the page and its focus alone when a post completes after the writer closed', () => {
+    const view = renderWithLocale(
+      <ChromeBackProvider>
+        <AppShell mode="fill" topLeft={<ProfileChromeLeft hideHistoryArrow />}>
+          <WelcomeScreen />
+        </AppShell>
+      </ChromeBackProvider>,
+    );
+    const port = view.container.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 300;
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByTestId('writer')).toBeNull();
+    expect(port.scrollTop).toBe(300);
+    port.scrollTop = 140;
+    const field = screen.getByRole('button', { name: 'Forum re-render' });
+    field.focus();
+    // ForumLoader's pay poll calls onClose once the note exists, also with the writer closed.
+    fireEvent.click(screen.getByRole('button', { name: 'Stub late post' }));
+    expect(port.scrollTop).toBe(140);
+    expect(document.activeElement).toBe(field);
+    expect(screen.queryByTestId('writer')).toBeNull();
   });
 
   it('posts from a writer opened outside a shell without moving anything', () => {
